@@ -5,8 +5,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
 using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
@@ -23,9 +21,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
 ///     Integration tests for <see cref="IBrookReaderGrain" /> and <see cref="IBrookAsyncReaderGrain" />.
 /// </summary>
 [Collection(ClusterTestSuite.Name)]
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Brook Reader Grain Integration")]
 public sealed class BrookReaderGrainTests
 {
     private readonly TestCluster cluster = TestClusterAccess.Cluster;

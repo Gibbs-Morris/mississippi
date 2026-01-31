@@ -24,23 +24,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         background work, consider Orleans reminders or external workflow systems.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         public sealed class OrderPlacedNotificationEffect : IEventEffect&lt;OrderAggregate&gt;
-///         {
-///             public bool CanHandle(object eventData) => eventData is OrderPlacedEvent;
-///
-///             public async IAsyncEnumerable&lt;object&gt; HandleAsync(
-///                 object eventData,
-///                 OrderAggregate currentState,
-///                 [EnumeratorCancellation] CancellationToken cancellationToken)
-///             {
-///                 var evt = (OrderPlacedEvent)eventData;
-///                 yield return new NotificationQueuedEvent(evt.OrderId);
-///             }
-///         }
-///     </code>
-/// </example>
 /// <typeparam name="TAggregate">The aggregate state type this effect is registered for.</typeparam>
 public interface IEventEffect<TAggregate>
 {
@@ -58,6 +41,8 @@ public interface IEventEffect<TAggregate>
     /// </summary>
     /// <param name="eventData">The event that was persisted.</param>
     /// <param name="currentState">The current aggregate state after the event was applied.</param>
+    /// <param name="brookKey">The brook key identifying the aggregate instance.</param>
+    /// <param name="eventPosition">The position of the event in the brook.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     ///     An async enumerable of additional events to persist.
@@ -66,6 +51,8 @@ public interface IEventEffect<TAggregate>
     IAsyncEnumerable<object> HandleAsync(
         object eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     );
 }

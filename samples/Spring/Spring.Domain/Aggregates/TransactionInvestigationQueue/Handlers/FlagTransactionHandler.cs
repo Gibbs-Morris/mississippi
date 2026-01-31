@@ -15,6 +15,26 @@ namespace Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
 internal sealed class FlagTransactionHandler
     : CommandHandlerBase<FlagTransaction, TransactionInvestigationQueueAggregate>
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="FlagTransactionHandler" /> class
+    ///     using system time.
+    /// </summary>
+    public FlagTransactionHandler()
+        : this(null)
+    {
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="FlagTransactionHandler" /> class.
+    /// </summary>
+    /// <param name="timeProvider">The time provider for generating timestamps. Uses system time if null.</param>
+    public FlagTransactionHandler(
+        TimeProvider? timeProvider
+    ) =>
+        TimeProvider = timeProvider ?? TimeProvider.System;
+
+    private TimeProvider TimeProvider { get; }
+
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         FlagTransaction command,
@@ -44,7 +64,7 @@ internal sealed class FlagTransactionHandler
                     AccountId = command.AccountId,
                     Amount = command.Amount,
                     OriginalTimestamp = command.Timestamp,
-                    FlaggedTimestamp = DateTimeOffset.UtcNow,
+                    FlaggedTimestamp = TimeProvider.GetUtcNow(),
                 },
             });
     }

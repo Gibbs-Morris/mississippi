@@ -32,14 +32,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         to define the event stream identity.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         [AggregateService("users")]
-///         [BrookName("MYAPP", "CHAT", "USER")]
-///         [GenerateSerializer]
-///         public sealed record class UserAggregate { ... }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class AggregateServiceAttribute : Attribute
 {

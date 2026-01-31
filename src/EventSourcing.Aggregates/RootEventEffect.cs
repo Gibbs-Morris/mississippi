@@ -181,16 +181,20 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
     public IAsyncEnumerable<object> DispatchAsync(
         object eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return DispatchCoreAsync(eventData, currentState, cancellationToken);
+        return DispatchCoreAsync(eventData, currentState, brookKey, eventPosition, cancellationToken);
     }
 
     private async IAsyncEnumerable<object> DispatchCoreAsync(
         object eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
@@ -206,6 +210,8 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
                                indexed,
                                eventData,
                                currentState,
+                               brookKey,
+                               eventPosition,
                                cancellationToken))
             {
                 yield return yieldedEvent;
@@ -217,6 +223,8 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
                            fallbackEffects,
                            eventData,
                            currentState,
+                           brookKey,
+                           eventPosition,
                            cancellationToken))
         {
             yield return yieldedEvent;
@@ -230,6 +238,8 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         ImmutableArray<IEventEffect<TAggregate>> effects,
         object eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
@@ -246,6 +256,8 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
                                effect,
                                eventData,
                                currentState,
+                               brookKey,
+                               eventPosition,
                                eventTypeName,
                                aggregateTypeName,
                                cancellationToken))
@@ -266,6 +278,8 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         IEventEffect<TAggregate> effect,
         object eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         string eventTypeName,
         string aggregateTypeName,
         [EnumeratorCancellation] CancellationToken cancellationToken
@@ -275,7 +289,7 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         IAsyncEnumerator<object>? enumerator = null;
         try
         {
-            enumerator = effect.HandleAsync(eventData, currentState, cancellationToken)
+            enumerator = effect.HandleAsync(eventData, currentState, brookKey, eventPosition, cancellationToken)
                 .GetAsyncEnumerator(cancellationToken);
             while (await TryMoveNextAsync(enumerator, effectTypeName, eventTypeName, aggregateTypeName))
             {

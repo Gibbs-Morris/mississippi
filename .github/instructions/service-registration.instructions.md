@@ -10,7 +10,7 @@ Governing thought: Use hierarchical `ServiceRegistration` extension methods with
 
 ## Rules (RFC 2119)
 
-- Each feature **MUST** expose `public static class ServiceRegistration` with `Add{Feature}()` extension methods that follow the feature namespace structure. Why: Keeps DI discoverable and consistent.
+- Each feature **MUST** expose `public static class {Feature}Registrations` with `Add{Feature}()` extension methods that follow the feature namespace structure (e.g., `AggregateRegistrations`, `ReducerRegistrations`, `InletSiloRegistrations`). Why: Keeps DI discoverable and consistent.
 - Parent registrations **MUST** call child registrations; sub-feature registrations **MUST** remain `internal`; public registration **MUST** exist only at product/feature boundaries and include XML docs. Why: Preserves hierarchy and minimizes public surface.
 - Registration methods **MUST** be synchronous; async calls (DB, HTTP, etc.) **MUST NOT** occur during registration. Why: DI building is synchronous.
 - Any async initialization **MUST** be deferred to `IHostedService` or Orleans lifecycle participants; async factories **MUST** be registered for deferred work rather than blocking registration. Why: Avoids startup deadlocks.
@@ -26,7 +26,7 @@ Developers adding or modifying DI registration in Mississippi/Samples, including
 
 ## At-a-Glance Quick-Start
 
-- Shape registrations as `services.Add{Feature}()` in `ServiceRegistration.cs` under the feature namespace.
+- Shape registrations as `services.Add{Feature}()` in `{Feature}Registrations.cs` under the feature namespace (e.g., `AggregateRegistrations.cs`, `InletSiloRegistrations.cs`).
 - Keep registration sync-only; move setup to `IHostedService` or Orleans lifecycle participants.
 - Provide overloads: explicit parameters, `Action<TOptions>`, `IConfiguration`; validate options on start.
 - Call child registrations instead of duplicating service lists.

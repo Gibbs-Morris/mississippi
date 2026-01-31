@@ -65,6 +65,7 @@ public static class AggregateRegistrations
         });
         services.TryAddTransient<IBrookEventConverter, BrookEventConverter>();
         services.TryAddTransient<IAggregateGrainFactory, AggregateGrainFactory>();
+        services.TryAddSingleton(TimeProvider.System);
         return services;
     }
 
@@ -150,6 +151,43 @@ public static class AggregateRegistrations
 
         // Register the event type at startup
         services.AddSingleton<IEventTypeRegistration>(new EventTypeRegistration<TEvent>());
+        return services;
+    }
+
+    /// <summary>
+    ///     Registers a fire-and-forget event effect for processing events on a specific aggregate type.
+    /// </summary>
+    /// <typeparam name="TEffect">The effect implementation type.</typeparam>
+    /// <typeparam name="TEvent">The event type this effect handles.</typeparam>
+    /// <typeparam name="TAggregate">The aggregate state type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         Fire-and-forget effects run in a separate worker grain and do not block the aggregate.
+    ///         The aggregate dispatches the effect and continues immediately without waiting for completion.
+    ///     </para>
+    ///     <para>
+    ///         Unlike synchronous effects, fire-and-forget effects CANNOT yield additional events.
+    ///         If the effect needs to trigger further state changes, it should send commands through
+    ///         the normal aggregate command API.
+    ///     </para>
+    /// </remarks>
+    public static IServiceCollection AddFireAndForgetEventEffect<TEffect, TEvent, TAggregate>(
+        this IServiceCollection services
+    )
+        where TEffect : class, IFireAndForgetEventEffect<TEvent, TAggregate>
+        where TEvent : class
+        where TAggregate : class
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        // Register the effect itself (transient - new instance per execution)
+        services.AddTransient<IFireAndForgetEventEffect<TEvent, TAggregate>, TEffect>();
+
+        // Register a typed registration entry for discovery by the aggregate grain
+        services.AddSingleton<IFireAndForgetEffectRegistration<TAggregate>>(
+            new FireAndForgetEffectRegistration<TEffect, TEvent, TAggregate>());
         return services;
     }
 

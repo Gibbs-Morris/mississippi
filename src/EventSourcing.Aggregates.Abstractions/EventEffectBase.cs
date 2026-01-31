@@ -15,7 +15,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///     <para>
 ///         Inherit from this class to create strongly-typed event effects.
 ///         The base class handles type checking in <see cref="CanHandle" /> and
-///         dispatches to the typed <see cref="HandleAsync(TEvent, TAggregate, CancellationToken)" />
+///         dispatches to the typed <see cref="HandleAsync(TEvent, TAggregate, string, long, CancellationToken)" />
 ///         method.
 ///     </para>
 ///     <para>
@@ -23,22 +23,6 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         They are discovered by the source generator in the <c>Effects</c> sub-namespace.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-/// public sealed class AccountOpenedEffect : EventEffectBase&lt;AccountOpened, AccountAggregate&gt;
-/// {
-///     public override async IAsyncEnumerable&lt;object&gt; HandleAsync(
-///         AccountOpened eventData,
-///         AccountAggregate currentState,
-///         [EnumeratorCancellation] CancellationToken cancellationToken)
-///     {
-///         // Fetch external data
-///         var enrichmentData = await _httpClient.GetAsync(...);
-///         yield return new AccountEnriched(enrichmentData);
-///     }
-/// }
-///     </code>
-/// </example>
 public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TAggregate>
 {
     /// <inheritdoc />
@@ -54,13 +38,15 @@ public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TAggreg
     public IAsyncEnumerable<object> HandleAsync(
         object eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
         if (eventData is TEvent typedEvent)
         {
-            return HandleAsync(typedEvent, currentState, cancellationToken);
+            return HandleAsync(typedEvent, currentState, brookKey, eventPosition, cancellationToken);
         }
 
         return AsyncEnumerable.Empty<object>();
@@ -71,6 +57,8 @@ public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TAggreg
     /// </summary>
     /// <param name="eventData">The event that was persisted.</param>
     /// <param name="currentState">The current aggregate state after the event was applied.</param>
+    /// <param name="brookKey">The brook key identifying the aggregate instance.</param>
+    /// <param name="eventPosition">The position of the event in the brook.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
     ///     An async enumerable of additional events to persist.
@@ -78,6 +66,8 @@ public abstract class EventEffectBase<TEvent, TAggregate> : IEventEffect<TAggreg
     public abstract IAsyncEnumerable<object> HandleAsync(
         TEvent eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     );
 }

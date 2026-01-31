@@ -1,7 +1,5 @@
 using System;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 
@@ -10,9 +8,6 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
 /// <summary>
 ///     Tests for <see cref="BrookKey.ForGrain{TGrain}" /> and <see cref="BrookKey.ForType{T}" /> functionality.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Abstractions")]
-[AllureSubSuite("Brook Key")]
 public class BrookKeyForTests
 {
     /// <summary>
@@ -40,7 +35,6 @@ public class BrookKeyForTests
     ///     ForGrain should create a key using the grain's brook name attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("ForGrain")]
     public void ForGrainCreatesKeyWithBrookName()
     {
         BrookKey key = BrookKey.ForGrain<TestGrain>("entity-123");
@@ -52,7 +46,6 @@ public class BrookKeyForTests
     ///     ForGrain should create keys that convert to correct string format.
     /// </summary>
     [Fact]
-    [AllureFeature("ForGrain")]
     public void ForGrainCreatesKeyWithCorrectStringFormat()
     {
         BrookKey key = BrookKey.ForGrain<TestGrain>("order-456");
@@ -64,7 +57,6 @@ public class BrookKeyForTests
     ///     ForType should create a key using the type's brook name attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("ForType")]
     public void ForTypeCreatesKeyWithBrookName()
     {
         BrookKey key = BrookKey.ForType<TestProjection>("entity-789");
@@ -76,7 +68,6 @@ public class BrookKeyForTests
     ///     ForType should create keys that convert to correct string format.
     /// </summary>
     [Fact]
-    [AllureFeature("ForType")]
     public void ForTypeCreatesKeyWithCorrectStringFormat()
     {
         BrookKey key = BrookKey.ForType<TestProjection>("proj-456");
@@ -88,7 +79,6 @@ public class BrookKeyForTests
     ///     ForType should throw InvalidOperationException when type lacks BrookNameAttribute.
     /// </summary>
     [Fact]
-    [AllureFeature("ForType")]
     public void ForTypeThrowsWhenTypeLacksBrookNameAttribute()
     {
         InvalidOperationException exception =
@@ -100,7 +90,6 @@ public class BrookKeyForTests
     ///     ForType should work with any type decorated with BrookNameAttribute, not just grains.
     /// </summary>
     [Fact]
-    [AllureFeature("ForType")]
     public void ForTypeWorksWithNonGrainTypes()
     {
         // TestProjection is a record, not a grain class

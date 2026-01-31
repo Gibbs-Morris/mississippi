@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
@@ -13,9 +11,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SimpleEventEffectBase{TEvent,TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("SimpleEventEffectBase")]
 public sealed class SimpleEventEffectBaseTests
 {
     /// <summary>
@@ -46,6 +41,8 @@ public sealed class SimpleEventEffectBaseTests
         protected override Task HandleSimpleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             CancellationToken cancellationToken
         )
         {
@@ -59,7 +56,6 @@ public sealed class SimpleEventEffectBaseTests
     ///     CanHandle returns false for non-matching event type.
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
     public void CanHandleReturnsFalseForNonMatchingEventType()
     {
         // Arrange
@@ -77,7 +73,6 @@ public sealed class SimpleEventEffectBaseTests
     ///     CanHandle returns true for matching event type (inherited from EventEffectBase).
     /// </summary>
     [Fact]
-    [AllureFeature("Type Checking")]
     public void CanHandleReturnsTrueForMatchingEventType()
     {
         // Arrange
@@ -96,7 +91,6 @@ public sealed class SimpleEventEffectBaseTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoEvents()
     {
         // Arrange
@@ -106,7 +100,7 @@ public sealed class SimpleEventEffectBaseTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.HandleAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.HandleAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -121,7 +115,6 @@ public sealed class SimpleEventEffectBaseTests
     ///     HandleAsync throws ArgumentNullException when event is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void HandleAsyncThrowsArgumentNullExceptionWhenEventIsNull()
     {
         // Arrange
@@ -130,7 +123,9 @@ public sealed class SimpleEventEffectBaseTests
 
         // Act & Assert
         // Note: The exception is thrown synchronously on method call, not during async enumeration
-        IAsyncEnumerable<object> CallHandleAsync() => sut.HandleAsync(null!, state, CancellationToken.None);
+        IAsyncEnumerable<object> CallHandleAsync() =>
+            sut.HandleAsync(null!, state, "test-brook", 1L, CancellationToken.None);
+
         Assert.Throws<ArgumentNullException>(CallHandleAsync);
     }
 }

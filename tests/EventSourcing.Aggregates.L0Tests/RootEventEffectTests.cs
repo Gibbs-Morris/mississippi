@@ -4,8 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 
 
@@ -14,9 +12,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="RootEventEffect{TAggregate}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("RootEventEffect")]
 public sealed class RootEventEffectTests
 {
     /// <summary>
@@ -37,6 +32,8 @@ public sealed class RootEventEffectTests
         public async IAsyncEnumerable<object> HandleAsync(
             object eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -70,6 +67,8 @@ public sealed class RootEventEffectTests
         public override async IAsyncEnumerable<object> HandleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -92,6 +91,8 @@ public sealed class RootEventEffectTests
         protected override Task HandleSimpleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             CancellationToken cancellationToken
         )
         {
@@ -114,6 +115,8 @@ public sealed class RootEventEffectTests
         public override async IAsyncEnumerable<object> HandleAsync(
             TestEvent eventData,
             TestAggregate currentState,
+            string brookKey,
+            long eventPosition,
             [EnumeratorCancellation] CancellationToken cancellationToken
         )
         {
@@ -126,7 +129,6 @@ public sealed class RootEventEffectTests
     ///     Constructor should throw ArgumentNullException when effects is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void ConstructorWithNullEffectsThrowsArgumentNullException()
     {
         // Act & Assert
@@ -138,7 +140,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Error Handling")]
     public async Task DispatchAsyncContinuesToOtherEffectsWhenOneThrows()
     {
         // Arrange
@@ -149,7 +150,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -163,7 +164,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task DispatchAsyncDispatchesToFallbackEffects()
     {
         // Arrange
@@ -174,7 +174,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -188,7 +188,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task DispatchAsyncDispatchesToMatchingEffectAndYieldsEvents()
     {
         // Arrange
@@ -198,7 +197,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -213,7 +212,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task DispatchAsyncInvokesMultipleEffectsForSameEventType()
     {
         // Arrange
@@ -224,7 +222,7 @@ public sealed class RootEventEffectTests
         TestAggregate state = new(1);
 
         // Act
-        await foreach (object item in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object item in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             _ = item; // Consume the enumerable
         }
@@ -239,7 +237,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Dispatch")]
     public async Task DispatchAsyncReturnsEmptyWhenNoEffectsMatch()
     {
         // Arrange
@@ -249,7 +246,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -262,7 +259,6 @@ public sealed class RootEventEffectTests
     ///     DispatchAsync throws ArgumentNullException when eventData is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Validation")]
     public void DispatchAsyncThrowsArgumentNullExceptionWhenEventDataIsNull()
     {
         // Arrange
@@ -270,7 +266,12 @@ public sealed class RootEventEffectTests
         TestAggregate state = new(1);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => sut.DispatchAsync(null!, state, CancellationToken.None));
+        Assert.Throws<ArgumentNullException>(() => sut.DispatchAsync(
+            null!,
+            state,
+            "test-brook",
+            1L,
+            CancellationToken.None));
     }
 
     /// <summary>
@@ -278,7 +279,6 @@ public sealed class RootEventEffectTests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [AllureFeature("Logging")]
     public async Task DispatchAsyncWithLoggerDoesNotThrow()
     {
         // Arrange
@@ -288,7 +288,7 @@ public sealed class RootEventEffectTests
 
         // Act
         List<object> results = [];
-        await foreach (object result in sut.DispatchAsync(eventData, state, CancellationToken.None))
+        await foreach (object result in sut.DispatchAsync(eventData, state, "test-brook", 1L, CancellationToken.None))
         {
             results.Add(result);
         }
@@ -301,7 +301,6 @@ public sealed class RootEventEffectTests
     ///     EffectCount returns correct count when effects are registered.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void EffectCountReturnsCorrectCountWhenEffectsRegistered()
     {
         // Arrange
@@ -315,7 +314,6 @@ public sealed class RootEventEffectTests
     ///     EffectCount returns zero when no effects are registered.
     /// </summary>
     [Fact]
-    [AllureFeature("State")]
     public void EffectCountReturnsZeroWhenNoEffectsRegistered()
     {
         // Arrange

@@ -3,8 +3,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -21,9 +19,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Integration;
 /// <remarks>
 ///     These tests use patterns from the Spring sample to verify real-world scenarios.
 /// </remarks>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Roslyn Integration")]
 public class RoslynCompilationTests
 {
     /// <summary>

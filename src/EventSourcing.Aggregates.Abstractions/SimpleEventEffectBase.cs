@@ -22,38 +22,19 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///         instead of <see cref="IAsyncEnumerable{T}" />.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-/// public sealed class SendWelcomeEmailEffect : SimpleEventEffectBase&lt;AccountOpened, AccountAggregate&gt;
-/// {
-///     private readonly IEmailService _emailService;
-///
-///     public SendWelcomeEmailEffect(IEmailService emailService)
-///     {
-///         _emailService = emailService;
-///     }
-///
-///     protected override async Task HandleSimpleAsync(
-///         AccountOpened eventData,
-///         AccountAggregate currentState,
-///         CancellationToken cancellationToken)
-///     {
-///         await _emailService.SendWelcomeEmailAsync(eventData.AccountHolder, cancellationToken);
-///     }
-/// }
-///     </code>
-/// </example>
 public abstract class SimpleEventEffectBase<TEvent, TAggregate> : EventEffectBase<TEvent, TAggregate>
 {
     /// <inheritdoc />
     public sealed override IAsyncEnumerable<object> HandleAsync(
         TEvent eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return HandleAsyncCoreAsync(eventData, currentState, cancellationToken);
+        return HandleAsyncCoreAsync(eventData, currentState, brookKey, eventPosition, cancellationToken);
     }
 
     /// <summary>
@@ -61,21 +42,27 @@ public abstract class SimpleEventEffectBase<TEvent, TAggregate> : EventEffectBas
     /// </summary>
     /// <param name="eventData">The event that was persisted.</param>
     /// <param name="currentState">The current aggregate state after the event was applied.</param>
+    /// <param name="brookKey">The brook key identifying the aggregate instance.</param>
+    /// <param name="eventPosition">The position of the event in the brook.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     protected abstract Task HandleSimpleAsync(
         TEvent eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         CancellationToken cancellationToken
     );
 
     private async IAsyncEnumerable<object> HandleAsyncCoreAsync(
         TEvent eventData,
         TAggregate currentState,
+        string brookKey,
+        long eventPosition,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
-        await HandleSimpleAsync(eventData, currentState, cancellationToken);
+        await HandleSimpleAsync(eventData, currentState, brookKey, eventPosition, cancellationToken);
         yield break;
     }
 }

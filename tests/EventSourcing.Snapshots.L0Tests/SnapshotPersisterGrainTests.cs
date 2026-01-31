@@ -1,8 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -17,9 +15,6 @@ namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 /// <summary>
 ///     Tests for <see cref="SnapshotPersisterGrain" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Snapshots")]
-[AllureSubSuite("Snapshot Persister Grain")]
 public sealed class SnapshotPersisterGrainTests
 {
     private static Mock<IGrainContext> CreateDefaultGrainContext()
@@ -49,7 +44,6 @@ public sealed class SnapshotPersisterGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Activation")]
     public async Task OnActivateAsyncParsesKeyCorrectly()
     {
         // Arrange
@@ -72,7 +66,6 @@ public sealed class SnapshotPersisterGrainTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Persistence")]
     public async Task PersistAsyncWritesToStorage()
     {
         // Arrange

@@ -12,6 +12,7 @@ Governing thought: Write SOLID, testable, cloud-ready C# with internal-by-defaul
 
 - Code **MUST** follow SOLID and remain unit-testable via clear seams/DI; blocking calls and shared mutable state **MUST NOT** be introduced. Why: Keeps code maintainable and testable.
 - .NET analyzers **MUST** stay enabled; warnings are errors. Suppressions or `#pragma` **MUST NOT** be added without approval. Why: Zero-warnings is mandatory.
+- XML documentation **MUST NOT** include `<example>` or `<code>` blocks with code samples; examples drift over time and become stale/misleading. Readers can refer to real implementation code in the repository instead. Why: Prevents documentation drift and maintenance burden.
 - Injected dependencies **MUST** use the get-only property pattern (`private Type Name { get; }`); field injection/underscored fields **MUST NOT** be used. Why: Aligns with logging and analyzers.
 - Source files **MUST NOT** include copyright/license headers or banners at the top; repository-level licensing already applies. Why: Avoids noisy/stale headers and keeps diffs focused on behavior.
 - Configuration **MUST** use `IOptions<T>`/`IOptionsSnapshot<T>`/`IOptionsMonitor<T>`; constructors **MUST NOT** take raw config primitives. Why: Centralizes config and validation.
@@ -19,11 +20,12 @@ Governing thought: Write SOLID, testable, cloud-ready C# with internal-by-defaul
 - Access control: types **MUST** default to `internal`; public/protected/unsealed types **MUST** document justification in XML comments; implementation types **MUST** remain internal unless part of public API. Why: Protects API surface.
 - Grain implementations **MUST** implement `IGrainBase`, be `sealed`, and **MUST NOT** inherit from `Grain`; grain interfaces **MUST** be public only when external callers need them. Why: Follows Orleans 7+ POCO guidance.
 - Orleans code **MUST NOT** use `Parallel.ForEach` or chatty inter-grain calls; prefer async + `Task.WhenAll`. Why: Preserves Orleans threading model.
-- Options/ServiceRegistration types **MAY** be public when part of consumer surface; otherwise **SHOULD** stay internal. Why: Keeps public surface intentional.
+- Options and registration classes (`*Registrations`) **MAY** be public when part of consumer surface; otherwise **SHOULD** stay internal. Why: Keeps public surface intentional.
 - Public contracts **SHOULD** live in `.Abstractions` projects; implementations **MUST** stay in main projects. Why: Supports clean layering.
 - Classes **SHOULD** be records/immutable where feasible and only inheritable with clear need; interfaces **SHOULD** be public only when part of deliberate API; members **SHOULD** expose least privilege. Why: Reduces coupling and breaks.
 - New third-party dependencies **MAY** be added only with explicit approval or when extending already-adopted tech. Why: Limits supply-chain risk and sprawl.
 - All logging **SHOULD** use LoggerExtensions per logging rules. Why: Maintains performance and consistency.
+- Code that requires current date/time **MUST** inject `TimeProvider` rather than calling `DateTime.Now`, `DateTime.UtcNow`, or `DateTimeOffset.UtcNow` directly; tests **SHOULD** use `Microsoft.Extensions.TimeProvider.Testing.FakeTimeProvider` for deterministic assertions. Why: Enables deterministic testing and avoids flaky time-dependent tests.
 
 ## Scope and Audience
 
@@ -33,6 +35,7 @@ C# contributors across Mississippi and Samples, including Orleans code.
 
 - Default visibility to `internal`; justify any widening in XML docs.
 - Use DI property pattern and options pattern; no raw config parameters.
+- Inject `TimeProvider` for date/time; use `FakeTimeProvider` in tests.
 - Avoid blocking/parallel loops in Orleans; use async + `Task.WhenAll`.
 - Place public contracts in `.Abstractions`; keep implementations internal.
 - Keep analyzers on; fix warnings instead of suppressing.

@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Diagnostics;
 
@@ -13,9 +11,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests.Diagnostics;
 /// <summary>
 ///     Tests for brook read/write metrics.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Metrics")]
 public sealed class BrookMetricsTests
 {
     private sealed record MetricMeasurement(

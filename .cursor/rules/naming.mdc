@@ -16,7 +16,7 @@ Governing thought: Use feature-centric namespaces, clear PascalCase identifiers,
 ## Rules (RFC 2119)
 
 - Naming/StyleCop rules (SA13xx/SA16xx) **MUST** be treated as build-breaking; violations **MUST** be fixed, not suppressed. Why: Keeps naming/docs consistent.
-- Namespaces **MUST** be feature-oriented (no `Services/Models` silos), max five PascalCase segments, no underscores; abbreviations **MUST** be industry-standard only. Why: Improves discoverability.
+- Namespaces **MUST** be feature-oriented (no `Services/Models` silos), max ten PascalCase segments, no underscores; abbreviations **MUST** be industry-standard only. Why: Improves discoverability.
 - Types **MUST** use PascalCase nouns; interfaces **MUST** prefix `I`; enums **MUST** be singular with PascalCase members. Why: Aligns with .NET guidelines.
 - Methods **MUST** use PascalCase verb phrases; properties **MUST** be PascalCase nouns; booleans **MUST** start with `Is/Has/Can/Should`; DI properties **MUST** follow `private Type Name { get; }`; private fields/locals **MUST** be camelCase with no underscore; constants **MUST** be PascalCase. Why: Keeps identifiers unambiguous.
 - Public (and internal when exposed) symbols **MUST** have XML docs with `<summary>` (imperative voice), `<param>`/`<typeparam>`/`<returns>` as applicable; text **MUST** be factual (no TODOs) and `<example>` snippets **MUST** compile. Why: Ensures IntelliSense and docs quality.
@@ -29,7 +29,7 @@ All C# contributors.
 
 ## At-a-Glance Quick-Start
 
-- Derive namespaces from company/product/feature; keep <=5 segments.
+- Derive namespaces from company/product/feature; keep <=10 segments.
 - Use PascalCase nouns for types/properties/constants; `I`-prefixed interfaces; camelCase locals/fields without underscores.
 - Prefix booleans with `Is/Has/Can/Should`; keep DI properties as get-only.
 - Write concise, factual XML docs for public APIs; validate tags match parameters.
@@ -49,7 +49,7 @@ All C# contributors.
 | Aggregate reducer | `Reducer` | `ChannelCreatedReducer` |
 | Projection state | `Projection` | `UserProfileProjection` |
 | Projection reducer | `ProjectionReducer` | `UserRegisteredProjectionReducer` |
-| Registration class | `Registrations` | `CascadeRegistrations` |
+| Registration class | `Registrations` | `ContosoRegistrations` |
 | LoggerExtensions | `LoggerExtensions` | `BrookWriterGrainLoggerExtensions` |
 
 ## References

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
+using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -17,9 +17,6 @@ namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 /// <summary>
 ///     Tests for <see cref="BrookEventConverter" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Aggregates")]
-[AllureSubSuite("Brook Event Converter")]
 public class BrookEventConverterTests
 {
     /// <summary>
@@ -191,6 +188,58 @@ public class BrookEventConverterTests
         BrookKey source = BrookKey.FromString("TEST.BROOK|entity-1");
         ImmutableArray<BrookEvent> result = converter.ToStorageEvents(source, Array.Empty<object>());
         Assert.Empty(result);
+    }
+
+    /// <summary>
+    ///     ToStorageEvents should set Time using the injected TimeProvider.
+    /// </summary>
+    [Fact]
+    public void ToStorageEventsSetsTimeFromTimeProvider()
+    {
+        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IEventTypeRegistry> eventTypeRegistryMock = new();
+        eventTypeRegistryMock.Setup(r => r.ResolveName(typeof(TestEvent))).Returns("TEST.EVENT.V1");
+        serializationProviderMock.Setup(s => s.Serialize(It.IsAny<object>())).Returns(new byte[] { 1 }.AsMemory());
+        serializationProviderMock.Setup(s => s.Format).Returns("json");
+        DateTimeOffset expectedTime = new(2025, 6, 15, 10, 30, 0, TimeSpan.Zero);
+        FakeTimeProvider fakeTimeProvider = new(expectedTime);
+        BrookEventConverter converter = new(
+            serializationProviderMock.Object,
+            eventTypeRegistryMock.Object,
+            fakeTimeProvider);
+        BrookKey source = BrookKey.FromString("TEST.BROOK|entity-1");
+        List<object> domainEvents = new()
+        {
+            new TestEvent("value1"),
+        };
+        ImmutableArray<BrookEvent> result = converter.ToStorageEvents(source, domainEvents);
+        Assert.Single(result);
+        Assert.Equal(expectedTime, result[0].Time);
+    }
+
+    /// <summary>
+    ///     ToStorageEvents should use TimeProvider.System when no TimeProvider is injected.
+    /// </summary>
+    [Fact]
+    public void ToStorageEventsSetsTimeWhenNoTimeProviderInjected()
+    {
+        Mock<ISerializationProvider> serializationProviderMock = new();
+        Mock<IEventTypeRegistry> eventTypeRegistryMock = new();
+        eventTypeRegistryMock.Setup(r => r.ResolveName(typeof(TestEvent))).Returns("TEST.EVENT.V1");
+        serializationProviderMock.Setup(s => s.Serialize(It.IsAny<object>())).Returns(new byte[] { 1 }.AsMemory());
+        serializationProviderMock.Setup(s => s.Format).Returns("json");
+        BrookEventConverter converter = new(serializationProviderMock.Object, eventTypeRegistryMock.Object);
+        BrookKey source = BrookKey.FromString("TEST.BROOK|entity-1");
+        List<object> domainEvents = new()
+        {
+            new TestEvent("value1"),
+        };
+        DateTimeOffset before = DateTimeOffset.UtcNow;
+        ImmutableArray<BrookEvent> result = converter.ToStorageEvents(source, domainEvents);
+        DateTimeOffset after = DateTimeOffset.UtcNow;
+        Assert.Single(result);
+        Assert.NotNull(result[0].Time);
+        Assert.InRange(result[0].Time!.Value, before, after);
     }
 
     /// <summary>

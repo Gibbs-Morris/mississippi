@@ -138,6 +138,12 @@ public sealed class AccessControlArchitectureTests : ArchitectureTestBase
             .DoNotHaveNameContaining("Policy") // Policies are public API
             .And()
             .DoNotHaveNameContaining("Info") // Info types may be public
+            .And()
+            .DoNotHaveNameContaining("Effect") // Reservoir action effects are public API
+            .And()
+            .DoNotHaveNameContaining("Harness") // Test harnesses are public API
+            .And()
+            .DoNotHaveNameContaining("Scenario") // Test scenarios are public API
             .Should()
             .BeInternal()
             .Because("implementation types should default to internal per csharp.instructions.md");

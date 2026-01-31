@@ -1,11 +1,9 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Abstractions;
+using Mississippi.Inlet.Server.Abstractions;
 
 
 namespace Mississippi.Inlet.Blazor.Server.L0Tests;
@@ -13,9 +11,6 @@ namespace Mississippi.Inlet.Blazor.Server.L0Tests;
 /// <summary>
 ///     Tests for <see cref="InProcessProjectionNotifier" />.
 /// </summary>
-[AllureParentSuite("Mississippi.Inlet.Blazor.Server")]
-[AllureSuite("Notifiers")]
-[AllureSubSuite("InProcessProjectionNotifier")]
 public sealed class InProcessProjectionNotifierTests : IDisposable
 {
     private readonly IServerProjectionNotifier notifier;
@@ -44,7 +39,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should continue invoking other callbacks when one throws.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
     public void NotifyProjectionChangedContinuesWhenCallbackThrows()
     {
         // Arrange
@@ -69,7 +63,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should not invoke disposed subscription callback.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP017:Prefer using",
@@ -92,7 +85,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should not invoke subscriber for different entity.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
     public void NotifyProjectionChangedDoesNotInvokeForDifferentEntity()
     {
         // Arrange
@@ -110,7 +102,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should not invoke subscriber for different projection type.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
     public void NotifyProjectionChangedDoesNotInvokeForDifferentProjectionType()
     {
         // Arrange
@@ -128,7 +119,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should not invoke callback when no subscriptions.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
     [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",
@@ -146,7 +136,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should invoke subscriber callback.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
     public void NotifyProjectionChangedInvokesCallback()
     {
         // Arrange
@@ -167,7 +156,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should invoke multiple subscribers.
     /// </summary>
     [Fact]
-    [AllureFeature("Notification")]
     public void NotifyProjectionChangedInvokesMultipleSubscribers()
     {
         // Arrange
@@ -186,7 +174,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should throw when entityId is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void NotifyProjectionChangedThrowsWhenEntityIdEmpty()
     {
         // Act & Assert
@@ -199,7 +186,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should throw when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void NotifyProjectionChangedThrowsWhenEntityIdNull()
     {
         // Act & Assert
@@ -212,7 +198,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should throw when projectionType is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void NotifyProjectionChangedThrowsWhenProjectionTypeEmpty()
     {
         // Act & Assert
@@ -225,7 +210,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     NotifyProjectionChanged should throw when projectionType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     public void NotifyProjectionChangedThrowsWhenProjectionTypeNull()
     {
         // Act & Assert
@@ -238,7 +222,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should return a disposable subscription.
     /// </summary>
     [Fact]
-    [AllureFeature("Subscription")]
     public void SubscribeReturnsDisposable()
     {
         // Act
@@ -252,7 +235,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when callback is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -269,7 +251,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when entityId is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -286,7 +267,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when entityId is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -303,7 +283,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when projectionType is empty.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -320,7 +299,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscribe should throw when projectionType is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Argument Validation")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
@@ -337,7 +315,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscription collection should be cleaned up when all subscriptions are disposed.
     /// </summary>
     [Fact]
-    [AllureFeature("Subscription")]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP017:Prefer using",
@@ -366,7 +343,6 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     ///     Subscription dispose can be called multiple times.
     /// </summary>
     [Fact]
-    [AllureFeature("Subscription")]
     [SuppressMessage(
         "SonarQube",
         "S2699:Tests should include assertions",

@@ -122,15 +122,6 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
-          items: [
-            {
-              label: 'Getting Started',
-              to: '/docs/next/intro',
-            },
-          ],
-        },
-        {
           title: 'More',
           items: [
             {

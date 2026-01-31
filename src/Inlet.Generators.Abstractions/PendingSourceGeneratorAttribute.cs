@@ -19,15 +19,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         to identify all manual implementations that need replacement.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         [PendingSourceGenerator("AggregateService generator should produce this mapper")]
-///         public sealed class UserAggregateMapper : IMapper&lt;UserAggregate, UserDto&gt;
-///         {
-///             // Hand-crafted implementation that establishes the pattern
-///         }
-///     </code>
-/// </example>
 [AttributeUsage(
     AttributeTargets.Class |
     AttributeTargets.Struct |

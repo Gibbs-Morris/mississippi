@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet;
-using Mississippi.Inlet.Blazor.WebAssembly;
+using Mississippi.Inlet.Client;
+using Mississippi.Reservoir.Blazor.BuiltIn;
 
 using Spring.Client;
 using Spring.Client.Features.BankAccountAggregate;
@@ -32,9 +32,12 @@ builder.Services.AddBankAccountAggregateFeature();
 // Navigation/UI: entity selection
 builder.Services.AddEntitySelectionFeature();
 
+// Built-in Reservoir features: navigation, lifecycle
+builder.Services.AddReservoirBlazorBuiltIns();
+
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
-builder.Services.AddInlet();
+builder.Services.AddInletClient();
 builder.Services.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));

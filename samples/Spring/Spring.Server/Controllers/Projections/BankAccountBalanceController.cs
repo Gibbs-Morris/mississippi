@@ -21,7 +21,7 @@ using Microsoft.Extensions.Logging;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 using Mississippi.EventSourcing.UxProjections.Api;
-using Mississippi.Inlet.Projection.Abstractions;
+using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 
 using Spring.Domain.Projections.BankAccountBalance;

@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Mississippi.EventSourcing.Brooks.Abstractions;
 
 using Orleans.Runtime;
@@ -10,9 +8,6 @@ namespace Mississippi.EventSourcing.Brooks.L0Tests;
 /// <summary>
 ///     Tests for <see cref="StreamIdFactory" /> behavior.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks")]
-[AllureSubSuite("Stream ID Factory")]
 public sealed class StreamIdFactoryTests
 {
     /// <summary>

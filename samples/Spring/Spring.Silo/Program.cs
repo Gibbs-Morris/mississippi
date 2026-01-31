@@ -13,7 +13,7 @@ using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
-using Mississippi.Inlet.Orleans;
+using Mississippi.Inlet.Silo;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -23,13 +23,18 @@ using Orleans.Hosting;
 using Orleans.Runtime;
 
 using Spring.Domain.Projections.BankAccountBalance;
+using Spring.Domain.Services;
 using Spring.Silo.Registrations;
+using Spring.Silo.Services;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Register HttpClient factory for effects that call external APIs
 builder.Services.AddHttpClient();
+
+// Register notification service (stub for demo, replace with real provider in production)
+builder.Services.AddSingleton<INotificationService, StubNotificationService>();
 
 // Register Spring domain aggregates
 builder.Services.AddBankAccountAggregate();
@@ -98,8 +103,8 @@ builder.Services.AddKeyedSingleton(
         _
     ) => sp.GetRequiredService<CosmosClient>());
 
-// Add Inlet Orleans services for projection subscription management
-builder.Services.AddInletOrleans();
+// Add Inlet Silo services for projection subscription management
+builder.Services.AddInletSilo();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add event sourcing infrastructure

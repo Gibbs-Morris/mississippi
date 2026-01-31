@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -22,9 +20,6 @@ namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionControllerBase{TProjection, TDto}" />.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections API")]
-[AllureSubSuite("UxProjectionControllerBase with Mapper")]
 public sealed class UxProjectionControllerWithMapperTests
 {
     private const string TestEntityId = "entity-123";
@@ -81,7 +76,6 @@ public sealed class UxProjectionControllerWithMapperTests
     ///     Verifies that constructor accepts valid parameters.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorAcceptsValidParameters()
     {
         // Arrange
@@ -101,7 +95,6 @@ public sealed class UxProjectionControllerWithMapperTests
     ///     Verifies that constructor throws when factory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenFactoryIsNull()
     {
         // Arrange
@@ -118,7 +111,6 @@ public sealed class UxProjectionControllerWithMapperTests
     ///     Verifies that constructor throws when logger is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenLoggerIsNull()
     {
         // Arrange
@@ -136,7 +128,6 @@ public sealed class UxProjectionControllerWithMapperTests
     ///     Verifies that constructor throws when mapper is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenMapperIsNull()
     {
         // Arrange
@@ -154,7 +145,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
     public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
     {
         // Arrange
@@ -182,7 +172,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
     public async Task GetAsyncReturnsCacheControlHeader()
     {
         // Arrange
@@ -211,7 +200,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
     public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
     {
         // Arrange
@@ -245,7 +233,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
     public async Task GetAsyncReturnsETagHeader()
     {
         // Arrange
@@ -276,7 +263,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAsync")]
     public async Task GetAsyncReturnsNotFoundWhenPositionIsNotSet()
     {
         // Arrange
@@ -302,7 +288,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAsync")]
     public async Task GetAsyncReturnsNotFoundWhenProjectionIsNull()
     {
         // Arrange
@@ -327,7 +312,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAsync")]
     public async Task GetAsyncReturnsOkWithMappedDtoWhenProjectionFound()
     {
         // Arrange
@@ -357,7 +341,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAtVersionAsync")]
     public async Task GetAtVersionAsyncReturnsNotFoundWhenProjectionIsNull()
     {
         // Arrange
@@ -382,7 +365,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAtVersionAsync")]
     public async Task GetAtVersionAsyncReturnsOkWithMappedDtoWhenProjectionFound()
     {
         // Arrange
@@ -420,7 +402,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetLatestVersionAsync")]
     public async Task GetLatestVersionAsyncReturnsNotFoundWhenPositionIsNotSet()
     {
         // Arrange
@@ -444,7 +425,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetLatestVersionAsync")]
     public async Task GetLatestVersionAsyncReturnsOkWhenVersionFound()
     {
         // Arrange
@@ -470,7 +450,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Mapping")]
     public async Task MapperIsInvokedForGetAtVersionAsync()
     {
         // Arrange
@@ -504,7 +483,6 @@ public sealed class UxProjectionControllerWithMapperTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("Mapping")]
     public async Task MapperIsInvokedWithCorrectProjection()
     {
         // Arrange

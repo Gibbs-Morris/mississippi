@@ -4,8 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -24,9 +22,6 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Brooks;
 ///     Test class for EventBrookReader functionality.
 ///     Contains unit tests to verify the behavior of event brook reader implementations.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("Brooks Cosmos")]
-[AllureSubSuite("Event Brook Reader")]
 public sealed class EventBrookReaderTests
 {
     /// <summary>

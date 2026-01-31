@@ -1,5 +1,3 @@
-using Allure.Xunit.Attributes;
-
 using Mississippi.Inlet.Generators.Core.Naming;
 
 
@@ -8,9 +6,6 @@ namespace Mississippi.Inlet.Generators.Core.L0Tests.Naming;
 /// <summary>
 ///     Tests for <see cref="NamingConventions" /> string manipulation utilities.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Generators Core")]
-[AllureSubSuite("Naming Conventions")]
 public class NamingConventionsTests
 {
     /// <summary>

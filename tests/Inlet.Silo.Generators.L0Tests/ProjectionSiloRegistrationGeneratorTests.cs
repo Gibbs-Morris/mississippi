@@ -4,8 +4,6 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -15,9 +13,6 @@ namespace Mississippi.Inlet.Silo.Generators.L0Tests;
 /// <summary>
 ///     Tests for <see cref="ProjectionSiloRegistrationGenerator" />.
 /// </summary>
-[AllureParentSuite("SDK")]
-[AllureSuite("Silo Generators")]
-[AllureSubSuite("Projection Silo Registration Generator")]
 public class ProjectionSiloRegistrationGeneratorTests
 {
     /// <summary>
@@ -35,7 +30,7 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.Inlet.Projection.Abstractions
+                                                 namespace Mississippi.Inlet.Abstractions
                                                  {
                                                      using System;
 
@@ -109,7 +104,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -151,7 +146,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -193,7 +188,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -232,7 +227,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -273,7 +268,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -312,7 +307,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -355,7 +350,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -397,7 +392,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -436,7 +431,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -477,7 +472,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -530,7 +525,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -572,7 +567,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -614,7 +609,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -673,7 +668,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -698,7 +693,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
@@ -736,7 +731,7 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Projection.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance

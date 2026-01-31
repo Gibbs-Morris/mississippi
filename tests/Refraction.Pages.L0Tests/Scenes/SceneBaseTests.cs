@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.AspNetCore.Components;
 
 using Mississippi.Refraction.Pages.Scenes;
@@ -13,15 +11,12 @@ namespace Mississippi.Refraction.Pages.L0Tests.Scenes;
 /// <summary>
 ///     Tests for <see cref="SceneBase{TState}" />.
 /// </summary>
-[AllureSuite("Refraction.Pages")]
-[AllureSubSuite("Scenes")]
 public sealed class SceneBaseTests
 {
     /// <summary>
     ///     SceneBase has Dispose method.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseHasDisposeMethod()
     {
         // Arrange
@@ -38,7 +33,6 @@ public sealed class SceneBaseTests
     ///     SceneBase has protected HasError property.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseHasProtectedHasErrorProperty()
     {
         // Arrange
@@ -57,7 +51,6 @@ public sealed class SceneBaseTests
     ///     SceneBase has protected IsLoading property.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseHasProtectedIsLoadingProperty()
     {
         // Arrange
@@ -76,7 +69,6 @@ public sealed class SceneBaseTests
     ///     SceneBase has protected State property.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseHasProtectedStateProperty()
     {
         // Arrange
@@ -95,7 +87,6 @@ public sealed class SceneBaseTests
     ///     SceneBase has protected Store property with Inject attribute.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseHasProtectedStorePropertyWithInject()
     {
         // Arrange
@@ -116,7 +107,6 @@ public sealed class SceneBaseTests
     ///     SceneBase implements IDisposable.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseImplementsIDisposable()
     {
         // Arrange
@@ -130,7 +120,6 @@ public sealed class SceneBaseTests
     ///     SceneBase inherits from ComponentBase.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseInheritsFromComponentBase()
     {
         // Arrange
@@ -144,7 +133,6 @@ public sealed class SceneBaseTests
     ///     SceneBase is abstract.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseIsAbstract()
     {
         // Arrange
@@ -158,7 +146,6 @@ public sealed class SceneBaseTests
     ///     SceneBase is generic with one type parameter.
     /// </summary>
     [Fact]
-    [AllureFeature("SceneBase")]
     public void SceneBaseIsGenericWithOneTypeParameter()
     {
         // Arrange

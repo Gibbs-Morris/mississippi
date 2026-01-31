@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Allure.Xunit.Attributes;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -22,9 +20,6 @@ namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
 /// <summary>
 ///     Tests for <see cref="UxProjectionControllerBase{TProjection, TDto}" /> using identity mapping.
 /// </summary>
-[AllureParentSuite("Event Sourcing")]
-[AllureSuite("UX Projections API")]
-[AllureSubSuite("UxProjectionControllerBase")]
 #pragma warning disable CS0618 // Type or member is obsolete - testing legacy IBrookDefinition-based methods
 public sealed class UxProjectionControllerTests
 {
@@ -86,7 +81,6 @@ public sealed class UxProjectionControllerTests
     ///     Verifies that constructor accepts valid factory.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorAcceptsValidFactory()
     {
         // Arrange
@@ -104,7 +98,6 @@ public sealed class UxProjectionControllerTests
     ///     Verifies that constructor throws when factory is null.
     /// </summary>
     [Fact]
-    [AllureFeature("Constructor")]
     public void ConstructorThrowsWhenFactoryIsNull()
     {
         // Act & Assert
@@ -120,7 +113,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
     public async Task GetAsyncReturns304WhenIfNoneMatchMatches()
     {
         // Arrange
@@ -146,7 +138,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
     public async Task GetAsyncReturnsCacheControlHeader()
     {
         // Arrange
@@ -172,7 +163,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
     public async Task GetAsyncReturnsDataWhenIfNoneMatchDoesNotMatch()
     {
         // Arrange
@@ -202,7 +192,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("ETag")]
     public async Task GetAsyncReturnsETagHeader()
     {
         // Arrange
@@ -230,7 +219,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAsync")]
     public async Task GetAsyncReturnsNotFoundWhenProjectionIsNull()
     {
         // Arrange
@@ -252,7 +240,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAsync")]
     public async Task GetAsyncReturnsOkWhenProjectionFound()
     {
         // Arrange
@@ -278,7 +265,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAtVersionAsync")]
     public async Task GetAtVersionAsyncReturnsNotFoundWhenProjectionIsNull()
     {
         // Arrange
@@ -301,7 +287,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetAtVersionAsync")]
     public async Task GetAtVersionAsyncReturnsOkWhenProjectionFound()
     {
         // Arrange
@@ -335,7 +320,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetLatestVersionAsync")]
     public async Task GetLatestVersionAsyncReturnsNotFoundWhenPositionIsNotSet()
     {
         // Arrange
@@ -358,7 +342,6 @@ public sealed class UxProjectionControllerTests
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
-    [AllureFeature("GetLatestVersionAsync")]
     public async Task GetLatestVersionAsyncReturnsOkWhenVersionFound()
     {
         // Arrange
