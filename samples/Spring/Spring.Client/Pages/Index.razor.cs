@@ -10,6 +10,7 @@ using Spring.Client.Features.BankAccountAggregate.State;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 using Spring.Client.Features.BankAccountLedger.Dtos;
 using Spring.Client.Features.EntitySelection;
+using Spring.Client.Features.EntitySelection.Selectors;
 
 
 namespace Spring.Client.Pages;
@@ -103,7 +104,10 @@ public sealed partial class Index
     /// <summary>
     ///     Gets a value indicating whether the SignalR connection is not established.
     /// </summary>
-    private bool IsDisconnected => ConnectionState.Status != SignalRConnectionStatus.Connected;
+    /// <remarks>
+    ///     Demonstrates using a framework-provided selector for derived state.
+    /// </remarks>
+    private bool IsDisconnected => Select<SignalRConnectionState, bool>(SignalRConnectionSelectors.IsDisconnected);
 
     /// <summary>
     ///     Gets a value indicating whether any operation is in progress.
@@ -122,7 +126,10 @@ public sealed partial class Index
     /// <summary>
     ///     Gets the currently selected entity ID from entity selection state.
     /// </summary>
-    private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
+    /// <remarks>
+    ///     Demonstrates using an application-level selector for derived state.
+    /// </remarks>
+    private string? SelectedEntityId => Select<EntitySelectionState, string?>(EntitySelectionSelectors.GetEntityId);
 
     private static string FormatTimestamp(
         DateTimeOffset? timestamp
