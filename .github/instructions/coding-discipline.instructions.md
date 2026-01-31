@@ -15,12 +15,12 @@ Governing thought: Sample applications follow strict architectural patterns—Re
 - Client state **MUST** follow Redux pattern: actions flow up, state flows down, reducers transform state, effects handle side-effects. Why: Predictable state management.
 - Components **MUST** be "dumb" (presentational); they **MUST NOT** call APIs or dispatch actions directly. Components **MUST** emit events via `EventCallback`. Why: Separation of concerns.
 - Pages **MUST** inherit from `StoreComponent` (or `InletComponent` for SignalR); pages dispatch actions and read state via `GetState<T>()`. Why: Pages are the integration point.
-- Feature folders **MUST** contain: `*State.cs`, `*Action.cs`, `*Reducers.cs`, `*FeatureRegistration.cs`, and optionally `*Effects.cs`. Why: Consistent feature structure.
+- Feature folders **MUST** contain: `*State.cs`, `*Action.cs`, `*Reducers.cs`, `*FeatureRegistration.cs`; client-side effects **MAY** be implemented as `*ActionEffect.cs` types under an `ActionEffects/` folder (as in Spring). Why: Consistent feature and effect structure.
 - Ad-hoc state management outside Reservoir **MUST NOT** be used for domain state. Why: Breaks predictability.
 
 ### Server-Side
 
-- Server logic **MUST** live in `Domain/Aggregates/` or `Domain/Projections/` folders. Why: Centralizes business logic.
+- Server logic **MUST** live within the domain project in `Aggregates/` or `Projections/` folders. Why: Centralizes business logic.
 - Write operations **MUST** use aggregates; everything that writes state **MUST** be an aggregate. Why: Aggregates own state transitions.
 - Read-optimized views **MUST** use projections consuming events from brooks. Why: CQRS separation.
 - Server patterns **MUST** follow actions/reducers/state/effects model:
@@ -75,9 +75,10 @@ Client/Features/{Feature}/
 ├── {Action}Action.cs           # IAction records
 ├── {Feature}Reducers.cs        # Pure reducer functions
 ├── {Feature}FeatureRegistration.cs
-└── {Feature}Effects.cs         # Optional async effects
+└── ActionEffects/              # Optional async effects
+    └── {Action}ActionEffect.cs
 
-Domain/Aggregates/{Aggregate}/
+{DomainProject}/Aggregates/{Aggregate}/
 ├── {Aggregate}Aggregate.cs     # State record with attributes
 ├── Commands/{Command}.cs       # Command records
 ├── Events/{Event}.cs           # Event records
@@ -85,7 +86,7 @@ Domain/Aggregates/{Aggregate}/
 ├── Reducers/{Event}Reducer.cs
 └── Effects/{Effect}Effect.cs   # Optional event effects
 
-Domain/Projections/{Projection}/
+{DomainProject}/Projections/{Projection}/
 ├── {Projection}Projection.cs   # Projection state record
 └── Reducers/{Event}ProjectionReducer.cs
 ```
