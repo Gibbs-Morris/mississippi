@@ -1,4 +1,15 @@
+---
+id: registration-notes
+title: Mississippi Service Registration Design
+sidebar_label: Registration Design Notes
+sidebar_position: 2
+description: Design notes and rationale for the Mississippi registration redesign.
+last_updated: 2026-01-31
+---
+
 # Mississippi Service Registration Design
+
+Design notes and rationale for the Mississippi registration redesign.
 
 > **Status:** Design Document (Source of Truth for Registration Redesign)  
 > **Goal:** Best-in-class developer experience with zero-config defaults and full escape hatches  
@@ -754,3 +765,12 @@ The redesigned registration API achieves:
 - **Aspire-first design** with connection name discovery
 
 The implementation roadmap is staged to allow incremental adoption while maintaining backward compatibility through `[Obsolete]` markers.
+
+## Related links
+
+- [Inlet Client Registration](client-registration.md)
+- [Registration Implementation Approach](registration-implementation.md)
+
+## References
+
+- [Inlet Client Registration](client-registration.md)

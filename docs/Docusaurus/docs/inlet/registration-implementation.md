@@ -1,4 +1,15 @@
+---
+id: registration-implementation
+title: Registration Redesign Implementation Approach
+sidebar_label: Registration Implementation
+sidebar_position: 3
+description: Step-by-step implementation approach for composite registration and options-driven defaults.
+last_updated: 2026-01-31
+---
+
 # Registration Redesign Implementation Approach
+
+Step-by-step implementation approach for composite registration and options-driven defaults.
 
 > **Status:** Implementation Plan  
 > **Prerequisite:** [Registration Design Notes](./registration-notes.md)  
@@ -568,3 +579,12 @@ samples/Spring/
 5. **Week 4:** Create fluent builder wrappers
 6. **Week 5:** Create provider composites
 7. **Week 6:** Clean up dead code, update docs
+
+## Related links
+
+- [Registration Design Notes](registration-notes.md)
+- [Inlet Client Registration](client-registration.md)
+
+## References
+
+- [Inlet Client Registration](client-registration.md)

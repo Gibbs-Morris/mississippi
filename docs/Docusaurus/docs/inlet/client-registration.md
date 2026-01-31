@@ -4,9 +4,12 @@ title: Inlet Client Registration
 sidebar_label: Client Registration
 sidebar_position: 1
 description: Register Inlet client services using the generated composite method or manual wiring for advanced scenarios.
+last_updated: 2026-01-31
 ---
 
 # Inlet Client Registration
+
+Register Inlet client services using the generated composite entry point or a manual configuration path.
 
 ## Overview
 
@@ -125,3 +128,13 @@ Clients expect the server to expose the Inlet hub and projection endpoints. In t
 - Use the optional overload to customize SignalR behavior when needed.
 - Use manual registration only when you want full control.
 - Register projection DTOs explicitly or by assembly scan, depending on your requirements.
+
+## Related links
+
+- [Registration Design Notes](registration-notes.md)
+- [Registration Implementation Approach](registration-implementation.md)
+
+## References
+
+- [InletBlazorSignalRBuilder](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs)
+- [InletClientCompositeGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/InletClientCompositeGenerator.cs)
