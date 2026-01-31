@@ -158,6 +158,16 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "Mississippi.Mississippi.Reservoir.Testing": {
+        "type": "Project",
+        "dependencies": {
+          "FluentAssertions": "[8.8.0, )",
+          "Microsoft.Extensions.TimeProvider.Testing": "[10.0.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Moq": "[4.20.72, )"
+        }
+      },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {
@@ -170,8 +180,21 @@
       "Mississippi.Reservoir.Blazor": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Reservoir": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
+      },
+      "FluentAssertions": {
+        "type": "CentralTransitive",
+        "requested": "[8.8.0, )",
+        "resolved": "8.8.0",
+        "contentHash": "m0kwcqBwvVel03FuMa7Ozo/oTaxYbjeNlcOhQFkyQpwX/8wks6RNl/Jnn58DCZVs6c2oG1RsCZw7HfKSaxLm3w=="
+      },
+      "Microsoft.Extensions.TimeProvider.Testing": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.0, )",
+        "resolved": "10.0.0",
+        "contentHash": "aX2J/3k8BNWzIVCATarxY3xcS2iZm9kW2aN+tAD/qE29OcaySBU+8DC/KhoDk9gfqfYtptnN/eJ+WOZ4yT/hcQ=="
       },
       "Newtonsoft.Json": {
         "type": "CentralTransitive",

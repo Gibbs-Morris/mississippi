@@ -3,3 +3,9 @@
 
 # Ignore agent definition files (special format with code fence wrappers)
 .github/agents/**
+
+# Ignore Docusaurus dependencies
+docs/Docusaurus/node_modules/**
+
+# Ignore all node_modules
+**/node_modules/**
