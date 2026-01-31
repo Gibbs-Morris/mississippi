@@ -11,6 +11,7 @@ using Azure.Storage.Blobs.Models;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Abstractions;
 
@@ -26,20 +27,33 @@ internal sealed class BlobSnapshotOperations : IBlobSnapshotOperations
     ///     Initializes a new instance of the <see cref="BlobSnapshotOperations" /> class.
     /// </summary>
     /// <param name="containerClient">The blob container client.</param>
+    /// <param name="options">The snapshot storage options.</param>
     /// <param name="logger">The logger.</param>
     public BlobSnapshotOperations(
         [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobSnapshots)]
         BlobContainerClient containerClient,
+        IOptions<BlobSnapshotStorageOptions> options,
         ILogger<BlobSnapshotOperations> logger
     )
     {
         ContainerClient = containerClient ?? throw new ArgumentNullException(nameof(containerClient));
+        Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        if (Options.MaxConcurrency <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                Options.MaxConcurrency,
+                "MaxConcurrency must be greater than zero.");
+        }
+
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private BlobContainerClient ContainerClient { get; }
 
     private ILogger<BlobSnapshotOperations> Logger { get; }
+
+    private BlobSnapshotStorageOptions Options { get; }
 
     /// <inheritdoc />
     public async Task DeleteAsync(
@@ -72,8 +86,7 @@ internal sealed class BlobSnapshotOperations : IBlobSnapshotOperations
         }
 
         // Delete blobs in parallel with limited concurrency
-        const int maxConcurrency = 10;
-        using SemaphoreSlim semaphore = new(maxConcurrency);
+        using SemaphoreSlim semaphore = new(Options.MaxConcurrency);
         List<Task> deleteTasks = [];
         foreach (string path in paths)
         {

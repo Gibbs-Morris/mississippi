@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Blob.Compression;
+using Mississippi.EventSourcing.Snapshots.Blob.Diagnostics;
 
 
 namespace Mississippi.EventSourcing.Snapshots.Blob.Storage;
@@ -21,11 +22,11 @@ namespace Mississippi.EventSourcing.Snapshots.Blob.Storage;
 /// </summary>
 internal sealed class BlobSnapshotRepository : IBlobSnapshotRepository
 {
-    private const string CompressionMetadataKey = "x-snapshot-compression";
+    private const string CompressionMetadataKey = "SnapshotCompression";
 
-    private const string ContentTypeMetadataKey = "x-snapshot-content-type";
+    private const string ContentTypeMetadataKey = "SnapshotContentType";
 
-    private const string ReducerHashMetadataKey = "x-snapshot-reducer-hash";
+    private const string ReducerHashMetadataKey = "SnapshotReducerHash";
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BlobSnapshotRepository" /> class.
@@ -63,6 +64,16 @@ internal sealed class BlobSnapshotRepository : IBlobSnapshotRepository
             "gzip" => new GZipSnapshotCompressor(),
             "br" => new BrotliSnapshotCompressor(),
             var _ => new NoCompressionCompressor(),
+        };
+
+    private static string GetCompressionMetricTag(
+        string encoding
+    ) =>
+        encoding switch
+        {
+            "gzip" => "gzip",
+            "br" => "brotli",
+            var _ => "none",
         };
 
     /// <inheritdoc />
@@ -211,5 +222,10 @@ internal sealed class BlobSnapshotRepository : IBlobSnapshotRepository
         };
         await Operations.UploadAsync(blobPath, compressedData, metadata, Options.DefaultAccessTier, cancellationToken)
             .ConfigureAwait(false);
+        BlobSnapshotStorageMetrics.RecordCompressionRatio(
+            snapshotKey.Stream.SnapshotStorageName,
+            GetCompressionMetricTag(WriteCompressor.ContentEncoding ?? string.Empty),
+            originalData.Length,
+            compressedData.Length);
     }
 }

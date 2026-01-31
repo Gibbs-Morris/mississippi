@@ -107,6 +107,32 @@ internal static class BlobSnapshotStorageMetrics
     }
 
     /// <summary>
+    ///     Record a compression ratio measurement.
+    /// </summary>
+    /// <param name="snapshotType">The snapshot type name.</param>
+    /// <param name="compression">The compression type used.</param>
+    /// <param name="originalSizeBytes">The original uncompressed size.</param>
+    /// <param name="compressedSizeBytes">The compressed size.</param>
+    internal static void RecordCompressionRatio(
+        string snapshotType,
+        string compression,
+        long originalSizeBytes,
+        long compressedSizeBytes
+    )
+    {
+        if ((originalSizeBytes <= 0) || (compressedSizeBytes <= 0) || string.IsNullOrEmpty(compression))
+        {
+            return;
+        }
+
+        TagList sizeTags = default;
+        sizeTags.Add(SnapshotTypeTag, snapshotType);
+        sizeTags.Add(CompressionTag, compression);
+        double ratio = (double)originalSizeBytes / compressedSizeBytes;
+        CompressionRatio.Record(ratio, sizeTags);
+    }
+
+    /// <summary>
     ///     Record a snapshot read operation.
     /// </summary>
     /// <param name="snapshotType">The snapshot type name.</param>

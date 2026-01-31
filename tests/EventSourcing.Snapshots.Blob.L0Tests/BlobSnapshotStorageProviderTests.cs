@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Azure.Storage.Blobs.Models;
+
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -192,5 +194,24 @@ public sealed class BlobSnapshotStorageProviderTests
             SnapshotKey,
             null!,
             CancellationToken.None));
+    }
+
+    /// <summary>
+    ///     Ensures archive access tier is rejected.
+    /// </summary>
+    [Fact]
+    public void ConstructorShouldThrowWhenAccessTierIsArchive()
+    {
+        Mock<IBlobSnapshotRepository> repo = new();
+        BlobSnapshotStorageOptions options = new()
+        {
+            DefaultAccessTier = AccessTier.Archive,
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new BlobSnapshotStorageProvider(
+                repo.Object,
+                Options.Create(options),
+                NullLogger<BlobSnapshotStorageProvider>.Instance));
     }
 }

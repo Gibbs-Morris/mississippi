@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Azure.Storage.Blobs.Models;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -32,6 +34,14 @@ internal sealed class BlobSnapshotStorageProvider : ISnapshotStorageProvider
     {
         Repository = repository ?? throw new ArgumentNullException(nameof(repository));
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        if (Options.DefaultAccessTier == AccessTier.Archive)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                Options.DefaultAccessTier,
+                "Archive access tier is not supported for snapshot storage.");
+        }
+
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 

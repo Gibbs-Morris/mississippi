@@ -81,19 +81,17 @@ public sealed class SimpleUxProjectionTests
 
         // Act - Step 2: Read the UX projection for the same entity ID
         output.WriteLine("[Test] Step 2: Query UX projection for the same entity ID");
-        IUxProjectionGrain<CounterSummaryProjection> projectionGrain = fixture.UxProjectionGrainFactory
-            .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
-        CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
-
         // Assert - Step 3: Verify the projection state matches expectations
         output.WriteLine("[Test] Step 3: Verify projection state matches expected values");
-        projection.Should().NotBeNull("Projection should exist after commands");
 
         // Expected: 10 (init) + 5 (increments) - 2 (decrements) = 13
         int expectedCount = 13;
         int expectedOperations = 8; // 1 init + 5 inc + 2 dec
+        CounterSummaryProjection projection = await fixture.WaitForProjectionAsync<CounterSummaryProjection>(
+            entityId,
+            state => state.CurrentCount == expectedCount && state.TotalOperations == expectedOperations);
         output.WriteLine($"[Test] Expected: Count={expectedCount}, Operations={expectedOperations}");
-        output.WriteLine($"[Test] Actual: Count={projection!.CurrentCount}, Operations={projection.TotalOperations}");
+        output.WriteLine($"[Test] Actual: Count={projection.CurrentCount}, Operations={projection.TotalOperations}");
         projection.CurrentCount.Should().Be(expectedCount, "Count should be 10 + 5 - 2 = 13");
         projection.TotalOperations.Should().Be(expectedOperations, "Operations should be 1 + 5 + 2 = 8");
         projection.IsPositive.Should().BeTrue("Count is positive");
@@ -160,11 +158,10 @@ public sealed class SimpleUxProjectionTests
         output.WriteLine($"[Test] Second Initialize(200) failed as expected: {secondInit.ErrorMessage}");
 
         // Assert - Projection should reflect first initialization only
-        IUxProjectionGrain<CounterSummaryProjection> projectionGrain = fixture.UxProjectionGrainFactory
-            .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
-        CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(100, "Should reflect first init value");
+        CounterSummaryProjection projection = await fixture.WaitForProjectionAsync<CounterSummaryProjection>(
+            entityId,
+            state => state.CurrentCount == 100 && state.TotalOperations == 1);
+        projection.CurrentCount.Should().Be(100, "Should reflect first init value");
         projection.TotalOperations.Should().Be(1, "Only one successful operation");
         output.WriteLine("[Test] PASSED: Re-initialization correctly prevented");
     }

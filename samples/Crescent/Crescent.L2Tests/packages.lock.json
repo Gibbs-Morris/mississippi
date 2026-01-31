@@ -1426,6 +1426,16 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.EventSourcing.Snapshots.Blob": {
+        "type": "Project",
+        "dependencies": {
+          "Azure.Storage.Blobs": "[12.27.0, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[10.0.2, )",
+          "Microsoft.Extensions.Options": "[10.0.2, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Snapshots.Cosmos": {
         "type": "Project",
         "dependencies": {
