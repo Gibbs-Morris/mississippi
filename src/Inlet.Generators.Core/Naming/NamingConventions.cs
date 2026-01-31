@@ -46,6 +46,40 @@ public static class NamingConventions
     private const string FeaturesSegment = "Features";
 
     /// <summary>
+    ///     Extracts the saga name from a saga namespace.
+    /// </summary>
+    /// <param name="sagaNamespace">The saga namespace (e.g., "Contoso.Domain.Sagas.TransferFunds").</param>
+    /// <returns>The saga name (e.g., "TransferFunds"), or null if not extractable.</returns>
+    public static string? ExtractSagaName(
+        string sagaNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sagaNamespace))
+        {
+            return null;
+        }
+
+        // Pattern: ...Sagas.TransferFunds → TransferFunds
+        const string SagasSegment = ".Sagas.";
+        int sagasIndex = sagaNamespace.LastIndexOf(SagasSegment, StringComparison.Ordinal);
+        if (sagasIndex > 0)
+        {
+            string sagaName = sagaNamespace.Substring(sagasIndex + SagasSegment.Length);
+
+            // Remove any trailing segments (e.g., .Steps, .Events)
+            int dotIndex = sagaName.IndexOf('.');
+            if (dotIndex > 0)
+            {
+                sagaName = sagaName.Substring(0, dotIndex);
+            }
+
+            return sagaName;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     ///     Extracts the aggregate name from a domain command namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -361,6 +395,34 @@ public static class NamingConventions
         GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "Reducers");
 
     /// <summary>
+    ///     Converts a saga state namespace to a client saga feature namespace.
+    /// </summary>
+    /// <param name="sagaNamespace">The saga namespace (e.g., "Contoso.Domain.Sagas.TransferFunds").</param>
+    /// <param name="targetRootNamespace">The target project's root namespace.</param>
+    /// <param name="subNamespace">The sub-namespace (e.g., "Actions", "State", "Dtos").</param>
+    /// <returns>The client saga feature namespace.</returns>
+    public static string GetClientSagaFeatureNamespace(
+        string sagaNamespace,
+        string targetRootNamespace,
+        string subNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sagaNamespace) || string.IsNullOrEmpty(targetRootNamespace))
+        {
+            return GetClientSagaFeatureNamespaceLegacy(sagaNamespace, subNamespace);
+        }
+
+        // Extract saga name from namespace
+        string? sagaName = ExtractSagaName(sagaNamespace);
+        if (!string.IsNullOrEmpty(sagaName))
+        {
+            return $"{targetRootNamespace}.{FeaturesSegment}.{sagaName}Saga.{subNamespace}";
+        }
+
+        return GetClientSagaFeatureNamespaceLegacy(sagaNamespace, subNamespace);
+    }
+
+    /// <summary>
     ///     Converts a domain command namespace to a client State namespace.
     /// </summary>
     /// <param name="domainNamespace">
@@ -512,6 +574,28 @@ public static class NamingConventions
 
         // For server, we always use Controllers.Aggregates
         return $"{targetRootNamespace}.Controllers.Aggregates";
+    }
+
+    /// <summary>
+    ///     Converts a saga state namespace to a server saga controller namespace.
+    /// </summary>
+    /// <param name="sagaNamespace">
+    ///     The saga namespace (e.g., "Contoso.Domain.Sagas.TransferFunds").
+    /// </param>
+    /// <param name="targetRootNamespace">The target project's root namespace (e.g., "Contoso.Server").</param>
+    /// <returns>The server namespace (e.g., "Contoso.Server.Controllers.Sagas").</returns>
+    public static string GetServerSagaNamespace(
+        string sagaNamespace,
+        string targetRootNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sagaNamespace) || string.IsNullOrEmpty(targetRootNamespace))
+        {
+            return GetServerSagaNamespaceLegacy(sagaNamespace);
+        }
+
+        // For server sagas, we always use Controllers.Sagas
+        return $"{targetRootNamespace}.Controllers.Sagas";
     }
 
     /// <summary>
@@ -746,5 +830,71 @@ public static class NamingConventions
 
         // Fallback to legacy behavior
         return GetClientFeatureNamespace(sourceNamespace, subNamespace);
+    }
+
+    /// <summary>
+    ///     Legacy fallback for client saga namespace conversion.
+    /// </summary>
+    private static string GetClientSagaFeatureNamespaceLegacy(
+        string sagaNamespace,
+        string subNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sagaNamespace))
+        {
+            return sagaNamespace + ".Client.Features." + subNamespace;
+        }
+
+        // Pattern: Contoso.Domain.Sagas.TransferFunds → Contoso.Client.Features.TransferFundsSaga
+        if (sagaNamespace.Contains(".Domain.Sagas."))
+        {
+            int domainIndex = sagaNamespace.IndexOf(DomainSegment, StringComparison.Ordinal);
+            if (domainIndex > 0)
+            {
+                string product = sagaNamespace.Substring(0, domainIndex);
+                int sagasIndex = sagaNamespace.IndexOf(".Domain.Sagas.", StringComparison.Ordinal);
+                string sagaName = sagaNamespace.Substring(sagasIndex + ".Domain.Sagas.".Length);
+                return $"{product}.Client.Features.{sagaName}Saga.{subNamespace}";
+            }
+        }
+
+        return sagaNamespace.Replace(DomainSegment, ClientSegment) + ".Features." + subNamespace;
+    }
+
+    /// <summary>
+    ///     Legacy fallback for saga namespace conversion.
+    /// </summary>
+    /// <param name="sagaNamespace">The saga namespace.</param>
+    /// <returns>The server namespace.</returns>
+    private static string GetServerSagaNamespaceLegacy(
+        string sagaNamespace
+    )
+    {
+        if (string.IsNullOrEmpty(sagaNamespace))
+        {
+            return sagaNamespace;
+        }
+
+        // Pattern: Contoso.Domain.Sagas.TransferFunds → Contoso.Server.Controllers.Sagas
+        int domainIndex = sagaNamespace.IndexOf(DomainSegment, StringComparison.Ordinal);
+        if (domainIndex > 0)
+        {
+            string product = sagaNamespace.Substring(0, domainIndex);
+            return product + ".Server.Controllers.Sagas";
+        }
+
+        // Fallback: Replace .Domain with .Server
+        if (sagaNamespace.EndsWith(DomainSuffix, StringComparison.Ordinal))
+        {
+            return sagaNamespace.Substring(0, sagaNamespace.Length - DomainSuffix.Length) + ".Server.Controllers.Sagas";
+        }
+
+        if (sagaNamespace.Contains(DomainSegment))
+        {
+            return sagaNamespace.Replace(DomainSegment, ".Server.") + ".Controllers.Sagas";
+        }
+
+        // Last resort: just append .Server.Controllers.Sagas
+        return sagaNamespace + ".Server.Controllers.Sagas";
     }
 }

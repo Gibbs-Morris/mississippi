@@ -11,6 +11,27 @@ namespace Mississippi.EventSourcing.Sagas;
 internal static partial class SagaLoggerExtensions
 {
     [LoggerMessage(
+        EventId = 1017,
+        Level = LogLevel.Debug,
+        Message = "Saga {SagaId} applying post-step delay of {DelayMilliseconds}ms after step {StepName}")]
+    public static partial void ApplyingPostStepDelay(
+        this ILogger logger,
+        Guid sagaId,
+        string stepName,
+        int delayMilliseconds
+    );
+
+    [LoggerMessage(
+        EventId = 1018,
+        Level = LogLevel.Debug,
+        Message = "Saga {SagaId} post-step delay completed for step {StepName}")]
+    public static partial void PostStepDelayCompleted(
+        this ILogger logger,
+        Guid sagaId,
+        string stepName
+    );
+
+    [LoggerMessage(
         EventId = 1005,
         Level = LogLevel.Information,
         Message = "Saga {SagaId} ({SagaType}) cancelling: {Reason}")]

@@ -1,0 +1,123 @@
+@page "/transfer"
+@using Spring.Client.Features.BankAccountBalance.Dtos
+@using Spring.Client.Features.TransferFundsSaga.Dtos
+@inherits InletComponent
+
+<main>
+    <nav>
+        <a href="/">Bank Account</a>
+        <a href="/account-watch">Account Watch</a>
+        <a href="/investigations">Investigations</a>
+        <a href="/scalar/v1" target="_blank">API Docs</a>
+    </nav>
+
+    <header>
+        <h1>Transfer Funds</h1>
+        <p>Transfer money between two accounts using a saga</p>
+    </header>
+
+    <section>
+        <h2>New Transfer</h2>
+        <fieldset disabled="@IsTransferInProgress">
+            <legend>Transfer Details</legend>
+            
+            <div>
+                <label for="source-account">From Account</label>
+                <input id="source-account"
+                       type="text"
+                       @bind="sourceAccountId"
+                       placeholder="Source account ID" />
+            </div>
+            
+            <div>
+                <label for="destination-account">To Account</label>
+                <input id="destination-account"
+                       type="text"
+                       @bind="destinationAccountId"
+                       placeholder="Destination account ID" />
+            </div>
+            
+            <div>
+                <label for="amount">Amount (£)</label>
+                <input id="amount"
+                       type="number"
+                       @bind="amount"
+                       placeholder="0.00"
+                       step="0.01"
+                       min="0.01" />
+            </div>
+            
+            <button type="button" 
+                    @onclick="StartTransfer"
+                    disabled="@(!CanStartTransfer)">
+                Transfer Funds
+            </button>
+        </fieldset>
+    </section>
+
+    @if (CurrentSagaId.HasValue)
+    {
+        <section>
+            <h2>Transfer Status</h2>
+            @if (SagaStatus is not null)
+            {
+                <div class="saga-progress">
+                    <div class="step @GetStepClass(1)">
+                        <span class="step-icon">@GetStepIcon(1)</span>
+                        <span class="step-name">Step 1: Debit Source Account</span>
+                        <span class="step-status">@GetStepStatus(1)</span>
+                    </div>
+                    <div class="step @GetStepClass(2)">
+                        <span class="step-icon">@GetStepIcon(2)</span>
+                        <span class="step-name">Step 2: Credit Destination</span>
+                        <span class="step-status">@GetStepStatus(2)</span>
+                    </div>
+                </div>
+                
+                <dl>
+                    <dt>Saga ID</dt>
+                    <dd>@CurrentSagaId</dd>
+                    
+                    <dt>Started</dt>
+                    <dd>@(SagaStatus.StartedAt?.ToString("HH:mm:ss") ?? "—")</dd>
+                    
+                    <dt>Status</dt>
+                    <dd class="@SagaStatus.Phase.ToLowerInvariant()">
+                        @SagaStatus.Phase
+                    </dd>
+                    
+                    @if (!string.IsNullOrEmpty(SagaStatus.FailureReason))
+                    {
+                        <dt>Error</dt>
+                        <dd class="error">@SagaStatus.FailureReason</dd>
+                    }
+                    
+                    @if (string.Equals(SagaStatus.Phase, "Compensating", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <dt>Compensation</dt>
+                        <dd class="warning">Rolling back changes...</dd>
+                    }
+                    
+                    @if (SagaStatus.CompletedAt.HasValue)
+                    {
+                        <dt>Completed</dt>
+                        <dd>@SagaStatus.CompletedAt?.ToString("HH:mm:ss")</dd>
+                    }
+                </dl>
+            }
+            else
+            {
+                <p>Loading saga status...</p>
+            }
+        </section>
+    }
+
+    <aside>
+        <p>
+            <strong>Tip:</strong> Open the 
+            <a href="/account-watch" target="_blank">Account Watch</a> 
+            page in another tab to see balances update in real-time 
+            during the transfer!
+        </p>
+    </aside>
+</main>

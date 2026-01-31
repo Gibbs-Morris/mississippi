@@ -1,0 +1,126 @@
+@page "/account-watch"
+@using Spring.Client.Features.BankAccountBalance.Dtos
+@inherits InletComponent
+
+<main>
+    <nav>
+        <a href="/">Bank Account</a>
+        <a href="/transfer">Transfer Funds</a>
+        <a href="/investigations">Investigations</a>
+        <a href="/scalar/v1" target="_blank">API Docs</a>
+    </nav>
+
+    <header>
+        <h1>Account Watch</h1>
+        <p>Monitor multiple account balances in real-time</p>
+    </header>
+
+    <section>
+        <h2>Add Account</h2>
+        <div class="add-account-form">
+            <input type="text"
+                   @bind="newAccountId"
+                   @bind:event="oninput"
+                   @onkeyup="HandleKeyUp"
+                   placeholder="Enter account ID to watch"
+                   aria-label="Account ID" />
+            <button type="button" 
+                    @onclick="AddAccount"
+                    disabled="@(!CanAddAccount)">
+                + Add to Watch
+            </button>
+        </div>
+        
+        @if (watchedAccountIds.Count >= MaxWatchedAccounts)
+        {
+            <p class="limit-warning">
+                Maximum of @MaxWatchedAccounts accounts can be watched at once.
+            </p>
+        }
+    </section>
+
+    <section>
+        <h2>Watched Accounts (@watchedAccountIds.Count)</h2>
+        
+        @if (watchedAccountIds.Count == 0)
+        {
+            <div class="empty-state">
+                <p>No accounts being watched.</p>
+                <p>Add an account ID above to start monitoring its balance.</p>
+            </div>
+        }
+        else
+        {
+            <div class="account-grid">
+                @foreach (string accountId in watchedAccountIds)
+                {
+                    <div class="account-card @GetBalanceChangeClass(accountId)">
+                        <div class="account-header">
+                            <span class="account-id">@accountId</span>
+                            <button type="button"
+                                    class="remove-button"
+                                    @onclick="() => RemoveAccount(accountId)"
+                                    aria-label="Remove @accountId from watch list">
+                                ×
+                            </button>
+                        </div>
+                        
+                        @{
+                            BankAccountBalanceProjectionDto? projection = GetProjection<BankAccountBalanceProjectionDto>(accountId);
+                            bool isLoading = IsProjectionLoading<BankAccountBalanceProjectionDto>(accountId);
+                        }
+                        
+                        @if (isLoading)
+                        {
+                            <div class="account-body loading">
+                                <p>Loading...</p>
+                            </div>
+                        }
+                        else if (projection is null)
+                        {
+                            <div class="account-body not-found">
+                                <p>Account not found or not open</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="account-body">
+                                <dl>
+                                    <dt>Holder</dt>
+                                    <dd>@(string.IsNullOrEmpty(projection.HolderName) ? "—" : projection.HolderName)</dd>
+                                    
+                                    <dt>Balance</dt>
+                                    <dd class="balance @GetBalanceChangeClass(accountId)">
+                                        @projection.Balance.ToString("C")
+                                        @if (GetBalanceChangeClass(accountId) == "increased")
+                                        {
+                                            <span class="change-indicator">▲</span>
+                                        }
+                                        else if (GetBalanceChangeClass(accountId) == "decreased")
+                                        {
+                                            <span class="change-indicator">▼</span>
+                                        }
+                                    </dd>
+                                    
+                                    <dt>Status</dt>
+                                    <dd class="@(projection.IsOpen ? "open" : "closed")">
+                                        @(projection.IsOpen ? "Open" : "Closed")
+                                    </dd>
+                                </dl>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <aside>
+        <p>
+            <strong>Tip:</strong> Open the 
+            <a href="/transfer" target="_blank">Transfer Funds</a> 
+            page and add both source and destination accounts here to 
+            watch balances change in real-time during the transfer!
+        </p>
+    </aside>
+</main>

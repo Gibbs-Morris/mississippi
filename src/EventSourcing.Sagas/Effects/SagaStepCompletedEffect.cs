@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,10 +55,12 @@ internal sealed class SagaStepCompletedEffect<TSaga> : EventEffectBase<SagaStepC
     {
         _ = brookKey; // Saga effects don't use brook key directly
         _ = eventPosition; // Saga effects don't use event position directly
-        await Task.CompletedTask; // Async enumerable requires async method
 
         // Extract saga identity from state if available
         Guid sagaId = currentState is ISagaState sagaState ? sagaState.SagaId : Guid.Empty;
+
+        // Apply post-step delay if configured on the completed step
+        await ApplyPostStepDelayAsync(eventData.StepOrder, sagaId, cancellationToken);
 
         // Find the next step
         ISagaStepInfo? nextStep = FindNextStep(eventData.StepOrder);
@@ -74,6 +77,31 @@ internal sealed class SagaStepCompletedEffect<TSaga> : EventEffectBase<SagaStepC
         yield return new SagaStepStartedEvent(nextStep.Name, nextStep.Order, TimeProvider.GetUtcNow());
     }
 
+    private async Task ApplyPostStepDelayAsync(
+        int stepOrder,
+        Guid sagaId,
+        CancellationToken cancellationToken
+    )
+    {
+        // Find the step that just completed
+        ISagaStepInfo? completedStep = FindStep(stepOrder);
+        if (completedStep is null)
+        {
+            return;
+        }
+
+        // Check for DelayAfterStep attribute
+        DelayAfterStepAttribute? delayAttr = completedStep.StepType.GetCustomAttribute<DelayAfterStepAttribute>();
+        if (delayAttr is null || (delayAttr.DelayMilliseconds <= 0))
+        {
+            return;
+        }
+
+        Logger.ApplyingPostStepDelay(sagaId, completedStep.Name, delayAttr.DelayMilliseconds);
+        await Task.Delay(delayAttr.Delay, TimeProvider, cancellationToken);
+        Logger.PostStepDelayCompleted(sagaId, completedStep.Name);
+    }
+
     private ISagaStepInfo? FindNextStep(
         int currentStepOrder
     )
@@ -84,6 +112,21 @@ internal sealed class SagaStepCompletedEffect<TSaga> : EventEffectBase<SagaStepC
         foreach (ISagaStepInfo step in steps)
         {
             if (step.Order > currentStepOrder)
+            {
+                return step;
+            }
+        }
+
+        return null;
+    }
+
+    private ISagaStepInfo? FindStep(
+        int stepOrder
+    )
+    {
+        foreach (ISagaStepInfo step in StepRegistry.Steps)
+        {
+            if (step.Order == stepOrder)
             {
                 return step;
             }

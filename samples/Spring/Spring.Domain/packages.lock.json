@@ -506,6 +506,13 @@
       "Mississippi.EventSourcing.Reducers.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.EventSourcing.Sagas.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.UxProjections.Abstractions": {
         "type": "Project",
         "dependencies": {
