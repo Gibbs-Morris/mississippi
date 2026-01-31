@@ -10,7 +10,7 @@ Users need to see the saga progressing in real-time, especially with the 10-seco
 
 ## Architecture
 
-```
+```text
 ┌─────────────────┐     SignalR      ┌─────────────────┐     Orleans      ┌─────────────────┐
 │  Blazor Client  │◀────────────────▶│    API Server   │◀────────────────▶│  Saga Grain     │
 │                 │                  │                 │                  │                 │
@@ -29,6 +29,7 @@ The `SagaStatusProjection` already exists in `EventSourcing.Sagas.Abstractions.P
 2. Create a projection grain that subscribes to saga events
 
 **Verify/Add to `SagaStatusProjection.cs`:**
+
 ```csharp
 [ProjectionPath("saga-status")]
 [BrookName("MISSISSIPPI", "SAGAS", "SAGASTATUS")]  // May need saga-specific brook
@@ -42,6 +43,7 @@ public sealed record SagaStatusProjection
 ```
 
 **Challenge:** Saga status is per-saga-type (TransferFunds), not a global projection. We may need:
+
 - `TransferFundsSagaStatusProjection` in `Spring.Domain`
 - Or a generic pattern with saga type as part of the projection path
 

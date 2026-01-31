@@ -1,5 +1,3 @@
-using Mississippi.Inlet.Generators.Abstractions;
-
 using Orleans;
 
 
@@ -13,10 +11,10 @@ namespace Spring.Domain.Sagas.TransferFunds;
 public sealed record TransferFundsSagaInput
 {
     /// <summary>
-    ///     Gets the account to withdraw funds from.
+    ///     Gets the amount to transfer.
     /// </summary>
-    [Id(0)]
-    public required string SourceAccountId { get; init; }
+    [Id(2)]
+    public required decimal Amount { get; init; }
 
     /// <summary>
     ///     Gets the account to deposit funds into.
@@ -25,8 +23,8 @@ public sealed record TransferFundsSagaInput
     public required string DestinationAccountId { get; init; }
 
     /// <summary>
-    ///     Gets the amount to transfer.
+    ///     Gets the account to withdraw funds from.
     /// </summary>
-    [Id(2)]
-    public required decimal Amount { get; init; }
+    [Id(0)]
+    public required string SourceAccountId { get; init; }
 }

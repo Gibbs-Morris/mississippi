@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -230,14 +231,7 @@ internal sealed class SagaStepFailedEffect<TSaga> : EventEffectBase<SagaStepFail
         IReadOnlyList<ISagaStepInfo> steps = StepRegistry.Steps;
 
         // Find steps that completed before the failed step (in reverse order for compensation)
-        List<ISagaStepInfo> stepsToCompensate = [];
-        foreach (ISagaStepInfo step in steps)
-        {
-            if (step.Order < failedStepOrder)
-            {
-                stepsToCompensate.Add(step);
-            }
-        }
+        List<ISagaStepInfo> stepsToCompensate = steps.Where(step => step.Order < failedStepOrder).ToList();
 
         // Reverse to compensate in reverse order
         stepsToCompensate.Reverse();

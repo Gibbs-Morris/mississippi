@@ -15,6 +15,7 @@ Generator bugs are hard to debug at runtime. L0 tests that verify generated code
 **Location:** `tests/Inlet.Server.Generators.L0Tests/SagaControllerGeneratorTests.cs`
 
 **Test Cases:**
+
 - [ ] `GeneratorProducesControllerForSagaWithInputType` - Basic controller generation
 - [ ] `GeneratorIncludesStartEndpoint` - POST /{sagaId} endpoint present
 - [ ] `GeneratorIncludesStatusEndpoint` - GET /{sagaId}/status endpoint present
@@ -28,6 +29,7 @@ Generator bugs are hard to debug at runtime. L0 tests that verify generated code
 **Location:** `tests/Inlet.Server.Generators.L0Tests/SagaServerDtoGeneratorTests.cs`
 
 **Test Cases:**
+
 - [ ] `GeneratorProducesDtoWithAllInputProperties` - All input properties present
 - [ ] `GeneratorIncludesCorrelationIdProperty` - CorrelationId always added
 - [ ] `GeneratorUsesRequiredModifier` - Non-nullable properties are required
@@ -39,6 +41,7 @@ Generator bugs are hard to debug at runtime. L0 tests that verify generated code
 **Location:** `tests/Inlet.Client.Generators.L0Tests/SagaClientActionsGeneratorTests.cs`
 
 **Test Cases:**
+
 - [ ] `GeneratorProducesPrimaryAction` - `Start{Saga}SagaAction` generated
 - [ ] `GeneratorProducesExecutingAction` - `Start{Saga}SagaExecutingAction` generated
 - [ ] `GeneratorProducesSucceededAction` - `Start{Saga}SagaSucceededAction` generated
@@ -52,6 +55,7 @@ Generator bugs are hard to debug at runtime. L0 tests that verify generated code
 **Location:** `tests/Inlet.Client.Generators.L0Tests/SagaClientActionEffectsGeneratorTests.cs`
 
 **Test Cases:**
+
 - [ ] `GeneratorProducesActionEffect` - Effect class generated
 - [ ] `EffectInheritsSagaActionEffectBase` - Correct base class
 - [ ] `EffectHasCorrectSagaRoute` - Route property matches saga name
@@ -62,6 +66,7 @@ Generator bugs are hard to debug at runtime. L0 tests that verify generated code
 **Location:** `tests/Inlet.Client.Generators.L0Tests/SagaClientStateGeneratorTests.cs`
 
 **Test Cases:**
+
 - [ ] `GeneratorProducesStateRecord` - State record generated
 - [ ] `StateHasIsExecutingProperty` - bool IsExecuting present
 - [ ] `StateHasExecutingSagaIdProperty` - Guid? ExecutingSagaId present
@@ -73,6 +78,7 @@ Generator bugs are hard to debug at runtime. L0 tests that verify generated code
 **Location:** `tests/Inlet.Client.Generators.L0Tests/SagaClientReducersGeneratorTests.cs`
 
 **Test Cases:**
+
 - [ ] `GeneratorProducesExecutingReducer` - Reducer for executing action
 - [ ] `GeneratorProducesSucceededReducer` - Reducer for succeeded action
 - [ ] `GeneratorProducesFailedReducer` - Reducer for failed action
@@ -85,6 +91,7 @@ Generator bugs are hard to debug at runtime. L0 tests that verify generated code
 **Location:** `tests/Inlet.Client.Generators.L0Tests/SagaClientRegistrationGeneratorTests.cs`
 
 **Test Cases:**
+
 - [ ] `GeneratorProducesRegistrationMethod` - `Add{Saga}SagaFeature()` exists
 - [ ] `RegistrationIncludesStateRegistration` - State registered
 - [ ] `RegistrationIncludesReducers` - All reducers registered
@@ -94,11 +101,13 @@ Generator bugs are hard to debug at runtime. L0 tests that verify generated code
 ## Test Infrastructure
 
 Use same patterns as existing generator tests:
+
 - `RunGenerator()` helper that compiles source with generator
 - Assert on generated source text content
 - Assert no diagnostic errors
 
 **Example:**
+
 ```csharp
 [Fact]
 public void GeneratorProducesControllerForSagaWithInputType()

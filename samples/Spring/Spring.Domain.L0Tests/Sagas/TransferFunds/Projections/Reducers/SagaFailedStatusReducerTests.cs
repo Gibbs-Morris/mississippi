@@ -15,6 +15,22 @@ public sealed class SagaFailedStatusReducerTests
     private readonly SagaFailedStatusReducer reducer = new();
 
     /// <summary>
+    ///     Verifies that reducer throws when event is null.
+    /// </summary>
+    [Fact]
+    public void ReduceWithNullEventThrowsArgumentNullException()
+    {
+        // Arrange
+        TransferFundsSagaStatusProjection initial = new();
+
+        // Act & Assert
+        reducer.ShouldThrow<ArgumentNullException, SagaFailedEvent, TransferFundsSagaStatusProjection>(
+            initial,
+            null!,
+            "eventData");
+    }
+
+    /// <summary>
     ///     Verifies that applying SagaFailed marks the saga as failed with reason.
     /// </summary>
     [Fact]
@@ -37,21 +53,5 @@ public sealed class SagaFailedStatusReducerTests
         result.FailureReason.Should().Be("Insufficient funds");
         result.CompletedAt.Should().Be(failedAt);
         result.CurrentStep.Should().BeNull();
-    }
-
-    /// <summary>
-    ///     Verifies that reducer throws when event is null.
-    /// </summary>
-    [Fact]
-    public void ReduceWithNullEventThrowsArgumentNullException()
-    {
-        // Arrange
-        TransferFundsSagaStatusProjection initial = new();
-
-        // Act & Assert
-        reducer.ShouldThrow<ArgumentNullException, SagaFailedEvent, TransferFundsSagaStatusProjection>(
-            initial,
-            null!,
-            "eventData");
     }
 }

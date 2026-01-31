@@ -3,7 +3,6 @@ using System;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions.Events;
-using Mississippi.EventSourcing.Sagas.Abstractions.Projections;
 
 
 namespace Spring.Domain.Sagas.TransferFunds.Projections.Reducers;
@@ -16,8 +15,7 @@ namespace Spring.Domain.Sagas.TransferFunds.Projections.Reducers;
 ///         This reducer sets the phase to Failed, records the failure reason, and completion time.
 ///     </para>
 /// </remarks>
-public sealed class SagaFailedStatusReducer
-    : EventReducerBase<SagaFailedEvent, TransferFundsSagaStatusProjection>
+public sealed class SagaFailedStatusReducer : EventReducerBase<SagaFailedEvent, TransferFundsSagaStatusProjection>
 {
     /// <inheritdoc />
     protected override TransferFundsSagaStatusProjection ReduceCore(
@@ -27,7 +25,6 @@ public sealed class SagaFailedStatusReducer
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(eventData);
-
         return state with
         {
             Phase = SagaPhase.Failed.ToString(),

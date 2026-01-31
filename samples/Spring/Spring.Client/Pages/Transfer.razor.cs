@@ -34,7 +34,7 @@ public sealed partial class Transfer
         !string.IsNullOrWhiteSpace(sourceAccountId) &&
         !string.IsNullOrWhiteSpace(destinationAccountId) &&
         !string.Equals(sourceAccountId, destinationAccountId, StringComparison.OrdinalIgnoreCase) &&
-        amount > 0;
+        (amount > 0);
 
     /// <summary>
     ///     Gets the current saga ID if a transfer is in progress or completed.
@@ -44,16 +44,13 @@ public sealed partial class Transfer
     /// <summary>
     ///     Gets a value indicating whether a transfer is currently in progress.
     /// </summary>
-    private bool IsTransferInProgress =>
-        GetState<TransferFundsSagaFeatureState>().IsExecuting;
+    private bool IsTransferInProgress => GetState<TransferFundsSagaFeatureState>().IsExecuting;
 
     /// <summary>
     ///     Gets the current saga status projection.
     /// </summary>
     private SagaStatusDto? SagaStatus =>
-        currentSagaId.HasValue
-            ? GetProjection<SagaStatusDto>(currentSagaId.Value.ToString())
-            : null;
+        currentSagaId.HasValue ? GetProjection<SagaStatusDto>(currentSagaId.Value.ToString()) : null;
 
     /// <inheritdoc />
     protected override void Dispose(
@@ -83,13 +80,13 @@ public sealed partial class Transfer
         }
 
         int? currentOrder = SagaStatus.CurrentStep?.StepOrder;
-
         if (string.Equals(SagaStatus.Phase, "Completed", StringComparison.OrdinalIgnoreCase))
         {
             return "completed";
         }
 
-        if (string.Equals(SagaStatus.Phase, "Failed", StringComparison.OrdinalIgnoreCase) && currentOrder == stepOrder)
+        if (string.Equals(SagaStatus.Phase, "Failed", StringComparison.OrdinalIgnoreCase) &&
+            (currentOrder == stepOrder))
         {
             return "failed";
         }
@@ -135,7 +132,7 @@ public sealed partial class Transfer
             "running" => "●",
             "failed" => "✗",
             "compensating" => "↺",
-            _ => "○",
+            var _ => "○",
         };
 
     /// <summary>
@@ -152,7 +149,7 @@ public sealed partial class Transfer
             "running" => "Running...",
             "failed" => "Failed",
             "compensating" => "Rolling back",
-            _ => "Pending",
+            var _ => "Pending",
         };
 
     /// <summary>
@@ -173,10 +170,6 @@ public sealed partial class Transfer
         SubscribeToProjection<SagaStatusDto>(sagaId.ToString());
 
         // Dispatch the generated saga action
-        Dispatch(new StartTransferFundsSagaAction(
-            sagaId,
-            sourceAccountId.Trim(),
-            destinationAccountId.Trim(),
-            amount));
+        Dispatch(new StartTransferFundsSagaAction(sagaId, amount, destinationAccountId.Trim(), sourceAccountId.Trim()));
     }
 }

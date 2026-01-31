@@ -13,6 +13,18 @@ namespace Spring.Domain.Sagas.TransferFunds.Projections;
 public sealed record TransferFundsSagaStepStatus
 {
     /// <summary>
+    ///     Gets the error message if the step failed.
+    /// </summary>
+    [Id(4)]
+    public string? ErrorMessage { get; init; }
+
+    /// <summary>
+    ///     Gets the outcome of the step.
+    /// </summary>
+    [Id(3)]
+    public string Outcome { get; init; } = string.Empty;
+
+    /// <summary>
     ///     Gets the name of the step.
     /// </summary>
     [Id(0)]
@@ -29,16 +41,4 @@ public sealed record TransferFundsSagaStepStatus
     /// </summary>
     [Id(2)]
     public DateTimeOffset Timestamp { get; init; }
-
-    /// <summary>
-    ///     Gets the outcome of the step.
-    /// </summary>
-    [Id(3)]
-    public string Outcome { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the error message if the step failed.
-    /// </summary>
-    [Id(4)]
-    public string? ErrorMessage { get; init; }
 }

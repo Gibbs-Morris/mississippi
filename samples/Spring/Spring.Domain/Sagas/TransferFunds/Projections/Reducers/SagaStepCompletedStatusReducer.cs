@@ -3,7 +3,6 @@ using System;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions.Events;
-using Mississippi.EventSourcing.Sagas.Abstractions.Projections;
 
 
 namespace Spring.Domain.Sagas.TransferFunds.Projections.Reducers;
@@ -27,7 +26,6 @@ public sealed class SagaStepCompletedStatusReducer
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(eventData);
-
         TransferFundsSagaStepStatus completedStep = new()
         {
             StepName = eventData.StepName,
@@ -35,7 +33,6 @@ public sealed class SagaStepCompletedStatusReducer
             Timestamp = eventData.Timestamp,
             Outcome = StepOutcome.Succeeded.ToString(),
         };
-
         return state with
         {
             CurrentStep = null,

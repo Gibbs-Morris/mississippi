@@ -38,40 +38,10 @@ namespace Spring.Domain.Sagas.TransferFunds.Projections;
 public sealed record TransferFundsSagaStatusProjection
 {
     /// <summary>
-    ///     Gets the unique identifier of the saga instance.
-    /// </summary>
-    [Id(0)]
-    public string SagaId { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the type name of the saga.
-    /// </summary>
-    [Id(1)]
-    public string SagaType { get; init; } = nameof(TransferFundsSagaState);
-
-    /// <summary>
-    ///     Gets the current phase of the saga.
-    /// </summary>
-    [Id(2)]
-    public string Phase { get; init; } = "NotStarted";
-
-    /// <summary>
-    ///     Gets when the saga started, if it has started.
-    /// </summary>
-    [Id(3)]
-    public DateTimeOffset? StartedAt { get; init; }
-
-    /// <summary>
     ///     Gets when the saga completed, if it has completed.
     /// </summary>
     [Id(4)]
     public DateTimeOffset? CompletedAt { get; init; }
-
-    /// <summary>
-    ///     Gets the currently executing step, if any.
-    /// </summary>
-    [Id(5)]
-    public TransferFundsSagaStepStatus? CurrentStep { get; init; }
 
     /// <summary>
     ///     Gets the list of steps that have completed successfully.
@@ -79,6 +49,12 @@ public sealed record TransferFundsSagaStatusProjection
     [Id(6)]
     public ImmutableArray<TransferFundsSagaStepStatus> CompletedSteps { get; init; } =
         ImmutableArray<TransferFundsSagaStepStatus>.Empty;
+
+    /// <summary>
+    ///     Gets the currently executing step, if any.
+    /// </summary>
+    [Id(5)]
+    public TransferFundsSagaStepStatus? CurrentStep { get; init; }
 
     /// <summary>
     ///     Gets the list of steps that have failed.
@@ -92,6 +68,30 @@ public sealed record TransferFundsSagaStatusProjection
     /// </summary>
     [Id(8)]
     public string? FailureReason { get; init; }
+
+    /// <summary>
+    ///     Gets the current phase of the saga.
+    /// </summary>
+    [Id(2)]
+    public string Phase { get; init; } = "NotStarted";
+
+    /// <summary>
+    ///     Gets the unique identifier of the saga instance.
+    /// </summary>
+    [Id(0)]
+    public string SagaId { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     Gets the type name of the saga.
+    /// </summary>
+    [Id(1)]
+    public string SagaType { get; init; } = nameof(TransferFundsSagaState);
+
+    /// <summary>
+    ///     Gets when the saga started, if it has started.
+    /// </summary>
+    [Id(3)]
+    public DateTimeOffset? StartedAt { get; init; }
 
     /// <summary>
     ///     Gets the total number of steps in the saga.

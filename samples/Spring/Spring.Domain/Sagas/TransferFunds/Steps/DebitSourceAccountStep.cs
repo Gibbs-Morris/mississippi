@@ -57,13 +57,13 @@ internal sealed class DebitSourceAccountStep : SagaStepBase<TransferFundsSagaSta
     )
     {
         IGenericAggregateGrain<BankAccountAggregate> grain =
-            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(
-                state.SourceAccountId);
-
+            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(state.SourceAccountId);
         OperationResult result = await grain.ExecuteAsync(
-            new WithdrawFunds { Amount = state.Amount },
+            new WithdrawFunds
+            {
+                Amount = state.Amount,
+            },
             cancellationToken);
-
         if (!result.Success)
         {
             Logger.LogDebitFailed(context.SagaId, state.SourceAccountId, result.ErrorMessage);
@@ -73,6 +73,10 @@ internal sealed class DebitSourceAccountStep : SagaStepBase<TransferFundsSagaSta
         }
 
         Logger.LogDebitSucceeded(context.SagaId, state.SourceAccountId, state.Amount);
-        return StepResult.Succeeded(new SourceDebited { Amount = state.Amount });
+        return StepResult.Succeeded(
+            new SourceDebited
+            {
+                Amount = state.Amount,
+            });
     }
 }

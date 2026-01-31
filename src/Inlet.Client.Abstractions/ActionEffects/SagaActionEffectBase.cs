@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -24,11 +23,7 @@ namespace Mississippi.Inlet.Client.Abstractions.ActionEffects;
 ///     The action type that triggers this action effect. Must implement
 ///     <see cref="ISagaAction" />.
 /// </typeparam>
-/// <typeparam name="TRequestDto">The DTO type to POST to the API.</typeparam>
 /// <typeparam name="TState">The feature state type this effect is registered for.</typeparam>
-/// <typeparam name="TExecutingAction">The executing lifecycle action type.</typeparam>
-/// <typeparam name="TSucceededAction">The succeeded lifecycle action type.</typeparam>
-/// <typeparam name="TFailedAction">The failed lifecycle action type.</typeparam>
 /// <remarks>
 ///     <para>
 ///         This base class provides the common HTTP POST pattern for saga start requests:
@@ -50,34 +45,25 @@ namespace Mississippi.Inlet.Client.Abstractions.ActionEffects;
 ///         <c>/api/sagas/{SagaRoute}/{SagaId}</c>.
 ///     </para>
 /// </remarks>
-public abstract class SagaActionEffectBase<TAction, TRequestDto, TState, TExecutingAction, TSucceededAction,
-    TFailedAction> : IActionEffect<TState>
+public abstract class SagaActionEffectBase<TAction, TState> : IActionEffect<TState>
     where TAction : ISagaAction
-    where TRequestDto : class
     where TState : class, IFeatureState
-    where TExecutingAction : ISagaExecutingAction<TExecutingAction>
-    where TSucceededAction : ISagaSucceededAction<TSucceededAction>
-    where TFailedAction : ISagaFailedAction<TFailedAction>
 {
     /// <summary>
     ///     Initializes a new instance of the
     ///     <see
-    ///         cref="SagaActionEffectBase{TAction, TRequestDto, TState, TExecutingAction, TSucceededAction, TFailedAction}" />
+    ///         cref="SagaActionEffectBase{TAction, TState}" />
     ///     class.
     /// </summary>
     /// <param name="httpClient">The HTTP client for API calls.</param>
-    /// <param name="mapper">The mapper for action-to-DTO conversion.</param>
     /// <param name="timeProvider">The time provider for timestamps. If null, uses <see cref="System.TimeProvider.System" />.</param>
     protected SagaActionEffectBase(
         HttpClient httpClient,
-        IMapper<TAction, TRequestDto> mapper,
         TimeProvider? timeProvider = null
     )
     {
         ArgumentNullException.ThrowIfNull(httpClient);
-        ArgumentNullException.ThrowIfNull(mapper);
         Http = httpClient;
-        Mapper = mapper;
         TimeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -85,11 +71,6 @@ public abstract class SagaActionEffectBase<TAction, TRequestDto, TState, TExecut
     ///     Gets the HTTP client for API calls.
     /// </summary>
     protected HttpClient Http { get; }
-
-    /// <summary>
-    ///     Gets the mapper for action-to-DTO conversion.
-    /// </summary>
-    protected IMapper<TAction, TRequestDto> Mapper { get; }
 
     /// <summary>
     ///     Gets the saga route segment (e.g., "transfer-funds").
@@ -139,13 +120,13 @@ public abstract class SagaActionEffectBase<TAction, TRequestDto, TState, TExecut
 
         Guid sagaId = typedAction.SagaId;
         string sagaType = SagaTypeName;
-        yield return TExecutingAction.Create(sagaId, sagaType, TimeProvider.GetUtcNow());
+        yield return CreateExecutingAction(sagaId, sagaType, TimeProvider.GetUtcNow());
         string? errorCode = null;
         string? errorMessage = null;
         try
         {
             string endpoint = GetEndpoint(typedAction);
-            TRequestDto requestBody = Mapper.Map(typedAction);
+            object requestBody = CreateRequestBody(typedAction);
             using HttpResponseMessage response = await Http.PostAsJsonAsync(endpoint, requestBody, cancellationToken);
 
             // For saga start, Accepted (202) indicates success
@@ -169,12 +150,60 @@ public abstract class SagaActionEffectBase<TAction, TRequestDto, TState, TExecut
 
         if (errorMessage is not null)
         {
-            yield return TFailedAction.Create(sagaId, errorCode, errorMessage, TimeProvider.GetUtcNow());
+            yield return CreateFailedAction(sagaId, errorCode, errorMessage, TimeProvider.GetUtcNow());
             yield break;
         }
 
-        yield return TSucceededAction.Create(sagaId, TimeProvider.GetUtcNow());
+        yield return CreateSucceededAction(sagaId, TimeProvider.GetUtcNow());
     }
+
+    /// <summary>
+    ///     Creates the executing lifecycle action.
+    /// </summary>
+    /// <param name="sagaId">The saga instance identifier.</param>
+    /// <param name="sagaType">The saga type name.</param>
+    /// <param name="timestamp">The timestamp for the action.</param>
+    /// <returns>The executing action.</returns>
+    protected abstract IAction CreateExecutingAction(
+        Guid sagaId,
+        string sagaType,
+        DateTimeOffset timestamp
+    );
+
+    /// <summary>
+    ///     Creates the failed lifecycle action.
+    /// </summary>
+    /// <param name="sagaId">The saga instance identifier.</param>
+    /// <param name="errorCode">The error code describing the failure.</param>
+    /// <param name="errorMessage">The human-readable failure message.</param>
+    /// <param name="timestamp">The timestamp for the action.</param>
+    /// <returns>The failed action.</returns>
+    protected abstract IAction CreateFailedAction(
+        Guid sagaId,
+        string? errorCode,
+        string errorMessage,
+        DateTimeOffset timestamp
+    );
+
+    /// <summary>
+    ///     Creates the request payload for the saga start call.
+    /// </summary>
+    /// <param name="action">The saga action containing the request data.</param>
+    /// <returns>The request payload to POST.</returns>
+    protected abstract object CreateRequestBody(
+        TAction action
+    );
+
+    /// <summary>
+    ///     Creates the succeeded lifecycle action.
+    /// </summary>
+    /// <param name="sagaId">The saga instance identifier.</param>
+    /// <param name="timestamp">The timestamp for the action.</param>
+    /// <returns>The succeeded action.</returns>
+    protected abstract IAction CreateSucceededAction(
+        Guid sagaId,
+        DateTimeOffset timestamp
+    );
 
     /// <summary>
     ///     Gets the API endpoint for the saga by combining the saga route and saga ID.

@@ -23,11 +23,11 @@ public sealed partial class AccountWatch
 {
     private const int MaxWatchedAccounts = 10;
 
-    private readonly Dictionary<string, decimal?> previousBalances = new();
-
     private readonly Dictionary<string, DateTime> balanceChangeTimestamps = new();
 
     private readonly Dictionary<string, bool> balanceIncreased = new();
+
+    private readonly Dictionary<string, decimal?> previousBalances = new();
 
     private readonly List<string> watchedAccountIds = new();
 
@@ -39,7 +39,7 @@ public sealed partial class AccountWatch
     private bool CanAddAccount =>
         !string.IsNullOrWhiteSpace(newAccountId) &&
         !watchedAccountIds.Contains(newAccountId.Trim(), StringComparer.OrdinalIgnoreCase) &&
-        watchedAccountIds.Count < MaxWatchedAccounts;
+        (watchedAccountIds.Count < MaxWatchedAccounts);
 
     /// <inheritdoc />
     protected override void Dispose(
@@ -89,22 +89,18 @@ public sealed partial class AccountWatch
     {
         DateTime now = DateTime.UtcNow;
         bool needsRerender = false;
-
         foreach (string accountId in watchedAccountIds)
         {
-            BankAccountBalanceProjectionDto? projection =
-                GetProjection<BankAccountBalanceProjectionDto>(accountId);
-
+            BankAccountBalanceProjectionDto? projection = GetProjection<BankAccountBalanceProjectionDto>(accountId);
             if (projection is null)
             {
                 continue;
             }
 
             decimal currentBalance = projection.Balance;
-
             if (previousBalances.TryGetValue(accountId, out decimal? previous) &&
                 previous.HasValue &&
-                previous.Value != currentBalance)
+                (previous.Value != currentBalance))
             {
                 // Balance changed - record timestamp and direction for animation
                 balanceChangeTimestamps[accountId] = now;
@@ -116,11 +112,9 @@ public sealed partial class AccountWatch
         }
 
         // Clear old change indicators (after 2 seconds)
-        List<string> expiredChanges = balanceChangeTimestamps
-            .Where(kvp => (now - kvp.Value).TotalSeconds > 2)
+        List<string> expiredChanges = balanceChangeTimestamps.Where(kvp => (now - kvp.Value).TotalSeconds > 2)
             .Select(kvp => kvp.Key)
             .ToList();
-
         foreach (string accountId in expiredChanges)
         {
             balanceChangeTimestamps.Remove(accountId);
@@ -164,7 +158,7 @@ public sealed partial class AccountWatch
         KeyboardEventArgs e
     )
     {
-        if (e.Key == "Enter" && CanAddAccount)
+        if ((e.Key == "Enter") && CanAddAccount)
         {
             AddAccount();
         }

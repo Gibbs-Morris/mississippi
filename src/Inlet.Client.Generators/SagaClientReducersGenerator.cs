@@ -208,12 +208,11 @@ public sealed class SagaClientReducersGenerator : IIncrementalGenerator
     )
     {
         yield return compilation.Assembly;
-        foreach (MetadataReference reference in compilation.References)
+        foreach (IAssemblySymbol assemblySymbol in compilation.References
+                     .Select(reference => compilation.GetAssemblyOrModuleSymbol(reference))
+                     .OfType<IAssemblySymbol>())
         {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
+            yield return assemblySymbol;
         }
     }
 

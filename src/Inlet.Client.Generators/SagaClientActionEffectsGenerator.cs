@@ -77,6 +77,7 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendUsing("System.Net.Http");
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
         sb.AppendUsing("Mississippi.Inlet.Client.Abstractions.ActionEffects");
+        sb.AppendUsing("Mississippi.Reservoir.Abstractions.Actions");
         sb.AppendUsing(saga.ActionsNamespace);
         sb.AppendUsing(saga.DtosNamespace);
         sb.AppendUsing(saga.StateNamespace);
@@ -86,12 +87,11 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendGeneratedCodeAttribute(GeneratorName);
         sb.AppendLine($"internal sealed class {effectName}");
         sb.IncreaseIndent();
-        sb.AppendLine($": SagaActionEffectBase<{actionName}, {dtoName}, {stateName},");
-        sb.IncreaseIndent();
-        sb.AppendLine($"{executingActionName}, {succeededActionName}, {failedActionName}>");
-        sb.DecreaseIndent();
+        sb.AppendLine($": SagaActionEffectBase<{actionName}, {stateName}>");
         sb.DecreaseIndent();
         sb.OpenBrace();
+        sb.AppendLine($"private IMapper<{actionName}, {dtoName}> Mapper {{ get; }}");
+        sb.AppendLine();
 
         // Constructor
         sb.AppendSummary($"Initializes a new instance of the <see cref=\"{effectName}\" /> class.");
@@ -106,15 +106,39 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.IncreaseIndent();
-        sb.AppendLine(": base(httpClient, mapper, timeProvider)");
+        sb.AppendLine(": base(httpClient, timeProvider)");
         sb.DecreaseIndent();
         sb.OpenBrace();
+        sb.AppendLine("Mapper = mapper;");
         sb.CloseBrace();
         sb.AppendLine();
 
         // SagaRoute property
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine($"protected override string SagaRoute => \"{saga.SagaRouteKebab}\";");
+        sb.AppendLine();
+        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine($"protected override object CreateRequestBody({actionName} action) => Mapper.Map(action);");
+        sb.AppendLine();
+        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(
+            "protected override IAction CreateExecutingAction(Guid sagaId, string sagaType, DateTimeOffset timestamp) =>");
+        sb.IncreaseIndent();
+        sb.AppendLine($"{executingActionName}.Create(sagaId, sagaType, timestamp);");
+        sb.DecreaseIndent();
+        sb.AppendLine();
+        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine("protected override IAction CreateSucceededAction(Guid sagaId, DateTimeOffset timestamp) =>");
+        sb.IncreaseIndent();
+        sb.AppendLine($"{succeededActionName}.Create(sagaId, timestamp);");
+        sb.DecreaseIndent();
+        sb.AppendLine();
+        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(
+            "protected override IAction CreateFailedAction(Guid sagaId, string? errorCode, string errorMessage, DateTimeOffset timestamp) =>");
+        sb.IncreaseIndent();
+        sb.AppendLine($"{failedActionName}.Create(sagaId, errorCode, errorMessage, timestamp);");
+        sb.DecreaseIndent();
         sb.CloseBrace();
         context.AddSource($"{effectName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
@@ -127,12 +151,11 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
     )
     {
         yield return compilation.Assembly;
-        foreach (MetadataReference reference in compilation.References)
+        foreach (IAssemblySymbol assemblySymbol in compilation.References
+                     .Select(reference => compilation.GetAssemblyOrModuleSymbol(reference))
+                     .OfType<IAssemblySymbol>())
         {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
+            yield return assemblySymbol;
         }
     }
 

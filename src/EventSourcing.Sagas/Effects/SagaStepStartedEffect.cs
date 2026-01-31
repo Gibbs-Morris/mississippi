@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -232,15 +233,7 @@ internal sealed class SagaStepStartedEffect<TSaga> : EventEffectBase<SagaStepSta
         int stepOrder
     )
     {
-        foreach (ISagaStepInfo step in StepRegistry.Steps)
-        {
-            if (step.Order == stepOrder)
-            {
-                return step;
-            }
-        }
-
-        return null;
+        return StepRegistry.Steps.FirstOrDefault(step => step.Order == stepOrder);
     }
 
     private int GetStepIndex(

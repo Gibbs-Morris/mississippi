@@ -26,10 +26,52 @@ namespace Spring.Domain.Sagas.TransferFunds;
 [GenerateSagaEndpoints(InputType = typeof(TransferFundsSagaInput))]
 [GenerateSerializer]
 [Alias("Spring.Domain.Sagas.TransferFunds.TransferFundsSagaState")]
-public sealed record TransferFundsSagaState : ISagaDefinition, ISagaState
+public sealed record TransferFundsSagaState
+    : ISagaDefinition,
+      ISagaState
 {
     /// <inheritdoc />
     public static string SagaName => "TransferFunds";
+
+    /// <summary>
+    ///     Gets the amount to transfer.
+    /// </summary>
+    [Id(2)]
+    public decimal Amount { get; init; }
+
+    /// <inheritdoc />
+    [Id(11)]
+    public string? CorrelationId { get; init; }
+
+    /// <inheritdoc />
+    [Id(14)]
+    public int CurrentStepAttempt { get; init; } = 1;
+
+    /// <summary>
+    ///     Gets the account to deposit funds into.
+    /// </summary>
+    [Id(1)]
+    public string DestinationAccountId { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     Gets a value indicating whether the destination account has been credited.
+    /// </summary>
+    [Id(4)]
+    public bool DestinationCredited { get; init; }
+
+    /// <inheritdoc />
+    [Id(13)]
+    public int LastCompletedStepIndex { get; init; } = -1;
+
+    /// <inheritdoc />
+    [Id(12)]
+    public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
+
+    // ISagaState implementation
+
+    /// <inheritdoc />
+    [Id(10)]
+    public Guid SagaId { get; init; }
 
     // Business data (populated from TransferInitiated event)
 
@@ -40,50 +82,10 @@ public sealed record TransferFundsSagaState : ISagaDefinition, ISagaState
     public string SourceAccountId { get; init; } = string.Empty;
 
     /// <summary>
-    ///     Gets the account to deposit funds into.
-    /// </summary>
-    [Id(1)]
-    public string DestinationAccountId { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the amount to transfer.
-    /// </summary>
-    [Id(2)]
-    public decimal Amount { get; init; }
-
-    /// <summary>
     ///     Gets a value indicating whether the source account has been debited.
     /// </summary>
     [Id(3)]
     public bool SourceDebited { get; init; }
-
-    /// <summary>
-    ///     Gets a value indicating whether the destination account has been credited.
-    /// </summary>
-    [Id(4)]
-    public bool DestinationCredited { get; init; }
-
-    // ISagaState implementation
-
-    /// <inheritdoc />
-    [Id(10)]
-    public Guid SagaId { get; init; }
-
-    /// <inheritdoc />
-    [Id(11)]
-    public string? CorrelationId { get; init; }
-
-    /// <inheritdoc />
-    [Id(12)]
-    public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
-
-    /// <inheritdoc />
-    [Id(13)]
-    public int LastCompletedStepIndex { get; init; } = -1;
-
-    /// <inheritdoc />
-    [Id(14)]
-    public int CurrentStepAttempt { get; init; } = 1;
 
     /// <inheritdoc />
     [Id(15)]
@@ -97,7 +99,10 @@ public sealed record TransferFundsSagaState : ISagaDefinition, ISagaState
     public ISagaState ApplyPhase(
         SagaPhase phase
     ) =>
-        this with { Phase = phase };
+        this with
+        {
+            Phase = phase,
+        };
 
     /// <inheritdoc />
     public ISagaState ApplySagaStarted(

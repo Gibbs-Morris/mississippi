@@ -62,13 +62,13 @@ internal sealed class RefundSourceAccountCompensation : SagaCompensationBase<Tra
         }
 
         IGenericAggregateGrain<BankAccountAggregate> grain =
-            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(
-                state.SourceAccountId);
-
+            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(state.SourceAccountId);
         OperationResult result = await grain.ExecuteAsync(
-            new DepositFunds { Amount = state.Amount },
+            new DepositFunds
+            {
+                Amount = state.Amount,
+            },
             cancellationToken);
-
         if (!result.Success)
         {
             Logger.LogRefundFailed(context.SagaId, state.SourceAccountId, result.ErrorMessage);

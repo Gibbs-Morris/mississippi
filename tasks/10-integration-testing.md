@@ -7,6 +7,7 @@ Create end-to-end integration tests that validate the complete money transfer sa
 ## Rationale
 
 L2 tests verify the entire stack works together:
+
 - Saga starts via generated endpoint
 - Steps execute against real aggregate grains
 - Events propagate through streams to projections

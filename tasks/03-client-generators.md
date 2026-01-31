@@ -15,12 +15,14 @@ After this task, developers can dispatch `StartTransferFundsSagaAction` from Bla
 **Location:** `src/Inlet.Client.Generators/SagaClientActionsGenerator.cs`
 
 **Generates per saga:**
+
 - `Start{SagaName}SagaAction.g.cs` - Primary action with saga input properties
 - `Start{SagaName}SagaExecutingAction.g.cs` - Dispatched when HTTP call starts
 - `Start{SagaName}SagaSucceededAction.g.cs` - Dispatched on 2xx response
 - `Start{SagaName}SagaFailedAction.g.cs` - Dispatched on error
 
 **Example output:**
+
 ```csharp
 // Start{SagaName}SagaAction.g.cs
 namespace Spring.Client.Features.TransferFundsSaga.Actions;

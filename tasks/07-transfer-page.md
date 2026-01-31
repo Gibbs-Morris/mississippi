@@ -10,7 +10,7 @@ This is the primary demo UI for the saga feature. It should be simple, clear, an
 
 ## Wireframe
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │  Transfer Funds                                                 │
 ├─────────────────────────────────────────────────────────────────┤

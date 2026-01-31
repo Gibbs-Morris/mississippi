@@ -15,6 +15,22 @@ public sealed class SagaCompletedStatusReducerTests
     private readonly SagaCompletedStatusReducer reducer = new();
 
     /// <summary>
+    ///     Verifies that reducer throws when event is null.
+    /// </summary>
+    [Fact]
+    public void ReduceWithNullEventThrowsArgumentNullException()
+    {
+        // Arrange
+        TransferFundsSagaStatusProjection initial = new();
+
+        // Act & Assert
+        reducer.ShouldThrow<ArgumentNullException, SagaCompletedEvent, TransferFundsSagaStatusProjection>(
+            initial,
+            null!,
+            "eventData");
+    }
+
+    /// <summary>
     ///     Verifies that applying SagaCompleted marks the saga as completed.
     /// </summary>
     [Fact]
@@ -36,21 +52,5 @@ public sealed class SagaCompletedStatusReducerTests
         result.Phase.Should().Be(SagaPhase.Completed.ToString());
         result.CompletedAt.Should().Be(completedAt);
         result.CurrentStep.Should().BeNull();
-    }
-
-    /// <summary>
-    ///     Verifies that reducer throws when event is null.
-    /// </summary>
-    [Fact]
-    public void ReduceWithNullEventThrowsArgumentNullException()
-    {
-        // Arrange
-        TransferFundsSagaStatusProjection initial = new();
-
-        // Act & Assert
-        reducer.ShouldThrow<ArgumentNullException, SagaCompletedEvent, TransferFundsSagaStatusProjection>(
-            initial,
-            null!,
-            "eventData");
     }
 }

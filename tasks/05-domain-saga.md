@@ -10,7 +10,7 @@ This is the core business logic for the money transfer feature. Once defined wit
 
 ## Folder Structure
 
-```
+```text
 Spring.Domain/
 └── Sagas/
     └── TransferFunds/
@@ -131,6 +131,7 @@ public sealed record TransferFundsSagaState : ISagaDefinition, ISagaState
 ### 3. Events
 
 **`TransferInitiated.cs`** - Emitted in Step 1, captures input data:
+
 ```csharp
 [EventStorageName("SPRING", "BANKING", "TRANSFERINITIATED")]
 [GenerateSerializer]
@@ -144,6 +145,7 @@ internal sealed record TransferInitiated
 ```
 
 **`SourceDebited.cs`** - Emitted when source account withdraw succeeds:
+
 ```csharp
 [EventStorageName("SPRING", "BANKING", "SOURCEDEBITED")]
 [GenerateSerializer]
@@ -154,6 +156,7 @@ internal sealed record SourceDebited
 ```
 
 **`DestinationCredited.cs`** - Emitted when destination deposit succeeds:
+
 ```csharp
 [EventStorageName("SPRING", "BANKING", "DESTINATIONCREDITED")]
 [GenerateSerializer]
@@ -164,6 +167,7 @@ internal sealed record DestinationCredited
 ```
 
 **`TransferCompleted.cs`** - Final success event:
+
 ```csharp
 [EventStorageName("SPRING", "BANKING", "TRANSFERCOMPLETED")]
 [GenerateSerializer]
@@ -176,6 +180,7 @@ internal sealed record TransferCompleted
 ### 4. Steps
 
 **`DebitSourceAccountStep.cs`** (Order = 1):
+
 ```csharp
 [SagaStep(1)]
 internal sealed class DebitSourceAccountStep : SagaStepBase<TransferFundsSagaState>
@@ -222,6 +227,7 @@ internal sealed class DebitSourceAccountStep : SagaStepBase<TransferFundsSagaSta
 ```
 
 **`CreditDestinationAccountStep.cs`** (Order = 2):
+
 ```csharp
 [SagaStep(2)]
 internal sealed class CreditDestinationAccountStep : SagaStepBase<TransferFundsSagaState>
@@ -269,6 +275,7 @@ internal sealed class CreditDestinationAccountStep : SagaStepBase<TransferFundsS
 ### 5. Compensation
 
 **`RefundSourceAccountCompensation.cs`**:
+
 ```csharp
 [SagaCompensation(typeof(DebitSourceAccountStep))]
 internal sealed class RefundSourceAccountCompensation 

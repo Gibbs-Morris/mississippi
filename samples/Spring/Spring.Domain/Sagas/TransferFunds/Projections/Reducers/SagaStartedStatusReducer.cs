@@ -3,7 +3,6 @@ using System;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions.Events;
-using Mississippi.EventSourcing.Sagas.Abstractions.Projections;
 
 
 namespace Spring.Domain.Sagas.TransferFunds.Projections.Reducers;
@@ -16,8 +15,7 @@ namespace Spring.Domain.Sagas.TransferFunds.Projections.Reducers;
 ///         This reducer captures the saga ID, type, and start time when the saga begins execution.
 ///     </para>
 /// </remarks>
-public sealed class SagaStartedStatusReducer
-    : EventReducerBase<SagaStartedEvent, TransferFundsSagaStatusProjection>
+public sealed class SagaStartedStatusReducer : EventReducerBase<SagaStartedEvent, TransferFundsSagaStatusProjection>
 {
     /// <inheritdoc />
     protected override TransferFundsSagaStatusProjection ReduceCore(
@@ -27,7 +25,6 @@ public sealed class SagaStartedStatusReducer
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(eventData);
-
         return state with
         {
             SagaId = eventData.SagaId,

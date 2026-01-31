@@ -15,28 +15,6 @@ public sealed class SagaCompensatingStatusReducerTests
     private readonly SagaCompensatingStatusReducer reducer = new();
 
     /// <summary>
-    ///     Verifies that applying SagaCompensating marks the saga as compensating.
-    /// </summary>
-    [Fact]
-    public void ReduceWithSagaCompensatingMarksCompensating()
-    {
-        // Arrange
-        TransferFundsSagaStatusProjection initial = new()
-        {
-            Phase = SagaPhase.Running.ToString(),
-            CurrentStep = null,
-        };
-        SagaCompensatingEvent evt = new("CreditDestinationAccount", new DateTimeOffset(2024, 2, 1, 0, 5, 0, TimeSpan.Zero));
-
-        // Act
-        TransferFundsSagaStatusProjection result = reducer.Apply(initial, evt);
-
-        // Assert
-        result.Phase.Should().Be(SagaPhase.Compensating.ToString());
-        result.CurrentStep.Should().BeNull();
-    }
-
-    /// <summary>
     ///     Verifies that reducer throws when event is null.
     /// </summary>
     [Fact]
@@ -50,5 +28,27 @@ public sealed class SagaCompensatingStatusReducerTests
             initial,
             null!,
             "eventData");
+    }
+
+    /// <summary>
+    ///     Verifies that applying SagaCompensating marks the saga as compensating.
+    /// </summary>
+    [Fact]
+    public void ReduceWithSagaCompensatingMarksCompensating()
+    {
+        // Arrange
+        TransferFundsSagaStatusProjection initial = new()
+        {
+            Phase = SagaPhase.Running.ToString(),
+            CurrentStep = null,
+        };
+        SagaCompensatingEvent evt = new("CreditDestinationAccount", new(2024, 2, 1, 0, 5, 0, TimeSpan.Zero));
+
+        // Act
+        TransferFundsSagaStatusProjection result = reducer.Apply(initial, evt);
+
+        // Assert
+        result.Phase.Should().Be(SagaPhase.Compensating.ToString());
+        result.CurrentStep.Should().BeNull();
     }
 }

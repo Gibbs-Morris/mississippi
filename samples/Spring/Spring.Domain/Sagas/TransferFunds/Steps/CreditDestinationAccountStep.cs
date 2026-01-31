@@ -53,13 +53,13 @@ internal sealed class CreditDestinationAccountStep : SagaStepBase<TransferFundsS
     )
     {
         IGenericAggregateGrain<BankAccountAggregate> grain =
-            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(
-                state.DestinationAccountId);
-
+            AggregateGrainFactory.GetGenericAggregate<BankAccountAggregate>(state.DestinationAccountId);
         OperationResult result = await grain.ExecuteAsync(
-            new DepositFunds { Amount = state.Amount },
+            new DepositFunds
+            {
+                Amount = state.Amount,
+            },
             cancellationToken);
-
         if (!result.Success)
         {
             Logger.LogCreditFailed(context.SagaId, state.DestinationAccountId, result.ErrorMessage);
@@ -70,7 +70,13 @@ internal sealed class CreditDestinationAccountStep : SagaStepBase<TransferFundsS
 
         Logger.LogCreditSucceeded(context.SagaId, state.DestinationAccountId, state.Amount);
         return StepResult.Succeeded(
-            new DestinationCredited { Amount = state.Amount },
-            new TransferCompleted { CompletedAt = DateTimeOffset.UtcNow });
+            new DestinationCredited
+            {
+                Amount = state.Amount,
+            },
+            new TransferCompleted
+            {
+                CompletedAt = DateTimeOffset.UtcNow,
+            });
     }
 }

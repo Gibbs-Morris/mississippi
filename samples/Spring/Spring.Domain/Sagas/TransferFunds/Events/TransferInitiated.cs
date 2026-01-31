@@ -14,10 +14,10 @@ namespace Spring.Domain.Sagas.TransferFunds.Events;
 internal sealed record TransferInitiated
 {
     /// <summary>
-    ///     Gets the source account identifier.
+    ///     Gets the amount to transfer.
     /// </summary>
-    [Id(0)]
-    public required string SourceAccountId { get; init; }
+    [Id(2)]
+    public required decimal Amount { get; init; }
 
     /// <summary>
     ///     Gets the destination account identifier.
@@ -26,8 +26,8 @@ internal sealed record TransferInitiated
     public required string DestinationAccountId { get; init; }
 
     /// <summary>
-    ///     Gets the amount to transfer.
+    ///     Gets the source account identifier.
     /// </summary>
-    [Id(2)]
-    public required decimal Amount { get; init; }
+    [Id(0)]
+    public required string SourceAccountId { get; init; }
 }

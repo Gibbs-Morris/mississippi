@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 using Mississippi.Aqueduct;
 using Mississippi.EventSourcing.Aggregates;
+using Mississippi.EventSourcing.Sagas;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.UxProjections;
 using Mississippi.Inlet.Server;
@@ -23,6 +24,7 @@ using Scalar.AspNetCore;
 using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Server.Controllers.Aggregates.Mappers;
 using Spring.Server.Controllers.Projections.Mappers;
+using Spring.Server.Controllers.Sagas.Mappers;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -70,6 +72,9 @@ builder.Services.AddJsonSerialization();
 // Add aggregate infrastructure support (IAggregateGrainFactory, IBrookEventConverter, etc.)
 builder.Services.AddAggregateSupport();
 
+// Add saga orchestration services for server-side saga endpoints
+builder.Services.AddSagaOrchestration();
+
 // Add UX projection infrastructure support (IUxProjectionGrainFactory)
 builder.Services.AddUxProjections();
 
@@ -87,6 +92,9 @@ builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).A
 
 // Add aggregate DTO to command mappers
 builder.Services.AddBankAccountAggregateMappers();
+
+// Add saga DTO to input mappers
+builder.Services.AddTransferFundsSagaServer();
 
 // Note: TransactionInvestigationQueue aggregate has no public commands (only server-side effect dispatch)
 // so no mappers are generated or needed.

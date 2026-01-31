@@ -10,6 +10,18 @@ namespace Spring.Client.Features.TransferFundsSaga.Dtos;
 public sealed record SagaStepDto
 {
     /// <summary>
+    ///     Gets the error message if the step failed.
+    /// </summary>
+    [JsonPropertyName("errorMessage")]
+    public string? ErrorMessage { get; init; }
+
+    /// <summary>
+    ///     Gets the outcome of the step.
+    /// </summary>
+    [JsonPropertyName("outcome")]
+    public string Outcome { get; init; } = string.Empty;
+
+    /// <summary>
     ///     Gets the name of the step.
     /// </summary>
     [JsonPropertyName("stepName")]
@@ -26,16 +38,4 @@ public sealed record SagaStepDto
     /// </summary>
     [JsonPropertyName("timestamp")]
     public DateTimeOffset Timestamp { get; init; }
-
-    /// <summary>
-    ///     Gets the outcome of the step.
-    /// </summary>
-    [JsonPropertyName("outcome")]
-    public string Outcome { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the error message if the step failed.
-    /// </summary>
-    [JsonPropertyName("errorMessage")]
-    public string? ErrorMessage { get; init; }
 }

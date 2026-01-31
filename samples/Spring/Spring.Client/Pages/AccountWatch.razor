@@ -1,5 +1,4 @@
 @page "/account-watch"
-@using Spring.Client.Features.BankAccountBalance.Dtos
 @inherits InletComponent
 
 <main>
@@ -23,14 +22,14 @@
                    @bind:event="oninput"
                    @onkeyup="HandleKeyUp"
                    placeholder="Enter account ID to watch"
-                   aria-label="Account ID" />
-            <button type="button" 
+                   aria-label="Account ID"/>
+            <button type="button"
                     @onclick="AddAccount"
                     disabled="@(!CanAddAccount)">
                 + Add to Watch
             </button>
         </div>
-        
+
         @if (watchedAccountIds.Count >= MaxWatchedAccounts)
         {
             <p class="limit-warning">
@@ -41,7 +40,7 @@
 
     <section>
         <h2>Watched Accounts (@watchedAccountIds.Count)</h2>
-        
+
         @if (watchedAccountIds.Count == 0)
         {
             <div class="empty-state">
@@ -64,12 +63,12 @@
                                 ×
                             </button>
                         </div>
-                        
+
                         @{
                             BankAccountBalanceProjectionDto? projection = GetProjection<BankAccountBalanceProjectionDto>(accountId);
                             bool isLoading = IsProjectionLoading<BankAccountBalanceProjectionDto>(accountId);
                         }
-                        
+
                         @if (isLoading)
                         {
                             <div class="account-body loading">
@@ -88,7 +87,7 @@
                                 <dl>
                                     <dt>Holder</dt>
                                     <dd>@(string.IsNullOrEmpty(projection.HolderName) ? "—" : projection.HolderName)</dd>
-                                    
+
                                     <dt>Balance</dt>
                                     <dd class="balance @GetBalanceChangeClass(accountId)">
                                         @projection.Balance.ToString("C")
@@ -101,7 +100,7 @@
                                             <span class="change-indicator">▼</span>
                                         }
                                     </dd>
-                                    
+
                                     <dt>Status</dt>
                                     <dd class="@(projection.IsOpen ? "open" : "closed")">
                                         @(projection.IsOpen ? "Open" : "Closed")
@@ -117,9 +116,9 @@
 
     <aside>
         <p>
-            <strong>Tip:</strong> Open the 
-            <a href="/transfer" target="_blank">Transfer Funds</a> 
-            page and add both source and destination accounts here to 
+            <strong>Tip:</strong> Open the
+            <a href="/transfer" target="_blank">Transfer Funds</a>
+            page and add both source and destination accounts here to
             watch balances change in real-time during the transfer!
         </p>
     </aside>

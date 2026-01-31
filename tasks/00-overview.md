@@ -11,7 +11,7 @@ Build a complete money transfer saga feature in Spring sample that demonstrates:
 
 ## Architecture
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  Blazor Client  │────▶│   ASP.NET API   │────▶│   Orleans Silo  │
 │                 │     │                 │     │                 │
@@ -38,7 +38,7 @@ Build a complete money transfer saga feature in Spring sample that demonstrates:
 | [09-delay-effect](09-delay-effect.md) | 10s delay between saga steps for demo | 1h |
 | [10-integration-testing](10-integration-testing.md) | L2 tests for end-to-end saga flow | 3h |
 
-**Total Estimated: ~29 hours**
+### Total Estimated: ~29 hours
 
 ## Success Criteria
 

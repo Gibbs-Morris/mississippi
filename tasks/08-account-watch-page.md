@@ -7,13 +7,14 @@ Create a Blazor page that displays real-time balance updates for multiple accoun
 ## Rationale
 
 This is the "wow factor" demo page. Users add accounts to a watch list and see balances update live as the saga executes. With the 10-second delay between steps, they can clearly see:
+
 1. Source balance drops (Step 1 completes)
 2. 10 seconds pass...
 3. Destination balance rises (Step 2 completes)
 
 ## Wireframe
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │  Account Watch                                                  │
 ├─────────────────────────────────────────────────────────────────┤
@@ -486,9 +487,9 @@ Ensure link exists in `MainLayout.razor` (may already be done in Task 07).
 3. Opens `/transfer` in another tab
 4. Initiates transfer from `alice-checking` to `bob-savings` for £100
 5. Watches `/account-watch` tab:
-   - `alice-checking` balance drops by £100 (red flash)
-   - 10 seconds pass...
-   - `bob-savings` balance rises by £100 (green flash)
+    - `alice-checking` balance drops by £100 (red flash)
+    - 10 seconds pass...
+    - `bob-savings` balance rises by £100 (green flash)
 
 ## Dependencies
 

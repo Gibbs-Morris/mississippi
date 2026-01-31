@@ -24,6 +24,42 @@ namespace Spring.Client.Features.TransferFundsSaga.Dtos;
 public sealed record SagaStatusDto
 {
     /// <summary>
+    ///     Gets when the saga completed, if it has completed.
+    /// </summary>
+    [JsonPropertyName("completedAt")]
+    public DateTimeOffset? CompletedAt { get; init; }
+
+    /// <summary>
+    ///     Gets the list of steps that have completed successfully.
+    /// </summary>
+    [JsonPropertyName("completedSteps")]
+    public ImmutableArray<SagaStepDto> CompletedSteps { get; init; } = ImmutableArray<SagaStepDto>.Empty;
+
+    /// <summary>
+    ///     Gets the currently executing step, if any.
+    /// </summary>
+    [JsonPropertyName("currentStep")]
+    public SagaStepDto? CurrentStep { get; init; }
+
+    /// <summary>
+    ///     Gets the list of steps that have failed.
+    /// </summary>
+    [JsonPropertyName("failedSteps")]
+    public ImmutableArray<SagaStepDto> FailedSteps { get; init; } = ImmutableArray<SagaStepDto>.Empty;
+
+    /// <summary>
+    ///     Gets the reason for saga failure, if the saga failed.
+    /// </summary>
+    [JsonPropertyName("failureReason")]
+    public string? FailureReason { get; init; }
+
+    /// <summary>
+    ///     Gets the current phase of the saga (NotStarted, Running, Completed, Failed, Compensating).
+    /// </summary>
+    [JsonPropertyName("phase")]
+    public required string Phase { get; init; }
+
+    /// <summary>
     ///     Gets the unique identifier of the saga instance.
     /// </summary>
     [JsonPropertyName("sagaId")]
@@ -36,48 +72,10 @@ public sealed record SagaStatusDto
     public required string SagaType { get; init; }
 
     /// <summary>
-    ///     Gets the current phase of the saga (NotStarted, Running, Completed, Failed, Compensating).
-    /// </summary>
-    [JsonPropertyName("phase")]
-    public required string Phase { get; init; }
-
-    /// <summary>
     ///     Gets when the saga started, if it has started.
     /// </summary>
     [JsonPropertyName("startedAt")]
     public DateTimeOffset? StartedAt { get; init; }
-
-    /// <summary>
-    ///     Gets when the saga completed, if it has completed.
-    /// </summary>
-    [JsonPropertyName("completedAt")]
-    public DateTimeOffset? CompletedAt { get; init; }
-
-    /// <summary>
-    ///     Gets the currently executing step, if any.
-    /// </summary>
-    [JsonPropertyName("currentStep")]
-    public SagaStepDto? CurrentStep { get; init; }
-
-    /// <summary>
-    ///     Gets the list of steps that have completed successfully.
-    /// </summary>
-    [JsonPropertyName("completedSteps")]
-    public ImmutableArray<SagaStepDto> CompletedSteps { get; init; } =
-        ImmutableArray<SagaStepDto>.Empty;
-
-    /// <summary>
-    ///     Gets the list of steps that have failed.
-    /// </summary>
-    [JsonPropertyName("failedSteps")]
-    public ImmutableArray<SagaStepDto> FailedSteps { get; init; } =
-        ImmutableArray<SagaStepDto>.Empty;
-
-    /// <summary>
-    ///     Gets the reason for saga failure, if the saga failed.
-    /// </summary>
-    [JsonPropertyName("failureReason")]
-    public string? FailureReason { get; init; }
 
     /// <summary>
     ///     Gets the total number of steps in the saga.
