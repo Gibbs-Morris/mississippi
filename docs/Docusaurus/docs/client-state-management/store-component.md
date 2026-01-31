@@ -82,6 +82,41 @@ This method delegates to [`Store.GetState<TState>()`](store.md#reading-state). T
 
 **Source**: [`StoreComponent.cs#L81-L83`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L81-L83)
 
+### Select
+
+Derives computed values from state using selector functions:
+
+```csharp
+// Single-state selector
+protected TResult Select<TState, TResult>(Func<TState, TResult> selector)
+    where TState : class, IFeatureState;
+
+// Two-state selector
+protected TResult Select<TState1, TState2, TResult>(
+    Func<TState1, TState2, TResult> selector)
+    where TState1 : class, IFeatureState
+    where TState2 : class, IFeatureState;
+
+// Three-state selector  
+protected TResult Select<TState1, TState2, TState3, TResult>(
+    Func<TState1, TState2, TState3, TResult> selector)
+    where TState1 : class, IFeatureState
+    where TState2 : class, IFeatureState
+    where TState3 : class, IFeatureState;
+```
+
+These methods delegate to [`Store.Select()`](selectors.md) extension methods. Use selectors to encapsulate derived-state logic:
+
+```csharp
+// Instead of inline logic:
+private bool IsDisconnected => GetState<SignalRConnectionState>().Status != SignalRConnectionStatus.Connected;
+
+// Use a selector:
+private bool IsDisconnected => Select<SignalRConnectionState, bool>(SignalRConnectionSelectors.IsDisconnected);
+```
+
+See [Selectors](selectors.md) for detailed patterns and memoization.
+
 ## Lifecycle
 
 ### OnInitialized
@@ -148,7 +183,7 @@ The code-behind uses `GetState<TState>()` to read state and `Dispatch()` to trig
 
 ```csharp
 // Reading state (Index.razor.cs)
-private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
+private string? SelectedEntityId => Select<EntitySelectionState, string?>(EntitySelectionSelectors.GetEntityId);
 
 // Dispatching actions (Index.razor.cs)  
 private void Deposit() => Dispatch(new DepositFundsAction(SelectedEntityId!, depositAmount));
@@ -216,6 +251,7 @@ private sealed class TestStoreComponent : StoreComponent
 ## Next Steps
 
 - [Reservoir Overview](./reservoir.md) — Learn where StoreComponent fits in the system
+- [Selectors](./selectors.md) — Derive computed values via the `Select()` method
 - [Store](./store.md) — The central state container that StoreComponent wraps
 - [Actions](./actions.md) — The action types dispatched via `Dispatch()`
 - [Feature State](./feature-state.md) — The state slices retrieved via `GetState<TState>()`

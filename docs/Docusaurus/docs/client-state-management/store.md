@@ -295,3 +295,4 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 - [Middleware](./middleware.md) — Intercept and transform actions
 - [Feature State](./feature-state.md) — Organize state into modular slices
 - [StoreComponent](./store-component.md) — Blazor base component for store integration
+- [Selectors](./selectors.md) — Derive computed values from state
