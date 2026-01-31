@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 
@@ -262,17 +261,12 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
                 Dictionary<string, object> sanitized = new(StringComparer.Ordinal);
                 foreach (KeyValuePair<string, object> kvp in snapshot)
                 {
-                    if (kvp.Key == SensitiveFeatureState.FeatureKey)
-                    {
-                        sanitized[kvp.Key] = new
+                    sanitized[kvp.Key] = kvp.Key == SensitiveFeatureState.FeatureKey
+                        ? new
                         {
                             Token = "[REDACTED]",
-                        };
-                    }
-                    else
-                    {
-                        sanitized[kvp.Key] = kvp.Value;
-                    }
+                        }
+                        : kvp.Value;
                 }
 
                 return sanitized;
@@ -327,17 +321,12 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
                 Dictionary<string, object> sanitized = new(StringComparer.Ordinal);
                 foreach (KeyValuePair<string, object> kvp in snapshot)
                 {
-                    if (kvp.Key == SensitiveFeatureState.FeatureKey)
-                    {
-                        sanitized[kvp.Key] = new
+                    sanitized[kvp.Key] = kvp.Key == SensitiveFeatureState.FeatureKey
+                        ? new
                         {
                             Token = "[REDACTED]",
-                        };
-                    }
-                    else
-                    {
-                        sanitized[kvp.Key] = kvp.Value;
-                    }
+                        }
+                        : kvp.Value;
                 }
 
                 return sanitized;

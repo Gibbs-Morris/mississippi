@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
@@ -112,7 +111,10 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         ReservoirDevToolsOptions options = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(serviceProviderMock.Object, null!, Options.Create(options)));
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
+            serviceProviderMock.Object,
+            null!,
+            Options.Create(options)));
     }
 
     /// <summary>
@@ -131,7 +133,10 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         serviceProviderMock.Setup(sp => sp.GetService(typeof(IStore))).Returns(store);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(serviceProviderMock.Object, interop, null!));
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
+            serviceProviderMock.Object,
+            interop,
+            null!));
     }
 
     /// <summary>

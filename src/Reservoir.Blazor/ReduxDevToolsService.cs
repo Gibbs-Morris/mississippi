@@ -526,9 +526,14 @@ internal sealed class ReduxDevToolsService
             // Ignore invalid payloads.
             return false;
         }
-        catch (Exception)
+        catch (FormatException)
         {
-            // Catch any other parsing failures.
+            // Catch format-related parsing failures.
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            // Catch operation-related parsing failures.
             return false;
         }
     }
