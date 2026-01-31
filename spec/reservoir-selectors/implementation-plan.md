@@ -2,13 +2,24 @@
 
 ## Overview
 
-Phased rollout prioritizing developer experience and minimal risk. Each phase is independently valuable.
+This PR implements **client-side selector infrastructure only**. The architecture supports future Domain→Client source generation, but that is out of scope.
+
+**This PR delivers**:
+- Reservoir extension methods for selecting derived state
+- StoreComponent integration
+- Documentation and patterns
+- Sample client-side selectors in Spring
+
+**Future PRs**:
+- Domain→Client source generation
+- Memoization utilities
+- Analyzer for purity enforcement
 
 ---
 
-## Phase 1: Core API (Manual Selectors)
+## Phase 1: Core API (This PR)
 
-**Goal**: Enable developers to write and use selectors today with zero code generation.
+**Goal**: Enable developers to write and use client-side selectors with zero code generation.
 
 ### Step 1.1: Add Selector Extension Methods to Reservoir.Abstractions
 
@@ -167,9 +178,11 @@ public static class EntitySelectionSelectors
 
 ---
 
-## Phase 2: Selector Conventions and Analyzer
+## Future Phases (Out of Scope for This PR)
 
-**Goal**: Enforce purity and best practices via tooling.
+The following phases are documented for future reference but are **not part of this PR**.
+
+### Phase 2: Selector Conventions and Analyzer (Future)
 
 ### Step 2.1: Create Roslyn Analyzer for Selector Purity
 
@@ -203,9 +216,7 @@ dotnet_diagnostic.MISS003.severity = error
 
 ---
 
-## Phase 3: Source Generation
-
-**Goal**: Generate common selector scaffolding from Domain types.
+### Phase 3: Source Generation (Future)
 
 ### Step 3.1: Add GenerateSelectors Attribute
 
@@ -273,9 +284,7 @@ public static partial class BankAccountBalanceSelectors
 
 ---
 
-## Phase 4: Memoization (Optional)
-
-**Goal**: Provide opt-in caching for expensive selectors.
+### Phase 4: Memoization (Future)
 
 ### Step 4.1: Add Memoization Utilities
 
@@ -324,7 +333,7 @@ public static class Memoize
 
 ---
 
-## Test Plan
+## Test Plan (This PR)
 
 ### L0 Tests (Unit)
 
@@ -332,39 +341,16 @@ public static class Memoize
 |------------|----------|
 | `SelectorExtensionsTests` | Extension methods on IStore |
 | `StoreComponentSelectorTests` | Select methods in component |
-| `MemoizeTests` | Memoization utility |
-| `SelectorGeneratorTests` | Source generation |
-| `SelectorPurityAnalyzerTests` | Analyzer rules |
-
-### L1 Tests (Light Integration)
-
-| Test Class | Coverage |
-|------------|----------|
-| `SelectorIntegrationTests` | End-to-end selector flow with real store |
 
 ### Sample Validation
 
 | Validation | Location |
 |------------|----------|
-| EntitySelectionSelectors usage | Spring.Client components |
-| Generated selectors | BankAccountBalance feature |
+| EntitySelectionSelectors usage | Spring.Client/Features/EntitySelection |
 
 ---
 
-## Rollout Plan
-
-| Phase | Scope | Risk | Duration |
-|-------|-------|------|----------|
-| Phase 1 | Core API + Docs + Sample | Low | 1-2 days |
-| Phase 2 | Analyzer | Low | 1 day |
-| Phase 3 | Source Generation | Medium | 2-3 days |
-| Phase 4 | Memoization | Low | 1 day |
-
-**Recommended approach**: Ship Phase 1 first, gather feedback, then continue.
-
----
-
-## Validation Checklist
+## Validation Checklist (This PR)
 
 - [ ] `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` passes
 - [ ] `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` passes
@@ -376,9 +362,7 @@ public static class Memoize
 
 ---
 
-## Files Changed Summary
-
-### Phase 1 (Core API)
+## Files Changed Summary (This PR)
 
 | Operation | Path |
 |-----------|------|
@@ -390,8 +374,12 @@ public static class Memoize
 | Modify | `docs/Docusaurus/docs/client-state-management/reservoir.md` |
 | Modify | `docs/Docusaurus/docs/client-state-management/store.md` |
 | Modify | `docs/Docusaurus/docs/client-state-management/store-component.md` |
-| Create | `samples/Spring/Spring.Client/Features/EntitySelection/EntitySelectionSelectors.cs` |
+| Create | `samples/Spring/Spring.Client/Features/EntitySelection/Selectors/EntitySelectionSelectors.cs` |
 | Modify | `.github/instructions/mississippi-framework.instructions.md` |
+
+---
+
+## Future Phase Files (For Reference Only)
 
 ### Phase 2 (Analyzer)
 

@@ -15,16 +15,30 @@ Without selectors, developers:
 
 1. **Developer experience first** — Selectors should be as easy to write as reducers
 2. **Pure functions** — Selectors must be deterministic transforms with no side effects
-3. **Domain-first modeling** — Selectors defined alongside feature state; generators emit client code
-4. **Composable** — Build complex selectors from simpler ones
-5. **Memoization-ready** — Enable opt-in caching when performance requires it
-6. **Familiar patterns** — Follow Redux/Reselect conventions developers already know
+3. **Composable** — Build complex selectors from simpler ones
+4. **Memoization-ready** — Enable opt-in caching when performance requires it
+5. **Familiar patterns** — Follow Redux/Reselect conventions developers already know
+6. **Generation-ready** — Design supports future Domain→Client source generation
 
 ## Non-Goals
 
 1. **Automatic memoization** — Start simple; add caching as an opt-in feature
 2. **Selector-scoped subscriptions** — Keep current all-or-nothing re-render; optimize later if needed
 3. **Server-side selectors** — Focus on client-side Reservoir; projections serve the server read model role
+
+## Scope of This PR
+
+This PR implements **client-side selector infrastructure only**:
+
+- ✅ Reservoir extension methods (`Select<TState, TResult>`)
+- ✅ StoreComponent integration
+- ✅ Documentation and patterns
+- ✅ Sample client-side selectors in Spring
+- ⏳ Domain→Client source generation (future PR)
+- ⏳ Memoization utilities (future PR)
+- ⏳ Analyzer for purity enforcement (future PR)
+
+The architecture is **designed to support both** manual client-side selectors and future generated selectors from Domain definitions.
 
 ## Current State
 
@@ -83,59 +97,98 @@ flowchart LR
 
 ---
 
-## Developer Experience: The Vision
+## Architecture: Two Selector Sources
 
-### 1. Define Selectors in Domain Project
+The design supports **two ways to define selectors**, both using the same Reservoir infrastructure:
 
-Selectors live alongside feature state definitions. For aggregates, they go in a `Selectors/` folder:
+```mermaid
+flowchart TB
+    subgraph "This PR"
+        R[Reservoir Infrastructure]
+        R --> SE[SelectorExtensions]
+        R --> SC[StoreComponent.Select]
+    end
+    
+    subgraph "Client Project (Manual)"
+        CS[Client Selectors]
+        CS --> |uses| SE
+        CS --> |uses| SC
+    end
+    
+    subgraph "Future PR"
+        DS[Domain Selectors]
+        GEN[Source Generator]
+        DS --> GEN
+        GEN --> GCS[Generated Client Selectors]
+        GCS --> |uses| SE
+    end
+    
+    style R fill:#3498db,color:#fff
+    style SE fill:#3498db,color:#fff
+    style SC fill:#3498db,color:#fff
+    style CS fill:#50c878,color:#fff
+    style DS fill:#9b59b6,color:#fff
+    style GEN fill:#9b59b6,color:#fff
+    style GCS fill:#9b59b6,color:#fff
+```
+
+| Source | Location | Generated? | This PR? |
+|--------|----------|------------|----------|
+| **Manual client selectors** | `Client/Features/{Feature}/Selectors/` | No | ✅ Yes |
+| **Domain→Client selectors** | Define in Domain, emit in Client | Yes | ⏳ Future |
+
+### Why Both?
+
+| Use Case | Which Source |
+|----------|--------------|
+| Client-only state (navigation, UI flags) | Manual client selectors |
+| Business logic on projections | Domain selectors (future) |
+| Cross-state composition | Manual client selectors |
+| Generated scaffolding (`IsLoading`, `HasError`) | Domain→Client (future) |
+
+---
+
+## Developer Experience: This PR
+
+### 1. Define Selectors in Client Project
+
+For client-side state, selectors live in the Client project's Features folder:
 
 ```
-Spring.Domain/
-└── Aggregates/BankAccount/
-    ├── BankAccountAggregate.cs
-    ├── Commands/
-    ├── Events/
-    ├── Reducers/
-    └── Selectors/              ← NEW
-        └── BankAccountSelectors.cs
+Spring.Client/
+└── Features/
+    ├── EntitySelection/
+    │   ├── EntitySelectionState.cs
+    │   ├── EntitySelectionReducers.cs
+    │   └── Selectors/                    ← NEW
+    │       └── EntitySelectionSelectors.cs
+    └── BankAccountBalance/
+        └── Selectors/                    ← NEW (manual for now)
+            └── BankAccountBalanceSelectors.cs
 ```
-
-For client-only feature states (like `EntitySelectionState`), selectors can be defined in the Client project's Features folder.
 
 ### 2. Write Selectors as Static Methods
 
 ```csharp
-// In Domain project (or Client for client-only state)
-namespace Spring.Domain.Aggregates.BankAccount.Selectors;
+// Spring.Client/Features/EntitySelection/Selectors/EntitySelectionSelectors.cs
+namespace Spring.Client.Features.EntitySelection.Selectors;
 
 /// <summary>
-///     Pure selector functions for BankAccount-related derived state.
+///     Pure selector functions for entity selection state.
 /// </summary>
-public static class BankAccountSelectors
+public static class EntitySelectionSelectors
 {
     /// <summary>
-    ///     Computes whether the account balance is negative.
+    ///     Gets whether an entity is currently selected.
     /// </summary>
-    public static bool IsOverdrawn(BankAccountBalanceProjection balance)
-        => balance.IsOpen && balance.Balance < 0;
+    public static bool HasSelection(EntitySelectionState state)
+        => !string.IsNullOrEmpty(state.EntityId);
 
     /// <summary>
-    ///     Formats the balance for display with currency symbol.
+    ///     Gets the selected entity ID or a default value.
     /// </summary>
-    public static string FormattedBalance(BankAccountBalanceProjection balance)
-        => balance.Balance.ToString("C");
-
-    /// <summary>
-    ///     Computes the account health status based on balance thresholds.
-    /// </summary>
-    public static AccountHealth GetHealth(BankAccountBalanceProjection balance)
-        => balance.Balance switch
-        {
-            < 0 => AccountHealth.Overdrawn,
-            < 100 => AccountHealth.Low,
-            < 1000 => AccountHealth.Normal,
-            _ => AccountHealth.Healthy,
-        };
+    public static string GetEntityIdOrDefault(EntitySelectionState state, string defaultValue = "")
+        => state.EntityId ?? defaultValue;
 }
 ```
 
@@ -144,13 +197,17 @@ public static class BankAccountSelectors
 ```csharp
 @inherits StoreComponent
 
-<div class="account-card @(Select(BankAccountSelectors.IsOverdrawn) ? "overdrawn" : "")">
-    <h2>@Select(BankAccountSelectors.FormattedBalance)</h2>
-    <span class="health-badge">@Select(BankAccountSelectors.GetHealth)</span>
-</div>
+@if (Select(EntitySelectionSelectors.HasSelection))
+{
+    <AccountDetails EntityId="@Select(EntitySelectionSelectors.GetEntityIdOrDefault)" />
+}
+else
+{
+    <p>Select an account to view details.</p>
+}
 ```
 
-### 4. Compose Selectors
+### 4. Compose Selectors (Cross-State)
 
 ```csharp
 public static class DashboardSelectors
