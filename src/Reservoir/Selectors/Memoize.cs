@@ -38,38 +38,31 @@ public static class Memoize
     /// <exception cref="ArgumentNullException">
     ///     Thrown when <paramref name="selector" /> is null.
     /// </exception>
-    /// <example>
-    ///     <code>
-    ///     // Create a memoized selector for expensive computation
-    ///     var getExpensiveValue = Memoize.Create&lt;MyState, ExpensiveResult&gt;(
-    ///         state =&gt; ComputeExpensiveResult(state.Items));
-    ///
-    ///     // Usage in component
-    ///     var result = Select(getExpensiveValue);
-    ///     </code>
-    /// </example>
     public static Func<TState, TResult> Create<TState, TResult>(
         Func<TState, TResult> selector
     )
         where TState : class
     {
         ArgumentNullException.ThrowIfNull(selector);
-
+        object syncRoot = new();
         TState? lastInput = null;
         TResult? lastResult = default;
-
         return state =>
         {
-            // Reference equality check - if same reference, return cached result
-            if (ReferenceEquals(state, lastInput))
+            lock (syncRoot)
             {
-                return lastResult!;
-            }
+                // Reference equality check - if same reference, return cached result
+                if (ReferenceEquals(state, lastInput))
+                {
+                    return lastResult!;
+                }
 
-            // State changed, recompute
-            lastInput = state;
-            lastResult = selector(state);
-            return lastResult;
+                // State changed, recompute - update cache only after successful execution
+                TResult result = selector(state);
+                lastInput = state;
+                lastResult = result;
+                return result;
+            }
         };
     }
 
@@ -97,24 +90,30 @@ public static class Memoize
         where TState2 : class
     {
         ArgumentNullException.ThrowIfNull(selector);
-
+        object syncRoot = new();
         TState1? lastInput1 = null;
         TState2? lastInput2 = null;
         TResult? lastResult = default;
-
-        return (state1, state2) =>
+        return (
+            state1,
+            state2
+        ) =>
         {
-            // Reference equality check for both inputs
-            if (ReferenceEquals(state1, lastInput1) && ReferenceEquals(state2, lastInput2))
+            lock (syncRoot)
             {
-                return lastResult!;
-            }
+                // Reference equality check for both inputs
+                if (ReferenceEquals(state1, lastInput1) && ReferenceEquals(state2, lastInput2))
+                {
+                    return lastResult!;
+                }
 
-            // At least one state changed, recompute
-            lastInput1 = state1;
-            lastInput2 = state2;
-            lastResult = selector(state1, state2);
-            return lastResult;
+                // At least one state changed, recompute - update cache only after successful execution
+                TResult result = selector(state1, state2);
+                lastInput1 = state1;
+                lastInput2 = state2;
+                lastResult = result;
+                return result;
+            }
         };
     }
 
@@ -144,28 +143,35 @@ public static class Memoize
         where TState3 : class
     {
         ArgumentNullException.ThrowIfNull(selector);
-
+        object syncRoot = new();
         TState1? lastInput1 = null;
         TState2? lastInput2 = null;
         TState3? lastInput3 = null;
         TResult? lastResult = default;
-
-        return (state1, state2, state3) =>
+        return (
+            state1,
+            state2,
+            state3
+        ) =>
         {
-            // Reference equality check for all inputs
-            if (ReferenceEquals(state1, lastInput1) &&
-                ReferenceEquals(state2, lastInput2) &&
-                ReferenceEquals(state3, lastInput3))
+            lock (syncRoot)
             {
-                return lastResult!;
-            }
+                // Reference equality check for all inputs
+                if (ReferenceEquals(state1, lastInput1) &&
+                    ReferenceEquals(state2, lastInput2) &&
+                    ReferenceEquals(state3, lastInput3))
+                {
+                    return lastResult!;
+                }
 
-            // At least one state changed, recompute
-            lastInput1 = state1;
-            lastInput2 = state2;
-            lastInput3 = state3;
-            lastResult = selector(state1, state2, state3);
-            return lastResult;
+                // At least one state changed, recompute - update cache only after successful execution
+                TResult result = selector(state1, state2, state3);
+                lastInput1 = state1;
+                lastInput2 = state2;
+                lastInput3 = state3;
+                lastResult = result;
+                return result;
+            }
         };
     }
 }

@@ -44,7 +44,6 @@ public static class SelectorExtensions
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(selector);
-
         TState state = store.GetState<TState>();
         return selector(state);
     }
@@ -73,7 +72,6 @@ public static class SelectorExtensions
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(selector);
-
         TState1 state1 = store.GetState<TState1>();
         TState2 state2 = store.GetState<TState2>();
         return selector(state1, state2);
@@ -105,7 +103,6 @@ public static class SelectorExtensions
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(selector);
-
         TState1 state1 = store.GetState<TState1>();
         TState2 state2 = store.GetState<TState2>();
         TState3 state3 = store.GetState<TState3>();

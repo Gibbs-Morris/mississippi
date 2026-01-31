@@ -11,14 +11,14 @@ namespace Mississippi.Reservoir.L0Tests.Selectors;
 public sealed class MemoizeTests
 {
     /// <summary>
-    ///     Test state for unit tests.
-    /// </summary>
-    private sealed record TestState(int Counter);
-
-    /// <summary>
     ///     Second test state for multi-state tests.
     /// </summary>
     private sealed record OtherState(string Name);
+
+    /// <summary>
+    ///     Test state for unit tests.
+    /// </summary>
+    private sealed record TestState(int Counter);
 
     /// <summary>
     ///     Third test state for three-state tests.
@@ -26,14 +26,13 @@ public sealed class MemoizeTests
     private sealed record ThirdState(bool IsActive);
 
     /// <summary>
-    ///     Create with null selector throws ArgumentNullException.
+    ///     Create three-state with null selector throws ArgumentNullException.
     /// </summary>
     [Fact]
-    public void CreateWithNullSelectorThrowsArgumentNullException()
+    public void CreateThreeStateWithNullSelectorThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            Memoize.Create<TestState, int>(null!));
+        Assert.Throws<ArgumentNullException>(() => Memoize.Create<TestState, OtherState, ThirdState, string>(null!));
     }
 
     /// <summary>
@@ -43,60 +42,17 @@ public sealed class MemoizeTests
     public void CreateTwoStateWithNullSelectorThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            Memoize.Create<TestState, OtherState, string>(null!));
+        Assert.Throws<ArgumentNullException>(() => Memoize.Create<TestState, OtherState, string>(null!));
     }
 
     /// <summary>
-    ///     Create three-state with null selector throws ArgumentNullException.
+    ///     Create with null selector throws ArgumentNullException.
     /// </summary>
     [Fact]
-    public void CreateThreeStateWithNullSelectorThrowsArgumentNullException()
+    public void CreateWithNullSelectorThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            Memoize.Create<TestState, OtherState, ThirdState, string>(null!));
-    }
-
-    /// <summary>
-    ///     Memoized selector returns computed value on first call.
-    /// </summary>
-    [Fact]
-    public void MemoizedSelectorReturnsComputedValueOnFirstCall()
-    {
-        // Arrange
-        TestState state = new(42);
-        Func<TestState, int> selector = Memoize.Create<TestState, int>(s => s.Counter * 2);
-
-        // Act
-        int result = selector(state);
-
-        // Assert
-        Assert.Equal(84, result);
-    }
-
-    /// <summary>
-    ///     Memoized selector returns cached value when state reference unchanged.
-    /// </summary>
-    [Fact]
-    public void MemoizedSelectorReturnsCachedValueWhenStateUnchanged()
-    {
-        // Arrange
-        TestState state = new(42);
-        int callCount = 0;
-        Func<TestState, int> selector = Memoize.Create<TestState, int>(s =>
-        {
-            callCount++;
-            return s.Counter * 2;
-        });
-
-        // Act
-        _ = selector(state);
-        _ = selector(state);
-        _ = selector(state);
-
-        // Assert
-        Assert.Equal(1, callCount);
+        Assert.Throws<ArgumentNullException>(() => Memoize.Create<TestState, int>(null!));
     }
 
     /// <summary>
@@ -152,100 +108,44 @@ public sealed class MemoizeTests
     }
 
     /// <summary>
-    ///     Two-state memoized selector returns computed value.
+    ///     Memoized selector returns cached value when state reference unchanged.
     /// </summary>
     [Fact]
-    public void TwoStateMemoizedSelectorReturnsComputedValue()
+    public void MemoizedSelectorReturnsCachedValueWhenStateUnchanged()
     {
         // Arrange
-        TestState state1 = new(5);
-        OtherState state2 = new("test");
-        Func<TestState, OtherState, string> selector =
-            Memoize.Create<TestState, OtherState, string>((s1, s2) => $"{s2.Name}:{s1.Counter}");
-
-        // Act
-        string result = selector(state1, state2);
-
-        // Assert
-        Assert.Equal("test:5", result);
-    }
-
-    /// <summary>
-    ///     Two-state memoized selector caches when both states unchanged.
-    /// </summary>
-    [Fact]
-    public void TwoStateMemoizedSelectorCachesWhenBothStatesUnchanged()
-    {
-        // Arrange
-        TestState state1 = new(5);
-        OtherState state2 = new("test");
+        TestState state = new(42);
         int callCount = 0;
-        Func<TestState, OtherState, string> selector =
-            Memoize.Create<TestState, OtherState, string>((s1, s2) =>
-            {
-                callCount++;
-                return $"{s2.Name}:{s1.Counter}";
-            });
+        Func<TestState, int> selector = Memoize.Create<TestState, int>(s =>
+        {
+            callCount++;
+            return s.Counter * 2;
+        });
 
         // Act
-        _ = selector(state1, state2);
-        _ = selector(state1, state2);
-        _ = selector(state1, state2);
+        _ = selector(state);
+        _ = selector(state);
+        _ = selector(state);
 
         // Assert
         Assert.Equal(1, callCount);
     }
 
     /// <summary>
-    ///     Two-state memoized selector recomputes when first state changes.
+    ///     Memoized selector returns computed value on first call.
     /// </summary>
     [Fact]
-    public void TwoStateMemoizedSelectorRecomputesWhenFirstStateChanges()
+    public void MemoizedSelectorReturnsComputedValueOnFirstCall()
     {
         // Arrange
-        TestState state1A = new(5);
-        TestState state1B = new(10);
-        OtherState state2 = new("test");
-        int callCount = 0;
-        Func<TestState, OtherState, string> selector =
-            Memoize.Create<TestState, OtherState, string>((s1, s2) =>
-            {
-                callCount++;
-                return $"{s2.Name}:{s1.Counter}";
-            });
+        TestState state = new(42);
+        Func<TestState, int> selector = Memoize.Create<TestState, int>(s => s.Counter * 2);
 
         // Act
-        _ = selector(state1A, state2);
-        _ = selector(state1B, state2);
+        int result = selector(state);
 
         // Assert
-        Assert.Equal(2, callCount);
-    }
-
-    /// <summary>
-    ///     Two-state memoized selector recomputes when second state changes.
-    /// </summary>
-    [Fact]
-    public void TwoStateMemoizedSelectorRecomputesWhenSecondStateChanges()
-    {
-        // Arrange
-        TestState state1 = new(5);
-        OtherState state2A = new("alpha");
-        OtherState state2B = new("beta");
-        int callCount = 0;
-        Func<TestState, OtherState, string> selector =
-            Memoize.Create<TestState, OtherState, string>((s1, s2) =>
-            {
-                callCount++;
-                return $"{s2.Name}:{s1.Counter}";
-            });
-
-        // Act
-        _ = selector(state1, state2A);
-        _ = selector(state1, state2B);
-
-        // Assert
-        Assert.Equal(2, callCount);
+        Assert.Equal(84, result);
     }
 
     /// <summary>
@@ -260,7 +160,11 @@ public sealed class MemoizeTests
         ThirdState state3 = new(true);
         int callCount = 0;
         Func<TestState, OtherState, ThirdState, string> selector =
-            Memoize.Create<TestState, OtherState, ThirdState, string>((s1, s2, s3) =>
+            Memoize.Create<TestState, OtherState, ThirdState, string>((
+                s1,
+                s2,
+                s3
+            ) =>
             {
                 callCount++;
                 return $"{s2.Name}:{s1.Counter}:{s3.IsActive}";
@@ -288,7 +192,11 @@ public sealed class MemoizeTests
         ThirdState state3B = new(false);
         int callCount = 0;
         Func<TestState, OtherState, ThirdState, string> selector =
-            Memoize.Create<TestState, OtherState, ThirdState, string>((s1, s2, s3) =>
+            Memoize.Create<TestState, OtherState, ThirdState, string>((
+                s1,
+                s2,
+                s3
+            ) =>
             {
                 callCount++;
                 return $"{s2.Name}:{s1.Counter}:{s3.IsActive}";
@@ -300,5 +208,110 @@ public sealed class MemoizeTests
 
         // Assert
         Assert.Equal(2, callCount);
+    }
+
+    /// <summary>
+    ///     Two-state memoized selector caches when both states unchanged.
+    /// </summary>
+    [Fact]
+    public void TwoStateMemoizedSelectorCachesWhenBothStatesUnchanged()
+    {
+        // Arrange
+        TestState state1 = new(5);
+        OtherState state2 = new("test");
+        int callCount = 0;
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
+            s1,
+            s2
+        ) =>
+        {
+            callCount++;
+            return $"{s2.Name}:{s1.Counter}";
+        });
+
+        // Act
+        _ = selector(state1, state2);
+        _ = selector(state1, state2);
+        _ = selector(state1, state2);
+
+        // Assert
+        Assert.Equal(1, callCount);
+    }
+
+    /// <summary>
+    ///     Two-state memoized selector recomputes when first state changes.
+    /// </summary>
+    [Fact]
+    public void TwoStateMemoizedSelectorRecomputesWhenFirstStateChanges()
+    {
+        // Arrange
+        TestState state1A = new(5);
+        TestState state1B = new(10);
+        OtherState state2 = new("test");
+        int callCount = 0;
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
+            s1,
+            s2
+        ) =>
+        {
+            callCount++;
+            return $"{s2.Name}:{s1.Counter}";
+        });
+
+        // Act
+        _ = selector(state1A, state2);
+        _ = selector(state1B, state2);
+
+        // Assert
+        Assert.Equal(2, callCount);
+    }
+
+    /// <summary>
+    ///     Two-state memoized selector recomputes when second state changes.
+    /// </summary>
+    [Fact]
+    public void TwoStateMemoizedSelectorRecomputesWhenSecondStateChanges()
+    {
+        // Arrange
+        TestState state1 = new(5);
+        OtherState state2A = new("alpha");
+        OtherState state2B = new("beta");
+        int callCount = 0;
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
+            s1,
+            s2
+        ) =>
+        {
+            callCount++;
+            return $"{s2.Name}:{s1.Counter}";
+        });
+
+        // Act
+        _ = selector(state1, state2A);
+        _ = selector(state1, state2B);
+
+        // Assert
+        Assert.Equal(2, callCount);
+    }
+
+    /// <summary>
+    ///     Two-state memoized selector returns computed value.
+    /// </summary>
+    [Fact]
+    public void TwoStateMemoizedSelectorReturnsComputedValue()
+    {
+        // Arrange
+        TestState state1 = new(5);
+        OtherState state2 = new("test");
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
+                s1,
+                s2
+            ) => $"{s2.Name}:{s1.Counter}");
+
+        // Act
+        string result = selector(state1, state2);
+
+        // Assert
+        Assert.Equal("test:5", result);
     }
 }

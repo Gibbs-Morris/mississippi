@@ -211,27 +211,33 @@ public static class ExpensiveSelectors
 
 ### How Memoization Works
 
-Memoization uses **reference equality** to determine if state has changed:
+Memoization uses **reference equality** to determine if state has changed, with thread-safe locking:
 
 ```csharp
 public static Func<TState, TResult> Create<TState, TResult>(
     Func<TState, TResult> selector)
     where TState : class
 {
+    object syncRoot = new();
     TState? lastInput = null;
     TResult? lastResult = default;
 
     return state =>
     {
-        // Reference comparison - fast!
-        if (ReferenceEquals(state, lastInput))
+        lock (syncRoot)
         {
-            return lastResult!;
-        }
+            // Reference comparison - fast!
+            if (ReferenceEquals(state, lastInput))
+            {
+                return lastResult!;
+            }
 
-        lastInput = state;
-        lastResult = selector(state);
-        return lastResult;
+            // Update cache only after successful execution
+            TResult result = selector(state);
+            lastInput = state;
+            lastResult = result;
+            return result;
+        }
     };
 }
 ```

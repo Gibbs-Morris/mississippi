@@ -16,15 +16,50 @@ public sealed class SelectorExtensionsTests : IDisposable
     /// <summary>
     ///     Initializes a new instance of the <see cref="SelectorExtensionsTests" /> class.
     /// </summary>
-    public SelectorExtensionsTests()
-    {
-        store = new();
-    }
+    public SelectorExtensionsTests() => store = new();
 
     /// <inheritdoc />
     public void Dispose()
     {
         store.Dispose();
+    }
+
+    /// <summary>
+    ///     Test action for modifying OtherFeatureState.
+    /// </summary>
+    private sealed record OtherAction(string NewName) : IAction;
+
+    /// <summary>
+    ///     Other feature state for multi-state selector tests.
+    /// </summary>
+    private sealed record OtherFeatureState : IFeatureState
+    {
+        /// <inheritdoc />
+        public static string FeatureKey => "other-feature";
+
+        /// <summary>
+        ///     Gets the name value.
+        /// </summary>
+        public string Name { get; init; } = string.Empty;
+    }
+
+    /// <summary>
+    ///     Test action for modifying TestFeatureState.
+    /// </summary>
+    private sealed record TestAction(int NewValue) : IAction;
+
+    /// <summary>
+    ///     Test feature state.
+    /// </summary>
+    private sealed record TestFeatureState : IFeatureState
+    {
+        /// <inheritdoc />
+        public static string FeatureKey => "test-feature";
+
+        /// <summary>
+        ///     Gets the counter value.
+        /// </summary>
+        public int Counter { get; init; }
     }
 
     /// <summary>
@@ -106,47 +141,9 @@ public sealed class SelectorExtensionsTests : IDisposable
     }
 
     /// <summary>
-    ///     Test action for modifying TestFeatureState.
-    /// </summary>
-    private sealed record TestAction(int NewValue) : IAction;
-
-    /// <summary>
-    ///     Test action for modifying OtherFeatureState.
-    /// </summary>
-    private sealed record OtherAction(string NewName) : IAction;
-
-    /// <summary>
     ///     Test action for modifying ThirdFeatureState.
     /// </summary>
     private sealed record ThirdAction(bool NewValue) : IAction;
-
-    /// <summary>
-    ///     Test feature state.
-    /// </summary>
-    private sealed record TestFeatureState : IFeatureState
-    {
-        /// <inheritdoc />
-        public static string FeatureKey => "test-feature";
-
-        /// <summary>
-        ///     Gets the counter value.
-        /// </summary>
-        public int Counter { get; init; }
-    }
-
-    /// <summary>
-    ///     Other feature state for multi-state selector tests.
-    /// </summary>
-    private sealed record OtherFeatureState : IFeatureState
-    {
-        /// <inheritdoc />
-        public static string FeatureKey => "other-feature";
-
-        /// <summary>
-        ///     Gets the name value.
-        /// </summary>
-        public string Name { get; init; } = string.Empty;
-    }
 
     /// <summary>
     ///     Third feature state for three-state selector tests.
@@ -189,108 +186,12 @@ public sealed class SelectorExtensionsTests : IDisposable
 
         // Act
         int firstResult = store.Select<TestFeatureState, int>(state => state.Counter);
-
         store.Dispatch(new TestAction(20));
-
         int secondResult = store.Select<TestFeatureState, int>(state => state.Counter);
 
         // Assert
         Assert.Equal(10, firstResult);
         Assert.Equal(20, secondResult);
-    }
-
-    /// <summary>
-    ///     Select with two states returns combined derived value.
-    /// </summary>
-    [Fact]
-    public void SelectTwoStatesReturnsCombinedDerivedValue()
-    {
-        // Arrange
-        store.Dispatch(new TestAction(5));
-        store.Dispatch(new OtherAction("test"));
-
-        // Act
-        string result = store.Select<TestFeatureState, OtherFeatureState, string>(
-            (test, other) => $"{other.Name}:{test.Counter}");
-
-        // Assert
-        Assert.Equal("test:5", result);
-    }
-
-    /// <summary>
-    ///     Select with null store throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void SelectWithNullStoreThrowsArgumentNullException()
-    {
-        // Arrange
-        IStore? nullStore = null;
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            nullStore!.Select<TestFeatureState, int>(state => state.Counter));
-    }
-
-    /// <summary>
-    ///     Select with null selector throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void SelectWithNullSelectorThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            store.Select<TestFeatureState, int>(null!));
-    }
-
-    /// <summary>
-    ///     Select two states with null store throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void SelectTwoStatesWithNullStoreThrowsArgumentNullException()
-    {
-        // Arrange
-        IStore? nullStore = null;
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            nullStore!.Select<TestFeatureState, OtherFeatureState, string>((s1, s2) => string.Empty));
-    }
-
-    /// <summary>
-    ///     Select two states with null selector throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void SelectTwoStatesWithNullSelectorThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            store.Select<TestFeatureState, OtherFeatureState, string>(null!));
-    }
-
-    /// <summary>
-    ///     Select three states with null store throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void SelectThreeStatesWithNullStoreThrowsArgumentNullException()
-    {
-        // Arrange
-        IStore? nullStore = null;
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            nullStore!.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>(
-                (s1, s2, s3) => string.Empty));
-    }
-
-    /// <summary>
-    ///     Select three states with null selector throws ArgumentNullException.
-    /// </summary>
-    [Fact]
-    public void SelectThreeStatesWithNullSelectorThrowsArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-            store.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>(null!));
     }
 
     /// <summary>
@@ -305,10 +206,111 @@ public sealed class SelectorExtensionsTests : IDisposable
         store.Dispatch(new ThirdAction(true));
 
         // Act
-        string result = store.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>(
-            (test, other, third) => $"{other.Name}:{test.Counter}:{third.IsActive}");
+        string result = store.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>((
+                test,
+                other,
+                third
+            ) => $"{other.Name}:{test.Counter}:{third.IsActive}");
 
         // Assert
         Assert.Equal("test:5:True", result);
+    }
+
+    /// <summary>
+    ///     Select three states with null selector throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    public void SelectThreeStatesWithNullSelectorThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() =>
+            store.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>(null!));
+    }
+
+    /// <summary>
+    ///     Select three states with null store throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    public void SelectThreeStatesWithNullStoreThrowsArgumentNullException()
+    {
+        // Arrange
+        IStore? nullStore = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() =>
+            nullStore!.Select<TestFeatureState, OtherFeatureState, ThirdFeatureState, string>((
+                s1,
+                s2,
+                s3
+            ) => string.Empty));
+    }
+
+    /// <summary>
+    ///     Select with two states returns combined derived value.
+    /// </summary>
+    [Fact]
+    public void SelectTwoStatesReturnsCombinedDerivedValue()
+    {
+        // Arrange
+        store.Dispatch(new TestAction(5));
+        store.Dispatch(new OtherAction("test"));
+
+        // Act
+        string result = store.Select<TestFeatureState, OtherFeatureState, string>((
+                test,
+                other
+            ) => $"{other.Name}:{test.Counter}");
+
+        // Assert
+        Assert.Equal("test:5", result);
+    }
+
+    /// <summary>
+    ///     Select two states with null selector throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    public void SelectTwoStatesWithNullSelectorThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => store.Select<TestFeatureState, OtherFeatureState, string>(null!));
+    }
+
+    /// <summary>
+    ///     Select two states with null store throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    public void SelectTwoStatesWithNullStoreThrowsArgumentNullException()
+    {
+        // Arrange
+        IStore? nullStore = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => nullStore!.Select<TestFeatureState, OtherFeatureState, string>((
+            s1,
+            s2
+        ) => string.Empty));
+    }
+
+    /// <summary>
+    ///     Select with null selector throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    public void SelectWithNullSelectorThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => store.Select<TestFeatureState, int>(null!));
+    }
+
+    /// <summary>
+    ///     Select with null store throws ArgumentNullException.
+    /// </summary>
+    [Fact]
+    public void SelectWithNullStoreThrowsArgumentNullException()
+    {
+        // Arrange
+        IStore? nullStore = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => nullStore!.Select<TestFeatureState, int>(state => state.Counter));
     }
 }
