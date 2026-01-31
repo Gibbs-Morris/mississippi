@@ -30,12 +30,8 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         </item>
 ///     </list>
 ///     <para>
-///         Example usage:
-///         <code>
-///         [assembly: GenerateInletClientComposite(AppName = "Spring")]
-///         </code>
-///         This generates <c>SpringInletRegistrations.AddSpringInlet()</c> which can replace
-///         multiple manual registration calls in Program.cs.
+///         Applying this attribute generates an <c>Add{App}Inlet()</c> entry point
+///         (for example, <c>AddSpringInlet()</c>) that consolidates client registrations.
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Assembly)]

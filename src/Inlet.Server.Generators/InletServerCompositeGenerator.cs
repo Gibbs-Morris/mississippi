@@ -316,12 +316,10 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
     )
     {
         yield return compilation.Assembly;
-        foreach (MetadataReference reference in compilation.References)
+        foreach (IAssemblySymbol assemblySymbol in compilation.References.Select(compilation.GetAssemblyOrModuleSymbol)
+                     .OfType<IAssemblySymbol>())
         {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
+            yield return assemblySymbol;
         }
     }
 
@@ -351,13 +349,12 @@ public sealed class InletServerCompositeGenerator : IIncrementalGenerator
         string? appName = null;
         string hubPath = "/hubs/inlet";
         string apiPrefix = "/api";
-        foreach (TypedConstant arg in attr.ConstructorArguments)
+        string? ctorAppName = attr.ConstructorArguments.Select(argument => argument.Value)
+            .OfType<string>()
+            .FirstOrDefault();
+        if (ctorAppName is not null)
         {
-            if (arg.Value is string s)
-            {
-                appName = s;
-                break;
-            }
+            appName = ctorAppName;
         }
 
         foreach (KeyValuePair<string, TypedConstant> kvp in attr.NamedArguments)

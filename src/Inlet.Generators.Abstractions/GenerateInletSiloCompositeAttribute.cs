@@ -26,13 +26,8 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         </item>
 ///     </list>
 ///     <para>
-///         Example usage:
-///         <code>
-///         [assembly: GenerateInletSiloComposite(AppName = "Spring")]
-///         </code>
-///         This generates <c>SpringSiloRegistrations.AddSpringSilo()</c> and
-///         <c>SpringSiloRegistrations.UseSpringSilo()</c> which can replace
-///         multiple manual registration calls in Program.cs.
+///         Applying this attribute generates <c>Add{App}Silo()</c> and <c>Use{App}Silo()</c>
+///         entry points (for example, <c>AddSpringSilo()</c> / <c>UseSpringSilo()</c>).
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Assembly)]

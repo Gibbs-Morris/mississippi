@@ -26,13 +26,8 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         </item>
 ///     </list>
 ///     <para>
-///         Example usage:
-///         <code>
-///         [assembly: GenerateInletServerComposite(AppName = "Spring")]
-///         </code>
-///         This generates <c>SpringServerRegistrations.AddSpringServer()</c> and
-///         <c>SpringServerRegistrations.UseSpringServer()</c> which can replace
-///         multiple manual registration calls in Program.cs.
+///         Applying this attribute generates <c>Add{App}Server()</c> and <c>Use{App}Server()</c>
+///         entry points (for example, <c>AddSpringServer()</c> / <c>UseSpringServer()</c>).
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Assembly)]
