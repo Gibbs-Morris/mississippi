@@ -79,6 +79,86 @@ public static class SignalRConnectionSelectors
     }
 
     /// <summary>
+    ///     Selects the current connection identifier.
+    /// </summary>
+    /// <param name="state">The SignalR connection state.</param>
+    /// <returns>The connection ID, or null if not connected.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="state" /> is null.
+    /// </exception>
+    public static string? GetConnectionId(
+        SignalRConnectionState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ConnectionId;
+    }
+
+    /// <summary>
+    ///     Selects the timestamp when the connection was last successfully established.
+    /// </summary>
+    /// <param name="state">The SignalR connection state.</param>
+    /// <returns>The last connected timestamp, or null if never connected.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="state" /> is null.
+    /// </exception>
+    public static DateTimeOffset? GetLastConnectedAt(
+        SignalRConnectionState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.LastConnectedAt;
+    }
+
+    /// <summary>
+    ///     Selects the timestamp when the connection was last disconnected.
+    /// </summary>
+    /// <param name="state">The SignalR connection state.</param>
+    /// <returns>The last disconnected timestamp, or null if never disconnected.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="state" /> is null.
+    /// </exception>
+    public static DateTimeOffset? GetLastDisconnectedAt(
+        SignalRConnectionState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.LastDisconnectedAt;
+    }
+
+    /// <summary>
+    ///     Selects the last error message that occurred.
+    /// </summary>
+    /// <param name="state">The SignalR connection state.</param>
+    /// <returns>The last error message, or null if no error.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="state" /> is null.
+    /// </exception>
+    public static string? GetLastError(
+        SignalRConnectionState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.LastError;
+    }
+
+    /// <summary>
+    ///     Selects the timestamp when the last message was received.
+    /// </summary>
+    /// <param name="state">The SignalR connection state.</param>
+    /// <returns>The last message timestamp, or null if no message received.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="state" /> is null.
+    /// </exception>
+    public static DateTimeOffset? GetLastMessageReceivedAt(
+        SignalRConnectionState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.LastMessageReceivedAt;
+    }
+
+    /// <summary>
     ///     Selects the current reconnection attempt count.
     /// </summary>
     /// <param name="state">The SignalR connection state.</param>
