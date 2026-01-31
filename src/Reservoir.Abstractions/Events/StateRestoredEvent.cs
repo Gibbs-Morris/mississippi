@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -19,11 +20,13 @@ namespace Mississippi.Reservoir.Abstractions.Events;
 ///         operations like jump-to-state, reset, or rollback.
 ///     </para>
 /// </remarks>
+/// <param name="Timestamp">The UTC timestamp when this event was created.</param>
 /// <param name="PreviousSnapshot">The state snapshot before restoration.</param>
 /// <param name="NewSnapshot">The state snapshot after restoration.</param>
 /// <param name="Cause">The system action that triggered the restoration.</param>
 public sealed record StateRestoredEvent(
+    DateTimeOffset Timestamp,
     IReadOnlyDictionary<string, object> PreviousSnapshot,
     IReadOnlyDictionary<string, object> NewSnapshot,
     ISystemAction Cause
-) : StoreEventBase;
+) : StoreEventBase(Timestamp);

@@ -44,11 +44,14 @@ public class Store : IStore
 
     private bool disposed;
 
+    private TimeProvider TimeProvider { get; }
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="Store" /> class.
     /// </summary>
     public Store()
     {
+        TimeProvider = TimeProvider.System;
     }
 
     /// <summary>
@@ -56,17 +59,22 @@ public class Store : IStore
     /// </summary>
     /// <param name="featureRegistrations">The feature state registrations to initialize.</param>
     /// <param name="middlewaresCollection">The middlewares to register in the dispatch pipeline.</param>
+    /// <param name="timeProvider">The time provider for timestamping store events.</param>
     /// <remarks>
     ///     All effects are feature-scoped via <see cref="IActionEffect{TState}" /> and are
     ///     resolved through feature state registrations. There are no global effects.
     /// </remarks>
     public Store(
         IEnumerable<IFeatureStateRegistration> featureRegistrations,
-        IEnumerable<IMiddleware> middlewaresCollection
+        IEnumerable<IMiddleware> middlewaresCollection,
+        TimeProvider timeProvider
     )
     {
         ArgumentNullException.ThrowIfNull(featureRegistrations);
         ArgumentNullException.ThrowIfNull(middlewaresCollection);
+        ArgumentNullException.ThrowIfNull(timeProvider);
+
+        TimeProvider = timeProvider;
 
         // Initialize feature states from registrations
         foreach (IFeatureStateRegistration registration in featureRegistrations)
@@ -91,7 +99,7 @@ public class Store : IStore
         }
 
         // Emit initialization event
-        storeEventSubject.OnNext(new StoreInitializedEvent(GetStateSnapshot()));
+        storeEventSubject.OnNext(new StoreInitializedEvent(TimeProvider.GetUtcNow(), GetStateSnapshot()));
     }
 
     /// <inheritdoc />
@@ -266,13 +274,13 @@ public class Store : IStore
     )
     {
         // Emit pre-dispatch event
-        storeEventSubject.OnNext(new ActionDispatchingEvent(action));
+        storeEventSubject.OnNext(new ActionDispatchingEvent(TimeProvider.GetUtcNow(), action));
 
         // Run reducers for feature states
         ReduceFeatureStates(action);
 
         // Emit post-dispatch event with current state snapshot
-        storeEventSubject.OnNext(new ActionDispatchedEvent(action, GetStateSnapshot()));
+        storeEventSubject.OnNext(new ActionDispatchedEvent(TimeProvider.GetUtcNow(), action, GetStateSnapshot()));
 
         // Notify listeners of state change
         NotifyListeners();
@@ -286,7 +294,7 @@ public class Store : IStore
     )
     {
         // Emit pre-dispatch event for system actions too
-        storeEventSubject.OnNext(new ActionDispatchingEvent(systemAction));
+        storeEventSubject.OnNext(new ActionDispatchingEvent(TimeProvider.GetUtcNow(), systemAction));
         IReadOnlyDictionary<string, object> previousSnapshot = GetStateSnapshot();
         IReadOnlyDictionary<string, object> newSnapshot;
         bool notify;
@@ -308,7 +316,7 @@ public class Store : IStore
         }
 
         // Emit state restored event
-        storeEventSubject.OnNext(new StateRestoredEvent(previousSnapshot, newSnapshot, systemAction));
+        storeEventSubject.OnNext(new StateRestoredEvent(TimeProvider.GetUtcNow(), previousSnapshot, newSnapshot, systemAction));
         if (notify)
         {
             NotifyListeners();

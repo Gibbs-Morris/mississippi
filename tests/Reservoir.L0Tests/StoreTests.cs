@@ -277,7 +277,7 @@ public sealed class StoreTests : IDisposable
         TestMiddleware middleware = new(() => middlewareInvoked = true);
 
         // Act
-        using Store diStore = new([], [middleware]);
+        using Store diStore = new([], [middleware], TimeProvider.System);
         diStore.Dispatch(new IncrementAction());
 
         // Assert
@@ -299,7 +299,7 @@ public sealed class StoreTests : IDisposable
     public void ConstructorWithNullFeatureRegistrationsThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store(null!, []));
+        Assert.Throws<ArgumentNullException>(() => new Store(null!, [], TimeProvider.System));
     }
 
     /// <summary>
@@ -317,7 +317,7 @@ public sealed class StoreTests : IDisposable
     public void ConstructorWithNullMiddlewareThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store([], null!));
+        Assert.Throws<ArgumentNullException>(() => new Store([], null!, TimeProvider.System));
     }
 
     /// <summary>
@@ -470,7 +470,7 @@ public sealed class StoreTests : IDisposable
         [
             new FeatureStateRegistration<TestFeatureState>(reducer),
         ];
-        using Store store = new(registrations, Array.Empty<IMiddleware>());
+        using Store store = new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
 
         // Act - get initial snapshot
         IReadOnlyDictionary<string, object> initialSnapshot = store.GetStateSnapshot();
@@ -594,7 +594,7 @@ public sealed class StoreTests : IDisposable
         [
             new FeatureStateRegistration<TestFeatureState>(reducer),
         ];
-        using Store store = new(registrations, Array.Empty<IMiddleware>());
+        using Store store = new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
 
         // Increment state first
         store.Dispatch(new IncrementAction());
@@ -620,7 +620,7 @@ public sealed class StoreTests : IDisposable
         [
             new FeatureStateRegistration<TestFeatureState>(),
         ];
-        using Store store = new(registrations, Array.Empty<IMiddleware>());
+        using Store store = new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
         IReadOnlyDictionary<string, object> newSnapshot = new Dictionary<string, object>
         {
             [TestFeatureState.FeatureKey] = "not-a-state",
@@ -646,7 +646,7 @@ public sealed class StoreTests : IDisposable
         [
             new FeatureStateRegistration<TestFeatureState>(reducer),
         ];
-        using Store store = new(registrations, Array.Empty<IMiddleware>());
+        using Store store = new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
 
         // Increment state
         store.Dispatch(new IncrementAction());
