@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 
@@ -53,8 +54,12 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
     private ReduxDevToolsService CreateService(
         IStore store,
         ReservoirDevToolsOptions options
-    ) =>
-        new(store, interop, Options.Create(options));
+    )
+    {
+        Mock<IServiceProvider> serviceProviderMock = new();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(IStore))).Returns(store);
+        return new(serviceProviderMock.Object, interop, Options.Create(options));
+    }
 
     private void SetupJsModuleForConnection()
     {

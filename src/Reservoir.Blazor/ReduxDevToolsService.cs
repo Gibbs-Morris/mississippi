@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
@@ -43,6 +44,8 @@ internal sealed class ReduxDevToolsService
 
     private bool isDisposed;
 
+    private IStore? resolvedStore;
+
     private IDisposable? storeEventsSubscription;
 
     private bool suppressDevToolsUpdates;
@@ -50,25 +53,28 @@ internal sealed class ReduxDevToolsService
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReduxDevToolsService" /> class.
     /// </summary>
-    /// <param name="store">The store to observe and control.</param>
+    /// <param name="serviceProvider">
+    ///     The service provider for lazy resolution of scoped services.
+    ///     Required because hosted services are singletons, but IStore may be scoped.
+    /// </param>
     /// <param name="interop">The DevTools JavaScript interop.</param>
     /// <param name="options">The DevTools options.</param>
     /// <param name="hostEnvironment">The optional host environment for environment checks.</param>
     public ReduxDevToolsService(
-        IStore store,
+        IServiceProvider serviceProvider,
         ReservoirDevToolsInterop interop,
         IOptions<ReservoirDevToolsOptions> options,
         IHostEnvironment? hostEnvironment = null
     )
     {
-        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
         ArgumentNullException.ThrowIfNull(interop);
         ArgumentNullException.ThrowIfNull(options);
-        Store = store;
+        ServiceProvider = serviceProvider;
         Interop = interop;
         Options = options.Value;
         HostEnvironment = hostEnvironment;
-        committedSnapshot = Store.GetStateSnapshot();
+        committedSnapshot = new Dictionary<string, object>(StringComparer.Ordinal);
     }
 
     private IHostEnvironment? HostEnvironment { get; }
@@ -77,7 +83,16 @@ internal sealed class ReduxDevToolsService
 
     private ReservoirDevToolsOptions Options { get; }
 
-    private IStore Store { get; }
+    private IServiceProvider ServiceProvider { get; }
+
+    /// <summary>
+    ///     Gets the store, lazily resolved from the service provider.
+    /// </summary>
+    /// <remarks>
+    ///     In Blazor WASM, scoped services are effectively singletons (one scope for the app lifetime).
+    ///     We resolve lazily to avoid DI lifetime issues during hosted service construction.
+    /// </remarks>
+    private IStore Store => resolvedStore ??= ServiceProvider.GetRequiredService<IStore>();
 
     private static string? TryExtractImportedStateJson(
         JsonElement payload
@@ -171,6 +186,10 @@ internal sealed class ReduxDevToolsService
 
         // Dispose any previous subscription before creating a new one
         storeEventsSubscription?.Dispose();
+
+        // Initialize committed snapshot now that we can safely resolve the store
+        // (Blazor WASM scoped services are resolvable after host construction)
+        committedSnapshot = Store.GetStateSnapshot();
 
         // Subscribe to store events
         storeEventsSubscription = Store.StoreEvents.Subscribe(new StoreEventObserver(this));

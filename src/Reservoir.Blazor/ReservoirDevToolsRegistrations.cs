@@ -45,7 +45,10 @@ public static class ReservoirDevToolsRegistrations
             services.AddOptions<ReservoirDevToolsOptions>();
         }
 
-        services.TryAddScoped<ReservoirDevToolsInterop>();
+        // Singleton is safe because ReservoirDevToolsInterop only holds IJSRuntime which is
+        // effectively singleton in Blazor WASM. Must be singleton to be injectable into
+        // ReduxDevToolsService (hosted service = singleton).
+        services.TryAddSingleton<ReservoirDevToolsInterop>();
         services.AddHostedService<ReduxDevToolsService>();
         return services;
     }
