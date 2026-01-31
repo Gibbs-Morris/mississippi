@@ -100,7 +100,7 @@ public static class EntitySelectionSelectors
     public static bool HasEntitySelected(EntitySelectionState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return state.EntityId is not null;
+        return !string.IsNullOrEmpty(state.EntityId);
     }
 }
 ```
