@@ -18,5 +18,6 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Commands;
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.Commands.StartSagaCommand`1")]
 public sealed record StartSagaCommand<TInput>(
     [property: Id(0)] TInput Input,
-    [property: Id(1)] string? CorrelationId = null)
+    [property: Id(1)] string? CorrelationId = null
+)
     where TInput : class;

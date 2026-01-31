@@ -290,6 +290,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine($"services.AddSaga<{saga.Model.TypeName}>();");
         }
 
+        sb.AppendLine($"services.AddRootCommandHandler<{saga.Model.TypeName}>();");
         sb.AppendLine("services.AddSagaOrchestration();");
         sb.AppendLine();
 
@@ -641,7 +642,9 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         // Get InputType from named argument
         string? inputTypeName = null;
         TypedConstant inputTypeArg = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value;
-        if (!inputTypeArg.IsNull && inputTypeArg.Value is INamedTypeSymbol inputTypeSymbol)
+        if (!inputTypeArg.IsNull &&
+            (inputTypeArg.Kind == TypedConstantKind.Type) &&
+            inputTypeArg.Value is ITypeSymbol inputTypeSymbol)
         {
             inputTypeName = inputTypeSymbol.ToDisplayString();
         }
