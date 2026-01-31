@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+
 using Mississippi.Reservoir.Abstractions;
 
 
@@ -53,7 +54,7 @@ public static class ReservoirDevToolsRegistrations
 
         // Register Lazy<IStore> factory to allow deferred store resolution without injecting
         // IServiceProvider directly (avoids service locator anti-pattern per DI guidelines).
-        services.TryAddSingleton<Lazy<IStore>>(sp => new Lazy<IStore>(() => sp.GetRequiredService<IStore>()));
+        services.TryAddSingleton<Lazy<IStore>>(sp => new(() => sp.GetRequiredService<IStore>()));
         services.AddHostedService<ReduxDevToolsService>();
         return services;
     }

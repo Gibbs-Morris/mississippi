@@ -130,10 +130,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         Lazy<IStore> storeFactory = new(() => store);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
-            storeFactory,
-            interop,
-            null!));
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(storeFactory, interop, null!));
     }
 
     /// <summary>
@@ -159,10 +156,6 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
     [SuppressMessage(
-        "SonarQube",
-        "S2699:Tests should include assertions",
-        Justification = "This test verifies no exception is thrown on multiple dispose calls")]
-    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP016:Don't use disposed instance",
         Justification = "Testing that multiple Dispose calls don't throw")]
@@ -183,6 +176,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         // Act & Assert - should not throw
         await service.DisposeAsync();
         await service.DisposeAsync();
+        Assert.NotEmpty(store.GetStateSnapshot());
     }
 
     /// <summary>
@@ -203,7 +197,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         // Act & Assert - should not throw
         await service.OnDevToolsMessageAsync(string.Empty);
         await service.OnDevToolsMessageAsync("   ");
-        Assert.True(true);
+        Assert.Equal(0, store.GetState<TestFeatureState>().Value);
     }
 
     /// <summary>
@@ -224,7 +218,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         // Act & Assert - should not throw
         await service.OnDevToolsMessageAsync("not valid json");
         await service.OnDevToolsMessageAsync("{invalid}");
-        Assert.True(true);
+        Assert.Equal(0, store.GetState<TestFeatureState>().Value);
     }
 
     /// <summary>
@@ -245,7 +239,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
 
         // Act & Assert - should not throw or change state
         await service.OnDevToolsMessageAsync(message);
-        Assert.True(true);
+        Assert.Equal(0, store.GetState<TestFeatureState>().Value);
     }
 
     /// <summary>
@@ -302,8 +296,9 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         // Allow async operations to complete
         await Task.Delay(50);
 
-        // Assert - no exception is thrown
-        Assert.True(true);
+        // Assert - connection attempted but send not invoked
+        jsModuleMock.Verify(m => m.InvokeAsync<bool>("connect", It.IsAny<object[]>()), Times.Once);
+        jsModuleMock.Verify(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()), Times.Never);
     }
 
     /// <summary>
@@ -423,14 +418,19 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
+        int sendCount = 0;
+        jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
+            .Callback(() => sendCount++)
+            .ReturnsAsync(new object());
 
         // Act
         await service.StartAsync(CancellationToken.None);
         store.Dispatch(new TestAction());
+        await Task.Delay(50);
 
         // Assert - service should be subscribed (no exception means success)
-        // The subscription is internal, so we verify via side effects when DevTools is connected
-        Assert.True(true);
+        // The subscription is internal, so we verify via send side effects when DevTools is connected
+        Assert.True(sendCount > 0);
     }
 
     /// <summary>
@@ -438,10 +438,6 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
     [Fact]
-    [SuppressMessage(
-        "SonarQube",
-        "S2699:Tests should include assertions",
-        Justification = "This test verifies no exception is thrown during stop")]
     public async Task StopAsyncUnsubscribesFromStoreEvents()
     {
         // Arrange
@@ -452,12 +448,21 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
+        int sendCount = 0;
+        jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
+            .Callback(() => sendCount++)
+            .ReturnsAsync(new object());
         await service.StartAsync(CancellationToken.None);
+        store.Dispatch(new TestAction());
+        await Task.Delay(50);
+        int sendCountBeforeStop = sendCount;
 
         // Act
         await service.StopAsync(CancellationToken.None);
 
-        // Assert - dispatching should not cause issues after stop
+        // Assert - dispatching should not send after stop
         store.Dispatch(new TestAction());
+        await Task.Delay(50);
+        Assert.Equal(sendCountBeforeStop, sendCount);
     }
 }

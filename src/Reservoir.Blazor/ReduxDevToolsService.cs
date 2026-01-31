@@ -82,8 +82,6 @@ internal sealed class ReduxDevToolsService
 
     private ReservoirDevToolsOptions Options { get; }
 
-    private Lazy<IStore> StoreFactory { get; }
-
     /// <summary>
     ///     Gets the store, lazily resolved via the factory.
     /// </summary>
@@ -92,6 +90,8 @@ internal sealed class ReduxDevToolsService
     ///     We resolve lazily to avoid DI lifetime issues during hosted service construction.
     /// </remarks>
     private IStore Store => resolvedStore ??= StoreFactory.Value;
+
+    private Lazy<IStore> StoreFactory { get; }
 
     private static string? TryExtractImportedStateJson(
         JsonElement payload
