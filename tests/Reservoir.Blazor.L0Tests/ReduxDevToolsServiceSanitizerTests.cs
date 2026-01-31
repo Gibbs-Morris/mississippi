@@ -47,7 +47,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
     )
     {
         registrations ??= [new TestFeatureStateRegistration()];
-        return new(registrations, Array.Empty<IMiddleware>());
+        return new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
     }
 
     private ReduxDevToolsService CreateService(
