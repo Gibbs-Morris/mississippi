@@ -56,9 +56,8 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     )
     {
         options ??= new();
-        Mock<IServiceProvider> serviceProviderMock = new();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(IStore))).Returns(store);
-        return new(serviceProviderMock.Object, interop, Options.Create(options), hostEnvironment);
+        Lazy<IStore> storeFactory = new(() => store);
+        return new(storeFactory, interop, Options.Create(options), hostEnvironment);
     }
 
     private void SetupJsModuleForConnection(
@@ -106,13 +105,12 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     {
         // Arrange
         using Store store = CreateStore();
-        Mock<IServiceProvider> serviceProviderMock = new();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(IStore))).Returns(store);
+        Lazy<IStore> storeFactory = new(() => store);
         ReservoirDevToolsOptions options = new();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
-            serviceProviderMock.Object,
+            storeFactory,
             null!,
             Options.Create(options)));
     }
@@ -129,25 +127,24 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     {
         // Arrange
         using Store store = CreateStore();
-        Mock<IServiceProvider> serviceProviderMock = new();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(IStore))).Returns(store);
+        Lazy<IStore> storeFactory = new(() => store);
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
-            serviceProviderMock.Object,
+            storeFactory,
             interop,
             null!));
     }
 
     /// <summary>
-    ///     Constructor should throw when serviceProvider is null.
+    ///     Constructor should throw when storeFactory is null.
     /// </summary>
     [Fact]
     [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP005:Return type should indicate that the value should be disposed",
         Justification = "Test validates exception is thrown; no instance is created.")]
-    public void ConstructorThrowsWhenServiceProviderIsNull()
+    public void ConstructorThrowsWhenStoreFactoryIsNull()
     {
         // Arrange
         ReservoirDevToolsOptions options = new();

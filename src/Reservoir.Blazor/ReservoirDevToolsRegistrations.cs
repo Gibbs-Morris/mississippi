@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Mississippi.Reservoir.Abstractions;
 
 
 namespace Mississippi.Reservoir.Blazor;
@@ -49,6 +50,10 @@ public static class ReservoirDevToolsRegistrations
         // effectively singleton in Blazor WASM. Must be singleton to be injectable into
         // ReduxDevToolsService (hosted service = singleton).
         services.TryAddSingleton<ReservoirDevToolsInterop>();
+
+        // Register Lazy<IStore> factory to allow deferred store resolution without injecting
+        // IServiceProvider directly (avoids service locator anti-pattern per DI guidelines).
+        services.TryAddSingleton<Lazy<IStore>>(sp => new Lazy<IStore>(() => sp.GetRequiredService<IStore>()));
         services.AddHostedService<ReduxDevToolsService>();
         return services;
     }

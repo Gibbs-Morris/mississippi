@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
@@ -53,24 +52,24 @@ internal sealed class ReduxDevToolsService
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReduxDevToolsService" /> class.
     /// </summary>
-    /// <param name="serviceProvider">
-    ///     The service provider for lazy resolution of scoped services.
+    /// <param name="storeFactory">
+    ///     Factory for lazy resolution of the store.
     ///     Required because hosted services are singletons, but IStore may be scoped.
     /// </param>
     /// <param name="interop">The DevTools JavaScript interop.</param>
     /// <param name="options">The DevTools options.</param>
     /// <param name="hostEnvironment">The optional host environment for environment checks.</param>
     public ReduxDevToolsService(
-        IServiceProvider serviceProvider,
+        Lazy<IStore> storeFactory,
         ReservoirDevToolsInterop interop,
         IOptions<ReservoirDevToolsOptions> options,
         IHostEnvironment? hostEnvironment = null
     )
     {
-        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentNullException.ThrowIfNull(storeFactory);
         ArgumentNullException.ThrowIfNull(interop);
         ArgumentNullException.ThrowIfNull(options);
-        ServiceProvider = serviceProvider;
+        StoreFactory = storeFactory;
         Interop = interop;
         Options = options.Value;
         HostEnvironment = hostEnvironment;
@@ -83,16 +82,16 @@ internal sealed class ReduxDevToolsService
 
     private ReservoirDevToolsOptions Options { get; }
 
-    private IServiceProvider ServiceProvider { get; }
+    private Lazy<IStore> StoreFactory { get; }
 
     /// <summary>
-    ///     Gets the store, lazily resolved from the service provider.
+    ///     Gets the store, lazily resolved via the factory.
     /// </summary>
     /// <remarks>
     ///     In Blazor WASM, scoped services are effectively singletons (one scope for the app lifetime).
     ///     We resolve lazily to avoid DI lifetime issues during hosted service construction.
     /// </remarks>
-    private IStore Store => resolvedStore ??= ServiceProvider.GetRequiredService<IStore>();
+    private IStore Store => resolvedStore ??= StoreFactory.Value;
 
     private static string? TryExtractImportedStateJson(
         JsonElement payload

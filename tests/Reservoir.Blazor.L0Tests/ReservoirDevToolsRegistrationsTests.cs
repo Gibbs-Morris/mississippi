@@ -85,6 +85,29 @@ public sealed class ReservoirDevToolsRegistrationsTests
     }
 
     /// <summary>
+    ///     AddReservoirDevTools should register Lazy IStore factory.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AddReservoirDevToolsRegistersLazyStoreFactoryAsync()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        services.AddReservoir();
+        services.AddReservoirDevTools();
+        services.AddSingleton(new Mock<IJSRuntime>().Object);
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        await using AsyncServiceScope scope = provider.CreateAsyncScope();
+
+        // Act
+        Lazy<IStore> storeFactory = scope.ServiceProvider.GetRequiredService<Lazy<IStore>>();
+
+        // Assert
+        Assert.NotNull(storeFactory);
+        Assert.NotNull(storeFactory.Value);
+    }
+
+    /// <summary>
     ///     AddReservoirDevTools should throw when services is null.
     /// </summary>
     [Fact]

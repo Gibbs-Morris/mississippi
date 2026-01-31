@@ -54,9 +54,8 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         ReservoirDevToolsOptions options
     )
     {
-        Mock<IServiceProvider> serviceProviderMock = new();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(IStore))).Returns(store);
-        return new(serviceProviderMock.Object, interop, Options.Create(options));
+        Lazy<IStore> storeFactory = new(() => store);
+        return new(storeFactory, interop, Options.Create(options));
     }
 
     private void SetupJsModuleForConnection()

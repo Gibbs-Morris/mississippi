@@ -271,7 +271,7 @@ Subscribers receive events synchronously during dispatch. Keep handlers fast to 
 
 All events inherit from `StoreEventBase`.
 
-([StoreEventBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StoreEvent.cs),
+([StoreEventBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StoreEventBase.cs),
 [ActionDispatchingEvent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/ActionDispatchingEvent.cs),
 [ActionDispatchedEvent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/ActionDispatchedEvent.cs),
 [StateRestoredEvent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StateRestoredEvent.cs),
