@@ -141,35 +141,167 @@ protected TResult Select<TState1, TState2, TState3, TResult>(
 - `docs/Docusaurus/docs/client-state-management/store.md` — Add Select method documentation
 - `docs/Docusaurus/docs/client-state-management/store-component.md` — Add Select method documentation
 
-### Step 1.4: Add Spring Sample Selectors
+### Step 1.4: Add Memoization Utilities
 
 **Files to create**:
-- `samples/Spring/Spring.Client/Features/EntitySelection/EntitySelectionSelectors.cs`
+- `src/Reservoir/Selectors/Memoize.cs`
+- `src/Reservoir/Selectors/MemoizedSelector.cs`
 
-**Example implementation**:
+**Implementation**:
 ```csharp
-namespace Spring.Client.Features.EntitySelection;
+namespace Mississippi.Reservoir.Selectors;
 
 /// <summary>
-///     Pure selector functions for entity selection state.
+///     Utilities for creating memoized selectors that cache results when input state unchanged.
 /// </summary>
-public static class EntitySelectionSelectors
+public static class Memoize
 {
     /// <summary>
-    ///     Gets whether an entity is currently selected.
+    ///     Creates a memoized selector that caches the result when input state reference is unchanged.
     /// </summary>
-    public static bool HasSelection(EntitySelectionState state)
-        => !string.IsNullOrEmpty(state.EntityId);
+    public static Func<TState, TResult> Create<TState, TResult>(
+        Func<TState, TResult> selector)
+        where TState : class
+    {
+        TState? lastInput = null;
+        TResult? lastResult = default;
+
+        return state =>
+        {
+            if (ReferenceEquals(state, lastInput))
+            {
+                return lastResult!;
+            }
+
+            lastInput = state;
+            lastResult = selector(state);
+            return lastResult;
+        };
+    }
 
     /// <summary>
-    ///     Gets the selected entity ID or a default value.
+    ///     Creates a memoized selector for two states.
     /// </summary>
-    public static string GetEntityIdOrDefault(EntitySelectionState state, string defaultValue = "")
-        => state.EntityId ?? defaultValue;
+    public static Func<TState1, TState2, TResult> Create<TState1, TState2, TResult>(
+        Func<TState1, TState2, TResult> selector)
+        where TState1 : class
+        where TState2 : class
+    {
+        TState1? lastInput1 = null;
+        TState2? lastInput2 = null;
+        TResult? lastResult = default;
+
+        return (state1, state2) =>
+        {
+            if (ReferenceEquals(state1, lastInput1) && ReferenceEquals(state2, lastInput2))
+            {
+                return lastResult!;
+            }
+
+            lastInput1 = state1;
+            lastInput2 = state2;
+            lastResult = selector(state1, state2);
+            return lastResult;
+        };
+    }
 }
 ```
 
-### Step 1.5: Update Framework Instructions
+**Tests**:
+- `tests/Reservoir.L0Tests/Selectors/MemoizeTests.cs`
+
+### Step 1.5: Add Spring Sample Selectors
+
+**Files to create**:
+- `samples/Spring/Spring.Client/Features/EntitySelection/Selectors/EntitySelectionSelectors.cs`
+- `samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountAggregateSelectors.cs`
+- `samples/Spring/Spring.Client/Features/SignalR/Selectors/SignalRConnectionSelectors.cs`
+
+**EntitySelectionSelectors**:
+```csharp
+namespace Spring.Client.Features.EntitySelection.Selectors;
+
+public static class EntitySelectionSelectors
+{
+    public static bool HasSelection(EntitySelectionState state)
+        => !string.IsNullOrEmpty(state.EntityId);
+
+    public static string? GetEntityId(EntitySelectionState state)
+        => state.EntityId;
+}
+```
+
+**BankAccountAggregateSelectors**:
+```csharp
+namespace Spring.Client.Features.BankAccountAggregate.Selectors;
+
+public static class BankAccountAggregateSelectors
+{
+    public static bool IsExecuting(BankAccountAggregateState state)
+        => state.IsExecuting;
+
+    public static bool HasError(BankAccountAggregateState state)
+        => !string.IsNullOrEmpty(state.ErrorMessage);
+
+    public static string? GetErrorMessage(BankAccountAggregateState state)
+        => state.ErrorMessage;
+}
+```
+
+**SignalRConnectionSelectors**:
+```csharp
+namespace Spring.Client.Features.SignalR.Selectors;
+
+public static class SignalRConnectionSelectors
+{
+    public static bool IsConnected(SignalRConnectionState state)
+        => state.Status == SignalRConnectionStatus.Connected;
+
+    public static bool IsDisconnected(SignalRConnectionState state)
+        => state.Status != SignalRConnectionStatus.Connected;
+}
+```
+
+### Step 1.6: Update Spring Sample Pages to Use Selectors
+
+**Files to modify**:
+- `samples/Spring/Spring.Client/Pages/Index.razor.cs`
+
+**Refactor computed properties to use selectors**:
+
+Current (inline):
+```csharp
+private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
+private bool IsDisconnected => ConnectionState.Status != SignalRConnectionStatus.Connected;
+```
+
+Updated (selectors):
+```csharp
+private string? SelectedEntityId => Select(EntitySelectionSelectors.GetEntityId);
+private bool IsDisconnected => Select(SignalRConnectionSelectors.IsDisconnected);
+```
+
+### Step 1.7: Add Documentation
+
+**Files to create**:
+- `docs/Docusaurus/docs/client-state-management/selectors.md`
+
+**Content outline**:
+1. What are selectors?
+2. Why use selectors?
+3. Writing selectors (static methods)
+4. Memoization
+5. Using selectors in components
+6. Composing selectors
+7. Testing selectors
+8. Best practices and rules
+
+**Files to modify**:
+- `docs/Docusaurus/docs/client-state-management/reservoir.md` — Add selectors to Learn More section
+- `docs/Docusaurus/docs/client-state-management/store.md` — Add Select method documentation
+- `docs/Docusaurus/docs/client-state-management/store-component.md` — Add Select method documentation
+
+### Step 1.8: Update Framework Instructions
 
 **Files to modify**:
 - `.github/instructions/mississippi-framework.instructions.md`
@@ -284,52 +416,9 @@ public static partial class BankAccountBalanceSelectors
 
 ---
 
-### Phase 4: Memoization (Future)
+### Phase 4: Memoization (Moved to This PR)
 
-### Step 4.1: Add Memoization Utilities
-
-**Files to create**:
-- `src/Reservoir/Selectors/Memoize.cs`
-
-**Implementation**:
-```csharp
-namespace Mississippi.Reservoir.Selectors;
-
-/// <summary>
-///     Utilities for creating memoized selectors.
-/// </summary>
-public static class Memoize
-{
-    /// <summary>
-    ///     Creates a memoized version of a selector that caches the result
-    ///     when the input state reference is unchanged.
-    /// </summary>
-    public static Func<TState, TResult> Create<TState, TResult>(
-        Func<TState, TResult> selector)
-        where TState : class
-    {
-        TState? lastInput = null;
-        TResult? lastResult = default;
-
-        return state =>
-        {
-            if (ReferenceEquals(state, lastInput))
-            {
-                return lastResult!;
-            }
-
-            lastInput = state;
-            lastResult = selector(state);
-            return lastResult;
-        };
-    }
-}
-```
-
-### Step 4.2: Memoization Documentation
-
-**Files to modify**:
-- `docs/Docusaurus/docs/client-state-management/selectors.md` — Add memoization section
+Memoization is now included in Phase 1 (this PR). See Step 1.4.
 
 ---
 
@@ -341,12 +430,16 @@ public static class Memoize
 |------------|----------|
 | `SelectorExtensionsTests` | Extension methods on IStore |
 | `StoreComponentSelectorTests` | Select methods in component |
+| `MemoizeTests` | Memoization utility |
 
 ### Sample Validation
 
 | Validation | Location |
 |------------|----------|
-| EntitySelectionSelectors usage | Spring.Client/Features/EntitySelection |
+| EntitySelectionSelectors usage | Spring.Client/Features/EntitySelection/Selectors |
+| BankAccountAggregateSelectors usage | Spring.Client/Features/BankAccountAggregate/Selectors |
+| SignalRConnectionSelectors usage | Spring.Client/Features/SignalR/Selectors |
+| Index.razor.cs refactored | Spring.Client/Pages |
 
 ---
 
@@ -367,14 +460,19 @@ public static class Memoize
 | Operation | Path |
 |-----------|------|
 | Create | `src/Reservoir.Abstractions/SelectorExtensions.cs` |
+| Create | `src/Reservoir/Selectors/Memoize.cs` |
 | Modify | `src/Reservoir.Blazor/StoreComponent.cs` |
 | Create | `tests/Reservoir.Abstractions.L0Tests/SelectorExtensionsTests.cs` |
 | Create | `tests/Reservoir.Blazor.L0Tests/StoreComponentSelectorTests.cs` |
+| Create | `tests/Reservoir.L0Tests/Selectors/MemoizeTests.cs` |
 | Create | `docs/Docusaurus/docs/client-state-management/selectors.md` |
 | Modify | `docs/Docusaurus/docs/client-state-management/reservoir.md` |
 | Modify | `docs/Docusaurus/docs/client-state-management/store.md` |
 | Modify | `docs/Docusaurus/docs/client-state-management/store-component.md` |
 | Create | `samples/Spring/Spring.Client/Features/EntitySelection/Selectors/EntitySelectionSelectors.cs` |
+| Create | `samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountAggregateSelectors.cs` |
+| Create | `samples/Spring/Spring.Client/Features/SignalR/Selectors/SignalRConnectionSelectors.cs` |
+| Modify | `samples/Spring/Spring.Client/Pages/Index.razor.cs` |
 | Modify | `.github/instructions/mississippi-framework.instructions.md` |
 
 ---
@@ -397,10 +495,3 @@ public static class Memoize
 | Create | `src/Inlet.Generators.Abstractions/GenerateSelectorsAttribute.cs` |
 | Modify | `src/Inlet.Client.Generators/...` |
 | Create | `tests/Inlet.Client.Generators.L0Tests/SelectorGeneratorTests.cs` |
-
-### Phase 4 (Memoization)
-
-| Operation | Path |
-|-----------|------|
-| Create | `src/Reservoir/Selectors/Memoize.cs` |
-| Create | `tests/Reservoir.L0Tests/Selectors/MemoizeTests.cs` |

@@ -25,6 +25,15 @@
 - Updated implementation plan to mark Phases 2-4 as future
 - Confirmed client can still build its own selectors for client-only or cross-state logic
 
+### 11:30 UTC — Scope expanded
+
+- User requested memoization be included in this PR
+- User requested sample app (Spring.Client) be updated to demonstrate selectors
+- Moved memoization from Phase 4 → Step 1.4
+- Added Steps 1.5-1.6 for sample selector files and Index.razor.cs refactoring
+- Updated test plan to include MemoizeTests
+- Updated files changed summary with all new files
+
 ### Status
 
 - [x] Spec scaffolded
@@ -32,5 +41,5 @@
 - [x] RFC written
 - [x] Verification complete
 - [x] Implementation plan detailed
-- [x] Scope refined to Phase 1 only
-- [ ] Awaiting approval to proceed with implementation
+- [x] Scope refined to Phase 1 + memoization + sample app
+- [ ] Implementation in progress
