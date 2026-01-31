@@ -118,43 +118,45 @@ You MUST follow this sequence and keep the headings exactly as listed.
   - Keep boundaries crisp; avoid scope creep.
 - Ensure SKILL.md uses this baseline structure (adjust as needed):
 
-  ---
-  name: <skill-name>
-  description: <what it does>. Use this when <specific triggers/keywords>.
-  license: <optional>
-  compatibility: <optional>
-  metadata:
-    owner: mississippi
-    version: "0.1"
-  ---
+```yaml
+---
+name: <skill-name>
+description: <what it does>. Use this when <specific triggers/keywords>.
+license: <optional>
+compatibility: <optional>
+metadata:
+  owner: mississippi
+  version: "0.1"
+---
 
-  # <Human title>
+# <Human title>
 
-  ## When to use this skill
-  - ...
+## When to use this skill
+- ...
 
-  ## Inputs you should expect
-  - ...
+## Inputs you should expect
+- ...
 
-  ## Outputs you must produce
-  - ...
+## Outputs you must produce
+- ...
 
-  ## Procedure
-  1. ...
-  2. ...
+## Procedure
+1. ...
+2. ...
 
-  ## Examples
-  ### Example
-  **Input**
-  ...
-  **Output**
-  ...
+## Examples
+### Example
+**Input**
+...
+**Output**
+...
 
-  ## Guardrails
-  - ...
+## Guardrails
+- ...
 
-  ## Done criteria
-  - [ ] ...
+## Done criteria
+- [ ] ...
+```
 
 - If scripts/resources exist:
   - Reference them with relative links (e.g., `[template](./assets/templates/x.md)`).
