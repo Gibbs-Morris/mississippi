@@ -1,0 +1,93 @@
+/* Shell - Application frame template */
+/* Combines NavRail, CommandBar, Breadcrumb, TabBar, and Lens */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-shell {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    background: var(--rf-spectrum-surface-base);
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-shell__nav-rail {
+    flex-shrink: 0;
+    height: 100%;
+    z-index: var(--rf-depth-navigation);
+}
+
+.rf-shell__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.rf-shell__command-bar {
+    flex-shrink: 0;
+    z-index: var(--rf-depth-header);
+}
+
+.rf-shell__breadcrumb {
+    flex-shrink: 0;
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    border-bottom: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-shell__tab-bar {
+    flex-shrink: 0;
+    padding: 0 var(--rf-space-md);
+    background: var(--rf-spectrum-surface-raised);
+}
+
+.rf-shell__content {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+.rf-shell__lens {
+    position: sticky;
+    top: 0;
+    z-index: var(--rf-depth-sticky);
+    background: var(--rf-spectrum-surface-base);
+}
+
+.rf-shell__footer {
+    flex-shrink: 0;
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    background: var(--rf-spectrum-surface-raised);
+    border-top: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-shell__aside {
+    flex-shrink: 0;
+    width: 320px;
+    height: 100%;
+    border-left: 1px solid var(--rf-spectrum-surface-edge);
+    background: var(--rf-spectrum-surface-raised);
+    overflow: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .rf-shell {
+        flex-direction: column;
+    }
+
+    .rf-shell__nav-rail {
+        height: auto;
+        width: 100%;
+        order: 2;
+    }
+
+    .rf-shell__main {
+        order: 1;
+    }
+
+    .rf-shell__aside {
+        display: none;
+    }
+}

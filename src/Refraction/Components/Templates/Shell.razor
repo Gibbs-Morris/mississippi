@@ -1,0 +1,128 @@
+@namespace Refraction.Components.Templates
+
+<div class="rf-shell @Class"
+     style="@Style"
+     @attributes="AdditionalAttributes">
+    
+    @if (NavRailContent != null)
+    {
+        <aside class="rf-shell__nav-rail">
+            @NavRailContent
+        </aside>
+    }
+    
+    <div class="rf-shell__main">
+        @if (CommandBarContent != null)
+        {
+            <header class="rf-shell__command-bar">
+                @CommandBarContent
+            </header>
+        }
+        
+        @if (BreadcrumbContent != null)
+        {
+            <div class="rf-shell__breadcrumb">
+                @BreadcrumbContent
+            </div>
+        }
+        
+        @if (TabBarContent != null)
+        {
+            <div class="rf-shell__tab-bar">
+                @TabBarContent
+            </div>
+        }
+        
+        <main class="rf-shell__content" role="main">
+            @if (LensContent != null)
+            {
+                <div class="rf-shell__lens">
+                    @LensContent
+                </div>
+            }
+            @ChildContent
+        </main>
+        
+        @if (FooterContent != null)
+        {
+            <footer class="rf-shell__footer">
+                @FooterContent
+            </footer>
+        }
+    </div>
+    
+    @if (AsideContent != null)
+    {
+        <aside class="rf-shell__aside">
+            @AsideContent
+        </aside>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the NavRail content slot.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? NavRailContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the CommandBar content slot.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? CommandBarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Breadcrumb content slot.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? BreadcrumbContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TabBar content slot.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? TabBarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Lens content slot.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? LensContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the main content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the footer content slot.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? FooterContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the right-side aside content slot.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? AsideContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}
