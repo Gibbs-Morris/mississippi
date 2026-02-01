@@ -1,0 +1,117 @@
+.rf-dashboard-page__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rf-spacing-md);
+    padding: var(--rf-spacing-2xl);
+    color: var(--rf-color-text-secondary);
+    min-height: 20rem;
+}
+
+.rf-dashboard-page__spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid var(--rf-color-surface-border);
+    border-top-color: var(--rf-color-accent-primary);
+    border-radius: 50%;
+    animation: rf-dashboard-spin 1s linear infinite;
+}
+
+@keyframes rf-dashboard-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.rf-dashboard-page__loading-text {
+    font-size: var(--rf-font-size-md);
+}
+
+.rf-dashboard-page__time-range {
+    min-width: 10rem;
+}
+
+.rf-dashboard-page__layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-spacing-lg);
+}
+
+.rf-dashboard-page__layout--grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--rf-spacing-lg);
+}
+
+.rf-dashboard-page__header {
+    grid-column: 1 / -1;
+}
+
+.rf-dashboard-page__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--rf-spacing-md);
+}
+
+.rf-dashboard-page__charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: var(--rf-spacing-lg);
+}
+
+.rf-dashboard-page__tables {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-spacing-lg);
+}
+
+.rf-dashboard-page__custom {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-spacing-md);
+}
+
+.rf-dashboard-page__sidebar {
+    width: 20rem;
+}
+
+/* Flow layout for stacked sections */
+.rf-dashboard-page__layout--flow {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Split layout for side-by-side sections */
+.rf-dashboard-page__layout--split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 1024px) {
+    .rf-dashboard-page__layout--split {
+        grid-template-columns: 1fr;
+    }
+
+    .rf-dashboard-page__sidebar {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .rf-dashboard-page__metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .rf-dashboard-page__charts {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-dashboard-page__spinner {
+        animation: none;
+        opacity: 0.7;
+    }
+}

@@ -1,0 +1,319 @@
+@namespace Refraction.Pages.Templates
+@inherits StoreComponent
+@using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Reservoir.Blazor
+@using Refraction.Components.Molecules
+@using Refraction.Components.Organisms
+@using Refraction.Components.Templates
+
+<Shell Class="@GetCssClass()"
+       Style="@Style"
+       @attributes="AdditionalAttributes">
+    
+    <NavRailContent>
+        @if (NavRailContent != null)
+        {
+            @NavRailContent
+        }
+    </NavRailContent>
+    
+    <CommandBarContent>
+        @if (CommandBarContent != null)
+        {
+            @CommandBarContent
+        }
+        else
+        {
+            @if (ShowRefreshButton)
+            {
+                <ActionChip Label="@(IsRefreshing ? "Refreshing..." : "Refresh")"
+                            Variant="ActionChipVariant.Default"
+                            IsDisabled="@IsRefreshing"
+                            OnClick="HandleRefresh" />
+            }
+            @if (ShowExportButton)
+            {
+                <ActionChip Label="Export"
+                            Variant="ActionChipVariant.Default"
+                            IsDisabled="@IsLoading"
+                            OnClick="HandleExport" />
+            }
+            @if (ShowSettingsButton)
+            {
+                <ActionChip Label="Settings"
+                            Variant="ActionChipVariant.Ghost"
+                            OnClick="HandleSettings" />
+            }
+        }
+    </CommandBarContent>
+    
+    <BreadcrumbContent>
+        @if (BreadcrumbItems?.Any() == true)
+        {
+            <Breadcrumb Items="@BreadcrumbItems" />
+        }
+    </BreadcrumbContent>
+    
+    <TabBarContent>
+        @if (TabBarContent != null)
+        {
+            @TabBarContent
+        }
+    </TabBarContent>
+    
+    <ChildContent>
+        @if (IsLoading && !HasAnyContent())
+        {
+            <div class="rf-dashboard-page__loading" role="status" aria-label="Loading dashboard">
+                <div class="rf-dashboard-page__spinner"></div>
+                <span class="rf-dashboard-page__loading-text">@LoadingText</span>
+            </div>
+        }
+        else
+        {
+            @if (HeaderContent != null)
+            {
+                <header class="rf-dashboard-page__header">
+                    @HeaderContent
+                </header>
+            }
+            else if (!string.IsNullOrEmpty(Title))
+            {
+                <header class="rf-dashboard-page__header">
+                    <h1 class="rf-dashboard-page__title">@Title</h1>
+                    @if (!string.IsNullOrEmpty(Subtitle))
+                    {
+                        <p class="rf-dashboard-page__subtitle">@Subtitle</p>
+                    }
+                    @if (LastUpdated.HasValue)
+                    {
+                        <p class="rf-dashboard-page__updated">Last updated: @LastUpdated.Value.ToString("g")</p>
+                    }
+                </header>
+            }
+            
+            <div class="rf-dashboard-page__content rf-dashboard-page__content--@GetLayoutModeClass()">
+                @if (MetricsContent != null)
+                {
+                    <section class="rf-dashboard-page__section rf-dashboard-page__metrics" 
+                             aria-label="Key metrics">
+                        @MetricsContent
+                    </section>
+                }
+                
+                @if (ChartsContent != null)
+                {
+                    <section class="rf-dashboard-page__section rf-dashboard-page__charts" 
+                             aria-label="Charts and visualizations">
+                        @ChartsContent
+                    </section>
+                }
+                
+                @if (TablesContent != null)
+                {
+                    <section class="rf-dashboard-page__section rf-dashboard-page__tables" 
+                             aria-label="Data tables">
+                        @TablesContent
+                    </section>
+                }
+                
+                @if (ChildContent != null)
+                {
+                    <section class="rf-dashboard-page__section rf-dashboard-page__custom">
+                        @ChildContent
+                    </section>
+                }
+            </div>
+        }
+    </ChildContent>
+    
+    <AsideContent>
+        @if (SidebarContent != null)
+        {
+            <Lens Variant="LensVariant.Card"
+                  Class="rf-dashboard-page__sidebar">
+                @SidebarContent
+            </Lens>
+        }
+    </AsideContent>
+    
+</Shell>
+
+@code {
+    /// <summary>
+    /// Gets or sets the breadcrumb items.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<BreadcrumbItem>? BreadcrumbItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the nav rail content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? NavRailContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the dashboard title.
+    /// </summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets the dashboard subtitle.
+    /// </summary>
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last updated timestamp.
+    /// </summary>
+    [Parameter]
+    public DateTimeOffset? LastUpdated { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the dashboard is loading.
+    /// </summary>
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the dashboard is refreshing.
+    /// </summary>
+    [Parameter]
+    public bool IsRefreshing { get; set; }
+
+    /// <summary>
+    /// Gets or sets the loading message text.
+    /// </summary>
+    [Parameter]
+    public string LoadingText { get; set; } = "Loading dashboard...";
+
+    /// <summary>
+    /// Gets or sets the dashboard layout mode.
+    /// </summary>
+    [Parameter]
+    public DashboardLayoutMode LayoutMode { get; set; } = DashboardLayoutMode.Grid;
+
+    /// <summary>
+    /// Gets or sets whether to show the refresh button.
+    /// </summary>
+    [Parameter]
+    public bool ShowRefreshButton { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to show the export button.
+    /// </summary>
+    [Parameter]
+    public bool ShowExportButton { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to show the settings button.
+    /// </summary>
+    [Parameter]
+    public bool ShowSettingsButton { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when refresh is requested.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnRefresh { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when export is requested.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnExport { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when settings is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSettings { get; set; }
+
+    /// <summary>
+    /// Gets or sets the command bar content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? CommandBarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tab bar content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? TabBarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the header content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? HeaderContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the metrics section content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? MetricsContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the charts section content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChartsContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tables section content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? TablesContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? SidebarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the main child content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string GetCssClass() => string.IsNullOrEmpty(Class) ? "rf-dashboard-page" : $"rf-dashboard-page {Class}";
+
+    private string GetLayoutModeClass() => LayoutMode.ToString().ToLowerInvariant();
+
+    private bool HasAnyContent() => MetricsContent != null || ChartsContent != null || TablesContent != null || ChildContent != null;
+
+    private async Task HandleRefresh()
+    {
+        await OnRefresh.InvokeAsync();
+    }
+
+    private async Task HandleExport()
+    {
+        await OnExport.InvokeAsync();
+    }
+
+    private async Task HandleSettings()
+    {
+        await OnSettings.InvokeAsync();
+    }
+}
