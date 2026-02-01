@@ -25,3 +25,4 @@ Design and implement an enterprise-grade, Blazor-native UI design system and com
 - Provide enterprise data-app controls with mobile-first behavior.
 - Encapsulate Chart.js behind Blazor-first components.
 - Documentation-first deliverables under docs/Docusaurus/docs/refraction.
+- Treat existing Refraction UI component code as untrusted legacy and remove/clear it to start fresh.

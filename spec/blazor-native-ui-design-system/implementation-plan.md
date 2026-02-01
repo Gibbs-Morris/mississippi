@@ -5,6 +5,7 @@
 - Incorporates existing Refraction atoms/molecules/organisms and token file.
 - Adds explicit bUnit-based L0 tests for new components.
 - Adds explicit docs placement under docs/Docusaurus/docs/refraction.
+- Adds requirement to clear legacy Refraction component content before reimplementation.
 
 ## Detailed step-by-step checklist
 
@@ -21,9 +22,14 @@
 	- Document how to override tokens via CSS variables.
 
 3. Component architecture alignment
+	- Clear legacy Refraction component content to start fresh, retaining folder structure where needed.
 	- Keep atomic design folders: src/Refraction/Components/{Atoms,Molecules,Organisms}.
 	- Add Templates/Pages compositions under src/Refraction.Pages where appropriate.
 	- Ensure components follow state-down / events-up contract and DX conventions.
+
+3.1. Legacy wipe validation
+	- Scan solution references to Refraction components to avoid breaking builds.
+	- Remove or replace old components after new baseline primitives are in place.
 
 4. Signature hologram components
 	- Implement or align GlassPlane, RingNav, RibbonDetail, CalloutLine, VolumetricObject, PulseConfirm.

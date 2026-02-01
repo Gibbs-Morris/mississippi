@@ -18,6 +18,7 @@
 - Atomic design structure across docs and code.
 - Mandatory Chart.js integration via Blazor-first components with strongly typed .NET models.
 - Built-in themes: Neon Blue (dark), Water Blue (light + dark), yin/yang approach across light/dark.
+- Existing Refraction UI component content is untrusted; remove/clear it to start fresh.
 
 ## Sources to verify
 

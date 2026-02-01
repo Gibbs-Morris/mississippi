@@ -12,6 +12,7 @@
 8. Accessibility and keyboard navigation can be implemented consistently across components.
 9. Documentation-first deliverables can be placed under docs/Docusaurus/docs/refraction with required front matter.
 10. Atomic design can be mirrored in the docs sidebar and component library structure.
+11. Existing Refraction component content can be cleared without breaking required consumers (to be validated).
 
 ## Verification questions
 
@@ -25,6 +26,7 @@
 8. How are mobile/responsive behaviors handled in current UI assets (CSS breakpoints, responsive utilities, or layout components)?
 9. Are there any existing build or lint rules specific to docs/Docusaurus that constrain content or structure?
 10. Is there a preferred location or naming convention for new component libraries within src/ or tests/ that should be followed?
+11. What consumers (if any) currently depend on Refraction components such that wiping them would break builds?
 
 ## Verification answers (evidence-based)
 
@@ -38,3 +40,4 @@
 8. No explicit responsive utilities were found in the inspected Refraction component CSS; media queries are not present in Pane/TelemetryStrip CSS (UNVERIFIED repo-wide).
 9. Docs follow Docusaurus structure with front matter; docs/Docusaurus/README.md describes site build/test. Markdownlint rules apply repository-wide.
 10. The Refraction library already uses atomic design folders; new component work should follow the existing src/Refraction/Components/{Atoms,Molecules,Organisms} structure and L0 tests under tests/Refraction.*.L0Tests.
+11. UNVERIFIED: Downstream consumers of Refraction components have not been validated. Requires solution build or reference scan before removing content.
