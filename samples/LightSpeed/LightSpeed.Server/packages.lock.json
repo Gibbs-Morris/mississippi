@@ -74,7 +74,8 @@
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
           "Mississippi.Refraction.Pages": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )",
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
       },
       "Mississippi.Refraction": {
@@ -99,6 +100,13 @@
       },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
+      },
+      "Mississippi.Reservoir.Blazor": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {
         "type": "CentralTransitive",
