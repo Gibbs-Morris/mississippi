@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
+using Mississippi.Reservoir.State;
 
 
 namespace Mississippi.Reservoir.L0Tests;
@@ -139,6 +140,21 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
+    ///     Root reducer for test feature state that handles IncrementAction.
+    /// </summary>
+    private sealed class TestFeatureRootReducer : IRootReducer<TestFeatureState>
+    {
+        private readonly RootReducer<TestFeatureState> innerReducer = new([new TestFeatureActionReducer()]);
+
+        /// <inheritdoc />
+        public TestFeatureState Reduce(
+            TestFeatureState state,
+            IAction action
+        ) =>
+            innerReducer.Reduce(state, action);
+    }
+
+    /// <summary>
     ///     Test feature state for unit tests.
     /// </summary>
     private sealed record TestFeatureState : IFeatureState
@@ -261,7 +277,7 @@ public sealed class StoreTests : IDisposable
         TestMiddleware middleware = new(() => middlewareInvoked = true);
 
         // Act
-        using Store diStore = new([], [middleware]);
+        using Store diStore = new([], [middleware], TimeProvider.System);
         diStore.Dispatch(new IncrementAction());
 
         // Assert
@@ -283,7 +299,7 @@ public sealed class StoreTests : IDisposable
     public void ConstructorWithNullFeatureRegistrationsThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store(null!, []));
+        Assert.Throws<ArgumentNullException>(() => new Store(null!, [], TimeProvider.System));
     }
 
     /// <summary>
@@ -301,7 +317,7 @@ public sealed class StoreTests : IDisposable
     public void ConstructorWithNullMiddlewareThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new Store([], null!));
+        Assert.Throws<ArgumentNullException>(() => new Store([], null!, TimeProvider.System));
     }
 
     /// <summary>
@@ -443,6 +459,36 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
+    ///     GetStateSnapshot should return the current state of all registered features.
+    /// </summary>
+    [Fact]
+    public void GetStateSnapshotReturnsCurrentState()
+    {
+        // Arrange - create store with reducer and initial state
+        IRootReducer<TestFeatureState> reducer = new TestFeatureRootReducer();
+        List<IFeatureStateRegistration> registrations =
+        [
+            new FeatureStateRegistration<TestFeatureState>(reducer),
+        ];
+        using Store store = new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
+
+        // Act - get initial snapshot
+        IReadOnlyDictionary<string, object> initialSnapshot = store.GetStateSnapshot();
+
+        // Assert - initial state should have Counter = 0
+        TestFeatureState initialState = (TestFeatureState)initialSnapshot[TestFeatureState.FeatureKey];
+        Assert.Equal(0, initialState.Counter);
+
+        // Act - dispatch action and get updated snapshot
+        store.Dispatch(new IncrementAction());
+        IReadOnlyDictionary<string, object> updatedSnapshot = store.GetStateSnapshot();
+
+        // Assert - snapshot should reflect updated state
+        TestFeatureState updatedState = (TestFeatureState)updatedSnapshot[TestFeatureState.FeatureKey];
+        Assert.Equal(1, updatedState.Counter);
+    }
+
+    /// <summary>
     ///     Middleware pipeline should execute in correct order.
     /// </summary>
     [Fact]
@@ -534,6 +580,93 @@ public sealed class StoreTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => sut.RegisterMiddleware(null!));
+    }
+
+    /// <summary>
+    ///     ResetToInitialStateAction should reset state to initial values.
+    /// </summary>
+    [Fact]
+    public void ResetToInitialStateActionResetsState()
+    {
+        // Arrange - create store with reducer
+        IRootReducer<TestFeatureState> reducer = new TestFeatureRootReducer();
+        List<IFeatureStateRegistration> registrations =
+        [
+            new FeatureStateRegistration<TestFeatureState>(reducer),
+        ];
+        using Store store = new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
+
+        // Increment state first
+        store.Dispatch(new IncrementAction());
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(2, store.GetState<TestFeatureState>().Counter);
+
+        // Act
+        store.Dispatch(new ResetToInitialStateAction());
+
+        // Assert - should be back to initial state
+        TestFeatureState state = store.GetState<TestFeatureState>();
+        Assert.Equal(0, state.Counter);
+    }
+
+    /// <summary>
+    ///     RestoreStateAction should ignore incompatible feature states.
+    /// </summary>
+    [Fact]
+    public void RestoreStateActionIgnoresIncompatibleState()
+    {
+        // Arrange
+        List<IFeatureStateRegistration> registrations =
+        [
+            new FeatureStateRegistration<TestFeatureState>(),
+        ];
+        using Store store = new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
+        IReadOnlyDictionary<string, object> newSnapshot = new Dictionary<string, object>
+        {
+            [TestFeatureState.FeatureKey] = "not-a-state",
+        };
+
+        // Act
+        store.Dispatch(new RestoreStateAction(newSnapshot));
+
+        // Assert - state should be unchanged (incompatible type ignored)
+        TestFeatureState state = store.GetState<TestFeatureState>();
+        Assert.Equal(0, state.Counter);
+    }
+
+    /// <summary>
+    ///     RestoreStateAction should restore state from snapshot.
+    /// </summary>
+    [Fact]
+    public void RestoreStateActionRestoresStateFromSnapshot()
+    {
+        // Arrange - create store with reducer
+        IRootReducer<TestFeatureState> reducer = new TestFeatureRootReducer();
+        List<IFeatureStateRegistration> registrations =
+        [
+            new FeatureStateRegistration<TestFeatureState>(reducer),
+        ];
+        using Store store = new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
+
+        // Increment state
+        store.Dispatch(new IncrementAction());
+        Assert.Equal(1, store.GetState<TestFeatureState>().Counter);
+
+        // Create snapshot with different value
+        IReadOnlyDictionary<string, object> snapshot = new Dictionary<string, object>
+        {
+            [TestFeatureState.FeatureKey] = new TestFeatureState
+            {
+                Counter = 42,
+            },
+        };
+
+        // Act
+        store.Dispatch(new RestoreStateAction(snapshot));
+
+        // Assert
+        TestFeatureState state = store.GetState<TestFeatureState>();
+        Assert.Equal(42, state.Counter);
     }
 
     /// <summary>
