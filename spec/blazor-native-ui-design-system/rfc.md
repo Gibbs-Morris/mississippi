@@ -10,6 +10,8 @@ The repository lacks a cohesive, enterprise-grade Blazor-native design system an
 - Implement a Blazor-native component library with strong DX and enterprise data-app capabilities.
 - Integrate Chart.js behind Blazor-first components without leaking JS types.
 - Provide built-in themes that express the hologram aesthetic.
+- Ensure components honor state-down / events-up interaction contract.
+- Ensure mobile-first behavior with explicit mobile modes for dense components.
 
 ## Non-goals
 
@@ -27,6 +29,7 @@ The repository lacks a cohesive, enterprise-grade Blazor-native design system an
 - Define tokens (Opacity, Stroke, Glow, Depth, Motion) and theme variants (Neon Blue, Water Blue).
 - Implement core components and signature hologram components aligned to the design brief.
 - Encapsulate Chart.js via .NET configuration models.
+- Use atomic design as a structural taxonomy for docs and code.
 
 ## Alternatives
 
