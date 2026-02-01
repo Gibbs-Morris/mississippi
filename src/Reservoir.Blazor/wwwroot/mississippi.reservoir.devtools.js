@@ -2,11 +2,11 @@ let connection = null;
 let unsubscribe = null;
 
 export function connect(options, dotNetRef) {
-  if (typeof window === 'undefined' || !window.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (typeof globalThis.window === 'undefined' || !globalThis.__REDUX_DEVTOOLS_EXTENSION__) {
     return false;
   }
 
-  connection = window.__REDUX_DEVTOOLS_EXTENSION__.connect(options || {});
+  connection = globalThis.__REDUX_DEVTOOLS_EXTENSION__.connect(options || {});
   if (!connection) {
     return false;
   }
@@ -33,24 +33,18 @@ export function connect(options, dotNetRef) {
 }
 
 export function init(state) {
-  if (connection && connection.init) {
-    connection.init(state);
-  }
+  connection?.init?.(state);
 }
 
 export function send(action, state) {
-  if (connection && connection.send) {
-    connection.send(action, state);
-  }
+  connection?.send?.(action, state);
 }
 
 export function disconnect() {
-  if (connection && connection.unsubscribe) {
-    try {
-      connection.unsubscribe();
-    } catch {
-      // ignore failures
-    }
+  try {
+    connection?.unsubscribe?.();
+  } catch {
+    // ignore failures
   }
 
   connection = null;
