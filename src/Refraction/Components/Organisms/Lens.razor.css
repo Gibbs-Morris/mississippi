@@ -1,0 +1,102 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Lens - Container / surface with depth and optional caustic
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rf-lens {
+    position: relative;
+    background-color: var(--rf-bg);
+    border-radius: var(--rf-radius-md);
+    overflow: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Content layer
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-lens__content {
+    position: relative;
+    z-index: 1;
+    padding: var(--rf-space-md);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Caustic background layer
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-lens__caustic {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Border layer
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-lens__border {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid var(--rf-veil-faint);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variant: Default
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-lens--default {
+    background-color: var(--rf-bg);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variant: Elevated
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-lens--elevated {
+    background-color: var(--rf-bg-raised);
+    box-shadow: var(--rf-depth-elevated);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variant: Sunken
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-lens--sunken {
+    background-color: var(--rf-bg-sunken);
+    box-shadow: var(--rf-depth-sunken);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variant: Card
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-lens--card {
+    background-color: var(--rf-bg-raised);
+    box-shadow: var(--rf-depth-elevated);
+    transition:
+        box-shadow var(--rf-flow-fast) var(--rf-ease-out),
+        transform var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-lens--card:hover {
+    box-shadow: var(--rf-depth-floating);
+    transform: translateY(-2px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variant: Modal
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-lens--modal {
+    background-color: var(--rf-bg-raised);
+    box-shadow: var(--rf-depth-overlay);
+    border-radius: var(--rf-radius-lg);
+}
+
+.rf-lens--modal .rf-lens__content {
+    padding: var(--rf-space-lg);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Reduced motion
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .rf-lens--card:hover {
+        transform: none;
+    }
+}

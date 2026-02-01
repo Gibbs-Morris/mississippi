@@ -1,0 +1,330 @@
+@namespace Refraction.Components.Organisms
+
+@{
+    var monthStart = new DateOnly(_viewYear, _viewMonth, 1);
+    var daysInMonth = DateTime.DaysInMonth(_viewYear, _viewMonth);
+    var firstDayOfWeek = (int)monthStart.DayOfWeek;
+    var weeks = new List<List<DateOnly?>>();
+    var currentWeek = new List<DateOnly?>();
+    
+    // Fill empty cells for days before the 1st
+    for (var i = 0; i < firstDayOfWeek; i++)
+    {
+        currentWeek.Add(null);
+    }
+    
+    // Fill days of the month
+    for (var day = 1; day <= daysInMonth; day++)
+    {
+        currentWeek.Add(new DateOnly(_viewYear, _viewMonth, day));
+        if (currentWeek.Count == 7)
+        {
+            weeks.Add(currentWeek);
+            currentWeek = new List<DateOnly?>();
+        }
+    }
+    
+    // Fill remaining cells
+    if (currentWeek.Count > 0)
+    {
+        while (currentWeek.Count < 7)
+        {
+            currentWeek.Add(null);
+        }
+        weeks.Add(currentWeek);
+    }
+}
+
+<div class="rf-date-picker rf-date-picker--@Size.ToString().ToLowerInvariant() rf-date-picker--@State.ToString().ToLowerInvariant() @(Disabled ? "rf-date-picker--disabled" : "") @Class"
+     style="@Style"
+     @attributes="AdditionalAttributes">
+    
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="rf-date-picker__label">
+            @Label
+            @if (IsRequired)
+            {
+                <span class="rf-date-picker__required" aria-hidden="true">*</span>
+            }
+        </label>
+    }
+    
+    <div class="rf-date-picker__wrapper">
+        <button class="rf-date-picker__trigger"
+                type="button"
+                disabled="@Disabled"
+                aria-haspopup="dialog"
+                aria-expanded="@_isOpen"
+                @onclick="ToggleCalendar">
+            <span class="rf-date-picker__value">
+                @if (Value.HasValue)
+                {
+                    @Value.Value.ToString(DisplayFormat)
+                }
+                else
+                {
+                    <span class="rf-date-picker__placeholder">@Placeholder</span>
+                }
+            </span>
+            <span class="rf-date-picker__icon">
+                <svg viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M2 6H14" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 1V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M11 1V4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </span>
+        </button>
+        
+        @if (_isOpen)
+        {
+            <div class="rf-date-picker__calendar" role="dialog" aria-modal="true" aria-label="Choose date">
+                <div class="rf-date-picker__header">
+                    <button class="rf-date-picker__nav" type="button" @onclick="PreviousMonth" aria-label="Previous month">
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <path d="M10 4L6 8L10 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <span class="rf-date-picker__month-year">
+                        @monthStart.ToString("MMMM yyyy")
+                    </span>
+                    <button class="rf-date-picker__nav" type="button" @onclick="NextMonth" aria-label="Next month">
+                        <svg viewBox="0 0 16 16" fill="none">
+                            <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="rf-date-picker__weekdays">
+                    <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                </div>
+                
+                <div class="rf-date-picker__days">
+                    @foreach (var week in weeks)
+                    {
+                        @foreach (var date in week)
+                        {
+                            @if (date.HasValue)
+                            {
+                                var d = date.Value;
+                                var isSelected = Value.HasValue && Value.Value == d;
+                                var isToday = d == DateOnly.FromDateTime(DateTime.Today);
+                                var isDisabled = (MinDate.HasValue && d < MinDate.Value) || (MaxDate.HasValue && d > MaxDate.Value);
+                                
+                                <button class="rf-date-picker__day @(isSelected ? "rf-date-picker__day--selected" : "") @(isToday ? "rf-date-picker__day--today" : "")"
+                                        type="button"
+                                        disabled="@isDisabled"
+                                        @onclick="@(() => SelectDate(d))"
+                                        aria-selected="@isSelected"
+                                        aria-label="@d.ToString("MMMM d, yyyy")">
+                                    @d.Day
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="rf-date-picker__day rf-date-picker__day--empty"></span>
+                            }
+                        }
+                    }
+                </div>
+                
+                <div class="rf-date-picker__footer">
+                    <button class="rf-date-picker__today" type="button" @onclick="SelectToday">Today</button>
+                    @if (Value.HasValue)
+                    {
+                        <button class="rf-date-picker__clear" type="button" @onclick="ClearDate">Clear</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+    
+    @if (!string.IsNullOrEmpty(HelperText))
+    {
+        <span class="rf-date-picker__helper">@HelperText</span>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMessage) && State == DatePickerState.Error)
+    {
+        <span class="rf-date-picker__error" role="alert">@ErrorMessage</span>
+    }
+</div>
+
+@code {
+    private bool _isOpen;
+    private int _viewYear;
+    private int _viewMonth;
+
+    /// <summary>
+    /// Gets or sets the selected date.
+    /// </summary>
+    [Parameter]
+    public DateOnly? Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when value changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<DateOnly?> ValueChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum selectable date.
+    /// </summary>
+    [Parameter]
+    public DateOnly? MinDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum selectable date.
+    /// </summary>
+    [Parameter]
+    public DateOnly? MaxDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the label text.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets the placeholder text.
+    /// </summary>
+    [Parameter]
+    public string? Placeholder { get; set; } = "Select date";
+
+    /// <summary>
+    /// Gets or sets the display format.
+    /// </summary>
+    [Parameter]
+    public string DisplayFormat { get; set; } = "MMM d, yyyy";
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public DatePickerSize Size { get; set; } = DatePickerSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the field state.
+    /// </summary>
+    [Parameter]
+    public DatePickerState State { get; set; } = DatePickerState.Default;
+
+    /// <summary>
+    /// Gets or sets whether the field is disabled.
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the field is required.
+    /// </summary>
+    [Parameter]
+    public bool IsRequired { get; set; }
+
+    /// <summary>
+    /// Gets or sets helper text.
+    /// </summary>
+    [Parameter]
+    public string? HelperText { get; set; }
+
+    /// <summary>
+    /// Gets or sets error message.
+    /// </summary>
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        InitializeView();
+    }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (!_isOpen)
+        {
+            InitializeView();
+        }
+    }
+
+    private void InitializeView()
+    {
+        var date = Value ?? DateOnly.FromDateTime(DateTime.Today);
+        _viewYear = date.Year;
+        _viewMonth = date.Month;
+    }
+
+    private void ToggleCalendar()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            InitializeView();
+        }
+    }
+
+    private void PreviousMonth()
+    {
+        if (_viewMonth == 1)
+        {
+            _viewMonth = 12;
+            _viewYear--;
+        }
+        else
+        {
+            _viewMonth--;
+        }
+    }
+
+    private void NextMonth()
+    {
+        if (_viewMonth == 12)
+        {
+            _viewMonth = 1;
+            _viewYear++;
+        }
+        else
+        {
+            _viewMonth++;
+        }
+    }
+
+    private async Task SelectDate(DateOnly date)
+    {
+        Value = date;
+        _isOpen = false;
+        await ValueChanged.InvokeAsync(date);
+    }
+
+    private async Task SelectToday()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        await SelectDate(today);
+    }
+
+    private async Task ClearDate()
+    {
+        Value = null;
+        _isOpen = false;
+        await ValueChanged.InvokeAsync(null);
+    }
+}

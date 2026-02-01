@@ -1,0 +1,175 @@
+@namespace Refraction.Components.Organisms
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="rf-tab-bar rf-tab-bar--@Size.ToString().ToLowerInvariant() rf-tab-bar--@Variant.ToString().ToLowerInvariant() @Class"
+     style="@Style"
+     role="tablist"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    @{
+        var tabItems = Tabs?.ToList() ?? new List<TabBarTab>();
+    }
+    @for (var i = 0; i < tabItems.Count; i++)
+    {
+        var tab = tabItems[i];
+        var isSelected = SelectedKey == tab.Key;
+        var index = i;
+        
+        <button class="rf-tab-bar__tab @(isSelected ? "rf-tab-bar__tab--selected" : "") @(tab.IsDisabled ? "rf-tab-bar__tab--disabled" : "")"
+                type="button"
+                role="tab"
+                id="@($"tab-{tab.Key}")"
+                aria-selected="@isSelected"
+                aria-controls="@($"panel-{tab.Key}")"
+                tabindex="@(isSelected ? 0 : -1)"
+                disabled="@tab.IsDisabled"
+                @onclick="@(() => SelectTab(tab))"
+                @onkeydown="@((e) => OnKeyDown(e, index, tabItems))">
+            @if (tab.IconContent != null)
+            {
+                <span class="rf-tab-bar__icon">@tab.IconContent</span>
+            }
+            <span class="rf-tab-bar__label">@tab.Label</span>
+            @if (tab.Badge > 0)
+            {
+                <span class="rf-tab-bar__badge">@tab.Badge</span>
+            }
+            @if (tab.IsCloseable)
+            {
+                <button class="rf-tab-bar__close"
+                        type="button"
+                        aria-label="Close tab"
+                        @onclick:stopPropagation="true"
+                        @onclick="@(() => CloseTab(tab))">
+                    ×
+                </button>
+            }
+        </button>
+    }
+    
+    @if (Variant == TabBarVariant.Underline)
+    {
+        <span class="rf-tab-bar__indicator" aria-hidden="true"></span>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the tabs.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<TabBarTab>? Tabs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the selected tab key.
+    /// </summary>
+    [Parameter]
+    public string? SelectedKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when selection changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> SelectedKeyChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when a tab is closed.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TabBarTab> OnTabClosed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size.
+    /// </summary>
+    [Parameter]
+    public TabBarSize Size { get; set; } = TabBarSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the style variant.
+    /// </summary>
+    [Parameter]
+    public TabBarVariant Variant { get; set; } = TabBarVariant.Underline;
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Tabs";
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task SelectTab(TabBarTab tab)
+    {
+        if (!tab.IsDisabled)
+        {
+            SelectedKey = tab.Key;
+            await SelectedKeyChanged.InvokeAsync(tab.Key);
+        }
+    }
+
+    private async Task CloseTab(TabBarTab tab)
+    {
+        await OnTabClosed.InvokeAsync(tab);
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e, int currentIndex, List<TabBarTab> tabItems)
+    {
+        int newIndex;
+        
+        switch (e.Key)
+        {
+            case "ArrowLeft":
+                newIndex = currentIndex > 0 ? currentIndex - 1 : tabItems.Count - 1;
+                break;
+            case "ArrowRight":
+                newIndex = currentIndex < tabItems.Count - 1 ? currentIndex + 1 : 0;
+                break;
+            case "Home":
+                newIndex = 0;
+                break;
+            case "End":
+                newIndex = tabItems.Count - 1;
+                break;
+            default:
+                return;
+        }
+        
+        while (newIndex != currentIndex && tabItems[newIndex].IsDisabled)
+        {
+            newIndex = GetNextIndex(e.Key, newIndex, tabItems.Count);
+        }
+        
+        if (!tabItems[newIndex].IsDisabled)
+        {
+            await SelectTab(tabItems[newIndex]);
+        }
+    }
+
+    private static int GetNextIndex(string key, int currentIndex, int count)
+    {
+        var isBackward = key == "ArrowLeft" || key == "End";
+        if (isBackward)
+        {
+            return currentIndex > 0 ? currentIndex - 1 : count - 1;
+        }
+
+        return currentIndex < count - 1 ? currentIndex + 1 : 0;
+    }
+}

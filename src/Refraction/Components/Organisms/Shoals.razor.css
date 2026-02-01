@@ -1,0 +1,121 @@
+/* Shoals - 3D data representation */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-shoals {
+    position: relative;
+    display: inline-block;
+}
+
+.rf-shoals__canvas {
+    width: 100%;
+    height: auto;
+    min-width: 200px;
+    min-height: 150px;
+}
+
+.rf-shoals__line {
+    stroke: var(--rf-shoals-line-color, var(--rf-spectrum-surface-edge));
+    stroke-width: 1;
+    fill: none;
+}
+
+.rf-shoals__anchor {
+    fill: var(--rf-spectrum-accent);
+    stroke: var(--rf-spectrum-surface-base);
+    stroke-width: 1;
+}
+
+.rf-shoals__label {
+    font-family: var(--rf-font-instrument);
+    font-size: var(--rf-font-size-xs);
+    fill: var(--rf-spectrum-text-muted);
+}
+
+.rf-shoals__placeholder {
+    opacity: 0.6;
+}
+
+.rf-shoals__face {
+    fill: none;
+    stroke: var(--rf-shoals-line-color, var(--rf-spectrum-surface-edge));
+    stroke-width: 1;
+}
+
+.rf-shoals__face--top {
+    fill: var(--rf-spectrum-surface-overlay);
+    fill-opacity: 0.3;
+}
+
+.rf-shoals__face--side {
+    fill: var(--rf-spectrum-surface-overlay);
+    fill-opacity: 0.2;
+}
+
+.rf-shoals__detail {
+    margin-top: var(--rf-space-md);
+    padding: var(--rf-space-sm);
+    background: var(--rf-spectrum-surface-overlay);
+    border-radius: var(--rf-radius-sm);
+}
+
+/* State variants */
+.rf-shoals--ambient {
+    opacity: 0.6;
+}
+
+.rf-shoals--focused {
+    opacity: 1;
+}
+
+.rf-shoals--focused .rf-shoals__anchor {
+    filter: drop-shadow(0 0 4px var(--rf-spectrum-accent));
+}
+
+.rf-shoals--inspected {
+    opacity: 1;
+}
+
+.rf-shoals--inspected .rf-shoals__line {
+    stroke-width: 2;
+}
+
+.rf-shoals--inspected .rf-shoals__anchor {
+    r: 6;
+    filter: drop-shadow(0 0 8px var(--rf-spectrum-accent));
+}
+
+/* Style variants */
+.rf-shoals--wireframe .rf-shoals__face {
+    fill: none;
+}
+
+.rf-shoals--ghosted .rf-shoals__face {
+    fill: var(--rf-spectrum-surface-overlay);
+    fill-opacity: 0.2;
+}
+
+.rf-shoals--solid .rf-shoals__face {
+    fill: var(--rf-spectrum-surface-overlay);
+    fill-opacity: 0.5;
+}
+
+/* Parallax animation hint */
+.rf-shoals:hover .rf-shoals__placeholder {
+    animation: rf-shoals-parallax 3s ease-in-out infinite;
+}
+
+@keyframes rf-shoals-parallax {
+    0%, 100% {
+        transform: translate(100px, 75px) rotateY(0deg);
+    }
+    50% {
+        transform: translate(100px, 75px) rotateY(5deg);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-shoals:hover .rf-shoals__placeholder {
+        animation: none;
+    }
+}

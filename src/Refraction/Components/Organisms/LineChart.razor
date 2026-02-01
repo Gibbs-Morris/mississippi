@@ -1,0 +1,144 @@
+@namespace Refraction.Components.Organisms
+@using Microsoft.AspNetCore.Components.Web
+
+@{
+    var viewBox = $"0 0 {Width} {Height}";
+    var padding = 40;
+    var chartWidth = Width - padding * 2;
+    var chartHeight = Height - padding * 2;
+    var dataPoints = Data?.ToList() ?? new List<LineChartPoint>();
+    var minY = dataPoints.Count > 0 ? dataPoints.Min(p => p.Value) : 0;
+    var maxY = dataPoints.Count > 0 ? dataPoints.Max(p => p.Value) : 100;
+    var range = maxY - minY;
+    if (Math.Abs(range) < 0.0001) range = 1;
+}
+
+<div class="rf-line-chart @Class"
+     style="@Style"
+     role="img"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    <svg class="rf-line-chart__svg" viewBox="@viewBox" preserveAspectRatio="xMidYMid meet">
+        <!-- Grid lines -->
+        @for (var i = 0; i <= 4; i++)
+        {
+            var y = padding + (chartHeight * i / 4.0);
+            <line class="rf-line-chart__grid-line"
+                  x1="@padding" y1="@y"
+                  x2="@(Width - padding)" y2="@y" />
+        }
+
+        <!-- Y-axis labels -->
+        @for (var i = 0; i <= 4; i++)
+        {
+            var y = padding + (chartHeight * i / 4.0);
+            var value = maxY - (range * i / 4.0);
+            @((MarkupString)$"<text class=\"rf-line-chart__axis-label\" x=\"{padding - 8}\" y=\"{y + 4}\" text-anchor=\"end\">{value:N0}</text>")
+        }
+
+        <!-- Data line -->
+        @if (dataPoints.Count > 1)
+        {
+            var pathData = new System.Text.StringBuilder();
+            for (var i = 0; i < dataPoints.Count; i++)
+            {
+                var x = padding + (chartWidth * i / (double)(dataPoints.Count - 1));
+                var y = padding + chartHeight - (chartHeight * (dataPoints[i].Value - minY) / range);
+                pathData.Append(i == 0 ? $"M {x:F1},{y:F1}" : $" L {x:F1},{y:F1}");
+            }
+
+            <!-- Area fill -->
+            @if (ShowArea)
+            {
+                var areaPath = pathData.ToString();
+                var lastX = padding + chartWidth;
+                var firstX = padding;
+                var bottomY = padding + chartHeight;
+                <path class="rf-line-chart__area"
+                      d="@areaPath L @lastX,@bottomY L @firstX,@bottomY Z" />
+            }
+
+            <path class="rf-line-chart__line" d="@pathData.ToString()" />
+
+            <!-- Data points -->
+            @if (ShowPoints)
+            {
+                @for (var i = 0; i < dataPoints.Count; i++)
+                {
+                    var x = padding + (chartWidth * i / (double)(dataPoints.Count - 1));
+                    var y = padding + chartHeight - (chartHeight * (dataPoints[i].Value - minY) / range);
+                    <circle class="rf-line-chart__point" cx="@x" cy="@y" r="4" />
+                }
+            }
+        }
+
+        <!-- X-axis labels -->
+        @if (dataPoints.Count > 0)
+        {
+            var labelStep = Math.Max(1, dataPoints.Count / 5);
+            @for (var i = 0; i < dataPoints.Count; i += labelStep)
+            {
+                var x = padding + (chartWidth * i / (double)(Math.Max(1, dataPoints.Count - 1)));
+                var label = dataPoints[i].Label;
+                @((MarkupString)$"<text class=\"rf-line-chart__axis-label\" x=\"{x}\" y=\"{Height - 8}\" text-anchor=\"middle\">{System.Web.HttpUtility.HtmlEncode(label)}</text>")
+            }
+        }
+    </svg>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the chart data points.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<LineChartPoint>? Data { get; set; }
+
+    /// <summary>
+    /// Gets or sets the chart width.
+    /// </summary>
+    [Parameter]
+    public int Width { get; set; } = 400;
+
+    /// <summary>
+    /// Gets or sets the chart height.
+    /// </summary>
+    [Parameter]
+    public int Height { get; set; } = 200;
+
+    /// <summary>
+    /// Gets or sets whether to show data points.
+    /// </summary>
+    [Parameter]
+    public bool ShowPoints { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to show the area fill.
+    /// </summary>
+    [Parameter]
+    public bool ShowArea { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Line chart";
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

@@ -1,0 +1,164 @@
+/* DataGrid - Tabular data display */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-data-grid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background: var(--rf-spectrum-surface-base);
+    border: 1px solid var(--rf-spectrum-surface-edge);
+    border-radius: var(--rf-radius-md);
+    overflow: hidden;
+}
+
+/* Header */
+.rf-data-grid__header {
+    display: flex;
+    background: var(--rf-spectrum-surface-raised);
+    border-bottom: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-data-grid__header-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-xs);
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    font-weight: var(--rf-font-weight-semibold);
+    color: var(--rf-spectrum-text-default);
+    flex: 1 1 0;
+    min-width: 0;
+    user-select: none;
+}
+
+.rf-data-grid__header-cell--sortable {
+    cursor: pointer;
+    transition: background var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-data-grid__header-cell--sortable:hover {
+    background: var(--rf-spectrum-surface-edge);
+}
+
+.rf-data-grid__header-cell--sortable:focus {
+    outline: 2px solid var(--rf-spectrum-accent);
+    outline-offset: -2px;
+}
+
+.rf-data-grid__header-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rf-data-grid__sort-indicator {
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-spectrum-text-muted);
+    opacity: 0.5;
+    transition: opacity var(--rf-flow-fast);
+}
+
+.rf-data-grid__sort-indicator--active {
+    opacity: 1;
+    color: var(--rf-spectrum-accent);
+}
+
+/* Body */
+.rf-data-grid__body {
+    flex: 1;
+    overflow: auto;
+}
+
+.rf-data-grid__row {
+    display: flex;
+    border-bottom: 1px solid var(--rf-spectrum-surface-edge);
+    transition: background var(--rf-flow-fast) var(--rf-ease-out);
+    cursor: pointer;
+}
+
+.rf-data-grid__row:last-child {
+    border-bottom: none;
+}
+
+.rf-data-grid__row:hover {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 5%, transparent);
+}
+
+.rf-data-grid__row:focus {
+    outline: 2px solid var(--rf-spectrum-accent);
+    outline-offset: -2px;
+    z-index: 1;
+}
+
+.rf-data-grid__row--selected {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 10%, transparent);
+}
+
+.rf-data-grid__row--selected:hover {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 15%, transparent);
+}
+
+.rf-data-grid__cell {
+    display: flex;
+    align-items: center;
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-default);
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Selection column */
+.rf-data-grid__selection-cell {
+    flex: 0 0 48px;
+    justify-content: center;
+}
+
+.rf-data-grid__select-all,
+.rf-data-grid__selection-cell input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--rf-spectrum-accent);
+    cursor: pointer;
+}
+
+.rf-data-grid__selection-indicator {
+    color: var(--rf-spectrum-accent);
+    font-size: 8px;
+}
+
+/* Footer */
+.rf-data-grid__footer {
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    background: var(--rf-spectrum-surface-raised);
+    border-top: 1px solid var(--rf-spectrum-surface-edge);
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-muted);
+}
+
+/* Size variants */
+.rf-data-grid--compact .rf-data-grid__header-cell,
+.rf-data-grid--compact .rf-data-grid__cell {
+    padding: var(--rf-space-xs) var(--rf-space-sm);
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-data-grid--comfortable .rf-data-grid__header-cell,
+.rf-data-grid--comfortable .rf-data-grid__cell {
+    padding: var(--rf-space-md) var(--rf-space-lg);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-data-grid__row,
+    .rf-data-grid__header-cell--sortable {
+        transition: none;
+    }
+}

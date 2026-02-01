@@ -1,0 +1,146 @@
+@using Refraction.Components.Molecules
+@namespace Refraction.Components.Organisms
+
+<div class="@CssClass"
+     role="status"
+     aria-live="@AriaLiveValue"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    @if (ShowBeacon)
+    {
+        <Refraction.Components.Molecules.Beacon
+            State="@BeaconStateValue"
+            Pulsing="@BeaconPulsing"
+            Size="BeaconSize.Small"
+            Class="rf-tide-ribbon__beacon"/>
+    }
+    <div class="rf-tide-ribbon__content">
+        @if (ChildContent is not null)
+        {
+            @ChildContent
+        }
+        else if (!string.IsNullOrEmpty(Message))
+        {
+            <span class="rf-tide-ribbon__message">@Message</span>
+        }
+    </div>
+    @if (IsDismissible)
+    {
+        <button type="button"
+                class="rf-tide-ribbon__dismiss"
+                aria-label="Dismiss notification"
+                @onclick="@(async () => await OnDismiss.InvokeAsync())">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+    }
+</div>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the semantic state of the ribbon.
+    /// </summary>
+    [Parameter]
+    public TideRibbonState State { get; set; } = TideRibbonState.Info;
+
+    /// <summary>
+    ///     Gets or sets the message text (used if ChildContent is null).
+    /// </summary>
+    [Parameter]
+    public string? Message { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the child content of the ribbon.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether to show a beacon indicator.
+    /// </summary>
+    [Parameter]
+    public bool ShowBeacon { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets whether the beacon should pulse.
+    /// </summary>
+    [Parameter]
+    public bool BeaconPulsing { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether the ribbon can be dismissed.
+    /// </summary>
+    [Parameter]
+    public bool IsDismissible { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the accessible label for the ribbon.
+    /// </summary>
+    [Parameter]
+    public string AriaLabel { get; set; } = "Notification";
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    ///     Gets or sets additional attributes to apply to the root element.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    /// <summary>
+    ///     Event callback fired when the ribbon is dismissed.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string AriaLiveValue => State is TideRibbonState.Critical or TideRibbonState.Warning ? "assertive" : "polite";
+
+    private BeaconState BeaconStateValue =>
+        State switch
+        {
+            TideRibbonState.Info => BeaconState.Info,
+            TideRibbonState.Success => BeaconState.Info,
+            TideRibbonState.Warning => BeaconState.Warning,
+            TideRibbonState.Critical => BeaconState.Critical,
+            var _ => BeaconState.Info,
+        };
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-tide-ribbon",
+            GetStateClass(),
+        };
+        if (IsDismissible)
+        {
+            classes.Add("rf-tide-ribbon--dismissible");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetStateClass() =>
+        State switch
+        {
+            TideRibbonState.Info => "rf-tide-ribbon--info",
+            TideRibbonState.Success => "rf-tide-ribbon--success",
+            TideRibbonState.Warning => "rf-tide-ribbon--warning",
+            TideRibbonState.Critical => "rf-tide-ribbon--critical",
+            var _ => "rf-tide-ribbon--info",
+        };
+
+}

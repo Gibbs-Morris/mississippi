@@ -1,0 +1,128 @@
+/* CommandBar - Horizontal command toolbar */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-command-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-sm);
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    background: var(--rf-spectrum-surface-raised);
+    border-bottom: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-command-bar--bottom {
+    border-bottom: none;
+    border-top: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-command-bar__leading,
+.rf-command-bar__trailing {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-sm);
+}
+
+.rf-command-bar__primary,
+.rf-command-bar__secondary {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-xs);
+}
+
+.rf-command-bar__secondary {
+    margin-left: auto;
+}
+
+.rf-command-bar__center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rf-command-bar__command {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-xs);
+    padding: var(--rf-space-xs) var(--rf-space-sm);
+    background: transparent;
+    border: none;
+    border-radius: var(--rf-radius-md);
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-default);
+    cursor: pointer;
+    transition: background var(--rf-flow-fast) var(--rf-ease-out),
+                color var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-command-bar__command:hover:not(:disabled) {
+    background: var(--rf-spectrum-surface-edge);
+}
+
+.rf-command-bar__command:focus-visible {
+    outline: 2px solid var(--rf-spectrum-accent);
+    outline-offset: -2px;
+}
+
+.rf-command-bar__command:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.rf-command-bar__command--active {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 15%, transparent);
+    color: var(--rf-spectrum-accent);
+}
+
+.rf-command-bar__command--active:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 20%, transparent);
+}
+
+.rf-command-bar__command--primary {
+    background: var(--rf-spectrum-accent);
+    color: var(--rf-spectrum-surface-base);
+}
+
+.rf-command-bar__command--primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 90%, white);
+}
+
+.rf-command-bar__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.rf-command-bar__icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.rf-command-bar__label {
+    white-space: nowrap;
+}
+
+/* Compact size */
+.rf-command-bar--compact {
+    padding: var(--rf-space-xs) var(--rf-space-sm);
+}
+
+.rf-command-bar--compact .rf-command-bar__command {
+    padding: var(--rf-space-xs);
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-command-bar--compact .rf-command-bar__icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-command-bar__command {
+        transition: none;
+    }
+}

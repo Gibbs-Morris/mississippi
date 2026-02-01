@@ -1,0 +1,144 @@
+@namespace Refraction.Components.Organisms
+
+<nav class="rf-nav-rail rf-nav-rail--@Position.ToString().ToLowerInvariant() @(State == NavRailState.Expanded ? "rf-nav-rail--expanded" : "rf-nav-rail--collapsed") @Class"
+     style="@Style"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    @if (HeaderContent != null)
+    {
+        <div class="rf-nav-rail__header">
+            @HeaderContent
+        </div>
+    }
+    
+    <div class="rf-nav-rail__items">
+        @foreach (var item in Items ?? Enumerable.Empty<NavRailItem>())
+        {
+            var isActive = item.Href == ActiveHref;
+            
+            <a class="rf-nav-rail__item @(isActive ? "rf-nav-rail__item--active" : "")"
+               href="@item.Href"
+               aria-current="@(isActive ? "page" : null)"
+               title="@item.Label">
+                <span class="rf-nav-rail__beacon @(isActive ? "rf-nav-rail__beacon--active" : "")">
+                    @if (item.IconContent != null)
+                    {
+                        @item.IconContent
+                    }
+                    else if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <span class="rf-nav-rail__icon-placeholder">@item.Icon</span>
+                    }
+                </span>
+                
+                @if (State == NavRailState.Expanded)
+                {
+                    <span class="rf-nav-rail__label">@item.Label</span>
+                }
+                
+                @if (item.Badge > 0)
+                {
+                    <span class="rf-nav-rail__badge">@item.Badge</span>
+                }
+            </a>
+        }
+    </div>
+    
+    @if (FooterContent != null)
+    {
+        <div class="rf-nav-rail__footer">
+            @FooterContent
+        </div>
+    }
+    
+    <button class="rf-nav-rail__toggle"
+            type="button"
+            aria-label="@(State == NavRailState.Expanded ? "Collapse navigation" : "Expand navigation")"
+            @onclick="ToggleState">
+        <svg viewBox="0 0 16 16" fill="none">
+            @if (State == NavRailState.Expanded)
+            {
+                <path d="M10 4L6 8L10 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            }
+            else
+            {
+                <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            }
+        </svg>
+    </button>
+</nav>
+
+@code {
+    /// <summary>
+    /// Gets or sets the navigation items.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<NavRailItem>? Items { get; set; }
+
+    /// <summary>
+    /// Gets or sets the currently active href.
+    /// </summary>
+    [Parameter]
+    public string? ActiveHref { get; set; }
+
+    /// <summary>
+    /// Gets or sets the position.
+    /// </summary>
+    [Parameter]
+    public NavRailPosition Position { get; set; } = NavRailPosition.Left;
+
+    /// <summary>
+    /// Gets or sets the state.
+    /// </summary>
+    [Parameter]
+    public NavRailState State { get; set; } = NavRailState.Collapsed;
+
+    /// <summary>
+    /// Gets or sets the callback when state changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<NavRailState> StateChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets header content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? HeaderContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets footer content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? FooterContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Main navigation";
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task ToggleState()
+    {
+        State = State == NavRailState.Expanded ? NavRailState.Collapsed : NavRailState.Expanded;
+        await StateChanged.InvokeAsync(State);
+    }
+}

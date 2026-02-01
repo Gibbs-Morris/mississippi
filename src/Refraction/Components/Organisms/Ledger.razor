@@ -1,0 +1,140 @@
+@namespace Refraction.Components.Organisms
+
+@{
+    var displayItems = State == LedgerState.Collapsed && CollapsedRowCount > 0
+        ? Items?.Take(CollapsedRowCount).ToList()
+        : Items;
+}
+
+<div class="rf-ledger rf-ledger--@Size.ToString().ToLowerInvariant() @(State == LedgerState.Expanded ? "rf-ledger--expanded" : "rf-ledger--collapsed") @Class"
+     style="@Style"
+     role="log"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="rf-ledger__header">
+            <span class="rf-ledger__title">@Title</span>
+            @if (Items?.Count > CollapsedRowCount && ShowExpandToggle)
+            {
+                <button class="rf-ledger__toggle"
+                        @onclick="() => State = State == LedgerState.Collapsed ? LedgerState.Expanded : LedgerState.Collapsed"
+                        aria-expanded="@(State == LedgerState.Expanded)"
+                        aria-label="@(State == LedgerState.Collapsed ? "Expand ledger" : "Collapse ledger")">
+                    @(State == LedgerState.Collapsed ? "▼" : "▲")
+                </button>
+            }
+        </div>
+    }
+
+    <div class="rf-ledger__body">
+        @if (Columns != null && Columns.Count > 0)
+        {
+            <div class="rf-ledger__row rf-ledger__row--header" role="row">
+                @foreach (var column in Columns)
+                {
+                    <div class="rf-ledger__cell rf-ledger__cell--header @(column.IsNumeric ? "rf-ledger__cell--numeric" : "")"
+                         role="columnheader"
+                         style="@(column.Width != null ? $"width: {column.Width};" : "")">
+                        @column.Header
+                    </div>
+                }
+            </div>
+        }
+
+        @if (displayItems != null)
+        {
+            @foreach (var item in displayItems)
+            {
+                <div class="rf-ledger__row" role="row">
+                    @if (RowTemplate != null)
+                    {
+                        @RowTemplate(item)
+                    }
+                </div>
+            }
+        }
+
+        @if (State == LedgerState.Collapsed && Items?.Count > CollapsedRowCount)
+        {
+            <div class="rf-ledger__overflow">
+                +@(Items.Count - CollapsedRowCount) more
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the ledger title.
+    /// </summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets the column definitions.
+    /// </summary>
+    [Parameter]
+    public List<LedgerColumn>? Columns { get; set; }
+
+    /// <summary>
+    /// Gets or sets the data items.
+    /// </summary>
+    [Parameter]
+    public List<object>? Items { get; set; }
+
+    /// <summary>
+    /// Gets or sets the row template.
+    /// </summary>
+    [Parameter]
+    public RenderFragment<object>? RowTemplate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current state.
+    /// </summary>
+    [Parameter]
+    public LedgerState State { get; set; } = LedgerState.Collapsed;
+
+    /// <summary>
+    /// Gets or sets the number of rows to show when collapsed.
+    /// </summary>
+    [Parameter]
+    public int CollapsedRowCount { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets whether to show the expand/collapse toggle.
+    /// </summary>
+    [Parameter]
+    public bool ShowExpandToggle { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public LedgerSize Size { get; set; } = LedgerSize.Default;
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

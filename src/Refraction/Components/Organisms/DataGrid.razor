@@ -1,0 +1,342 @@
+@namespace Refraction.Components.Organisms
+@using Microsoft.AspNetCore.Components.Web
+@typeparam TItem
+
+<div class="rf-data-grid rf-data-grid--@Size.ToString().ToLowerInvariant() @Class"
+     style="@Style"
+     role="grid"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    <div class="rf-data-grid__header" role="row">
+        @if (SelectionMode != DataGridSelectionMode.None)
+        {
+            <div class="rf-data-grid__header-cell rf-data-grid__selection-cell" role="columnheader">
+                @if (SelectionMode == DataGridSelectionMode.Multiple)
+                {
+                    <input type="checkbox"
+                           class="rf-data-grid__select-all"
+                           checked="@_allSelected"
+                           @onchange="ToggleSelectAll"
+                           aria-label="Select all rows" />
+                }
+            </div>
+        }
+        
+        @foreach (var column in Columns ?? Enumerable.Empty<DataGridColumn<TItem>>())
+        {
+            var sortDir = GetSortDirection(column);
+            <div class="rf-data-grid__header-cell @(column.IsSortable ? "rf-data-grid__header-cell--sortable" : "")"
+                 role="columnheader"
+                 style="@GetColumnStyle(column)"
+                 @onclick="@(() => OnColumnHeaderClick(column))"
+                 tabindex="@(column.IsSortable ? 0 : -1)"
+                 aria-sort="@GetAriaSortValue(sortDir)">
+                <span class="rf-data-grid__header-text">@column.Header</span>
+                @if (column.IsSortable)
+                {
+                    <span class="rf-data-grid__sort-indicator @(sortDir != DataGridSortDirection.None ? "rf-data-grid__sort-indicator--active" : "")">
+                        @if (sortDir == DataGridSortDirection.Ascending)
+                        {
+                            <span>↑</span>
+                        }
+                        else if (sortDir == DataGridSortDirection.Descending)
+                        {
+                            <span>↓</span>
+                        }
+                        else
+                        {
+                            <span>↕</span>
+                        }
+                    </span>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="rf-data-grid__body" role="rowgroup">
+        @if (Items != null)
+        {
+            foreach (var item in Items)
+            {
+                var isSelected = _selectedItems.Contains(item);
+                <div class="rf-data-grid__row @(isSelected ? "rf-data-grid__row--selected" : "")"
+                     role="row"
+                     tabindex="0"
+                     @onclick="@(() => OnRowClick(item))"
+                     @onkeydown="@((e) => OnRowKeyDown(e, item))"
+                     aria-selected="@isSelected">
+                    @if (SelectionMode != DataGridSelectionMode.None)
+                    {
+                        <div class="rf-data-grid__cell rf-data-grid__selection-cell" role="gridcell">
+                            @if (SelectionMode == DataGridSelectionMode.Multiple)
+                            {
+                                <input type="checkbox"
+                                       checked="@isSelected"
+                                       @onclick:stopPropagation="true"
+                                       @onchange="@(() => ToggleRowSelection(item))"
+                                       aria-label="Select row" />
+                            }
+                            else if (isSelected)
+                            {
+                                <span class="rf-data-grid__selection-indicator">●</span>
+                            }
+                        </div>
+                    }
+                    
+                    @foreach (var column in Columns ?? Enumerable.Empty<DataGridColumn<TItem>>())
+                    {
+                        <div class="rf-data-grid__cell" role="gridcell" style="@GetColumnStyle(column)">
+                            @if (column.Template != null)
+                            {
+                                @column.Template(item)
+                            }
+                            else if (column.PropertySelector != null)
+                            {
+                                @column.PropertySelector(item)?.ToString()
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    @if (FooterContent != null)
+    {
+        <div class="rf-data-grid__footer">
+            @FooterContent
+        </div>
+    }
+</div>
+
+@code {
+    private readonly HashSet<TItem> _selectedItems = new();
+    private bool _allSelected;
+    private string? _sortColumn;
+    private DataGridSortDirection _sortDirection = DataGridSortDirection.None;
+
+    /// <summary>
+    /// Gets or sets the data items.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<TItem>? Items { get; set; }
+
+    /// <summary>
+    /// Gets or sets the column definitions.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<DataGridColumn<TItem>>? Columns { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public DataGridSize Size { get; set; } = DataGridSize.Default;
+
+    /// <summary>
+    /// Gets or sets the selection mode.
+    /// </summary>
+    [Parameter]
+    public DataGridSelectionMode SelectionMode { get; set; } = DataGridSelectionMode.None;
+
+    /// <summary>
+    /// Gets or sets the currently selected items.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyCollection<TItem>? SelectedItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when selection changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IReadOnlyCollection<TItem>> SelectedItemsChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when a row is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TItem> OnRowClicked { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when sort changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<(string Column, DataGridSortDirection Direction)> OnSortChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets optional footer content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? FooterContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Data grid";
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (SelectedItems != null)
+        {
+            _selectedItems.Clear();
+            foreach (var item in SelectedItems)
+            {
+                _selectedItems.Add(item);
+            }
+        }
+
+        UpdateAllSelectedState();
+    }
+
+    private static string GetColumnStyle(DataGridColumn<TItem> column)
+    {
+        var styles = new List<string>();
+        
+        if (!string.IsNullOrEmpty(column.Width))
+        {
+            styles.Add($"width: {column.Width}");
+        }
+
+        if (!string.IsNullOrEmpty(column.MinWidth))
+        {
+            styles.Add($"min-width: {column.MinWidth}");
+        }
+
+        return string.Join("; ", styles);
+    }
+
+    private DataGridSortDirection GetSortDirection(DataGridColumn<TItem> column)
+    {
+        return _sortColumn == column.PropertyName ? _sortDirection : DataGridSortDirection.None;
+    }
+
+    private static string GetAriaSortValue(DataGridSortDirection direction)
+    {
+        return direction switch
+        {
+            DataGridSortDirection.Ascending => "ascending",
+            DataGridSortDirection.Descending => "descending",
+            _ => "none",
+        };
+    }
+
+    private async Task OnColumnHeaderClick(DataGridColumn<TItem> column)
+    {
+        if (!column.IsSortable || string.IsNullOrEmpty(column.PropertyName))
+        {
+            return;
+        }
+
+        if (_sortColumn == column.PropertyName)
+        {
+            _sortDirection = _sortDirection switch
+            {
+                DataGridSortDirection.None => DataGridSortDirection.Ascending,
+                DataGridSortDirection.Ascending => DataGridSortDirection.Descending,
+                _ => DataGridSortDirection.None,
+            };
+        }
+        else
+        {
+            _sortColumn = column.PropertyName;
+            _sortDirection = DataGridSortDirection.Ascending;
+        }
+
+        if (_sortDirection == DataGridSortDirection.None)
+        {
+            _sortColumn = null;
+        }
+
+        await OnSortChanged.InvokeAsync((_sortColumn ?? string.Empty, _sortDirection));
+    }
+
+    private async Task OnRowClick(TItem item)
+    {
+        await OnRowClicked.InvokeAsync(item);
+
+        if (SelectionMode == DataGridSelectionMode.OneRow)
+        {
+            _selectedItems.Clear();
+            _selectedItems.Add(item);
+            await NotifySelectionChanged();
+        }
+    }
+
+    private async Task OnRowKeyDown(KeyboardEventArgs e, TItem item)
+    {
+        if (e.Key == "Enter" || e.Key == " ")
+        {
+            await OnRowClick(item);
+            if (SelectionMode == DataGridSelectionMode.Multiple)
+            {
+                await ToggleRowSelection(item);
+            }
+        }
+    }
+
+    private async Task ToggleRowSelection(TItem item)
+    {
+        if (_selectedItems.Contains(item))
+        {
+            _selectedItems.Remove(item);
+        }
+        else
+        {
+            _selectedItems.Add(item);
+        }
+
+        UpdateAllSelectedState();
+        await NotifySelectionChanged();
+    }
+
+    private async Task ToggleSelectAll()
+    {
+        if (_allSelected)
+        {
+            _selectedItems.Clear();
+        }
+        else if (Items != null)
+        {
+            _selectedItems.Clear();
+            foreach (var item in Items)
+            {
+                _selectedItems.Add(item);
+            }
+        }
+
+        UpdateAllSelectedState();
+        await NotifySelectionChanged();
+    }
+
+    private void UpdateAllSelectedState()
+    {
+        var itemCount = Items?.Count() ?? 0;
+        _allSelected = itemCount > 0 && _selectedItems.Count == itemCount;
+    }
+
+    private async Task NotifySelectionChanged()
+    {
+        await SelectedItemsChanged.InvokeAsync(_selectedItems.ToList().AsReadOnly());
+    }
+}

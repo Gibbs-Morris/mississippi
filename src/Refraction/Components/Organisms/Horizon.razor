@@ -1,0 +1,143 @@
+@using Refraction.Components.Molecules
+@namespace Refraction.Components.Organisms
+
+<header class="@CssClass" role="banner" @attributes="AdditionalAttributes">
+    <div class="rf-horizon__start">
+        @if (StartContent is not null)
+        {
+            @StartContent
+        }
+    </div>
+    <div class="rf-horizon__center">
+        @if (CenterContent is not null)
+        {
+            @CenterContent
+        }
+        else if (ChildContent is not null)
+        {
+            @ChildContent
+        }
+    </div>
+    <div class="rf-horizon__end">
+        @if (EndContent is not null)
+        {
+            @EndContent
+        }
+        @if (ShowSystemBeacon)
+        {
+            <Refraction.Components.Molecules.Beacon
+                State="@SystemBeaconState"
+                Pulsing="@SystemBeaconPulsing"
+                Size="BeaconSize.Small"
+                AriaLabel="@SystemBeaconAriaLabel"
+                Class="rf-horizon__beacon"/>
+        }
+    </div>
+</header>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the content at the start (left) of the horizon.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? StartContent { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the content at the center of the horizon.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? CenterContent { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the content at the end (right) of the horizon.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? EndContent { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the default child content (used in center if CenterContent is null).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether to show a system status beacon.
+    /// </summary>
+    [Parameter]
+    public bool ShowSystemBeacon { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the state of the system beacon.
+    /// </summary>
+    [Parameter]
+    public BeaconState SystemBeaconState { get; set; } = BeaconState.Info;
+
+    /// <summary>
+    ///     Gets or sets whether the system beacon should pulse.
+    /// </summary>
+    [Parameter]
+    public bool SystemBeaconPulsing { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the accessible label for the system beacon.
+    /// </summary>
+    [Parameter]
+    public string SystemBeaconAriaLabel { get; set; } = "System status";
+
+    /// <summary>
+    ///     Gets or sets the horizon variant.
+    /// </summary>
+    [Parameter]
+    public HorizonVariant Variant { get; set; } = HorizonVariant.Default;
+
+    /// <summary>
+    ///     Gets or sets whether the horizon is sticky (fixed at top).
+    /// </summary>
+    [Parameter]
+    public bool IsSticky { get; set; }
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    ///     Gets or sets additional attributes to apply to the root element.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-horizon",
+            GetVariantClass(),
+        };
+        if (IsSticky)
+        {
+            classes.Add("rf-horizon--sticky");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetVariantClass() =>
+        Variant switch
+        {
+            HorizonVariant.Default => "rf-horizon--default",
+            HorizonVariant.Transparent => "rf-horizon--transparent",
+            HorizonVariant.Blurred => "rf-horizon--blurred",
+            var _ => "rf-horizon--default",
+        };
+
+}

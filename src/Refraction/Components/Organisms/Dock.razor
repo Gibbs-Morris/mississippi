@@ -1,0 +1,60 @@
+@namespace Refraction.Components.Organisms
+
+<div class="rf-dock rf-dock--@Position.ToString().ToLowerInvariant() rf-dock--@Size.ToString().ToLowerInvariant() @(IsVisible ? "" : "rf-dock--hidden") @Class"
+     style="@Style"
+     role="toolbar"
+     aria-label="@AriaLabel"
+     aria-hidden="@(!IsVisible)"
+     @attributes="AdditionalAttributes">
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the dock position.
+    /// </summary>
+    [Parameter]
+    public DockPosition Position { get; set; } = DockPosition.Bottom;
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public DockSize Size { get; set; } = DockSize.Default;
+
+    /// <summary>
+    /// Gets or sets whether the dock is visible.
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Toolbar";
+
+    /// <summary>
+    /// Gets or sets the child content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

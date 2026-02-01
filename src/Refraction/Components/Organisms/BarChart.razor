@@ -1,0 +1,140 @@
+@namespace Refraction.Components.Organisms
+@using Microsoft.AspNetCore.Components.Web
+
+@{
+    var viewBox = $"0 0 {Width} {Height}";
+    var padding = 40;
+    var chartWidth = Width - padding * 2;
+    var chartHeight = Height - padding * 2;
+    var dataPoints = Data?.ToList() ?? new List<BarChartItem>();
+    var maxValue = dataPoints.Count > 0 ? dataPoints.Max(p => p.Value) : 100;
+    if (Math.Abs(maxValue) < 0.0001) maxValue = 1;
+    var barWidth = dataPoints.Count > 0 ? (chartWidth / dataPoints.Count) * 0.7 : 0;
+    var barGap = dataPoints.Count > 0 ? (chartWidth / dataPoints.Count) * 0.15 : 0;
+}
+
+<div class="rf-bar-chart @(IsHorizontal ? "rf-bar-chart--horizontal" : "") @Class"
+     style="@Style"
+     role="img"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    <svg class="rf-bar-chart__svg" viewBox="@viewBox" preserveAspectRatio="xMidYMid meet">
+        <!-- Grid lines -->
+        @for (var i = 0; i <= 4; i++)
+        {
+            if (IsHorizontal)
+            {
+                var x = padding + (chartWidth * i / 4.0);
+                <line class="rf-bar-chart__grid-line"
+                      x1="@x" y1="@padding"
+                      x2="@x" y2="@(Height - padding)" />
+            }
+            else
+            {
+                var y = padding + (chartHeight * i / 4.0);
+                <line class="rf-bar-chart__grid-line"
+                      x1="@padding" y1="@y"
+                      x2="@(Width - padding)" y2="@y" />
+            }
+        }
+
+        <!-- Bars -->
+        @for (var i = 0; i < dataPoints.Count; i++)
+        {
+            var item = dataPoints[i];
+            var barHeight = (item.Value / maxValue) * chartHeight;
+            
+            if (IsHorizontal)
+            {
+                var barLength = (item.Value / maxValue) * chartWidth;
+                var y = padding + barGap + i * (chartWidth / dataPoints.Count);
+                <rect class="rf-bar-chart__bar"
+                      x="@padding"
+                      y="@y"
+                      width="@barLength"
+                      height="@barWidth"
+                      style="animation-delay: @(i * 50)ms;" />
+                @((MarkupString)$"<text class=\"rf-bar-chart__label\" x=\"{padding - 8}\" y=\"{y + barWidth / 2 + 4}\" text-anchor=\"end\">{System.Web.HttpUtility.HtmlEncode(item.Label)}</text>")
+            }
+            else
+            {
+                var x = padding + barGap + i * (chartWidth / dataPoints.Count);
+                var y = padding + chartHeight - barHeight;
+                <rect class="rf-bar-chart__bar"
+                      x="@x"
+                      y="@y"
+                      width="@barWidth"
+                      height="@barHeight"
+                      style="animation-delay: @(i * 50)ms;" />
+                @((MarkupString)$"<text class=\"rf-bar-chart__label\" x=\"{x + barWidth / 2}\" y=\"{Height - 8}\" text-anchor=\"middle\">{System.Web.HttpUtility.HtmlEncode(item.Label)}</text>")
+            }
+        }
+
+        <!-- Value labels -->
+        @for (var i = 0; i <= 4; i++)
+        {
+            var value = maxValue * (4 - i) / 4.0;
+            if (IsHorizontal)
+            {
+                var x = padding + (chartWidth * (4 - i) / 4.0);
+                @((MarkupString)$"<text class=\"rf-bar-chart__axis-label\" x=\"{x}\" y=\"{Height - 8}\" text-anchor=\"middle\">{value:N0}</text>")
+            }
+            else
+            {
+                var y = padding + (chartHeight * i / 4.0);
+                @((MarkupString)$"<text class=\"rf-bar-chart__axis-label\" x=\"{padding - 8}\" y=\"{y + 4}\" text-anchor=\"end\">{value:N0}</text>")
+            }
+        }
+    </svg>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the chart data.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<BarChartItem>? Data { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to render as horizontal bars.
+    /// </summary>
+    [Parameter]
+    public bool IsHorizontal { get; set; }
+
+    /// <summary>
+    /// Gets or sets the chart width.
+    /// </summary>
+    [Parameter]
+    public int Width { get; set; } = 400;
+
+    /// <summary>
+    /// Gets or sets the chart height.
+    /// </summary>
+    [Parameter]
+    public int Height { get; set; } = 200;
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Bar chart";
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

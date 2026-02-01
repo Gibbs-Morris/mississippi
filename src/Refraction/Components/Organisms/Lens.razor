@@ -1,0 +1,112 @@
+@using Refraction.Components.Atoms
+@namespace Refraction.Components.Organisms
+
+<div class="@CssClass"
+     role="@RoleValue"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    @if (ShowCaustic)
+    {
+        <Refraction.Components.Atoms.CausticField Intensity="CausticIntensity" Class="rf-lens__caustic"/>
+    }
+    <div class="rf-lens__content">
+        @ChildContent
+    </div>
+    @if (ShowBorder)
+    {
+        <div class="rf-lens__border"></div>
+    }
+</div>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the lens variant.
+    /// </summary>
+    [Parameter]
+    public LensVariant Variant { get; set; } = LensVariant.Default;
+
+    /// <summary>
+    ///     Gets or sets whether to show the caustic background effect.
+    /// </summary>
+    [Parameter]
+    public bool ShowCaustic { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the intensity of the caustic effect.
+    /// </summary>
+    [Parameter]
+    public CausticIntensity CausticIntensity { get; set; } = CausticIntensity.Subtle;
+
+    /// <summary>
+    ///     Gets or sets whether to show a subtle border.
+    /// </summary>
+    [Parameter]
+    public bool ShowBorder { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets the semantic role for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? Role { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the accessible label.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; }
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the child content of the lens.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    ///     Gets or sets additional attributes to apply to the root element.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string? RoleValue => Role ?? (Variant == LensVariant.Card ? "article" : null);
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-lens",
+            GetVariantClass(),
+        };
+        if (ShowCaustic)
+        {
+            classes.Add("rf-lens--has-caustic");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetVariantClass() =>
+        Variant switch
+        {
+            LensVariant.Default => "rf-lens--default",
+            LensVariant.Elevated => "rf-lens--elevated",
+            LensVariant.Sunken => "rf-lens--sunken",
+            LensVariant.Card => "rf-lens--card",
+            LensVariant.Modal => "rf-lens--modal",
+            var _ => "rf-lens--default",
+        };
+
+}

@@ -1,0 +1,81 @@
+/* BarChart - Categorical comparison */
+/* Pure CSS + SVG implementation - NO JAVASCRIPT */
+
+.rf-bar-chart {
+    display: block;
+    width: 100%;
+}
+
+.rf-bar-chart__svg {
+    width: 100%;
+    height: auto;
+}
+
+.rf-bar-chart__grid-line {
+    stroke: var(--rf-spectrum-surface-edge);
+    stroke-width: 1;
+    stroke-dasharray: 2, 4;
+    opacity: 0.5;
+}
+
+.rf-bar-chart__axis-label {
+    font-family: var(--rf-font-instrument);
+    font-size: 10px;
+    fill: var(--rf-spectrum-text-muted);
+}
+
+.rf-bar-chart__label {
+    font-family: var(--rf-font-instrument);
+    font-size: 10px;
+    fill: var(--rf-spectrum-text-muted);
+}
+
+.rf-bar-chart__bar {
+    fill: var(--rf-spectrum-accent);
+    rx: 2;
+    ry: 2;
+    transition: opacity var(--rf-flow-fast) var(--rf-ease-out);
+    animation: rf-bar-chart-grow var(--rf-flow-medium) var(--rf-ease-out) both;
+}
+
+.rf-bar-chart__bar:hover {
+    opacity: 0.8;
+}
+
+/* Vertical bar animation */
+.rf-bar-chart:not(.rf-bar-chart--horizontal) .rf-bar-chart__bar {
+    transform-origin: bottom;
+    animation-name: rf-bar-chart-grow-up;
+}
+
+/* Horizontal bar animation */
+.rf-bar-chart--horizontal .rf-bar-chart__bar {
+    transform-origin: left;
+    animation-name: rf-bar-chart-grow-right;
+}
+
+@keyframes rf-bar-chart-grow-up {
+    from {
+        transform: scaleY(0);
+    }
+    to {
+        transform: scaleY(1);
+    }
+}
+
+@keyframes rf-bar-chart-grow-right {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-bar-chart__bar {
+        animation: none;
+        transform: none;
+    }
+}

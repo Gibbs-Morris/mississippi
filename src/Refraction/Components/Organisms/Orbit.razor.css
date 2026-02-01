@@ -1,0 +1,124 @@
+/* Orbit - Radial navigation control */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-orbit {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rf-orbit__ring {
+    width: var(--rf-orbit-size, 200px);
+    height: var(--rf-orbit-size, 200px);
+}
+
+.rf-orbit__empty-ring {
+    stroke: var(--rf-spectrum-surface-edge);
+}
+
+.rf-orbit__segment {
+    cursor: pointer;
+    outline: none;
+}
+
+.rf-orbit__segment-arc {
+    stroke: var(--rf-spectrum-surface-edge);
+    transition: stroke var(--rf-flow-fast) var(--rf-ease-out),
+                stroke-width var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-orbit__segment:hover .rf-orbit__segment-arc,
+.rf-orbit__segment:focus-visible .rf-orbit__segment-arc {
+    stroke: var(--rf-spectrum-accent);
+}
+
+.rf-orbit__segment--selected .rf-orbit__segment-arc {
+    stroke: var(--rf-spectrum-accent);
+    stroke-width: 10;
+}
+
+.rf-orbit__segment:focus-visible {
+    outline: none;
+}
+
+.rf-orbit__segment:focus-visible .rf-orbit__segment-arc {
+    stroke: var(--rf-spectrum-accent);
+    filter: drop-shadow(0 0 4px var(--rf-spectrum-accent));
+}
+
+.rf-orbit__center {
+    stroke: var(--rf-spectrum-surface-overlay);
+    stroke-width: 1;
+}
+
+.rf-orbit__content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    max-width: calc(var(--rf-orbit-size, 200px) * 0.4);
+}
+
+.rf-orbit__label {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-default);
+    font-weight: var(--rf-font-weight-medium);
+}
+
+/* Size variants */
+.rf-orbit--small {
+    --rf-orbit-size: 120px;
+}
+
+.rf-orbit--small .rf-orbit__label {
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-orbit--medium {
+    --rf-orbit-size: 200px;
+}
+
+.rf-orbit--large {
+    --rf-orbit-size: 300px;
+}
+
+.rf-orbit--large .rf-orbit__label {
+    font-size: var(--rf-font-size-md);
+}
+
+/* Active state - subtle glow on the ring */
+.rf-orbit--active .rf-orbit__ring {
+    filter: drop-shadow(0 0 8px var(--rf-radiance-glow));
+}
+
+/* Hover animation - gyre effect */
+.rf-orbit__segment:hover .rf-orbit__segment-arc {
+    animation: rf-orbit-gyre 3s linear infinite;
+}
+
+@keyframes rf-orbit-gyre {
+    /* Subtle rotation hint - purely visual, segment stays in place */
+    0% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.1);
+    }
+    100% {
+        filter: brightness(1);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-orbit__segment-arc {
+        transition: none;
+    }
+
+    .rf-orbit__segment:hover .rf-orbit__segment-arc {
+        animation: none;
+    }
+}

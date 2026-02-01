@@ -1,0 +1,160 @@
+@namespace Refraction.Components.Organisms
+@using Microsoft.AspNetCore.Components.Web
+
+@{
+    var dataItems = Data?.ToList() ?? new List<PieChartSlice>();
+    var total = dataItems.Sum(s => s.Value);
+    if (Math.Abs(total) < 0.0001) total = 1;
+    var cx = Size / 2.0;
+    var cy = Size / 2.0;
+    var radius = (Size - 20) / 2.0;
+    var innerRadius = IsDonut ? radius * 0.6 : 0;
+}
+
+<div class="rf-pie-chart @(IsDonut ? "rf-pie-chart--donut" : "") @Class"
+     style="@Style"
+     role="img"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    <svg class="rf-pie-chart__svg" viewBox="0 0 @Size @Size">
+        @{
+            var currentAngle = -90.0; // Start from top
+            var colorIndex = 0;
+            var colors = new[] {
+                "var(--rf-spectrum-accent)",
+                "var(--rf-signal-ok)",
+                "var(--rf-signal-attention)",
+                "var(--rf-signal-critical)",
+                "#8b5cf6",
+                "#06b6d4",
+                "#f59e0b",
+                "#ec4899"
+            };
+        }
+
+        @foreach (var slice in dataItems)
+        {
+            var sliceAngle = (slice.Value / total) * 360;
+            var largeArcFlag = sliceAngle > 180 ? 1 : 0;
+            
+            var startRad = currentAngle * Math.PI / 180;
+            var endRad = (currentAngle + sliceAngle) * Math.PI / 180;
+            
+            var x1 = cx + radius * Math.Cos(startRad);
+            var y1 = cy + radius * Math.Sin(startRad);
+            var x2 = cx + radius * Math.Cos(endRad);
+            var y2 = cy + radius * Math.Sin(endRad);
+            
+            var color = slice.Color ?? colors[colorIndex % colors.Length];
+            
+            string pathD;
+            if (IsDonut)
+            {
+                var ix1 = cx + innerRadius * Math.Cos(startRad);
+                var iy1 = cy + innerRadius * Math.Sin(startRad);
+                var ix2 = cx + innerRadius * Math.Cos(endRad);
+                var iy2 = cy + innerRadius * Math.Sin(endRad);
+                pathD = $"M {x1:F2},{y1:F2} A {radius},{radius} 0 {largeArcFlag},1 {x2:F2},{y2:F2} L {ix2:F2},{iy2:F2} A {innerRadius},{innerRadius} 0 {largeArcFlag},0 {ix1:F2},{iy1:F2} Z";
+            }
+            else
+            {
+                pathD = $"M {cx},{cy} L {x1:F2},{y1:F2} A {radius},{radius} 0 {largeArcFlag},1 {x2:F2},{y2:F2} Z";
+            }
+            
+            <path class="rf-pie-chart__slice"
+                  d="@pathD"
+                  fill="@color"
+                  style="animation-delay: @(colorIndex * 100)ms;">
+                @{
+                    var percentage = slice.Value / total * 100;
+                }
+                <title>@slice.Label: @slice.Value.ToString("N0") (@percentage.ToString("F1")%)</title>
+            </path>
+            
+            currentAngle += sliceAngle;
+            colorIndex++;
+        }
+
+        @if (IsDonut && !string.IsNullOrEmpty(CenterLabel))
+        {
+            @((MarkupString)$"<text class=\"rf-pie-chart__center-label\" x=\"{cx}\" y=\"{cy}\" text-anchor=\"middle\" dominant-baseline=\"middle\">{System.Web.HttpUtility.HtmlEncode(CenterLabel)}</text>")
+        }
+    </svg>
+
+    @if (ShowLegend && dataItems.Count > 0)
+    {
+        <div class="rf-pie-chart__legend">
+            @{
+                colorIndex = 0;
+            }
+            @foreach (var slice in dataItems)
+            {
+                var color = slice.Color ?? colors[colorIndex % colors.Length];
+                var slicePercentage = (slice.Value / total * 100).ToString("F1");
+                <div class="rf-pie-chart__legend-item">
+                    <span class="rf-pie-chart__legend-color" style="background-color: @color;"></span>
+                    <span class="rf-pie-chart__legend-label">@slice.Label</span>
+                    <span class="rf-pie-chart__legend-value">@slicePercentage%</span>
+                </div>
+                colorIndex++;
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the chart data.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<PieChartSlice>? Data { get; set; }
+
+    /// <summary>
+    /// Gets or sets the chart size (width and height).
+    /// </summary>
+    [Parameter]
+    public int Size { get; set; } = 200;
+
+    /// <summary>
+    /// Gets or sets whether to render as a donut chart.
+    /// </summary>
+    [Parameter]
+    public bool IsDonut { get; set; }
+
+    /// <summary>
+    /// Gets or sets the center label for donut charts.
+    /// </summary>
+    [Parameter]
+    public string? CenterLabel { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to show the legend.
+    /// </summary>
+    [Parameter]
+    public bool ShowLegend { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Pie chart";
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

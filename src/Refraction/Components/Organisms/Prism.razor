@@ -1,0 +1,62 @@
+@namespace Refraction.Components.Organisms
+
+<div class="rf-prism rf-prism--@SplitMode.ToString().ToLowerInvariant() rf-prism--@Distribution.ToString().ToLowerInvariant() @Class"
+     style="@Style"
+     @attributes="AdditionalAttributes">
+    
+    <div class="rf-prism__pane rf-prism__pane--primary">
+        @PrimaryContent
+    </div>
+
+    @if (SplitMode != PrismSplitMode.NoSplit && SecondaryContent != null)
+    {
+        <div class="rf-prism__divider" role="separator"></div>
+        <div class="rf-prism__pane rf-prism__pane--secondary">
+            @SecondaryContent
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the split mode.
+    /// </summary>
+    [Parameter]
+    public PrismSplitMode SplitMode { get; set; } = PrismSplitMode.NoSplit;
+
+    /// <summary>
+    /// Gets or sets the size distribution between panes.
+    /// </summary>
+    [Parameter]
+    public PrismDistribution Distribution { get; set; } = PrismDistribution.Equal;
+
+    /// <summary>
+    /// Gets or sets the primary pane content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? PrimaryContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the secondary pane content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? SecondaryContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

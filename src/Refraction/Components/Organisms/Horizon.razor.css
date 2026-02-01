@@ -1,0 +1,90 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Horizon - Global header / app bar with optional system beacon
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rf-horizon {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rf-space-md);
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    min-height: 3.5rem;
+    border-bottom: 1px solid var(--rf-veil-faint);
+    transition: background-color var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Layout sections
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-horizon__start,
+.rf-horizon__end {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-sm);
+    flex-shrink: 0;
+}
+
+.rf-horizon__start {
+    justify-content: flex-start;
+}
+
+.rf-horizon__end {
+    justify-content: flex-end;
+}
+
+.rf-horizon__center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Beacon integration
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-horizon__beacon {
+    margin-left: var(--rf-space-xs);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variant: Default
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-horizon--default {
+    background-color: var(--rf-bg);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variant: Transparent
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-horizon--transparent {
+    background-color: transparent;
+    border-bottom-color: transparent;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Variant: Blurred (glass effect)
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-horizon--blurred {
+    background-color: var(--rf-veil-subtle);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Sticky modifier
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-horizon--sticky {
+    position: sticky;
+    top: 0;
+    z-index: var(--rf-z-sticky);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Reduced motion
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .rf-horizon {
+        transition: none;
+    }
+}

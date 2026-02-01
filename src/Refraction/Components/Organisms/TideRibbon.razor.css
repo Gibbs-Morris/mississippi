@@ -1,0 +1,130 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   TideRibbon - Notification banner / toast container
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rf-tide-ribbon {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-sm);
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    border-radius: var(--rf-radius-md);
+    font-size: var(--rf-text-sm);
+    line-height: var(--rf-leading-normal);
+    animation: rf-tide-ribbon-emerge var(--rf-flow-base) var(--rf-ease-out);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Content area
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-tide-ribbon__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.rf-tide-ribbon__message {
+    display: block;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Beacon integration
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-tide-ribbon__beacon {
+    flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Dismiss button
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-tide-ribbon__dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: none;
+    border-radius: var(--rf-radius-sm);
+    background-color: transparent;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+    transition:
+        opacity var(--rf-flow-fast) var(--rf-ease-out),
+        background-color var(--rf-flow-fast) var(--rf-ease-out);
+    flex-shrink: 0;
+}
+
+.rf-tide-ribbon__dismiss:hover {
+    opacity: 1;
+    background-color: var(--rf-veil-subtle);
+}
+
+.rf-tide-ribbon__dismiss:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    opacity: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   State: Info
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-tide-ribbon--info {
+    background-color: var(--rf-spectrum-accent-dim);
+    color: var(--rf-spectrum-accent);
+    border: 1px solid var(--rf-spectrum-accent);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   State: Success
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-tide-ribbon--success {
+    background-color: var(--rf-signal-ok-dim);
+    color: var(--rf-signal-ok);
+    border: 1px solid var(--rf-signal-ok);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   State: Warning
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-tide-ribbon--warning {
+    background-color: var(--rf-signal-attention-dim);
+    color: var(--rf-signal-attention);
+    border: 1px solid var(--rf-signal-attention);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   State: Critical
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-tide-ribbon--critical {
+    background-color: var(--rf-signal-critical-dim);
+    color: var(--rf-signal-critical);
+    border: 1px solid var(--rf-signal-critical);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Keyframes
+   ───────────────────────────────────────────────────────────────────────────── */
+@keyframes rf-tide-ribbon-emerge {
+    0% {
+        opacity: 0;
+        transform: translateY(-0.5rem);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Reduced motion
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .rf-tide-ribbon {
+        animation: none;
+    }
+
+    .rf-tide-ribbon__dismiss:hover {
+        background-color: transparent;
+    }
+}

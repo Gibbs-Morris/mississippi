@@ -1,0 +1,131 @@
+/* Ledger - Dense tabular diagnostic list */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-ledger {
+    display: flex;
+    flex-direction: column;
+    background: var(--rf-spectrum-surface-base);
+    border: 1px solid var(--rf-spectrum-surface-edge);
+    border-radius: var(--rf-radius-md);
+    overflow: hidden;
+    font-family: var(--rf-font-instrument);
+}
+
+.rf-ledger__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    background: var(--rf-spectrum-surface-overlay);
+    border-bottom: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-ledger__title {
+    font-size: var(--rf-font-size-sm);
+    font-weight: var(--rf-font-weight-semibold);
+    color: var(--rf-spectrum-text-default);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rf-ledger__toggle {
+    background: transparent;
+    border: none;
+    color: var(--rf-spectrum-text-muted);
+    cursor: pointer;
+    padding: var(--rf-space-xs);
+    font-size: var(--rf-font-size-xs);
+    transition: color var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-ledger__toggle:hover {
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-ledger__body {
+    display: flex;
+    flex-direction: column;
+}
+
+.rf-ledger__row {
+    display: flex;
+    border-bottom: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-ledger__row:last-child {
+    border-bottom: none;
+}
+
+.rf-ledger__row--header {
+    background: var(--rf-spectrum-surface-overlay);
+}
+
+.rf-ledger__cell {
+    flex: 1 1 auto;
+    padding: var(--rf-ledger-cell-padding, var(--rf-space-sm) var(--rf-space-md));
+    font-size: var(--rf-ledger-font-size, var(--rf-font-size-sm));
+    color: var(--rf-spectrum-text-default);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rf-ledger__cell--header {
+    font-weight: var(--rf-font-weight-medium);
+    color: var(--rf-spectrum-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-ledger__cell--numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.rf-ledger__overflow {
+    padding: var(--rf-space-xs) var(--rf-space-md);
+    text-align: center;
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-spectrum-text-muted);
+    background: var(--rf-spectrum-surface-overlay);
+}
+
+/* Size variants */
+.rf-ledger--compact {
+    --rf-ledger-cell-padding: var(--rf-space-xs) var(--rf-space-sm);
+    --rf-ledger-font-size: var(--rf-font-size-xs);
+}
+
+.rf-ledger--default {
+    --rf-ledger-cell-padding: var(--rf-space-sm) var(--rf-space-md);
+    --rf-ledger-font-size: var(--rf-font-size-sm);
+}
+
+.rf-ledger--comfortable {
+    --rf-ledger-cell-padding: var(--rf-space-md) var(--rf-space-lg);
+    --rf-ledger-font-size: var(--rf-font-size-md);
+}
+
+/* Slide-in animation */
+.rf-ledger__row {
+    animation: rf-ledger-slide-in var(--rf-flow-fast) var(--rf-ease-out) both;
+}
+
+@keyframes rf-ledger-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-ledger__row {
+        animation: none;
+    }
+}

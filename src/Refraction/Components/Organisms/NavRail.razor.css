@@ -1,0 +1,189 @@
+/* NavRail - Vertical navigation sidebar */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-nav-rail {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--rf-spectrum-surface-raised);
+    border-right: 1px solid var(--rf-spectrum-surface-edge);
+    transition: width var(--rf-flow-medium) var(--rf-ease-out);
+}
+
+.rf-nav-rail--right {
+    border-right: none;
+    border-left: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-nav-rail--collapsed {
+    width: 64px;
+}
+
+.rf-nav-rail--expanded {
+    width: 240px;
+}
+
+.rf-nav-rail__header {
+    padding: var(--rf-space-md);
+    border-bottom: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-nav-rail__items {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-space-xs);
+    padding: var(--rf-space-sm);
+    overflow-y: auto;
+}
+
+.rf-nav-rail__item {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-sm);
+    padding: var(--rf-space-sm);
+    text-decoration: none;
+    border-radius: var(--rf-radius-md);
+    transition: background var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-nav-rail__item:hover {
+    background: var(--rf-spectrum-surface-edge);
+}
+
+.rf-nav-rail__item:focus-visible {
+    outline: 2px solid var(--rf-spectrum-accent);
+    outline-offset: -2px;
+}
+
+.rf-nav-rail__item--active {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 15%, transparent);
+}
+
+.rf-nav-rail__item--active:hover {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 20%, transparent);
+}
+
+.rf-nav-rail__beacon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: var(--rf-radius-md);
+    background: var(--rf-spectrum-surface-edge);
+    color: var(--rf-spectrum-text-muted);
+    transition: background var(--rf-flow-fast),
+                color var(--rf-flow-fast);
+}
+
+.rf-nav-rail__beacon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.rf-nav-rail__beacon--active {
+    background: var(--rf-spectrum-accent);
+    color: var(--rf-spectrum-surface-base);
+}
+
+.rf-nav-rail__icon-placeholder {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-lg);
+    font-weight: var(--rf-font-weight-semibold);
+}
+
+.rf-nav-rail__label {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-default);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rf-nav-rail__item--active .rf-nav-rail__label {
+    color: var(--rf-spectrum-accent);
+    font-weight: var(--rf-font-weight-medium);
+}
+
+.rf-nav-rail__badge {
+    margin-left: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 var(--rf-space-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--rf-signal-critical);
+    color: var(--rf-spectrum-surface-base);
+    border-radius: var(--rf-radius-full);
+    font-family: var(--rf-font-instrument);
+    font-size: var(--rf-font-size-xs);
+    font-weight: var(--rf-font-weight-semibold);
+}
+
+.rf-nav-rail__footer {
+    padding: var(--rf-space-md);
+    border-top: 1px solid var(--rf-spectrum-surface-edge);
+}
+
+.rf-nav-rail__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin: var(--rf-space-sm);
+    align-self: flex-end;
+    padding: 0;
+    background: var(--rf-spectrum-surface-edge);
+    border: none;
+    border-radius: var(--rf-radius-sm);
+    color: var(--rf-spectrum-text-muted);
+    cursor: pointer;
+    transition: background var(--rf-flow-fast),
+                color var(--rf-flow-fast);
+}
+
+.rf-nav-rail__toggle:hover {
+    background: var(--rf-spectrum-accent);
+    color: var(--rf-spectrum-surface-base);
+}
+
+.rf-nav-rail__toggle svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Collapsed state adjustments */
+.rf-nav-rail--collapsed .rf-nav-rail__item {
+    justify-content: center;
+}
+
+.rf-nav-rail--collapsed .rf-nav-rail__badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    margin: 0;
+}
+
+.rf-nav-rail--collapsed .rf-nav-rail__item {
+    position: relative;
+}
+
+/* Right position toggle direction */
+.rf-nav-rail--right .rf-nav-rail__toggle {
+    align-self: flex-start;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-nav-rail,
+    .rf-nav-rail__item,
+    .rf-nav-rail__beacon,
+    .rf-nav-rail__toggle {
+        transition: none;
+    }
+}

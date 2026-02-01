@@ -1,0 +1,88 @@
+/* PieChart - Part-to-whole relationships */
+/* Pure CSS + SVG implementation - NO JAVASCRIPT */
+
+.rf-pie-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--rf-space-md);
+}
+
+.rf-pie-chart__svg {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+}
+
+.rf-pie-chart__slice {
+    transition: opacity var(--rf-flow-fast) var(--rf-ease-out),
+                transform var(--rf-flow-fast) var(--rf-ease-out);
+    transform-origin: center;
+    animation: rf-pie-chart-reveal var(--rf-flow-medium) var(--rf-ease-out) both;
+}
+
+.rf-pie-chart__slice:hover {
+    opacity: 0.85;
+    transform: scale(1.02);
+}
+
+.rf-pie-chart__center-label {
+    font-family: var(--rf-font-display);
+    font-size: var(--rf-font-size-lg);
+    font-weight: var(--rf-font-weight-semibold);
+    fill: var(--rf-spectrum-text-default);
+}
+
+.rf-pie-chart__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rf-space-sm) var(--rf-space-md);
+    justify-content: center;
+}
+
+.rf-pie-chart__legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-xs);
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+}
+
+.rf-pie-chart__legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--rf-radius-sm);
+    flex-shrink: 0;
+}
+
+.rf-pie-chart__legend-label {
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-pie-chart__legend-value {
+    color: var(--rf-spectrum-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+@keyframes rf-pie-chart-reveal {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-pie-chart__slice {
+        animation: none;
+        transition: opacity var(--rf-flow-fast);
+    }
+
+    .rf-pie-chart__slice:hover {
+        transform: none;
+    }
+}

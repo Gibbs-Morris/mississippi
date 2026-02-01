@@ -1,0 +1,71 @@
+/* LineChart - Time-series and trend visualization */
+/* Pure CSS + SVG implementation - NO JAVASCRIPT */
+
+.rf-line-chart {
+    display: block;
+    width: 100%;
+}
+
+.rf-line-chart__svg {
+    width: 100%;
+    height: auto;
+}
+
+.rf-line-chart__grid-line {
+    stroke: var(--rf-spectrum-surface-edge);
+    stroke-width: 1;
+    stroke-dasharray: 2, 4;
+    opacity: 0.5;
+}
+
+.rf-line-chart__axis-label {
+    font-family: var(--rf-font-instrument);
+    font-size: 10px;
+    fill: var(--rf-spectrum-text-muted);
+}
+
+.rf-line-chart__line {
+    fill: none;
+    stroke: var(--rf-spectrum-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.rf-line-chart__area {
+    fill: var(--rf-spectrum-accent);
+    opacity: 0.1;
+}
+
+.rf-line-chart__point {
+    fill: var(--rf-spectrum-accent);
+    stroke: var(--rf-spectrum-surface-base);
+    stroke-width: 2;
+    transition: r var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-line-chart__point:hover {
+    r: 6;
+}
+
+/* Animation on load */
+.rf-line-chart__line {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: rf-line-chart-draw 1.5s ease-out forwards;
+}
+
+@keyframes rf-line-chart-draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-line-chart__line {
+        animation: none;
+        stroke-dasharray: none;
+        stroke-dashoffset: 0;
+    }
+}

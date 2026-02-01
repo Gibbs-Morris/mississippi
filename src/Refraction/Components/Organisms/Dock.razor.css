@@ -1,0 +1,110 @@
+/* Dock - Pinned tools area */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-dock {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-sm);
+    background: var(--rf-spectrum-surface-overlay);
+    border: 1px solid var(--rf-spectrum-surface-edge);
+    padding: var(--rf-dock-padding, var(--rf-space-sm) var(--rf-space-md));
+    transition: opacity var(--rf-flow-fast) var(--rf-ease-out),
+                transform var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+/* Position variants */
+.rf-dock--top,
+.rf-dock--bottom {
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+}
+
+.rf-dock--top {
+    border-radius: 0 0 var(--rf-radius-md) var(--rf-radius-md);
+    border-top: none;
+}
+
+.rf-dock--bottom {
+    border-radius: var(--rf-radius-md) var(--rf-radius-md) 0 0;
+    border-bottom: none;
+}
+
+.rf-dock--left,
+.rf-dock--right {
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 100%;
+}
+
+.rf-dock--left {
+    border-radius: 0 var(--rf-radius-md) var(--rf-radius-md) 0;
+    border-left: none;
+}
+
+.rf-dock--right {
+    border-radius: var(--rf-radius-md) 0 0 var(--rf-radius-md);
+    border-right: none;
+}
+
+/* Size variants */
+.rf-dock--compact {
+    --rf-dock-padding: var(--rf-space-xs) var(--rf-space-sm);
+    gap: var(--rf-space-xs);
+}
+
+.rf-dock--default {
+    --rf-dock-padding: var(--rf-space-sm) var(--rf-space-md);
+    gap: var(--rf-space-sm);
+}
+
+/* Hidden state */
+.rf-dock--hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rf-dock--hidden.rf-dock--top {
+    transform: translateY(-100%);
+}
+
+.rf-dock--hidden.rf-dock--bottom {
+    transform: translateY(100%);
+}
+
+.rf-dock--hidden.rf-dock--left {
+    transform: translateX(-100%);
+}
+
+.rf-dock--hidden.rf-dock--right {
+    transform: translateX(100%);
+}
+
+/* Emerge animation */
+.rf-dock {
+    animation: rf-dock-emerge var(--rf-flow-medium) var(--rf-ease-out) both;
+}
+
+@keyframes rf-dock-emerge {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-dock {
+        transition: opacity var(--rf-flow-fast);
+        animation: none;
+    }
+
+    .rf-dock--hidden.rf-dock--top,
+    .rf-dock--hidden.rf-dock--bottom,
+    .rf-dock--hidden.rf-dock--left,
+    .rf-dock--hidden.rf-dock--right {
+        transform: none;
+    }
+}

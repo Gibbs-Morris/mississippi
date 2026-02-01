@@ -1,0 +1,108 @@
+@namespace Refraction.Components.Organisms
+@using Refraction.Components.Atoms
+
+<div class="rf-shoals rf-shoals--@State.ToString().ToLowerInvariant() rf-shoals--@RenderStyle.ToString().ToLowerInvariant() @Class"
+     style="@Style"
+     role="img"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    <!-- Frame brackets around the shoals -->
+    <Frame Variant="FrameVariant.Default" Size="FrameSize.Medium" IsAnimated="true">
+        <svg class="rf-shoals__canvas" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet">
+            @if (Points != null && Points.Count > 0)
+            {
+                <!-- Connect points with lines -->
+                @for (var i = 0; i < Points.Count - 1; i++)
+                {
+                    var p1 = Points[i];
+                    var p2 = Points[i + 1];
+                    <line class="rf-shoals__line"
+                          x1="@p1.X" y1="@p1.Y"
+                          x2="@p2.X" y2="@p2.Y" />
+                }
+
+                <!-- Render each point with an anchor -->
+                @foreach (var point in Points)
+                {
+                    <g class="rf-shoals__point" transform="translate(@point.X, @point.Y)">
+                        <circle class="rf-shoals__anchor" r="4" />
+                        @if (!string.IsNullOrEmpty(point.Label))
+                        {
+                            @((MarkupString)$"<text class=\"rf-shoals__label\" x=\"8\" y=\"4\">{System.Web.HttpUtility.HtmlEncode(point.Label)}</text>")
+                        }
+                    </g>
+                }
+            }
+            else
+            {
+                <!-- Placeholder wireframe cube -->
+                <g class="rf-shoals__placeholder" transform="translate(100, 75)">
+                    <!-- Front face -->
+                    <polygon class="rf-shoals__face" points="-30,-20 30,-20 30,20 -30,20" />
+                    <!-- Top face -->
+                    <polygon class="rf-shoals__face rf-shoals__face--top" points="-30,-20 30,-20 45,-35 -15,-35" />
+                    <!-- Side face -->
+                    <polygon class="rf-shoals__face rf-shoals__face--side" points="30,-20 45,-35 45,5 30,20" />
+                </g>
+            }
+        </svg>
+    </Frame>
+
+    @if (State == ShoalsState.Inspected && ChildContent != null)
+    {
+        <div class="rf-shoals__detail">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the component state.
+    /// </summary>
+    [Parameter]
+    public ShoalsState State { get; set; } = ShoalsState.Ambient;
+
+    /// <summary>
+    /// Gets or sets the rendering style.
+    /// </summary>
+    [Parameter]
+    public ShoalsStyle RenderStyle { get; set; } = ShoalsStyle.Wireframe;
+
+    /// <summary>
+    /// Gets or sets the data points to visualize.
+    /// </summary>
+    [Parameter]
+    public List<ShoalsPoint>? Points { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "3D data visualization";
+
+    /// <summary>
+    /// Gets or sets additional content shown when inspected.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

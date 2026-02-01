@@ -1,0 +1,151 @@
+@namespace Refraction.Components.Organisms
+@using Microsoft.AspNetCore.Components.Web
+
+@{
+    var segmentCount = Segments?.Count ?? 0;
+    var anglePerSegment = segmentCount > 0 ? 360.0 / segmentCount : 360;
+    var gapAngle = 2.0; // Gap between segments in degrees
+}
+
+<div class="rf-orbit rf-orbit--@Size.ToString().ToLowerInvariant() @(State == OrbitState.Active ? "rf-orbit--active" : "") @Class"
+     style="@Style"
+     role="navigation"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    <svg class="rf-orbit__ring" viewBox="0 0 100 100">
+        @if (Segments != null && Segments.Count > 0)
+        {
+            var radius = 40;
+            var cx = 50;
+            var cy = 50;
+            var circumference = 2 * Math.PI * radius;
+
+            @for (var i = 0; i < Segments.Count; i++)
+            {
+                var segment = Segments[i];
+                var startAngle = i * anglePerSegment - 90 + gapAngle / 2;
+                var segmentAngle = anglePerSegment - gapAngle;
+                var arcLength = circumference * (segmentAngle / 360);
+                var rotation = startAngle;
+                var isSelected = i == SelectedIndex;
+                var index = i;
+
+                <g class="rf-orbit__segment @(isSelected ? "rf-orbit__segment--selected" : "")"
+                   @onclick="() => HandleSegmentClick(index)"
+                   @onkeydown="e => HandleSegmentKeyDown(e, index)"
+                   role="button"
+                   tabindex="0"
+                   aria-label="@segment.Label"
+                   aria-pressed="@isSelected">
+                    <circle class="rf-orbit__segment-arc"
+                            cx="@cx" cy="@cy" r="@radius"
+                            fill="none"
+                            stroke-width="8"
+                            stroke-dasharray="@arcLength @(circumference - arcLength)"
+                            transform="rotate(@rotation @cx @cy)" />
+                </g>
+            }
+        }
+        else
+        {
+            <!-- Empty ring -->
+            <circle class="rf-orbit__empty-ring"
+                    cx="50" cy="50" r="40"
+                    fill="none"
+                    stroke-width="2" />
+        }
+        
+        <!-- Center content area -->
+        <circle class="rf-orbit__center"
+                cx="50" cy="50" r="25"
+                fill="none" />
+    </svg>
+
+    <div class="rf-orbit__content">
+        @if (Segments != null && SelectedIndex >= 0 && SelectedIndex < Segments.Count)
+        {
+            <span class="rf-orbit__label">@Segments[SelectedIndex].Label</span>
+        }
+        else
+        {
+            @ChildContent
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the orbit segments.
+    /// </summary>
+    [Parameter]
+    public List<OrbitSegment>? Segments { get; set; }
+
+    /// <summary>
+    /// Gets or sets the currently selected segment index.
+    /// </summary>
+    [Parameter]
+    public int SelectedIndex { get; set; } = -1;
+
+    /// <summary>
+    /// Gets or sets the callback when a segment is selected.
+    /// </summary>
+    [Parameter]
+    public EventCallback<int> SelectedIndexChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public OrbitSize Size { get; set; } = OrbitSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the component state.
+    /// </summary>
+    [Parameter]
+    public OrbitState State { get; set; } = OrbitState.Idle;
+
+    /// <summary>
+    /// Gets or sets the aria-label for the navigation.
+    /// </summary>
+    [Parameter]
+    public string AriaLabel { get; set; } = "Radial navigation";
+
+    /// <summary>
+    /// Gets or sets the child content displayed in the center when no segment is selected.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task HandleSegmentClick(int index)
+    {
+        SelectedIndex = index;
+        await SelectedIndexChanged.InvokeAsync(index);
+    }
+
+    private async Task HandleSegmentKeyDown(KeyboardEventArgs e, int index)
+    {
+        if (e.Key == "Enter" || e.Key == " ")
+        {
+            await HandleSegmentClick(index);
+        }
+    }
+}

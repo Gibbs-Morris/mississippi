@@ -1,0 +1,154 @@
+@namespace Refraction.Components.Organisms
+
+<div class="rf-command-bar rf-command-bar--@Position.ToString().ToLowerInvariant() rf-command-bar--@Size.ToString().ToLowerInvariant() @Class"
+     style="@Style"
+     role="toolbar"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    
+    @if (LeadingContent != null)
+    {
+        <div class="rf-command-bar__leading">
+            @LeadingContent
+        </div>
+    }
+    
+    <div class="rf-command-bar__primary">
+        @foreach (var command in PrimaryCommands ?? Enumerable.Empty<CommandBarCommand>())
+        {
+            <button class="rf-command-bar__command @(command.IsActive ? "rf-command-bar__command--active" : "") @(command.IsPrimary ? "rf-command-bar__command--primary" : "")"
+                    type="button"
+                    disabled="@command.IsDisabled"
+                    aria-pressed="@command.IsActive"
+                    title="@command.Tooltip"
+                    @onclick="@(() => OnCommandClick(command))">
+                @if (command.IconContent != null)
+                {
+                    <span class="rf-command-bar__icon">@command.IconContent</span>
+                }
+                @if (!string.IsNullOrEmpty(command.Label))
+                {
+                    <span class="rf-command-bar__label">@command.Label</span>
+                }
+            </button>
+        }
+    </div>
+    
+    @if (CenterContent != null)
+    {
+        <div class="rf-command-bar__center">
+            @CenterContent
+        </div>
+    }
+    
+    <div class="rf-command-bar__secondary">
+        @foreach (var command in SecondaryCommands ?? Enumerable.Empty<CommandBarCommand>())
+        {
+            <button class="rf-command-bar__command @(command.IsActive ? "rf-command-bar__command--active" : "")"
+                    type="button"
+                    disabled="@command.IsDisabled"
+                    aria-pressed="@command.IsActive"
+                    title="@command.Tooltip"
+                    @onclick="@(() => OnCommandClick(command))">
+                @if (command.IconContent != null)
+                {
+                    <span class="rf-command-bar__icon">@command.IconContent</span>
+                }
+                @if (!string.IsNullOrEmpty(command.Label))
+                {
+                    <span class="rf-command-bar__label">@command.Label</span>
+                }
+            </button>
+        }
+    </div>
+    
+    @if (TrailingContent != null)
+    {
+        <div class="rf-command-bar__trailing">
+            @TrailingContent
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the primary commands (left-aligned).
+    /// </summary>
+    [Parameter]
+    public IEnumerable<CommandBarCommand>? PrimaryCommands { get; set; }
+
+    /// <summary>
+    /// Gets or sets the secondary commands (right-aligned).
+    /// </summary>
+    [Parameter]
+    public IEnumerable<CommandBarCommand>? SecondaryCommands { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when a command is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback<CommandBarCommand> OnCommand { get; set; }
+
+    /// <summary>
+    /// Gets or sets the position.
+    /// </summary>
+    [Parameter]
+    public CommandBarPosition Position { get; set; } = CommandBarPosition.Top;
+
+    /// <summary>
+    /// Gets or sets the size.
+    /// </summary>
+    [Parameter]
+    public CommandBarSize Size { get; set; } = CommandBarSize.Default;
+
+    /// <summary>
+    /// Gets or sets leading content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? LeadingContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets center content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? CenterContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets trailing content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? TrailingContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Command bar";
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task OnCommandClick(CommandBarCommand command)
+    {
+        if (!command.IsDisabled)
+        {
+            command.OnClick?.Invoke();
+            await OnCommand.InvokeAsync(command);
+        }
+    }
+}
