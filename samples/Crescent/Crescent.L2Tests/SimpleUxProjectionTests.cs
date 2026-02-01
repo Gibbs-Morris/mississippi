@@ -90,7 +90,7 @@ public sealed class SimpleUxProjectionTests
         int expectedOperations = 8; // 1 init + 5 inc + 2 dec
         CounterSummaryProjection projection = await fixture.WaitForProjectionAsync<CounterSummaryProjection>(
             entityId,
-            state => state.CurrentCount == expectedCount && state.TotalOperations == expectedOperations);
+            state => (state.CurrentCount == expectedCount) && (state.TotalOperations == expectedOperations));
         output.WriteLine($"[Test] Expected: Count={expectedCount}, Operations={expectedOperations}");
         output.WriteLine($"[Test] Actual: Count={projection.CurrentCount}, Operations={projection.TotalOperations}");
         projection.CurrentCount.Should().Be(expectedCount, "Count should be 10 + 5 - 2 = 13");
@@ -161,7 +161,7 @@ public sealed class SimpleUxProjectionTests
         // Assert - Projection should reflect first initialization only
         CounterSummaryProjection projection = await fixture.WaitForProjectionAsync<CounterSummaryProjection>(
             entityId,
-            state => state.CurrentCount == 100 && state.TotalOperations == 1);
+            state => (state.CurrentCount == 100) && (state.TotalOperations == 1));
         projection.CurrentCount.Should().Be(100, "Should reflect first init value");
         projection.TotalOperations.Should().Be(1, "Only one successful operation");
         output.WriteLine("[Test] PASSED: Re-initialization correctly prevented");

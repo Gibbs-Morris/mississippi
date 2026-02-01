@@ -13,7 +13,9 @@ namespace Crescent.Crescent.L2Tests;
 public sealed class CrescentFixture : CrescentFixtureBase
 {
     /// <inheritdoc />
-    protected override void AddSnapshotStorage(IHostApplicationBuilder builder)
+    protected override void AddSnapshotStorage(
+        IHostApplicationBuilder builder
+    )
     {
         builder.Services.AddCosmosSnapshotStorageProvider(options =>
         {

@@ -25,7 +25,6 @@ internal static class BlobSnapshotStorageMetrics
 
     private const string TierTag = "tier";
 
-    // Compression ratio metrics
     private static readonly Meter SnapshotStorageMeter = new(MeterName);
 
     private static readonly Histogram<double> CompressionRatio = SnapshotStorageMeter.CreateHistogram<double>(
@@ -62,6 +61,8 @@ internal static class BlobSnapshotStorageMetrics
         "bytes",
         "Snapshot size in bytes.");
 
+    // Compression ratio metrics
+
     // Write metrics
     private static readonly Counter<long> WriteCount = SnapshotStorageMeter.CreateCounter<long>(
         "blob.snapshot.write.count",
@@ -72,6 +73,32 @@ internal static class BlobSnapshotStorageMetrics
         "blob.snapshot.write.duration",
         "ms",
         "Snapshot write duration to blob storage.");
+
+    /// <summary>
+    ///     Record a compression ratio measurement.
+    /// </summary>
+    /// <param name="snapshotType">The snapshot type name.</param>
+    /// <param name="compression">The compression type used.</param>
+    /// <param name="originalSizeBytes">The original uncompressed size.</param>
+    /// <param name="compressedSizeBytes">The compressed size.</param>
+    internal static void RecordCompressionRatio(
+        string snapshotType,
+        string compression,
+        long originalSizeBytes,
+        long compressedSizeBytes
+    )
+    {
+        if ((originalSizeBytes <= 0) || (compressedSizeBytes <= 0) || string.IsNullOrEmpty(compression))
+        {
+            return;
+        }
+
+        TagList sizeTags = default;
+        sizeTags.Add(SnapshotTypeTag, snapshotType);
+        sizeTags.Add(CompressionTag, compression);
+        double ratio = (double)originalSizeBytes / compressedSizeBytes;
+        CompressionRatio.Record(ratio, sizeTags);
+    }
 
     /// <summary>
     ///     Record a snapshot deletion.
@@ -104,32 +131,6 @@ internal static class BlobSnapshotStorageMetrics
         TagList tags = default;
         tags.Add(SnapshotTypeTag, snapshotType);
         PruneCount.Add(prunedCount, tags);
-    }
-
-    /// <summary>
-    ///     Record a compression ratio measurement.
-    /// </summary>
-    /// <param name="snapshotType">The snapshot type name.</param>
-    /// <param name="compression">The compression type used.</param>
-    /// <param name="originalSizeBytes">The original uncompressed size.</param>
-    /// <param name="compressedSizeBytes">The compressed size.</param>
-    internal static void RecordCompressionRatio(
-        string snapshotType,
-        string compression,
-        long originalSizeBytes,
-        long compressedSizeBytes
-    )
-    {
-        if ((originalSizeBytes <= 0) || (compressedSizeBytes <= 0) || string.IsNullOrEmpty(compression))
-        {
-            return;
-        }
-
-        TagList sizeTags = default;
-        sizeTags.Add(SnapshotTypeTag, snapshotType);
-        sizeTags.Add(CompressionTag, compression);
-        double ratio = (double)originalSizeBytes / compressedSizeBytes;
-        CompressionRatio.Record(ratio, sizeTags);
     }
 
     /// <summary>

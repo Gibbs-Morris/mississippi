@@ -37,6 +37,23 @@ public sealed class BlobSnapshotStorageProviderTests
     }
 
     /// <summary>
+    ///     Ensures archive access tier is rejected.
+    /// </summary>
+    [Fact]
+    public void ConstructorShouldThrowWhenAccessTierIsArchive()
+    {
+        Mock<IBlobSnapshotRepository> repo = new();
+        BlobSnapshotStorageOptions options = new()
+        {
+            DefaultAccessTier = AccessTier.Archive,
+        };
+        Assert.Throws<ArgumentOutOfRangeException>(() => new BlobSnapshotStorageProvider(
+            repo.Object,
+            Options.Create(options),
+            NullLogger<BlobSnapshotStorageProvider>.Instance));
+    }
+
+    /// <summary>
     ///     Ensures constructor throws when logger is null.
     /// </summary>
     [Fact]
@@ -194,24 +211,5 @@ public sealed class BlobSnapshotStorageProviderTests
             SnapshotKey,
             null!,
             CancellationToken.None));
-    }
-
-    /// <summary>
-    ///     Ensures archive access tier is rejected.
-    /// </summary>
-    [Fact]
-    public void ConstructorShouldThrowWhenAccessTierIsArchive()
-    {
-        Mock<IBlobSnapshotRepository> repo = new();
-        BlobSnapshotStorageOptions options = new()
-        {
-            DefaultAccessTier = AccessTier.Archive,
-        };
-
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => new BlobSnapshotStorageProvider(
-                repo.Object,
-                Options.Create(options),
-                NullLogger<BlobSnapshotStorageProvider>.Instance));
     }
 }

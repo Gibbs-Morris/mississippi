@@ -1,10 +1,6 @@
-using Azure.Storage.Blobs;
-
 using Crescent.Crescent.L2Tests.Domain.Counter;
 
-using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 using Mississippi.Common.Abstractions;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -26,7 +22,7 @@ namespace Crescent.Crescent.L2Tests;
 /// <summary>
 ///     Base fixture for Crescent integration tests using Aspire and Orleans.
 /// </summary>
-internal abstract class CrescentFixtureBase : IAsyncLifetime
+public abstract class CrescentFixtureBase : IAsyncLifetime
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(10);
 
@@ -77,6 +73,57 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
         orleansHost?.Services.GetRequiredService<IUxProjectionGrainFactory>() ??
         throw new InvalidOperationException("Orleans host not initialized.");
 
+    private static string MaskConnectionString(
+        string connectionString
+    )
+    {
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            return "(empty)";
+        }
+
+        return connectionString.Length > 50 ? $"{connectionString[..50]}..." : connectionString;
+    }
+
+    /// <summary>
+    ///     Creates a new BlobServiceClient configured to connect to the Azurite emulator.
+    /// </summary>
+    /// <returns>The blob service client instance.</returns>
+    public BlobServiceClient CreateBlobServiceClient()
+    {
+        EnsureInitialized();
+        return new(BlobConnectionString);
+    }
+
+    /// <summary>
+    ///     Creates a new CosmosClient configured to connect to the emulator.
+    /// </summary>
+    /// <returns>The Cosmos client instance.</returns>
+    public CosmosClient CreateCosmosClient()
+    {
+        EnsureInitialized();
+        CosmosClientOptions options = new()
+        {
+            ConnectionMode = ConnectionMode.Gateway,
+            LimitToEndpoint = true,
+        };
+        if (!CosmosConnectionString.Contains("http://", StringComparison.OrdinalIgnoreCase))
+        {
+            options.HttpClientFactory = () =>
+            {
+                HttpClientHandler handler = new()
+                {
+                    CheckCertificateRevocationList = true,
+                    ServerCertificateCustomValidationCallback =
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                };
+                return new(handler, true);
+            };
+        }
+
+        return new(CosmosConnectionString, options);
+    }
+
     /// <inheritdoc />
     public async Task DisposeAsync()
     {
@@ -108,19 +155,16 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
         {
             using IDistributedApplicationTestingBuilder appHost = await DistributedApplicationTestingBuilder
                 .CreateAsync<Crescent_AppHost>();
-
             appHost.Services.AddLogging(logging =>
             {
                 logging.SetMinimumLevel(LogLevel.Debug);
                 logging.AddFilter(appHost.Environment.ApplicationName, LogLevel.Debug);
                 logging.AddFilter("Aspire.", LogLevel.Debug);
             });
-
             appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
             {
                 clientBuilder.AddStandardResilienceHandler();
             });
-
             DistributedApplication builtApp = await appHost.BuildAsync().WaitAsync(DefaultTimeout);
             if (app is not null)
             {
@@ -130,25 +174,19 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
 
             app = builtApp;
             await app.StartAsync().WaitAsync(DefaultTimeout);
-
             using CancellationTokenSource cts = new(DefaultTimeout);
-
             await app.ResourceNotifications.WaitForResourceHealthyAsync("cosmos", cts.Token)
                 .WaitAsync(DefaultTimeout, cts.Token);
-
             await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cts.Token)
                 .WaitAsync(DefaultTimeout, cts.Token);
-
             CosmosConnectionString = await app.GetConnectionStringAsync("cosmos", cts.Token) ??
                                      throw new InvalidOperationException("Failed to get Cosmos DB connection string.");
             BlobConnectionString = await app.GetConnectionStringAsync("blobs", cts.Token) ??
                                    throw new InvalidOperationException("Failed to get Blob storage connection string.");
-
             Console.WriteLine("=== ASPIRE FIXTURE DEBUG ===");
             Console.WriteLine($"[Fixture] Cosmos connection string: {MaskConnectionString(CosmosConnectionString)}");
             Console.WriteLine($"[Fixture] Blob connection string: {MaskConnectionString(BlobConnectionString)}");
             Console.WriteLine("=== END FIXTURE DEBUG ===");
-
             Console.WriteLine("[Fixture] Starting Orleans silo...");
             if (orleansHost is not null)
             {
@@ -167,46 +205,6 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
             IsInitialized = false;
             throw;
         }
-    }
-
-    /// <summary>
-    ///     Creates a new BlobServiceClient configured to connect to the Azurite emulator.
-    /// </summary>
-    /// <returns>The blob service client instance.</returns>
-    public BlobServiceClient CreateBlobServiceClient()
-    {
-        EnsureInitialized();
-        return new(BlobConnectionString);
-    }
-
-    /// <summary>
-    ///     Creates a new CosmosClient configured to connect to the emulator.
-    /// </summary>
-    /// <returns>The Cosmos client instance.</returns>
-    public CosmosClient CreateCosmosClient()
-    {
-        EnsureInitialized();
-        CosmosClientOptions options = new()
-        {
-            ConnectionMode = ConnectionMode.Gateway,
-            LimitToEndpoint = true,
-        };
-
-        if (!CosmosConnectionString.Contains("http://", StringComparison.OrdinalIgnoreCase))
-        {
-            options.HttpClientFactory = () =>
-            {
-                HttpClientHandler handler = new()
-                {
-                    CheckCertificateRevocationList = true,
-                    ServerCertificateCustomValidationCallback =
-                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
-                };
-                return new HttpClient(handler, disposeHandler: true);
-            };
-        }
-
-        return new(CosmosConnectionString, options);
     }
 
     /// <summary>
@@ -232,16 +230,12 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
         EnsureInitialized();
         ArgumentException.ThrowIfNullOrEmpty(entityId);
         ArgumentNullException.ThrowIfNull(predicate);
-
         TimeSpan effectiveTimeout = timeout ?? TimeSpan.FromSeconds(30);
         TimeSpan effectivePollInterval = pollInterval ?? TimeSpan.FromMilliseconds(200);
-
         using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(effectiveTimeout);
-
-        IUxProjectionGrain<TProjection> projectionGrain = UxProjectionGrainFactory
-            .GetUxProjectionGrain<TProjection>(entityId);
-
+        IUxProjectionGrain<TProjection> projectionGrain =
+            UxProjectionGrainFactory.GetUxProjectionGrain<TProjection>(entityId);
         try
         {
             using PeriodicTimer timer = new(effectivePollInterval);
@@ -267,12 +261,16 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
     ///     Adds the specific snapshot storage provider services.
     /// </summary>
     /// <param name="builder">The host application builder used to register snapshot storage services.</param>
-    protected abstract void AddSnapshotStorage(IHostApplicationBuilder builder);
+    protected abstract void AddSnapshotStorage(
+        IHostApplicationBuilder builder
+    );
 
-    private IHost BuildOrleansHost(string cosmosConnectionString, string blobConnectionString)
+    private IHost BuildOrleansHost(
+        string cosmosConnectionString,
+        string blobConnectionString
+    )
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder();
-
         builder.Logging.ClearProviders();
         builder.Logging.AddSimpleConsole(o =>
         {
@@ -282,7 +280,6 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
         builder.Logging.SetMinimumLevel(LogLevel.Debug);
         builder.Logging.AddFilter("Orleans", LogLevel.Warning);
         builder.Logging.AddFilter("Mississippi", LogLevel.Debug);
-
         builder.Services.AddEventSourcingByService();
         builder.Services.AddJsonSerialization();
         builder.Services.AddSnapshotCaching();
@@ -290,19 +287,40 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
         // Register keyed clients
         builder.Services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.CosmosBrooksClient,
-            (_, _) => new CosmosClient(cosmosConnectionString, new() { ConnectionMode = ConnectionMode.Gateway, LimitToEndpoint = true }));
-
+            (
+                _,
+                _
+            ) => new CosmosClient(
+                cosmosConnectionString,
+                new()
+                {
+                    ConnectionMode = ConnectionMode.Gateway,
+                    LimitToEndpoint = true,
+                }));
         builder.Services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
-            (_, _) => new CosmosClient(cosmosConnectionString, new() { ConnectionMode = ConnectionMode.Gateway, LimitToEndpoint = true }));
-
+            (
+                _,
+                _
+            ) => new CosmosClient(
+                cosmosConnectionString,
+                new()
+                {
+                    ConnectionMode = ConnectionMode.Gateway,
+                    LimitToEndpoint = true,
+                }));
         builder.Services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.BlobLocking,
-            (_, _) => new BlobServiceClient(blobConnectionString));
-
+            (
+                _,
+                _
+            ) => new BlobServiceClient(blobConnectionString));
         builder.Services.AddKeyedSingleton(
             MississippiDefaults.ServiceKeys.BlobSnapshotsClient,
-            (_, _) => new BlobServiceClient(blobConnectionString));
+            (
+                _,
+                _
+            ) => new BlobServiceClient(blobConnectionString));
 
         // Configure Brooks (Cosmos) - common for both fixtures currently unless we want to vary brooks too
         builder.Services.AddCosmosBrookStorageProvider(o =>
@@ -318,7 +336,6 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
 
         // Register Domain
         builder.Services.AddCounterAggregate();
-
         builder.UseOrleans(silo =>
         {
             silo.UseLocalhostClustering()
@@ -327,12 +344,10 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
                     opt.ClusterId = "aspire-l2tests";
                     opt.ServiceId = "CrescentTests";
                 });
-
             silo.AddMemoryStreams(MississippiDefaults.StreamProviderName);
             silo.AddMemoryGrainStorage("PubSubStore");
             silo.AddEventSourcing();
         });
-
         return builder.Build();
     }
 
@@ -342,15 +357,5 @@ internal abstract class CrescentFixtureBase : IAsyncLifetime
         {
             throw new InvalidOperationException("Aspire fixture is not initialized.");
         }
-    }
-
-    private static string MaskConnectionString(string connectionString)
-    {
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            return "(empty)";
-        }
-
-        return connectionString.Length > 50 ? $"{connectionString[..50]}..." : connectionString;
     }
 }

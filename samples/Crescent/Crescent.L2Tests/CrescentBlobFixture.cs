@@ -1,3 +1,5 @@
+using Azure.Storage.Blobs.Models;
+
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Common.Abstractions;
@@ -13,7 +15,9 @@ namespace Crescent.Crescent.L2Tests;
 public sealed class CrescentBlobFixture : CrescentFixtureBase
 {
     /// <inheritdoc />
-    protected override void AddSnapshotStorage(IHostApplicationBuilder builder)
+    protected override void AddSnapshotStorage(
+        IHostApplicationBuilder builder
+    )
     {
         builder.Services.AddBlobSnapshotStorageProvider(options =>
         {
@@ -21,7 +25,7 @@ public sealed class CrescentBlobFixture : CrescentFixtureBase
             options.ContainerName = MississippiDefaults.ContainerIds.Snapshots;
 
             // Emulator supports Hot
-            options.DefaultAccessTier = Azure.Storage.Blobs.Models.AccessTier.Hot;
+            options.DefaultAccessTier = AccessTier.Hot;
         });
     }
 }

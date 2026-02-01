@@ -56,16 +56,6 @@ internal sealed class BlobSnapshotRepository : IBlobSnapshotRepository
 
     private ISnapshotCompressor WriteCompressor { get; }
 
-    private static ISnapshotCompressor GetCompressorForEncoding(
-        string encoding
-    ) =>
-        encoding switch
-        {
-            "gzip" => new GZipSnapshotCompressor(),
-            "br" => new BrotliSnapshotCompressor(),
-            var _ => new NoCompressionCompressor(),
-        };
-
     private static string GetCompressionMetricTag(
         string encoding
     ) =>
@@ -74,6 +64,16 @@ internal sealed class BlobSnapshotRepository : IBlobSnapshotRepository
             "gzip" => "gzip",
             "br" => "brotli",
             var _ => "none",
+        };
+
+    private static ISnapshotCompressor GetCompressorForEncoding(
+        string encoding
+    ) =>
+        encoding switch
+        {
+            "gzip" => new GZipSnapshotCompressor(),
+            "br" => new BrotliSnapshotCompressor(),
+            var _ => new NoCompressionCompressor(),
         };
 
     /// <inheritdoc />
