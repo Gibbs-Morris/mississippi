@@ -2,7 +2,7 @@ let connection = null;
 let unsubscribe = null;
 
 export function connect(options, dotNetRef) {
-  if (typeof globalThis.window === 'undefined' || !globalThis.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (globalThis.window === undefined || !globalThis.__REDUX_DEVTOOLS_EXTENSION__) {
     return false;
   }
 
