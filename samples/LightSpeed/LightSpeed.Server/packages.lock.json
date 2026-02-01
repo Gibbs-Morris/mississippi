@@ -1,0 +1,92 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "IDisposableAnalyzers": {
+        "type": "Direct",
+        "requested": "[4.0.8, )",
+        "resolved": "4.0.8",
+        "contentHash": "vNi4NMG0CcJyjXxiNDcQ21FwV/whM9o9OEZKD+oP7tuxAqFEzX/x5OhC3OZJqW/w+8GOtCmJPBquYgMWgz0rfQ=="
+      },
+      "Microsoft.AspNetCore.Components.WebAssembly.Server": {
+        "type": "Direct",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "0XL+5oFRL6OkV2d8SUE3HY79pBlwxQkDCJ0ieQ3VfPhN/3xbfdUGph3yJjdSYPjFguGMbzx4fmJNgxO3C0a9Cw==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.2"
+        }
+      },
+      "Microsoft.CodeAnalysis.NetAnalyzers": {
+        "type": "Direct",
+        "requested": "[10.0.102, )",
+        "resolved": "10.0.102",
+        "contentHash": "4toG7NN4bwoIt5KAUJd8vhJQt5vwaLTBWdDOSeyaAAQP1wXLIkVshsMtKMIrPGpm0w+pHFpX7ffWqdB6ZAinoQ=="
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Direct",
+        "requested": "[10.0.102, )",
+        "resolved": "10.0.102",
+        "contentHash": "Oxq3RCIJSdtpIU4hLqO7XaDe/Ra3HS9Wi8rJl838SAg6Zu1iQjerA0+xXWBgUFYbgknUGCLOU0T+lzMLkvY9Qg==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "10.0.102",
+          "Microsoft.SourceLink.Common": "10.0.102"
+        }
+      },
+      "Microsoft.VisualStudio.Threading.Analyzers": {
+        "type": "Direct",
+        "requested": "[17.14.15, )",
+        "resolved": "17.14.15",
+        "contentHash": "mXQPJsbuUD2ydq4/ffd8h8tSOFCXec+2xJOVNCvXjuMOq/+5EKHq3D2m2MC2+nUaXeFMSt66VS/J4HdKBixgcw=="
+      },
+      "SonarAnalyzer.CSharp": {
+        "type": "Direct",
+        "requested": "[10.18.0.131500, )",
+        "resolved": "10.18.0.131500",
+        "contentHash": "Rbad71/k5e8MfG81i03Yh2YQQgovIdmyhWcLRevrcW4h9i1DUB3kKX9O1QiOGXcULLjkTdRAXdR8A8XtinL3Pg=="
+      },
+      "StyleCop.Analyzers.Unstable": {
+        "type": "Direct",
+        "requested": "[1.2.0.556, )",
+        "resolved": "1.2.0.556",
+        "contentHash": "zvn9Mqs/ox/83cpYPignI8hJEM2A93s2HkHs8HYMOAQW0PkampyoErAiIyKxgTLqbbad29HX/shv/6LGSjPJNQ=="
+      },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "10.0.102",
+        "contentHash": "0i81LYX31U6UiXz4NOLbvc++u+/mVDmOt+PskrM/MygpDxkv9THKQyRUmavBpLK6iBV0abNWnn+CQgSRz//Pwg=="
+      },
+      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
+        "type": "Transitive",
+        "resolved": "10.0.102",
+        "contentHash": "Y8Xq5gLe6l3bW82uGJODzom5Z7pn+Y71BHObnmWF0LqbKFqfOOVDg76a2vyJnRLHn0X1LmsXSec/QdCWFOPl4A=="
+      },
+      "Microsoft.JSInterop.WebAssembly": {
+        "type": "Transitive",
+        "resolved": "10.0.2",
+        "contentHash": "XeNFL2ozbjbPe32be7OVC3peMbS+vM1hu6Cp0RZfF1HepDRTmohQ+p3LF7BVhEKETxCh1/dd5sUwYuB7I/iApw=="
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "10.0.102",
+        "contentHash": "Mk1IMb9q5tahC2NltxYXFkLBtuBvfBoCQ3pIxYQWfzbCE9o1OB9SsHe0hnNGo7lWgTA/ePbFAJLWu6nLL9K17A=="
+      },
+      "lightspeed.client": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.2, )",
+          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.102, )"
+        }
+      },
+      "Microsoft.AspNetCore.Components.WebAssembly": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.2, )",
+        "resolved": "10.0.2",
+        "contentHash": "xJ0Qi75jnR75IhZhEwIdH04WH03wbJEAbilFND4SKYH0xgG/4oNAarb4Duvb0/5ko6/qcn4rCmzRuNJ1hF4dRw==",
+        "dependencies": {
+          "Microsoft.JSInterop.WebAssembly": "10.0.2"
+        }
+      }
+    }
+  }
+}
