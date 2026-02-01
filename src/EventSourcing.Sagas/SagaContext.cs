@@ -23,5 +23,5 @@ internal sealed class SagaContext : ISagaContext
     public required string SagaName { get; init; }
 
     /// <inheritdoc />
-    public DateTimeOffset StartedAt { get; init; } = DateTimeOffset.UtcNow;
+    public required DateTimeOffset StartedAt { get; init; }
 }

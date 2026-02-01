@@ -63,7 +63,7 @@ internal sealed class StartSagaCommandHandler<TInput, TSaga> : CommandHandlerBas
         List<object> events =
         [
             new SagaStartedEvent(
-                Guid.NewGuid().ToString(),
+                command.SagaId.ToString(),
                 typeof(TSaga).Name,
                 StepRegistry.StepHash,
                 command.CorrelationId,

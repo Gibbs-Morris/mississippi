@@ -34,9 +34,4 @@ public enum SagaPhaseDto
     ///     The saga failed and cannot be compensated.
     /// </summary>
     Failed = 5,
-
-    /// <summary>
-    ///     The saga was canceled manually.
-    /// </summary>
-    Canceled = 6,
 }

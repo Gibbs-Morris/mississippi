@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.EventSourcing.Sagas.Abstractions.Commands;
 
 
@@ -77,13 +79,15 @@ public sealed class SagaCommandRecordsTests
     public void StartSagaCommandShouldExposeInputAndCorrelationId()
     {
         // Arrange
+        Guid sagaId = Guid.NewGuid();
         TestSagaInput input = new("Test Order", 100m);
         string correlationId = "corr-123";
 
         // Act
-        StartSagaCommand<TestSagaInput> cmd = new(input, correlationId);
+        StartSagaCommand<TestSagaInput> cmd = new(sagaId, input, correlationId);
 
         // Assert
+        Assert.Equal(sagaId, cmd.SagaId);
         Assert.Equal(input, cmd.Input);
         Assert.Equal(correlationId, cmd.CorrelationId);
     }
@@ -95,9 +99,10 @@ public sealed class SagaCommandRecordsTests
     public void StartSagaCommandShouldImplementRecordEquality()
     {
         // Arrange
+        Guid sagaId = Guid.NewGuid();
         TestSagaInput input = new("Order", 25m);
-        StartSagaCommand<TestSagaInput> cmd1 = new(input, "corr");
-        StartSagaCommand<TestSagaInput> cmd2 = new(input, "corr");
+        StartSagaCommand<TestSagaInput> cmd1 = new(sagaId, input, "corr");
+        StartSagaCommand<TestSagaInput> cmd2 = new(sagaId, input, "corr");
 
         // Assert
         Assert.Equal(cmd1, cmd2);
@@ -110,12 +115,14 @@ public sealed class SagaCommandRecordsTests
     public void StartSagaCommandShouldSupportNullCorrelationId()
     {
         // Arrange
+        Guid sagaId = Guid.NewGuid();
         TestSagaInput input = new("Test Order", 50m);
 
         // Act
-        StartSagaCommand<TestSagaInput> cmd = new(input);
+        StartSagaCommand<TestSagaInput> cmd = new(sagaId, input);
 
         // Assert
+        Assert.Equal(sagaId, cmd.SagaId);
         Assert.Equal(input, cmd.Input);
         Assert.Null(cmd.CorrelationId);
     }

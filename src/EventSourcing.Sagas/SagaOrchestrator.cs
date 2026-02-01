@@ -32,15 +32,6 @@ internal sealed class SagaOrchestrator : ISagaOrchestrator
     private IAggregateGrainFactory AggregateGrainFactory { get; }
 
     /// <inheritdoc />
-    public Task CancelAsync(
-        Guid sagaId,
-        string reason
-    ) =>
-
-        // Cancel would dispatch CancelSagaCommand to the aggregate grain.
-        throw new NotSupportedException("Saga cancellation is not yet implemented.");
-
-    /// <inheritdoc />
     public async Task<SagaStatusProjection?> GetStatusAsync(
         Guid sagaId
     )
@@ -50,14 +41,6 @@ internal sealed class SagaOrchestrator : ISagaOrchestrator
         await Task.CompletedTask;
         return null;
     }
-
-    /// <inheritdoc />
-    public Task ResumeAsync(
-        Guid sagaId
-    ) =>
-
-        // Resume requires Orleans reminders (future enhancement).
-        throw new NotSupportedException("Saga resume is not yet implemented.");
 
     /// <inheritdoc />
     public async Task StartAsync<TSaga, TInput>(
@@ -72,7 +55,7 @@ internal sealed class SagaOrchestrator : ISagaOrchestrator
 
         // Sagas are aggregates - use the standard aggregate grain
         IGenericAggregateGrain<TSaga> grain = AggregateGrainFactory.GetGenericAggregate<TSaga>(sagaId.ToString());
-        StartSagaCommand<TInput> command = new(input, correlationId);
+        StartSagaCommand<TInput> command = new(sagaId, input, correlationId);
         OperationResult result = await grain.ExecuteAsync(command, CancellationToken.None);
         if (!result.Success)
         {

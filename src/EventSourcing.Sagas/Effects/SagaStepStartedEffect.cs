@@ -114,8 +114,13 @@ internal sealed class SagaStepStartedEffect<TSaga> : EventEffectBase<SagaStepSta
             ExtractSagaIdentity(currentState);
 
         // Idempotency guard: skip if step was already completed
-        if (currentState is ISagaState sagaState &&
-            (sagaState.LastCompletedStepIndex >= GetStepIndex(eventData.StepOrder)))
+        // Note: GetStepIndex returns -1 for unknown steps, so we must check for that case
+        // to ensure unknown steps are not treated as "already completed" but instead
+        // fall through to the STEP_NOT_FOUND handling below.
+        int stepIndex = GetStepIndex(eventData.StepOrder);
+        if (stepIndex >= 0 &&
+            currentState is ISagaState sagaState &&
+            sagaState.LastCompletedStepIndex >= stepIndex)
         {
             Logger.SagaStepCompleted(sagaId, eventData.StepName, eventData.StepOrder);
             yield break;

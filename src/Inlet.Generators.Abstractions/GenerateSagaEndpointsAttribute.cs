@@ -29,21 +29,11 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         Compensations are discovered from the <c>Compensations</c> sub-namespace by looking for classes
 ///         that extend <c>SagaCompensationBase&lt;TSaga&gt;</c> and have <c>[SagaCompensation]</c> applied.
 ///     </para>
+///     <para>
+///         For a complete usage example, see the Spring sample saga definitions under
+///         <c>samples/Spring/Spring.Domain/Sagas</c> in this repository.
+///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///         [BrookName("CONTOSO", "BANKING", "TRANSFER")]
-///         [SnapshotStorageName("CONTOSO", "BANKING", "TRANSFERSTATE")]
-///         [SagaOptions(CompensationStrategy = CompensationStrategy.Immediate)]
-///         [GenerateSagaEndpoints]
-///         [GenerateSerializer]
-///         public sealed record TransferFundsSagaState : ISagaDefinition
-///         {
-///             public static string SagaName =&gt; "TransferFunds";
-///             public decimal Amount { get; init; }
-///         }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class GenerateSagaEndpointsAttribute : Attribute
 {

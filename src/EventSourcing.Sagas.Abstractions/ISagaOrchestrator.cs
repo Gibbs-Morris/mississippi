@@ -7,36 +7,23 @@ using Mississippi.EventSourcing.Sagas.Abstractions.Projections;
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>
-///     Orchestrates the execution of sagas, managing step progression and compensation.
+///     Orchestrates the execution of sagas, managing step progression and status retrieval.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This interface provides the core saga operations: starting new saga instances and
+///         querying their status. Saga cancellation and resume operations may be added in a
+///         future release via a separate interface.
+///     </para>
+/// </remarks>
 public interface ISagaOrchestrator
 {
-    /// <summary>
-    ///     Cancels a running saga, triggering compensation for completed steps.
-    /// </summary>
-    /// <param name="sagaId">The saga instance identifier.</param>
-    /// <param name="reason">The reason for cancellation.</param>
-    /// <returns>A task representing the cancellation operation.</returns>
-    Task CancelAsync(
-        Guid sagaId,
-        string reason
-    );
-
     /// <summary>
     ///     Gets the current status of a saga instance.
     /// </summary>
     /// <param name="sagaId">The saga instance identifier.</param>
     /// <returns>The current saga status projection, or null if not found.</returns>
     Task<SagaStatusProjection?> GetStatusAsync(
-        Guid sagaId
-    );
-
-    /// <summary>
-    ///     Resumes a saga that is awaiting intervention or manual retry.
-    /// </summary>
-    /// <param name="sagaId">The saga instance identifier.</param>
-    /// <returns>A task representing the resume operation.</returns>
-    Task ResumeAsync(
         Guid sagaId
     );
 

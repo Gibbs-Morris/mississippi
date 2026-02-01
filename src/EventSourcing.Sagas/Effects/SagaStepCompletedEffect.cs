@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -104,34 +105,11 @@ internal sealed class SagaStepCompletedEffect<TSaga> : EventEffectBase<SagaStepC
 
     private ISagaStepInfo? FindNextStep(
         int currentStepOrder
-    )
-    {
-        IReadOnlyList<ISagaStepInfo> steps = StepRegistry.Steps;
-
-        // Find the first step with order greater than the current step
-        foreach (ISagaStepInfo step in steps)
-        {
-            if (step.Order > currentStepOrder)
-            {
-                return step;
-            }
-        }
-
-        return null;
-    }
+    ) =>
+        StepRegistry.Steps.FirstOrDefault(step => step.Order > currentStepOrder);
 
     private ISagaStepInfo? FindStep(
         int stepOrder
-    )
-    {
-        foreach (ISagaStepInfo step in StepRegistry.Steps)
-        {
-            if (step.Order == stepOrder)
-            {
-                return step;
-            }
-        }
-
-        return null;
-    }
+    ) =>
+        StepRegistry.Steps.FirstOrDefault(step => step.Order == stepOrder);
 }

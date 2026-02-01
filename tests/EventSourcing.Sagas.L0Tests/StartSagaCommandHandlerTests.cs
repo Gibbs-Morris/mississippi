@@ -36,7 +36,7 @@ public sealed class StartSagaCommandHandlerTests
         Mock<ISagaStepRegistry<TestSagaState>> registryMock = new();
         FakeTimeProvider timeProvider = new();
         StartSagaCommandHandler<TestSagaInput, TestSagaState> sut = new(registryMock.Object, timeProvider);
-        StartSagaCommand<TestSagaInput> command = new(new("Order123"));
+        StartSagaCommand<TestSagaInput> command = new(Guid.NewGuid(), new("Order123"));
         TestSagaState state = new()
         {
             Phase = phase,
@@ -61,7 +61,7 @@ public sealed class StartSagaCommandHandlerTests
         FakeTimeProvider timeProvider = new();
         registryMock.Setup(r => r.Steps).Returns([]);
         StartSagaCommandHandler<TestSagaInput, TestSagaState> sut = new(registryMock.Object, timeProvider);
-        StartSagaCommand<TestSagaInput> command = new(new("Order123"));
+        StartSagaCommand<TestSagaInput> command = new(Guid.NewGuid(), new("Order123"));
 
         // Act
         OperationResult<IReadOnlyList<object>> result = sut.Handle(command, null);
@@ -81,7 +81,7 @@ public sealed class StartSagaCommandHandlerTests
         Mock<ISagaStepRegistry<TestSagaState>> registryMock = new();
         FakeTimeProvider timeProvider = new();
         StartSagaCommandHandler<TestSagaInput, TestSagaState> sut = new(registryMock.Object, timeProvider);
-        StartSagaCommand<TestSagaInput> command = new(new("Order123"));
+        StartSagaCommand<TestSagaInput> command = new(Guid.NewGuid(), new("Order123"));
         TestSagaState existingState = new()
         {
             Phase = SagaPhase.Running,
@@ -124,7 +124,8 @@ public sealed class StartSagaCommandHandlerTests
             ]);
         registryMock.Setup(r => r.StepHash).Returns("testhash123");
         StartSagaCommandHandler<TestSagaInput, TestSagaState> sut = new(registryMock.Object, timeProvider);
-        StartSagaCommand<TestSagaInput> command = new(new("Order123"), "corr-id");
+        Guid sagaId = Guid.NewGuid();
+        StartSagaCommand<TestSagaInput> command = new(sagaId, new("Order123"), "corr-id");
 
         // Act
         OperationResult<IReadOnlyList<object>> result = sut.Handle(command, null);
@@ -135,6 +136,7 @@ public sealed class StartSagaCommandHandlerTests
         Assert.IsType<SagaStartedEvent>(result.Value[0]);
         Assert.IsType<SagaStepStartedEvent>(result.Value[1]);
         SagaStartedEvent startedEvent = (SagaStartedEvent)result.Value[0];
+        Assert.Equal(sagaId.ToString(), startedEvent.SagaId);
         Assert.Equal("TestSagaState", startedEvent.SagaType);
         Assert.Equal("testhash123", startedEvent.StepHash);
         Assert.Equal("corr-id", startedEvent.CorrelationId);
@@ -165,7 +167,7 @@ public sealed class StartSagaCommandHandlerTests
             ]);
         registryMock.Setup(r => r.StepHash).Returns("hash");
         StartSagaCommandHandler<TestSagaInput, TestSagaState> sut = new(registryMock.Object, timeProvider);
-        StartSagaCommand<TestSagaInput> command = new(new("Order123"));
+        StartSagaCommand<TestSagaInput> command = new(Guid.NewGuid(), new("Order123"));
         TestSagaState state = new()
         {
             Phase = SagaPhase.NotStarted,
@@ -199,7 +201,8 @@ public sealed class StartSagaCommandHandlerTests
             ]);
         registryMock.Setup(r => r.StepHash).Returns("hash");
         StartSagaCommandHandler<TestSagaInput, TestSagaState> sut = new(registryMock.Object, timeProvider);
-        StartSagaCommand<TestSagaInput> command = new(new("Order123"));
+        Guid sagaId = Guid.NewGuid();
+        StartSagaCommand<TestSagaInput> command = new(sagaId, new("Order123"));
 
         // Act
         OperationResult<IReadOnlyList<object>> result = sut.Handle(command, null);
@@ -207,6 +210,7 @@ public sealed class StartSagaCommandHandlerTests
         // Assert
         Assert.True(result.Success);
         SagaStartedEvent startedEvent = (SagaStartedEvent)result.Value![0];
+        Assert.Equal(sagaId.ToString(), startedEvent.SagaId);
         Assert.Null(startedEvent.CorrelationId);
     }
 }

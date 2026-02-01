@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,12 +45,9 @@ public sealed class SagaStepFailedEffectTests
     )
     {
         ServiceCollection services = new();
-        foreach (SagaStepInfo step in steps)
+        foreach (SagaStepInfo step in steps.Where(s => s.CompensationType is not null))
         {
-            if (step.CompensationType is not null)
-            {
-                services.AddTransient(step.CompensationType);
-            }
+            services.AddTransient(step.CompensationType!);
         }
 
         ServiceProvider provider = services.BuildServiceProvider();
@@ -68,12 +66,9 @@ public sealed class SagaStepFailedEffectTests
         where TSaga : class
     {
         ServiceCollection services = new();
-        foreach (SagaStepInfo step in steps)
+        foreach (SagaStepInfo step in steps.Where(s => s.CompensationType is not null))
         {
-            if (step.CompensationType is not null)
-            {
-                services.AddTransient(step.CompensationType);
-            }
+            services.AddTransient(step.CompensationType!);
         }
 
         ServiceProvider provider = services.BuildServiceProvider();

@@ -18,22 +18,6 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests;
 public sealed class SagaOrchestratorTests
 {
     /// <summary>
-    ///     CancelAsync throws NotSupportedException.
-    /// </summary>
-    /// <returns>A task that completes when the assertion finishes.</returns>
-    [Fact]
-    public async Task CancelAsyncShouldThrowNotSupportedException()
-    {
-        // Arrange
-        Mock<IAggregateGrainFactory> factoryMock = new();
-        SagaOrchestrator sut = new(factoryMock.Object);
-        Guid sagaId = Guid.NewGuid();
-
-        // Act & Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => sut.CancelAsync(sagaId, "User requested"));
-    }
-
-    /// <summary>
     ///     GetStatusAsync returns null (not yet implemented).
     /// </summary>
     /// <returns>A task that completes when the assertion finishes.</returns>
@@ -50,22 +34,6 @@ public sealed class SagaOrchestratorTests
 
         // Assert
         Assert.Null(result);
-    }
-
-    /// <summary>
-    ///     ResumeAsync throws NotSupportedException.
-    /// </summary>
-    /// <returns>A task that completes when the assertion finishes.</returns>
-    [Fact]
-    public async Task ResumeAsyncShouldThrowNotSupportedException()
-    {
-        // Arrange
-        Mock<IAggregateGrainFactory> factoryMock = new();
-        SagaOrchestrator sut = new(factoryMock.Object);
-        Guid sagaId = Guid.NewGuid();
-
-        // Act & Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => sut.ResumeAsync(sagaId));
     }
 
     /// <summary>
@@ -93,7 +61,7 @@ public sealed class SagaOrchestratorTests
         factoryMock.Verify(f => f.GetGenericAggregate<TestSagaState>(entityId), Times.Once);
         grainMock.Verify(
             g => g.ExecuteAsync(
-                It.Is<StartSagaCommand<TestSagaInput>>(c => (c.Input == input) && (c.CorrelationId == "corr-id")),
+                It.Is<StartSagaCommand<TestSagaInput>>(c => (c.SagaId == sagaId) && (c.Input == input) && (c.CorrelationId == "corr-id")),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

@@ -15,17 +15,11 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions;
 ///     <para>
 ///         During compensation, delays are NOT applied to maintain quick rollback behavior.
 ///     </para>
+///     <para>
+///         For usage examples, see saga step implementations in the samples projects that apply
+///         <see cref="DelayAfterStepAttribute" /> to their step classes.
+///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///     [SagaStep(1)]
-///     [DelayAfterStep(10_000)] // 10 second delay after this step
-///     internal sealed class DebitSourceAccountStep : SagaStepBase&lt;TransferFundsSagaState&gt;
-///     {
-///         // Step implementation...
-///     }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class DelayAfterStepAttribute : Attribute
 {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
@@ -128,6 +129,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     ///     Recursively finds sagas in a namespace.
     /// </summary>
     private static void FindSagasInNamespace(
+        Compilation compilation,
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol sagaAttrSymbol,
         INamedTypeSymbol? stepBaseSymbol,
@@ -144,6 +146,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
             SagaRegistrationInfo? info = TryGetSagaInfo(
+                compilation,
                 typeSymbol,
                 sagaAttrSymbol,
                 stepBaseSymbol,
@@ -163,6 +166,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
             FindSagasInNamespace(
+                compilation,
                 childNs,
                 sagaAttrSymbol,
                 stepBaseSymbol,
@@ -367,12 +371,11 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         yield return compilation.Assembly;
 
         // Include all referenced assemblies
-        foreach (MetadataReference reference in compilation.References)
+        foreach (IAssemblySymbol assemblySymbol in compilation.References
+            .Select(compilation.GetAssemblyOrModuleSymbol)
+            .OfType<IAssemblySymbol>())
         {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
+            yield return assemblySymbol;
         }
     }
 
@@ -409,6 +412,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
             FindSagasInNamespace(
+                compilation,
                 referencedAssembly.GlobalNamespace,
                 sagaAttrSymbol,
                 stepBaseSymbol,
@@ -422,6 +426,37 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         return sagas;
+    }
+
+    private static string? GetInputTypeName(
+        AttributeData attr,
+        Compilation compilation
+    )
+    {
+        if (attr.ApplicationSyntaxReference?.GetSyntax() is AttributeSyntax attributeSyntax)
+        {
+            AttributeArgumentSyntax? inputTypeArgument = attributeSyntax.ArgumentList?.Arguments
+                .FirstOrDefault(argument =>
+                    argument.NameEquals?.Name.Identifier.ValueText == "InputType" ||
+                    argument.NameColon?.Name.Identifier.ValueText == "InputType");
+            if (inputTypeArgument?.Expression is TypeOfExpressionSyntax typeOfExpression)
+            {
+                SemanticModel semanticModel = compilation.GetSemanticModel(attributeSyntax.SyntaxTree);
+                ITypeSymbol? syntaxTypeSymbol = semanticModel.GetTypeInfo(typeOfExpression.Type).Type;
+                if (syntaxTypeSymbol is not null)
+                {
+                    return syntaxTypeSymbol.ToDisplayString();
+                }
+            }
+        }
+
+        TypedConstant inputTypeArg = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value;
+        if (!inputTypeArg.IsNull && inputTypeArg.Value is ITypeSymbol inputTypeSymbol)
+        {
+            return inputTypeSymbol.ToDisplayString();
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -620,6 +655,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     ///     Tries to get saga info from a type symbol.
     /// </summary>
     private static SagaRegistrationInfo? TryGetSagaInfo(
+        Compilation compilation,
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol sagaAttrSymbol,
         INamedTypeSymbol? stepBaseSymbol,
@@ -639,15 +675,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             return null;
         }
 
-        // Get InputType from named argument
-        string? inputTypeName = null;
-        TypedConstant inputTypeArg = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value;
-        if (!inputTypeArg.IsNull &&
-            (inputTypeArg.Kind == TypedConstantKind.Type) &&
-            inputTypeArg.Value is ITypeSymbol inputTypeSymbol)
-        {
-            inputTypeName = inputTypeSymbol.ToDisplayString();
-        }
+        // Get InputType from named argument or syntax
+        string? inputTypeName = GetInputTypeName(attr, compilation);
 
         // Remove "SagaState" or "Saga" suffix for the saga name
         string baseName = typeSymbol.Name;
