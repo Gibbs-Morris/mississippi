@@ -4,4 +4,12 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Reservoir\Reservoir.csproj" />
+    <ProjectReference Include="..\..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Refraction\Refraction.csproj" />
+    <ProjectReference Include="..\..\..\src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Refraction.Pages\Refraction.Pages.csproj" />
+  </ItemGroup>
+
 </Project>

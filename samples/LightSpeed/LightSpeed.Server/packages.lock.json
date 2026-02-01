@@ -56,11 +56,6 @@
         "resolved": "10.0.102",
         "contentHash": "0i81LYX31U6UiXz4NOLbvc++u+/mVDmOt+PskrM/MygpDxkv9THKQyRUmavBpLK6iBV0abNWnn+CQgSRz//Pwg=="
       },
-      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
-        "type": "Transitive",
-        "resolved": "10.0.102",
-        "contentHash": "Y8Xq5gLe6l3bW82uGJODzom5Z7pn+Y71BHObnmWF0LqbKFqfOOVDg76a2vyJnRLHn0X1LmsXSec/QdCWFOPl4A=="
-      },
       "Microsoft.JSInterop.WebAssembly": {
         "type": "Transitive",
         "resolved": "10.0.2",
@@ -75,8 +70,35 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.2, )",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.102, )"
+          "Mississippi.Refraction": "[1.0.0, )",
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )",
+          "Mississippi.Refraction.Pages": "[1.0.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
+      },
+      "Mississippi.Refraction": {
+        "type": "Project"
+      },
+      "Mississippi.Refraction.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Refraction.Pages": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Refraction": "[1.0.0, )",
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.Abstractions": {
+        "type": "Project"
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {
         "type": "CentralTransitive",
