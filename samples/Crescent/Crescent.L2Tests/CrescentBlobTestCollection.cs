@@ -9,7 +9,7 @@ namespace Crescent.Crescent.L2Tests;
 /// </summary>
 [CollectionDefinition(Name)]
 #pragma warning disable CA1515 // Types can be made internal - xUnit collection must be public
-public sealed class CrescentBlobTestCollection : ICollectionFixture<CrescentBlobFixture>
+public sealed class CrescentBlobTestCollectionDefinition : ICollectionFixture<CrescentBlobFixture>
 {
     /// <summary>
     ///     The name of the test collection.

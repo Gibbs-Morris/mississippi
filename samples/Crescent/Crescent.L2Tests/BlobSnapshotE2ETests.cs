@@ -12,7 +12,7 @@ namespace Crescent.Crescent.L2Tests;
 ///     End-to-end integration tests using Blob Storage for snapshots.
 ///     Validates that aggregates function correctly when backed by Blob snapshots.
 /// </summary>
-[Collection(CrescentBlobTestCollection.Name)]
+[Collection(CrescentBlobTestCollectionDefinition.Name)]
 #pragma warning disable CA1515 // Types can be made internal - xUnit test class must be public
 public sealed class BlobSnapshotE2ETests
 #pragma warning restore CA1515
@@ -72,8 +72,9 @@ public sealed class BlobSnapshotE2ETests
         }
 
         // Verify state is correct in memory
-        CounterAggregate state = await counter.GetStateAsync();
-        state.Count.Should().Be(15, "Aggregate state should reflect 15 increments");
+        CounterAggregate? state = await counter.GetStateAsync();
+        state.Should().NotBeNull("Aggregate state should be available after initialization and updates");
+        state!.Count.Should().Be(15, "Aggregate state should reflect 15 increments");
 
         // Act - Force deactivation to ensure next load reads from storage (snapshot + events)
         // Note: Orleans deactivation is hints-based. In tests, we rely on the fact that

@@ -26,7 +26,7 @@ namespace Crescent.Crescent.L2Tests;
 /// <summary>
 ///     Base fixture for Crescent integration tests using Aspire and Orleans.
 /// </summary>
-public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
+internal abstract class CrescentFixtureBase : IAsyncLifetime
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(10);
 
@@ -78,7 +78,7 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
         throw new InvalidOperationException("Orleans host not initialized.");
 
     /// <inheritdoc />
-    public void Dispose()
+    public async Task DisposeAsync()
     {
         if (disposed)
         {
@@ -86,22 +86,18 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
         }
 
         disposed = true;
-        GC.SuppressFinalize(this);
-    }
-
-    /// <inheritdoc />
-    public async Task DisposeAsync()
-    {
         if (orleansHost is not null)
         {
             await orleansHost.StopAsync();
             orleansHost.Dispose();
+            orleansHost = null;
         }
 
         if (app is not null)
         {
             await app.StopAsync();
             await app.DisposeAsync();
+            app = null;
         }
     }
 
@@ -110,7 +106,7 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
     {
         try
         {
-            IDistributedApplicationTestingBuilder appHost = await DistributedApplicationTestingBuilder
+            using IDistributedApplicationTestingBuilder appHost = await DistributedApplicationTestingBuilder
                 .CreateAsync<Crescent_AppHost>();
 
             appHost.Services.AddLogging(logging =>
@@ -126,6 +122,12 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
             });
 
             DistributedApplication builtApp = await appHost.BuildAsync().WaitAsync(DefaultTimeout);
+            if (app is not null)
+            {
+                await app.StopAsync();
+                await app.DisposeAsync();
+            }
+
             app = builtApp;
             await app.StartAsync().WaitAsync(DefaultTimeout);
 
@@ -148,6 +150,12 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
             Console.WriteLine("=== END FIXTURE DEBUG ===");
 
             Console.WriteLine("[Fixture] Starting Orleans silo...");
+            if (orleansHost is not null)
+            {
+                await orleansHost.StopAsync(cts.Token);
+                orleansHost.Dispose();
+            }
+
             orleansHost = BuildOrleansHost(CosmosConnectionString, BlobConnectionString);
             await orleansHost.StartAsync(cts.Token);
             Console.WriteLine("[Fixture] Orleans silo started successfully.");
@@ -164,6 +172,7 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
     /// <summary>
     ///     Creates a new BlobServiceClient configured to connect to the Azurite emulator.
     /// </summary>
+    /// <returns>The blob service client instance.</returns>
     public BlobServiceClient CreateBlobServiceClient()
     {
         EnsureInitialized();
@@ -173,6 +182,7 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
     /// <summary>
     ///     Creates a new CosmosClient configured to connect to the emulator.
     /// </summary>
+    /// <returns>The Cosmos client instance.</returns>
     public CosmosClient CreateCosmosClient()
     {
         EnsureInitialized();
@@ -188,10 +198,11 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
             {
                 HttpClientHandler handler = new()
                 {
+                    CheckCertificateRevocationList = true,
                     ServerCertificateCustomValidationCallback =
                         HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
                 };
-                return new(handler);
+                return new HttpClient(handler, disposeHandler: true);
             };
         }
 
@@ -255,6 +266,7 @@ public abstract class CrescentFixtureBase : IAsyncLifetime, IDisposable
     /// <summary>
     ///     Adds the specific snapshot storage provider services.
     /// </summary>
+    /// <param name="builder">The host application builder used to register snapshot storage services.</param>
     protected abstract void AddSnapshotStorage(IHostApplicationBuilder builder);
 
     private IHost BuildOrleansHost(string cosmosConnectionString, string blobConnectionString)

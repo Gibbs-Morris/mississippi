@@ -81,6 +81,7 @@ public sealed class SimpleUxProjectionTests
 
         // Act - Step 2: Read the UX projection for the same entity ID
         output.WriteLine("[Test] Step 2: Query UX projection for the same entity ID");
+
         // Assert - Step 3: Verify the projection state matches expectations
         output.WriteLine("[Test] Step 3: Verify projection state matches expected values");
 
