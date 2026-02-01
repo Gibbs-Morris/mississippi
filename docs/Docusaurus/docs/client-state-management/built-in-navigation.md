@@ -2,7 +2,7 @@
 id: built-in-navigation
 title: Built-in Navigation
 sidebar_label: Built-in Navigation
-sidebar_position: 9
+sidebar_position: 10
 description: Redux-style navigation state management for Blazor applications using Reservoir's built-in navigation feature.
 ---
 

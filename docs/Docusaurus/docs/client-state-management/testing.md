@@ -2,7 +2,7 @@
 id: testing
 title: Testing Reservoir
 sidebar_label: Testing
-sidebar_position: 11
+sidebar_position: 12
 description: Test Reservoir reducers and effects in isolation using the StoreTestHarness with Given/When/Then fluent API.
 ---
 

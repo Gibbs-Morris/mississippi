@@ -170,6 +170,7 @@ Detailed documentation for each core component:
 - [Store](store.md) — Configuration and advanced usage
 - [Middleware](middleware.md) — Cross-cutting concerns
 - [StoreComponent](store-component.md) — Blazor base component for store integration
+- [Selectors](selectors.md) — Deriving computed values from state with optional memoization
 - [Built-in Navigation](built-in-navigation.md) — Navigation state management
 - [Built-in Lifecycle](built-in-lifecycle.md) — Application lifecycle management
 - [Testing](testing.md) — Unit testing reducers and effects with StoreTestHarness

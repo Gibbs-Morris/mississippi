@@ -6,10 +6,12 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
+using Spring.Client.Features.BankAccountAggregate.Selectors;
 using Spring.Client.Features.BankAccountAggregate.State;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 using Spring.Client.Features.BankAccountLedger.Dtos;
 using Spring.Client.Features.EntitySelection;
+using Spring.Client.Features.EntitySelection.Selectors;
 
 
 namespace Spring.Client.Pages;
@@ -56,9 +58,13 @@ public sealed partial class Index
     private decimal withdrawAmount;
 
     /// <summary>
-    ///     Gets the aggregate (write) feature state.
+    ///     Gets the error message from the aggregate state.
     /// </summary>
-    private BankAccountAggregateState AggregateState => GetState<BankAccountAggregateState>();
+    /// <remarks>
+    ///     Demonstrates using an aggregate-level selector for derived state.
+    /// </remarks>
+    private string? AggregateErrorMessage =>
+        Select<BankAccountAggregateState, string?>(BankAccountAggregateSelectors.GetErrorMessage);
 
     /// <summary>
     ///     Gets the projection data from the InletStore.
@@ -69,9 +75,15 @@ public sealed partial class Index
             : GetProjection<BankAccountBalanceProjectionDto>(SelectedEntityId);
 
     /// <summary>
-    ///     Gets the SignalR connection state.
+    ///     Gets the current connection identifier.
     /// </summary>
-    private SignalRConnectionState ConnectionState => GetState<SignalRConnectionState>();
+    private string? ConnectionId => Select<SignalRConnectionState, string?>(SignalRConnectionSelectors.GetConnectionId);
+
+    /// <summary>
+    ///     Gets the current connection status.
+    /// </summary>
+    private SignalRConnectionStatus ConnectionStatus =>
+        Select<SignalRConnectionState, SignalRConnectionStatus>(SignalRConnectionSelectors.GetStatus);
 
     /// <summary>
     ///     Gets error message from aggregate state or projection error.
@@ -80,9 +92,9 @@ public sealed partial class Index
     {
         get
         {
-            if (!string.IsNullOrEmpty(AggregateState.ErrorMessage))
+            if (!string.IsNullOrEmpty(AggregateErrorMessage))
             {
-                return AggregateState.ErrorMessage;
+                return AggregateErrorMessage;
             }
 
             if (!string.IsNullOrEmpty(SelectedEntityId))
@@ -101,17 +113,61 @@ public sealed partial class Index
     private bool IsAccountOpen => BalanceProjection?.IsOpen is true;
 
     /// <summary>
+    ///     Gets a value indicating whether any command is currently executing.
+    /// </summary>
+    /// <remarks>
+    ///     Demonstrates using an aggregate-level selector for derived state.
+    /// </remarks>
+    private bool IsAggregateExecuting =>
+        Select<BankAccountAggregateState, bool>(BankAccountAggregateSelectors.IsExecuting);
+
+    /// <summary>
     ///     Gets a value indicating whether the SignalR connection is not established.
     /// </summary>
-    private bool IsDisconnected => ConnectionState.Status != SignalRConnectionStatus.Connected;
+    /// <remarks>
+    ///     Demonstrates using a framework-provided selector for derived state.
+    /// </remarks>
+    private bool IsDisconnected => Select<SignalRConnectionState, bool>(SignalRConnectionSelectors.IsDisconnected);
 
     /// <summary>
     ///     Gets a value indicating whether any operation is in progress.
     /// </summary>
     private bool IsExecutingOrLoading =>
-        AggregateState.IsExecuting ||
+        IsAggregateExecuting ||
         (!string.IsNullOrEmpty(SelectedEntityId) &&
          IsProjectionLoading<BankAccountBalanceProjectionDto>(SelectedEntityId));
+
+    /// <summary>
+    ///     Gets a value indicating whether the last command succeeded.
+    /// </summary>
+    /// <remarks>
+    ///     Demonstrates using an aggregate-level selector for derived state.
+    /// </remarks>
+    private bool? LastCommandSucceeded =>
+        Select<BankAccountAggregateState, bool?>(BankAccountAggregateSelectors.DidLastCommandSucceed);
+
+    /// <summary>
+    ///     Gets the timestamp when the connection was last successfully established.
+    /// </summary>
+    private DateTimeOffset? LastConnectedAt =>
+        Select<SignalRConnectionState, DateTimeOffset?>(SignalRConnectionSelectors.GetLastConnectedAt);
+
+    /// <summary>
+    ///     Gets the timestamp when the connection was last disconnected.
+    /// </summary>
+    private DateTimeOffset? LastDisconnectedAt =>
+        Select<SignalRConnectionState, DateTimeOffset?>(SignalRConnectionSelectors.GetLastDisconnectedAt);
+
+    /// <summary>
+    ///     Gets the last error message from the connection.
+    /// </summary>
+    private string? LastError => Select<SignalRConnectionState, string?>(SignalRConnectionSelectors.GetLastError);
+
+    /// <summary>
+    ///     Gets the timestamp when the last message was received.
+    /// </summary>
+    private DateTimeOffset? LastMessageReceivedAt =>
+        Select<SignalRConnectionState, DateTimeOffset?>(SignalRConnectionSelectors.GetLastMessageReceivedAt);
 
     /// <summary>
     ///     Gets the ledger projection data from the InletStore.
@@ -120,9 +176,18 @@ public sealed partial class Index
         string.IsNullOrEmpty(SelectedEntityId) ? null : GetProjection<BankAccountLedgerProjectionDto>(SelectedEntityId);
 
     /// <summary>
+    ///     Gets the current reconnection attempt count.
+    /// </summary>
+    private int ReconnectAttemptCount =>
+        Select<SignalRConnectionState, int>(SignalRConnectionSelectors.GetReconnectAttemptCount);
+
+    /// <summary>
     ///     Gets the currently selected entity ID from entity selection state.
     /// </summary>
-    private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
+    /// <remarks>
+    ///     Demonstrates using an application-level selector for derived state.
+    /// </remarks>
+    private string? SelectedEntityId => Select<EntitySelectionState, string?>(EntitySelectionSelectors.GetEntityId);
 
     private static string FormatTimestamp(
         DateTimeOffset? timestamp
