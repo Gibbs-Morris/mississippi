@@ -29,10 +29,11 @@ The component roadmap does not explicitly capture dependency ordering, which can
 
 - Whether any component dependency assumptions are incorrect.
 
-## Current State (UNVERIFIED)
+## Current State
 
-- Phase tables list components without dependency columns.
-- Component catalog lacks dependency annotations.
+- Phase tables include Dependencies columns for each phase.
+- Component catalog entries include Dependencies fields.
+- Dependency Rules section documents build order and cross-phase dependencies.
 
 ## Proposed Design
 
@@ -62,17 +63,16 @@ No compatibility impact; documentation-only change.
 
 - Incorrect dependency assumptions could mislead implementation order.
 
-## As-Is vs To-Be (UNVERIFIED)
+## As-Is vs To-Be
 
 ```mermaid
 flowchart TD
-    A[As-Is: Phase tables] --> B[No dependency column]
-    B --> C[Implicit order]
+    A[As-Is: Phase tables] --> B[Implicit ordering]
     D[To-Be: Phase tables] --> E[Dependencies column]
     E --> F[Explicit build order]
 ```
 
-## Critical Path Sequence (UNVERIFIED)
+## Critical Path Sequence
 
 ```mermaid
 sequenceDiagram

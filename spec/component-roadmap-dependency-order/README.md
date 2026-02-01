@@ -4,7 +4,7 @@
 
 - Status: Draft
 - Size: Small
-- Approval checkpoint: TBD
+- Approval checkpoint: No (docs-only change)
 
 ## Index
 
