@@ -103,7 +103,7 @@ Micro-interactions and transient feedback elements. All stateless presentation c
 
 ### Phase 6: Data Visualization
 
-Wrapped chart and data components (encapsulated JS if needed). All stateless; data passed via parameters.
+Pure C# Blazor chart and data components using SVG rendering. All stateless; data passed via parameters. **No JavaScript**.
 
 | Component | Level | Project | Dependencies | Purpose |
 | --- | --- | --- | --- | --- |

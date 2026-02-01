@@ -39,10 +39,11 @@
 	- Add enterprise data components (tables, filters, summaries) with virtualization.
 	- Add Streamlit-inspired parameter panels and report blocks.
 
-6. Chart.js integration (Blazor-first)
-	- Create internal JS interop wrapper within Refraction (no JS types exposed).
+6. Chart components (Pure C# Blazor SVG)
+	- Implement charts using pure Blazor SVG rendering (no JS).
 	- Define strongly typed .NET chart configuration models and events.
-	- Ensure responsive resizing and hover/click selection events.
+	- Use CSS transitions for animations; no JavaScript whatsoever.
+	- Ensure responsive resizing via CSS and hover/click via Blazor @onclick/@onmouseover.
 
 7. Tests and examples
 	- Add bUnit L0 tests for each component (rendering, states, callbacks, accessibility attributes).
@@ -67,7 +68,7 @@
 ## Data model and configuration changes
 
 - CSS token additions under RefractionTokens.css.
-- Optional JS interop module file for Chart.js (internal only).
+- No JavaScript files; all interactivity via C# Blazor and CSS.
 
 ## API/contract changes and compatibility
 

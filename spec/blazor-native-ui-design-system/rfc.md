@@ -8,7 +8,7 @@ The repository lacks a cohesive, enterprise-grade Blazor-native design system an
 
 - Deliver a document-first design system with tokens, theming, and atomic-design-based component inventory.
 - Implement a Blazor-native component library with strong DX and enterprise data-app capabilities.
-- Integrate Chart.js behind Blazor-first components without leaking JS types.
+- **NO JAVASCRIPT**: All components MUST be pure C# Blazor only. No JS interop, no JS libraries. Use CSS animations/transitions and SVG rendering for charts and visual effects.
 - Provide built-in themes that express the hologram aesthetic.
 - Ensure components honor state-down / events-up interaction contract.
 - Ensure mobile-first behavior with explicit mobile modes for dense components.
@@ -16,7 +16,7 @@ The repository lacks a cohesive, enterprise-grade Blazor-native design system an
 ## Non-goals
 
 - Replacing existing applications or rewriting unrelated UI code.
-- Introducing JS-first or consumer-authored JS dependencies.
+- **Any JavaScript whatsoever**: No JS interop, no JS libraries (including Chart.js), no inline JS. Pure C# Blazor only.
 
 ## Current state
 
@@ -40,8 +40,8 @@ flowchart LR
 		F --> I[Component inventory + examples]
 		J[Refraction Components] --> K[Expanded atoms/molecules/organisms]
 		J --> L[Templates/Pages compositions]
-		J --> M[Chart components (Blazor-first)]
-		M --> N[Internal JS interop wrapper]
+		J --> M[Chart components - Pure Blazor SVG]
+		M --> N[No JS - CSS animations only]
 	end
 ```
 
@@ -60,17 +60,14 @@ flowchart LR
 ```mermaid
 sequenceDiagram
 	participant User
-	participant BlazorChart as RefractionChart (Blazor)
+	participant BlazorChart as RefractionChart (Pure Blazor SVG)
 	participant Parent as Page/Scene
-	participant Interop as ChartJsInterop (internal)
-	participant ChartJS as Chart.js (internal)
 
-	User->>BlazorChart: Tap/hover data point
+	User->>BlazorChart: Tap/hover data point (via Blazor @onclick/@onmouseover)
 	BlazorChart->>Parent: EventCallback<ChartSelection>
 	Parent->>Parent: Update state
 	Parent-->>BlazorChart: New parameters (state down)
-	BlazorChart->>Interop: Update chart config
-	Interop->>ChartJS: Apply update (no JS types exposed)
+	BlazorChart->>BlazorChart: Re-render SVG (pure C#)
 ```
 
 ## Alternatives
