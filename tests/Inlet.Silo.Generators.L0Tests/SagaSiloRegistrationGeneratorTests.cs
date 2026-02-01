@@ -78,10 +78,8 @@ public class SagaSiloRegistrationGeneratorTests
     /// <param name="output">The test output helper.</param>
     public SagaSiloRegistrationGeneratorTests(
         ITestOutputHelper output
-    )
-    {
+    ) =>
         this.output = output;
-    }
 
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
@@ -185,79 +183,6 @@ public class SagaSiloRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Verifies that the generator registers saga input handling when InputType is provided.
-    /// </summary>
-    [Fact]
-    public void GeneratorRegistersSagaInputWhenProvided()
-    {
-        // Arrange: Saga with input type and reducers
-        string source = $$"""
-                          {{AttributeAndBaseStubs}}
-
-                          namespace TestApp.Domain.Sagas.TransferFunds
-                          {
-                              using Mississippi.Inlet.Generators.Abstractions;
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-
-                              [GenerateSagaEndpoints(InputType = typeof(TransferFundsSagaInput))]
-                              public sealed record TransferFundsSagaState : ISagaDefinition
-                              {
-                                  public static string SagaName => "TransferFunds";
-                              }
-
-                              public sealed record TransferFundsSagaInput;
-                          }
-
-                          namespace TestApp.Domain.Sagas.TransferFunds.Events
-                          {
-                              public sealed record TransferInitiated;
-                          }
-
-                          namespace TestApp.Domain.Sagas.TransferFunds.Reducers
-                          {
-                              using Mississippi.EventSourcing.Reducers.Abstractions;
-                              using TestApp.Domain.Sagas.TransferFunds.Events;
-
-                              public sealed class TransferInitiatedReducer
-                                  : EventReducerBase<TransferInitiated, TransferFundsSagaState>
-                              {
-                              }
-                          }
-                          """;
-
-        // Act
-        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
-            RunGenerator(source);
-
-        // Assert: No errors
-        Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
-
-        // Assert: Generated file exists
-        GeneratorRunResult generatorResult = runResult.Results.Single();
-        Assert.Single(generatorResult.GeneratedSources);
-
-        // Assert: Contains saga input registration
-        string generatedCode = generatorResult.GeneratedSources[0].SyntaxTree.ToString();
-        if (string.Equals(Environment.GetEnvironmentVariable("PRINT_GENERATED_SILO"), "1", StringComparison.Ordinal))
-        {
-            output.WriteLine(generatedCode);
-        }
-
-        Assert.Contains(
-            "services.AddSaga<TransferFundsSagaState, TestApp.Domain.Sagas.TransferFunds.TransferFundsSagaInput>()",
-            generatedCode,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "services.AddRootCommandHandler<TransferFundsSagaState>()",
-            generatedCode,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "services.AddSagaOrchestration()",
-            generatedCode,
-            StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Verifies that the generator produces a valid registration file for a saga with steps, compensations, and reducers.
     /// </summary>
     [Fact]
@@ -356,6 +281,76 @@ public class SagaSiloRegistrationGeneratorTests
             "services.AddSnapshotStateConverter<TransferFundsSagaState>()",
             generatedCode,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies that the generator registers saga input handling when InputType is provided.
+    /// </summary>
+    [Fact]
+    public void GeneratorRegistersSagaInputWhenProvided()
+    {
+        // Arrange: Saga with input type and reducers
+        string source = $$"""
+                          {{AttributeAndBaseStubs}}
+
+                          namespace TestApp.Domain.Sagas.TransferFunds
+                          {
+                              using Mississippi.Inlet.Generators.Abstractions;
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+
+                              [GenerateSagaEndpoints(InputType = typeof(TransferFundsSagaInput))]
+                              public sealed record TransferFundsSagaState : ISagaDefinition
+                              {
+                                  public static string SagaName => "TransferFunds";
+                              }
+
+                              public sealed record TransferFundsSagaInput;
+                          }
+
+                          namespace TestApp.Domain.Sagas.TransferFunds.Events
+                          {
+                              public sealed record TransferInitiated;
+                          }
+
+                          namespace TestApp.Domain.Sagas.TransferFunds.Reducers
+                          {
+                              using Mississippi.EventSourcing.Reducers.Abstractions;
+                              using TestApp.Domain.Sagas.TransferFunds.Events;
+
+                              public sealed class TransferInitiatedReducer
+                                  : EventReducerBase<TransferInitiated, TransferFundsSagaState>
+                              {
+                              }
+                          }
+                          """;
+
+        // Act
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(source);
+
+        // Assert: No errors
+        Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+        // Assert: Generated file exists
+        GeneratorRunResult generatorResult = runResult.Results.Single();
+        Assert.Single(generatorResult.GeneratedSources);
+
+        // Assert: Contains saga input registration
+        string generatedCode = generatorResult.GeneratedSources[0].SyntaxTree.ToString();
+        if (string.Equals(Environment.GetEnvironmentVariable("PRINT_GENERATED_SILO"), "1", StringComparison.Ordinal))
+        {
+            output.WriteLine(generatedCode);
+        }
+
+        Assert.Contains(
+            "services.AddSaga<TransferFundsSagaState, TestApp.Domain.Sagas.TransferFunds.TransferFundsSagaInput>()",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "services.AddRootCommandHandler<TransferFundsSagaState>()",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("services.AddSagaOrchestration()", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -61,7 +61,8 @@ public sealed class SagaOrchestratorTests
         factoryMock.Verify(f => f.GetGenericAggregate<TestSagaState>(entityId), Times.Once);
         grainMock.Verify(
             g => g.ExecuteAsync(
-                It.Is<StartSagaCommand<TestSagaInput>>(c => (c.SagaId == sagaId) && (c.Input == input) && (c.CorrelationId == "corr-id")),
+                It.Is<StartSagaCommand<TestSagaInput>>(c =>
+                    (c.SagaId == sagaId) && (c.Input == input) && (c.CorrelationId == "corr-id")),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

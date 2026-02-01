@@ -24,9 +24,9 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
 
     private const string GeneratorName = "SagaClientActionEffectsGenerator";
 
-    private const string InheritDocComment = "/// <inheritdoc />";
-
     private const string ISagaDefinitionFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaDefinition";
+
+    private const string InheritDocComment = "/// <inheritdoc />";
 
     /// <summary>
     ///     Recursively finds sagas in a namespace.
