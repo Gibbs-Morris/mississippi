@@ -263,11 +263,23 @@ Mississippi includes selectors for built-in framework state:
 ```csharp
 public static class SignalRConnectionSelectors
 {
+    // Connection state
     public static bool IsConnected(SignalRConnectionState state);
     public static bool IsDisconnected(SignalRConnectionState state);
     public static bool IsReconnecting(SignalRConnectionState state);
     public static SignalRConnectionStatus GetStatus(SignalRConnectionState state);
+
+    // Connection details
+    public static string? GetConnectionId(SignalRConnectionState state);
     public static int GetReconnectAttemptCount(SignalRConnectionState state);
+
+    // Timestamps
+    public static DateTimeOffset? GetLastConnectedAt(SignalRConnectionState state);
+    public static DateTimeOffset? GetLastDisconnectedAt(SignalRConnectionState state);
+    public static DateTimeOffset? GetLastMessageReceivedAt(SignalRConnectionState state);
+
+    // Error handling
+    public static string? GetLastError(SignalRConnectionState state);
 }
 ```
 
