@@ -32,6 +32,7 @@
 - Docs root and structure: docs/Docusaurus/docs/index.md, docs/Docusaurus/docs/client-state-management/_category_.json
 - Refraction component structure: src/Refraction/Components/Atoms, Molecules, Organisms
 - Refraction tokens: src/Refraction/Themes/RefractionTokens.css
+- Refraction component tests use bUnit: tests/Refraction.L0Tests/Components/** (PaneTests, ReticleTests, SmokeConfirmTests)
 
 ## Assumptions (UNVERIFIED)
 

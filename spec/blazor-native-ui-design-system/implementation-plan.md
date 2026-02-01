@@ -1,12 +1,91 @@
-# Implementation Plan (Initial)
+# Implementation Plan (Revised)
 
-## Outline
+## Changes from initial draft
 
-1. Verify repository structure, existing UI components, and docs patterns.
-2. Research required external sources and compile citations.
-3. Produce document-first deliverables (design language spec, tokens/theming spec, component inventory, reference examples).
-4. Define the component architecture and project placement.
-5. Implement core tokens, themes, and signature components.
-6. Implement data-centric components and Chart.js integration.
-7. Add tests, docs pages, and examples for each component.
-8. Run build/test/cleanup scripts and address issues.
+- Incorporates existing Refraction atoms/molecules/organisms and token file.
+- Adds explicit bUnit-based L0 tests for new components.
+- Adds explicit docs placement under docs/Docusaurus/docs/refraction.
+
+## Detailed step-by-step checklist
+
+1. Documentation-first deliverables
+	- Create docs/Docusaurus/docs/refraction with _category_.json and required pages.
+	- Draft design language spec reflecting the authoritative hologram brief.
+	- Draft token/theming spec, including Opacity/Stroke/Glow/Depth/Motion values.
+	- Draft component inventory (atomic design) and reference examples.
+	- Ensure all docs include YAML front matter and markdownlint-compliant structure.
+
+2. Token and theming foundation
+	- Extend src/Refraction/Themes/RefractionTokens.css with required token families and theme variants.
+	- Add Neon Blue (dark) and Water Blue (light + dark) themes using CSS variables.
+	- Document how to override tokens via CSS variables.
+
+3. Component architecture alignment
+	- Keep atomic design folders: src/Refraction/Components/{Atoms,Molecules,Organisms}.
+	- Add Templates/Pages compositions under src/Refraction.Pages where appropriate.
+	- Ensure components follow state-down / events-up contract and DX conventions.
+
+4. Signature hologram components
+	- Implement or align GlassPlane, RingNav, RibbonDetail, CalloutLine, VolumetricObject, PulseConfirm.
+	- Ensure accessibility, keyboard navigation, and mobile variants are defined.
+
+5. Data-centric components
+	- Add enterprise data components (tables, filters, summaries) with virtualization.
+	- Add Streamlit-inspired parameter panels and report blocks.
+
+6. Chart.js integration (Blazor-first)
+	- Create internal JS interop wrapper within Refraction (no JS types exposed).
+	- Define strongly typed .NET chart configuration models and events.
+	- Ensure responsive resizing and hover/click selection events.
+
+7. Tests and examples
+	- Add bUnit L0 tests for each component (rendering, states, callbacks, accessibility attributes).
+	- Add example snippets to docs pages for each component.
+	- Validate mobile variants and keyboard navigation behavior.
+
+8. Quality gates and verification
+	- Run cleanup and build scripts and fix warnings.
+	- Run unit tests for Mississippi solution.
+	- Run mutation tests if required by touched projects.
+
+## Files and modules likely to change
+
+- docs/Docusaurus/docs/refraction/**
+- docs/Docusaurus/docs/refraction/_category_.json
+- src/Refraction/Components/**
+- src/Refraction/Themes/RefractionTokens.css
+- src/Refraction.Pages/** (templates/pages and samples)
+- tests/Refraction.L0Tests/**
+- tests/Refraction.Pages.L0Tests/**
+
+## Data model and configuration changes
+
+- CSS token additions under RefractionTokens.css.
+- Optional JS interop module file for Chart.js (internal only).
+
+## API/contract changes and compatibility
+
+- New public components and parameters in Mississippi.Refraction namespaces.
+- Avoid breaking changes in existing components; add new parameters with defaults.
+
+## Observability changes
+
+- Ensure ARIA attributes and keyboard focus styles are defined; avoid runtime logging unless required.
+
+## Test plan (commands)
+
+- Build: pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
+- Cleanup: pwsh ./clean-up.ps1
+- Unit tests: pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
+- Mutation tests (if required): pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
+
+## Rollout plan
+
+- Introduce new components alongside existing ones; avoid breaking changes.
+- Provide migration notes if any existing components change behavior.
+
+## Risks and mitigations
+
+- Scope creep: enforce component inventory and phase delivery by iterations.
+- Performance risk: require virtualization for large data components.
+- Accessibility gaps: define keyboard patterns and add bUnit tests for ARIA roles.

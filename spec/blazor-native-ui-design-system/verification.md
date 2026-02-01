@@ -33,7 +33,7 @@
 3. Refraction UI components exist in src/Refraction/Components with Atoms, Molecules, Organisms folders. Components use .razor, .razor.cs, and .razor.css files (e.g., Pane, TelemetryStrip). Tokens live in src/Refraction/Themes/RefractionTokens.css.
 4. No evidence of existing JS interop patterns was found; repo-wide search for IJSRuntime/JSImport/IJSObjectReference in .cs/.razor returned no matches.
 5. Existing theming uses CSS variables in RefractionTokens.css with raw and semantic tokens; new tokens should extend this model to avoid breaking existing usage.
-6. Tests for Refraction exist as L0 tests in tests/Refraction.L0Tests and tests/Refraction.Pages.L0Tests. Current tests focus on DI/service registration rather than UI interaction.
+6. Tests for Refraction exist as L0 tests in tests/Refraction.L0Tests and tests/Refraction.Pages.L0Tests and use bUnit (e.g., PaneTests, ReticleTests, SmokeConfirmTests). This indicates component tests are expected to use bUnit.
 7. No explicit accessibility conventions were found in Refraction components beyond standard semantic markup; no repo-level ARIA conventions located yet (UNVERIFIED beyond inspected files).
 8. No explicit responsive utilities were found in the inspected Refraction component CSS; media queries are not present in Pane/TelemetryStrip CSS (UNVERIFIED repo-wide).
 9. Docs follow Docusaurus structure with front matter; docs/Docusaurus/README.md describes site build/test. Markdownlint rules apply repository-wide.
