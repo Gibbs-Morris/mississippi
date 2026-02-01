@@ -1,0 +1,118 @@
+@namespace Refraction.Components.Molecules
+
+<div class="rf-metric-card rf-metric-card--@Size.ToString().ToLowerInvariant() @Class"
+     style="@Style"
+     role="status"
+     aria-label="@Label: @Value @Unit"
+     @attributes="AdditionalAttributes">
+    
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="rf-metric-card__label">@Label</div>
+    }
+
+    <div class="rf-metric-card__value-row">
+        <span class="rf-metric-card__value">@Value.ToString(Format)</span>
+        @if (!string.IsNullOrEmpty(Unit))
+        {
+            <span class="rf-metric-card__unit">@Unit</span>
+        }
+    </div>
+
+    @if (Trend != MetricCardTrend.None)
+    {
+        <div class="rf-metric-card__trend rf-metric-card__trend--@Trend.ToString().ToLowerInvariant()">
+            @switch (Trend)
+            {
+                case MetricCardTrend.Up:
+                    <span class="rf-metric-card__trend-icon">▲</span>
+                    break;
+                case MetricCardTrend.Down:
+                    <span class="rf-metric-card__trend-icon">▼</span>
+                    break;
+                case MetricCardTrend.Stable:
+                    <span class="rf-metric-card__trend-icon">―</span>
+                    break;
+            }
+            @if (!string.IsNullOrEmpty(TrendLabel))
+            {
+                <span class="rf-metric-card__trend-label">@TrendLabel</span>
+            }
+        </div>
+    }
+
+    @if (ChildContent != null)
+    {
+        <div class="rf-metric-card__sparkline">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the metric label.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets the metric value.
+    /// </summary>
+    [Parameter]
+    public double Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the value format string.
+    /// </summary>
+    [Parameter]
+    public string Format { get; set; } = "N0";
+
+    /// <summary>
+    /// Gets or sets the unit label.
+    /// </summary>
+    [Parameter]
+    public string? Unit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the trend direction.
+    /// </summary>
+    [Parameter]
+    public MetricCardTrend Trend { get; set; } = MetricCardTrend.None;
+
+    /// <summary>
+    /// Gets or sets the trend description label.
+    /// </summary>
+    [Parameter]
+    public string? TrendLabel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public MetricCardSize Size { get; set; } = MetricCardSize.Medium;
+
+    /// <summary>
+    /// Gets or sets optional child content (e.g., sparkline).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

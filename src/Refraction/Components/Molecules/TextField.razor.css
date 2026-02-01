@@ -1,0 +1,159 @@
+/* TextField - Text input with label and validation */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-text-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-space-xs);
+}
+
+.rf-text-field__label {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    font-weight: var(--rf-font-weight-medium);
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-text-field__required {
+    color: var(--rf-signal-critical);
+    margin-left: var(--rf-space-xs);
+}
+
+.rf-text-field__wrapper {
+    display: flex;
+    align-items: center;
+    background: var(--rf-spectrum-surface-base);
+    border: 1px solid var(--rf-spectrum-surface-edge);
+    border-radius: var(--rf-radius-md);
+    transition: border-color var(--rf-flow-fast) var(--rf-ease-out),
+                box-shadow var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-text-field__input {
+    flex: 1;
+    min-width: 0;
+    padding: var(--rf-space-sm) var(--rf-space-md);
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-text-field__input::placeholder {
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-text-field__prefix,
+.rf-text-field__suffix {
+    padding: 0 var(--rf-space-sm);
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-muted);
+    white-space: nowrap;
+}
+
+.rf-text-field__prefix {
+    padding-left: var(--rf-space-md);
+}
+
+.rf-text-field__suffix {
+    padding-right: var(--rf-space-md);
+}
+
+.rf-text-field__clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-right: var(--rf-space-xs);
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--rf-radius-full);
+    color: var(--rf-spectrum-text-muted);
+    cursor: pointer;
+    transition: background var(--rf-flow-fast);
+}
+
+.rf-text-field__clear:hover {
+    background: var(--rf-spectrum-surface-edge);
+}
+
+.rf-text-field__helper {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-text-field__error {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-signal-critical);
+}
+
+.rf-text-field__char-count {
+    font-family: var(--rf-font-instrument);
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-spectrum-text-muted);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Focus state */
+.rf-text-field--focused .rf-text-field__wrapper {
+    border-color: var(--rf-spectrum-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--rf-spectrum-accent) 25%, transparent);
+}
+
+/* Error state */
+.rf-text-field--error .rf-text-field__wrapper {
+    border-color: var(--rf-signal-critical);
+}
+
+.rf-text-field--error.rf-text-field--focused .rf-text-field__wrapper {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--rf-signal-critical) 25%, transparent);
+}
+
+/* Success state */
+.rf-text-field--success .rf-text-field__wrapper {
+    border-color: var(--rf-signal-ok);
+}
+
+.rf-text-field--success.rf-text-field--focused .rf-text-field__wrapper {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--rf-signal-ok) 25%, transparent);
+}
+
+/* Disabled state */
+.rf-text-field--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.rf-text-field--disabled .rf-text-field__wrapper {
+    background: var(--rf-spectrum-surface-edge);
+}
+
+/* Size variants */
+.rf-text-field--small .rf-text-field__label {
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-text-field--small .rf-text-field__input {
+    padding: var(--rf-space-xs) var(--rf-space-sm);
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-text-field--large .rf-text-field__input {
+    padding: var(--rf-space-md) var(--rf-space-lg);
+    font-size: var(--rf-font-size-md);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-text-field__wrapper {
+        transition: none;
+    }
+}

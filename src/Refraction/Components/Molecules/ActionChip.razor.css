@@ -1,0 +1,134 @@
+/* ActionChip - Fast command entry capsule */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-action-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rf-space-xs);
+    padding: var(--rf-chip-padding-y, var(--rf-space-xs)) var(--rf-chip-padding-x, var(--rf-space-md));
+    border-radius: var(--rf-radius-full);
+    border: 1px solid var(--rf-chip-border, var(--rf-spectrum-surface-edge));
+    background: var(--rf-chip-bg, transparent);
+    color: var(--rf-chip-color, var(--rf-spectrum-text-default));
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-chip-font-size, var(--rf-font-size-sm));
+    font-weight: var(--rf-font-weight-medium);
+    cursor: pointer;
+    transition: background var(--rf-flow-fast) var(--rf-ease-out),
+                border-color var(--rf-flow-fast) var(--rf-ease-out),
+                transform var(--rf-flow-fast) var(--rf-ease-out);
+    user-select: none;
+}
+
+.rf-action-chip:hover:not(:disabled) {
+    background: var(--rf-chip-hover-bg, var(--rf-spectrum-surface-overlay));
+}
+
+.rf-action-chip:focus-visible {
+    outline: 2px solid var(--rf-spectrum-accent);
+    outline-offset: 2px;
+}
+
+.rf-action-chip__icon {
+    font-size: 1.1em;
+}
+
+.rf-action-chip__label {
+    white-space: nowrap;
+}
+
+.rf-action-chip__indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--rf-spectrum-accent);
+    animation: rf-chip-pulse 1s ease-in-out infinite;
+}
+
+/* Variant: Default (outlined) */
+.rf-action-chip--default {
+    --rf-chip-bg: transparent;
+    --rf-chip-border: var(--rf-spectrum-surface-edge);
+    --rf-chip-hover-bg: var(--rf-spectrum-surface-overlay);
+}
+
+/* Variant: Primary (filled) */
+.rf-action-chip--primary {
+    --rf-chip-bg: var(--rf-spectrum-accent);
+    --rf-chip-border: var(--rf-spectrum-accent);
+    --rf-chip-color: var(--rf-spectrum-surface-base);
+    --rf-chip-hover-bg: var(--rf-spectrum-accent);
+}
+
+.rf-action-chip--primary:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+/* Variant: Ghost */
+.rf-action-chip--ghost {
+    --rf-chip-bg: transparent;
+    --rf-chip-border: transparent;
+    --rf-chip-color: var(--rf-spectrum-text-muted);
+    --rf-chip-hover-bg: var(--rf-spectrum-surface-overlay);
+}
+
+.rf-action-chip--ghost:hover:not(:disabled) {
+    --rf-chip-color: var(--rf-spectrum-text-default);
+}
+
+/* Size variants */
+.rf-action-chip--small {
+    --rf-chip-padding-y: 2px;
+    --rf-chip-padding-x: var(--rf-space-sm);
+    --rf-chip-font-size: var(--rf-font-size-xs);
+}
+
+.rf-action-chip--medium {
+    --rf-chip-padding-y: var(--rf-space-xs);
+    --rf-chip-padding-x: var(--rf-space-md);
+    --rf-chip-font-size: var(--rf-font-size-sm);
+}
+
+.rf-action-chip--large {
+    --rf-chip-padding-y: var(--rf-space-sm);
+    --rf-chip-padding-x: var(--rf-space-lg);
+    --rf-chip-font-size: var(--rf-font-size-md);
+}
+
+/* State: Pressed */
+.rf-action-chip--pressed {
+    transform: scale(0.95);
+}
+
+/* State: Queued */
+.rf-action-chip--queued {
+    cursor: wait;
+    opacity: 0.8;
+}
+
+/* State: Disabled */
+.rf-action-chip--disabled,
+.rf-action-chip:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+@keyframes rf-chip-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-action-chip {
+        transition: none;
+    }
+
+    .rf-action-chip__indicator {
+        animation: none;
+    }
+}

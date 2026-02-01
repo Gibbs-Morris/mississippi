@@ -1,0 +1,87 @@
+@namespace Refraction.Components.Molecules
+
+<div class="@CssClass"
+     role="status"
+     aria-live="polite"
+     aria-label="@AriaLabel">
+    <div class="rf-beacon__core"></div>
+    @if (Pulsing)
+    {
+        <div class="rf-beacon__pulse"></div>
+    }
+</div>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the semantic state of the beacon.
+    /// </summary>
+    [Parameter]
+    public BeaconState State { get; set; } = BeaconState.Info;
+
+    /// <summary>
+    ///     Gets or sets whether the beacon is actively pulsing.
+    /// </summary>
+    [Parameter]
+    public bool Pulsing { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets the size variant of the beacon.
+    /// </summary>
+    [Parameter]
+    public BeaconSize Size { get; set; } = BeaconSize.Default;
+
+    /// <summary>
+    ///     Gets or sets the accessible label for the beacon.
+    /// </summary>
+    [Parameter]
+    public string AriaLabel { get; set; } = "Status indicator";
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-beacon",
+            GetStateClass(),
+            GetSizeClass(),
+        };
+        if (Pulsing)
+        {
+            classes.Add("rf-beacon--pulsing");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetStateClass() =>
+        State switch
+        {
+            BeaconState.Info => "rf-beacon--info",
+            BeaconState.Warning => "rf-beacon--warning",
+            BeaconState.Critical => "rf-beacon--critical",
+            var _ => "rf-beacon--info",
+        };
+
+    private string GetSizeClass() =>
+        Size switch
+        {
+            BeaconSize.Small => "rf-beacon--small",
+            BeaconSize.Default => "rf-beacon--default",
+            BeaconSize.Large => "rf-beacon--large",
+            var _ => "rf-beacon--default",
+        };
+
+}

@@ -1,0 +1,147 @@
+@namespace Refraction.Components.Molecules
+
+<svg class="@CssClass"
+     role="presentation"
+     aria-hidden="true"
+     xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        @if (Animated)
+        {
+            <linearGradient id="@GradientId" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="currentColor" stop-opacity="0.3">
+                    <animate attributeName="stop-opacity"
+                             values="0.3;0.8;0.3"
+                             dur="2s"
+                             repeatCount="indefinite"/>
+                </stop>
+                <stop offset="50%" stop-color="currentColor" stop-opacity="0.8">
+                    <animate attributeName="stop-opacity"
+                             values="0.8;1;0.8"
+                             dur="2s"
+                             repeatCount="indefinite"/>
+                </stop>
+                <stop offset="100%" stop-color="currentColor" stop-opacity="0.3">
+                    <animate attributeName="stop-opacity"
+                             values="0.3;0.8;0.3"
+                             dur="2s"
+                             repeatCount="indefinite"/>
+                </stop>
+            </linearGradient>
+        }
+    </defs>
+    <line class="rf-mooring-line__line"
+          x1="@StartX"
+          y1="@StartY"
+          x2="@EndX"
+          y2="@EndY"
+          stroke="@StrokeValue"
+          stroke-width="@StrokeWidth"
+          stroke-dasharray="@DashArrayValue"/>
+</svg>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the starting X coordinate.
+    /// </summary>
+    [Parameter]
+    public double StartX { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the starting Y coordinate.
+    /// </summary>
+    [Parameter]
+    public double StartY { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the ending X coordinate.
+    /// </summary>
+    [Parameter]
+    public double EndX { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the ending Y coordinate.
+    /// </summary>
+    [Parameter]
+    public double EndY { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the line style variant.
+    /// </summary>
+    [Parameter]
+    public MooringLineStyle Style { get; set; } = MooringLineStyle.Solid;
+
+    /// <summary>
+    ///     Gets or sets the semantic color variant.
+    /// </summary>
+    [Parameter]
+    public MooringLineColor Color { get; set; } = MooringLineColor.Default;
+
+    /// <summary>
+    ///     Gets or sets whether the line has a flowing animation.
+    /// </summary>
+    [Parameter]
+    public bool Animated { get; set; }
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string GradientId { get; } = $"mooring-gradient-{Guid.NewGuid():N}";
+
+    private string CssClass => BuildCssClass();
+
+    private string StrokeWidth =>
+        Style switch
+        {
+            MooringLineStyle.Fine => "1",
+            MooringLineStyle.Solid => "2",
+            MooringLineStyle.Bold => "3",
+            var _ => "2",
+        };
+
+    private string DashArrayValue =>
+        Style switch
+        {
+            MooringLineStyle.Dashed => "6,4",
+            MooringLineStyle.Dotted => "2,3",
+            var _ => "none",
+        };
+
+    private string StrokeValue => Animated ? $"url(#{GradientId})" : "currentColor";
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-mooring-line",
+            GetColorClass(),
+        };
+        if (Animated)
+        {
+            classes.Add("rf-mooring-line--animated");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetColorClass() =>
+        Color switch
+        {
+            MooringLineColor.Default => "rf-mooring-line--default",
+            MooringLineColor.Muted => "rf-mooring-line--muted",
+            MooringLineColor.Accent => "rf-mooring-line--accent",
+            MooringLineColor.Ok => "rf-mooring-line--ok",
+            MooringLineColor.Attention => "rf-mooring-line--attention",
+            MooringLineColor.Critical => "rf-mooring-line--critical",
+            var _ => "rf-mooring-line--default",
+        };
+
+}

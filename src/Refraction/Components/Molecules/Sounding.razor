@@ -1,0 +1,96 @@
+@namespace Refraction.Components.Molecules
+
+<div class="rf-sounding rf-sounding--@Size.ToString().ToLowerInvariant() @(State == SoundingState.Updating ? "rf-sounding--updating" : "") @Class"
+     style="@Style"
+     role="status"
+     aria-label="@Label"
+     aria-live="@(State == SoundingState.Updating ? "polite" : "off")"
+     @attributes="AdditionalAttributes">
+    
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <span class="rf-sounding__label">@Label</span>
+    }
+
+    <span class="rf-sounding__value">@Value.ToString(Format)</span>
+
+    @if (!string.IsNullOrEmpty(Unit))
+    {
+        <span class="rf-sounding__unit">@Unit</span>
+    }
+
+    @if (ShowTrend && Trend != 0)
+    {
+        <span class="rf-sounding__trend rf-sounding__trend--@(Trend > 0 ? "up" : "down")">
+            @(Trend > 0 ? "▲" : "▼")
+        </span>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the numeric value to display.
+    /// </summary>
+    [Parameter]
+    public double Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the format string for the value.
+    /// </summary>
+    [Parameter]
+    public string Format { get; set; } = "F1";
+
+    /// <summary>
+    /// Gets or sets the unit label (e.g., "ms", "m", "°C").
+    /// </summary>
+    [Parameter]
+    public string? Unit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the descriptive label.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public SoundingSize Size { get; set; } = SoundingSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the component state.
+    /// </summary>
+    [Parameter]
+    public SoundingState State { get; set; } = SoundingState.Idle;
+
+    /// <summary>
+    /// Gets or sets whether to show the trend indicator.
+    /// </summary>
+    [Parameter]
+    public bool ShowTrend { get; set; }
+
+    /// <summary>
+    /// Gets or sets the trend direction (-1 = down, 0 = stable, 1 = up).
+    /// </summary>
+    [Parameter]
+    public int Trend { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

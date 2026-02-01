@@ -1,0 +1,78 @@
+@namespace Refraction.Components.Molecules
+
+<div class="@CssClass"
+     role="status"
+     aria-live="polite"
+     aria-label="@AriaLabel">
+    @if (IsActive)
+    {
+        <div class="rf-ripple__ring rf-ripple__ring--1"></div>
+        <div class="rf-ripple__ring rf-ripple__ring--2"></div>
+        <div class="rf-ripple__bloom"></div>
+    }
+</div>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets whether the ripple effect is currently active.
+    /// </summary>
+    [Parameter]
+    public bool IsActive { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the semantic state of the ripple.
+    /// </summary>
+    [Parameter]
+    public RippleState State { get; set; } = RippleState.Success;
+
+    /// <summary>
+    ///     Gets or sets the accessible label for the ripple.
+    /// </summary>
+    [Parameter]
+    public string AriaLabel { get; set; } = "Confirmation feedback";
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    ///     Event callback fired when the ripple animation completes.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnAnimationComplete { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-ripple",
+            GetStateClass(),
+        };
+        if (IsActive)
+        {
+            classes.Add("rf-ripple--active");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetStateClass() =>
+        State switch
+        {
+            RippleState.Success => "rf-ripple--success",
+            RippleState.Warning => "rf-ripple--warning",
+            RippleState.Failure => "rf-ripple--failure",
+            var _ => "rf-ripple--success",
+        };
+
+}

@@ -1,0 +1,125 @@
+@namespace Refraction.Components.Molecules
+
+@{
+    var normalizedHeading = ((Heading % 360) + 360) % 360;
+    var cardinalDirection = GetCardinalDirection(normalizedHeading);
+}
+
+<div class="rf-bearing rf-bearing--@Size.ToString().ToLowerInvariant() @(State == BearingState.Tracking ? "rf-bearing--tracking" : "") @Class"
+     style="@Style"
+     role="img"
+     aria-label="Heading: @normalizedHeading.ToString("F0") degrees @cardinalDirection"
+     @attributes="AdditionalAttributes">
+    
+    <svg class="rf-bearing__compass" viewBox="0 0 100 100">
+        <!-- Outer ring -->
+        <circle class="rf-bearing__ring"
+                cx="50" cy="50" r="45"
+                fill="none"
+                stroke-width="2" />
+        
+        <!-- Cardinal ticks -->
+        @foreach (var tick in new[] { 0, 90, 180, 270 })
+        {
+            var angle = tick - 90;
+            var radians = angle * Math.PI / 180;
+            var x1 = 50 + 38 * Math.Cos(radians);
+            var y1 = 50 + 38 * Math.Sin(radians);
+            var x2 = 50 + 45 * Math.Cos(radians);
+            var y2 = 50 + 45 * Math.Sin(radians);
+            <line class="rf-bearing__tick rf-bearing__tick--cardinal"
+                  x1="@x1" y1="@y1" x2="@x2" y2="@y2"
+                  stroke-width="2" />
+        }
+        
+        <!-- Minor ticks (every 30 degrees) -->
+        @foreach (var tick in new[] { 30, 60, 120, 150, 210, 240, 300, 330 })
+        {
+            var angle = tick - 90;
+            var radians = angle * Math.PI / 180;
+            var x1 = 50 + 40 * Math.Cos(radians);
+            var y1 = 50 + 40 * Math.Sin(radians);
+            var x2 = 50 + 45 * Math.Cos(radians);
+            var y2 = 50 + 45 * Math.Sin(radians);
+            <line class="rf-bearing__tick rf-bearing__tick--minor"
+                  x1="@x1" y1="@y1" x2="@x2" y2="@y2"
+                  stroke-width="1" />
+        }
+        
+        <!-- Heading indicator (pointer) -->
+        <g class="rf-bearing__pointer" transform="rotate(@normalizedHeading 50 50)">
+            <polygon points="50,15 45,35 50,30 55,35" />
+        </g>
+        
+        <!-- Center dot -->
+        <circle class="rf-bearing__center"
+                cx="50" cy="50" r="4" />
+    </svg>
+
+    @if (ShowReadout)
+    {
+        <div class="rf-bearing__readout">
+            <span class="rf-bearing__degrees">@normalizedHeading.ToString("F0")°</span>
+            <span class="rf-bearing__cardinal">@cardinalDirection</span>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the heading in degrees (0-360, where 0 is North).
+    /// </summary>
+    [Parameter]
+    public double Heading { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public BearingSize Size { get; set; } = BearingSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the component state.
+    /// </summary>
+    [Parameter]
+    public BearingState State { get; set; } = BearingState.Idle;
+
+    /// <summary>
+    /// Gets or sets whether to show the numeric readout.
+    /// </summary>
+    [Parameter]
+    public bool ShowReadout { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private static string GetCardinalDirection(double heading)
+    {
+        return heading switch
+        {
+            >= 337.5 or < 22.5 => "N",
+            >= 22.5 and < 67.5 => "NE",
+            >= 67.5 and < 112.5 => "E",
+            >= 112.5 and < 157.5 => "SE",
+            >= 157.5 and < 202.5 => "S",
+            >= 202.5 and < 247.5 => "SW",
+            >= 247.5 and < 292.5 => "W",
+            _ => "NW",
+        };
+    }
+}

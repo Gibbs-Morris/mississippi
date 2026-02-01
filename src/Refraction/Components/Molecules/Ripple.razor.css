@@ -1,0 +1,113 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Ripple - Confirmation pulse / commit feedback
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rf-ripple {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    pointer-events: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Ripple rings - expanding circles
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-ripple__ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0;
+    transform: scale(0.5);
+}
+
+.rf-ripple--active .rf-ripple__ring {
+    animation: rf-ripple-expand var(--rf-flow-base) var(--rf-ease-out) forwards;
+}
+
+.rf-ripple__ring--1 {
+    animation-delay: 0ms;
+}
+
+.rf-ripple__ring--2 {
+    animation-delay: 100ms;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Bloom - center pulse
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-ripple__bloom {
+    position: absolute;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: currentColor;
+    opacity: 0;
+    transform: scale(0);
+}
+
+.rf-ripple--active .rf-ripple__bloom {
+    animation: rf-ripple-bloom var(--rf-flow-slow) var(--rf-ease-out) forwards;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   State color modifiers
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-ripple--success {
+    color: var(--rf-signal-ok);
+}
+
+.rf-ripple--warning {
+    color: var(--rf-signal-attention);
+}
+
+.rf-ripple--failure {
+    color: var(--rf-signal-critical);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Keyframes
+   ───────────────────────────────────────────────────────────────────────────── */
+@keyframes rf-ripple-expand {
+    0% {
+        opacity: 0.8;
+        transform: scale(0.5);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(2);
+    }
+}
+
+@keyframes rf-ripple-bloom {
+    0% {
+        opacity: 1;
+        transform: scale(0);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Reduced motion
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .rf-ripple--active .rf-ripple__ring,
+    .rf-ripple--active .rf-ripple__bloom {
+        animation: none;
+        opacity: 1;
+        transform: scale(1);
+    }
+}

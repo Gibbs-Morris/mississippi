@@ -1,0 +1,260 @@
+@namespace Refraction.Components.Molecules
+
+<div class="rf-text-field rf-text-field--@Size.ToString().ToLowerInvariant() rf-text-field--@State.ToString().ToLowerInvariant() @(Disabled ? "rf-text-field--disabled" : "") @(_isFocused ? "rf-text-field--focused" : "") @Class"
+     style="@Style"
+     @attributes="AdditionalAttributes">
+    
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="rf-text-field__label" for="@_inputId">
+            @Label
+            @if (IsRequired)
+            {
+                <span class="rf-text-field__required" aria-hidden="true">*</span>
+            }
+        </label>
+    }
+    
+    <div class="rf-text-field__wrapper">
+        @if (PrefixContent != null)
+        {
+            <span class="rf-text-field__prefix">@PrefixContent</span>
+        }
+        @if (!string.IsNullOrEmpty(Prefix))
+        {
+            <span class="rf-text-field__prefix">@Prefix</span>
+        }
+        
+        <input id="@_inputId"
+               class="rf-text-field__input"
+               type="@GetInputType()"
+               value="@Value"
+               placeholder="@Placeholder"
+               disabled="@Disabled"
+               readonly="@ReadOnly"
+               required="@IsRequired"
+               maxlength="@MaxLength"
+               aria-invalid="@(State == TextFieldState.Error)"
+               aria-describedby="@GetDescribedBy()"
+               @oninput="OnInput"
+               @onfocus="OnFocus"
+               @onblur="OnBlur" />
+        
+        @if (SuffixContent != null)
+        {
+            <span class="rf-text-field__suffix">@SuffixContent</span>
+        }
+        @if (!string.IsNullOrEmpty(Suffix))
+        {
+            <span class="rf-text-field__suffix">@Suffix</span>
+        }
+        @if (Type == TextFieldType.Search && !string.IsNullOrEmpty(Value))
+        {
+            <button class="rf-text-field__clear" 
+                    type="button"
+                    aria-label="Clear"
+                    @onclick="ClearValue">
+                ×
+            </button>
+        }
+    </div>
+    
+    @if (!string.IsNullOrEmpty(HelperText))
+    {
+        <span id="@_helperId" class="rf-text-field__helper">@HelperText</span>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMessage) && State == TextFieldState.Error)
+    {
+        <span id="@_errorId" class="rf-text-field__error" role="alert">@ErrorMessage</span>
+    }
+    @if (ShowCharacterCount && MaxLength.HasValue)
+    {
+        <span class="rf-text-field__char-count">@(Value?.Length ?? 0) / @MaxLength</span>
+    }
+</div>
+
+@code {
+    private readonly string _inputId = $"rf-text-field-{Guid.NewGuid():N}";
+    private readonly string _helperId = $"rf-text-field-helper-{Guid.NewGuid():N}";
+    private readonly string _errorId = $"rf-text-field-error-{Guid.NewGuid():N}";
+    private bool _isFocused;
+
+    /// <summary>
+    /// Gets or sets the input value.
+    /// </summary>
+    [Parameter]
+    public string? Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when value changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the label text.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets the placeholder text.
+    /// </summary>
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    /// <summary>
+    /// Gets or sets the input type.
+    /// </summary>
+    [Parameter]
+    public TextFieldType Type { get; set; } = TextFieldType.Text;
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public TextFieldSize Size { get; set; } = TextFieldSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the field state.
+    /// </summary>
+    [Parameter]
+    public TextFieldState State { get; set; } = TextFieldState.Default;
+
+    /// <summary>
+    /// Gets or sets whether the field is disabled.
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the field is read-only.
+    /// </summary>
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the field is required.
+    /// </summary>
+    [Parameter]
+    public bool IsRequired { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum length.
+    /// </summary>
+    [Parameter]
+    public int? MaxLength { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to show character count.
+    /// </summary>
+    [Parameter]
+    public bool ShowCharacterCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets helper text below the field.
+    /// </summary>
+    [Parameter]
+    public string? HelperText { get; set; }
+
+    /// <summary>
+    /// Gets or sets error message to display.
+    /// </summary>
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets text prefix.
+    /// </summary>
+    [Parameter]
+    public string? Prefix { get; set; }
+
+    /// <summary>
+    /// Gets or sets text suffix.
+    /// </summary>
+    [Parameter]
+    public string? Suffix { get; set; }
+
+    /// <summary>
+    /// Gets or sets prefix content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? PrefixContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets suffix content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? SuffixContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string GetInputType()
+    {
+        return Type switch
+        {
+            TextFieldType.Password => "password",
+            TextFieldType.Email => "email",
+            TextFieldType.Number => "number",
+            TextFieldType.Search => "search",
+            TextFieldType.Url => "url",
+            TextFieldType.Tel => "tel",
+            _ => "text",
+        };
+    }
+
+    private string? GetDescribedBy()
+    {
+        var ids = new List<string>();
+        if (!string.IsNullOrEmpty(HelperText))
+        {
+            ids.Add(_helperId);
+        }
+
+        if (!string.IsNullOrEmpty(ErrorMessage) && State == TextFieldState.Error)
+        {
+            ids.Add(_errorId);
+        }
+
+        return ids.Count > 0 ? string.Join(" ", ids) : null;
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        var newValue = e.Value?.ToString() ?? string.Empty;
+        Value = newValue;
+        await ValueChanged.InvokeAsync(newValue);
+    }
+
+    private void OnFocus()
+    {
+        _isFocused = true;
+    }
+
+    private void OnBlur()
+    {
+        _isFocused = false;
+    }
+
+    private async Task ClearValue()
+    {
+        Value = string.Empty;
+        await ValueChanged.InvokeAsync(string.Empty);
+    }
+}

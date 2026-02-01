@@ -1,0 +1,104 @@
+/* Bearing - Compass/heading widget */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-bearing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--rf-space-xs);
+}
+
+.rf-bearing__compass {
+    width: var(--rf-bearing-size, 80px);
+    height: var(--rf-bearing-size, 80px);
+}
+
+.rf-bearing__ring {
+    stroke: var(--rf-spectrum-surface-edge);
+}
+
+.rf-bearing__tick {
+    stroke: var(--rf-spectrum-text-muted);
+}
+
+.rf-bearing__tick--cardinal {
+    stroke: var(--rf-spectrum-text-default);
+}
+
+.rf-bearing__pointer {
+    fill: var(--rf-spectrum-accent);
+    transition: transform var(--rf-flow-medium) var(--rf-ease-out);
+}
+
+.rf-bearing__center {
+    fill: var(--rf-spectrum-surface-overlay);
+    stroke: var(--rf-spectrum-surface-edge);
+    stroke-width: 1;
+}
+
+.rf-bearing__readout {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    font-family: var(--rf-font-instrument);
+}
+
+.rf-bearing__degrees {
+    font-size: var(--rf-font-size-lg);
+    font-weight: var(--rf-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-bearing__cardinal {
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Size variants */
+.rf-bearing--small {
+    --rf-bearing-size: 50px;
+}
+
+.rf-bearing--small .rf-bearing__degrees {
+    font-size: var(--rf-font-size-md);
+}
+
+.rf-bearing--medium {
+    --rf-bearing-size: 80px;
+}
+
+.rf-bearing--large {
+    --rf-bearing-size: 120px;
+}
+
+.rf-bearing--large .rf-bearing__degrees {
+    font-size: var(--rf-font-size-xl);
+}
+
+/* Tracking state - adds subtle pulse to pointer */
+.rf-bearing--tracking .rf-bearing__pointer {
+    animation: rf-bearing-track 2s ease-in-out infinite;
+}
+
+@keyframes rf-bearing-track {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-bearing__pointer {
+        transition: none;
+    }
+
+    .rf-bearing--tracking .rf-bearing__pointer {
+        animation: none;
+    }
+}

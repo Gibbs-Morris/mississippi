@@ -1,0 +1,183 @@
+/* FocusReticle - Selection indicator */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-focus-reticle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.rf-focus-reticle__ring {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border: 1px solid var(--rf-spectrum-accent);
+    border-radius: var(--rf-radius-sm);
+    opacity: 0.6;
+}
+
+/* Corner brackets */
+.rf-focus-reticle__corner {
+    position: absolute;
+    width: var(--rf-reticle-bracket-size, 12px);
+    height: var(--rf-reticle-bracket-size, 12px);
+}
+
+.rf-focus-reticle__corner::before,
+.rf-focus-reticle__corner::after {
+    content: '';
+    position: absolute;
+    background: var(--rf-spectrum-accent);
+}
+
+.rf-focus-reticle__corner::before {
+    width: 100%;
+    height: 2px;
+}
+
+.rf-focus-reticle__corner::after {
+    width: 2px;
+    height: 100%;
+}
+
+/* Corner positions */
+.rf-focus-reticle__corner--top-left {
+    top: -6px;
+    left: -6px;
+}
+
+.rf-focus-reticle__corner--top-left::before {
+    top: 0;
+    left: 0;
+}
+
+.rf-focus-reticle__corner--top-left::after {
+    top: 0;
+    left: 0;
+}
+
+.rf-focus-reticle__corner--top-right {
+    top: -6px;
+    right: -6px;
+}
+
+.rf-focus-reticle__corner--top-right::before {
+    top: 0;
+    right: 0;
+}
+
+.rf-focus-reticle__corner--top-right::after {
+    top: 0;
+    right: 0;
+}
+
+.rf-focus-reticle__corner--bottom-left {
+    bottom: -6px;
+    left: -6px;
+}
+
+.rf-focus-reticle__corner--bottom-left::before {
+    bottom: 0;
+    left: 0;
+}
+
+.rf-focus-reticle__corner--bottom-left::after {
+    bottom: 0;
+    left: 0;
+}
+
+.rf-focus-reticle__corner--bottom-right {
+    bottom: -6px;
+    right: -6px;
+}
+
+.rf-focus-reticle__corner--bottom-right::before {
+    bottom: 0;
+    right: 0;
+}
+
+.rf-focus-reticle__corner--bottom-right::after {
+    bottom: 0;
+    right: 0;
+}
+
+/* Size variants */
+.rf-focus-reticle--small {
+    --rf-reticle-bracket-size: 8px;
+}
+
+.rf-focus-reticle--medium {
+    --rf-reticle-bracket-size: 12px;
+}
+
+.rf-focus-reticle--large {
+    --rf-reticle-bracket-size: 18px;
+}
+
+/* Acquiring state - animating */
+.rf-focus-reticle--acquiring .rf-focus-reticle__ring {
+    animation: rf-reticle-acquire 300ms ease-out forwards;
+}
+
+.rf-focus-reticle--acquiring .rf-focus-reticle__corner {
+    animation: rf-reticle-corner-acquire 300ms ease-out forwards;
+}
+
+.rf-focus-reticle--acquiring .rf-focus-reticle__corner--top-right {
+    animation-delay: 50ms;
+}
+
+.rf-focus-reticle--acquiring .rf-focus-reticle__corner--bottom-left {
+    animation-delay: 100ms;
+}
+
+.rf-focus-reticle--acquiring .rf-focus-reticle__corner--bottom-right {
+    animation-delay: 150ms;
+}
+
+/* Locked state - stable with subtle glow */
+.rf-focus-reticle--locked .rf-focus-reticle__ring {
+    opacity: 0.8;
+    box-shadow: 0 0 8px var(--rf-spectrum-accent);
+}
+
+.rf-focus-reticle--locked .rf-focus-reticle__corner::before,
+.rf-focus-reticle--locked .rf-focus-reticle__corner::after {
+    box-shadow: 0 0 4px var(--rf-spectrum-accent);
+}
+
+@keyframes rf-reticle-acquire {
+    from {
+        opacity: 0;
+        transform: scale(1.5);
+    }
+    to {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+}
+
+@keyframes rf-reticle-corner-acquire {
+    from {
+        opacity: 0;
+        transform: scale(0);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-focus-reticle--acquiring .rf-focus-reticle__ring,
+    .rf-focus-reticle--acquiring .rf-focus-reticle__corner {
+        animation: none;
+        opacity: 1;
+    }
+}

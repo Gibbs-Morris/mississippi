@@ -1,0 +1,101 @@
+@namespace Refraction.Components.Molecules
+
+<nav class="rf-breadcrumb rf-breadcrumb--@Size.ToString().ToLowerInvariant() @Class"
+     style="@Style"
+     aria-label="@AriaLabel"
+     @attributes="AdditionalAttributes">
+    <ol class="rf-breadcrumb__list">
+        @{
+            var items = Items?.ToList() ?? new List<BreadcrumbItem>();
+            var lastIndex = items.Count - 1;
+        }
+        @for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            var isCurrent = i == lastIndex;
+            
+            <li class="rf-breadcrumb__item @(isCurrent ? "rf-breadcrumb__item--current" : "")">
+                @if (!isCurrent && !string.IsNullOrEmpty(item.Href))
+                {
+                    <a class="rf-breadcrumb__link" href="@item.Href">
+                        @if (item.IconContent != null)
+                        {
+                            <span class="rf-breadcrumb__icon">@item.IconContent</span>
+                        }
+                        <span class="rf-breadcrumb__text">@item.Label</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="rf-breadcrumb__current" aria-current="@(isCurrent ? "page" : null)">
+                        @if (item.IconContent != null)
+                        {
+                            <span class="rf-breadcrumb__icon">@item.IconContent</span>
+                        }
+                        <span class="rf-breadcrumb__text">@item.Label</span>
+                    </span>
+                }
+                
+                @if (!isCurrent)
+                {
+                    <span class="rf-breadcrumb__separator" aria-hidden="true">
+                        @if (SeparatorContent != null)
+                        {
+                            @SeparatorContent
+                        }
+                        else
+                        {
+                            <svg viewBox="0 0 16 16" fill="none">
+                                <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        }
+                    </span>
+                }
+            </li>
+        }
+    </ol>
+</nav>
+
+@code {
+    /// <summary>
+    /// Gets or sets the breadcrumb items.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<BreadcrumbItem>? Items { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public BreadcrumbSize Size { get; set; } = BreadcrumbSize.Medium;
+
+    /// <summary>
+    /// Gets or sets custom separator content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? SeparatorContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; } = "Breadcrumb";
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

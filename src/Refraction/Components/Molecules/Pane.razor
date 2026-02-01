@@ -1,0 +1,66 @@
+@namespace Refraction.Components.Molecules
+
+<div class="rf-pane rf-pane--@Variant.ToString().ToLowerInvariant() rf-pane--@Size.ToString().ToLowerInvariant() @(IsVisible ? "" : "rf-pane--hidden") @(IsAnimated ? "rf-pane--animated" : "") @Class"
+     style="@Style"
+     role="region"
+     aria-label="@AriaLabel"
+     aria-hidden="@(!IsVisible)"
+     @attributes="AdditionalAttributes">
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the visual variant.
+    /// </summary>
+    [Parameter]
+    public PaneVariant Variant { get; set; } = PaneVariant.Default;
+
+    /// <summary>
+    /// Gets or sets the size preset.
+    /// </summary>
+    [Parameter]
+    public PaneSize Size { get; set; } = PaneSize.Auto;
+
+    /// <summary>
+    /// Gets or sets whether the pane is visible.
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to animate visibility changes.
+    /// </summary>
+    [Parameter]
+    public bool IsAnimated { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the child content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

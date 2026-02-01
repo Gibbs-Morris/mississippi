@@ -1,0 +1,85 @@
+/* Sounding - Measurement readout */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-sounding {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.25em;
+    font-family: var(--rf-font-instrument);
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-sounding__label {
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 0.5em;
+}
+
+.rf-sounding__value {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--rf-font-weight-semibold);
+    transition: opacity var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-sounding__unit {
+    font-size: 0.75em;
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-sounding__trend {
+    font-size: 0.65em;
+    margin-left: 0.25em;
+}
+
+.rf-sounding__trend--up {
+    color: var(--rf-signal-ok);
+}
+
+.rf-sounding__trend--down {
+    color: var(--rf-signal-critical);
+}
+
+/* Size variants */
+.rf-sounding--small {
+    font-size: var(--rf-font-size-sm);
+}
+
+.rf-sounding--small .rf-sounding__label {
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-sounding--medium {
+    font-size: var(--rf-font-size-lg);
+}
+
+.rf-sounding--large {
+    font-size: var(--rf-font-size-2xl);
+}
+
+.rf-sounding--large .rf-sounding__label {
+    font-size: var(--rf-font-size-sm);
+}
+
+/* Updating state */
+.rf-sounding--updating .rf-sounding__value {
+    animation: rf-sounding-pulse 1s ease-in-out infinite;
+}
+
+@keyframes rf-sounding-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-sounding--updating .rf-sounding__value {
+        animation: none;
+        opacity: 0.8;
+    }
+}

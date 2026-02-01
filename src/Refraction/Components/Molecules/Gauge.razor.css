@@ -1,0 +1,169 @@
+/* Gauge - Instrument-style meter */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--rf-space-xs);
+    font-family: var(--rf-font-instrument);
+}
+
+/* SVG container for arc/circle variants */
+.rf-gauge__svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.rf-gauge__track {
+    stroke: var(--rf-spectrum-surface-overlay);
+    opacity: 0.3;
+}
+
+.rf-gauge__fill {
+    stroke: var(--rf-gauge-color, var(--rf-signal-ok));
+    stroke-linecap: round;
+    transition: stroke-dasharray var(--rf-flow-medium) var(--rf-ease-out);
+}
+
+/* Bar track (non-SVG) */
+.rf-gauge--bar .rf-gauge__track,
+.rf-gauge--verticalbar .rf-gauge__track {
+    position: relative;
+    background: var(--rf-spectrum-surface-overlay);
+    border-radius: var(--rf-radius-full);
+    overflow: hidden;
+}
+
+.rf-gauge--bar .rf-gauge__track {
+    width: 100%;
+    height: 8px;
+}
+
+.rf-gauge--verticalbar .rf-gauge__track {
+    width: 8px;
+    height: 100%;
+}
+
+/* Bar fill (non-SVG) */
+.rf-gauge--bar .rf-gauge__fill,
+.rf-gauge--verticalbar .rf-gauge__fill {
+    position: absolute;
+    background: var(--rf-gauge-color, var(--rf-signal-ok));
+    border-radius: var(--rf-radius-full);
+    transition: width var(--rf-flow-medium) var(--rf-ease-out),
+                height var(--rf-flow-medium) var(--rf-ease-out);
+}
+
+.rf-gauge--bar .rf-gauge__fill {
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: var(--rf-gauge-fill, 0%);
+}
+
+.rf-gauge--verticalbar .rf-gauge__fill {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: var(--rf-gauge-fill, 0%);
+}
+
+/* Value display */
+.rf-gauge__value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25em;
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-gauge__number {
+    font-size: var(--rf-gauge-value-size, var(--rf-font-size-lg));
+    font-weight: var(--rf-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+.rf-gauge__unit {
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-gauge__label {
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* State colors */
+.rf-gauge--normal {
+    --rf-gauge-color: var(--rf-signal-ok);
+}
+
+.rf-gauge--warning {
+    --rf-gauge-color: var(--rf-signal-attention);
+}
+
+.rf-gauge--critical {
+    --rf-gauge-color: var(--rf-signal-critical);
+}
+
+/* Size variants */
+.rf-gauge--small {
+    --rf-gauge-value-size: var(--rf-font-size-md);
+}
+
+.rf-gauge--small .rf-gauge__svg {
+    max-width: 60px;
+}
+
+.rf-gauge--small.rf-gauge--bar .rf-gauge__track {
+    height: 4px;
+}
+
+.rf-gauge--medium .rf-gauge__svg {
+    max-width: 100px;
+}
+
+.rf-gauge--large {
+    --rf-gauge-value-size: var(--rf-font-size-2xl);
+}
+
+.rf-gauge--large .rf-gauge__svg {
+    max-width: 160px;
+}
+
+.rf-gauge--large.rf-gauge--bar .rf-gauge__track {
+    height: 12px;
+}
+
+/* Arc specific positioning */
+.rf-gauge--arc .rf-gauge__value {
+    position: absolute;
+    bottom: 0;
+}
+
+/* Circle specific positioning */
+.rf-gauge--circle {
+    position: relative;
+}
+
+.rf-gauge--circle .rf-gauge__value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-gauge__fill {
+        transition: none;
+    }
+
+    .rf-gauge--bar .rf-gauge__fill,
+    .rf-gauge--verticalbar .rf-gauge__fill {
+        transition: none;
+    }
+}

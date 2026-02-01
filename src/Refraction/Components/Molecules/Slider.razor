@@ -1,0 +1,167 @@
+@namespace Refraction.Components.Molecules
+
+@{
+    var percentage = (Value - Min) / (Max - Min) * 100;
+}
+
+<div class="rf-slider rf-slider--@Size.ToString().ToLowerInvariant() @(Disabled ? "rf-slider--disabled" : "") @Class"
+     style="@Style"
+     @attributes="AdditionalAttributes">
+    
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="rf-slider__header">
+            <label class="rf-slider__label" for="@_inputId">@Label</label>
+            @if (ShowValue)
+            {
+                <span class="rf-slider__value">@FormatValue(Value)</span>
+            }
+        </div>
+    }
+    
+    <div class="rf-slider__track-container">
+        <div class="rf-slider__track">
+            <div class="rf-slider__fill" style="width: @percentage%;"></div>
+        </div>
+        
+        <input id="@_inputId"
+               type="range"
+               class="rf-slider__input"
+               min="@Min"
+               max="@Max"
+               step="@Step"
+               value="@Value"
+               disabled="@Disabled"
+               aria-valuemin="@Min"
+               aria-valuemax="@Max"
+               aria-valuenow="@Value"
+               aria-valuetext="@FormatValue(Value)"
+               aria-label="@(Label ?? AriaLabel)"
+               @oninput="OnSliderInput" />
+    </div>
+    
+    @if (ShowTicks)
+    {
+        <div class="rf-slider__ticks">
+            @for (var i = 0; i <= TickCount; i++)
+            {
+                var tickValue = Min + ((Max - Min) / TickCount * i);
+                <span class="rf-slider__tick" aria-hidden="true">@FormatValue(tickValue)</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private readonly string _inputId = $"rf-slider-{Guid.NewGuid():N}";
+
+    /// <summary>
+    /// Gets or sets the current value.
+    /// </summary>
+    [Parameter]
+    public double Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when value changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<double> ValueChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum value.
+    /// </summary>
+    [Parameter]
+    public double Min { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum value.
+    /// </summary>
+    [Parameter]
+    public double Max { get; set; } = 100;
+
+    /// <summary>
+    /// Gets or sets the step increment.
+    /// </summary>
+    [Parameter]
+    public double Step { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the label text.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public SliderSize Size { get; set; } = SliderSize.Medium;
+
+    /// <summary>
+    /// Gets or sets whether to show the current value.
+    /// </summary>
+    [Parameter]
+    public bool ShowValue { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to show tick marks.
+    /// </summary>
+    [Parameter]
+    public bool ShowTicks { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of ticks to display.
+    /// </summary>
+    [Parameter]
+    public int TickCount { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets the value format string.
+    /// </summary>
+    [Parameter]
+    public string ValueFormat { get; set; } = "N0";
+
+    /// <summary>
+    /// Gets or sets whether the slider is disabled.
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string FormatValue(double value)
+    {
+        return value.ToString(ValueFormat);
+    }
+
+    private async Task OnSliderInput(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(), out var newValue))
+        {
+            Value = newValue;
+            await ValueChanged.InvokeAsync(newValue);
+        }
+    }
+}

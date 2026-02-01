@@ -1,0 +1,110 @@
+/* Breadcrumb - Navigation trail */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-breadcrumb {
+    display: block;
+}
+
+.rf-breadcrumb__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--rf-space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rf-breadcrumb__item {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-xs);
+}
+
+.rf-breadcrumb__link,
+.rf-breadcrumb__current {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-xs);
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    text-decoration: none;
+}
+
+.rf-breadcrumb__link {
+    color: var(--rf-spectrum-text-muted);
+    transition: color var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-breadcrumb__link:hover {
+    color: var(--rf-spectrum-accent);
+}
+
+.rf-breadcrumb__link:focus-visible {
+    outline: 2px solid var(--rf-spectrum-accent);
+    outline-offset: 2px;
+    border-radius: var(--rf-radius-sm);
+}
+
+.rf-breadcrumb__current {
+    color: var(--rf-spectrum-text-default);
+    font-weight: var(--rf-font-weight-medium);
+}
+
+.rf-breadcrumb__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+}
+
+.rf-breadcrumb__icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.rf-breadcrumb__separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: var(--rf-spectrum-text-muted);
+    opacity: 0.5;
+}
+
+.rf-breadcrumb__separator svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Size variants */
+.rf-breadcrumb--small .rf-breadcrumb__link,
+.rf-breadcrumb--small .rf-breadcrumb__current {
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-breadcrumb--small .rf-breadcrumb__icon,
+.rf-breadcrumb--small .rf-breadcrumb__separator {
+    width: 12px;
+    height: 12px;
+}
+
+.rf-breadcrumb--large .rf-breadcrumb__link,
+.rf-breadcrumb--large .rf-breadcrumb__current {
+    font-size: var(--rf-font-size-md);
+}
+
+.rf-breadcrumb--large .rf-breadcrumb__icon,
+.rf-breadcrumb--large .rf-breadcrumb__separator {
+    width: 20px;
+    height: 20px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-breadcrumb__link {
+        transition: none;
+    }
+}

@@ -1,0 +1,95 @@
+/* Pane - Simple translucent panel */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-pane {
+    background: var(--rf-pane-bg, var(--rf-spectrum-surface-base));
+    border: 1px solid var(--rf-spectrum-surface-edge);
+    border-radius: var(--rf-radius-md);
+    padding: var(--rf-space-md);
+}
+
+/* Variant styles */
+.rf-pane--default {
+    --rf-pane-bg: var(--rf-spectrum-surface-base);
+}
+
+.rf-pane--elevated {
+    --rf-pane-bg: var(--rf-spectrum-surface-overlay);
+    box-shadow: var(--rf-depth-shadow-md);
+}
+
+.rf-pane--subdued {
+    --rf-pane-bg: transparent;
+    border-color: transparent;
+}
+
+/* Size presets */
+.rf-pane--auto {
+    width: auto;
+}
+
+.rf-pane--small {
+    width: 240px;
+    max-width: 100%;
+}
+
+.rf-pane--medium {
+    width: 400px;
+    max-width: 100%;
+}
+
+.rf-pane--large {
+    width: 600px;
+    max-width: 100%;
+}
+
+.rf-pane--full {
+    width: 100%;
+}
+
+/* Hidden state */
+.rf-pane--hidden {
+    display: none;
+}
+
+/* Animated visibility */
+.rf-pane--animated {
+    animation: rf-pane-emerge var(--rf-flow-medium) var(--rf-ease-out) both;
+}
+
+.rf-pane--animated.rf-pane--hidden {
+    animation: rf-pane-disperse var(--rf-flow-medium) var(--rf-ease-out) both;
+}
+
+@keyframes rf-pane-emerge {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes rf-pane-disperse {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-pane--animated {
+        animation: none;
+    }
+
+    .rf-pane--animated.rf-pane--hidden {
+        animation: none;
+    }
+}

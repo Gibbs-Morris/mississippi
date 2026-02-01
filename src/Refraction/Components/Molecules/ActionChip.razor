@@ -1,0 +1,84 @@
+@namespace Refraction.Components.Molecules
+
+<button class="rf-action-chip rf-action-chip--@Variant.ToString().ToLowerInvariant() rf-action-chip--@Size.ToString().ToLowerInvariant() rf-action-chip--@State.ToString().ToLowerInvariant() @Class"
+        style="@Style"
+        type="button"
+        disabled="@(State == ActionChipState.Disabled)"
+        aria-disabled="@(State == ActionChipState.Disabled)"
+        aria-busy="@(State == ActionChipState.Queued)"
+        @onclick="HandleClick"
+        @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <span class="rf-action-chip__icon">@Icon</span>
+    }
+    <span class="rf-action-chip__label">@Label</span>
+    @if (State == ActionChipState.Queued)
+    {
+        <span class="rf-action-chip__indicator"></span>
+    }
+</button>
+
+@code {
+    /// <summary>
+    /// Gets or sets the chip label (verb).
+    /// </summary>
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the optional icon.
+    /// </summary>
+    [Parameter]
+    public string? Icon { get; set; }
+
+    /// <summary>
+    /// Gets or sets the chip state.
+    /// </summary>
+    [Parameter]
+    public ActionChipState State { get; set; } = ActionChipState.Available;
+
+    /// <summary>
+    /// Gets or sets the chip size.
+    /// </summary>
+    [Parameter]
+    public ActionChipSize Size { get; set; } = ActionChipSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the visual variant.
+    /// </summary>
+    [Parameter]
+    public ActionChipVariant Variant { get; set; } = ActionChipVariant.Default;
+
+    /// <summary>
+    /// Gets or sets the click callback.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task HandleClick()
+    {
+        if (State != ActionChipState.Disabled && State != ActionChipState.Queued)
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
+}

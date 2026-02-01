@@ -1,0 +1,157 @@
+/* RadioGroup - Single selection from options */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-space-sm);
+}
+
+.rf-radio-group__label {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    font-weight: var(--rf-font-weight-medium);
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-radio-group__options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-space-sm);
+}
+
+.rf-radio-group--horizontal .rf-radio-group__options {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--rf-space-md);
+}
+
+.rf-radio-group__option {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--rf-space-sm);
+    cursor: pointer;
+    user-select: none;
+}
+
+.rf-radio-group__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.rf-radio-group__radio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    background: transparent;
+    border: 2px solid var(--rf-spectrum-surface-edge);
+    border-radius: var(--rf-radius-full);
+    transition: border-color var(--rf-flow-fast) var(--rf-ease-out),
+                background var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-radio-group__dot {
+    width: 10px;
+    height: 10px;
+    background: var(--rf-spectrum-accent);
+    border-radius: var(--rf-radius-full);
+    opacity: 0;
+    transform: scale(0);
+    transition: opacity var(--rf-flow-fast) var(--rf-ease-out),
+                transform var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-radio-group__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rf-radio-group__option-label {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-radio-group__option-description {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-radio-group__helper {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-spectrum-text-muted);
+}
+
+/* Hover state */
+.rf-radio-group__option:hover .rf-radio-group__radio {
+    border-color: var(--rf-spectrum-accent);
+}
+
+/* Selected state */
+.rf-radio-group__option--selected .rf-radio-group__radio {
+    border-color: var(--rf-spectrum-accent);
+}
+
+.rf-radio-group__option--selected .rf-radio-group__dot {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Focus state */
+.rf-radio-group__input:focus-visible + .rf-radio-group__radio {
+    outline: 2px solid var(--rf-spectrum-accent);
+    outline-offset: 2px;
+}
+
+/* Disabled states */
+.rf-radio-group--disabled,
+.rf-radio-group__option--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Size variants */
+.rf-radio-group--small .rf-radio-group__radio {
+    width: 16px;
+    height: 16px;
+}
+
+.rf-radio-group--small .rf-radio-group__dot {
+    width: 8px;
+    height: 8px;
+}
+
+.rf-radio-group--small .rf-radio-group__option-label {
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-radio-group--large .rf-radio-group__radio {
+    width: 24px;
+    height: 24px;
+}
+
+.rf-radio-group--large .rf-radio-group__dot {
+    width: 12px;
+    height: 12px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-radio-group__radio,
+    .rf-radio-group__dot {
+        transition: none;
+    }
+}

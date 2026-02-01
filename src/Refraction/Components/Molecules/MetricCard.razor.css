@@ -1,0 +1,97 @@
+/* MetricCard - Single-value display with trend */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-metric-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-space-xs);
+    padding: var(--rf-space-md);
+    background: var(--rf-spectrum-surface-base);
+    border: 1px solid var(--rf-spectrum-surface-edge);
+    border-radius: var(--rf-radius-md);
+}
+
+.rf-metric-card__label {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    font-weight: var(--rf-font-weight-medium);
+    color: var(--rf-spectrum-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rf-metric-card__value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25em;
+}
+
+.rf-metric-card__value {
+    font-family: var(--rf-font-display);
+    font-size: var(--rf-metric-value-size, var(--rf-font-size-3xl));
+    font-weight: var(--rf-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--rf-spectrum-text-default);
+    line-height: 1;
+}
+
+.rf-metric-card__unit {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-md);
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-metric-card__trend {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-space-xs);
+    font-size: var(--rf-font-size-sm);
+}
+
+.rf-metric-card__trend-icon {
+    font-size: 0.8em;
+}
+
+.rf-metric-card__trend-label {
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-metric-card__trend--up {
+    color: var(--rf-signal-ok);
+}
+
+.rf-metric-card__trend--down {
+    color: var(--rf-signal-critical);
+}
+
+.rf-metric-card__trend--stable {
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-metric-card__sparkline {
+    margin-top: var(--rf-space-sm);
+    height: 40px;
+}
+
+/* Size variants */
+.rf-metric-card--small {
+    padding: var(--rf-space-sm);
+    --rf-metric-value-size: var(--rf-font-size-xl);
+}
+
+.rf-metric-card--small .rf-metric-card__label {
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-metric-card--medium {
+    --rf-metric-value-size: var(--rf-font-size-3xl);
+}
+
+.rf-metric-card--large {
+    padding: var(--rf-space-lg);
+    --rf-metric-value-size: var(--rf-font-size-4xl);
+}
+
+.rf-metric-card--large .rf-metric-card__unit {
+    font-size: var(--rf-font-size-lg);
+}

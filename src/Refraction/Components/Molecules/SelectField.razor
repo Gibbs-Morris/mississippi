@@ -1,0 +1,196 @@
+@namespace Refraction.Components.Molecules
+@typeparam TValue
+
+<div class="rf-select-field rf-select-field--@Size.ToString().ToLowerInvariant() rf-select-field--@State.ToString().ToLowerInvariant() @(Disabled ? "rf-select-field--disabled" : "") @(_isOpen ? "rf-select-field--open" : "") @Class"
+     style="@Style"
+     @attributes="AdditionalAttributes">
+    
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="rf-select-field__label" for="@_selectId">
+            @Label
+            @if (IsRequired)
+            {
+                <span class="rf-select-field__required" aria-hidden="true">*</span>
+            }
+        </label>
+    }
+    
+    <div class="rf-select-field__wrapper">
+        <select id="@_selectId"
+                class="rf-select-field__select"
+                disabled="@Disabled"
+                required="@IsRequired"
+                aria-invalid="@(State == SelectFieldState.Error)"
+                aria-describedby="@GetDescribedBy()"
+                @onchange="OnSelectionChanged"
+                @onfocus="OnFocus"
+                @onblur="OnBlur">
+            @if (!string.IsNullOrEmpty(Placeholder))
+            {
+                <option value="" disabled selected="@(EqualityComparer<TValue>.Default.Equals(Value, default))">@Placeholder</option>
+            }
+            @foreach (var option in Options ?? Enumerable.Empty<SelectOption<TValue>>())
+            {
+                var isSelected = EqualityComparer<TValue>.Default.Equals(Value, option.Value);
+                <option value="@GetOptionIndex(option)" selected="@isSelected" disabled="@option.IsDisabled">
+                    @option.Label
+                </option>
+            }
+        </select>
+        
+        <span class="rf-select-field__chevron">
+            <svg viewBox="0 0 16 16" fill="none">
+                <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </span>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(HelperText))
+    {
+        <span id="@_helperId" class="rf-select-field__helper">@HelperText</span>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMessage) && State == SelectFieldState.Error)
+    {
+        <span id="@_errorId" class="rf-select-field__error" role="alert">@ErrorMessage</span>
+    }
+</div>
+
+@code {
+    private readonly string _selectId = $"rf-select-{Guid.NewGuid():N}";
+    private readonly string _helperId = $"rf-select-helper-{Guid.NewGuid():N}";
+    private readonly string _errorId = $"rf-select-error-{Guid.NewGuid():N}";
+    private bool _isOpen;
+    private List<SelectOption<TValue>>? _optionsList;
+
+    /// <summary>
+    /// Gets or sets the selected value.
+    /// </summary>
+    [Parameter]
+    public TValue? Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when value changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TValue> ValueChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the available options.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<SelectOption<TValue>>? Options { get; set; }
+
+    /// <summary>
+    /// Gets or sets the label text.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets the placeholder text.
+    /// </summary>
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public SelectFieldSize Size { get; set; } = SelectFieldSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the field state.
+    /// </summary>
+    [Parameter]
+    public SelectFieldState State { get; set; } = SelectFieldState.Default;
+
+    /// <summary>
+    /// Gets or sets whether the field is disabled.
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the field is required.
+    /// </summary>
+    [Parameter]
+    public bool IsRequired { get; set; }
+
+    /// <summary>
+    /// Gets or sets helper text.
+    /// </summary>
+    [Parameter]
+    public string? HelperText { get; set; }
+
+    /// <summary>
+    /// Gets or sets error message.
+    /// </summary>
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        _optionsList = Options?.ToList();
+    }
+
+    private string? GetDescribedBy()
+    {
+        var ids = new List<string>();
+        if (!string.IsNullOrEmpty(HelperText))
+        {
+            ids.Add(_helperId);
+        }
+
+        if (!string.IsNullOrEmpty(ErrorMessage) && State == SelectFieldState.Error)
+        {
+            ids.Add(_errorId);
+        }
+
+        return ids.Count > 0 ? string.Join(" ", ids) : null;
+    }
+
+    private int GetOptionIndex(SelectOption<TValue> option)
+    {
+        return _optionsList?.IndexOf(option) ?? -1;
+    }
+
+    private void OnFocus()
+    {
+        _isOpen = true;
+    }
+
+    private void OnBlur()
+    {
+        _isOpen = false;
+    }
+
+    private async Task OnSelectionChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var index) && _optionsList != null && index >= 0 && index < _optionsList.Count)
+        {
+            var selectedOption = _optionsList[index];
+            Value = selectedOption.Value;
+            await ValueChanged.InvokeAsync(selectedOption.Value);
+        }
+    }
+}

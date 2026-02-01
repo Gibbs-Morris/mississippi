@@ -1,0 +1,159 @@
+@namespace Refraction.Components.Molecules
+
+@{
+    var normalizedValue = Math.Clamp(Value, Min, Max);
+    var percentage = (normalizedValue - Min) / (Max - Min) * 100;
+    var stateClass = State.ToString().ToLowerInvariant();
+    var variantClass = Variant.ToString().ToLowerInvariant();
+    var sizeClass = Size.ToString().ToLowerInvariant();
+}
+
+<div class="rf-gauge rf-gauge--@variantClass rf-gauge--@stateClass rf-gauge--@sizeClass @Class"
+     style="@Style"
+     role="meter"
+     aria-valuenow="@normalizedValue"
+     aria-valuemin="@Min"
+     aria-valuemax="@Max"
+     aria-label="@Label"
+     @attributes="AdditionalAttributes">
+    
+    @if (Variant == GaugeVariant.Arc || Variant == GaugeVariant.Circle)
+    {
+        <svg class="rf-gauge__svg" viewBox="0 0 100 @(Variant == GaugeVariant.Circle ? "100" : "60")">
+            @{
+                var isCircle = Variant == GaugeVariant.Circle;
+                var radius = 40;
+                var cx = 50;
+                var cy = 50;
+                var startAngle = isCircle ? -90 : -180;
+                var circumference = 2 * Math.PI * radius;
+                var arcLength = isCircle ? circumference : circumference / 2;
+                var fillLength = arcLength * (percentage / 100);
+                var dashArray = $"{fillLength} {arcLength}";
+            }
+            <!-- Background track -->
+            <circle class="rf-gauge__track"
+                    cx="@cx"
+                    cy="@cy"
+                    r="@radius"
+                    fill="none"
+                    stroke-width="6"
+                    stroke-dasharray="@(isCircle ? "" : $"{arcLength} {circumference}")"
+                    stroke-dashoffset="@(isCircle ? 0 : -arcLength / 2)"
+                    transform="@(isCircle ? "" : $"rotate({startAngle} {cx} {cy})")" />
+            <!-- Fill indicator -->
+            <circle class="rf-gauge__fill"
+                    cx="@cx"
+                    cy="@cy"
+                    r="@radius"
+                    fill="none"
+                    stroke-width="6"
+                    stroke-dasharray="@dashArray"
+                    stroke-dashoffset="@(isCircle ? circumference / 4 : 0)"
+                    transform="@(isCircle ? "" : $"rotate({startAngle} {cx} {cy})")" />
+        </svg>
+    }
+    else
+    {
+        <!-- Bar variant -->
+        <div class="rf-gauge__track">
+            <div class="rf-gauge__fill" style="--rf-gauge-fill: @percentage%;"></div>
+        </div>
+    }
+
+    @if (ShowValue)
+    {
+        <div class="rf-gauge__value">
+            <span class="rf-gauge__number">@normalizedValue.ToString(ValueFormat)</span>
+            @if (!string.IsNullOrEmpty(Unit))
+            {
+                <span class="rf-gauge__unit">@Unit</span>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="rf-gauge__label">@Label</div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the current value.
+    /// </summary>
+    [Parameter]
+    public double Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum value.
+    /// </summary>
+    [Parameter]
+    public double Min { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum value.
+    /// </summary>
+    [Parameter]
+    public double Max { get; set; } = 100;
+
+    /// <summary>
+    /// Gets or sets the gauge variant.
+    /// </summary>
+    [Parameter]
+    public GaugeVariant Variant { get; set; } = GaugeVariant.Arc;
+
+    /// <summary>
+    /// Gets or sets the gauge state.
+    /// </summary>
+    [Parameter]
+    public GaugeState State { get; set; } = GaugeState.Normal;
+
+    /// <summary>
+    /// Gets or sets the gauge size.
+    /// </summary>
+    [Parameter]
+    public GaugeSize Size { get; set; } = GaugeSize.Medium;
+
+    /// <summary>
+    /// Gets or sets whether to show the numeric value.
+    /// </summary>
+    [Parameter]
+    public bool ShowValue { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the value format string.
+    /// </summary>
+    [Parameter]
+    public string ValueFormat { get; set; } = "F0";
+
+    /// <summary>
+    /// Gets or sets the unit label.
+    /// </summary>
+    [Parameter]
+    public string? Unit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gauge label.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

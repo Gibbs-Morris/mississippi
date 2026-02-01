@@ -1,0 +1,57 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MooringLine - Tether / callout leader line
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rf-mooring-line {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.rf-mooring-line__line {
+    transition: stroke var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Color variants
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-mooring-line--default {
+    color: var(--rf-fg);
+}
+
+.rf-mooring-line--muted {
+    color: var(--rf-fg-muted);
+}
+
+.rf-mooring-line--accent {
+    color: var(--rf-spectrum-accent);
+}
+
+.rf-mooring-line--ok {
+    color: var(--rf-signal-ok);
+}
+
+.rf-mooring-line--attention {
+    color: var(--rf-signal-attention);
+}
+
+.rf-mooring-line--critical {
+    color: var(--rf-signal-critical);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Animation modifier
+   ───────────────────────────────────────────────────────────────────────────── */
+.rf-mooring-line--animated .rf-mooring-line__line {
+    stroke-linecap: round;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Reduced motion
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .rf-mooring-line--animated linearGradient stop animate {
+        animation: none;
+    }
+}

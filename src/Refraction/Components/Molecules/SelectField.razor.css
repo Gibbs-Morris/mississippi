@@ -1,0 +1,143 @@
+/* SelectField - Dropdown selection */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-select-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-space-xs);
+}
+
+.rf-select-field__label {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    font-weight: var(--rf-font-weight-medium);
+    color: var(--rf-spectrum-text-default);
+}
+
+.rf-select-field__required {
+    color: var(--rf-signal-critical);
+    margin-left: var(--rf-space-xs);
+}
+
+.rf-select-field__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.rf-select-field__select {
+    flex: 1;
+    appearance: none;
+    padding: var(--rf-space-sm) var(--rf-space-xl) var(--rf-space-sm) var(--rf-space-md);
+    background: var(--rf-spectrum-surface-base);
+    border: 1px solid var(--rf-spectrum-surface-edge);
+    border-radius: var(--rf-radius-md);
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-default);
+    cursor: pointer;
+    transition: border-color var(--rf-flow-fast) var(--rf-ease-out),
+                box-shadow var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-select-field__select:focus {
+    outline: none;
+    border-color: var(--rf-spectrum-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--rf-spectrum-accent) 25%, transparent);
+}
+
+.rf-select-field__select option {
+    background: var(--rf-spectrum-surface-base);
+    color: var(--rf-spectrum-text-default);
+    padding: var(--rf-space-sm);
+}
+
+.rf-select-field__select option:disabled {
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-select-field__chevron {
+    position: absolute;
+    right: var(--rf-space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--rf-spectrum-text-muted);
+    pointer-events: none;
+    transition: transform var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-select-field__chevron svg {
+    width: 16px;
+    height: 16px;
+}
+
+.rf-select-field--open .rf-select-field__chevron {
+    transform: rotate(180deg);
+}
+
+.rf-select-field__helper {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-select-field__error {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-xs);
+    color: var(--rf-signal-critical);
+}
+
+/* Error state */
+.rf-select-field--error .rf-select-field__select {
+    border-color: var(--rf-signal-critical);
+}
+
+.rf-select-field--error .rf-select-field__select:focus {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--rf-signal-critical) 25%, transparent);
+}
+
+/* Success state */
+.rf-select-field--success .rf-select-field__select {
+    border-color: var(--rf-signal-ok);
+}
+
+.rf-select-field--success .rf-select-field__select:focus {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--rf-signal-ok) 25%, transparent);
+}
+
+/* Disabled state */
+.rf-select-field--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.rf-select-field--disabled .rf-select-field__select {
+    background: var(--rf-spectrum-surface-edge);
+    cursor: not-allowed;
+}
+
+/* Size variants */
+.rf-select-field--small .rf-select-field__label {
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-select-field--small .rf-select-field__select {
+    padding: var(--rf-space-xs) var(--rf-space-lg) var(--rf-space-xs) var(--rf-space-sm);
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-select-field--large .rf-select-field__select {
+    padding: var(--rf-space-md) var(--rf-space-2xl) var(--rf-space-md) var(--rf-space-lg);
+    font-size: var(--rf-font-size-md);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-select-field__select,
+    .rf-select-field__chevron {
+        transition: none;
+    }
+}

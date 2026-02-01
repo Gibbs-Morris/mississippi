@@ -1,0 +1,93 @@
+/*
+ * Beacon Component Styles
+ * =======================
+ * Attention indicator/system alert light with pulsing animation.
+ */
+
+.rf-beacon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--rf-beacon-size, 12px);
+    height: var(--rf-beacon-size, 12px);
+}
+
+.rf-beacon__core {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: var(--rf-beacon-color, var(--rf-spectrum-cyan-500));
+    box-shadow: var(--rf-beacon-glow, var(--rf-radiance-edge-soft));
+}
+
+.rf-beacon__pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background-color: var(--rf-beacon-color, var(--rf-spectrum-cyan-500));
+    animation: rf-beacon-pulse 2s var(--rf-ease-out) infinite;
+}
+
+/* === Size Variants === */
+
+.rf-beacon--small {
+    --rf-beacon-size: 8px;
+}
+
+.rf-beacon--default {
+    --rf-beacon-size: 12px;
+}
+
+.rf-beacon--large {
+    --rf-beacon-size: 16px;
+}
+
+/* === State Variants === */
+
+.rf-beacon--info {
+    --rf-beacon-color: var(--rf-spectrum-cyan-500);
+    --rf-beacon-glow: var(--rf-radiance-edge-soft);
+}
+
+.rf-beacon--warning {
+    --rf-beacon-color: var(--rf-signal-attn);
+    --rf-beacon-glow: var(--rf-signal-attn-glow);
+}
+
+.rf-beacon--critical {
+    --rf-beacon-color: var(--rf-signal-critical);
+    --rf-beacon-glow: var(--rf-signal-critical-glow);
+}
+
+/* === Pulsing Animation === */
+
+@keyframes rf-beacon-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+/* Non-pulsing state */
+.rf-beacon:not(.rf-beacon--pulsing) .rf-beacon__pulse {
+    display: none;
+}
+
+/* === Reduced Motion === */
+
+@media (prefers-reduced-motion: reduce) {
+    .rf-beacon__pulse {
+        animation: none;
+        opacity: 0.3;
+        transform: scale(1.5);
+    }
+}

@@ -1,0 +1,134 @@
+@namespace Refraction.Components.Molecules
+@typeparam TValue
+
+<div class="rf-radio-group rf-radio-group--@Size.ToString().ToLowerInvariant() rf-radio-group--@Orientation.ToString().ToLowerInvariant() @(Disabled ? "rf-radio-group--disabled" : "") @Class"
+     role="radiogroup"
+     aria-label="@AriaLabel"
+     style="@Style"
+     @attributes="AdditionalAttributes">
+    
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <span class="rf-radio-group__label">@Label</span>
+    }
+    
+    <div class="rf-radio-group__options">
+        @foreach (var option in Options ?? Enumerable.Empty<RadioOption<TValue>>())
+        {
+            var isSelected = EqualityComparer<TValue>.Default.Equals(Value, option.Value);
+            var optionId = $"{_groupId}-{option.Value}";
+            
+            <label class="rf-radio-group__option @(isSelected ? "rf-radio-group__option--selected" : "") @(option.IsDisabled ? "rf-radio-group__option--disabled" : "")">
+                <input type="radio"
+                       class="rf-radio-group__input"
+                       id="@optionId"
+                       name="@_groupId"
+                       value="@option.Value"
+                       checked="@isSelected"
+                       disabled="@(Disabled || option.IsDisabled)"
+                       @onchange="@(() => SelectOption(option.Value))" />
+                
+                <span class="rf-radio-group__radio">
+                    <span class="rf-radio-group__dot"></span>
+                </span>
+                
+                <span class="rf-radio-group__text">
+                    <span class="rf-radio-group__option-label">@option.Label</span>
+                    @if (!string.IsNullOrEmpty(option.Description))
+                    {
+                        <span class="rf-radio-group__option-description">@option.Description</span>
+                    }
+                </span>
+            </label>
+        }
+    </div>
+    
+    @if (!string.IsNullOrEmpty(HelperText))
+    {
+        <span class="rf-radio-group__helper">@HelperText</span>
+    }
+</div>
+
+@code {
+    private readonly string _groupId = $"rf-radio-{Guid.NewGuid():N}";
+
+    /// <summary>
+    /// Gets or sets the selected value.
+    /// </summary>
+    [Parameter]
+    public TValue? Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when value changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TValue> ValueChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the available options.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<RadioOption<TValue>>? Options { get; set; }
+
+    /// <summary>
+    /// Gets or sets the group label.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-label for accessibility.
+    /// </summary>
+    [Parameter]
+    public string? AriaLabel { get; set; }
+
+    /// <summary>
+    /// Gets or sets helper text.
+    /// </summary>
+    [Parameter]
+    public string? HelperText { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public RadioGroupSize Size { get; set; } = RadioGroupSize.Medium;
+
+    /// <summary>
+    /// Gets or sets the orientation.
+    /// </summary>
+    [Parameter]
+    public RadioGroupOrientation Orientation { get; set; } = RadioGroupOrientation.Vertical;
+
+    /// <summary>
+    /// Gets or sets whether the group is disabled.
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task SelectOption(TValue value)
+    {
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+    }
+}
+    public bool IsDisabled { get; set; }
+}

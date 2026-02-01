@@ -1,0 +1,47 @@
+@namespace Refraction.Components.Molecules
+
+<div class="rf-focus-reticle rf-focus-reticle--@State.ToString().ToLowerInvariant() rf-focus-reticle--@Size.ToString().ToLowerInvariant() @Class"
+     style="@Style"
+     role="presentation"
+     aria-hidden="true"
+     @attributes="AdditionalAttributes">
+    <!-- Ring -->
+    <div class="rf-focus-reticle__ring"></div>
+    <!-- Corner brackets (Frame-style) -->
+    <div class="rf-focus-reticle__corner rf-focus-reticle__corner--top-left"></div>
+    <div class="rf-focus-reticle__corner rf-focus-reticle__corner--top-right"></div>
+    <div class="rf-focus-reticle__corner rf-focus-reticle__corner--bottom-left"></div>
+    <div class="rf-focus-reticle__corner rf-focus-reticle__corner--bottom-right"></div>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the reticle state.
+    /// </summary>
+    [Parameter]
+    public FocusReticleState State { get; set; } = FocusReticleState.Acquiring;
+
+    /// <summary>
+    /// Gets or sets the reticle size.
+    /// </summary>
+    [Parameter]
+    public FocusReticleSize Size { get; set; } = FocusReticleSize.Medium;
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}
