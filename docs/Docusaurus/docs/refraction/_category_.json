@@ -1,0 +1,8 @@
+{
+  "label": "Refraction",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Refraction is the hologram UI design system and Blazor-native component library for Mississippi."
+  }
+}
