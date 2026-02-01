@@ -213,36 +213,38 @@ public static class ExpensiveSelectors
 
 ### How Memoization Works
 
-Memoization uses **reference equality** to determine if state has changed, with thread-safe locking:
+Memoization uses **reference equality** to determine if state has changed, with a lock-free thread-safe design:
 
 ```csharp
 public static Func<TState, TResult> Create<TState, TResult>(
     Func<TState, TResult> selector)
     where TState : class
 {
-    object syncRoot = new();
-    TState? lastInput = null;
-    TResult? lastResult = default;
+    // Immutable cache entry enables lock-free atomic updates
+    CacheEntry<TState, TResult>? cache = null;
 
     return state =>
     {
-        lock (syncRoot)
-        {
-            // Reference comparison - fast!
-            if (ReferenceEquals(state, lastInput))
-            {
-                return lastResult!;
-            }
+        // Volatile read for proper memory barrier
+        CacheEntry<TState, TResult>? current = Volatile.Read(ref cache);
 
-            // Update cache only after successful execution
-            TResult result = selector(state);
-            lastInput = state;
-            lastResult = result;
-            return result;
+        // Reference comparison - fast!
+        if (current is not null && ReferenceEquals(state, current.Input))
+        {
+            return current.Result;
         }
+
+        // Recompute and update cache atomically via single reference write
+        TResult result = selector(state);
+        Volatile.Write(ref cache, new CacheEntry<TState, TResult>(state, result));
+        return result;
     };
 }
 ```
+
+:::info Lock-Free Design
+This implementation is **lock-free**, avoiding contention and deadlock risks. Under heavy concurrent load, the selector may be called more than once for the same state (benign race), but results are always correct because **selectors must be pure functions**.
+:::
 
 :::note When Memoization Helps
 Memoization is most beneficial when:

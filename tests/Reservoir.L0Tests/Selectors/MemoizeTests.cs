@@ -30,6 +30,86 @@ public sealed class MemoizeTests
     private sealed record ThirdState(bool IsActive);
 
     /// <summary>
+    ///     Concurrent access with different state references handles contention correctly.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ConcurrentAccessWithDifferentStatesHandlesContentionAsync()
+    {
+        // Arrange
+        TestState[] states = Enumerable.Range(0, 10).Select(i => new TestState(i)).ToArray();
+        int callCount = 0;
+        Func<TestState, int> selector = Memoize.Create<TestState, int>(s =>
+        {
+            Interlocked.Increment(ref callCount);
+            return s.Counter * 2;
+        });
+        const int iterationsPerState = 50;
+        List<Task<int>> tasks = [];
+
+        // Act - launch many concurrent calls with different state references
+        foreach (TestState state in states)
+        {
+            for (int i = 0; i < iterationsPerState; i++)
+            {
+                TestState capturedState = state;
+                tasks.Add(Task.Run(() => selector(capturedState)));
+            }
+        }
+
+        int[] results = await Task.WhenAll(tasks);
+
+        // Assert - all results should be valid (even values between 0 and 18)
+        Assert.All(
+            results,
+            result =>
+            {
+                Assert.True((result >= 0) && (result <= 18));
+                Assert.Equal(0, result % 2);
+            });
+
+        // Call count should be reasonable (at least 1, could be more due to cache invalidation)
+        Assert.True(callCount >= 1);
+    }
+
+    /// <summary>
+    ///     Concurrent access with same state reference returns correct results.
+    ///     With lock-free implementation, selector may be called multiple times under contention (benign race).
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ConcurrentAccessWithSameStateReturnsCachedValueAsync()
+    {
+        // Arrange
+        TestState state = new(42);
+        int callCount = 0;
+        Func<TestState, int> selector = Memoize.Create<TestState, int>(s =>
+        {
+            Interlocked.Increment(ref callCount);
+            return s.Counter * 2;
+        });
+        const int threadCount = 100;
+        Task<int>[] tasks = new Task<int>[threadCount];
+
+        // Act - launch many concurrent calls with the same state reference
+        for (int i = 0; i < threadCount; i++)
+        {
+            tasks[i] = Task.Run(() => selector(state));
+        }
+
+        int[] results = await Task.WhenAll(tasks);
+
+        // Assert - all results should be correct (pure function guarantees this)
+        Assert.All(results, result => Assert.Equal(84, result));
+
+        // Lock-free implementation: selector may be called multiple times under contention (benign race)
+        // but once the cache is populated, subsequent calls should use cached value
+        Assert.True(
+            (callCount >= 1) && (callCount <= threadCount),
+            $"Call count {callCount} should be between 1 and {threadCount}");
+    }
+
+    /// <summary>
     ///     Create three-state with null selector throws ArgumentNullException.
     /// </summary>
     [Fact]
@@ -153,6 +233,49 @@ public sealed class MemoizeTests
     }
 
     /// <summary>
+    ///     Three-state memoized selector handles concurrent access correctly.
+    ///     With lock-free implementation, selector may be called multiple times under contention (benign race).
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ThreeStateConcurrentAccessHandlesContentionAsync()
+    {
+        // Arrange
+        TestState state1 = new(5);
+        OtherState state2 = new("test");
+        ThirdState state3 = new(true);
+        int callCount = 0;
+        Func<TestState, OtherState, ThirdState, string> selector =
+            Memoize.Create<TestState, OtherState, ThirdState, string>((
+                s1,
+                s2,
+                s3
+            ) =>
+            {
+                Interlocked.Increment(ref callCount);
+                return $"{s2.Name}:{s1.Counter}:{s3.IsActive}";
+            });
+        const int threadCount = 100;
+        Task<string>[] tasks = new Task<string>[threadCount];
+
+        // Act - launch many concurrent calls with the same state references
+        for (int i = 0; i < threadCount; i++)
+        {
+            tasks[i] = Task.Run(() => selector(state1, state2, state3));
+        }
+
+        string[] results = await Task.WhenAll(tasks);
+
+        // Assert - all results should be correct (pure function guarantees this)
+        Assert.All(results, result => Assert.Equal("test:5:True", result));
+
+        // Lock-free implementation: selector may be called multiple times under contention (benign race)
+        Assert.True(
+            (callCount >= 1) && (callCount <= threadCount),
+            $"Call count {callCount} should be between 1 and {threadCount}");
+    }
+
+    /// <summary>
     ///     Three-state memoized selector caches when all states unchanged.
     /// </summary>
     [Fact]
@@ -212,6 +335,46 @@ public sealed class MemoizeTests
 
         // Assert
         Assert.Equal(2, callCount);
+    }
+
+    /// <summary>
+    ///     Two-state memoized selector handles concurrent access correctly.
+    ///     With lock-free implementation, selector may be called multiple times under contention (benign race).
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task TwoStateConcurrentAccessHandlesContentionAsync()
+    {
+        // Arrange
+        TestState state1 = new(5);
+        OtherState state2 = new("test");
+        int callCount = 0;
+        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
+            s1,
+            s2
+        ) =>
+        {
+            Interlocked.Increment(ref callCount);
+            return $"{s2.Name}:{s1.Counter}";
+        });
+        const int threadCount = 100;
+        Task<string>[] tasks = new Task<string>[threadCount];
+
+        // Act - launch many concurrent calls with the same state references
+        for (int i = 0; i < threadCount; i++)
+        {
+            tasks[i] = Task.Run(() => selector(state1, state2));
+        }
+
+        string[] results = await Task.WhenAll(tasks);
+
+        // Assert - all results should be correct (pure function guarantees this)
+        Assert.All(results, result => Assert.Equal("test:5", result));
+
+        // Lock-free implementation: selector may be called multiple times under contention (benign race)
+        Assert.True(
+            (callCount >= 1) && (callCount <= threadCount),
+            $"Call count {callCount} should be between 1 and {threadCount}");
     }
 
     /// <summary>
@@ -317,160 +480,5 @@ public sealed class MemoizeTests
 
         // Assert
         Assert.Equal("test:5", result);
-    }
-
-    /// <summary>
-    ///     Concurrent access with same state reference returns cached value and invokes selector once.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task ConcurrentAccessWithSameStateReturnsCachedValueAsync()
-    {
-        // Arrange
-        TestState state = new(42);
-        int callCount = 0;
-        Func<TestState, int> selector = Memoize.Create<TestState, int>(s =>
-        {
-            Interlocked.Increment(ref callCount);
-            return s.Counter * 2;
-        });
-
-        const int threadCount = 100;
-        Task<int>[] tasks = new Task<int>[threadCount];
-
-        // Act - launch many concurrent calls with the same state reference
-        for (int i = 0; i < threadCount; i++)
-        {
-            tasks[i] = Task.Run(() => selector(state));
-        }
-
-        int[] results = await Task.WhenAll(tasks);
-
-        // Assert - all results should be correct
-        Assert.All(results, result => Assert.Equal(84, result));
-
-        // Selector should be called exactly once (first call computes, rest use cache)
-        Assert.Equal(1, callCount);
-    }
-
-    /// <summary>
-    ///     Concurrent access with different state references handles contention correctly.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task ConcurrentAccessWithDifferentStatesHandlesContentionAsync()
-    {
-        // Arrange
-        TestState[] states = Enumerable.Range(0, 10).Select(i => new TestState(i)).ToArray();
-        int callCount = 0;
-        Func<TestState, int> selector = Memoize.Create<TestState, int>(s =>
-        {
-            Interlocked.Increment(ref callCount);
-            return s.Counter * 2;
-        });
-
-        const int iterationsPerState = 50;
-        List<Task<int>> tasks = [];
-
-        // Act - launch many concurrent calls with different state references
-        foreach (TestState state in states)
-        {
-            for (int i = 0; i < iterationsPerState; i++)
-            {
-                TestState capturedState = state;
-                tasks.Add(Task.Run(() => selector(capturedState)));
-            }
-        }
-
-        int[] results = await Task.WhenAll(tasks);
-
-        // Assert - all results should be valid (even values between 0 and 18)
-        Assert.All(results, result =>
-        {
-            Assert.True(result >= 0 && result <= 18);
-            Assert.Equal(0, result % 2);
-        });
-
-        // Call count should be reasonable (at least 1, could be more due to cache invalidation)
-        Assert.True(callCount >= 1);
-    }
-
-    /// <summary>
-    ///     Two-state memoized selector handles concurrent access correctly.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task TwoStateConcurrentAccessHandlesContentionAsync()
-    {
-        // Arrange
-        TestState state1 = new(5);
-        OtherState state2 = new("test");
-        int callCount = 0;
-        Func<TestState, OtherState, string> selector = Memoize.Create<TestState, OtherState, string>((
-            s1,
-            s2
-        ) =>
-        {
-            Interlocked.Increment(ref callCount);
-            return $"{s2.Name}:{s1.Counter}";
-        });
-
-        const int threadCount = 100;
-        Task<string>[] tasks = new Task<string>[threadCount];
-
-        // Act - launch many concurrent calls with the same state references
-        for (int i = 0; i < threadCount; i++)
-        {
-            tasks[i] = Task.Run(() => selector(state1, state2));
-        }
-
-        string[] results = await Task.WhenAll(tasks);
-
-        // Assert - all results should be correct
-        Assert.All(results, result => Assert.Equal("test:5", result));
-
-        // Selector should be called exactly once
-        Assert.Equal(1, callCount);
-    }
-
-    /// <summary>
-    ///     Three-state memoized selector handles concurrent access correctly.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task ThreeStateConcurrentAccessHandlesContentionAsync()
-    {
-        // Arrange
-        TestState state1 = new(5);
-        OtherState state2 = new("test");
-        ThirdState state3 = new(true);
-        int callCount = 0;
-        Func<TestState, OtherState, ThirdState, string> selector =
-            Memoize.Create<TestState, OtherState, ThirdState, string>((
-                s1,
-                s2,
-                s3
-            ) =>
-            {
-                Interlocked.Increment(ref callCount);
-                return $"{s2.Name}:{s1.Counter}:{s3.IsActive}";
-            });
-
-        const int threadCount = 100;
-        Task<string>[] tasks = new Task<string>[threadCount];
-
-        // Act - launch many concurrent calls with the same state references
-        for (int i = 0; i < threadCount; i++)
-        {
-            tasks[i] = Task.Run(() => selector(state1, state2, state3));
-        }
-
-        string[] results = await Task.WhenAll(tasks);
-
-        // Assert - all results should be correct
-        Assert.All(results, result => Assert.Equal("test:5:True", result));
-
-        // Selector should be called exactly once
-        Assert.Equal(1, callCount);
     }
 }
