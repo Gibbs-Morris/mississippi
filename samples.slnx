@@ -18,4 +18,9 @@
         <Project Path="samples\Spring\Spring.Domain.L0Tests\Spring.Domain.L0Tests.csproj" />
         <Project Path="samples\Spring\Spring.L2Tests\Spring.L2Tests.csproj" />
     </Folder>
+    <Folder Name="/Samples/LightSpeed/">
+        <Project Path="samples\LightSpeed\LightSpeed.Client\LightSpeed.Client.csproj" />
+        <Project Path="samples\LightSpeed\LightSpeed.Server\LightSpeed.Server.csproj" />
+        <Project Path="samples\LightSpeed\LightSpeed.AppHost\LightSpeed.AppHost.csproj" />
+    </Folder>
 </Solution>
