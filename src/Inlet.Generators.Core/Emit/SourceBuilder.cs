@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 
@@ -107,6 +108,28 @@ public sealed class SourceBuilder
 
         builder.AppendLine(line);
         startOfLine = true;
+        return this;
+    }
+
+    /// <summary>
+    ///     Appends multiple lines with the current indentation.
+    /// </summary>
+    /// <param name="lines">The lines to append.</param>
+    /// <returns>This builder for chaining.</returns>
+    public SourceBuilder AppendLines(
+        IEnumerable<string> lines
+    )
+    {
+        if (lines is null)
+        {
+            return this;
+        }
+
+        foreach (string line in lines)
+        {
+            AppendLine(line);
+        }
+
         return this;
     }
 

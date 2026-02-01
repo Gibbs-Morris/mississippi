@@ -605,6 +605,23 @@
       "Mississippi.EventSourcing.Reducers.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.EventSourcing.Sagas": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.0, )",
+          "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
+          "Mississippi.EventSourcing.Sagas.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.EventSourcing.Sagas.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.EventSourcing.Serialization.Abstractions": {
         "type": "Project"
       },
@@ -713,6 +730,7 @@
           "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Sagas.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )"

@@ -44,6 +44,9 @@ builder.Services.AddTransactionInvestigationQueueAggregate();
 builder.Services.AddBankAccountBalanceProjection();
 builder.Services.AddBankAccountLedgerProjection();
 builder.Services.AddFlaggedTransactionsProjection();
+
+// Register Spring domain sagas
+builder.Services.AddTransferFundsSaga();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
