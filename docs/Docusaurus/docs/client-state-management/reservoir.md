@@ -14,12 +14,13 @@ Reservoir is a Redux-inspired state management library in the Mississippi framew
 
 ## Core Components
 
-Reservoir consists of five core components that work together to manage application state:
+Reservoir consists of six core components that work together to manage application state:
 
 | Component | Purpose |
 |-----------|---------|
 | **Action** | Records that describe what happened or what the user intends (actions should be immutable) ([IAction](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/IAction.cs)) |
 | **Action Reducer** | Pure functions that transform state based on actions ([IActionReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionReducer.cs)) |
+| **Selector** | Pure functions that derive computed values from state with optional memoization ([Selectors](selectors.md)) |
 | **Action Effect** | Handlers for async side effects (API calls, navigation, timers) ([IActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionEffect%7BTState%7D.cs)) |
 | **Feature State** | State slices representing distinct areas of the application (feature states should be immutable) ([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs)) |
 | **Store** | Central container that manages feature states and coordinates dispatch ([IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs)) |
@@ -73,6 +74,7 @@ flowchart LR
 ### Testability and Stability
 
 - **Reducers are pure functions**: given the same state and action, they always return the same new state ([IActionReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionReducer.cs)).
+- **Selectors enable testable business logic**: extract derived values into pure functions that can be unit tested without component infrastructure ([Selectors](selectors.md#why-use-selectors)).
 - **Effects handle async side effects**: action effects run asynchronous work triggered by actions ([IActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionEffect%7BTState%7D.cs)).
 - **Feature states are immutable**: feature states are expected to be immutable records ([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs)).
 
@@ -178,6 +180,7 @@ Detailed documentation for each core component:
 - [Store](store.md) — Configuration and advanced usage
 - [Middleware](middleware.md) — Cross-cutting concerns
 - [StoreComponent](store-component.md) — Blazor base component for store integration
+- [Selectors](selectors.md) — Deriving computed values from state with optional memoization
 - [Built-in Navigation](built-in-navigation.md) — Navigation state management
 - [Built-in Lifecycle](built-in-lifecycle.md) — Application lifecycle management
 - [Testing](testing.md) — Unit testing reducers and effects with StoreTestHarness
