@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
-using System.Linq;
 
 using Mississippi.Aqueduct.Grains.Diagnostics;
 
@@ -201,15 +200,12 @@ public sealed class AqueductMetricsTests
         });
         listener.Start();
 
-        // Record initial count to isolate from parallel tests
-        int initialDeadServerMeasurements = measurements.Count(m => m.InstrumentName == "signalr.server.dead");
-
-        // Zero count should not emit
+        // Zero count should not emit - verify by checking no zero-value measurement exists
+        // (parallel tests would emit positive values, so this assertion is isolated)
         AqueductMetrics.RecordDeadServers(0);
-        int afterZeroCount = measurements.Count(m => m.InstrumentName == "signalr.server.dead");
-        Assert.Equal(initialDeadServerMeasurements, afterZeroCount);
+        Assert.DoesNotContain(measurements, m => (m.InstrumentName == "signalr.server.dead") && (m.LongValue == 0));
 
-        // Positive count should emit
+        // Positive count should emit with the exact value
         AqueductMetrics.RecordDeadServers(3);
         Assert.Contains(
             measurements,

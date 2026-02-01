@@ -395,8 +395,7 @@ public sealed class BrookMetricsTests
 
         // Filter by unique brook name to isolate from parallel tests - only our brook should have no metrics
         bool hasOurBrookMeasurement = measurements.Any(m =>
-            m.Tags.TryGetValue("brook.name", out object? name) &&
-            ((string?)name == brookName));
+            m.Tags.TryGetValue("brook.name", out object? name) && ((string?)name == brookName));
         Assert.False(hasOurBrookMeasurement, $"Expected no metrics for brook '{brookName}' but found some.");
     }
 }
