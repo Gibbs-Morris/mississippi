@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Inlet.Client.Abstractions;
+using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -26,17 +27,20 @@ public static class InletClientRegistrations
     ///     <para>
     ///         This method registers the following services:
     ///         <list type="bullet">
-    ///             <item><see cref="IProjectionCache" /> - Thread-safe cache for projection states</item>
     ///             <item><see cref="IStore" /> - Redux-style state container</item>
     ///             <item><see cref="IInletStore" /> - Composite interface for components</item>
-    ///             <item><see cref="IProjectionUpdateNotifier" /> - For pushing projection updates</item>
-    ///             <item><see cref="ProjectionCacheMiddleware" /> - Intercepts projection actions</item>
+    ///             <item><see cref="IProjectionUpdateNotifier" /> - For dispatching projection updates</item>
+    ///             <item><see cref="ProjectionsFeatureState" /> - Feature state for all projections</item>
     ///         </list>
     ///     </para>
     ///     <para>
     ///         Use scoped lifetime to match Fluxor pattern:
     ///         Blazor WASM: scoped = singleton (no difference);
     ///         Blazor Server: scoped = per-circuit (each user gets own store).
+    ///     </para>
+    ///     <para>
+    ///         Projection state is stored in <see cref="ProjectionsFeatureState" /> and follows the
+    ///         Redux pattern. Access via <c>store.GetState&lt;ProjectionsFeatureState&gt;()</c>.
     ///     </para>
     /// </remarks>
     public static IServiceCollection AddInletClient(
@@ -46,26 +50,21 @@ public static class InletClientRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddSingleton<IProjectionRegistry, ProjectionRegistry>();
 
-        // Register the projection cache (scoped per circuit/user)
-        services.TryAddScoped<IProjectionCache, ProjectionCache>();
-
-        // Register the projection cache middleware to intercept projection actions
-        services.AddScoped<IMiddleware, ProjectionCacheMiddleware>();
+        // Register the projections feature state
+        services.AddFeatureState<ProjectionsFeatureState>();
 
         // Register the Store with DI-resolved components
+        services.TryAddSingleton(TimeProvider.System);
         services.TryAddScoped<IStore>(sp => new Store(
             sp.GetServices<IFeatureStateRegistration>(),
-            sp.GetServices<IMiddleware>()));
+            sp.GetServices<IMiddleware>(),
+            sp.GetRequiredService<TimeProvider>()));
 
-        // Register the composite InletStore for backward compatibility
-        services.TryAddScoped<IInletStore>(sp => new CompositeInletStore(
-            sp.GetRequiredService<IStore>(),
-            sp.GetRequiredService<IProjectionCache>()));
+        // Register the composite InletStore (wraps Store)
+        services.TryAddScoped<IInletStore>(sp => new CompositeInletStore(sp.GetRequiredService<IStore>()));
 
-        // Register the projection notifier for pushing updates
-        services.TryAddScoped<IProjectionUpdateNotifier>(sp => new ProjectionNotifier(
-            sp.GetRequiredService<IStore>(),
-            sp.GetRequiredService<IProjectionCache>()));
+        // Register the projection notifier for dispatching updates
+        services.TryAddScoped<IProjectionUpdateNotifier>(sp => new ProjectionNotifier(sp.GetRequiredService<IStore>()));
         return services;
     }
 

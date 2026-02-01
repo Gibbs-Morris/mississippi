@@ -15,17 +15,23 @@ The Store is the central state container for Reservoir. It coordinates feature s
 
 ## What Is the Store?
 
-The Store implements [`IStore`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs) and provides three core operations:
+The Store implements [`IStore`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs) and provides five core operations:
 
 | Method | Description |
 |--------|-------------|
 | `Dispatch(IAction)` | Sends an action through the pipeline |
 | `GetState<TState>()` | Retrieves current feature state |
+| `GetStateSnapshot()` | Returns all feature states as a dictionary |
 | `Subscribe(Action)` | Registers a listener for state changes |
+| `StoreEvents` | Observable stream for external integrations |
 
 ```csharp
 public interface IStore : IDisposable
 {
+    IObservable<StoreEventBase> StoreEvents { get; }
+
+    IReadOnlyDictionary<string, object> GetStateSnapshot();
+
     void Dispatch(IAction action);
 
     TState GetState<TState>()
@@ -35,7 +41,7 @@ public interface IStore : IDisposable
 }
 ```
 
-([IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L24-L55))
+([IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L32-L85))
 
 ## Registering the Store
 
@@ -52,9 +58,11 @@ public static IServiceCollection AddReservoir(
     this IServiceCollection services
 )
 {
+    services.TryAddSingleton(TimeProvider.System);
     services.TryAddScoped<IStore>(sp => new Store(
         sp.GetServices<IFeatureStateRegistration>(),
-        sp.GetServices<IMiddleware>()));
+        sp.GetServices<IMiddleware>(),
+        sp.GetRequiredService<TimeProvider>()));
     return services;
 }
 ```
@@ -72,8 +80,10 @@ When you call `store.Dispatch(action)`, the action flows through a well-defined 
 ```mermaid
 flowchart LR
     A[Dispatch] --> B[Middleware Pipeline]
-    B --> C[Reducers]
-    C --> D[Notify Subscribers]
+    B --> SE1[ActionDispatchingEvent]
+    SE1 --> C[Reducers]
+    C --> SE2[ActionDispatchedEvent]
+    SE2 --> D[Notify Subscribers]
     D --> E[Effects]
     E -.->|Returned Actions| A
     
@@ -82,6 +92,8 @@ flowchart LR
     style C fill:#50c878,color:#fff
     style D fill:#6c5ce7,color:#fff
     style E fill:#ff6b6b,color:#fff
+    style SE1 fill:#9b59b6,color:#fff
+    style SE2 fill:#9b59b6,color:#fff
 ```
 
 ### Pipeline Steps
@@ -94,11 +106,14 @@ flowchart LR
 ```csharp
 private void CoreDispatch(IAction action)
 {
-    // First, run reducers for feature states
+    // Emit pre-dispatch event
+    storeEventSubject.OnNext(new ActionDispatchingEvent(action));
+
+    // Run reducers for feature states
     ReduceFeatureStates(action);
 
-    // Hook for derived classes
-    OnActionDispatched(action);
+    // Emit post-dispatch event with current state snapshot
+    storeEventSubject.OnNext(new ActionDispatchedEvent(action, GetStateSnapshot()));
 
     // Notify listeners of state change
     NotifyListeners();
@@ -108,12 +123,12 @@ private void CoreDispatch(IAction action)
 }
 ```
 
-([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L214-L228))
+([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L238-L256))
 
 ## Dispatching Actions
 
 Call `Dispatch` on the store to send actions through the pipeline.
-([IStore.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L26-L33))
+([IStore.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L55-L64))
 
 Components inheriting `StoreComponent` can call its protected `Dispatch` helper.
 ([StoreComponent.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L48-L53))
@@ -157,12 +172,12 @@ No feature state registered for 'entitySelection'.
 Call AddFeatureState<EntitySelectionState>() during service registration.
 ```
 
-([Store.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L112-L125))
+([Store.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L131-L144))
 
 ## Subscribing to Changes
 
 Use `Subscribe` to register a listener that runs after every dispatch.
-([IStore.Subscribe](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L46-L53))
+([IStore.Subscribe](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L76-L84))
 
 ### Subscription Behavior
 
@@ -227,8 +242,8 @@ The Store implements `IDisposable`. When disposed:
 - Subsequent `Dispatch`, `GetState`, or `Subscribe` calls throw `ObjectDisposedException`
 
 ([StoreTests.DispatchAfterDisposeThrowsObjectDisposedException](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L327-L335),
-[Store.Dispose](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L104-L108),
-[Store.Dispose(bool)](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L156-L182))
+[Store.Dispose](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L124-L129),
+[Store.Dispose(bool)](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L183-L208))
 
 ## Effect Error Handling
 
@@ -238,7 +253,113 @@ Effects run asynchronously after dispatch. If an effect throws:
 - Other effects continue to run
 - Effects should handle their own errors by emitting error actions
 
-([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L278-L332))
+([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L372-L426))
+
+## Observable Store Events
+
+The store exposes an observable stream of events via `StoreEvents`, enabling external integrations to observe store activity without subclassing. [DevTools](./devtools.md) uses this pattern to report actions and state to the browser extension.
+
+### StoreEvents Property
+
+```csharp
+IObservable<StoreEventBase> StoreEvents { get; }
+```
+
+Subscribers receive events synchronously during dispatch. Keep handlers fast to avoid blocking the pipeline.
+
+([IStore.StoreEvents](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L36-L51))
+
+### Store Event Types
+
+| Event | When Emitted | Payload |
+|-------|--------------|---------|
+| `StoreInitializedEvent` | Once during store construction | `InitialSnapshot` |
+| `ActionDispatchingEvent` | Before reducers run | `Action` |
+| `ActionDispatchedEvent` | After reducers, before effects | `Action`, `StateSnapshot` |
+| `StateRestoredEvent` | After system action restores state | `PreviousSnapshot`, `NewSnapshot`, `Cause` |
+
+All events inherit from `StoreEventBase`.
+
+([StoreEventBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StoreEventBase.cs),
+[ActionDispatchingEvent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/ActionDispatchingEvent.cs),
+[ActionDispatchedEvent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/ActionDispatchedEvent.cs),
+[StateRestoredEvent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StateRestoredEvent.cs),
+[StoreInitializedEvent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Events/StoreInitializedEvent.cs))
+
+### Example: Subscribing to Events
+
+```csharp
+store.StoreEvents.Subscribe(new ActionObserver());
+
+private sealed class ActionObserver : IObserver<StoreEventBase>
+{
+    public void OnNext(StoreEventBase evt)
+    {
+        if (evt is ActionDispatchedEvent dispatched)
+        {
+            Console.WriteLine($"Action: {dispatched.Action.GetType().Name}");
+        }
+    }
+    
+    public void OnCompleted() { }
+    public void OnError(Exception error) { }
+}
+```
+
+## System Actions
+
+System actions implement `ISystemAction` and are handled directly by the store rather than by user-defined reducers. They enable external components (like DevTools) to command the store through the standard dispatch mechanism, maintaining unidirectional data flow.
+
+### ISystemAction
+
+```csharp
+public interface ISystemAction : IAction { }
+```
+
+System actions do not trigger user reducers or effects. They are processed internally and emit `StateRestoredEvent` to notify observers.
+
+([ISystemAction](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/ISystemAction.cs))
+
+### Built-in System Actions
+
+| Action | Purpose | Parameters |
+|--------|---------|------------|
+| `RestoreStateAction` | Restore state from a snapshot | `Snapshot`, `NotifyListeners` (default: true) |
+| `ResetToInitialStateAction` | Reset to initial state | `NotifyListeners` (default: true) |
+
+([RestoreStateAction](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/RestoreStateAction.cs),
+[ResetToInitialStateAction](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Actions/ResetToInitialStateAction.cs))
+
+### Example: Time-Travel
+
+```csharp
+// Save a snapshot
+var snapshot = store.GetStateSnapshot();
+
+// ... user performs actions ...
+
+// Restore to saved snapshot
+store.Dispatch(new RestoreStateAction(snapshot));
+
+// Or reset to initial state
+store.Dispatch(new ResetToInitialStateAction());
+```
+
+## GetStateSnapshot
+
+Returns a dictionary of all current feature states keyed by feature key:
+
+```csharp
+IReadOnlyDictionary<string, object> GetStateSnapshot();
+```
+
+Use this for:
+
+- Saving state for later restoration
+- Reporting current state to external tools
+- Debugging and logging
+
+([IStore.GetStateSnapshot](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L49-L53))
 
 ## Store Internals
 
@@ -251,8 +372,9 @@ For advanced scenarios, understanding the Store's internal structure helps:
 | `rootActionEffects` | `ConcurrentDictionary<string, object>` | Maps FeatureKey → `IRootActionEffect<TState>` |
 | `middlewares` | `List<IMiddleware>` | Ordered middleware pipeline |
 | `listeners` | `List<Action>` | Registered subscribers |
+| `storeEventSubject` | `StoreEventSubject<StoreEventBase>` | Observable subject for store events |
 
-([Store fields](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L20-L38))
+([Store fields](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L23-L45))
 
 ### Middleware Pipeline Building
 
@@ -275,7 +397,7 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 }
 ```
 
-([Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L199-L212))
+([Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L221-L236))
 
 ## Summary
 
@@ -284,6 +406,9 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 | **Store** | Central state container implementing `IStore` |
 | **Dispatch** | Sends actions through middleware → reducers → notify → effects |
 | **GetState** | Returns current feature state snapshot |
+| **GetStateSnapshot** | Returns all feature states as a dictionary |
+| **StoreEvents** | Observable stream for external integrations (DevTools, logging) |
+| **System Actions** | `ISystemAction` for store-internal operations (time-travel) |
 | **Subscribe** | Registers listener called after every dispatch |
 | **Lifetime** | Scoped (per DI scope) |
 | **Disposal** | Clears all state and subscriptions; subsequent calls throw |
@@ -296,6 +421,7 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 ## Next Steps
 
 - [Reservoir Overview](./reservoir.md) — Understand the dispatch pipeline end-to-end
+- [DevTools](./devtools.md) — See how DevTools uses StoreEvents and system actions
 - [Actions](./actions.md) — Define what can happen in your application
 - [Reducers](./reducers.md) — Update state in response to actions
 - [Effects](./effects.md) — Handle async operations and side effects

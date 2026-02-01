@@ -351,6 +351,8 @@ The result is a slick, event-based architecture where every feature follows the 
 
 ## References
 
+- Coding discipline (samples): `.github/instructions/coding-discipline.instructions.md`
+- Framework patterns (src): `.github/instructions/framework-patterns.instructions.md`
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - Orleans conventions: `.github/instructions/orleans.instructions.md`
 - Domain modeling: `.github/instructions/domain-modeling.instructions.md`

@@ -32,7 +32,7 @@ public abstract class InletComponent : StoreComponent
         string entityId
     )
         where T : class =>
-        InletStore.GetProjection<T>(entityId);
+        GetProjectionsState().GetProjection<T>(entityId);
 
     /// <summary>
     ///     Gets the error for a projection, if any.
@@ -45,7 +45,7 @@ public abstract class InletComponent : StoreComponent
         string entityId
     )
         where T : class =>
-        InletStore.GetProjectionError<T>(entityId);
+        GetProjectionsState().GetProjectionError<T>(entityId);
 
     /// <summary>
     ///     Gets the full projection state for a specific entity.
@@ -58,7 +58,7 @@ public abstract class InletComponent : StoreComponent
         string entityId
     )
         where T : class =>
-        InletStore.GetProjectionState<T>(entityId);
+        GetProjectionsState().GetEntry<T>(entityId);
 
     /// <summary>
     ///     Gets whether a projection is connected to the server.
@@ -71,7 +71,7 @@ public abstract class InletComponent : StoreComponent
         string entityId
     )
         where T : class =>
-        InletStore.IsProjectionConnected<T>(entityId);
+        GetProjectionsState().IsProjectionConnected<T>(entityId);
 
     /// <summary>
     ///     Gets whether a projection is currently loading.
@@ -84,7 +84,7 @@ public abstract class InletComponent : StoreComponent
         string entityId
     )
         where T : class =>
-        InletStore.IsProjectionLoading<T>(entityId);
+        GetProjectionsState().IsProjectionLoading<T>(entityId);
 
     /// <summary>
     ///     Refreshes a projection for a specific entity.
@@ -127,4 +127,6 @@ public abstract class InletComponent : StoreComponent
     {
         Dispatch(new UnsubscribeFromProjectionAction<T>(entityId));
     }
+
+    private ProjectionsFeatureState GetProjectionsState() => InletStore.GetState<ProjectionsFeatureState>();
 }
