@@ -1,0 +1,467 @@
+@namespace Refraction.Pages.Templates
+@inherits StoreComponent
+@typeparam TItem
+@using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Reservoir.Blazor
+@using Refraction.Components.Molecules
+@using Refraction.Components.Organisms
+@using Refraction.Components.Templates
+
+<Shell Class="@GetCssClass()"
+       Style="@Style"
+       @attributes="AdditionalAttributes">
+    
+    <NavRailContent>
+        @if (NavRailContent != null)
+        {
+            @NavRailContent
+        }
+    </NavRailContent>
+    
+    <CommandBarContent>
+        @if (CommandBarContent != null)
+        {
+            @CommandBarContent
+        }
+        else
+        {
+            @if (ShowCreateButton)
+            {
+                <ActionChip Label="@CreateButtonText"
+                            Variant="ActionChipVariant.Primary"
+                            OnClick="HandleCreate" />
+            }
+            @if (ShowRefreshButton)
+            {
+                <ActionChip Label="Refresh"
+                            Variant="ActionChipVariant.Default"
+                            IsDisabled="@IsLoading"
+                            OnClick="HandleRefresh" />
+            }
+        }
+    </CommandBarContent>
+    
+    <BreadcrumbContent>
+        @if (BreadcrumbItems?.Any() == true)
+        {
+            <Breadcrumb Items="@BreadcrumbItems" />
+        }
+    </BreadcrumbContent>
+    
+    <TabBarContent>
+        @if (TabBarContent != null)
+        {
+            @TabBarContent
+        }
+    </TabBarContent>
+    
+    <ChildContent>
+        <Lens Variant="LensVariant.Elevated"
+              Class="rf-list-page__lens">
+            
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <header class="rf-list-page__header">
+                    <h1 class="rf-list-page__title">@Title</h1>
+                    @if (!string.IsNullOrEmpty(Subtitle))
+                    {
+                        <p class="rf-list-page__subtitle">@Subtitle</p>
+                    }
+                </header>
+            }
+            
+            @if (ToolbarContent != null)
+            {
+                <div class="rf-list-page__toolbar">
+                    @ToolbarContent
+                </div>
+            }
+            else if (ShowSearch || ShowFilters)
+            {
+                <div class="rf-list-page__toolbar">
+                    @if (ShowSearch)
+                    {
+                        <TextField @bind-Value="@SearchText"
+                                   Placeholder="@SearchPlaceholder"
+                                   OnBlur="HandleSearchChanged"
+                                   Class="rf-list-page__search" />
+                    }
+                    @if (ShowFilters && FilterContent != null)
+                    {
+                        @FilterContent
+                    }
+                </div>
+            }
+            
+            <div class="rf-list-page__content">
+                @if (IsLoading && (Items == null || !Items.Any()))
+                {
+                    <div class="rf-list-page__loading" role="status" aria-label="Loading">
+                        <div class="rf-list-page__spinner"></div>
+                        <span class="rf-list-page__loading-text">@LoadingText</span>
+                    </div>
+                }
+                else if (Items == null || !Items.Any())
+                {
+                    <div class="rf-list-page__empty">
+                        @if (EmptyContent != null)
+                        {
+                            @EmptyContent
+                        }
+                        else
+                        {
+                            <span>@EmptyText</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @if (ListContent != null)
+                    {
+                        @ListContent(GetFilteredItems())
+                    }
+                    else if (ItemTemplate != null)
+                    {
+                        <div class="rf-list-page__items" role="list">
+                            @foreach (var item in GetFilteredItems())
+                            {
+                                <div class="rf-list-page__item @(GetIsSelected(item) ? "rf-list-page__item--selected" : "")"
+                                     role="listitem"
+                                     @onclick="() => HandleItemClick(item)">
+                                    @ItemTemplate(item)
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            
+            @if (ShowPagination && TotalPages > 1)
+            {
+                <footer class="rf-list-page__pagination">
+                    <ActionChip Label="Previous"
+                                Variant="ActionChipVariant.Default"
+                                IsDisabled="@(CurrentPage <= 1)"
+                                OnClick="HandlePreviousPage" />
+                    <span class="rf-list-page__page-info">Page @CurrentPage of @TotalPages</span>
+                    <ActionChip Label="Next"
+                                Variant="ActionChipVariant.Default"
+                                IsDisabled="@(CurrentPage >= TotalPages)"
+                                OnClick="HandleNextPage" />
+                </footer>
+            }
+            
+        </Lens>
+    </ChildContent>
+    
+    <AsideContent>
+        @if (SidebarContent != null)
+        {
+            <Lens Variant="LensVariant.Card"
+                  Class="rf-list-page__sidebar">
+                @SidebarContent
+            </Lens>
+        }
+        else if (SelectedItems?.Any() == true && SelectionSummaryContent != null)
+        {
+            <Lens Variant="LensVariant.Card"
+                  Class="rf-list-page__sidebar">
+                @SelectionSummaryContent(SelectedItems)
+            </Lens>
+        }
+    </AsideContent>
+    
+</Shell>
+
+@code {
+    /// <summary>
+    /// Gets or sets the page title.
+    /// </summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets the page subtitle.
+    /// </summary>
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    /// <summary>
+    /// Gets or sets the breadcrumb items.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<BreadcrumbItem>? BreadcrumbItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the nav rail content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? NavRailContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the command bar content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? CommandBarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tab bar content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? TabBarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the toolbar content (replaces default search/filter).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ToolbarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the filter content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? FilterContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the items to display.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<TItem>? Items { get; set; }
+
+    /// <summary>
+    /// Gets or sets the selected items.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<TItem>? SelectedItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when selection changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IReadOnlyList<TItem>> SelectedItemsChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list content template (receives filtered items).
+    /// </summary>
+    [Parameter]
+    public RenderFragment<IReadOnlyList<TItem>>? ListContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the item template (alternative to ListContent).
+    /// </summary>
+    [Parameter]
+    public RenderFragment<TItem>? ItemTemplate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the empty state content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? EmptyContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? SidebarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the selection summary content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment<IReadOnlyList<TItem>>? SelectionSummaryContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether data is loading.
+    /// </summary>
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    /// <summary>
+    /// Gets or sets the loading message.
+    /// </summary>
+    [Parameter]
+    public string LoadingText { get; set; } = "Loading...";
+
+    /// <summary>
+    /// Gets or sets the empty state message.
+    /// </summary>
+    [Parameter]
+    public string EmptyText { get; set; } = "No items found";
+
+    /// <summary>
+    /// Gets or sets whether to show the search input.
+    /// </summary>
+    [Parameter]
+    public bool ShowSearch { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the search placeholder text.
+    /// </summary>
+    [Parameter]
+    public string SearchPlaceholder { get; set; } = "Search...";
+
+    /// <summary>
+    /// Gets or sets the current search text.
+    /// </summary>
+    [Parameter]
+    public string? SearchText { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when search text changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string?> SearchTextChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to show filters.
+    /// </summary>
+    [Parameter]
+    public bool ShowFilters { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to show the create button.
+    /// </summary>
+    [Parameter]
+    public bool ShowCreateButton { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the create button text.
+    /// </summary>
+    [Parameter]
+    public string CreateButtonText { get; set; } = "Create";
+
+    /// <summary>
+    /// Gets or sets whether to show the refresh button.
+    /// </summary>
+    [Parameter]
+    public bool ShowRefreshButton { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to show pagination.
+    /// </summary>
+    [Parameter]
+    public bool ShowPagination { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current page (1-based).
+    /// </summary>
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the callback when page changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<int> CurrentPageChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of pages.
+    /// </summary>
+    [Parameter]
+    public int TotalPages { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the filter function.
+    /// </summary>
+    [Parameter]
+    public Func<TItem, string?, bool>? FilterPredicate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when create is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCreate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when refresh is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnRefresh { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when an item is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TItem> OnItemClick { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string GetCssClass() => string.IsNullOrEmpty(Class) ? "rf-list-page" : $"rf-list-page {Class}";
+
+    private IReadOnlyList<TItem> GetFilteredItems()
+    {
+        if (Items == null)
+        {
+            return Array.Empty<TItem>();
+        }
+
+        if (FilterPredicate == null || string.IsNullOrWhiteSpace(SearchText))
+        {
+            return Items;
+        }
+
+        return Items.Where(item => FilterPredicate(item, SearchText)).ToList();
+    }
+
+    private bool GetIsSelected(TItem item)
+    {
+        if (SelectedItems == null || SelectedItems.Count == 0)
+        {
+            return false;
+        }
+
+        return SelectedItems.Contains(item);
+    }
+
+    private async Task HandleCreate()
+    {
+        await OnCreate.InvokeAsync();
+    }
+
+    private async Task HandleRefresh()
+    {
+        await OnRefresh.InvokeAsync();
+    }
+
+    private async Task HandleItemClick(TItem item)
+    {
+        await OnItemClick.InvokeAsync(item);
+    }
+
+    private async Task HandleSearchChanged()
+    {
+        await SearchTextChanged.InvokeAsync(SearchText);
+    }
+
+    private async Task HandlePreviousPage()
+    {
+        if (CurrentPage > 1)
+        {
+            await CurrentPageChanged.InvokeAsync(CurrentPage - 1);
+        }
+    }
+
+    private async Task HandleNextPage()
+    {
+        if (CurrentPage < TotalPages)
+        {
+            await CurrentPageChanged.InvokeAsync(CurrentPage + 1);
+        }
+    }
+}

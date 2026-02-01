@@ -1,0 +1,104 @@
+.rf-list-page__lens {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-spacing-md);
+    min-height: 0;
+    flex: 1;
+}
+
+.rf-list-page__header {
+    flex-shrink: 0;
+}
+
+.rf-list-page__search {
+    min-width: 16rem;
+}
+
+.rf-list-page__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rf-spacing-md);
+    padding: var(--rf-spacing-2xl);
+    color: var(--rf-color-text-secondary);
+}
+
+.rf-list-page__spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid var(--rf-color-surface-border);
+    border-top-color: var(--rf-color-accent-primary);
+    border-radius: 50%;
+    animation: rf-list-page-spin 1s linear infinite;
+}
+
+@keyframes rf-list-page-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.rf-list-page__loading-text {
+    font-size: var(--rf-font-size-sm);
+}
+
+.rf-list-page__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--rf-spacing-2xl);
+    text-align: center;
+}
+
+.rf-list-page__empty-message {
+    font-size: var(--rf-font-size-md);
+    color: var(--rf-color-text-secondary);
+}
+
+.rf-list-page__grid {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.rf-list-page__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rf-spacing-md);
+    padding: var(--rf-spacing-md) 0;
+    border-top: 1px solid var(--rf-color-surface-border);
+    flex-shrink: 0;
+}
+
+.rf-list-page__page-info {
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-color-text-secondary);
+    min-width: 8rem;
+    text-align: center;
+}
+
+.rf-list-page__detail-panel {
+    width: 24rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .rf-list-page__search {
+        min-width: 100%;
+    }
+
+    .rf-list-page__detail-panel {
+        width: 100%;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-list-page__spinner {
+        animation: none;
+        border-top-color: var(--rf-color-accent-primary);
+        opacity: 0.7;
+    }
+}
