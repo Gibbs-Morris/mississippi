@@ -4,22 +4,20 @@ using Mississippi.Reservoir.Abstractions;
 namespace Mississippi.Inlet.Client.Abstractions;
 
 /// <summary>
-///     Composite interface providing access to both local Redux-style state
-///     and server-synced projection cache.
+///     Composite interface providing access to Redux-style state management
+///     with convenience methods for server-synced projections.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         Components can inject <see cref="IInletStore" /> for convenient access to
-///         both <see cref="IStore" /> (for feature states and actions) and
-///         <see cref="IProjectionCache" /> (for server-synced projections).
+///         <see cref="IStore" /> functionality plus projection-specific helper methods.
 ///     </para>
 ///     <para>
-///         Alternatively, components can inject <see cref="IStore" /> and
-///         <see cref="IProjectionCache" /> separately for finer-grained dependencies.
+///         Projection state is stored in <see cref="State.ProjectionsFeatureState" />
+///         and follows the Redux pattern: actions → reducers → state.
+///         Use <c>GetState&lt;ProjectionsFeatureState&gt;()</c> for direct access.
 ///     </para>
 /// </remarks>
-public interface IInletStore
-    : IStore,
-      IProjectionCache
+public interface IInletStore : IStore
 {
 }

@@ -4,7 +4,7 @@
 
 <main>
     <nav>
-        <a href="/investigations">View Investigations</a>
+        <button type="button" @onclick="NavigateToInvestigations">View Investigations</button>
         <a href="/scalar/v1" target="_blank">API Docs</a>
     </nav>
 
@@ -17,7 +17,7 @@
                 aria-haspopup="dialog"
                 aria-expanded="@isConnectionModalOpen"
                 @onclick="ToggleConnectionModal">
-            @ConnectionState.Status
+            @ConnectionStatus
         </button>
     </header>
 
@@ -154,7 +154,7 @@
                 </div>
             }
 
-            @if (AggregateState.LastCommandSucceeded is true)
+            @if (LastCommandSucceeded is true)
             {
                 <div role="status">
                     Command executed successfully.
@@ -199,27 +199,27 @@
             </header>
             <div>
                 <div>
-                    <span>Status:</span> <span>@ConnectionState.Status</span>
+                    <span>Status:</span> <span>@ConnectionStatus</span>
                 </div>
                 <div>
-                    <span>Connection ID:</span> <span>@(ConnectionState.ConnectionId ?? "—")</span>
+                    <span>Connection ID:</span> <span>@(ConnectionId ?? "—")</span>
                 </div>
                 <div>
-                    <span>Reconnect Attempts:</span> <span>@ConnectionState.ReconnectAttemptCount</span>
+                    <span>Reconnect Attempts:</span> <span>@ReconnectAttemptCount</span>
                 </div>
                 <div>
-                    <span>Last Connected:</span> <span>@FormatTimestamp(ConnectionState.LastConnectedAt)</span>
+                    <span>Last Connected:</span> <span>@FormatTimestamp(LastConnectedAt)</span>
                 </div>
                 <div>
-                    <span>Last Disconnected:</span> <span>@FormatTimestamp(ConnectionState.LastDisconnectedAt)</span>
+                    <span>Last Disconnected:</span> <span>@FormatTimestamp(LastDisconnectedAt)</span>
                 </div>
                 <div>
-                    <span>Last Message:</span> <span>@FormatTimestamp(ConnectionState.LastMessageReceivedAt)</span>
+                    <span>Last Message:</span> <span>@FormatTimestamp(LastMessageReceivedAt)</span>
                 </div>
-                @if (ConnectionState.LastError is not null)
+                @if (LastError is not null)
                 {
                     <div>
-                        <span>Last Error:</span> <span>@ConnectionState.LastError</span>
+                        <span>Last Error:</span> <span>@LastError</span>
                     </div>
                 }
             </div>
@@ -233,14 +233,14 @@
                 <h2>Connection Lost</h2>
             </header>
             <div>
-                <p>@ConnectionState.Status</p>
-                @if (ConnectionState.ReconnectAttemptCount > 0)
+                <p>@ConnectionStatus</p>
+                @if (ReconnectAttemptCount > 0)
                 {
-                    <p>Reconnect Attempt @ConnectionState.ReconnectAttemptCount</p>
+                    <p>Reconnect Attempt @ReconnectAttemptCount</p>
                 }
-                @if (ConnectionState.LastError is not null)
+                @if (LastError is not null)
                 {
-                    <p>@ConnectionState.LastError</p>
+                    <p>@LastError</p>
                 }
                 <button type="button" @onclick="RequestReconnect">Reconnect</button>
             </div>

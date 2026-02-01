@@ -1,186 +1,200 @@
 ---
 id: documentation-guide
 title: Documentation Guide
-sidebar_label: Documentation
-description: Comprehensive guide for writing and maintaining Mississippi Framework documentation
-keywords:
-  - documentation
-  - writing
-  - contributing
-  - style guide
-  - best practices
+sidebar_label: Documentation Guide
+sidebar_position: 1
+description: Opinionated documentation rules for Mississippi Docusaurus authors and AI agents.
 ---
 
 # Documentation Guide
 
-This guide establishes a consistent structure and tone for all Mississippi Framework documentation. Follow these principles to create content that is useful, maintainable, and easy to navigate.
+## Overview
+
+This guide defines the standard structure and style for the client-state-management documentation set and makes it mandatory for all new and updated Docusaurus docs in this repo; existing pages will be updated to follow it over time.
+
+## Scope
+
+These rules apply to every new or edited Markdown/MDX doc under `docs/Docusaurus/docs/`.
 
 ## Tone and Language
 
 ### Purpose and Audience
 
-Before writing a page, define its goal and identify who will read it: administrator, developer, architect, or executive. Documentation should exist only to enable decisions or actions.
+- Define the reader (developer, architect, administrator, or executive) before writing.
+- Write only what enables a decision or action.
 
-### Write for Your Readers
+### Concise, Factual Language
 
-Adjust terminology, depth, and examples to match reader expertise and time. Provide executive summaries for leaders, thorough explanations for implementers, and appendices for specialists.
+- Use active voice and present tense.
+- Use one idea per sentence.
+- Define abbreviations on first use.
+- Avoid marketing language and vague qualifiers.
 
-### Use Concise, Factual Language
+### RFC 2119 Keywords
 
-- Prefer active voice and present tense
-- Avoid marketing language and jargon
-- Give one idea per sentence
-- Explain abbreviations on first use
+- Use **MUST**, **SHOULD**, and **MAY** in rules sections only.
+- Use **MUST NOT** and **SHOULD NOT** for explicit prohibitions.
 
-### Follow RFC 2119 Where Appropriate
+## Required Page Structure
 
-When stating requirements or recommendations, use "MUST," "SHOULD," or "MAY" consistently. Reserve these keywords for rules sections.
+Every doc MUST follow this structure in order:
 
-### Be Human and Helpful
+1. **Frontmatter**
+2. **H1 title**
+3. **Overview** section
+4. **Core content sections** (problem/concept → mechanics → usage)
+5. **Closing section(s)** (rules below)
 
-Use a friendly tone; anticipate readers' questions and link to background material rather than repeating it. Code examples should be minimal but complete.
+### Closing Section Rules
 
-## Page Structure
+- If the page is a **section entry** (the doc referenced by a folder's `_category_.json` link), it MUST include a **Learn More** section with links to all child pages. Additional utility sections such as **Source Code**, **Changelog**, or **Release Notes** MAY follow **Learn More**.
+- Otherwise, the page MUST include **Summary** followed by **Next Steps** as its final core content sections. Optional appendix-style sections such as **References** or **Further Reading** MAY follow.
 
-Every documentation page should follow a predictable layout so that readers can orient themselves quickly.
+## Frontmatter (Required)
 
-### 1. Front Matter and Metadata
-
-Include a YAML header with `id`, `title`, `sidebar_label`, and optional `description`. Set `keywords` to improve search. Use kebab-case filenames.
+Frontmatter MUST include all fields shown below and MUST be the first lines in the file.
 
 ```yaml
 ---
-id: my-topic
-title: My Topic
-sidebar_label: My Topic
-description: Brief description of this page
-keywords:
-  - keyword1
-  - keyword2
+id: <kebab-case-doc-id>
+title: <Title Case Page Title>
+sidebar_label: <Short Sidebar Label>
+sidebar_position: <number>
+description: <One-sentence summary>
 ---
 ```
 
-### 2. Title and Summary (H1)
+### Frontmatter Rules
 
-Start with a clear, descriptive title and one-sentence summary explaining what the page covers.
+- `id` MUST be kebab-case and stable.
+- `title` MUST be concise and human-readable.
+- `sidebar_label` MUST be short (1–3 words).
+- `sidebar_position` MUST be an integer and MUST be unique within its folder.
+- `description` MUST be a single sentence.
+- Use kebab-case filenames to match `id`.
+- Use `slug` only for section landing pages (example: [../index.md](../index.md)).
 
-### 3. On-Page Table of Contents
+## Headings
 
-Provide a TOC component so users see the scope of information without scrolling. Limit heading levels to H3.
+- Use **one** H1 (`#`) per file.
+- Use H2 (`##`) for main sections.
+- Use H3 (`###`) only for subsections of a main section.
+- Do NOT use H4+ headings.
 
-### 4. Body Sections (H2/H3)
+## Markdown Usage Rules
 
-Break content into logical sections. Use progressive disclosure: start with an overview, then deepen detail in later sections. If a section grows beyond 2–3 pages of text, split it into its own topic and cross-link.
+### Tables
 
-### 5. Related Links and Navigation
+Use tables for enumerations or structured comparisons.
 
-At the end of each page, include "See also" links to related topics. Whenever you mention a concept, feature, or command, link to its description.
+```markdown
+| Item | Purpose |
+|------|---------|
+| **Reducer** | Pure state transition |
+| **Effect** | Async side effect |
+```
 
-### 6. References and Footnotes
+### Code Blocks
 
-Place additional resources, specification references, or external links in a "References" section. Provide alt text for images and diagrams.
+- All code blocks MUST declare a language (e.g., `csharp`, `json`, `bash`).
+- Keep samples minimal and focused.
+- Do NOT include example output unless it is verified from the repo.
 
-### 7. Last Updated and Ownership
+### Admonitions
 
-Note the author and last updated date. Assign a maintainer responsible for updates.
+Use Docusaurus admonitions for callouts.
+
+```markdown
+:::note
+Short, factual note that clarifies a rule.
+:::
+```
+
+Use `:::warning` for risks or breaking behaviors.
+
+## Mermaid Usage
+
+Mermaid is enabled for this Docusaurus site. Use Mermaid for diagrams instead of images.
+([docusaurus.config.ts](https://github.com/Gibbs-Morris/mississippi/blob/main/docs/Docusaurus/docusaurus.config.ts#L17-L21))
+
+```mermaid
+flowchart LR
+    A[Concept] --> B[Step]
+    B --> C[Outcome]
+```
+
+### Mermaid Rules
+
+- Use `flowchart LR` by default for process diagrams.
+- Keep diagrams small (7 nodes or fewer) unless the doc is explicitly about architecture.
+- Prefer labels that match section terminology.
+- Do NOT embed images for diagrams.
+
+## Links
+
+### Internal Doc Links
+
+- Use relative links between docs (e.g., `./store.md`, `actions.md`).
+- Link to the most relevant section, not the top of a long page.
+
+### Source Code Links
+
+- Use absolute GitHub URLs to source code.
+- Prefer deep links to specific files; add line ranges when pointing at specific members.
+- Use the `/blob/main/` path for source links.
+
+## Evidence Rules (Non-Negotiable)
+
+- Every technical statement MUST be backed by repository evidence.
+- If a statement cannot be verified, rewrite it as a question or remove it.
+- Do NOT speculate about behavior, defaults, or APIs.
+
+## Tone and Voice
+
+- Use direct, imperative language.
+- Avoid hedging words like "might", "could", "maybe", or "typically".
+- Prefer short sentences.
 
 ## Topic Scope
 
-### One Cohesive Topic Per Page
-
-A page should answer a single question or cover a single concept or procedure. If you find yourself adding multiple rule sets or divergent tasks, split the content.
-
-### Right-Size Topics
-
-Aim for 5–10 minutes of reading time. Balance depth and brevity; provide enough detail to understand and act, but avoid overwhelming the reader.
-
-### Avoid Deep Hierarchies
-
-The Docusaurus sidebar should not nest beyond two levels; deeper nesting makes it hard for users to grasp the whole. Group related pages into sections and use cross-links to connect concepts.
-
-### Use Multi-Level Documentation
-
-Provide different layers:
-
-- **High-level overviews**: Portal or section homepages with executive summaries
-- **Task-oriented guides**: Step-by-step instructions for common workflows
-- **In-depth references**: API documentation and detailed specifications
+- One page MUST answer one question or cover one task.
+- Split divergent tasks into separate pages and cross-link them.
+- Use the `Overview` section to state scope boundaries explicitly.
 
 ## Navigation and Information Architecture
 
-### Doc Portal (Level 1)
-
-The home page lists major documentation areas such as Introduction, Core Concepts, Guides, Reference, and Contribution. Use cards or a scannable list to orient users.
-
-### Section Pages (Level 2)
-
-Each major area has its own landing page summarizing its purpose and listing child pages. Keep the sidebar shallow: one or two sub-levels at most.
-
-### Individual Pages (Level 3/4)
-
-Pages contain the actual instructional content. Provide an on-page TOC and embed inline links to other topics. Readers often navigate via inline links rather than the sidebar.
-
-### Related Resources
-
-Include a "Related resources" section on section pages to point users to other relevant doc sets.
-
-### Surface Popular Topics
-
-Use analytics or feedback to identify frequently accessed pages and feature them prominently in the section or portal home.
+- Section entry pages MUST summarize their purpose and list child pages.
+- Component pages MUST end with a closing navigation section that links to at least two related pages. Acceptable titles include `Next Steps` and `Related Documentation`; new or updated pages SHOULD standardize on `Next Steps`, while legacy pages MAY retain older patterns until they are revised.
 
 ## Visuals and Examples
 
-### Use Visuals Strategically
+- Use Mermaid for process and architecture diagrams.
+- Code samples MUST compile in isolation or be copy-safe excerpts.
+- Use tables for option matrices and comparative data.
 
-Diagrams, flowcharts, and simple figures improve comprehension of:
+## Maintenance Rules
 
-- System architecture
-- Process flows
-- Data relationships
-- UI elements
-
-Keep visuals clear and uncluttered, use consistent symbols and colors, and provide alt text for accessibility.
-
-### Code Samples and Snippets
-
-Provide working examples in code fences with language identifiers. Keep them short; link to repositories or sample projects for full implementations. Use comments to explain non-obvious steps.
-
-```csharp
-// Example: Creating an aggregate
-public class BankAccountAggregate : AggregateRoot<BankAccountState>
-{
-    // Aggregate implementation
-}
-```
-
-### Tables and Lists
-
-- Use tables for concise data (keywords, options, parameters)
-- Avoid long sentences in tables
-- Use lists for procedures or grouped ideas
-
-## Maintenance and Versioning
-
-### Living Documentation
-
-Treat docs as evolving artifacts; use version control, assign owners, and review schedules. Update docs when features change, performance characteristics shift, or new components are added.
-
-### Naming and Findability
-
-Use clear, descriptive file names and titles; include keywords to aid search. Avoid duplication; link to the single source of truth.
-
-### Templates and Consistency
-
-Follow common templates for similar page types (concept, tutorial, reference). Reuse components such as admonitions, callouts, and code patterns.
+- Update docs in the same change that modifies behavior or API surface.
+- Keep one source of truth; link instead of duplicating content.
+- Do NOT add "last updated" or timestamp fields; Git history is the source of truth.
 
 ## Writing Checklist
 
-Before publishing a page, ensure:
+- [ ] Frontmatter is complete and valid.
+- [ ] H1, Overview, and required closing sections are present.
+- [ ] All code fences declare a language.
+- [ ] All technical claims link to repository evidence.
+- [ ] Mermaid diagrams are used instead of images.
+- [ ] Internal links are relative; source links are absolute.
 
-- [ ] Purpose and audience are clearly defined and addressed
-- [ ] The page adheres to the structure above (title, summary, TOC, sections, references)
-- [ ] Language is concise and uses consistent terminology
-- [ ] Inline links connect concepts and tasks
-- [ ] Visuals and examples are accurate and accessible
-- [ ] Metadata (keywords, author, last updated) is present
-- [ ] The page is placed in the correct section, and the sidebar remains shallow
+## Summary
+
+- Follow the exact page structure.
+- Use strict Markdown conventions.
+- Use Mermaid for diagrams.
+- Link to source with absolute GitHub URLs.
+
+## Next Steps
+
+- Review the client-state-management docs for canonical patterns.
+- Add new docs only after verifying every technical claim.

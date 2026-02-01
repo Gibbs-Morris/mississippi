@@ -5,7 +5,9 @@
 {
   "globsIgnore": [
     ".scratchpad/**",
-    ".github/agents/**"
+    ".github/agents/**",
+    "docs/Docusaurus/node_modules/**",
+    "**/node_modules/**"
   ],
   "config": {
     "default": true,

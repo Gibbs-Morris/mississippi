@@ -14,8 +14,8 @@ test.describe('Docusaurus Site', () => {
   test('navigation to docs works', async ({ page }) => {
     await page.goto('/');
     
-    // Click the "Get Started" button
-    await page.click('text=Get Started');
+    // Click the "View Documentation" button
+    await page.click('text=View Documentation');
     
     // Verify we're on a docs page (URL changes)
     await expect(page).toHaveURL(/\/docs\//);
@@ -24,14 +24,14 @@ test.describe('Docusaurus Site', () => {
   test('docs page loads with expected content', async ({ page }) => {
     await page.goto('/');
     
-    // Navigate via the Get Started button
-    await page.click('text=Get Started');
+    // Navigate via the View Documentation button
+    await page.click('text=View Documentation');
     
     // Wait for navigation and check for docs-specific content
     await page.waitForURL(/\/docs\//);
     
-    // Check that the Introduction heading appears
-    await expect(page.locator('h1')).toContainText('Introduction');
+    // Check that the Mississippi Documentation heading appears
+    await expect(page.locator('h1')).toContainText('Mississippi Documentation');
   });
 
   test('GitHub link is present in navbar', async ({ page }) => {
@@ -53,7 +53,7 @@ test.describe('Docusaurus Site', () => {
 
   test('docs navigation elements exist', async ({ page }) => {
     await page.goto('/');
-    await page.click('text=Get Started');
+    await page.click('text=View Documentation');
     await page.waitForURL(/\/docs\//);
     
     // Just check that we can find some navigation element (sidebar or nav menu)

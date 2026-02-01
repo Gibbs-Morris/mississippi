@@ -34,7 +34,7 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 ### Reducers (Aggregate State)
 
-- Reducers **MUST** inherit from `ReducerBase<TEvent, TAggregate>` and be `internal sealed class`. Why: Provides type-safe reduction and immutability enforcement.
+- Reducers **MUST** inherit from `EventReducerBase<TEvent, TAggregate>` and be `internal sealed class`. Why: Provides type-safe reduction and immutability enforcement.
 - Reducer classes **MUST** be named `{Event}Reducer` (e.g., `ChannelCreatedReducer`); reducers **MUST** return a new instance using `with` expressions or record constructors. Why: Immutability is enforced at runtime.
 - Reducers **MUST NOT** mutate the input state; the base class throws if the same instance is returned. Why: Event sourcing requires pure functions.
 
@@ -45,7 +45,7 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 ### Projection Reducers
 
-- Projection reducers **MUST** inherit from `ReducerBase<TEvent, TProjection>` and be `internal sealed class`. Why: Same dispatch pattern as aggregate reducers.
+- Projection reducers **MUST** inherit from `EventReducerBase<TEvent, TProjection>` and be `internal sealed class`. Why: Same dispatch pattern as aggregate reducers.
 - Projection reducer classes **MUST** be named `{Event}ProjectionReducer` to distinguish from aggregate reducers (e.g., `UserRegisteredProjectionReducer` vs `UserRegisteredReducer`). Why: Multiple reducers may consume the same event.
 - Projection reducers **SHOULD** live under `Projections/{ProjectionName}/Reducers/`. Why: Clear organization by projection type.
 
@@ -118,6 +118,8 @@ Developers implementing domain models using Mississippi event sourcing in sample
 
 ## References
 
+- Coding discipline (samples): `.github/instructions/coding-discipline.instructions.md`
+- Framework patterns (src): `.github/instructions/framework-patterns.instructions.md`
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - Orleans serialization: `.github/instructions/orleans-serialization.instructions.md`
 - Storage naming: `.github/instructions/storage-type-naming.instructions.md`
