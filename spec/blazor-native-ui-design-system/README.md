@@ -3,8 +3,8 @@
 ## Status
 
 - Status: Draft
-- Size: Large (initial guess)
-- Approval checkpoint: TBD
+- Size: Large (verified)
+- Approval checkpoint: Yes (public API additions for new/expanded component library)
 
 ## Index
 
