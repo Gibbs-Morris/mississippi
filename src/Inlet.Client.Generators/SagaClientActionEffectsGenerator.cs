@@ -24,6 +24,8 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
 
     private const string GeneratorName = "SagaClientActionEffectsGenerator";
 
+    private const string InheritDocComment = "/// <inheritdoc />";
+
     private const string ISagaDefinitionFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaDefinition";
 
     /// <summary>
@@ -114,26 +116,26 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine();
 
         // SagaRoute property
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritDocComment);
         sb.AppendLine($"protected override string SagaRoute => \"{saga.SagaRouteKebab}\";");
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritDocComment);
         sb.AppendLine($"protected override object CreateRequestBody({actionName} action) => Mapper.Map(action);");
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritDocComment);
         sb.AppendLine(
             "protected override IAction CreateExecutingAction(Guid sagaId, string sagaType, DateTimeOffset timestamp) =>");
         sb.IncreaseIndent();
         sb.AppendLine($"{executingActionName}.Create(sagaId, sagaType, timestamp);");
         sb.DecreaseIndent();
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritDocComment);
         sb.AppendLine("protected override IAction CreateSucceededAction(Guid sagaId, DateTimeOffset timestamp) =>");
         sb.IncreaseIndent();
         sb.AppendLine($"{succeededActionName}.Create(sagaId, timestamp);");
         sb.DecreaseIndent();
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritDocComment);
         sb.AppendLine(
             "protected override IAction CreateFailedAction(Guid sagaId, string? errorCode, string errorMessage, DateTimeOffset timestamp) =>");
         sb.IncreaseIndent();
