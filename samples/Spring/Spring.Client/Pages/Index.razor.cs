@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 
+using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
@@ -9,6 +10,7 @@ using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Selectors;
 using Spring.Client.Features.BankAccountAggregate.State;
 using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.BankAccountBalance.Selectors;
 using Spring.Client.Features.BankAccountLedger.Dtos;
 using Spring.Client.Features.EntitySelection;
 using Spring.Client.Features.EntitySelection.Selectors;
@@ -58,15 +60,6 @@ public sealed partial class Index
     private decimal withdrawAmount;
 
     /// <summary>
-    ///     Gets the error message from the aggregate state.
-    /// </summary>
-    /// <remarks>
-    ///     Demonstrates using an aggregate-level selector for derived state.
-    /// </remarks>
-    private string? AggregateErrorMessage =>
-        Select<BankAccountAggregateState, string?>(BankAccountAggregateSelectors.GetErrorMessage);
-
-    /// <summary>
     ///     Gets the projection data from the InletStore.
     /// </summary>
     private BankAccountBalanceProjectionDto? BalanceProjection =>
@@ -88,38 +81,22 @@ public sealed partial class Index
     /// <summary>
     ///     Gets error message from aggregate state or projection error.
     /// </summary>
-    private string? ErrorMessage
-    {
-        get
-        {
-            if (!string.IsNullOrEmpty(AggregateErrorMessage))
-            {
-                return AggregateErrorMessage;
-            }
-
-            if (!string.IsNullOrEmpty(SelectedEntityId))
-            {
-                Exception? projectionError = GetProjectionError<BankAccountBalanceProjectionDto>(SelectedEntityId);
-                return projectionError?.Message;
-            }
-
-            return null;
-        }
-    }
+    /// <remarks>
+    ///     Demonstrates using a composite selector that combines aggregate and projection state.
+    /// </remarks>
+    private string? ErrorMessage =>
+        Select<BankAccountAggregateState, ProjectionsFeatureState, string?>(
+            BankAccountCompositeSelectors.GetErrorMessage(SelectedEntityId));
 
     /// <summary>
     ///     Gets a value indicating whether the account is open (from projection).
     /// </summary>
-    private bool IsAccountOpen => BalanceProjection?.IsOpen is true;
-
-    /// <summary>
-    ///     Gets a value indicating whether any command is currently executing.
-    /// </summary>
     /// <remarks>
-    ///     Demonstrates using an aggregate-level selector for derived state.
+    ///     Demonstrates using a factory selector for entity-keyed projection state.
     /// </remarks>
-    private bool IsAggregateExecuting =>
-        Select<BankAccountAggregateState, bool>(BankAccountAggregateSelectors.IsExecuting);
+    private bool IsAccountOpen =>
+        !string.IsNullOrEmpty(SelectedEntityId) &&
+        Select(BankAccountProjectionSelectors.IsAccountOpen(SelectedEntityId));
 
     /// <summary>
     ///     Gets a value indicating whether the SignalR connection is not established.
@@ -132,10 +109,12 @@ public sealed partial class Index
     /// <summary>
     ///     Gets a value indicating whether any operation is in progress.
     /// </summary>
+    /// <remarks>
+    ///     Demonstrates using a composite selector for cross-state derived values.
+    /// </remarks>
     private bool IsExecutingOrLoading =>
-        IsAggregateExecuting ||
-        (!string.IsNullOrEmpty(SelectedEntityId) &&
-         IsProjectionLoading<BankAccountBalanceProjectionDto>(SelectedEntityId));
+        Select<BankAccountAggregateState, ProjectionsFeatureState, bool>(
+            BankAccountCompositeSelectors.IsOperationInProgress(SelectedEntityId));
 
     /// <summary>
     ///     Gets a value indicating whether the last command succeeded.

@@ -12,30 +12,77 @@ description: Selectors derive computed values from feature states with optional 
 
 Selectors are pure functions that derive computed values from store state. They encapsulate state access logic, promote reuse, and can be memoized to avoid redundant recomputation when state hasn't changed.
 
+:::tip Opinionated Guidance
+Mississippi provides **opinionated patterns** for when to use each approach. Following these patterns ensures consistent, maintainable, and testable code across your application.
+:::
+
+## When to Use What: The Decision Matrix
+
+Mississippi provides three ways to access and derive state. Each has a specific purpose:
+
+| Access Pattern | When to Use | Example |
+|----------------|-------------|---------|
+| **InletComponent Helpers** | Raw projection data/metadata access | `GetProjection<T>(id)` |
+| **Selector Classes** | Derived/computed values | `Select(AccountSelectors.IsOpen(id))` |
+| **Cross-State Selectors** | Combining multiple feature states | `Select(CompositeSelectors.IsOperationInProgress(id))` |
+
+### ✅ DO Use InletComponent Helpers For
+
+- Getting raw projection data: `GetProjection<BankAccountDto>(entityId)`
+- Checking raw metadata: `IsProjectionLoading<T>(entityId)`, `IsProjectionConnected<T>(entityId)`
+- Getting raw errors: `GetProjectionError<T>(entityId)`
+
+These helpers provide clean, ergonomic access to projection state without requiring selectors.
+
+### ✅ DO Use Selectors For
+
+- **Derived values**: `IsAccountOpen`, `HasSufficientBalance`, `FormattedBalance`
+- **Cross-state logic**: Combining aggregate state with projection state
+- **Reusable computations**: Logic needed in multiple components
+- **Expensive computations**: Values that benefit from memoization
+
+### ❌ DON'T
+
+- Write inline lambdas in components
+- Compute derived values directly in component properties
+- Mix helper calls with inline logic
+- Create selectors that only wrap raw access (use helpers instead)
+
 ## Why Use Selectors?
 
-Without selectors, components access state directly and compute derived values inline:
+### The Problem: Scattered Logic
+
+Without selectors, components compute derived values inline:
 
 ```csharp
-// Scattered logic across components
-private bool HasSelectedEntity => GetState<EntitySelectionState>().EntityId != null;
-private bool IsDisconnected => GetState<SignalRConnectionState>().Status != SignalRConnectionStatus.Connected;
+// ❌ BAD: Scattered logic, hard to test, duplicated across components
+private bool IsAccountOpen => BalanceProjection?.IsOpen is true;
+private bool IsExecutingOrLoading =>
+    IsAggregateExecuting ||
+    (!string.IsNullOrEmpty(SelectedEntityId) &&
+     IsProjectionLoading<BankAccountBalanceProjectionDto>(SelectedEntityId));
 ```
 
-With selectors, the logic lives in one place:
+### The Solution: Centralized Selectors
 
 ```csharp
-// Centralized, reusable, testable
-private bool HasSelectedEntity => Select<EntitySelectionState, bool>(EntitySelectionSelectors.HasEntitySelected);
-private bool IsDisconnected => Select<SignalRConnectionState, bool>(SignalRConnectionSelectors.IsDisconnected);
+// ✅ GOOD: Centralized, reusable, testable
+private bool IsAccountOpen =>
+    Select(BankAccountProjectionSelectors.IsAccountOpen(SelectedEntityId));
+private bool IsExecutingOrLoading =>
+    Select(BankAccountCompositeSelectors.IsOperationInProgress(SelectedEntityId));
 ```
 
-| Without Selectors | With Selectors |
-|-------------------|----------------|
-| Logic scattered across components | Logic centralized in selector classes |
-| Duplicate derivation code | Single source of truth |
-| Harder to unit test | Pure functions, easy to test |
-| No built-in caching | Memoization available |
+### Benefits Comparison
+
+| Aspect | Inline Logic | Selectors |
+|--------|-------------|-----------|
+| **Testability** | Requires component instantiation | Pure functions, trivial to test |
+| **Reusability** | Copy-paste across components | Import and use anywhere |
+| **Maintainability** | Update every component | Update one selector |
+| **Performance** | Recomputes every render | Memoization available |
+| **Debugging** | Logic buried in UI | Isolated, inspectable |
+| **Code Review** | Mixed UI + business logic | Separated concerns |
 
 ## Core API
 
@@ -149,6 +196,175 @@ public static class DashboardSelectors
 // Usage
 private bool CanSubmit => Select<EntitySelectionState, SignalRConnectionState, bool>(
     DashboardSelectors.CanSubmit);
+```
+
+## Projection Selectors: The Factory Pattern
+
+### The Challenge
+
+Projections are **entity-keyed**: accessing a projection requires both the feature state AND an entity ID:
+
+```csharp
+// Standard selectors only receive the state
+Func<ProjectionsFeatureState, bool> selector = ???;  // Where does entityId come from?
+```
+
+### The Solution: Factory Selectors
+
+Factory selectors are methods that **return a selector function** after closing over the entity ID:
+
+```csharp
+public static class BankAccountProjectionSelectors
+{
+    /// <summary>
+    ///     Creates a selector that checks if the bank account is open.
+    /// </summary>
+    public static Func<ProjectionsFeatureState, bool> IsAccountOpen(string entityId)
+    {
+        ArgumentNullException.ThrowIfNull(entityId);
+        return state =>
+        {
+            ArgumentNullException.ThrowIfNull(state);
+            return state.GetProjection<BankAccountBalanceProjectionDto>(entityId)?.IsOpen is true;
+        };
+    }
+
+    /// <summary>
+    ///     Creates a selector that returns the account balance.
+    /// </summary>
+    public static Func<ProjectionsFeatureState, decimal> GetBalance(string entityId)
+    {
+        ArgumentNullException.ThrowIfNull(entityId);
+        return state =>
+        {
+            ArgumentNullException.ThrowIfNull(state);
+            return state.GetProjection<BankAccountBalanceProjectionDto>(entityId)?.Balance ?? 0m;
+        };
+    }
+
+    /// <summary>
+    ///     Creates a selector that checks if the projection is loading.
+    /// </summary>
+    public static Func<ProjectionsFeatureState, bool> IsLoading(string entityId)
+    {
+        ArgumentNullException.ThrowIfNull(entityId);
+        return state =>
+        {
+            ArgumentNullException.ThrowIfNull(state);
+            return state.IsProjectionLoading<BankAccountBalanceProjectionDto>(entityId);
+        };
+    }
+}
+```
+
+**Source**: [`BankAccountProjectionSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountBalance/Selectors/BankAccountProjectionSelectors.cs)
+
+### Using Factory Selectors in Components
+
+```csharp
+public partial class AccountPage : InletComponent
+{
+    private string? SelectedEntityId => 
+        Select<EntitySelectionState, string?>(EntitySelectionSelectors.GetEntityId);
+
+    // Factory selector - creates closure over entityId
+    private bool IsAccountOpen => 
+        string.IsNullOrEmpty(SelectedEntityId)
+            ? false
+            : Select(BankAccountProjectionSelectors.IsAccountOpen(SelectedEntityId));
+
+    private decimal Balance =>
+        string.IsNullOrEmpty(SelectedEntityId)
+            ? 0m
+            : Select(BankAccountProjectionSelectors.GetBalance(SelectedEntityId));
+}
+```
+
+### When to Use Factory Selectors vs InletComponent Helpers
+
+| Scenario | Use This | Why |
+|----------|----------|-----|
+| Raw projection data | `GetProjection<T>(id)` | Simpler, no selector overhead |
+| Raw metadata | `IsProjectionLoading<T>(id)` | Direct access is cleaner |
+| Derived value from projection | `Select(Selectors.IsOpen(id))` | Reusable, testable logic |
+| Cross-state logic | Composite selector | Combines multiple feature states |
+
+## Composite Selectors: Cross-State Derivation
+
+When derived values depend on **multiple feature states**, use composite selectors:
+
+```csharp
+public static class BankAccountCompositeSelectors
+{
+    /// <summary>
+    ///     Checks if any operation (command or projection load) is in progress.
+    /// </summary>
+    public static Func<BankAccountAggregateState, ProjectionsFeatureState, bool> IsOperationInProgress(
+        string? entityId)
+    {
+        return (aggregateState, projectionsState) =>
+        {
+            ArgumentNullException.ThrowIfNull(aggregateState);
+            ArgumentNullException.ThrowIfNull(projectionsState);
+            
+            if (aggregateState.IsExecuting)
+            {
+                return true;
+            }
+
+            if (string.IsNullOrEmpty(entityId))
+            {
+                return false;
+            }
+
+            return projectionsState.IsProjectionLoading<BankAccountBalanceProjectionDto>(entityId);
+        };
+    }
+
+    /// <summary>
+    ///     Gets the most relevant error message from aggregate or projection state.
+    /// </summary>
+    public static Func<BankAccountAggregateState, ProjectionsFeatureState, string?> GetErrorMessage(
+        string? entityId)
+    {
+        return (aggregateState, projectionsState) =>
+        {
+            ArgumentNullException.ThrowIfNull(aggregateState);
+            ArgumentNullException.ThrowIfNull(projectionsState);
+
+            // Aggregate errors take priority (command failures are more actionable)
+            if (!string.IsNullOrEmpty(aggregateState.ErrorMessage))
+            {
+                return aggregateState.ErrorMessage;
+            }
+
+            // Fall back to projection errors
+            if (!string.IsNullOrEmpty(entityId))
+            {
+                return projectionsState
+                    .GetProjectionError<BankAccountBalanceProjectionDto>(entityId)?.Message;
+            }
+
+            return null;
+        };
+    }
+}
+```
+
+**Source**: [`BankAccountCompositeSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountCompositeSelectors.cs)
+
+### Using Composite Selectors
+
+```csharp
+// Two-state selector
+private bool IsOperationInProgress =>
+    Select<BankAccountAggregateState, ProjectionsFeatureState, bool>(
+        BankAccountCompositeSelectors.IsOperationInProgress(SelectedEntityId));
+
+// Unified error handling across state slices
+private string? ErrorMessage =>
+    Select<BankAccountAggregateState, ProjectionsFeatureState, string?>(
+        BankAccountCompositeSelectors.GetErrorMessage(SelectedEntityId));
 ```
 
 ## Memoization
@@ -349,6 +565,87 @@ public void MemoizedSelector_WithSameReference_ReturnsCachedResult()
 }
 ```
 
+### Testing Factory Selectors
+
+Factory selectors are just as easy to test—invoke the factory, then test the returned function:
+
+```csharp
+[Fact]
+public void IsAccountOpen_WhenProjectionExists_ReturnsOpenStatus()
+{
+    // Arrange
+    var projection = new BankAccountBalanceProjectionDto { IsOpen = true };
+    var state = new ProjectionsFeatureState()
+        .WithEntry("account-123", new ProjectionEntry<BankAccountBalanceProjectionDto>(
+            projection, Version: 1, IsLoading: false, IsConnected: true, Error: null));
+
+    // Get the selector function
+    Func<ProjectionsFeatureState, bool> selector = 
+        BankAccountProjectionSelectors.IsAccountOpen("account-123");
+
+    // Act
+    bool result = selector(state);
+
+    // Assert
+    Assert.True(result);
+}
+
+[Fact]
+public void IsAccountOpen_WhenProjectionNotLoaded_ReturnsFalse()
+{
+    // Arrange
+    var state = new ProjectionsFeatureState(); // Empty
+
+    // Get the selector function
+    Func<ProjectionsFeatureState, bool> selector = 
+        BankAccountProjectionSelectors.IsAccountOpen("account-123");
+
+    // Act
+    bool result = selector(state);
+
+    // Assert
+    Assert.False(result);
+}
+```
+
+### Testing Composite Selectors
+
+```csharp
+[Fact]
+public void IsOperationInProgress_WhenAggregateExecuting_ReturnsTrue()
+{
+    // Arrange
+    var aggregateState = new BankAccountAggregateState { IsExecuting = true };
+    var projectionsState = new ProjectionsFeatureState();
+
+    var selector = BankAccountCompositeSelectors.IsOperationInProgress("account-123");
+
+    // Act
+    bool result = selector(aggregateState, projectionsState);
+
+    // Assert
+    Assert.True(result);
+}
+
+[Fact]
+public void IsOperationInProgress_WhenProjectionLoading_ReturnsTrue()
+{
+    // Arrange
+    var aggregateState = new BankAccountAggregateState { IsExecuting = false };
+    var projectionsState = new ProjectionsFeatureState()
+        .WithEntry("account-123", new ProjectionEntry<BankAccountBalanceProjectionDto>(
+            null, Version: -1, IsLoading: true, IsConnected: true, Error: null));
+
+    var selector = BankAccountCompositeSelectors.IsOperationInProgress("account-123");
+
+    // Act
+    bool result = selector(aggregateState, projectionsState);
+
+    // Assert
+    Assert.True(result);
+}
+```
+
 ## Best Practices
 
 ### DO
@@ -358,22 +655,108 @@ public void MemoizedSelector_WithSameReference_ReturnsCachedResult()
 - ✅ Use meaningful names that describe the derived value
 - ✅ Co-locate selectors with the feature state they derive from
 - ✅ Memoize expensive computations
+- ✅ Use factory selectors for entity-keyed projections
+- ✅ Use composite selectors for cross-state logic
+- ✅ Handle null entity IDs gracefully (return defaults)
 
 ### DON'T
 
+- ❌ Write inline lambdas in components
+- ❌ Compute derived values in component properties without selectors
 - ❌ Access services or external state in selectors
 - ❌ Modify input state objects
 - ❌ Use selectors for side effects (use effects instead)
 - ❌ Over-memoize simple property access
+- ❌ Create selectors that only wrap raw access (use helpers instead)
+
+## Performance Considerations
+
+### When Selectors Improve Performance
+
+| Scenario | Performance Impact | Recommendation |
+|----------|-------------------|----------------|
+| Simple property access | Neutral | Use helpers or selectors |
+| Computed values (formatting, math) | Slight improvement | Use selectors |
+| Filtering/sorting collections | Significant improvement | Use memoized selectors |
+| Multiple components using same logic | Caching wins | Use memoized selectors |
+
+### When to Memoize
+
+```mermaid
+flowchart TD
+    A[Is the computation expensive?] -->|Yes| B[Memoize]
+    A -->|No| C[Is it called frequently?]
+    C -->|Yes, many times per render| B
+    C -->|No| D[Skip memoization]
+    
+    style B fill:#50c878,color:#fff
+    style D fill:#f4a261,color:#fff
+```
+
+:::tip Performance Rule of Thumb
+
+- **Simple selectors** (property access, boolean checks): No memoization needed
+- **Medium selectors** (string formatting, simple math): Memoization optional
+- **Complex selectors** (LINQ, grouping, sorting): Always memoize
+
+:::
+
+## Maintainability Guidelines
+
+### Selector Organization
+
+Organize selectors by feature, co-located with the state they derive from:
+
+```text
+Features/
+├── BankAccountAggregate/
+│   ├── State/
+│   │   └── BankAccountAggregateState.cs
+│   └── Selectors/
+│       ├── BankAccountAggregateSelectors.cs    # Single-state
+│       └── BankAccountCompositeSelectors.cs    # Cross-state
+├── BankAccountBalance/
+│   ├── Dtos/
+│   │   └── BankAccountBalanceProjectionDto.cs
+│   └── Selectors/
+│       └── BankAccountProjectionSelectors.cs   # Factory selectors
+└── EntitySelection/
+    ├── EntitySelectionState.cs
+    └── Selectors/
+        └── EntitySelectionSelectors.cs
+```
+
+### Naming Conventions
+
+| Pattern | Naming | Example |
+|---------|--------|---------|
+| Boolean getter | `Is*`, `Has*`, `Can*` | `IsAccountOpen`, `HasError` |
+| Value getter | `Get*` | `GetBalance`, `GetErrorMessage` |
+| Composite | `*CompositeSelectors` | `BankAccountCompositeSelectors` |
+| Factory | Same as regular, returns `Func<>` | `IsAccountOpen(entityId)` |
 
 ## Repository Examples
 
 ### Spring Sample
 
-The [Spring sample](https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring/Spring.Client) demonstrates selector patterns:
+The [Spring sample](https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring/Spring.Client) demonstrates all selector patterns:
 
-- [`EntitySelectionSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/Selectors/EntitySelectionSelectors.cs) — Entity selection state selectors
-- [`Index.razor.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs) — Using selectors in components
+**Single-State Selectors:**
+
+- [`EntitySelectionSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/Selectors/EntitySelectionSelectors.cs) — Entity selection state
+- [`BankAccountAggregateSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountAggregateSelectors.cs) — Aggregate command state
+
+**Factory Selectors (Entity-Keyed):**
+
+- [`BankAccountProjectionSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountBalance/Selectors/BankAccountProjectionSelectors.cs) — Projection state
+
+**Composite Selectors (Cross-State):**
+
+- [`BankAccountCompositeSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountCompositeSelectors.cs) — Aggregate + Projection
+
+**Usage in Components:**
+
+- [`Index.razor.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs) — All patterns in action
 
 ## See Also
 
