@@ -115,6 +115,12 @@ private bool IsDisconnected => GetState<SignalRConnectionState>().Status != Sign
 private bool IsDisconnected => Select<SignalRConnectionState, bool>(SignalRConnectionSelectors.IsDisconnected);
 ```
 
+:::tip Testing Advantage
+Extracting logic into selectors makes business rules **trivially testable** as pure functions—no component rendering, mocking, or DI setup required. For enterprise applications requiring high test coverage, selectors are the primary mechanism for testing client-side logic.
+
+See [Why Use Selectors?](selectors.md#why-use-selectors) for detailed guidance on achieving high coverage without complex UI tests.
+:::
+
 See [Selectors](selectors.md) for detailed patterns and memoization.
 
 ## Lifecycle
