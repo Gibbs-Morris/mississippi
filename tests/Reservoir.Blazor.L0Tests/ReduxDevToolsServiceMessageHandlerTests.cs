@@ -46,7 +46,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     )
     {
         registrations ??= [new TestFeatureStateRegistration()];
-        return new(registrations, Array.Empty<IMiddleware>());
+        return new(registrations, Array.Empty<IMiddleware>(), TimeProvider.System);
     }
 
     private ReduxDevToolsService CreateService(

@@ -54,9 +54,11 @@ public static class InletClientRegistrations
         services.AddFeatureState<ProjectionsFeatureState>();
 
         // Register the Store with DI-resolved components
+        services.TryAddSingleton(TimeProvider.System);
         services.TryAddScoped<IStore>(sp => new Store(
             sp.GetServices<IFeatureStateRegistration>(),
-            sp.GetServices<IMiddleware>()));
+            sp.GetServices<IMiddleware>(),
+            sp.GetRequiredService<TimeProvider>()));
 
         // Register the composite InletStore (wraps Store)
         services.TryAddScoped<IInletStore>(sp => new CompositeInletStore(sp.GetRequiredService<IStore>()));

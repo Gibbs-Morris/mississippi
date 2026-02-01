@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
@@ -16,5 +18,6 @@ namespace Mississippi.Reservoir.Abstractions.Events;
 ///         the store handles them internally.
 ///     </para>
 /// </remarks>
+/// <param name="Timestamp">The UTC timestamp when this event was created.</param>
 /// <param name="Action">The action about to be processed.</param>
-public sealed record ActionDispatchingEvent(IAction Action) : StoreEventBase;
+public sealed record ActionDispatchingEvent(DateTimeOffset Timestamp, IAction Action) : StoreEventBase(Timestamp);

@@ -58,9 +58,11 @@ public static IServiceCollection AddReservoir(
     this IServiceCollection services
 )
 {
+    services.TryAddSingleton(TimeProvider.System);
     services.TryAddScoped<IStore>(sp => new Store(
         sp.GetServices<IFeatureStateRegistration>(),
-        sp.GetServices<IMiddleware>()));
+        sp.GetServices<IMiddleware>(),
+        sp.GetRequiredService<TimeProvider>()));
     return services;
 }
 ```

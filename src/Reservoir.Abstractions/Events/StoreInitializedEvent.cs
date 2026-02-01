@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 
@@ -16,5 +17,9 @@ namespace Mississippi.Reservoir.Abstractions.Events;
 ///         application state.
 ///     </para>
 /// </remarks>
+/// <param name="Timestamp">The UTC timestamp when this event was created.</param>
 /// <param name="InitialSnapshot">A snapshot of all feature states at initialization.</param>
-public sealed record StoreInitializedEvent(IReadOnlyDictionary<string, object> InitialSnapshot) : StoreEventBase;
+public sealed record StoreInitializedEvent(
+    DateTimeOffset Timestamp,
+    IReadOnlyDictionary<string, object> InitialSnapshot
+) : StoreEventBase(Timestamp);

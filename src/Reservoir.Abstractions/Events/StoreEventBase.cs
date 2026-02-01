@@ -17,10 +17,9 @@ namespace Mississippi.Reservoir.Abstractions.Events;
 ///         perform long-running operations in their handlers to avoid blocking dispatch.
 ///     </para>
 /// </remarks>
-public abstract record StoreEventBase
-{
-    /// <summary>
-    ///     Gets the UTC timestamp when this event was created.
-    /// </summary>
-    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
-}
+/// <param name="Timestamp">
+///     The UTC timestamp when this event was created. Provided by the store via
+///     injected <see cref="TimeProvider" /> to support deterministic testing with
+///     <c>FakeTimeProvider</c>.
+/// </param>
+public abstract record StoreEventBase(DateTimeOffset Timestamp);
