@@ -1,0 +1,106 @@
+.rf-entity-detail-page__loading,
+.rf-entity-detail-page__not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rf-spacing-md);
+    padding: var(--rf-spacing-2xl);
+    color: var(--rf-color-text-secondary);
+    min-height: 12rem;
+}
+
+.rf-entity-detail-page__spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid var(--rf-color-surface-border);
+    border-top-color: var(--rf-color-accent-primary);
+    border-radius: 50%;
+    animation: rf-entity-detail-spin 1s linear infinite;
+}
+
+@keyframes rf-entity-detail-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.rf-entity-detail-page__loading-text {
+    font-size: var(--rf-font-size-sm);
+}
+
+.rf-entity-detail-page__layout {
+    display: flex;
+    gap: var(--rf-spacing-lg);
+    min-height: 0;
+    flex: 1;
+}
+
+.rf-entity-detail-page__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--rf-spacing-lg);
+}
+
+.rf-entity-detail-page__header {
+    padding-bottom: var(--rf-spacing-md);
+    border-bottom: 1px solid var(--rf-color-surface-border);
+}
+
+.rf-entity-detail-page__title {
+    margin: 0 0 var(--rf-spacing-xs) 0;
+    font-family: var(--rf-font-family-display);
+    font-size: var(--rf-font-size-2xl);
+    font-weight: var(--rf-font-weight-semibold);
+    color: var(--rf-color-text-primary);
+}
+
+.rf-entity-detail-page__subtitle {
+    margin: 0;
+    font-size: var(--rf-font-size-md);
+    color: var(--rf-color-text-secondary);
+}
+
+.rf-entity-detail-page__content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.rf-entity-detail-page__content--editing {
+    background: var(--rf-color-surface-subtle);
+    padding: var(--rf-spacing-md);
+    border-radius: var(--rf-radius-md);
+}
+
+.rf-entity-detail-page__sidebar {
+    width: 20rem;
+    flex-shrink: 0;
+}
+
+.rf-entity-detail-page__related {
+    margin-top: var(--rf-spacing-lg);
+    padding-top: var(--rf-spacing-lg);
+    border-top: 1px solid var(--rf-color-surface-border);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .rf-entity-detail-page__layout {
+        flex-direction: column;
+    }
+
+    .rf-entity-detail-page__sidebar {
+        width: 100%;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-entity-detail-page__spinner {
+        animation: none;
+        opacity: 0.7;
+    }
+}

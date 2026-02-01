@@ -1,0 +1,336 @@
+@namespace Refraction.Pages.Templates
+@inherits StoreComponent
+@typeparam TEntity where TEntity : class
+@using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Reservoir.Blazor
+@using Refraction.Components.Molecules
+@using Refraction.Components.Organisms
+@using Refraction.Components.Templates
+
+<Shell Class="@GetCssClass()"
+       Style="@Style"
+       @attributes="AdditionalAttributes">
+    
+    <NavRailContent>
+        @if (NavRailContent != null)
+        {
+            @NavRailContent
+        }
+    </NavRailContent>
+    
+    <CommandBarContent>
+        @if (CommandBarContent != null)
+        {
+            @CommandBarContent
+        }
+        else
+        {
+            @if (ShowEditButton && !IsEditing)
+            {
+                <ActionChip Label="Edit"
+                            Variant="ActionChipVariant.Default"
+                            IsDisabled="@IsLoading"
+                            OnClick="HandleEdit" />
+            }
+            @if (ShowEditButton && IsEditing)
+            {
+                <ActionChip Label="Cancel"
+                            Variant="ActionChipVariant.Default"
+                            IsDisabled="@IsSaving"
+                            OnClick="HandleCancelEdit" />
+                <ActionChip Label="@(IsSaving ? "Saving..." : "Save")"
+                            Variant="ActionChipVariant.Primary"
+                            IsDisabled="@IsSaving"
+                            OnClick="HandleSave" />
+            }
+            @if (ShowDeleteButton)
+            {
+                <ActionChip Label="Delete"
+                            Variant="ActionChipVariant.Ghost"
+                            IsDisabled="@(IsLoading || IsEditing)"
+                            OnClick="HandleDelete" />
+            }
+        }
+    </CommandBarContent>
+    
+    <BreadcrumbContent>
+        @if (BreadcrumbItems?.Any() == true)
+        {
+            <Breadcrumb Items="@BreadcrumbItems" />
+        }
+    </BreadcrumbContent>
+    
+    <ChildContent>
+        @if (IsLoading && !HasEntity())
+        {
+            <div class="rf-entity-detail-page__loading" role="status" aria-label="Loading">
+                <div class="rf-entity-detail-page__spinner"></div>
+                <span class="rf-entity-detail-page__loading-text">@LoadingText</span>
+            </div>
+        }
+        else if (!HasEntity())
+        {
+            <div class="rf-entity-detail-page__not-found">
+                @if (NotFoundContent != null)
+                {
+                    @NotFoundContent
+                }
+                else
+                {
+                    <span>@NotFoundText</span>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="rf-entity-detail-page__layout">
+                <Lens Variant="LensVariant.Elevated"
+                      Class="rf-entity-detail-page__main">
+                    
+                    @if (HeaderContent != null && Entity != null)
+                    {
+                        <header class="rf-entity-detail-page__header">
+                            @HeaderContent(Entity)
+                        </header>
+                    }
+                    else if (!string.IsNullOrEmpty(EntityTitle))
+                    {
+                        <header class="rf-entity-detail-page__header">
+                            <h1 class="rf-entity-detail-page__title">@EntityTitle</h1>
+                            @if (!string.IsNullOrEmpty(EntitySubtitle))
+                            {
+                                <p class="rf-entity-detail-page__subtitle">@EntitySubtitle</p>
+                            }
+                        </header>
+                    }
+                    
+                    <div class="rf-entity-detail-page__content @(IsEditing ? "rf-entity-detail-page__content--editing" : "")">
+                        @if (IsEditing && EditContent != null && Entity != null)
+                        {
+                            @EditContent(Entity)
+                        }
+                        else if (ViewContent != null && Entity != null)
+                        {
+                            @ViewContent(Entity)
+                        }
+                    </div>
+                    
+                </Lens>
+            </div>
+            
+            @if (RelatedContent != null && Entity != null)
+            {
+                <section class="rf-entity-detail-page__related">
+                    @RelatedContent(Entity)
+                </section>
+            }
+        }
+    </ChildContent>
+    
+    <AsideContent>
+        @if (HasEntity() && SidebarContent != null && Entity != null)
+        {
+            <Lens Variant="LensVariant.Card"
+                  Class="rf-entity-detail-page__sidebar">
+                @SidebarContent(Entity)
+            </Lens>
+        }
+    </AsideContent>
+    
+</Shell>
+
+@code {
+    /// <summary>
+    /// Gets or sets the breadcrumb items.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<BreadcrumbItem>? BreadcrumbItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the nav rail content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? NavRailContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the entity to display.
+    /// </summary>
+    [Parameter]
+    public TEntity? Entity { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the entity is loading.
+    /// </summary>
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the entity is being edited.
+    /// </summary>
+    [Parameter]
+    public bool IsEditing { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when editing state changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsEditingChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the entity is being saved.
+    /// </summary>
+    [Parameter]
+    public bool IsSaving { get; set; }
+
+    /// <summary>
+    /// Gets or sets the entity display title.
+    /// </summary>
+    [Parameter]
+    public string? EntityTitle { get; set; }
+
+    /// <summary>
+    /// Gets or sets the entity display subtitle.
+    /// </summary>
+    [Parameter]
+    public string? EntitySubtitle { get; set; }
+
+    /// <summary>
+    /// Gets or sets the loading message text.
+    /// </summary>
+    [Parameter]
+    public string LoadingText { get; set; } = "Loading...";
+
+    /// <summary>
+    /// Gets or sets the not found message text.
+    /// </summary>
+    [Parameter]
+    public string NotFoundText { get; set; } = "Entity not found";
+
+    /// <summary>
+    /// Gets or sets whether to show the edit button.
+    /// </summary>
+    [Parameter]
+    public bool ShowEditButton { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to show the delete button.
+    /// </summary>
+    [Parameter]
+    public bool ShowDeleteButton { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the callback when edit is requested.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnEdit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when save is requested.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TEntity> OnSave { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when edit is cancelled.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancelEdit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when delete is requested.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TEntity> OnDelete { get; set; }
+
+    /// <summary>
+    /// Gets or sets the command bar content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? CommandBarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the entity header content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment<TEntity>? HeaderContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the entity view content (read-only mode).
+    /// </summary>
+    [Parameter]
+    public RenderFragment<TEntity>? ViewContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the entity edit content (edit mode).
+    /// </summary>
+    [Parameter]
+    public RenderFragment<TEntity>? EditContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sidebar content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment<TEntity>? SidebarContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the related items content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment<TEntity>? RelatedContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the not found content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? NotFoundContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string GetCssClass() => string.IsNullOrEmpty(Class) ? "rf-entity-detail-page" : $"rf-entity-detail-page {Class}";
+
+    private bool HasEntity() => Entity != null;
+
+    private async Task HandleEdit()
+    {
+        await IsEditingChanged.InvokeAsync(true);
+        await OnEdit.InvokeAsync();
+    }
+
+    private async Task HandleSave()
+    {
+        if (Entity != null)
+        {
+            await OnSave.InvokeAsync(Entity);
+        }
+    }
+
+    private async Task HandleCancelEdit()
+    {
+        await IsEditingChanged.InvokeAsync(false);
+        await OnCancelEdit.InvokeAsync();
+    }
+
+    private async Task HandleDelete()
+    {
+        if (Entity != null)
+        {
+            await OnDelete.InvokeAsync(Entity);
+        }
+    }
+}
