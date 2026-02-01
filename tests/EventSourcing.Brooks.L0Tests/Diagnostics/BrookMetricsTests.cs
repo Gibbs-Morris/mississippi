@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
+using System.Linq;
 
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Diagnostics;
@@ -325,6 +326,8 @@ public sealed class BrookMetricsTests
     [Fact]
     public void ZeroEventCountsAreNotRecorded()
     {
+        // Use unique brook name to isolate from other tests running in parallel
+        const string brookName = "ZeroCountTestBrook";
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (
@@ -344,7 +347,13 @@ public sealed class BrookMetricsTests
             _
         ) =>
         {
-            measurements.Add(new(instrument.Name, measurement, 0, new Dictionary<string, object?>()));
+            Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, object?> tag in tags)
+            {
+                tagMap[tag.Key] = tag.Value;
+            }
+
+            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.SetMeasurementEventCallback<double>((
             instrument,
@@ -353,7 +362,13 @@ public sealed class BrookMetricsTests
             _
         ) =>
         {
-            measurements.Add(new(instrument.Name, 0, measurement, new Dictionary<string, object?>()));
+            Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, object?> tag in tags)
+            {
+                tagMap[tag.Key] = tag.Value;
+            }
+
+            measurements.Add(new(instrument.Name, 0, measurement, tagMap));
         });
         listener.SetMeasurementEventCallback<int>((
             instrument,
@@ -362,17 +377,26 @@ public sealed class BrookMetricsTests
             _
         ) =>
         {
-            measurements.Add(new(instrument.Name, measurement, 0, new Dictionary<string, object?>()));
+            Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, object?> tag in tags)
+            {
+                tagMap[tag.Key] = tag.Value;
+            }
+
+            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
-        BrookKey brookKey = new("TestBrook", "entity-1");
+        BrookKey brookKey = new(brookName, "entity-1");
 
         // These should not emit metrics
         BrookMetrics.RecordWrite(brookKey, 0, 10);
         BrookMetrics.RecordRead(brookKey, 0, 5, "batch");
         BrookMetrics.RecordSliceFanOut(brookKey, 0);
 
-        // Only non-zero counts should be recorded
-        Assert.Empty(measurements);
+        // Filter by unique brook name to isolate from parallel tests - only our brook should have no metrics
+        bool hasOurBrookMeasurement = measurements.Any(m =>
+            m.Tags.TryGetValue("brook.name", out object? name) &&
+            ((string?)name == brookName));
+        Assert.False(hasOurBrookMeasurement, $"Expected no metrics for brook '{brookName}' but found some.");
     }
 }
