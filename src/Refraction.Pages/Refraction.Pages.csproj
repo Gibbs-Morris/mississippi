@@ -4,10 +4,11 @@
         Blazor-specific warning overrides:
         - BL0005: Allow setting component parameters outside of component (advanced composition patterns)
         - BL0006: Allow RenderTreeBuilder usage for performance-critical rendering
+        - S1144: False positive for Razor event handlers (@onclick, @onchange, etc.) - methods ARE used by generated Razor code
         These are justified for scene-level compositions that coordinate complex component hierarchies.
     -->
     <PropertyGroup>
-        <NoWarn>$(NoWarn);BL0005;BL0006</NoWarn>
+        <NoWarn>$(NoWarn);BL0005;BL0006;S1144</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,6 +20,7 @@
         <ProjectReference Include="..\Refraction\Refraction.csproj" />
         <ProjectReference Include="..\Refraction.Abstractions\Refraction.Abstractions.csproj" />
         <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+        <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
     </ItemGroup>
 
 </Project>
