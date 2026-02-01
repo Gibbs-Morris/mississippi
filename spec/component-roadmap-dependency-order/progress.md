@@ -1,0 +1,3 @@
+# Progress
+
+- 2026-02-01T00:00:00Z Initialized spec workspace.
