@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Abstractions.Events;
 using Mississippi.Reservoir.Abstractions.State;
 
 
@@ -73,6 +75,9 @@ public sealed class SelectorExtensionsTests : IDisposable
 
         private ThirdFeatureState thirdState = new();
 
+        /// <inheritdoc />
+        public IObservable<StoreEventBase> StoreEvents => EmptyObservable<StoreEventBase>.Instance;
+
         public void Dispatch(
             IAction action
         )
@@ -102,7 +107,7 @@ public sealed class SelectorExtensionsTests : IDisposable
 
         public void Dispose()
         {
-            // No resources to dispose
+            // Nothing to dispose in test store
         }
 
         public TState GetState<TState>()
@@ -126,10 +131,37 @@ public sealed class SelectorExtensionsTests : IDisposable
             throw new InvalidOperationException($"Unknown state type: {typeof(TState)}");
         }
 
+        /// <inheritdoc />
+        public IReadOnlyDictionary<string, object> GetStateSnapshot() =>
+            new Dictionary<string, object>
+            {
+                [TestFeatureState.FeatureKey] = testState,
+                [OtherFeatureState.FeatureKey] = otherState,
+                [ThirdFeatureState.FeatureKey] = thirdState,
+            };
+
         public IDisposable Subscribe(
             Action listener
         ) =>
             new NoOpDisposable();
+
+        /// <summary>
+        ///     A simple observable that never emits values (for test purposes).
+        /// </summary>
+        /// <typeparam name="T">The element type.</typeparam>
+        private sealed class EmptyObservable<T> : IObservable<T>
+        {
+            /// <summary>
+            ///     Gets the singleton instance.
+            /// </summary>
+            public static EmptyObservable<T> Instance { get; } = new();
+
+            /// <inheritdoc />
+            public IDisposable Subscribe(
+                IObserver<T> observer
+            ) =>
+                new NoOpDisposable();
+        }
 
         private sealed class NoOpDisposable : IDisposable
         {
