@@ -15,3 +15,5 @@
 - Q3: Is AnchorPoint listed after MooringLine in the current Phase 1/2 ordering?
 - Q4: Does Docusaurus build succeed after adding a Dependencies column to tables?
 - Q5: Are any components in Phase 9 dependent on Inlet/Reservoir (external dependencies)?
+- Q6: Do catalog entries omit dependency annotations today?
+- Q7: Are there any cross-phase dependencies that would require reordering within phases?
