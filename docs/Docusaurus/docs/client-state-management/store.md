@@ -131,7 +131,7 @@ Call `Dispatch` on the store to send actions through the pipeline.
 ([IStore.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L55-L64))
 
 Components inheriting `StoreComponent` can call its protected `Dispatch` helper.
-([StoreComponent.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L43-L51))
+([StoreComponent.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L48-L53))
 
 ### Dispatch Rules
 
@@ -146,14 +146,21 @@ Components inheriting `StoreComponent` can call its protected `Dispatch` helper.
 
 ## Reading State
 
-Use `GetState<TState>()` to retrieve the current value of a feature state. For example, the Spring sample reads from `EntitySelectionState` like this:
+Use `GetState<TState>()` to retrieve the current value of a feature state:
 
 ```csharp
 private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
 ```
 
-([Spring.Index](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs#L121-L125),
-[StoreComponent.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L76-L83))
+For derived values, prefer [selectors](selectors.md) to encapsulate logic. The Spring sample uses selectors for all state access:
+
+```csharp
+private string? SelectedEntityId => 
+    Select<EntitySelectionState, string?>(EntitySelectionSelectors.GetEntityId);
+```
+
+([Spring.Index](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs#L190),
+[StoreComponent.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L82-L84))
 
 ### GetState Rules
 
@@ -211,7 +218,7 @@ private void OnStoreChanged()
 }
 ```
 
-([StoreComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L22-L102))
+([StoreComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L22-L157))
 
 ## Store Lifecycle
 
@@ -421,3 +428,4 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 - [Middleware](./middleware.md) — Intercept and transform actions
 - [Feature State](./feature-state.md) — Organize state into modular slices
 - [StoreComponent](./store-component.md) — Blazor base component for store integration
+- [Selectors](./selectors.md) — Derive computed values from state
