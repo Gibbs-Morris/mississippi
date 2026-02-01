@@ -19,6 +19,7 @@
 - Mandatory Chart.js integration via Blazor-first components with strongly typed .NET models.
 - Built-in themes: Neon Blue (dark), Water Blue (light + dark), yin/yang approach across light/dark.
 - Existing Refraction UI component content is untrusted; remove/clear it to start fresh.
+- Expanded hologram design handoff: explicit z-layer model, palette hex values, typography (Space Grotesk/Inter/JetBrains Mono), motion primitives, and acceptance checklist.
 
 ## Sources to verify
 

@@ -53,6 +53,7 @@ flowchart LR
 - Encapsulate Chart.js via .NET configuration models.
 - Use atomic design as a structural taxonomy for docs and code.
 - Remove or clear existing Refraction component content to start fresh.
+- Adopt explicit z-layer model (Z0–Z6), palette hex values, typography (Space Grotesk/Inter/JetBrains Mono), motion primitives, and acceptance checklist from the latest handoff.
 
 ## Critical-path sequence (chart selection)
 

@@ -26,3 +26,4 @@ Design and implement an enterprise-grade, Blazor-native UI design system and com
 - Encapsulate Chart.js behind Blazor-first components.
 - Documentation-first deliverables under docs/Docusaurus/docs/refraction.
 - Treat existing Refraction UI component code as untrusted legacy and remove/clear it to start fresh.
+- Incorporate the expanded hologram UI handoff notes (z-layers, palette, typography, motion, and acceptance checklist) as mandatory design inputs.

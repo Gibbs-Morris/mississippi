@@ -11,14 +11,14 @@
 
 1. Documentation-first deliverables
 	- Create docs/Docusaurus/docs/refraction with _category_.json and required pages.
-	- Draft design language spec reflecting the authoritative hologram brief.
-	- Draft token/theming spec, including Opacity/Stroke/Glow/Depth/Motion values.
+	- Draft design language spec reflecting the authoritative hologram brief and expanded handoff (z-layers, palette hex values, typography, motion primitives, acceptance checklist).
+	- Draft token/theming spec, including Opacity/Stroke/Glow/Depth/Motion values and the new palette/alpha tiers.
 	- Draft component inventory (atomic design) and reference examples.
 	- Ensure all docs include YAML front matter and markdownlint-compliant structure.
 
 2. Token and theming foundation
 	- Extend src/Refraction/Themes/RefractionTokens.css with required token families and theme variants.
-	- Add Neon Blue (dark) and Water Blue (light + dark) themes using CSS variables.
+	- Add Neon Blue (dark) and Water Blue (light + dark) themes using the provided hex palette and alpha tiers.
 	- Document how to override tokens via CSS variables.
 
 3. Component architecture alignment
