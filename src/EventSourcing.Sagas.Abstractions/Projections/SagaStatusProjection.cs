@@ -16,7 +16,7 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions.Projections;
 ///         a read-model for monitoring and management UIs.
 ///     </para>
 /// </remarks>
-[SnapshotStorageName("MISSISSIPPI", "SAGAS", "SAGASTATUSPROJECTION", version: 1)]
+[SnapshotStorageName("MISSISSIPPI", "SAGAS", "SAGASTATUSPROJECTION", 1)]
 public sealed record SagaStatusProjection
 {
     /// <summary>

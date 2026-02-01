@@ -360,6 +360,37 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
+    private static string? GetInputTypeName(
+        AttributeData attr,
+        Compilation compilation
+    )
+    {
+        if (attr.ApplicationSyntaxReference?.GetSyntax() is AttributeSyntax attributeSyntax)
+        {
+            AttributeArgumentSyntax? inputTypeArgument =
+                attributeSyntax.ArgumentList?.Arguments.FirstOrDefault(argument =>
+                    (argument.NameEquals?.Name.Identifier.ValueText == "InputType") ||
+                    (argument.NameColon?.Name.Identifier.ValueText == "InputType"));
+            if (inputTypeArgument?.Expression is TypeOfExpressionSyntax typeOfExpression)
+            {
+                SemanticModel semanticModel = compilation.GetSemanticModel(attributeSyntax.SyntaxTree);
+                ITypeSymbol? syntaxTypeSymbol = semanticModel.GetTypeInfo(typeOfExpression.Type).Type;
+                if (syntaxTypeSymbol is not null)
+                {
+                    return syntaxTypeSymbol.ToDisplayString();
+                }
+            }
+        }
+
+        TypedConstant inputTypeArg = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value;
+        if (!inputTypeArg.IsNull && inputTypeArg.Value is ITypeSymbol inputTypeSymbol)
+        {
+            return inputTypeSymbol.ToDisplayString();
+        }
+
+        return null;
+    }
+
     /// <summary>
     ///     Gets all referenced assemblies from the compilation.
     /// </summary>
@@ -371,9 +402,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         yield return compilation.Assembly;
 
         // Include all referenced assemblies
-        foreach (IAssemblySymbol assemblySymbol in compilation.References
-            .Select(compilation.GetAssemblyOrModuleSymbol)
-            .OfType<IAssemblySymbol>())
+        foreach (IAssemblySymbol assemblySymbol in compilation.References.Select(compilation.GetAssemblyOrModuleSymbol)
+                     .OfType<IAssemblySymbol>())
         {
             yield return assemblySymbol;
         }
@@ -426,37 +456,6 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         return sagas;
-    }
-
-    private static string? GetInputTypeName(
-        AttributeData attr,
-        Compilation compilation
-    )
-    {
-        if (attr.ApplicationSyntaxReference?.GetSyntax() is AttributeSyntax attributeSyntax)
-        {
-            AttributeArgumentSyntax? inputTypeArgument = attributeSyntax.ArgumentList?.Arguments
-                .FirstOrDefault(argument =>
-                    argument.NameEquals?.Name.Identifier.ValueText == "InputType" ||
-                    argument.NameColon?.Name.Identifier.ValueText == "InputType");
-            if (inputTypeArgument?.Expression is TypeOfExpressionSyntax typeOfExpression)
-            {
-                SemanticModel semanticModel = compilation.GetSemanticModel(attributeSyntax.SyntaxTree);
-                ITypeSymbol? syntaxTypeSymbol = semanticModel.GetTypeInfo(typeOfExpression.Type).Type;
-                if (syntaxTypeSymbol is not null)
-                {
-                    return syntaxTypeSymbol.ToDisplayString();
-                }
-            }
-        }
-
-        TypedConstant inputTypeArg = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value;
-        if (!inputTypeArg.IsNull && inputTypeArg.Value is ITypeSymbol inputTypeSymbol)
-        {
-            return inputTypeSymbol.ToDisplayString();
-        }
-
-        return null;
     }
 
     /// <summary>

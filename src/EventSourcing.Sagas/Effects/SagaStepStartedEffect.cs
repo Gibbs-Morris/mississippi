@@ -118,9 +118,7 @@ internal sealed class SagaStepStartedEffect<TSaga> : EventEffectBase<SagaStepSta
         // to ensure unknown steps are not treated as "already completed" but instead
         // fall through to the STEP_NOT_FOUND handling below.
         int stepIndex = GetStepIndex(eventData.StepOrder);
-        if (stepIndex >= 0 &&
-            currentState is ISagaState sagaState &&
-            sagaState.LastCompletedStepIndex >= stepIndex)
+        if ((stepIndex >= 0) && currentState is ISagaState sagaState && (sagaState.LastCompletedStepIndex >= stepIndex))
         {
             Logger.SagaStepCompleted(sagaId, eventData.StepName, eventData.StepOrder);
             yield break;
