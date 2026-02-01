@@ -1,0 +1,268 @@
+@namespace Refraction.Pages.Templates
+@inherits StoreComponent
+@typeparam TFormModel where TFormModel : class, new()
+@using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Reservoir.Blazor
+@using Refraction.Components.Molecules
+@using Refraction.Components.Organisms
+@using Refraction.Components.Templates
+
+<Shell Class="@GetCssClass()"
+       Style="@Style"
+       @attributes="AdditionalAttributes">
+    
+    <NavRailContent>
+        @if (NavRailContent != null)
+        {
+            @NavRailContent
+        }
+    </NavRailContent>
+    
+    <CommandBarContent>
+        @if (CommandBarActions != null)
+        {
+            @CommandBarActions
+        }
+    </CommandBarContent>
+    
+    <BreadcrumbContent>
+        @if (BreadcrumbItems?.Any() == true)
+        {
+            <Breadcrumb Items="@BreadcrumbItems" />
+        }
+    </BreadcrumbContent>
+    
+    <ChildContent>
+        <Lens Variant="LensVariant.Elevated"
+              Class="rf-form-page__lens">
+            
+            @if (!string.IsNullOrEmpty(FormTitle))
+            {
+                <header class="rf-form-page__header">
+                    <h2 class="rf-form-page__title">@FormTitle</h2>
+                    @if (!string.IsNullOrEmpty(FormDescription))
+                    {
+                        <p class="rf-form-page__description">@FormDescription</p>
+                    }
+                </header>
+            }
+            
+            <form class="rf-form-page__form @(IsSubmitting ? "rf-form-page__form--submitting" : "")"
+                  @onsubmit="HandleSubmit"
+                  @onsubmit:preventDefault="true">
+                
+                @if (FormContent != null)
+                {
+                    <div class="rf-form-page__fields">
+                        @FormContent(Model)
+                    </div>
+                }
+                
+                @if (ValidationErrors.Count > 0)
+                {
+                    <div class="rf-form-page__errors" role="alert">
+                        @foreach (var error in ValidationErrors)
+                        {
+                            <Beacon State="BeaconState.Critical" IsPulsing="false" />
+                            <span class="rf-form-page__error-text">@error</span>
+                        }
+                    </div>
+                }
+                
+                <footer class="rf-form-page__actions">
+                    @if (ActionsContent != null)
+                    {
+                        @ActionsContent
+                    }
+                    else
+                    {
+                        @if (ShowCancelButton)
+                        {
+                            <ActionChip Label="@CancelButtonText"
+                                        Variant="ActionChipVariant.Default"
+                                        IsDisabled="@IsSubmitting"
+                                        OnClick="HandleCancel" />
+                        }
+                        <ActionChip Label="@(IsSubmitting ? SubmittingText : SubmitButtonText)"
+                                    Variant="ActionChipVariant.Primary"
+                                    IsDisabled="@IsSubmitting"
+                                    OnClick="HandleSubmit" />
+                    }
+                </footer>
+            </form>
+            
+        </Lens>
+    </ChildContent>
+    
+    <AsideContent>
+        @if (SideContent != null)
+        {
+            <Lens Variant="LensVariant.Card"
+                  Class="rf-form-page__sidebar">
+                @SideContent
+            </Lens>
+        }
+    </AsideContent>
+    
+</Shell>
+
+@code {
+    /// <summary>
+    /// Gets or sets the form section title.
+    /// </summary>
+    [Parameter]
+    public string? FormTitle { get; set; }
+
+    /// <summary>
+    /// Gets or sets the form description text.
+    /// </summary>
+    [Parameter]
+    public string? FormDescription { get; set; }
+
+    /// <summary>
+    /// Gets or sets the breadcrumb items.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<BreadcrumbItem>? BreadcrumbItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the nav rail content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? NavRailContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the command bar actions content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? CommandBarActions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the form model instance.
+    /// </summary>
+    [Parameter]
+    public TFormModel Model { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the callback for model changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TFormModel> ModelChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the form field content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment<TFormModel>? FormContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets custom action buttons content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ActionsContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the side panel content.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? SideContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether form submission is in progress.
+    /// </summary>
+    [Parameter]
+    public bool IsSubmitting { get; set; }
+
+    /// <summary>
+    /// Gets or sets the submit button text.
+    /// </summary>
+    [Parameter]
+    public string SubmitButtonText { get; set; } = "Submit";
+
+    /// <summary>
+    /// Gets or sets the text shown while submitting.
+    /// </summary>
+    [Parameter]
+    public string SubmittingText { get; set; } = "Submitting...";
+
+    /// <summary>
+    /// Gets or sets the cancel button text.
+    /// </summary>
+    [Parameter]
+    public string CancelButtonText { get; set; } = "Cancel";
+
+    /// <summary>
+    /// Gets or sets whether to show the cancel button.
+    /// </summary>
+    [Parameter]
+    public bool ShowCancelButton { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the validation errors to display.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<string> ValidationErrors { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the callback when form is submitted.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TFormModel> OnSubmit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when form is cancelled.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the validation function. Return empty list for valid form.
+    /// </summary>
+    [Parameter]
+    public Func<TFormModel, IReadOnlyList<string>>? Validate { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string GetCssClass() => string.IsNullOrEmpty(Class) ? "rf-form-page" : $"rf-form-page {Class}";
+
+    private async Task HandleSubmit()
+    {
+        if (IsSubmitting)
+        {
+            return;
+        }
+
+        // Run validation if provided
+        if (Validate != null)
+        {
+            var errors = Validate(Model);
+            if (errors.Count > 0)
+            {
+                return;
+            }
+        }
+
+        await OnSubmit.InvokeAsync(Model);
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}
