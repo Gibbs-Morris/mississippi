@@ -1,0 +1,136 @@
+/*
+ * CausticField Component Styles
+ * =============================
+ * Subtle background light patterns using CSS gradients and animations.
+ * Pure CSS - no JavaScript.
+ */
+
+.rf-caustic-field {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: var(--rf-depth-seabed);
+}
+
+.rf-caustic-field__layer {
+    position: absolute;
+    inset: -50%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(0, 200, 255, var(--rf-caustic-opacity, 0.03)) 0%,
+        transparent 50%
+    );
+    animation: rf-caustic-drift var(--rf-caustic-duration, 20s) var(--rf-ease-in-out) infinite;
+    will-change: transform;
+}
+
+.rf-caustic-field__layer--1 {
+    --rf-caustic-duration: 25s;
+    animation-delay: 0s;
+    transform-origin: 30% 40%;
+}
+
+.rf-caustic-field__layer--2 {
+    --rf-caustic-duration: 30s;
+    animation-delay: -8s;
+    transform-origin: 70% 60%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(94, 235, 255, var(--rf-caustic-opacity, 0.02)) 0%,
+        transparent 45%
+    );
+}
+
+.rf-caustic-field__layer--3 {
+    --rf-caustic-duration: 35s;
+    animation-delay: -15s;
+    transform-origin: 50% 50%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(0, 119, 168, var(--rf-caustic-opacity, 0.02)) 0%,
+        transparent 55%
+    );
+}
+
+/* === Intensity Variants === */
+
+.rf-caustic-field--minimal {
+    --rf-caustic-opacity: 0.015;
+}
+
+.rf-caustic-field--minimal .rf-caustic-field__layer--1 { --rf-caustic-duration: 40s; }
+.rf-caustic-field--minimal .rf-caustic-field__layer--2 { --rf-caustic-duration: 50s; }
+.rf-caustic-field--minimal .rf-caustic-field__layer--3 { --rf-caustic-duration: 60s; }
+
+.rf-caustic-field--subtle {
+    --rf-caustic-opacity: 0.03;
+}
+
+.rf-caustic-field--moderate {
+    --rf-caustic-opacity: 0.05;
+}
+
+.rf-caustic-field--moderate .rf-caustic-field__layer--1 { --rf-caustic-duration: 18s; }
+.rf-caustic-field--moderate .rf-caustic-field__layer--2 { --rf-caustic-duration: 22s; }
+.rf-caustic-field--moderate .rf-caustic-field__layer--3 { --rf-caustic-duration: 26s; }
+
+/* === Paused State === */
+
+.rf-caustic-field--paused .rf-caustic-field__layer {
+    animation-play-state: paused;
+}
+
+/* === Caustic Drift Animation === */
+
+@keyframes rf-caustic-drift {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+    25% {
+        transform: translate(5%, 3%) rotate(2deg) scale(1.02);
+    }
+    50% {
+        transform: translate(2%, 5%) rotate(-1deg) scale(1.01);
+    }
+    75% {
+        transform: translate(-3%, 2%) rotate(1deg) scale(1.03);
+    }
+    100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+}
+
+/* === Light Theme Adjustments === */
+
+:root[data-theme="light"] .rf-caustic-field__layer {
+    background: radial-gradient(
+        ellipse at center,
+        rgba(0, 119, 168, var(--rf-caustic-opacity, 0.02)) 0%,
+        transparent 50%
+    );
+}
+
+:root[data-theme="light"] .rf-caustic-field__layer--2 {
+    background: radial-gradient(
+        ellipse at center,
+        rgba(0, 163, 212, var(--rf-caustic-opacity, 0.015)) 0%,
+        transparent 45%
+    );
+}
+
+:root[data-theme="light"] .rf-caustic-field__layer--3 {
+    background: radial-gradient(
+        ellipse at center,
+        rgba(0, 200, 255, var(--rf-caustic-opacity, 0.015)) 0%,
+        transparent 55%
+    );
+}
+
+/* === Reduced Motion === */
+
+@media (prefers-reduced-motion: reduce) {
+    .rf-caustic-field__layer {
+        animation: none;
+    }
+}

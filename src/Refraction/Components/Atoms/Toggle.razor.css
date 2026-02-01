@@ -1,0 +1,135 @@
+/* Toggle - Binary on/off switch */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rf-space-sm);
+    cursor: pointer;
+    user-select: none;
+}
+
+.rf-toggle__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.rf-toggle__track {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 44px;
+    height: 24px;
+    background: var(--rf-spectrum-surface-edge);
+    border-radius: 12px;
+    transition: background var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-toggle__thumb {
+    position: absolute;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--rf-spectrum-text-muted);
+    border-radius: 50%;
+    transition: transform var(--rf-flow-fast) var(--rf-ease-out),
+                background var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+.rf-toggle__label {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-font-size-sm);
+    color: var(--rf-spectrum-text-default);
+}
+
+/* Checked state */
+.rf-toggle--checked .rf-toggle__track {
+    background: var(--rf-spectrum-accent);
+}
+
+.rf-toggle--checked .rf-toggle__thumb {
+    transform: translateX(20px);
+    background: var(--rf-spectrum-surface-base);
+}
+
+/* Hover state */
+.rf-toggle:hover .rf-toggle__track {
+    background: var(--rf-spectrum-text-muted);
+}
+
+.rf-toggle--checked:hover .rf-toggle__track {
+    background: color-mix(in srgb, var(--rf-spectrum-accent) 90%, white);
+}
+
+/* Focus state */
+.rf-toggle__input:focus-visible + .rf-toggle__track {
+    outline: 2px solid var(--rf-spectrum-accent);
+    outline-offset: 2px;
+}
+
+/* Disabled state */
+.rf-toggle--disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.rf-toggle--disabled .rf-toggle__track,
+.rf-toggle--disabled:hover .rf-toggle__track {
+    background: var(--rf-spectrum-surface-edge);
+}
+
+.rf-toggle--disabled.rf-toggle--checked .rf-toggle__track,
+.rf-toggle--disabled.rf-toggle--checked:hover .rf-toggle__track {
+    background: var(--rf-spectrum-accent);
+    opacity: 0.5;
+}
+
+/* Size variants */
+.rf-toggle--small .rf-toggle__track {
+    width: 32px;
+    height: 18px;
+    border-radius: 9px;
+}
+
+.rf-toggle--small .rf-toggle__thumb {
+    width: 14px;
+    height: 14px;
+}
+
+.rf-toggle--small.rf-toggle--checked .rf-toggle__thumb {
+    transform: translateX(14px);
+}
+
+.rf-toggle--small .rf-toggle__label {
+    font-size: var(--rf-font-size-xs);
+}
+
+.rf-toggle--large .rf-toggle__track {
+    width: 56px;
+    height: 30px;
+    border-radius: 15px;
+}
+
+.rf-toggle--large .rf-toggle__thumb {
+    width: 26px;
+    height: 26px;
+}
+
+.rf-toggle--large.rf-toggle--checked .rf-toggle__thumb {
+    transform: translateX(26px);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-toggle__track,
+    .rf-toggle__thumb {
+        transition: none;
+    }
+}

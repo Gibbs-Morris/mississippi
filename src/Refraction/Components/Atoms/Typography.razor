@@ -1,0 +1,95 @@
+@namespace Refraction.Components.Atoms
+
+<span class="@CssClass" style="@Style">@ChildContent</span>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the typographic variant to apply.
+    /// </summary>
+    [Parameter]
+    public TypographyVariant Variant { get; set; } = TypographyVariant.Body;
+
+    /// <summary>
+    ///     Gets or sets the semantic color to apply.
+    /// </summary>
+    [Parameter]
+    public TypographyColor Color { get; set; } = TypographyColor.Default;
+
+    /// <summary>
+    ///     Gets or sets whether the text should be truncated with ellipsis.
+    /// </summary>
+    [Parameter]
+    public bool Truncate { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether the text uses tabular (monospace) numerals.
+    /// </summary>
+    [Parameter]
+    public bool TabularNumerals { get; set; }
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the child content to render.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string? Style => TabularNumerals ? "font-variant-numeric: tabular-nums;" : null;
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-typography",
+            GetVariantClass(),
+            GetColorClass(),
+        };
+        if (Truncate)
+        {
+            classes.Add("rf-typography--truncate");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetVariantClass() =>
+        Variant switch
+        {
+            TypographyVariant.Display => "rf-typography--display",
+            TypographyVariant.H1 => "rf-typography--h1",
+            TypographyVariant.H2 => "rf-typography--h2",
+            TypographyVariant.Body => "rf-typography--body",
+            TypographyVariant.Small => "rf-typography--small",
+            TypographyVariant.Micro => "rf-typography--micro",
+            TypographyVariant.Instrument => "rf-typography--instrument",
+            TypographyVariant.Code => "rf-typography--code",
+            var _ => "rf-typography--body",
+        };
+
+    private string GetColorClass() =>
+        Color switch
+        {
+            TypographyColor.Default => "",
+            TypographyColor.Muted => "rf-typography--muted",
+            TypographyColor.Ghost => "rf-typography--ghost",
+            TypographyColor.Accent => "rf-typography--accent",
+            TypographyColor.Ok => "rf-typography--ok",
+            TypographyColor.Attention => "rf-typography--attention",
+            TypographyColor.Critical => "rf-typography--critical",
+            var _ => "",
+        };
+
+}

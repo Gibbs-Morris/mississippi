@@ -1,0 +1,79 @@
+/* Spray - Burst micro-particles */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-spray {
+    position: relative;
+    display: inline-block;
+    width: 0;
+    height: 0;
+}
+
+.rf-spray__particle {
+    position: absolute;
+    width: var(--rf-spray-size, 4px);
+    height: var(--rf-spray-size, 4px);
+    border-radius: 50%;
+    background: var(--rf-spray-color, var(--rf-spectrum-accent));
+    opacity: 0;
+    transform-origin: center center;
+    top: 50%;
+    left: 50%;
+    margin-top: calc(var(--rf-spray-size, 4px) / -2);
+    margin-left: calc(var(--rf-spray-size, 4px) / -2);
+}
+
+.rf-spray--triggered .rf-spray__particle {
+    animation: rf-spray-burst var(--rf-flow-slow) var(--rf-ease-out) forwards;
+}
+
+/* Intensity variants */
+.rf-spray--light {
+    --rf-spray-size: 3px;
+    --rf-spray-distance: 30px;
+}
+
+.rf-spray--medium {
+    --rf-spray-size: 4px;
+    --rf-spray-distance: 50px;
+}
+
+.rf-spray--heavy {
+    --rf-spray-size: 5px;
+    --rf-spray-distance: 70px;
+}
+
+/* Color variants */
+.rf-spray--accent {
+    --rf-spray-color: var(--rf-spectrum-accent);
+}
+
+.rf-spray--success {
+    --rf-spray-color: var(--rf-signal-ok);
+}
+
+.rf-spray--warning {
+    --rf-spray-color: var(--rf-signal-attention);
+}
+
+.rf-spray--critical {
+    --rf-spray-color: var(--rf-signal-critical);
+}
+
+@keyframes rf-spray-burst {
+    0% {
+        opacity: 1;
+        transform: rotate(var(--rf-spray-angle)) translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(var(--rf-spray-angle)) translateX(var(--rf-spray-distance, 50px));
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-spray--triggered .rf-spray__particle {
+        animation: none;
+        opacity: 0;
+    }
+}

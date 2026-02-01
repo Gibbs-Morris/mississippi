@@ -1,0 +1,123 @@
+@namespace Refraction.Components.Atoms
+
+<div class="@CssClass"
+     role="img"
+     aria-label="@AriaLabel"
+     style="@PositionStyle">
+    <div class="rf-anchor-point__dot"></div>
+    @if (Highlighted)
+    {
+        <div class="rf-anchor-point__ring"></div>
+    }
+</div>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the X position as a percentage (0-100) or pixels.
+    /// </summary>
+    [Parameter]
+    public string? X { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the Y position as a percentage (0-100) or pixels.
+    /// </summary>
+    [Parameter]
+    public string? Y { get; set; }
+
+    /// <summary>
+    ///     Gets or sets whether the anchor point is highlighted.
+    /// </summary>
+    [Parameter]
+    public bool Highlighted { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the size variant of the anchor point.
+    /// </summary>
+    [Parameter]
+    public AnchorPointSize Size { get; set; } = AnchorPointSize.Default;
+
+    /// <summary>
+    ///     Gets or sets the semantic color variant.
+    /// </summary>
+    [Parameter]
+    public AnchorPointColor Color { get; set; } = AnchorPointColor.Default;
+
+    /// <summary>
+    ///     Gets or sets the accessible label for the anchor point.
+    /// </summary>
+    [Parameter]
+    public string AriaLabel { get; set; } = "Anchor point";
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string? PositionStyle => BuildPositionStyle();
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-anchor-point",
+            GetSizeClass(),
+            GetColorClass(),
+        };
+        if (Highlighted)
+        {
+            classes.Add("rf-anchor-point--highlighted");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string? BuildPositionStyle()
+    {
+        if (string.IsNullOrEmpty(X) && string.IsNullOrEmpty(Y))
+        {
+            return null;
+        }
+
+        List<string> styles = new();
+        if (!string.IsNullOrEmpty(X))
+        {
+            styles.Add($"left: {X}");
+        }
+
+        if (!string.IsNullOrEmpty(Y))
+        {
+            styles.Add($"top: {Y}");
+        }
+
+        return string.Join("; ", styles);
+    }
+
+    private string GetSizeClass() =>
+        Size switch
+        {
+            AnchorPointSize.Small => "rf-anchor-point--small",
+            AnchorPointSize.Default => "rf-anchor-point--default",
+            AnchorPointSize.Large => "rf-anchor-point--large",
+            var _ => "rf-anchor-point--default",
+        };
+
+    private string GetColorClass() =>
+        Color switch
+        {
+            AnchorPointColor.Default => "",
+            AnchorPointColor.Ok => "rf-anchor-point--ok",
+            AnchorPointColor.Attention => "rf-anchor-point--attention",
+            AnchorPointColor.Critical => "rf-anchor-point--critical",
+            var _ => "",
+        };
+
+}

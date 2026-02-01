@@ -1,0 +1,44 @@
+@namespace Refraction.Components.Atoms
+
+<div class="rf-flare rf-flare--@Intensity.ToString().ToLowerInvariant() @(IsTriggered ? "rf-flare--triggered" : "") @Class"
+     style="@Style"
+     role="alert"
+     aria-live="assertive"
+     aria-atomic="true"
+     @attributes="AdditionalAttributes">
+    <div class="rf-flare__flash"></div>
+    <div class="rf-flare__ring"></div>
+    <div class="rf-flare__ring rf-flare__ring--outer"></div>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets whether the flare effect is triggered.
+    /// </summary>
+    [Parameter]
+    public bool IsTriggered { get; set; }
+
+    /// <summary>
+    /// Gets or sets the flare intensity.
+    /// </summary>
+    [Parameter]
+    public FlareIntensity Intensity { get; set; } = FlareIntensity.Standard;
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

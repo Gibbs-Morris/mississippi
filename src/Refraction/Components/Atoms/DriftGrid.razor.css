@@ -1,0 +1,85 @@
+/* DriftGrid - Ambient grid drift for coordinate reference */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-drift-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.rf-drift-grid__layer {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background-image:
+        linear-gradient(var(--rf-grid-color, rgba(255, 255, 255, 0.03)) 1px, transparent 1px),
+        linear-gradient(90deg, var(--rf-grid-color, rgba(255, 255, 255, 0.03)) 1px, transparent 1px);
+    background-size: var(--rf-grid-size, 40px) var(--rf-grid-size, 40px);
+}
+
+.rf-drift-grid__layer--primary {
+    animation: rf-drift-grid-move 60s linear infinite;
+}
+
+.rf-drift-grid__layer--secondary {
+    opacity: 0.5;
+    background-size: calc(var(--rf-grid-size, 40px) * 2) calc(var(--rf-grid-size, 40px) * 2);
+    animation: rf-drift-grid-move 90s linear infinite reverse;
+}
+
+/* Density variants */
+.rf-drift-grid--sparse {
+    --rf-grid-size: 80px;
+    --rf-grid-color: rgba(255, 255, 255, 0.02);
+}
+
+.rf-drift-grid--default {
+    --rf-grid-size: 40px;
+    --rf-grid-color: rgba(255, 255, 255, 0.03);
+}
+
+.rf-drift-grid--dense {
+    --rf-grid-size: 20px;
+    --rf-grid-color: rgba(255, 255, 255, 0.04);
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .rf-drift-grid--sparse {
+    --rf-grid-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .rf-drift-grid--default {
+    --rf-grid-color: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .rf-drift-grid--dense {
+    --rf-grid-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Paused state */
+.rf-drift-grid--paused .rf-drift-grid__layer {
+    animation-play-state: paused;
+}
+
+@keyframes rf-drift-grid-move {
+    from {
+        transform: translate(0, 0);
+    }
+    to {
+        transform: translate(var(--rf-grid-size, 40px), var(--rf-grid-size, 40px));
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-drift-grid__layer {
+        animation: none;
+    }
+}

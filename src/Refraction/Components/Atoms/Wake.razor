@@ -1,0 +1,43 @@
+@namespace Refraction.Components.Atoms
+
+<div class="rf-wake rf-wake--@Intensity.ToString().ToLowerInvariant() @(IsActive ? "rf-wake--active" : "") @Class"
+     style="@Style"
+     aria-hidden="true"
+     @attributes="AdditionalAttributes">
+    @* Wake trail segments - rendered via CSS pseudo-elements *@
+    <div class="rf-wake__trail"></div>
+    <div class="rf-wake__trail"></div>
+    <div class="rf-wake__trail"></div>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets whether the wake effect is active.
+    /// </summary>
+    [Parameter]
+    public bool IsActive { get; set; }
+
+    /// <summary>
+    /// Gets or sets the trail intensity.
+    /// </summary>
+    [Parameter]
+    public WakeIntensity Intensity { get; set; } = WakeIntensity.Moderate;
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

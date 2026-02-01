@@ -1,0 +1,41 @@
+@namespace Refraction.Components.Atoms
+
+<div class="rf-drift-grid rf-drift-grid--@Density.ToString().ToLowerInvariant() @(IsPaused ? "rf-drift-grid--paused" : "") @Class"
+     style="@Style"
+     aria-hidden="true"
+     @attributes="AdditionalAttributes">
+    <div class="rf-drift-grid__layer rf-drift-grid__layer--primary"></div>
+    <div class="rf-drift-grid__layer rf-drift-grid__layer--secondary"></div>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the grid density.
+    /// </summary>
+    [Parameter]
+    public DriftGridDensity Density { get; set; } = DriftGridDensity.Default;
+
+    /// <summary>
+    /// Gets or sets whether the drift animation is paused.
+    /// </summary>
+    [Parameter]
+    public bool IsPaused { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

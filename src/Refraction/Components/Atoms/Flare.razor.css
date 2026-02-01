@@ -1,0 +1,101 @@
+/* Flare - Critical attention pulse */
+/* Pure CSS implementation - NO JAVASCRIPT */
+/* Reserved for hard errors only - use sparingly */
+
+.rf-flare {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--rf-flare-size, 24px);
+    height: var(--rf-flare-size, 24px);
+}
+
+.rf-flare__flash {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--rf-signal-critical);
+    opacity: 0;
+}
+
+.rf-flare__ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--rf-signal-critical);
+    opacity: 0;
+}
+
+.rf-flare__ring--outer {
+    width: 150%;
+    height: 150%;
+    border-width: 1px;
+}
+
+/* Triggered state */
+.rf-flare--triggered .rf-flare__flash {
+    animation: rf-flare-flash 150ms ease-out forwards;
+}
+
+.rf-flare--triggered .rf-flare__ring {
+    animation: rf-flare-ring 600ms ease-out forwards;
+}
+
+.rf-flare--triggered .rf-flare__ring--outer {
+    animation: rf-flare-ring 600ms ease-out 100ms forwards;
+}
+
+/* Intensity variants */
+.rf-flare--standard {
+    --rf-flare-size: 24px;
+}
+
+.rf-flare--intense {
+    --rf-flare-size: 32px;
+}
+
+.rf-flare--intense .rf-flare__flash {
+    box-shadow: 0 0 20px var(--rf-signal-critical);
+}
+
+@keyframes rf-flare-flash {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1);
+    }
+}
+
+@keyframes rf-flare-ring {
+    0% {
+        opacity: 1;
+        transform: scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(2);
+    }
+}
+
+/* Reduced motion - still show indication but without animation */
+@media (prefers-reduced-motion: reduce) {
+    .rf-flare--triggered .rf-flare__flash {
+        animation: none;
+        opacity: 1;
+    }
+
+    .rf-flare--triggered .rf-flare__ring {
+        animation: none;
+        opacity: 0.5;
+    }
+}

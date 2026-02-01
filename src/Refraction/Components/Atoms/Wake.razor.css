@@ -1,0 +1,77 @@
+/* Wake - Pointer trail/motion echo */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-wake {
+    position: fixed;
+    pointer-events: none;
+    z-index: var(--rf-depth-tooltip);
+    display: none;
+}
+
+.rf-wake--active {
+    display: block;
+}
+
+.rf-wake__trail {
+    position: absolute;
+    width: var(--rf-wake-size, 8px);
+    height: var(--rf-wake-size, 8px);
+    border-radius: 50%;
+    background: var(--rf-spectrum-accent);
+    opacity: 0;
+}
+
+.rf-wake--active .rf-wake__trail {
+    animation: rf-wake-fade var(--rf-flow-medium) var(--rf-ease-out) forwards;
+}
+
+.rf-wake--active .rf-wake__trail:nth-child(1) {
+    animation-delay: 0ms;
+    opacity: var(--rf-wake-opacity, 0.4);
+}
+
+.rf-wake--active .rf-wake__trail:nth-child(2) {
+    animation-delay: 50ms;
+    opacity: calc(var(--rf-wake-opacity, 0.4) * 0.6);
+    transform: translate(-4px, -4px);
+}
+
+.rf-wake--active .rf-wake__trail:nth-child(3) {
+    animation-delay: 100ms;
+    opacity: calc(var(--rf-wake-opacity, 0.4) * 0.3);
+    transform: translate(-8px, -8px);
+}
+
+/* Intensity variants */
+.rf-wake--subtle {
+    --rf-wake-opacity: 0.2;
+    --rf-wake-size: 6px;
+}
+
+.rf-wake--moderate {
+    --rf-wake-opacity: 0.4;
+    --rf-wake-size: 8px;
+}
+
+.rf-wake--strong {
+    --rf-wake-opacity: 0.6;
+    --rf-wake-size: 10px;
+}
+
+@keyframes rf-wake-fade {
+    from {
+        opacity: var(--rf-wake-opacity, 0.4);
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-wake {
+        display: none !important;
+    }
+}

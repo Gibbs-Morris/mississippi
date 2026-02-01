@@ -1,0 +1,118 @@
+/*
+ * Typography Component Styles
+ * ===========================
+ * Implements the Refraction typographic scale.
+ */
+
+.rf-typography {
+    margin: 0;
+    padding: 0;
+    color: var(--rf-spectrum-text);
+}
+
+/* === Variant Styles === */
+
+.rf-typography--display {
+    font-family: var(--rf-font-display);
+    font-size: var(--rf-text-display);
+    line-height: var(--rf-line-display);
+    font-weight: var(--rf-weight-bold);
+    letter-spacing: -0.01em;
+}
+
+.rf-typography--h1 {
+    font-family: var(--rf-font-display);
+    font-size: var(--rf-text-h1);
+    line-height: var(--rf-line-h1);
+    font-weight: var(--rf-weight-bold);
+    letter-spacing: -0.01em;
+}
+
+.rf-typography--h2 {
+    font-family: var(--rf-font-display);
+    font-size: var(--rf-text-h2);
+    line-height: var(--rf-line-h2);
+    font-weight: var(--rf-weight-semibold);
+    letter-spacing: -0.005em;
+}
+
+.rf-typography--body {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-text-body);
+    line-height: var(--rf-line-body);
+    font-weight: var(--rf-weight-regular);
+    letter-spacing: 0;
+}
+
+.rf-typography--small {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-text-small);
+    line-height: var(--rf-line-small);
+    font-weight: var(--rf-weight-regular);
+    letter-spacing: 0;
+}
+
+.rf-typography--micro {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-text-micro);
+    line-height: var(--rf-line-micro);
+    font-weight: var(--rf-weight-semibold);
+    letter-spacing: 0.02em;
+}
+
+.rf-typography--instrument {
+    font-family: var(--rf-font-body);
+    font-size: var(--rf-text-micro);
+    line-height: var(--rf-line-micro);
+    font-weight: var(--rf-weight-semibold);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+}
+
+.rf-typography--code {
+    font-family: var(--rf-font-mono);
+    font-size: var(--rf-text-small);
+    line-height: var(--rf-line-small);
+    font-weight: var(--rf-weight-regular);
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* === Color Modifiers === */
+
+.rf-typography--muted {
+    color: var(--rf-spectrum-text-muted);
+}
+
+.rf-typography--ghost {
+    color: var(--rf-spectrum-ghost);
+}
+
+.rf-typography--accent {
+    color: var(--rf-spectrum-cyan-500);
+}
+
+/* Accessibility: Use darker cyan on light theme for contrast */
+:root[data-theme="light"] .rf-typography--accent {
+    color: var(--rf-spectrum-cyan-700);
+}
+
+.rf-typography--ok {
+    color: var(--rf-signal-ok);
+}
+
+.rf-typography--attention {
+    color: var(--rf-signal-attn);
+}
+
+.rf-typography--critical {
+    color: var(--rf-signal-critical);
+}
+
+/* === Utility Modifiers === */
+
+.rf-typography--truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

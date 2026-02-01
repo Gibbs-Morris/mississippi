@@ -1,0 +1,57 @@
+@namespace Refraction.Components.Atoms
+
+<div class="rf-spray rf-spray--@Intensity.ToString().ToLowerInvariant() rf-spray--@Color.ToString().ToLowerInvariant() @(IsTriggered ? "rf-spray--triggered" : "") @Class"
+     style="@Style"
+     aria-hidden="true"
+     @attributes="AdditionalAttributes">
+    @for (var i = 0; i < ParticleCount; i++)
+    {
+        <div class="rf-spray__particle" style="--rf-spray-angle: @(i * (360.0 / ParticleCount))deg;"></div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets whether the spray effect is triggered.
+    /// </summary>
+    [Parameter]
+    public bool IsTriggered { get; set; }
+
+    /// <summary>
+    /// Gets or sets the particle intensity.
+    /// </summary>
+    [Parameter]
+    public SprayIntensity Intensity { get; set; } = SprayIntensity.Medium;
+
+    /// <summary>
+    /// Gets or sets the particle color.
+    /// </summary>
+    [Parameter]
+    public SprayColor Color { get; set; } = SprayColor.Accent;
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private int ParticleCount => Intensity switch
+    {
+        SprayIntensity.Light => 6,
+        SprayIntensity.Medium => 10,
+        SprayIntensity.Heavy => 16,
+        _ => 10,
+    };
+}

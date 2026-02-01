@@ -1,0 +1,173 @@
+/* Frame - Partial corner brackets/HUD framing */
+/* Pure CSS implementation - NO JAVASCRIPT */
+
+.rf-frame {
+    position: relative;
+    display: block;
+}
+
+.rf-frame__content {
+    position: relative;
+    z-index: 1;
+}
+
+/* Corner brackets - positioned at each corner */
+.rf-frame__corner {
+    position: absolute;
+    width: var(--rf-frame-bracket-length, 24px);
+    height: var(--rf-frame-bracket-length, 24px);
+    pointer-events: none;
+}
+
+.rf-frame__corner::before,
+.rf-frame__corner::after {
+    content: '';
+    position: absolute;
+    background-color: var(--rf-frame-color, var(--rf-spectrum-surface-edge));
+    transition: opacity var(--rf-flow-fast) var(--rf-ease-out);
+}
+
+/* Horizontal stroke */
+.rf-frame__corner::before {
+    width: 100%;
+    height: var(--rf-frame-stroke-width, 1px);
+}
+
+/* Vertical stroke */
+.rf-frame__corner::after {
+    width: var(--rf-frame-stroke-width, 1px);
+    height: 100%;
+}
+
+/* Top-left corner */
+.rf-frame__corner--top-left {
+    top: 0;
+    left: 0;
+}
+
+.rf-frame__corner--top-left::before {
+    top: 0;
+    left: 0;
+}
+
+.rf-frame__corner--top-left::after {
+    top: 0;
+    left: 0;
+}
+
+/* Top-right corner */
+.rf-frame__corner--top-right {
+    top: 0;
+    right: 0;
+}
+
+.rf-frame__corner--top-right::before {
+    top: 0;
+    right: 0;
+}
+
+.rf-frame__corner--top-right::after {
+    top: 0;
+    right: 0;
+}
+
+/* Bottom-left corner */
+.rf-frame__corner--bottom-left {
+    bottom: 0;
+    left: 0;
+}
+
+.rf-frame__corner--bottom-left::before {
+    bottom: 0;
+    left: 0;
+}
+
+.rf-frame__corner--bottom-left::after {
+    bottom: 0;
+    left: 0;
+}
+
+/* Bottom-right corner */
+.rf-frame__corner--bottom-right {
+    bottom: 0;
+    right: 0;
+}
+
+.rf-frame__corner--bottom-right::before {
+    bottom: 0;
+    right: 0;
+}
+
+.rf-frame__corner--bottom-right::after {
+    bottom: 0;
+    right: 0;
+}
+
+/* Size variants */
+.rf-frame--small {
+    --rf-frame-bracket-length: 12px;
+    --rf-frame-stroke-width: 1px;
+}
+
+.rf-frame--medium {
+    --rf-frame-bracket-length: 24px;
+    --rf-frame-stroke-width: 1px;
+}
+
+.rf-frame--large {
+    --rf-frame-bracket-length: 40px;
+    --rf-frame-stroke-width: 2px;
+}
+
+/* Visual variants */
+.rf-frame--default {
+    --rf-frame-color: var(--rf-spectrum-surface-edge);
+}
+
+.rf-frame--prominent {
+    --rf-frame-color: var(--rf-spectrum-text-default);
+}
+
+.rf-frame--minimal {
+    --rf-frame-color: var(--rf-spectrum-text-ghost);
+}
+
+/* Animation - coalesce on appearance */
+.rf-frame--animated .rf-frame__corner::before,
+.rf-frame--animated .rf-frame__corner::after {
+    animation: rf-frame-coalesce var(--rf-flow-medium) var(--rf-ease-out) both;
+}
+
+.rf-frame--animated .rf-frame__corner--top-right::before,
+.rf-frame--animated .rf-frame__corner--top-right::after {
+    animation-delay: 50ms;
+}
+
+.rf-frame--animated .rf-frame__corner--bottom-left::before,
+.rf-frame--animated .rf-frame__corner--bottom-left::after {
+    animation-delay: 100ms;
+}
+
+.rf-frame--animated .rf-frame__corner--bottom-right::before,
+.rf-frame--animated .rf-frame__corner--bottom-right::after {
+    animation-delay: 150ms;
+}
+
+@keyframes rf-frame-coalesce {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .rf-frame--animated .rf-frame__corner::before,
+    .rf-frame--animated .rf-frame__corner::after {
+        animation: none;
+    }
+}

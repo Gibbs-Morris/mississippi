@@ -1,0 +1,95 @@
+@namespace Refraction.Components.Atoms
+
+<label class="rf-toggle rf-toggle--@Size.ToString().ToLowerInvariant() @(IsChecked ? "rf-toggle--checked" : "") @(Disabled ? "rf-toggle--disabled" : "") @Class"
+       style="@Style"
+       @attributes="AdditionalAttributes">
+    <input type="checkbox"
+           class="rf-toggle__input"
+           checked="@IsChecked"
+           disabled="@Disabled"
+           @onchange="OnToggleChanged"
+           aria-checked="@IsChecked"
+           aria-describedby="@AriaDescribedBy" />
+    
+    <span class="rf-toggle__track">
+        <span class="rf-toggle__thumb"></span>
+    </span>
+    
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <span class="rf-toggle__label">@Label</span>
+    }
+    @if (ChildContent != null)
+    {
+        <span class="rf-toggle__label">@ChildContent</span>
+    }
+</label>
+
+@code {
+    /// <summary>
+    /// Gets or sets whether the toggle is checked.
+    /// </summary>
+    [Parameter]
+    public bool IsChecked { get; set; }
+
+    /// <summary>
+    /// Gets or sets the callback when checked state changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<bool> IsCheckedChanged { get; set; }
+
+    /// <summary>
+    /// Gets or sets the label text.
+    /// </summary>
+    [Parameter]
+    public string? Label { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size variant.
+    /// </summary>
+    [Parameter]
+    public ToggleSize Size { get; set; } = ToggleSize.Medium;
+
+    /// <summary>
+    /// Gets or sets whether the toggle is disabled.
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aria-describedby reference.
+    /// </summary>
+    [Parameter]
+    public string? AriaDescribedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets child content for custom labels.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task OnToggleChanged(ChangeEventArgs e)
+    {
+        var newValue = (bool)(e.Value ?? false);
+        IsChecked = newValue;
+        await IsCheckedChanged.InvokeAsync(newValue);
+    }
+}

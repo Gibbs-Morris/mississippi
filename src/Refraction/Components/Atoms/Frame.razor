@@ -1,0 +1,57 @@
+@namespace Refraction.Components.Atoms
+
+<div class="rf-frame rf-frame--@Variant.ToString().ToLowerInvariant() rf-frame--@Size.ToString().ToLowerInvariant() @(IsAnimated ? "rf-frame--animated" : "") @Class"
+     style="@Style"
+     @attributes="AdditionalAttributes">
+    <div class="rf-frame__corner rf-frame__corner--top-left"></div>
+    <div class="rf-frame__corner rf-frame__corner--top-right"></div>
+    <div class="rf-frame__corner rf-frame__corner--bottom-left"></div>
+    <div class="rf-frame__corner rf-frame__corner--bottom-right"></div>
+    <div class="rf-frame__content">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// Gets or sets the visual variant of the frame.
+    /// </summary>
+    [Parameter]
+    public FrameVariant Variant { get; set; } = FrameVariant.Default;
+
+    /// <summary>
+    /// Gets or sets the size of the frame brackets.
+    /// </summary>
+    [Parameter]
+    public FrameSize Size { get; set; } = FrameSize.Medium;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the frame animates on appearance.
+    /// </summary>
+    [Parameter]
+    public bool IsAnimated { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the child content to display inside the frame.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Gets or sets inline styles to apply.
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional attributes to apply to the root element.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

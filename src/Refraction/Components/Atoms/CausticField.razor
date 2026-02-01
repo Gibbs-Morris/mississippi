@@ -1,0 +1,60 @@
+@namespace Refraction.Components.Atoms
+
+<div class="@CssClass" aria-hidden="true">
+    <div class="rf-caustic-field__layer rf-caustic-field__layer--1"></div>
+    <div class="rf-caustic-field__layer rf-caustic-field__layer--2"></div>
+    <div class="rf-caustic-field__layer rf-caustic-field__layer--3"></div>
+</div>
+
+@code {
+
+    /// <summary>
+    ///     Gets or sets the intensity of the caustic effect.
+    /// </summary>
+    [Parameter]
+    public CausticIntensity Intensity { get; set; } = CausticIntensity.Subtle;
+
+    /// <summary>
+    ///     Gets or sets whether the animation is paused.
+    /// </summary>
+    [Parameter]
+    public bool Paused { get; set; }
+
+    /// <summary>
+    ///     Gets or sets additional CSS classes to apply.
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    private string CssClass => BuildCssClass();
+
+    private string BuildCssClass()
+    {
+        List<string> classes = new()
+        {
+            "rf-caustic-field",
+            GetIntensityClass(),
+        };
+        if (Paused)
+        {
+            classes.Add("rf-caustic-field--paused");
+        }
+
+        if (!string.IsNullOrEmpty(Class))
+        {
+            classes.Add(Class);
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetIntensityClass() =>
+        Intensity switch
+        {
+            CausticIntensity.Minimal => "rf-caustic-field--minimal",
+            CausticIntensity.Subtle => "rf-caustic-field--subtle",
+            CausticIntensity.Moderate => "rf-caustic-field--moderate",
+            var _ => "rf-caustic-field--subtle",
+        };
+
+}
