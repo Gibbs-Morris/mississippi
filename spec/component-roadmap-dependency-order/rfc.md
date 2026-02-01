@@ -10,10 +10,24 @@ The component roadmap does not explicitly capture dependency ordering, which can
 - Ensure phase order and intra-phase order respect dependencies.
 - Flag cross-phase and external dependencies.
 
+## Requirements and Constraints
+
+- Update documentation only under docs/Docusaurus/docs/refraction/.
+- Keep build order consistent with dependencies.
+- Avoid introducing new component scope or renames.
+
 ## Non-Goals
 
 - Implementing components.
 - Changing component names or scope beyond dependency clarity.
+
+## Assumptions
+
+- Docusaurus build remains stable after adding columns to tables.
+
+## Unknowns
+
+- Whether any component dependency assumptions are incorrect.
 
 ## Current State (UNVERIFIED)
 
