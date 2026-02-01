@@ -50,39 +50,294 @@ These helpers provide clean, ergonomic access to projection state without requir
 
 ## Why Use Selectors?
 
-### The Problem: Scattered Logic
+:::tip The Enterprise Testing Advantage
+In enterprise applications, high unit test coverage is non-negotiable. **Selectors are the primary mechanism for testing client-side business logic without complex UI tests**. By extracting derived logic into pure functions, you make your business rules trivially testable.
+:::
 
-Without selectors, components compute derived values inline:
+### The Problem: Untestable Business Logic Trapped in Components
 
-```csharp
-// ❌ BAD: Scattered logic, hard to test, duplicated across components
-private bool IsAccountOpen => BalanceProjection?.IsOpen is true;
-private bool IsExecutingOrLoading =>
-    IsAggregateExecuting ||
-    (!string.IsNullOrEmpty(SelectedEntityId) &&
-     IsProjectionLoading<BankAccountBalanceProjectionDto>(SelectedEntityId));
-```
-
-### The Solution: Centralized Selectors
+Without selectors, business logic gets scattered across components and becomes **extremely difficult to test**:
 
 ```csharp
-// ✅ GOOD: Centralized, reusable, testable
-private bool IsAccountOpen =>
-    Select(BankAccountProjectionSelectors.IsAccountOpen(SelectedEntityId));
-private bool IsExecutingOrLoading =>
-    Select(BankAccountCompositeSelectors.IsOperationInProgress(SelectedEntityId));
+// ❌ BAD: Business logic trapped in component - testing this requires:
+// 1. Rendering the entire Blazor component
+// 2. Setting up mock stores, DI containers, and SignalR connections
+// 3. Triggering UI interactions to observe the computed values
+// 4. Parsing rendered HTML to verify results
+public partial class AccountDashboard : InletComponent
+{
+    private IEnumerable<BankAccountBalanceProjectionDto>? AllAccounts =>
+        GetProjection<AllAccountsProjectionDto>(UserId)?.Accounts;
+
+    // 🔴 Complex business logic that's HARD TO TEST without rendering component
+    private IEnumerable<AccountSummary> HighValueAccountsWithPendingTransactions =>
+        AllAccounts?
+            .Where(a => a.Balance > 10_000m)
+            .Where(a => a.PendingTransactionCount > 0)
+            .OrderByDescending(a => a.Balance)
+            .Select(a => new AccountSummary(
+                a.AccountId,
+                a.HolderName,
+                a.Balance,
+                FormatRiskLevel(a)))
+        ?? Enumerable.Empty<AccountSummary>();
+
+    // 🔴 More business logic buried in component
+    private string FormatRiskLevel(BankAccountBalanceProjectionDto account) =>
+        account.Balance > 100_000m ? "High Value" :
+        account.PendingTransactionCount > 5 ? "High Activity" :
+        "Normal";
+
+    // 🔴 Cross-state derivation mixed with UI concerns
+    private bool ShowUrgentWarning =>
+        HighValueAccountsWithPendingTransactions.Any(a =>
+            GetProjectionError<BankAccountBalanceProjectionDto>(a.AccountId) is not null ||
+            Store.GetState<AlertsFeatureState>()?.HasCriticalAlerts is true);
+}
 ```
+
+**To test `HighValueAccountsWithPendingTransactions`, you would need to:**
+
+1. Set up a full Blazor test host with `bunit`
+2. Configure dependency injection with mock stores
+3. Initialize projection state with test data
+4. Render the component
+5. Access internal properties via reflection or test the rendered HTML
+
+This is **expensive, fragile, and slow**.
+
+### The Solution: Pure, Testable Selectors
+
+Extract the same logic into selectors—**pure functions that are trivially testable**:
+
+```csharp
+// ✅ GOOD: Business logic in pure, testable selectors
+public static class AccountDashboardSelectors
+{
+    public static Func<ProjectionsFeatureState, IEnumerable<AccountSummary>>
+        GetHighValueAccountsWithPendingTransactions(string userId)
+    {
+        ArgumentNullException.ThrowIfNull(userId);
+        return state =>
+        {
+            ArgumentNullException.ThrowIfNull(state);
+
+            var accounts = state.GetProjection<AllAccountsProjectionDto>(userId)?.Accounts;
+            if (accounts is null) return Enumerable.Empty<AccountSummary>();
+
+            return accounts
+                .Where(a => a.Balance > 10_000m)
+                .Where(a => a.PendingTransactionCount > 0)
+                .OrderByDescending(a => a.Balance)
+                .Select(a => new AccountSummary(
+                    a.AccountId,
+                    a.HolderName,
+                    a.Balance,
+                    FormatRiskLevel(a)));
+        };
+    }
+
+    public static string FormatRiskLevel(BankAccountBalanceProjectionDto account) =>
+        account.Balance > 100_000m ? "High Value" :
+        account.PendingTransactionCount > 5 ? "High Activity" :
+        "Normal";
+
+    public static Func<ProjectionsFeatureState, AlertsFeatureState, bool>
+        ShowUrgentWarning(string userId)
+    {
+        ArgumentNullException.ThrowIfNull(userId);
+        return (projectionsState, alertsState) =>
+        {
+            ArgumentNullException.ThrowIfNull(projectionsState);
+            ArgumentNullException.ThrowIfNull(alertsState);
+
+            var highValueAccounts = GetHighValueAccountsWithPendingTransactions(userId)(projectionsState);
+            var hasProjectionErrors = highValueAccounts.Any(a =>
+                projectionsState.GetProjectionError<BankAccountBalanceProjectionDto>(a.AccountId) is not null);
+
+            return hasProjectionErrors || alertsState.HasCriticalAlerts;
+        };
+    }
+}
+
+// Component becomes thin - just wiring, no business logic
+public partial class AccountDashboard : InletComponent
+{
+    private IEnumerable<AccountSummary> HighValueAccountsWithPendingTransactions =>
+        Select(AccountDashboardSelectors.GetHighValueAccountsWithPendingTransactions(UserId));
+
+    private bool ShowUrgentWarning =>
+        Select(AccountDashboardSelectors.ShowUrgentWarning(UserId));
+}
+```
+
+### Testing: Component vs. Selector
+
+Here's the same business logic tested **with** and **without** selectors:
+
+```csharp
+// ❌ COMPONENT TEST: Complex, slow, fragile
+[Fact]
+public void HighValueAccounts_FiltersAndSortsCorrectly_ComponentTest()
+{
+    // Arrange - extensive setup required
+    using var ctx = new TestContext();
+    var mockStore = new Mock<IStore>();
+    var projectionsState = CreateTestProjectionsState();
+    mockStore.Setup(s => s.GetState<ProjectionsFeatureState>()).Returns(projectionsState);
+
+    ctx.Services.AddSingleton(mockStore.Object);
+    ctx.Services.AddSingleton(Mock.Of<IInletClient>());
+    ctx.Services.AddSingleton(Mock.Of<IDispatcher>());
+    // ... more DI setup ...
+
+    // Act - render and extract values (fragile)
+    var component = ctx.RenderComponent<AccountDashboard>(
+        parameters => parameters.Add(p => p.UserId, "user-1"));
+
+    // Assert - how do you even access HighValueAccountsWithPendingTransactions?
+    // Option 1: Make it public (breaks encapsulation)
+    // Option 2: Test rendered HTML (fragile, tests UI not logic)
+    // Option 3: Use reflection (maintenance nightmare)
+}
+
+// ✅ SELECTOR TEST: Simple, fast, reliable
+[Fact]
+public void GetHighValueAccountsWithPendingTransactions_FiltersAndSorts_Correctly()
+{
+    // Arrange - just create state
+    var state = new ProjectionsFeatureState()
+        .WithEntry("user-1", new ProjectionEntry<AllAccountsProjectionDto>(
+            new AllAccountsProjectionDto
+            {
+                Accounts = new[]
+                {
+                    new BankAccountBalanceProjectionDto { AccountId = "a1", Balance = 5_000m, PendingTransactionCount = 2 },   // Below threshold
+                    new BankAccountBalanceProjectionDto { AccountId = "a2", Balance = 50_000m, PendingTransactionCount = 0 },  // No pending
+                    new BankAccountBalanceProjectionDto { AccountId = "a3", Balance = 15_000m, PendingTransactionCount = 1 },  // Included
+                    new BankAccountBalanceProjectionDto { AccountId = "a4", Balance = 200_000m, PendingTransactionCount = 3 }, // Included, highest
+                }
+            },
+            Version: 1, IsLoading: false, IsConnected: true, Error: null));
+
+    // Act - just call the pure function
+    var selector = AccountDashboardSelectors.GetHighValueAccountsWithPendingTransactions("user-1");
+    var result = selector(state).ToList();
+
+    // Assert - direct, clear assertions
+    Assert.Equal(2, result.Count);
+    Assert.Equal("a4", result[0].AccountId);  // Highest balance first
+    Assert.Equal("a3", result[1].AccountId);
+    Assert.Equal("High Value", result[0].RiskLevel);
+}
+
+[Theory]
+[InlineData(150_000, 2, "High Value")]
+[InlineData(8_000, 10, "High Activity")]
+[InlineData(8_000, 2, "Normal")]
+public void FormatRiskLevel_CategorizesByBalanceAndActivity(
+    decimal balance, int pendingCount, string expected)
+{
+    // Arrange
+    var account = new BankAccountBalanceProjectionDto
+    {
+        Balance = balance,
+        PendingTransactionCount = pendingCount
+    };
+
+    // Act
+    string result = AccountDashboardSelectors.FormatRiskLevel(account);
+
+    // Assert
+    Assert.Equal(expected, result);
+}
+```
+
+### The Testing Pyramid for Client State
+
+```mermaid
+graph TB
+    subgraph "Selectors Enable This"
+        A[Unit Tests - Selectors<br/>Fast, Isolated, High Coverage] --> B[Integration Tests<br/>Store + Reducers + Effects]
+    end
+    B --> C[Component Tests<br/>Thin wiring verification]
+    C --> D[E2E Tests<br/>Critical user journeys]
+
+    style A fill:#50c878,stroke:#2d8b47,color:#fff
+    style B fill:#87ceeb,stroke:#5f9ea0,color:#000
+    style C fill:#f4a261,stroke:#d68a4e,color:#000
+    style D fill:#ff6b6b,stroke:#cc5555,color:#fff
+```
+
+:::info Enterprise Test Coverage Strategy
+For enterprise applications requiring 80%+ code coverage:
+
+- **Selectors** provide the bulk of business logic coverage with fast, isolated unit tests
+- **Reducers** cover state transitions (also pure functions)
+- **Component tests** verify only the wiring—that the right selectors are called
+- **E2E tests** cover critical user journeys, not business logic edge cases
+
+This approach achieves high coverage **without slow, brittle UI tests**.
+:::
 
 ### Benefits Comparison
 
 | Aspect | Inline Logic | Selectors |
 |--------|-------------|-----------|
-| **Testability** | Requires component instantiation | Pure functions, trivial to test |
+| **Testability** | Requires full component rendering, mocking, DI setup | Pure function call with test state |
+| **Test Speed** | Slow (component lifecycle, rendering) | Fast (milliseconds per test) |
+| **Test Reliability** | Fragile (UI changes break tests) | Stable (logic unchanged by UI) |
+| **Coverage** | Hard to achieve high coverage | Easy 100% logic coverage |
 | **Reusability** | Copy-paste across components | Import and use anywhere |
 | **Maintainability** | Update every component | Update one selector |
 | **Performance** | Recomputes every render | Memoization available |
 | **Debugging** | Logic buried in UI | Isolated, inspectable |
 | **Code Review** | Mixed UI + business logic | Separated concerns |
+
+### Memoization: Performance + Testability
+
+For expensive computations, memoization provides both **performance benefits** and **testable caching behavior**:
+
+```csharp
+public static class ExpensiveSelectors
+{
+    // Memoized: caches result when state reference unchanged
+    private static readonly Func<ProjectionsFeatureState, IReadOnlyList<AccountSummary>>
+        CachedGetSortedHighValueAccounts = Memoize.Create<ProjectionsFeatureState, IReadOnlyList<AccountSummary>>(
+            state => state.GetProjection<AllAccountsProjectionDto>("all")?
+                .Accounts?
+                .Where(a => a.Balance > 10_000m)
+                .OrderByDescending(a => a.Balance)
+                .ThenBy(a => a.HolderName)
+                .Select(a => new AccountSummary(a.AccountId, a.HolderName, a.Balance, ""))
+                .ToList()
+            ?? new List<AccountSummary>());
+
+    public static IReadOnlyList<AccountSummary> GetSortedHighValueAccounts(ProjectionsFeatureState state) =>
+        CachedGetSortedHighValueAccounts(state);
+}
+
+// Test that memoization works correctly
+[Fact]
+public void GetSortedHighValueAccounts_WithSameState_ReturnsCachedResult()
+{
+    // Arrange
+    var state = CreateStateWithManyAccounts();
+
+    // Act
+    var sw = Stopwatch.StartNew();
+    var first = ExpensiveSelectors.GetSortedHighValueAccounts(state);
+    var firstTime = sw.ElapsedTicks;
+
+    sw.Restart();
+    var second = ExpensiveSelectors.GetSortedHighValueAccounts(state);
+    var secondTime = sw.ElapsedTicks;
+
+    // Assert
+    Assert.Same(first, second);  // Same reference = cached
+    Assert.True(secondTime < firstTime / 10, "Second call should be >10x faster");
+}
+```
 
 ## Core API
 
