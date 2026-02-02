@@ -150,7 +150,7 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
         string uri
     )
     {
-        if (uri.StartsWith("/", StringComparison.Ordinal) && !uri.StartsWith("//", StringComparison.Ordinal))
+        if (uri.StartsWith('/', StringComparison.Ordinal) && !uri.StartsWith("//", StringComparison.Ordinal))
         {
             return uri;
         }
