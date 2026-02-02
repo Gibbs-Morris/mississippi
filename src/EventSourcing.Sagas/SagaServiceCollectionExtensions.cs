@@ -5,6 +5,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions.Commands;
@@ -60,8 +61,10 @@ public static class SagaServiceCollectionExtensions
         services.AddSaga<TSaga>();
 
         // Register the start saga command handler
-        services.TryAddTransient<
-            ICommandHandler<StartSagaCommand<TInput>, TSaga>, StartSagaCommandHandler<TInput, TSaga>>();
+        services.AddCommandHandler<
+            StartSagaCommand<TInput>,
+            TSaga,
+            StartSagaCommandHandler<TInput, TSaga>>();
         return services;
     }
 

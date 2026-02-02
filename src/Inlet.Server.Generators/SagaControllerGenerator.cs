@@ -158,7 +158,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendLine("/// <param name=\"sagaId\">The unique saga instance identifier.</param>");
         sb.AppendLine("/// <param name=\"request\">The saga start request.</param>");
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
-        sb.AppendLine("/// <returns>Accepted if the saga was started successfully.</returns>");
+        sb.AppendLine("/// <returns>Ok if the saga was started successfully.</returns>");
         sb.AppendLine("[HttpPost(\"{sagaId:guid}\")]");
         sb.AppendLine("public async Task<ActionResult> StartAsync(");
         sb.IncreaseIndent();
@@ -181,7 +181,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendLine("request.CorrelationId);");
         sb.DecreaseIndent();
         sb.AppendLine();
-        sb.AppendLine("return Accepted();");
+        sb.AppendLine("return Ok();");
         sb.CloseBrace();
         sb.AppendLine("catch (InvalidOperationException ex)");
         sb.OpenBrace();

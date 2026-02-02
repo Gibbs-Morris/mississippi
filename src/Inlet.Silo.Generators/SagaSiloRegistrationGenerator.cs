@@ -310,6 +310,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         if (saga.Model.ImplementsISagaState)
         {
             sb.AppendLine("services.AddEventType<SagaStartedEvent>();");
+            sb.AppendLine("services.AddEventType<SagaStepStartedEvent>();");
             sb.AppendLine("services.AddEventType<SagaStepCompletedEvent>();");
             sb.AppendLine("services.AddEventType<SagaStepRetryEvent>();");
             sb.AppendLine("services.AddEventType<SagaCompensatingEvent>();");
