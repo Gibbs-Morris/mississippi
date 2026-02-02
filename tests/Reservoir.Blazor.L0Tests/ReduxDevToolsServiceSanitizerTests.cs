@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 
@@ -53,11 +53,8 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
     private ReduxDevToolsService CreateService(
         IStore store,
         ReservoirDevToolsOptions options
-    )
-    {
-        Lazy<IStore> storeFactory = new(() => store);
-        return new(storeFactory, interop, Options.Create(options));
-    }
+    ) =>
+        new(store, interop, Options.Create(options), new(), NullLogger<ReduxDevToolsService>.Instance);
 
     private void SetupJsModuleForConnection()
     {
@@ -164,7 +161,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
                 method,
                 args
             ) => capturedActionPayload = args[0]);
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
 
         // Dispatch to establish connection
         store.Dispatch(new TestAction());
@@ -201,7 +198,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
                 method,
                 args
             ) => capturedActionPayload = args[0]);
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
 
         // Act
         store.Dispatch(new TestAction());
@@ -232,7 +229,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
                 method,
                 args
             ) => sendCalled = true);
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
 
         // Act
         store.Dispatch(new TestAction());
@@ -273,7 +270,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
 
         // Act
         store.Dispatch(new TestAction());
@@ -338,7 +335,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
                 method,
                 args
             ) => capturedStatePayload = args[1]);
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
 
         // Act
         store.Dispatch(new TestAction());
