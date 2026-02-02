@@ -41,6 +41,7 @@ See [updated-design.md](updated-design.md) for complete details. Key decisions:
 | Orchestration | Single `SagaOrchestrationEffect<TSaga>` handles all step execution |
 | Data passing | IDs only + transient external data; query aggregates for system data |
 | State interface | `ISagaState` with properties only, no Apply methods |
+| Infrastructure events | `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaStepCompensated`, `SagaCompleted`, `SagaCompensated`, `SagaFailed` |
 
 ### Core Pattern
 
@@ -82,14 +83,13 @@ flowchart LR
 
 	subgraph ToBe[To-Be: Saga Orchestration Flow]
 		B1[Client] --> B2[Saga Controller]
-		B2 --> B3[SagaOrchestrator]
-		B3 --> B4[GenericAggregateGrain&lt;TSagaState&gt;]
-		B4 --> B5[StartSagaCommandHandler]
-		B5 --> B6[SagaStartedEvent]
-		B6 --> B7[SagaOrchestrationEffect]
-		B7 --> B8[Step POCO via DI]
-		B8 --> B9[Business Events + SagaStepCompleted]
-		B9 --> B10[SignalR Updates]
+		B2 --> B3[GenericAggregateGrain&lt;TSagaState&gt;]
+		B3 --> B4[StartSagaCommandHandler]
+		B4 --> B5[SagaStartedEvent]
+		B5 --> B6[SagaOrchestrationEffect]
+		B6 --> B7[Step POCO via DI]
+		B7 --> B8[Business Events + SagaStepCompleted]
+		B8 --> B9[SignalR Updates]
 	end
 ```
 
@@ -158,4 +158,4 @@ sequenceDiagram
 | Compensation model | `ICompensatable<TSaga>` interface on step class |
 | Step orchestration | Single `SagaOrchestrationEffect<TSaga>` handles all steps |
 | ISagaState Apply methods | Removed - pure events → reducers |
-| Saga status projection key | `saga:{saga-type}:{saga-id}` |
+| Saga status projection key | `saga/{sagaTypeName}/{sagaId}` |

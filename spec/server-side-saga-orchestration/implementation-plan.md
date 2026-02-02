@@ -37,54 +37,71 @@ Create `src/EventSourcing.Sagas.Abstractions` containing:
 ```csharp
 public interface ISagaState
 {
+    Guid SagaId { get; }
     SagaPhase Phase { get; }
-    int CurrentStep { get; }
-    int TotalSteps { get; }
-    string? CurrentStepName { get; }
-    string? FailureReason { get; }
+    int LastCompletedStepIndex { get; }
+    string? CorrelationId { get; }
+    DateTimeOffset? StartedAt { get; }
+    string? StepHash { get; }
 }
 
-public interface ISagaStep<TSaga> where TSaga : ISagaState
+public interface ISagaStep<TSaga> where TSaga : class, ISagaState
 {
     Task<StepResult> ExecuteAsync(TSaga state, CancellationToken ct);
 }
 
-public interface ICompensatable<TSaga> where TSaga : ISagaState
+public interface ICompensatable<TSaga> where TSaga : class, ISagaState
 {
     Task<CompensationResult> CompensateAsync(TSaga state, CancellationToken ct);
 }
 ```
 
 **Attributes:**
-- `[SagaStep(int Order, Type SagaType)]` - step discovery; order determines execution sequence
-- `[SagaOptions]` - saga-level configuration (max retries, timeout, etc.)
-- `[DelayAfterStep(TimeSpan)]` - optional delay after step completion
+- `[SagaStep(int order)]` with optional `Saga` type property - step discovery; order determines execution sequence
 
 **Result Types:**
 ```csharp
-public abstract record StepResult;
-public sealed record StepSucceeded(object? Data = null) : StepResult;
-public sealed record StepFailed(string Reason, bool Compensate = true) : StepResult;
+public sealed record StepResult
+{
+    public bool Success { get; init; }
+    public string? ErrorCode { get; init; }
+    public string? ErrorMessage { get; init; }
+    public IReadOnlyList<object> Events { get; init; } = [];
 
-public abstract record CompensationResult;
-public sealed record CompensationSucceeded : CompensationResult;
-public sealed record CompensationFailed(string Reason) : CompensationResult;
+    public static StepResult Succeeded(params object[] events) =>
+        new() { Success = true, Events = events };
+
+    public static StepResult Failed(string errorCode, string? message = null) =>
+        new() { Success = false, ErrorCode = errorCode, ErrorMessage = message };
+}
+
+public sealed record CompensationResult
+{
+    public bool Success { get; init; }
+    public bool Skipped { get; init; }
+    public string? ErrorCode { get; init; }
+    public string? ErrorMessage { get; init; }
+
+    public static CompensationResult Succeeded() => new() { Success = true };
+    public static CompensationResult Skipped(string? reason = null) => new() { Skipped = true };
+    public static CompensationResult Failed(string errorCode, string? message = null) =>
+        new() { Success = false, ErrorCode = errorCode, ErrorMessage = message };
+}
 ```
 
 **Infrastructure Events (provided by framework):**
 - `SagaStartedEvent`
-- `SagaStepStartedEvent`
-- `SagaStepSucceededEvent`
-- `SagaStepFailedEvent`
-- `SagaCompensatingEvent`
-- `SagaCompensationStepSucceededEvent`
-- `SagaCompensationStepFailedEvent`
-- `SagaCompletedEvent`
-- `SagaFailedEvent`
+- `SagaStepCompleted`
+- `SagaStepFailed`
+- `SagaCompensating`
+- `SagaStepCompensated`
+- `SagaCompleted`
+- `SagaCompensated`
+- `SagaFailed`
 
-**Step Registry:**
-- `ISagaStepRegistry<TSaga>` - discovers and orders steps by attribute
-- `ISagaStepInfo` - metadata about a step (order, type, has compensation)
+**Step Metadata:**
+- `SagaStepInfo` (index, name, type, has compensation)
+- `AddSagaStepInfo<TSaga>(SagaStepInfo[] steps)` registration helper
 
 ### 2. Runtime Implementation
 
@@ -95,7 +112,7 @@ Create `src/EventSourcing.Sagas` with:
 public sealed class SagaOrchestrationEffect<TSaga> : RootEventEffect<TSaga>
     where TSaga : class, ISagaState
 {
-    private ISagaStepRegistry<TSaga> StepRegistry { get; }
+    private IReadOnlyList<SagaStepInfo> Steps { get; }
     private IServiceProvider ServiceProvider { get; }
 
     protected override async Task HandleAsync(
@@ -110,14 +127,17 @@ public sealed class SagaOrchestrationEffect<TSaga> : RootEventEffect<TSaga>
             case SagaStartedEvent:
                 await ExecuteStepAsync(state, 0, sagaId, ct);
                 break;
-            case SagaStepSucceededEvent e:
-                await ExecuteNextOrCompleteAsync(state, e.Step, sagaId, ct);
+            case SagaStepCompleted e:
+                await ExecuteNextOrCompleteAsync(state, e.StepIndex, sagaId, ct);
                 break;
-            case SagaStepFailedEvent e when e.Compensate:
-                await StartCompensationAsync(state, e.Step, sagaId, ct);
+            case SagaStepFailed e:
+                await StartCompensationAsync(state, e.StepIndex, sagaId, ct);
                 break;
-            case SagaCompensationStepSucceededEvent e:
-                await CompensatePreviousOrFailAsync(state, e.Step, sagaId, ct);
+            case SagaCompensating:
+                await CompensatePreviousOrFailAsync(state, sagaId, ct);
+                break;
+            case SagaStepCompensated e:
+                await CompensatePreviousOrFailAsync(state, e.StepIndex, sagaId, ct);
                 break;
             // ... other cases
         }
@@ -136,7 +156,7 @@ public static IServiceCollection AddSaga<TSaga>(
     this IServiceCollection services)
     where TSaga : class, ISagaState
 {
-    // Register step registry
+    // Register step metadata
     // Register SagaOrchestrationEffect<TSaga>
     // Register discovered steps via DI
     // Register infrastructure event reducers
@@ -148,16 +168,15 @@ public static IServiceCollection AddSaga<TSaga>(
 Built-in reducers that apply infrastructure events to update saga state:
 
 ```csharp
-// Example: SagaStepSucceededReducer applies to any ISagaState
-public sealed class SagaStepSucceededReducer<TSaga> 
-    : EventReducerBase<SagaStepSucceededEvent, TSaga>
+// Example: SagaStepCompletedReducer applies to any ISagaState
+public sealed class SagaStepCompletedReducer<TSaga> 
+    : EventReducerBase<SagaStepCompleted, TSaga>
     where TSaga : ISagaState
 {
-    public override TSaga Apply(TSaga state, SagaStepSucceededEvent @event)
-        => state with 
-        { 
-            CurrentStep = @event.Step + 1,
-            CurrentStepName = @event.NextStepName
+    public override TSaga Apply(TSaga state, SagaStepCompleted @event)
+        => state with
+        {
+            LastCompletedStepIndex = @event.StepIndex
         };
 }
 ```
@@ -223,11 +242,12 @@ Add TransferFunds saga in `samples/Spring/Spring.Domain`:
 [CosmosStorage("sagas")]
 public sealed record TransferSagaState : ISagaState
 {
-    public SagaPhase Phase { get; init; }
-    public int CurrentStep { get; init; }
-    public int TotalSteps { get; init; }
-    public string? CurrentStepName { get; init; }
-    public string? FailureReason { get; init; }
+    public Guid SagaId { get; init; }
+    public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
+    public int LastCompletedStepIndex { get; init; } = -1;
+    public string? CorrelationId { get; init; }
+    public DateTimeOffset? StartedAt { get; init; }
+    public string? StepHash { get; init; }
     
     // Business data (IDs only)
     public Guid SourceAccountId { get; init; }
@@ -239,7 +259,7 @@ public sealed record TransferSagaState : ISagaState
 }
 
 // Step (POCO with attribute)
-[SagaStep(0, typeof(TransferSagaState))]
+[SagaStep(Order = 0, Saga = typeof(TransferSagaState))]
 public sealed class DebitSourceStep : ISagaStep<TransferSagaState>, ICompensatable<TransferSagaState>
 {
     private IAccountGrainFactory AccountGrainFactory { get; }
@@ -248,16 +268,16 @@ public sealed class DebitSourceStep : ISagaStep<TransferSagaState>, ICompensatab
     {
         var grain = AccountGrainFactory.GetGrain(state.SourceAccountId);
         var result = await grain.DebitAsync(state.Amount, ct);
-        return result.IsSuccess 
-            ? new StepSucceeded() 
-            : new StepFailed(result.Error);
+        return result.IsSuccess
+            ? StepResult.Succeeded(new SourceDebited { Amount = state.Amount })
+            : StepResult.Failed(result.Error);
     }
     
     public async Task<CompensationResult> CompensateAsync(TransferSagaState state, CancellationToken ct)
     {
         var grain = AccountGrainFactory.GetGrain(state.SourceAccountId);
         await grain.CreditAsync(state.Amount, ct); // Reverse the debit
-        return new CompensationSucceeded();
+        return CompensationResult.Succeeded();
     }
 }
 ```
@@ -270,7 +290,7 @@ public sealed class DebitSourceStep : ISagaStep<TransferSagaState>, ICompensatab
 - Silo: [tests/Inlet.Silo.Generators.L0Tests](../../tests/Inlet.Silo.Generators.L0Tests)
 
 **Runtime L0 Tests:**
-- `SagaStepRegistry<T>` discovery and ordering
+- `SagaStepInfo` registration ordering and step hash consistency
 - `SagaOrchestrationEffect<T>` state machine logic
 - Infrastructure reducers
 
@@ -281,12 +301,12 @@ public sealed class DebitSourceStep : ISagaStep<TransferSagaState>, ICompensatab
 - Timeout/retry scenarios
 
 **Testing Support:**
-- `FakeSagaStep<TSaga>` for unit testing orchestration
-- `SagaTestHarness<TSaga>` for driving saga through states
+- Minimal POCO step doubles registered via DI for orchestration tests
 
 ## Data Model / API Changes
 
 - New saga endpoints under `/api/sagas/{saga-name}`
+- `StartSagaCommand<TInput>` input contract for saga starts
 - New saga status projection DTOs
 - New saga abstractions in `.Abstractions` projects
 

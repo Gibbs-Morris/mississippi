@@ -34,6 +34,8 @@
 | Data passing | IDs only + transient external data | Steps query aggregates for system data; reduces state bloat |
 | ISagaState | Properties only—no Apply methods | Maintains events→reducers principle |
 | Discovery | Attribute-based only | Aligns with task.md requirement; no namespace conventions |
+| Infrastructure events | `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaStepCompensated`, `SagaCompleted`, `SagaCompensated`, `SagaFailed` | Compact event set for lifecycle transitions |
+| Result types | `StepResult` + `CompensationResult` with success flags and error codes/messages | Simple, composable step outcomes |
 
 ## Evidence Collected (gap analysis)
 

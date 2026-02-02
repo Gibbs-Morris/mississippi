@@ -18,6 +18,8 @@
 11. **Compensation via `ICompensatable<TSaga>` interface** on step classes provides a clear, discoverable pattern without separate compensation classes.
 12. **Single `SagaOrchestrationEffect<TSaga>`** can handle step dispatch, compensation, and completion without multiple specialized effects.
 13. **IDs-only data passing** (no large payloads in saga state) works because steps can query aggregates/projections for system data.
+14. **Infrastructure events** are limited to the set in updated-design (`SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaStepCompensated`, `SagaCompleted`, `SagaCompensated`, `SagaFailed`) and cover all state transitions.
+15. **StepResult/CompensationResult** shapes match updated-design (success flags, error codes/messages, and event list for steps).
 
 ## Verification Questions
 
@@ -31,6 +33,8 @@
 8. What test projects cover generators and infrastructure, and what patterns do those tests follow?
 9. How are storage naming attributes and serializer aliases applied to aggregate state/events, and are there reusable patterns for saga equivalents?
 10. Are there existing orchestration or workflow constructs in the repo that should be reused or avoided?
+11. Do any existing event types or reducer patterns conflict with the new saga infrastructure event set?
+12. Are there existing result/operation types that should be reused for `StepResult` or `CompensationResult` semantics?
 
 ## Verification Answers
 
@@ -44,3 +48,5 @@
 8. Generator tests exist under L0 projects and use Roslyn compilation helpers, e.g. [tests/Inlet.Client.Generators.L0Tests/CommandClientActionsGeneratorTests.cs](../../tests/Inlet.Client.Generators.L0Tests/CommandClientActionsGeneratorTests.cs), [tests/Inlet.Server.Generators.L0Tests/AggregateControllerGeneratorTests.cs](../../tests/Inlet.Server.Generators.L0Tests/AggregateControllerGeneratorTests.cs), and [tests/Inlet.Silo.Generators.L0Tests](../../tests/Inlet.Silo.Generators.L0Tests).
 9. Aggregate state uses Brook/storage/serializer attributes as in [samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs](../../samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs).
 10. Existing orchestration infrastructure includes root event effects and fire-and-forget effect workers in [src/EventSourcing.Aggregates/RootEventEffect.cs](../../src/EventSourcing.Aggregates/RootEventEffect.cs) and [src/EventSourcing.Aggregates/FireAndForgetEffectWorkerGrain.cs](../../src/EventSourcing.Aggregates/FireAndForgetEffectWorkerGrain.cs). No saga-specific constructs were located yet.
+11. UNVERIFIED: No repository evidence checked yet for conflicts with the updated saga infrastructure event set.
+12. UNVERIFIED: No repository evidence checked yet for existing result/operation types that should be reused for `StepResult` or `CompensationResult`.
