@@ -61,10 +61,7 @@ public static class SagaServiceCollectionExtensions
         services.AddSaga<TSaga>();
 
         // Register the start saga command handler
-        services.AddCommandHandler<
-            StartSagaCommand<TInput>,
-            TSaga,
-            StartSagaCommandHandler<TInput, TSaga>>();
+        services.AddCommandHandler<StartSagaCommand<TInput>, TSaga, StartSagaCommandHandler<TInput, TSaga>>();
         return services;
     }
 
