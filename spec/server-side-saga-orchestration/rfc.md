@@ -29,6 +29,7 @@ Mississippi lacks first-class server-side saga orchestration for multi-step, lon
 - Add saga abstractions (state interface, step/compensation base classes, attributes, saga events).
 - Add saga runtime (step registry, orchestrator, reducers/effects, DI extensions) in implementation projects.
 - Add source generators for server endpoints, client actions/effects/state/reducers, and silo registrations.
+- Discovery for steps/compensations uses attributes/types only; never namespace conventions.
 - Add a sample saga in samples/Spring to validate end-to-end usage.
 
 ## Alternatives Considered

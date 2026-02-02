@@ -6,6 +6,13 @@
 - Generator patterns live under src/Inlet.*.Generators.* and should be mirrored for sagas.
 - Existing DI, logging, and serialization conventions are enforced by repository instructions.
 
+## Requirements Captured (from task.md)
+
+- Sagas are aggregates; reuse aggregate infrastructure and patterns.
+- Discovery MUST use attributes/types (no namespace conventions).
+- State must be records; state changes only via events and reducers.
+- Generator reuse: saga generators should mirror aggregate equivalents.
+
 ## Evidence To Collect
 
 - Identify aggregate generator files and their patterns (controller, registration, client actions, reducers, state, registrations).
