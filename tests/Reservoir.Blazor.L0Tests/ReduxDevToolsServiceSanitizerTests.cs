@@ -54,7 +54,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         IStore store,
         ReservoirDevToolsOptions options
     ) =>
-        new(store, interop, Options.Create(options), new DevToolsInitializationTracker(), NullLogger<ReduxDevToolsService>.Instance);
+        new(store, interop, Options.Create(options), new(), NullLogger<ReduxDevToolsService>.Instance);
 
     private void SetupJsModuleForConnection()
     {

@@ -1,6 +1,3 @@
-using Xunit;
-
-
 namespace Mississippi.Reservoir.Blazor.L0Tests;
 
 /// <summary>
@@ -9,13 +6,19 @@ namespace Mississippi.Reservoir.Blazor.L0Tests;
 public sealed class DevToolsInitializationTrackerTests
 {
     /// <summary>
-    ///     WasInitialized should default to false.
+    ///     WasInitialized can be set back to false.
     /// </summary>
     [Fact]
-    public void WasInitializedDefaultsToFalse()
+    public void WasInitializedCanBeSetBackToFalse()
     {
-        // Arrange & Act
-        DevToolsInitializationTracker tracker = new();
+        // Arrange
+        DevToolsInitializationTracker tracker = new()
+        {
+            WasInitialized = true,
+        };
+
+        // Act
+        tracker.WasInitialized = false;
 
         // Assert
         Assert.False(tracker.WasInitialized);
@@ -38,19 +41,13 @@ public sealed class DevToolsInitializationTrackerTests
     }
 
     /// <summary>
-    ///     WasInitialized can be set back to false.
+    ///     WasInitialized should default to false.
     /// </summary>
     [Fact]
-    public void WasInitializedCanBeSetBackToFalse()
+    public void WasInitializedDefaultsToFalse()
     {
-        // Arrange
-        DevToolsInitializationTracker tracker = new()
-        {
-            WasInitialized = true,
-        };
-
-        // Act
-        tracker.WasInitialized = false;
+        // Arrange & Act
+        DevToolsInitializationTracker tracker = new();
 
         // Assert
         Assert.False(tracker.WasInitialized);

@@ -89,9 +89,9 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
 
     private DevToolsInitializationTracker InitializationTracker { get; }
 
-    private ILogger<ReduxDevToolsService> Logger { get; }
-
     private ReservoirDevToolsInterop Interop { get; }
+
+    private ILogger<ReduxDevToolsService> Logger { get; }
 
     private ReservoirDevToolsOptions Options { get; }
 
@@ -197,6 +197,11 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
         string messageJson
     )
     {
+        if (!isInitialized)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(messageJson))
         {
             return;
@@ -216,12 +221,11 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         This method unsubscribes from store events so new actions are no longer sent to DevTools.
-    ///         The DevTools connection and callback references remain active to allow re-initialization
-    ///         via <see cref="Initialize" />.
+    ///         This method unsubscribes from store events so new actions are no longer sent to DevTools,
+    ///         clears the connection state, and disconnects from the DevTools extension.
     ///     </para>
     ///     <para>
-    ///         For full cleanup including disconnecting from DevTools, use <see cref="DisposeAsync" />.
+    ///         For full cleanup including releasing JS module references, use <see cref="DisposeAsync" />.
     ///     </para>
     /// </remarks>
     public void Stop()
@@ -229,6 +233,10 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
         storeEventsSubscription?.Dispose();
         storeEventsSubscription = null;
         isInitialized = false;
+        devToolsConnected = false;
+        dotNetRef?.Dispose();
+        dotNetRef = null;
+        _ = Interop.DisconnectAsync();
     }
 
     private Dictionary<string, object?> BuildOptionsPayload()

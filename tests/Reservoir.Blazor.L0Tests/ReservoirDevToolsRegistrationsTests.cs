@@ -1,8 +1,8 @@
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
@@ -132,12 +132,10 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Assert - Use reflection to verify DevTools received the same store instance.
         // This validates the captive dependency fix: before the fix, the singleton service
         // would have captured a different store instance than the scoped component resolution.
-        System.Reflection.PropertyInfo? storeProperty = typeof(ReduxDevToolsService).GetProperty(
+        PropertyInfo? storeProperty = typeof(ReduxDevToolsService).GetProperty(
             "Store",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-        );
+            BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(storeProperty);
-
         IStore? devToolsStore = storeProperty.GetValue(devToolsService) as IStore;
         IStore? devToolsStore2 = storeProperty.GetValue(devToolsService2) as IStore;
 

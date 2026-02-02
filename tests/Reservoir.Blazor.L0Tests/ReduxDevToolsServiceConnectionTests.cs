@@ -58,7 +58,13 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     {
         options ??= new();
         tracker ??= new();
-        return new(store, interop, Options.Create(options), tracker, NullLogger<ReduxDevToolsService>.Instance, hostEnvironment);
+        return new(
+            store,
+            interop,
+            Options.Create(options),
+            tracker,
+            NullLogger<ReduxDevToolsService>.Instance,
+            hostEnvironment);
     }
 
     private void SetupJsModuleForConnection(
@@ -109,7 +115,35 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         ReservoirDevToolsOptions options = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(store, null!, Options.Create(options), new DevToolsInitializationTracker(), NullLogger<ReduxDevToolsService>.Instance));
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
+            store,
+            null!,
+            Options.Create(options),
+            new(),
+            NullLogger<ReduxDevToolsService>.Instance));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when logger is null.
+    /// </summary>
+    [Fact]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Test validates exception is thrown; no instance is created.")]
+    public void ConstructorThrowsWhenLoggerIsNull()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
+            store,
+            interop,
+            Options.Create(options),
+            new(),
+            null!));
     }
 
     /// <summary>
@@ -126,7 +160,12 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         using Store store = CreateStore();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(store, interop, null!, new DevToolsInitializationTracker(), NullLogger<ReduxDevToolsService>.Instance));
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
+            store,
+            interop,
+            null!,
+            new(),
+            NullLogger<ReduxDevToolsService>.Instance));
     }
 
     /// <summary>
@@ -143,7 +182,35 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         ReservoirDevToolsOptions options = new();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(null!, interop, Options.Create(options), new DevToolsInitializationTracker(), NullLogger<ReduxDevToolsService>.Instance));
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
+            null!,
+            interop,
+            Options.Create(options),
+            new(),
+            NullLogger<ReduxDevToolsService>.Instance));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when tracker is null.
+    /// </summary>
+    [Fact]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP005:Return type should indicate that the value should be disposed",
+        Justification = "Test validates exception is thrown; no instance is created.")]
+    public void ConstructorThrowsWhenTrackerIsNull()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(
+            store,
+            interop,
+            Options.Create(options),
+            null!,
+            NullLogger<ReduxDevToolsService>.Instance));
     }
 
     /// <summary>
@@ -176,6 +243,29 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
     }
 
     /// <summary>
+    ///     Initialize should not set the tracker flag when DevTools is disabled.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InitializeDoesNotSetTrackerWhenDisabled()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Off,
+        };
+        DevToolsInitializationTracker tracker = new();
+        await using ReduxDevToolsService service = CreateService(store, options, tracker: tracker);
+
+        // Act
+        service.Initialize();
+
+        // Assert - tracker not set because DevTools is disabled
+        Assert.False(tracker.WasInitialized);
+    }
+
+    /// <summary>
     ///     Initialize should not subscribe when DevTools is disabled.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
@@ -195,6 +285,30 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
 
         // Assert - no JS calls should be made
         jsRuntimeMock.Verify(r => r.InvokeAsync<IJSObjectReference>("import", It.IsAny<object[]>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Initialize should set the tracker flag when DevTools is enabled.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task InitializeSetsTrackerWhenEnabled()
+    {
+        // Arrange
+        using Store store = CreateStore();
+        ReservoirDevToolsOptions options = new()
+        {
+            Enablement = ReservoirDevToolsEnablement.Always,
+        };
+        DevToolsInitializationTracker tracker = new();
+        await using ReduxDevToolsService service = CreateService(store, options, tracker: tracker);
+        SetupJsModuleForConnection();
+
+        // Act
+        service.Initialize();
+
+        // Assert
+        Assert.True(tracker.WasInitialized);
     }
 
     /// <summary>
@@ -232,91 +346,10 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
 
         // Assert - service should be subscribed (no exception means success)
         // The subscription is internal, so we verify via send side effects when DevTools is connected
-        Assert.True(ReferenceEquals(completedTask, sendCalledTcs.Task), "Timed out waiting for DevTools 'send' invocation.");
+        Assert.True(
+            ReferenceEquals(completedTask, sendCalledTcs.Task),
+            "Timed out waiting for DevTools 'send' invocation.");
         Assert.True(sendCount > 0);
-    }
-
-    /// <summary>
-    ///     Initialize should set the tracker flag when DevTools is enabled.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task InitializeSetsTrackerWhenEnabled()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Always,
-        };
-        DevToolsInitializationTracker tracker = new();
-        await using ReduxDevToolsService service = CreateService(store, options, tracker: tracker);
-        SetupJsModuleForConnection();
-
-        // Act
-        service.Initialize();
-
-        // Assert
-        Assert.True(tracker.WasInitialized);
-    }
-
-    /// <summary>
-    ///     Initialize should not set the tracker flag when DevTools is disabled.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task InitializeDoesNotSetTrackerWhenDisabled()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new()
-        {
-            Enablement = ReservoirDevToolsEnablement.Off,
-        };
-        DevToolsInitializationTracker tracker = new();
-        await using ReduxDevToolsService service = CreateService(store, options, tracker: tracker);
-
-        // Act
-        service.Initialize();
-
-        // Assert - tracker not set because DevTools is disabled
-        Assert.False(tracker.WasInitialized);
-    }
-
-    /// <summary>
-    ///     Constructor should throw when tracker is null.
-    /// </summary>
-    [Fact]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP005:Return type should indicate that the value should be disposed",
-        Justification = "Test validates exception is thrown; no instance is created.")]
-    public void ConstructorThrowsWhenTrackerIsNull()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(store, interop, Options.Create(options), null!, NullLogger<ReduxDevToolsService>.Instance));
-    }
-
-    /// <summary>
-    ///     Constructor should throw when logger is null.
-    /// </summary>
-    [Fact]
-    [SuppressMessage(
-        "IDisposableAnalyzers.Correctness",
-        "IDISP005:Return type should indicate that the value should be disposed",
-        Justification = "Test validates exception is thrown; no instance is created.")]
-    public void ConstructorThrowsWhenLoggerIsNull()
-    {
-        // Arrange
-        using Store store = CreateStore();
-        ReservoirDevToolsOptions options = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new ReduxDevToolsService(store, interop, Options.Create(options), new DevToolsInitializationTracker(), null!));
     }
 
     /// <summary>
