@@ -236,7 +236,7 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
         devToolsConnected = false;
         dotNetRef?.Dispose();
         dotNetRef = null;
-        _ = Interop.DisconnectAsync();
+        _ = Interop.DisconnectAsync().AsTask();
     }
 
     private Dictionary<string, object?> BuildOptionsPayload()
