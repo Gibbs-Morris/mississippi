@@ -1,5 +1,7 @@
 # RFC: Server-Side Saga Orchestration
 
+> **Status:** Updated - See [updated-design.md](updated-design.md) for final design decisions.
+
 ## Problem
 
 Mississippi lacks first-class server-side saga orchestration for multi-step, long-running transactions across aggregates with built-in compensation and consistent developer experience. Developers must coordinate steps manually and lack standardized observability and tooling.
@@ -8,15 +10,18 @@ Mississippi lacks first-class server-side saga orchestration for multi-step, lon
 
 - Provide saga orchestration that reuses existing aggregate infrastructure (sagas are aggregates).
 - Enforce immutable record-based state and event-reducer state transitions.
-- Use attribute/type-based discovery for steps and compensations; no namespace conventions.
+- Use attribute/type-based discovery for steps; no namespace conventions.
 - Generate server, client, and silo boilerplate to match existing aggregate generator patterns.
 - Provide real-time saga status updates consistent with current projection patterns.
+- **Minimal boilerplate** - Steps are POCOs with attributes, not framework base classes.
+- **Simple compensation** - Compensation is an optional method on the step class.
 
 ## Non-Goals
 
 - Introducing parallel/alternative infrastructure that duplicates aggregate patterns.
 - Adding non-deterministic behavior or mutable saga state.
 - Changing existing aggregate public APIs unless required for saga integration.
+- Storing system data in saga state (query aggregates/projections instead).
 
 ## Current State (verified)
 
@@ -25,13 +30,40 @@ Mississippi lacks first-class server-side saga orchestration for multi-step, lon
 - Aggregate runtime orchestration uses `GenericAggregateGrain<T>` with root command/reducer/effect dispatchers in [src/EventSourcing.Aggregates/GenericAggregateGrain.cs](../../src/EventSourcing.Aggregates/GenericAggregateGrain.cs), [src/EventSourcing.Aggregates/RootCommandHandler.cs](../../src/EventSourcing.Aggregates/RootCommandHandler.cs), and [src/EventSourcing.Aggregates/RootEventEffect.cs](../../src/EventSourcing.Aggregates/RootEventEffect.cs).
 - Projections are exposed via `UxProjectionControllerBase` and client SignalR subscriptions in [src/Inlet.Server.Generators/ProjectionEndpointsGenerator.cs](../../src/Inlet.Server.Generators/ProjectionEndpointsGenerator.cs) and [src/Inlet.Client/ActionEffects/InletSignalRActionEffect.cs](../../src/Inlet.Client/ActionEffects/InletSignalRActionEffect.cs).
 
-## Proposed Design (initial)
+## Proposed Design (Revised)
 
-- Add saga abstractions (state interface, step/compensation base classes, attributes, saga events).
-- Add saga runtime (step registry, orchestrator, reducers/effects, DI extensions) in implementation projects.
-- Add source generators for server endpoints, client actions/effects/state/reducers, and silo registrations.
-- Discovery for steps/compensations uses attributes/types only; never namespace conventions.
-- Add a sample saga in samples/Spring to validate end-to-end usage.
+See [updated-design.md](updated-design.md) for complete details. Key decisions:
+
+| Decision | Choice |
+|----------|--------|
+| Step implementation | POCO with `[SagaStep]` attribute implementing `ISagaStep<TSaga>` |
+| Compensation | Optional `ICompensatable<TSaga>` interface on step class |
+| Orchestration | Single `SagaOrchestrationEffect<TSaga>` handles all step execution |
+| Data passing | IDs only + transient external data; query aggregates for system data |
+| State interface | `ISagaState` with properties only, no Apply methods |
+
+### Core Pattern
+
+```csharp
+// Step is a POCO - testable, DI-friendly
+[SagaStep(Order = 1, Saga = typeof(TransferFundsSagaState))]
+public sealed class DebitSourceStep : ISagaStep<TransferFundsSagaState>, ICompensatable<TransferFundsSagaState>
+{
+    public DebitSourceStep(IAggregateGrainFactory grainFactory) { ... }
+    
+    public async Task<StepResult> ExecuteAsync(TransferFundsSagaState state, CancellationToken ct)
+    {
+        // Business logic...
+        return StepResult.Succeeded(new SourceDebited { Amount = state.Amount });
+    }
+    
+    public async Task<CompensationResult> CompensateAsync(TransferFundsSagaState state, CancellationToken ct)
+    {
+        // Undo logic...
+        return CompensationResult.Succeeded();
+    }
+}
+```
 
 ## Architecture Diagrams
 
@@ -53,44 +85,48 @@ flowchart LR
 		B2 --> B3[SagaOrchestrator]
 		B3 --> B4[GenericAggregateGrain&lt;TSagaState&gt;]
 		B4 --> B5[StartSagaCommandHandler]
-		B5 --> B6[Saga Events Persisted]
-		B6 --> B7[SagaStepStartedEffect]
-		B7 --> B8[Saga Step/Compensation]
-		B8 --> B9[RootReducer + SagaStatusProjection]
+		B5 --> B6[SagaStartedEvent]
+		B6 --> B7[SagaOrchestrationEffect]
+		B7 --> B8[Step POCO via DI]
+		B8 --> B9[Business Events + SagaStepCompleted]
 		B9 --> B10[SignalR Updates]
 	end
 ```
 
-### Saga Execution Sequence (critical path)
+### Saga Execution Sequence (Revised)
 
 ```mermaid
 sequenceDiagram
 	participant Client
-	participant SagaController
-	participant Orchestrator
+	participant Controller as SagaController
 	participant Grain as GenericAggregateGrain&lt;TSagaState&gt;
-	participant RootHandler as RootCommandHandler
-	participant RootReducer
-	participant StepEffect as SagaStepStartedEffect
-	participant Step as SagaStepBase
+	participant Handler as StartSagaCommandHandler
+	participant Reducer as RootReducer
+	participant Effect as SagaOrchestrationEffect
+	participant Step as Step POCO (DI)
 
-	Client->>SagaController: POST /api/sagas/{saga}/{sagaId}
-	SagaController->>Orchestrator: StartAsync(sagaId, input)
-	Orchestrator->>Grain: ExecuteAsync(StartSagaCommand)
-	Grain->>RootHandler: Handle(StartSagaCommand)
-	RootHandler-->>Grain: SagaStartedEvent + SagaStepStartedEvent
-	Grain->>RootReducer: Reduce(events)
-	Grain->>StepEffect: Dispatch SagaStepStartedEvent
-	StepEffect->>Step: ExecuteAsync(context, state)
-	Step-->>StepEffect: StepResult (events or error)
-	StepEffect-->>Grain: Persist events / emit failure
-	Grain->>RootReducer: Reduce(step events)
+	Client->>Controller: POST /api/sagas/{saga}/{sagaId}
+	Controller->>Grain: ExecuteAsync(StartSagaCommand)
+	Grain->>Handler: Handle(StartSagaCommand)
+	Handler-->>Grain: SagaStartedEvent
+	Grain->>Reducer: Reduce(SagaStartedEvent)
+	Note over Reducer: Phase = Running
+	Grain->>Effect: Handle SagaStartedEvent
+	Effect->>Step: Resolve Step0 from DI
+	Effect->>Step: ExecuteAsync(state, ct)
+	Step-->>Effect: StepResult([events])
+	Effect-->>Grain: Yield [events, SagaStepCompleted(0)]
+	Grain->>Reducer: Reduce(events)
+	Grain->>Effect: Handle SagaStepCompleted(0)
+	Note over Effect: Repeat for next step...
 ```
 
 ## Alternatives Considered
 
 - Manual orchestration in application code: rejected due to DX inconsistency and boilerplate.
 - Namespace-based discovery: rejected by requirement.
+- Separate compensation classes: rejected in favor of `ICompensatable` interface on step (simpler DX).
+- Complex effect chain: rejected in favor of single `SagaOrchestrationEffect` (easier to understand).
 
 ## Security
 
@@ -113,8 +149,13 @@ sequenceDiagram
 - Incorrect step discovery or step hash drift detection could cause runtime failures.
 - Saga status projections might not align with existing SignalR usage patterns.
 
-## Open Questions
+## Resolved Questions
 
-- How saga input is stored and made available to steps (event vs context).
-- How saga status projections are keyed for SignalR subscriptions.
-- Whether saga effects are auto-registered or opt-in.
+| Question | Decision |
+|----------|----------|
+| How saga input is stored | In saga state via `SagaStartedEvent` → reducer |
+| Data passing between steps | IDs only + transient external; query aggregates for system data |
+| Compensation model | `ICompensatable<TSaga>` interface on step class |
+| Step orchestration | Single `SagaOrchestrationEffect<TSaga>` handles all steps |
+| ISagaState Apply methods | Removed - pure events → reducers |
+| Saga status projection key | `saga:{saga-type}:{saga-id}` |

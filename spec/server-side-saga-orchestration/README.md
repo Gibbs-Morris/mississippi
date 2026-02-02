@@ -1,15 +1,16 @@
 # Server-Side Saga Orchestration Plan
 
-Status: **Gap Analysis Complete - Awaiting Design Decisions**
+Status: **Design Complete - Awaiting Approval**
 
 ## Index
 
+- [**updated-design.md**](updated-design.md) ← **Authoritative design reference**
 - [learned.md](learned.md)
 - [rfc.md](rfc.md)
 - [verification.md](verification.md)
 - [implementation-plan.md](implementation-plan.md)
 - [progress.md](progress.md)
-- [**gap-analysis.md**](gap-analysis.md) ← **NEW: Critical findings**
+- [gap-analysis.md](gap-analysis.md) ← Historical findings (all gaps now resolved)
 
 ## Task Size
 
@@ -18,24 +19,29 @@ Status: **Gap Analysis Complete - Awaiting Design Decisions**
 
 ## Current Status
 
-**The first draft has critical gaps that must be resolved before implementation.**
+**All gaps from the first draft have been resolved.** The design now uses:
 
-See [gap-analysis.md](gap-analysis.md) for detailed findings including:
+| Decision | Choice |
+|----------|--------|
+| Step implementation | POCO with `[SagaStep(Order, typeof(TSaga))]` implementing `ISagaStep<TSaga>` |
+| Compensation | `ICompensatable<TSaga>` interface on step class |
+| Orchestration | Single `SagaOrchestrationEffect<TSaga>` |
+| Data passing | IDs only + transient external data; query aggregates for system data |
+| ISagaState | Properties only—no Apply methods |
+| Discovery | Attribute-based only (no namespace conventions) |
 
-| Gap | Severity | Issue |
-|-----|----------|-------|
-| #1 | **Blocking** | `ISagaState` has mutable Apply methods that violate events→reducers principle |
-| #2 | **Blocking** | Saga input handling is underspecified (where stored, how accessed) |
-| #3 | **Blocking** | Step discovery association unclear (how steps link to sagas) |
-| #4 | Medium | Infrastructure reducer implementation approach unclear |
-| #5 | **Blocking** | Effect orchestration chain not fully specified |
-| #6 | Medium | SignalR projection key format undefined |
-| #7 | Medium | Step registry runtime vs generation unclear |
-| #8 | DX | Significant boilerplate for simple sagas |
+## Gap Resolution Summary
 
-## Key Contradiction Found
-
-**task.md explicitly forbids namespace-based discovery**, but the implementation plan still references namespace scanning for steps/compensations. This must be reconciled.
+| Gap | Status | Resolution |
+|-----|--------|------------|
+| #1 ISagaState Apply methods | ✅ Resolved | Removed; pure reducers only |
+| #2 Saga input handling | ✅ Resolved | IDs stored in state; steps query aggregates |
+| #3 Step discovery association | ✅ Resolved | `[SagaStep(Order, typeof(TSaga))]` attribute |
+| #4 Infrastructure reducers | ✅ Resolved | Generic reducers provided by framework |
+| #5 Effect orchestration | ✅ Resolved | Single `SagaOrchestrationEffect<TSaga>` |
+| #6 SignalR projection key | ✅ Resolved | `saga/{sagaTypeName}/{sagaId}` |
+| #7 Step registry timing | ✅ Resolved | Runtime discovery via DI |
+| #8 Boilerplate | ✅ Resolved | POCO steps reduce ceremony significantly |
 
 ## Summary
 

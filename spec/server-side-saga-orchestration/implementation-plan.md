@@ -1,4 +1,7 @@
-# Implementation Plan (Revised)
+# Implementation Plan (Revised 2025-06-10)
+
+> **Status**: Updated to reflect the `SagaOrchestrationEffect<TSaga>` design.
+> See [updated-design.md](./updated-design.md) for the authoritative design reference.
 
 ## Requirements (from task.md)
 
@@ -12,117 +15,304 @@
 
 - Follow repository guardrails (logging, DI, zero warnings, CPM, abstractions).
 - No new public API breaking changes without approval.
+- ISagaState MUST have properties only—no Apply methods (events→reducers principle).
 
-## Assumptions (UNVERIFIED)
+## Key Design Decisions
 
-- Existing aggregate generators can be cloned/adapted without architectural conflicts.
-- SignalR projection mechanisms are available for saga status updates.
-
-## Unknowns
-
-- Exact aggregate generator entry points and extension patterns.
-- Current projection subscription patterns and required DTO shape.
-- How aggregates handle step/effect registration and runtime orchestration.
-
-## Changes From Initial Plan
-
-- Explicitly call out attribute/type-based discovery to avoid namespace conventions.
-- Add concrete file/module touch list per generator and runtime layer.
-- Add plan to reuse projection infrastructure for saga status updates.
-- Add rollout, observability, and testing command checklist.
+| Decision | Choice |
+|----------|--------|
+| Step implementation | POCO with `[SagaStep(Order, typeof(TSaga))]` attribute implementing `ISagaStep<TSaga>` |
+| Compensation | `ICompensatable<TSaga>` interface on step class |
+| Orchestration | Single `SagaOrchestrationEffect<TSaga>` handles step dispatch, compensation, completion |
+| Data passing | IDs only + transient external data in saga state; query aggregates for system data |
+| ISagaState | Properties only—no Apply methods |
 
 ## Detailed Plan
 
 ### 1. Abstractions (new projects)
 
-- Create `src/EventSourcing.Sagas.Abstractions` containing:
-	- `SagaPhase` enum.
-	- `ISagaState` (record-oriented contract), `ISagaDefinition`.
-	- `ISagaContext` (access to saga input and correlation).
-	- `SagaStepBase<TSaga>` and `SagaCompensationBase<TSaga>`.
-	- `StepResult` and `CompensationResult` records.
-	- Saga infrastructure events (Started/StepStarted/StepCompleted/StepFailed/Compensating/Completed/Failed, etc.).
-	- `SagaStepAttribute`, `SagaCompensationAttribute`, `SagaOptionsAttribute`, `DelayAfterStepAttribute`.
-	- `ISagaStepRegistry<TSaga>` and `ISagaStepInfo` contracts.
-	- `SagaStatusProjection` record (if reusing UX projection patterns).
-- Create `src/Inlet.Generators.Abstractions` additions:
-	- `GenerateSagaEndpointsAttribute` mirroring `GenerateAggregateEndpointsAttribute` but for sagas.
-- Create `src/Inlet.Client.Abstractions` additions:
-	- `ISagaAction`, `ISagaExecutingAction`, `ISagaSucceededAction`, `ISagaFailedAction`.
-	- `SagaActionEffectBase<TAction, TState>` mirroring `CommandActionEffectBase`.
+Create `src/EventSourcing.Sagas.Abstractions` containing:
+
+**Core Interfaces:**
+```csharp
+public interface ISagaState
+{
+    SagaPhase Phase { get; }
+    int CurrentStep { get; }
+    int TotalSteps { get; }
+    string? CurrentStepName { get; }
+    string? FailureReason { get; }
+}
+
+public interface ISagaStep<TSaga> where TSaga : ISagaState
+{
+    Task<StepResult> ExecuteAsync(TSaga state, CancellationToken ct);
+}
+
+public interface ICompensatable<TSaga> where TSaga : ISagaState
+{
+    Task<CompensationResult> CompensateAsync(TSaga state, CancellationToken ct);
+}
+```
+
+**Attributes:**
+- `[SagaStep(int Order, Type SagaType)]` - step discovery; order determines execution sequence
+- `[SagaOptions]` - saga-level configuration (max retries, timeout, etc.)
+- `[DelayAfterStep(TimeSpan)]` - optional delay after step completion
+
+**Result Types:**
+```csharp
+public abstract record StepResult;
+public sealed record StepSucceeded(object? Data = null) : StepResult;
+public sealed record StepFailed(string Reason, bool Compensate = true) : StepResult;
+
+public abstract record CompensationResult;
+public sealed record CompensationSucceeded : CompensationResult;
+public sealed record CompensationFailed(string Reason) : CompensationResult;
+```
+
+**Infrastructure Events (provided by framework):**
+- `SagaStartedEvent`
+- `SagaStepStartedEvent`
+- `SagaStepSucceededEvent`
+- `SagaStepFailedEvent`
+- `SagaCompensatingEvent`
+- `SagaCompensationStepSucceededEvent`
+- `SagaCompensationStepFailedEvent`
+- `SagaCompletedEvent`
+- `SagaFailedEvent`
+
+**Step Registry:**
+- `ISagaStepRegistry<TSaga>` - discovers and orders steps by attribute
+- `ISagaStepInfo` - metadata about a step (order, type, has compensation)
 
 ### 2. Runtime Implementation
 
-- Create `src/EventSourcing.Sagas` with:
-	- `SagaStepRegistry<TSaga>` (attribute-based step/compensation discovery, step hash computation).
-	- `SagaContext` implementation.
-	- `StartSagaCommandHandler<TInput, TSaga>` using existing command handler patterns.
-	- Saga reducers implementing `EventReducerBase<TEvent, TSaga>` for infrastructure events.
-	- Saga effects: `SagaStepStartedEffect<TSaga>`, `SagaStepCompletedEffect<TSaga>`, `SagaStepFailedEffect<TSaga>`.
-	- `SagaOrchestrator` using `IAggregateGrainFactory` to invoke saga grains.
-	- `ServiceCollectionExtensions` for `AddSaga<TSaga, TInput>` and orchestration registration.
-	- LoggerExtensions per class that logs entry/success/failure with correlation IDs.
+Create `src/EventSourcing.Sagas` with:
 
-### 3. Server Generators
+**Single Orchestration Effect:**
+```csharp
+public sealed class SagaOrchestrationEffect<TSaga> : RootEventEffect<TSaga>
+    where TSaga : class, ISagaState
+{
+    private ISagaStepRegistry<TSaga> StepRegistry { get; }
+    private IServiceProvider ServiceProvider { get; }
 
-- Add `SagaControllerGenerator` in [src/Inlet.Server.Generators](../../src/Inlet.Server.Generators):
-	- Discover saga types via `[GenerateSagaEndpoints]` and `ISagaDefinition`.
-	- Generate `POST /api/sagas/{saga-route}/{sagaId}` start endpoint.
-	- Generate `GET /api/sagas/{saga-route}/{sagaId}/status` status endpoint.
-- Add `SagaServerDtoGenerator`:
-	- Generate `Start{SagaName}SagaDto` and mapper `IMapper<Dto, Input>`.
+    protected override async Task HandleAsync(
+        TSaga state,
+        IEventEnvelope envelope,
+        string sagaId,
+        long position,
+        CancellationToken ct)
+    {
+        switch (envelope.Event)
+        {
+            case SagaStartedEvent:
+                await ExecuteStepAsync(state, 0, sagaId, ct);
+                break;
+            case SagaStepSucceededEvent e:
+                await ExecuteNextOrCompleteAsync(state, e.Step, sagaId, ct);
+                break;
+            case SagaStepFailedEvent e when e.Compensate:
+                await StartCompensationAsync(state, e.Step, sagaId, ct);
+                break;
+            case SagaCompensationStepSucceededEvent e:
+                await CompensatePreviousOrFailAsync(state, e.Step, sagaId, ct);
+                break;
+            // ... other cases
+        }
+    }
+}
+```
 
-### 4. Client Generators
+**Step Discovery:**
+- Attribute-based only: scan for `[SagaStep(Order, typeof(TSaga))]`
+- Order determines execution sequence (0, 1, 2, ...)
+- Steps resolved via DI at execution time
 
-- Add saga equivalents in [src/Inlet.Client.Generators](../../src/Inlet.Client.Generators):
-	- `SagaClientActionsGenerator` (Start/Executing/Succeeded/Failed actions).
-	- `SagaClientActionEffectsGenerator` (HTTP POST to saga endpoint).
-	- `SagaClientStateGenerator` and `SagaClientReducersGenerator`.
-	- `SagaClientRegistrationGenerator` (registers mappers/reducers/effects).
+**Registration Extension:**
+```csharp
+public static IServiceCollection AddSaga<TSaga>(
+    this IServiceCollection services)
+    where TSaga : class, ISagaState
+{
+    // Register step registry
+    // Register SagaOrchestrationEffect<TSaga>
+    // Register discovered steps via DI
+    // Register infrastructure event reducers
+}
+```
 
-### 5. Silo Generators
+### 3. Infrastructure Reducers (provided by framework)
 
-- Add `SagaSiloRegistrationGenerator` in [src/Inlet.Silo.Generators](../../src/Inlet.Silo.Generators):
-	- Discover saga state types via `[GenerateSagaEndpoints]` + `ISagaState`.
-	- Discover steps and compensations via `[SagaStep]` and `[SagaCompensation]` attributes.
-	- Discover reducers via `EventReducerBase<TEvent, TSaga>` where `TSaga : ISagaState`.
-	- Register event types, reducers, step registry, and snapshot converters.
-	- Avoid namespace-based discovery entirely.
+Built-in reducers that apply infrastructure events to update saga state:
 
-### 6. Sample Saga (Spring)
+```csharp
+// Example: SagaStepSucceededReducer applies to any ISagaState
+public sealed class SagaStepSucceededReducer<TSaga> 
+    : EventReducerBase<SagaStepSucceededEvent, TSaga>
+    where TSaga : ISagaState
+{
+    public override TSaga Apply(TSaga state, SagaStepSucceededEvent @event)
+        => state with 
+        { 
+            CurrentStep = @event.Step + 1,
+            CurrentStepName = @event.NextStepName
+        };
+}
+```
 
-- Add TransferFunds saga in `samples/Spring/Spring.Domain`:
-	- Input record, state record, events, reducers, steps, compensations.
-	- `[GenerateSagaEndpoints]` and storage attributes on state.
-- Wire generated registrations in `samples/Spring/Spring.Silo`.
-- Add client page(s) in `samples/Spring/Spring.Client` to trigger saga and display status.
+### 4. Server Generators
 
-### 7. Tests
+Add `SagaControllerGenerator` in [src/Inlet.Server.Generators](../../src/Inlet.Server.Generators):
 
-- Add generator L0 tests mirroring existing patterns:
-	- Client: under [tests/Inlet.Client.Generators.L0Tests](../../tests/Inlet.Client.Generators.L0Tests).
-	- Server: under [tests/Inlet.Server.Generators.L0Tests](../../tests/Inlet.Server.Generators.L0Tests).
-	- Silo: under [tests/Inlet.Silo.Generators.L0Tests](../../tests/Inlet.Silo.Generators.L0Tests).
-- Add runtime L0 tests for `SagaStepRegistry`, reducers, and effects.
-- Add L2 integration test in `samples/Spring/Spring.L2Tests` for end-to-end saga flow.
+- Discover saga types via `[GenerateSagaEndpoints]` + `ISagaState`
+- Generate `POST /api/sagas/{saga-route}/{sagaId}` start endpoint
+- Generate `GET /api/sagas/{saga-route}/{sagaId}/status` status endpoint
+
+Add `SagaServerDtoGenerator`:
+- Generate `Start{SagaName}SagaDto` and mapper
+
+### 5. Client Generators
+
+Add saga equivalents in [src/Inlet.Client.Generators](../../src/Inlet.Client.Generators):
+
+- `SagaClientActionsGenerator` (Start/Executing/Succeeded/Failed actions)
+- `SagaClientActionEffectsGenerator` (HTTP POST to saga endpoint)
+- `SagaClientStateGenerator` and `SagaClientReducersGenerator`
+- `SagaClientRegistrationGenerator`
+
+### 6. Silo Generators
+
+Add `SagaSiloRegistrationGenerator` in [src/Inlet.Silo.Generators](../../src/Inlet.Silo.Generators):
+
+**Discovery (attribute-based only):**
+- Saga state types: `[GenerateSagaEndpoints]` + implements `ISagaState`
+- Steps: `[SagaStep(Order, typeof(TSaga))]` attribute
+- Reducers: `EventReducerBase<TEvent, TSaga>` where `TSaga : ISagaState`
+
+**No namespace discovery.** All discovery via types and attributes.
+
+**Generated Registration:**
+```csharp
+public static class SagaRegistration
+{
+    public static IServiceCollection AddGeneratedSagas(
+        this IServiceCollection services)
+    {
+        // For each discovered saga:
+        services.AddSaga<TransferSagaState>();
+        
+        // Register step types (discovered by attribute)
+        services.AddTransient<DebitSourceStep>();
+        services.AddTransient<CreditDestinationStep>();
+        // ...
+        
+        return services;
+    }
+}
+```
+
+### 7. Sample Saga (Spring)
+
+Add TransferFunds saga in `samples/Spring/Spring.Domain`:
+
+```csharp
+// State (properties only - no Apply methods)
+[GenerateSagaEndpoints("transfer")]
+[CosmosStorage("sagas")]
+public sealed record TransferSagaState : ISagaState
+{
+    public SagaPhase Phase { get; init; }
+    public int CurrentStep { get; init; }
+    public int TotalSteps { get; init; }
+    public string? CurrentStepName { get; init; }
+    public string? FailureReason { get; init; }
+    
+    // Business data (IDs only)
+    public Guid SourceAccountId { get; init; }
+    public Guid DestinationAccountId { get; init; }
+    public decimal Amount { get; init; }
+    
+    // Transient external data (if needed)
+    public string? TransferReference { get; init; }
+}
+
+// Step (POCO with attribute)
+[SagaStep(0, typeof(TransferSagaState))]
+public sealed class DebitSourceStep : ISagaStep<TransferSagaState>, ICompensatable<TransferSagaState>
+{
+    private IAccountGrainFactory AccountGrainFactory { get; }
+    
+    public async Task<StepResult> ExecuteAsync(TransferSagaState state, CancellationToken ct)
+    {
+        var grain = AccountGrainFactory.GetGrain(state.SourceAccountId);
+        var result = await grain.DebitAsync(state.Amount, ct);
+        return result.IsSuccess 
+            ? new StepSucceeded() 
+            : new StepFailed(result.Error);
+    }
+    
+    public async Task<CompensationResult> CompensateAsync(TransferSagaState state, CancellationToken ct)
+    {
+        var grain = AccountGrainFactory.GetGrain(state.SourceAccountId);
+        await grain.CreditAsync(state.Amount, ct); // Reverse the debit
+        return new CompensationSucceeded();
+    }
+}
+```
+
+### 8. Tests
+
+**Generator L0 Tests:**
+- Client: [tests/Inlet.Client.Generators.L0Tests](../../tests/Inlet.Client.Generators.L0Tests)
+- Server: [tests/Inlet.Server.Generators.L0Tests](../../tests/Inlet.Server.Generators.L0Tests)
+- Silo: [tests/Inlet.Silo.Generators.L0Tests](../../tests/Inlet.Silo.Generators.L0Tests)
+
+**Runtime L0 Tests:**
+- `SagaStepRegistry<T>` discovery and ordering
+- `SagaOrchestrationEffect<T>` state machine logic
+- Infrastructure reducers
+
+**L2 Integration Tests:**
+- End-to-end saga flow in `samples/Spring/Spring.L2Tests`
+- Happy path: all steps succeed
+- Compensation path: step fails, compensation runs
+- Timeout/retry scenarios
+
+**Testing Support:**
+- `FakeSagaStep<TSaga>` for unit testing orchestration
+- `SagaTestHarness<TSaga>` for driving saga through states
 
 ## Data Model / API Changes
 
-- New saga endpoints under `/api/sagas/{saga-name}`.
-- New saga status projection DTOs and status endpoints.
-- New saga abstractions in `.Abstractions` projects.
+- New saga endpoints under `/api/sagas/{saga-name}`
+- New saga status projection DTOs
+- New saga abstractions in `.Abstractions` projects
 
 ## Observability
 
-- Add LoggerExtensions classes for saga orchestrator, step registry, step execution, and reducers.
-- Emit logs for start, step start/completion/failure, compensation, completion/failure.
+Add LoggerExtensions classes for:
+- Saga start (correlation ID, input summary)
+- Step start/success/failure (step name, duration, error)
+- Compensation start/success/failure
+- Saga completion/failure (total duration, final state)
 
 ## Test Plan (commands)
 
-- Build: `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`
-- Cleanup: `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
-- Unit tests: `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
-- Mutation tests: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`
+```powershell
+# Build
+pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
+
+# Cleanup
+pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
+
+# Unit tests
+pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
+
+# Mutation tests
+pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
+```
 
 ## Rollout / Backout
 
