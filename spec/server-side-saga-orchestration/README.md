@@ -12,8 +12,8 @@ Status: Draft
 
 ## Task Size
 
-- Size: Medium (initial)
-- Approval checkpoint: TBD
+- Size: Large
+- Approval checkpoint: Yes (new public APIs and cross-cutting generator/runtime changes)
 
 ## Summary
 
