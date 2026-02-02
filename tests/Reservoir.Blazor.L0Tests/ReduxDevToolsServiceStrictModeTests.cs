@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Options;
@@ -52,11 +51,8 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
     private ReduxDevToolsService CreateService(
         IStore store,
         ReservoirDevToolsOptions options
-    )
-    {
-        Lazy<IStore> storeFactory = new(() => store);
-        return new(storeFactory, interop, Options.Create(options));
-    }
+    ) =>
+        new(store, interop, Options.Create(options));
 
     private void SetupJsModuleForConnection()
     {
@@ -144,7 +140,7 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
 
         // Act - JUMP_TO_STATE with only 'test' feature
@@ -183,7 +179,7 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
 
         // Act - test has invalid type, second is valid
@@ -222,7 +218,7 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
 
         // Act - JUMP_TO_STATE with all features
@@ -269,7 +265,7 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
 
         // Act - state is an array instead of object
@@ -302,7 +298,7 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
@@ -336,7 +332,7 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
@@ -375,7 +371,7 @@ public sealed class ReduxDevToolsServiceStrictModeTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
