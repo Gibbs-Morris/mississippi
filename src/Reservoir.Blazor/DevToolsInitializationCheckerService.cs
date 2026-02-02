@@ -22,7 +22,7 @@ namespace Mississippi.Reservoir.Blazor;
 ///         The check only runs when DevTools enablement is not <see cref="ReservoirDevToolsEnablement.Off" />.
 ///     </para>
 /// </remarks>
-internal sealed class DevToolsInitializationCheckerService : IHostedService
+internal sealed class DevToolsInitializationCheckerService : BackgroundService
 {
     /// <summary>
     ///     Default delay before checking initialization (5 seconds).
@@ -40,8 +40,6 @@ internal sealed class DevToolsInitializationCheckerService : IHostedService
     private readonly TimeProvider timeProvider;
 
     private readonly DevToolsInitializationTracker tracker;
-
-    private CancellationTokenSource? cts;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="DevToolsInitializationCheckerService" /> class.
@@ -94,62 +92,35 @@ internal sealed class DevToolsInitializationCheckerService : IHostedService
     }
 
     /// <inheritdoc />
-    public Task StartAsync(
-        CancellationToken cancellationToken
+    protected override async Task ExecuteAsync(
+        CancellationToken stoppingToken
     )
     {
         // Only check if DevTools is actually enabled
         if (!IsEnabled())
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        // Dispose any previous CTS before creating new one (shouldn't happen but safe)
-        cts?.Dispose();
-        cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
-        // Fire and forget - we don't block startup
-        _ = CheckInitializationAsync(cts.Token);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public async Task StopAsync(
-        CancellationToken cancellationToken
-    )
-    {
-        if (cts is not null)
-        {
-            await cts.CancelAsync();
-            cts.Dispose();
-            cts = null;
-        }
-    }
-
-    private async Task CheckInitializationAsync(
-        CancellationToken cancellationToken
-    )
-    {
         try
         {
-            await Task.Delay(checkDelay, timeProvider, cancellationToken);
-
+            await Task.Delay(checkDelay, timeProvider, stoppingToken);
             logger.DevToolsInitializationCheckResult(tracker.WasInitialized);
-
-            if (!tracker.WasInitialized)
+            if (tracker.WasInitialized)
             {
-                if (ShouldThrow())
-                {
-                    logger.DevToolsNotInitializedError();
-                    throw new InvalidOperationException(
-                        "DevTools is registered and enabled but Initialize() was not called. " +
-                        "Add <ReservoirDevToolsInitializerComponent/> to your App.razor or root layout. " +
-                        "Set ThrowOnMissingInitializer to false in ReservoirDevToolsOptions to log a warning instead."
-                    );
-                }
-
-                logger.DevToolsNotInitialized();
+                return;
             }
+
+            if (ShouldThrow())
+            {
+                logger.DevToolsNotInitializedError();
+                throw new InvalidOperationException(
+                    "DevTools is registered and enabled but Initialize() was not called. " +
+                    "Add <ReservoirDevToolsInitializerComponent/> to your App.razor or root layout. " +
+                    "Set ThrowOnMissingInitializer to false in ReservoirDevToolsOptions to log a warning instead.");
+            }
+
+            logger.DevToolsNotInitialized();
         }
         catch (OperationCanceledException)
         {
