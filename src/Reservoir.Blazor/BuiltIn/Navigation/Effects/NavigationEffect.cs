@@ -155,6 +155,12 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
             return uri;
         }
 
+        if (!string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            return uri;
+        }
+
         Uri baseUri = new(NavigationManager.BaseUri, UriKind.Absolute);
         bool sameOrigin = string.Equals(absoluteUri.Scheme, baseUri.Scheme, StringComparison.OrdinalIgnoreCase) &&
                           string.Equals(absoluteUri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase) &&

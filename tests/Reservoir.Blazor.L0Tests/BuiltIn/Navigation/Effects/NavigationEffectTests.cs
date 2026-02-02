@@ -54,6 +54,7 @@ public sealed class NavigationEffectTests
             NavigationCount = 0,
         };
 
+
     /// <summary>
     ///     Verifies that CanHandle returns false for LocationChangedAction (handled by reducer).
     /// </summary>
@@ -203,6 +204,29 @@ public sealed class NavigationEffectTests
             .ContainSingle()
             .Which.Should()
             .BeEquivalentTo(new TestableNavigationManager.NavigationRecord("https://example.com/target", false, false));
+    }
+
+    /// <summary>
+    ///     Verifies that NavigateAction accepts root-relative URIs.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsyncNavigateActionWithRootRelativeUriCallsNavigateTo()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        NavigationEffect effect = new(nav);
+        NavigateAction action = new("/investigations");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        await ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        nav.Navigations.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(new TestableNavigationManager.NavigationRecord("/investigations", false, false));
     }
 
     /// <summary>
