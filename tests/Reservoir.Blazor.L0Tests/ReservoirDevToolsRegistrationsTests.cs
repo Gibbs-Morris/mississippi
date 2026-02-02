@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
@@ -25,6 +26,7 @@ public sealed class ReservoirDevToolsRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        services.AddLogging();
         services.AddReservoir();
         services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
@@ -47,6 +49,7 @@ public sealed class ReservoirDevToolsRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        services.AddLogging();
         services.AddReservoir();
         services.AddReservoirDevTools();
         services.AddSingleton(new Mock<IJSRuntime>().Object);
@@ -69,6 +72,7 @@ public sealed class ReservoirDevToolsRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        services.AddLogging();
         services.AddReservoir();
         services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
@@ -109,6 +113,7 @@ public sealed class ReservoirDevToolsRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        services.AddLogging();
         services.AddReservoir();
         services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
@@ -122,15 +127,29 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Also verify different scopes get different store instances
         await using AsyncServiceScope scope2 = provider.CreateAsyncScope();
         IStore scopedStore2 = scope2.ServiceProvider.GetRequiredService<IStore>();
+        ReduxDevToolsService devToolsService2 = scope2.ServiceProvider.GetRequiredService<ReduxDevToolsService>();
 
-        // Assert - DevTools should use the same store as component resolution
-        // This is verified by the fact that both are scoped and resolved from the same scope.
-        // The store identity within a scope is guaranteed by DI scoping.
-        Assert.NotNull(devToolsService);
-        Assert.NotNull(scopedStore);
+        // Assert - Use reflection to verify DevTools received the same store instance.
+        // This validates the captive dependency fix: before the fix, the singleton service
+        // would have captured a different store instance than the scoped component resolution.
+        System.Reflection.PropertyInfo? storeProperty = typeof(ReduxDevToolsService).GetProperty(
+            "Store",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+        );
+        Assert.NotNull(storeProperty);
+
+        IStore? devToolsStore = storeProperty.GetValue(devToolsService) as IStore;
+        IStore? devToolsStore2 = storeProperty.GetValue(devToolsService2) as IStore;
+
+        // Key assertion: DevTools in scope1 uses the same store as scope1's component resolution
+        Assert.Same(scopedStore, devToolsStore);
+
+        // Key assertion: DevTools in scope2 uses the same store as scope2's component resolution
+        Assert.Same(scopedStore2, devToolsStore2);
 
         // Different scopes should have different store instances
         Assert.NotSame(scopedStore, scopedStore2);
+        Assert.NotSame(devToolsStore, devToolsStore2);
     }
 
     /// <summary>
@@ -142,6 +161,7 @@ public sealed class ReservoirDevToolsRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        services.AddLogging();
         services.AddReservoir();
         services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);

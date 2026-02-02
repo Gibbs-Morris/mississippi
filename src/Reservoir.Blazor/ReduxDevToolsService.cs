@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 
@@ -58,25 +59,37 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
     /// <param name="store">The store to observe. Must be scoped to match this service's lifetime.</param>
     /// <param name="interop">The DevTools JavaScript interop.</param>
     /// <param name="options">The DevTools options.</param>
+    /// <param name="initializationTracker">The initialization tracker for missing component detection.</param>
+    /// <param name="logger">The logger for DevTools connection status.</param>
     /// <param name="hostEnvironment">The optional host environment for environment checks.</param>
     public ReduxDevToolsService(
         IStore store,
         ReservoirDevToolsInterop interop,
         IOptions<ReservoirDevToolsOptions> options,
+        DevToolsInitializationTracker initializationTracker,
+        ILogger<ReduxDevToolsService> logger,
         IHostEnvironment? hostEnvironment = null
     )
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(interop);
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(initializationTracker);
+        ArgumentNullException.ThrowIfNull(logger);
         Store = store;
         Interop = interop;
         Options = options.Value;
+        InitializationTracker = initializationTracker;
+        Logger = logger;
         HostEnvironment = hostEnvironment;
         committedSnapshot = new Dictionary<string, object>(StringComparer.Ordinal);
     }
 
     private IHostEnvironment? HostEnvironment { get; }
+
+    private DevToolsInitializationTracker InitializationTracker { get; }
+
+    private ILogger<ReduxDevToolsService> Logger { get; }
 
     private ReservoirDevToolsInterop Interop { get; }
 
@@ -161,6 +174,9 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
             return;
         }
 
+        // Signal that initialization was called (for missing component detection)
+        InitializationTracker.WasInitialized = true;
+
         // Dispose any previous subscription before creating a new one
         storeEventsSubscription?.Dispose();
 
@@ -196,11 +212,17 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
     }
 
     /// <summary>
-    ///     Stops observing store events and disconnects from DevTools.
+    ///     Stops observing store events.
     /// </summary>
     /// <remarks>
-    ///     Called automatically during disposal, but may be called explicitly
-    ///     to stop DevTools integration before the service is disposed.
+    ///     <para>
+    ///         This method unsubscribes from store events so new actions are no longer sent to DevTools.
+    ///         The DevTools connection and callback references remain active to allow re-initialization
+    ///         via <see cref="Initialize" />.
+    ///     </para>
+    ///     <para>
+    ///         For full cleanup including disconnecting from DevTools, use <see cref="DisposeAsync" />.
+    ///     </para>
     /// </remarks>
     public void Stop()
     {
@@ -320,10 +342,12 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
             devToolsConnected = connected;
             if (!connected)
             {
+                Logger.DevToolsConnectionFailed();
                 return false;
             }
 
             await Interop.InitAsync(CreateStatePayload(Store.GetStateSnapshot()));
+            Logger.DevToolsConnected();
 
             // Note: committedSnapshot is NOT updated here - it was set in constructor
             // and should only be updated via explicit COMMIT command
@@ -331,10 +355,12 @@ internal sealed class ReduxDevToolsService : IAsyncDisposable
         }
         catch (JSException)
         {
+            Logger.DevToolsConnectionFailed();
             return false;
         }
         catch (InvalidOperationException)
         {
+            Logger.DevToolsConnectionFailed();
             return false;
         }
         finally

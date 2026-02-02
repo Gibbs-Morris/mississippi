@@ -30,7 +30,27 @@ builder.Services.AddReservoirDevTools(options =>
 
 ([ReservoirDevToolsRegistrations.AddReservoirDevTools](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs#L33-L52))
 
-### 2. Install the Browser Extension
+### 2. Add the Initializer Component
+
+Add `ReservoirDevToolsInitializerComponent` to your `App.razor`:
+
+```razor
+@using Mississippi.Reservoir.Blazor
+
+<ReservoirDevToolsInitializerComponent/>
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <!-- ... -->
+</Router>
+```
+
+:::important
+This step is required. The component calls `Initialize()` after the Blazor rendering context is available. Without it, DevTools will not connect.
+:::
+
+([ReservoirDevToolsInitializerComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsInitializerComponent.razor))
+
+### 3. Install the Browser Extension
 
 Install the Redux DevTools extension for your browser:
 
@@ -38,7 +58,7 @@ Install the Redux DevTools extension for your browser:
 - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/reduxdevtools/)
 - [Edge](https://microsoftedge.microsoft.com/addons/detail/redux-devtools/nnkgneoiohoecpdiaponcejilbhhikei)
 
-### 3. Run Your Application
+### 4. Run Your Application
 
 Open DevTools in your browser and navigate to the Redux tab. You will see actions and state as they are dispatched.
 
@@ -109,10 +129,14 @@ builder.Services.AddReservoirDevTools(options =>
 
 ## How It Works
 
-DevTools integration uses composition rather than inheritance. When enabled, `AddReservoirDevTools` registers `ReduxDevToolsService` as an `IHostedService` that subscribes to [`IStore.StoreEvents`](./store.md#observable-store-events). This approach keeps the store implementation unchanged while allowing external integrations to observe its activity.
+DevTools integration uses composition rather than inheritance. When enabled, `AddReservoirDevTools` registers `ReduxDevToolsService` as a **scoped service** that subscribes to [`IStore.StoreEvents`](./store.md#observable-store-events). The service is initialized via `ReservoirDevToolsInitializerComponent`, which calls `Initialize()` after the Blazor rendering context is available. This approach keeps the store implementation unchanged while allowing external integrations to observe its activity.
 
 ```mermaid
 flowchart LR
+    subgraph Blazor
+        COMP[ReservoirDevToolsInitializerComponent] -->|Initialize| DTS
+    end
+    
     subgraph Store
         A[Dispatch Action] --> B[Reducers]
         B --> C[Notify Listeners]
@@ -126,12 +150,26 @@ flowchart LR
     EXT -.->|Time-Travel Commands| SA[System Actions]
     SA --> A
     
+    style COMP fill:#3498db,color:#fff
     style SE fill:#9b59b6,color:#fff
     style DTS fill:#f4a261,color:#fff
     style JS fill:#6c5ce7,color:#fff
     style EXT fill:#50c878,color:#fff
     style SA fill:#e74c3c,color:#fff
 ```
+
+### Scoped Service Lifetime
+
+`ReduxDevToolsService` is registered as a **scoped service** to match the lifetime of `IStore`. In Blazor WebAssembly, scoped services are effectively singletons (one scope for the application lifetime). In Blazor Server, each circuit gets its own scope with its own store and DevTools instance.
+
+### Initialization via Component
+
+The `ReservoirDevToolsInitializerComponent` is a renderless Blazor component that:
+
+1. Calls `Initialize()` on first render (when JS interop is available)
+2. Calls `Stop()` on disposal to unsubscribe from store events
+
+This design ensures DevTools connects only after the Blazor rendering context is ready, avoiding JavaScript interop errors during server prerendering.
 
 ### Composition Pattern
 
@@ -273,8 +311,9 @@ Sanitizers run on every action dispatch. Keep them fast to avoid impacting appli
 
 | Concept | Description |
 |---------|-------------|
-| **Architecture** | Composition via `IHostedService` subscribing to `IStore.StoreEvents` |
+| **Architecture** | Scoped service subscribing to `IStore.StoreEvents`, initialized via component |
 | **Registration** | `AddReservoirDevTools()` after `AddReservoir()` |
+| **Initialization** | Add `<ReservoirDevToolsInitializerComponent/>` to `App.razor` |
 | **Enablement** | `Off` (default), `DevelopmentOnly`, or `Always` |
 | **Time-travel** | Commands become system actions (`RestoreStateAction`, `ResetToInitialStateAction`) |
 | **Strict mode** | `IsStrictStateRehydrationEnabled` requires all features in time-travel payloads |

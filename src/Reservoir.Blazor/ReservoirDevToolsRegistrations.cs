@@ -31,9 +31,14 @@ public static class ReservoirDevToolsRegistrations
     ///         dispatched to the store.
     ///     </para>
     ///     <para>
-    ///         To activate DevTools, add <c>&lt;ReservoirDevToolsInitializer /&gt;</c> to your root
+    ///         To activate DevTools, add <c>&lt;ReservoirDevToolsInitializerComponent /&gt;</c> to your root
     ///         layout or <c>App.razor</c>. This component initializes DevTools after the Blazor
     ///         rendering context is available.
+    ///     </para>
+    ///     <para>
+    ///         When DevTools is enabled (not <see cref="ReservoirDevToolsEnablement.Off" />), a background
+    ///         check runs after startup. If <see cref="ReservoirDevToolsInitializerComponent" /> has not
+    ///         initialized DevTools, a warning is logged to help diagnose missing component configuration.
     ///     </para>
     /// </remarks>
     public static IServiceCollection AddReservoirDevTools(
@@ -50,6 +55,12 @@ public static class ReservoirDevToolsRegistrations
         {
             services.AddOptions<ReservoirDevToolsOptions>();
         }
+
+        // Singleton tracker for cross-scope communication between scoped service and hosted service
+        services.TryAddSingleton<DevToolsInitializationTracker>();
+
+        // Hosted service to check if initialization was called
+        services.AddHostedService<DevToolsInitializationCheckerService>();
 
         // Scoped to match IStore lifetime. In Blazor Server, each circuit gets its own scope.
         // In Blazor WASM, the single scope acts as a pseudo-singleton.

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 
@@ -53,7 +54,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         IStore store,
         ReservoirDevToolsOptions options
     ) =>
-        new(store, interop, Options.Create(options));
+        new(store, interop, Options.Create(options), new DevToolsInitializationTracker(), NullLogger<ReduxDevToolsService>.Instance);
 
     private void SetupJsModuleForConnection()
     {

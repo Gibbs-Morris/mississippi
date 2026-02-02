@@ -1,4 +1,4 @@
-@implements IAsyncDisposable
+@implements IDisposable
 @inject ReduxDevToolsService DevToolsService
 
 @code {
@@ -15,10 +15,6 @@
     }
 
     /// <inheritdoc />
-    public async ValueTask DisposeAsync()
-    {
-        DevToolsService.Stop();
-        await DevToolsService.DisposeAsync();
-    }
+    public void Dispose() => DevToolsService.Stop();
 
 }

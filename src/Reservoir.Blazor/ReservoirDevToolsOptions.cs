@@ -54,6 +54,26 @@ public sealed class ReservoirDevToolsOptions
     public bool IsStrictStateRehydrationEnabled { get; set; }
 
     /// <summary>
+    ///     Gets or sets a value indicating whether to throw an exception if the DevTools initializer component
+    ///     is not rendered within the startup check window.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         When <see langword="true" />, an <see cref="InvalidOperationException" /> is thrown if DevTools
+    ///         is registered and enabled but <see cref="ReservoirDevToolsInitializerComponent" /> was not
+    ///         rendered. This helps catch configuration mistakes early during development.
+    ///     </para>
+    ///     <para>
+    ///         When <see langword="false" />, a warning is logged instead of throwing.
+    ///     </para>
+    ///     <para>
+    ///         When <see langword="null" /> (default), the behavior is determined by the environment:
+    ///         throws in Development, logs warning in Production.
+    ///     </para>
+    /// </remarks>
+    public bool? ThrowOnMissingInitializer { get; set; }
+
+    /// <summary>
     ///     Gets or sets the batching latency in milliseconds for DevTools messages.
     /// </summary>
     public int? Latency { get; set; }
