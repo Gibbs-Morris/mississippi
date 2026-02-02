@@ -2,17 +2,66 @@
 id: testing
 title: Testing Reservoir
 sidebar_label: Testing
-sidebar_position: 11
-description: Test Reservoir reducers and effects in isolation using the StoreTestHarness with Given/When/Then fluent API.
+sidebar_position: 12
+description: Test Reservoir reducers, effects, and selectors in isolation using pure functions and the StoreTestHarness.
 ---
 
 # Testing Reservoir
 
 ## Overview
 
-The `Mississippi.Reservoir.Testing` package provides a fluent test harness for testing Reservoir actions, reducers, and effects in isolation. It supports Given/When/Then style scenarios without requiring the full Store infrastructure.
+Reservoir's architecture is designed for testability. The pattern separates pure functions (reducers, selectors) from async operations (effects), making each layer independently testable.
 
-## Installation
+:::tip Enterprise Testing Strategy
+For applications requiring high test coverage, Reservoir provides a testing pyramid:
+
+1. **Selectors** — Test business logic as pure functions (fastest, highest coverage)
+2. **Reducers** — Test state transitions with Given/When/Then
+3. **Effects** — Test async operations with the StoreTestHarness
+4. **Components** — Thin wiring verification only
+
+See [Why Use Selectors?](selectors.md#why-use-selectors) for detailed guidance on achieving high coverage without complex UI tests.
+:::
+
+## Testing Approach by Component
+
+| Component | Testing Approach | Tooling |
+|-----------|-----------------|---------|
+| **Selectors** | Pure function calls with test state | Standard xUnit/NUnit, no special tooling |
+| **Reducers** | StoreTestHarness Given/When/Then | `Mississippi.Reservoir.Testing` |
+| **Effects** | StoreTestHarness with mocked services | `Mississippi.Reservoir.Testing` |
+| **Components** | Verify wiring, not logic | bUnit (optional, minimal tests) |
+
+## Testing Selectors
+
+Selectors are pure functions—the easiest code to test. They require no special infrastructure:
+
+```csharp
+[Fact]
+public void IsAccountOpen_WhenProjectionExists_ReturnsOpenStatus()
+{
+    // Arrange - create state directly
+    var state = new ProjectionsFeatureState()
+        .WithEntry("account-123", new ProjectionEntry<BankAccountBalanceProjectionDto>(
+            new BankAccountBalanceProjectionDto { IsOpen = true },
+            Version: 1, IsLoading: false, IsConnected: true, Error: null));
+
+    // Act - call the pure function
+    var selector = BankAccountProjectionSelectors.IsAccountOpen("account-123");
+    bool result = selector(state);
+
+    // Assert
+    Assert.True(result);
+}
+```
+
+For comprehensive selector testing patterns including factory selectors, composite selectors, and memoization testing, see [Testing Selectors](selectors.md#testing-selectors).
+
+## Testing Reducers and Effects with StoreTestHarness
+
+The `Mississippi.Reservoir.Testing` package provides a fluent test harness for testing reducers and effects in isolation. It supports Given/When/Then style scenarios without requiring the full Store infrastructure.
+
+### Installation
 
 Add the testing package to your test project:
 
@@ -20,7 +69,7 @@ Add the testing package to your test project:
 <PackageReference Include="Mississippi.Reservoir.Testing" />
 ```
 
-## Quick Start
+### Quick Start
 
 ```csharp
 using Mississippi.Reservoir.Testing;
@@ -40,7 +89,7 @@ public void IncrementAction_IncreasesCounter()
 }
 ```
 
-## Core Components
+## StoreTestHarness Components
 
 ### StoreTestHarnessFactory
 
@@ -361,6 +410,7 @@ var harness = StoreTestHarnessFactory.ForFeature<MyState>()
 
 ## Related Documentation
 
+- [Selectors](selectors.md) — Testing business logic as pure functions (recommended for high coverage)
 - [Reservoir Overview](reservoir.md) — Core concepts
 - [Reducers](reducers.md) — Writing pure reducer functions
 - [Effects](effects.md) — Handling async side effects

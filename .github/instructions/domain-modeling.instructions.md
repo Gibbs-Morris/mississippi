@@ -118,6 +118,8 @@ Developers implementing domain models using Mississippi event sourcing in sample
 
 ## References
 
+- Coding discipline (samples): `.github/instructions/coding-discipline.instructions.md`
+- Framework patterns (src): `.github/instructions/framework-patterns.instructions.md`
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - Orleans serialization: `.github/instructions/orleans-serialization.instructions.md`
 - Storage naming: `.github/instructions/storage-type-naming.instructions.md`

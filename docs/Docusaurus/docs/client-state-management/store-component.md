@@ -19,11 +19,11 @@ StoreComponent bridges Blazor's component model with the Reservoir store:
 - **Inherits from `ComponentBase`**
     ([StoreComponent.cs#L22-L25](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L22-L25))
 - **Implements `IDisposable`** and disposes the store subscription in `Dispose(bool)`
-    ([StoreComponent.cs#L58-L74](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L58-L74))
+    ([StoreComponent.cs#L59-L79](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L59-L79))
 - **Injects `IStore`**
     ([StoreComponent.cs#L33-L34](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L33-L34))
 - **Auto-subscribes** in `OnInitialized` and calls `StateHasChanged` via `InvokeAsync`
-    ([StoreComponent.cs#L86-L100](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L86-L100))
+    ([StoreComponent.cs#L87-L96](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L87-L96), [StoreComponent.cs#L152-L156](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L152-L156))
 
 ```mermaid
 flowchart TB
@@ -68,7 +68,7 @@ protected void Dispatch(IAction action)
 
 This method delegates directly to [`Store.Dispatch(action)`](store.md#dispatching-actions). Use it to trigger state changes from user interactions or component logic.
 
-**Source**: [`StoreComponent.cs#L47-L52`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L47-L52)
+**Source**: [`StoreComponent.cs#L48-L53`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L48-L53)
 
 ### GetState
 
@@ -80,7 +80,48 @@ protected TState GetState<TState>() where TState : class, IFeatureState
 
 This method delegates to [`Store.GetState<TState>()`](store.md#reading-state). The generic constraint ensures only registered feature states can be retrieved.
 
-**Source**: [`StoreComponent.cs#L81-L83`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L81-L83)
+**Source**: [`StoreComponent.cs#L82-L84`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L82-L84)
+
+### Select
+
+Derives computed values from state using selector functions:
+
+```csharp
+// Single-state selector
+protected TResult Select<TState, TResult>(Func<TState, TResult> selector)
+    where TState : class, IFeatureState;
+
+// Two-state selector
+protected TResult Select<TState1, TState2, TResult>(
+    Func<TState1, TState2, TResult> selector)
+    where TState1 : class, IFeatureState
+    where TState2 : class, IFeatureState;
+
+// Three-state selector  
+protected TResult Select<TState1, TState2, TState3, TResult>(
+    Func<TState1, TState2, TState3, TResult> selector)
+    where TState1 : class, IFeatureState
+    where TState2 : class, IFeatureState
+    where TState3 : class, IFeatureState;
+```
+
+These methods delegate to [`Store.Select()`](selectors.md) extension methods. Use selectors to encapsulate derived-state logic:
+
+```csharp
+// Instead of inline logic:
+private bool IsDisconnected => GetState<SignalRConnectionState>().Status != SignalRConnectionStatus.Connected;
+
+// Use a selector:
+private bool IsDisconnected => Select<SignalRConnectionState, bool>(SignalRConnectionSelectors.IsDisconnected);
+```
+
+:::tip Testing Advantage
+Extracting logic into selectors makes business rules **trivially testable** as pure functions—no component rendering, mocking, or DI setup required. For enterprise applications requiring high test coverage, selectors are the primary mechanism for testing client-side logic.
+
+See [Why Use Selectors?](selectors.md#why-use-selectors) for detailed guidance on achieving high coverage without complex UI tests.
+:::
+
+See [Selectors](selectors.md) for detailed patterns and memoization.
 
 ## Lifecycle
 
@@ -97,7 +138,7 @@ protected override void OnInitialized()
 }
 ```
 
-**Source**: [`StoreComponent.cs#L86-L95`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L86-L95)
+**Source**: [`StoreComponent.cs#L87-L96`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L87-L96)
 
 ### State Change Notification
 
@@ -110,7 +151,7 @@ private void OnStoreChanged()
 }
 ```
 
-**Source**: [`StoreComponent.cs#L97-L100`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L97-L100)
+**Source**: [`StoreComponent.cs#L152-L156`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L152-L156)
 
 ### Dispose
 
@@ -131,7 +172,7 @@ protected virtual void Dispose(bool disposing)
 
 The `disposed` flag short-circuits repeated disposal attempts.
 
-**Source**: [`StoreComponent.cs#L58-L74`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L58-L74)
+**Source**: [`StoreComponent.cs#L59-L79`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L59-L79)
 
 ## Repository Examples
 
@@ -148,7 +189,7 @@ The code-behind uses `GetState<TState>()` to read state and `Dispatch()` to trig
 
 ```csharp
 // Reading state (Index.razor.cs)
-private string? SelectedEntityId => GetState<EntitySelectionState>().EntityId;
+private string? SelectedEntityId => Select<EntitySelectionState, string?>(EntitySelectionSelectors.GetEntityId);
 
 // Dispatching actions (Index.razor.cs)  
 private void Deposit() => Dispatch(new DepositFundsAction(SelectedEntityId!, depositAmount));
@@ -216,6 +257,7 @@ private sealed class TestStoreComponent : StoreComponent
 ## Next Steps
 
 - [Reservoir Overview](./reservoir.md) — Learn where StoreComponent fits in the system
+- [Selectors](./selectors.md) — Derive computed values via the `Select()` method
 - [Store](./store.md) — The central state container that StoreComponent wraps
 - [Actions](./actions.md) — The action types dispatched via `Dispatch()`
 - [Feature State](./feature-state.md) — The state slices retrieved via `GetState<TState>()`

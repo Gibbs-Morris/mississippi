@@ -2,7 +2,7 @@
 id: built-in-lifecycle
 title: Built-in Lifecycle
 sidebar_label: Built-in Lifecycle
-sidebar_position: 10
+sidebar_position: 11
 description: Redux-style application lifecycle state management for Blazor applications using Reservoir's built-in lifecycle feature.
 ---
 
