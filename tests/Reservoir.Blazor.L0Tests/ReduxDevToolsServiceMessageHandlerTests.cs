@@ -1,7 +1,7 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 
@@ -52,11 +52,8 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
     private ReduxDevToolsService CreateService(
         IStore store,
         ReservoirDevToolsOptions options
-    )
-    {
-        Lazy<IStore> storeFactory = new(() => store);
-        return new(storeFactory, interop, Options.Create(options));
-    }
+    ) =>
+        new(store, interop, Options.Create(options), new(), NullLogger<ReduxDevToolsService>.Instance);
 
     private void SetupJsModuleForConnection()
     {
@@ -116,7 +113,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         store.Dispatch(new IncrementAction());
         Assert.Equal(2, store.GetState<TestFeatureState>().Value);
@@ -162,7 +159,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
@@ -201,7 +198,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
 
         // Act - simulate IMPORT_STATE with multiple computed states
         string importMessage = """
@@ -240,7 +237,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         store.Dispatch(new IncrementAction());
         store.Dispatch(new IncrementAction());
@@ -275,7 +272,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
 
         // Dispatch some actions to change state
         store.Dispatch(new IncrementAction());
@@ -311,7 +308,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
@@ -343,7 +340,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
@@ -376,7 +373,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 
@@ -408,7 +405,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         store.Dispatch(new IncrementAction());
         Assert.Equal(2, store.GetState<TestFeatureState>().Value);
@@ -441,7 +438,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
 
         // Initial committed snapshot is at value=0
         store.Dispatch(new IncrementAction());
@@ -476,7 +473,7 @@ public sealed class ReduxDevToolsServiceMessageHandlerTests : IAsyncDisposable
         };
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
-        await service.StartAsync(CancellationToken.None);
+        service.Initialize();
         store.Dispatch(new IncrementAction());
         Assert.Equal(1, store.GetState<TestFeatureState>().Value);
 

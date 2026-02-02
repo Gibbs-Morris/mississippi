@@ -3,8 +3,6 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Reservoir.Abstractions;
-
 
 namespace Mississippi.Reservoir.Blazor;
 
@@ -27,9 +25,20 @@ public static class ReservoirDevToolsRegistrations
     ///         Register after calling <c>AddReservoir</c>. DevTools integration is opt-in and disabled by default.
     ///     </para>
     ///     <para>
-    ///         This registers a background service that subscribes to <c>IStore.StoreEvents</c> and
-    ///         reports actions and state to the Redux DevTools browser extension. Time-travel commands
-    ///         from DevTools are translated into system actions dispatched to the store.
+    ///         This registers a scoped <see cref="ReduxDevToolsService" /> that subscribes to
+    ///         <c>IStore.StoreEvents</c> and reports actions and state to the Redux DevTools browser
+    ///         extension. Time-travel commands from DevTools are translated into system actions
+    ///         dispatched to the store.
+    ///     </para>
+    ///     <para>
+    ///         To activate DevTools, add <c>&lt;ReservoirDevToolsInitializerComponent /&gt;</c> to your root
+    ///         layout or <c>App.razor</c>. This component initializes DevTools after the Blazor
+    ///         rendering context is available.
+    ///     </para>
+    ///     <para>
+    ///         When DevTools is enabled (not <see cref="ReservoirDevToolsEnablement.Off" />), a background
+    ///         check runs after startup. If <see cref="ReservoirDevToolsInitializerComponent" /> has not
+    ///         initialized DevTools, a warning is logged to help diagnose missing component configuration.
     ///     </para>
     /// </remarks>
     public static IServiceCollection AddReservoirDevTools(
@@ -47,15 +56,16 @@ public static class ReservoirDevToolsRegistrations
             services.AddOptions<ReservoirDevToolsOptions>();
         }
 
-        // Singleton is safe because ReservoirDevToolsInterop only holds IJSRuntime which is
-        // effectively singleton in Blazor WASM. Must be singleton to be injectable into
-        // ReduxDevToolsService (hosted service = singleton).
-        services.TryAddSingleton<ReservoirDevToolsInterop>();
+        // Singleton tracker for cross-scope communication between scoped service and hosted service
+        services.TryAddSingleton<DevToolsInitializationTracker>();
 
-        // Register Lazy<IStore> factory to allow deferred store resolution without injecting
-        // IServiceProvider directly (avoids service locator anti-pattern per DI guidelines).
-        services.TryAddSingleton<Lazy<IStore>>(sp => new(() => sp.GetRequiredService<IStore>()));
-        services.AddHostedService<ReduxDevToolsService>();
+        // Hosted service to check if initialization was called
+        services.AddHostedService<DevToolsInitializationCheckerService>();
+
+        // Scoped to match IStore lifetime. In Blazor Server, each circuit gets its own scope.
+        // In Blazor WASM, the single scope acts as a pseudo-singleton.
+        services.TryAddScoped<ReservoirDevToolsInterop>();
+        services.TryAddScoped<ReduxDevToolsService>();
         return services;
     }
 }

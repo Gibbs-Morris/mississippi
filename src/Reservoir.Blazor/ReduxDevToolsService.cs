@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 
@@ -17,7 +18,7 @@ using Mississippi.Reservoir.Abstractions.Events;
 namespace Mississippi.Reservoir.Blazor;
 
 /// <summary>
-///     Background service that integrates the Reservoir store with Redux DevTools.
+///     Scoped service that integrates the Reservoir store with Redux DevTools.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -28,10 +29,13 @@ namespace Mississippi.Reservoir.Blazor;
 ///         Time-travel commands from DevTools (jump-to-state, reset, rollback, etc.) are translated
 ///         into system actions dispatched to the store, maintaining unidirectional data flow.
 ///     </para>
+///     <para>
+///         This service must be registered as scoped to match the lifetime of <see cref="IStore" />.
+///         Initialize it via <see cref="ReservoirDevToolsInitializerComponent" /> or by calling
+///         <see cref="Initialize" /> after the Blazor rendering context is available.
+///     </para>
 /// </remarks>
-internal sealed class ReduxDevToolsService
-    : IHostedService,
-      IAsyncDisposable
+internal sealed class ReduxDevToolsService : IAsyncDisposable
 {
     private readonly SemaphoreSlim devToolsLock = new(1, 1);
 
@@ -43,7 +47,7 @@ internal sealed class ReduxDevToolsService
 
     private bool isDisposed;
 
-    private IStore? resolvedStore;
+    private bool isInitialized;
 
     private IDisposable? storeEventsSubscription;
 
@@ -52,46 +56,46 @@ internal sealed class ReduxDevToolsService
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReduxDevToolsService" /> class.
     /// </summary>
-    /// <param name="storeFactory">
-    ///     Factory for lazy resolution of the store.
-    ///     Required because hosted services are singletons, but IStore may be scoped.
-    /// </param>
+    /// <param name="store">The store to observe. Must be scoped to match this service's lifetime.</param>
     /// <param name="interop">The DevTools JavaScript interop.</param>
     /// <param name="options">The DevTools options.</param>
+    /// <param name="initializationTracker">The initialization tracker for missing component detection.</param>
+    /// <param name="logger">The logger for DevTools connection status.</param>
     /// <param name="hostEnvironment">The optional host environment for environment checks.</param>
     public ReduxDevToolsService(
-        Lazy<IStore> storeFactory,
+        IStore store,
         ReservoirDevToolsInterop interop,
         IOptions<ReservoirDevToolsOptions> options,
+        DevToolsInitializationTracker initializationTracker,
+        ILogger<ReduxDevToolsService> logger,
         IHostEnvironment? hostEnvironment = null
     )
     {
-        ArgumentNullException.ThrowIfNull(storeFactory);
+        ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(interop);
         ArgumentNullException.ThrowIfNull(options);
-        StoreFactory = storeFactory;
+        ArgumentNullException.ThrowIfNull(initializationTracker);
+        ArgumentNullException.ThrowIfNull(logger);
+        Store = store;
         Interop = interop;
         Options = options.Value;
+        InitializationTracker = initializationTracker;
+        Logger = logger;
         HostEnvironment = hostEnvironment;
         committedSnapshot = new Dictionary<string, object>(StringComparer.Ordinal);
     }
 
     private IHostEnvironment? HostEnvironment { get; }
 
+    private DevToolsInitializationTracker InitializationTracker { get; }
+
     private ReservoirDevToolsInterop Interop { get; }
+
+    private ILogger<ReduxDevToolsService> Logger { get; }
 
     private ReservoirDevToolsOptions Options { get; }
 
-    /// <summary>
-    ///     Gets the store, lazily resolved via the factory.
-    /// </summary>
-    /// <remarks>
-    ///     In Blazor WASM, scoped services are effectively singletons (one scope for the app lifetime).
-    ///     We resolve lazily to avoid DI lifetime issues during hosted service construction.
-    /// </remarks>
-    private IStore Store => resolvedStore ??= StoreFactory.Value;
-
-    private Lazy<IStore> StoreFactory { get; }
+    private IStore Store { get; }
 
     private static string? TryExtractImportedStateJson(
         JsonElement payload
@@ -150,6 +154,40 @@ internal sealed class ReduxDevToolsService
     }
 
     /// <summary>
+    ///     Initializes the DevTools service and begins observing store events.
+    /// </summary>
+    /// <remarks>
+    ///     Call this method after the Blazor rendering context is available,
+    ///     typically in <c>OnAfterRenderAsync</c> with <c>firstRender = true</c>.
+    ///     Safe to call multiple times; only the first call has effect.
+    /// </remarks>
+    public void Initialize()
+    {
+        if (isInitialized)
+        {
+            return;
+        }
+
+        isInitialized = true;
+        if (!IsEnabled())
+        {
+            return;
+        }
+
+        // Signal that initialization was called (for missing component detection)
+        InitializationTracker.WasInitialized = true;
+
+        // Dispose any previous subscription before creating a new one
+        storeEventsSubscription?.Dispose();
+
+        // Initialize committed snapshot
+        committedSnapshot = Store.GetStateSnapshot();
+
+        // Subscribe to store events
+        storeEventsSubscription = Store.StoreEvents.Subscribe(new StoreEventObserver(this));
+    }
+
+    /// <summary>
     ///     Handles messages from the Redux DevTools extension.
     /// </summary>
     /// <param name="messageJson">The JSON message from DevTools.</param>
@@ -159,6 +197,11 @@ internal sealed class ReduxDevToolsService
         string messageJson
     )
     {
+        if (!isInitialized)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(messageJson))
         {
             return;
@@ -173,36 +216,27 @@ internal sealed class ReduxDevToolsService
         await HandleDevToolsMessageAsync(message);
     }
 
-    /// <inheritdoc />
-    public Task StartAsync(
-        CancellationToken cancellationToken
-    )
-    {
-        if (!IsEnabled())
-        {
-            return Task.CompletedTask;
-        }
-
-        // Dispose any previous subscription before creating a new one
-        storeEventsSubscription?.Dispose();
-
-        // Initialize committed snapshot now that we can safely resolve the store
-        // (Blazor WASM scoped services are resolvable after host construction)
-        committedSnapshot = Store.GetStateSnapshot();
-
-        // Subscribe to store events
-        storeEventsSubscription = Store.StoreEvents.Subscribe(new StoreEventObserver(this));
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public Task StopAsync(
-        CancellationToken cancellationToken
-    )
+    /// <summary>
+    ///     Stops observing store events.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         This method unsubscribes from store events so new actions are no longer sent to DevTools,
+    ///         clears the connection state, and disconnects from the DevTools extension.
+    ///     </para>
+    ///     <para>
+    ///         For full cleanup including releasing JS module references, use <see cref="DisposeAsync" />.
+    ///     </para>
+    /// </remarks>
+    public void Stop()
     {
         storeEventsSubscription?.Dispose();
         storeEventsSubscription = null;
-        return Task.CompletedTask;
+        isInitialized = false;
+        devToolsConnected = false;
+        dotNetRef?.Dispose();
+        dotNetRef = null;
+        _ = Interop.DisconnectAsync().AsTask();
     }
 
     private Dictionary<string, object?> BuildOptionsPayload()
@@ -316,10 +350,12 @@ internal sealed class ReduxDevToolsService
             devToolsConnected = connected;
             if (!connected)
             {
+                Logger.DevToolsConnectionFailed();
                 return false;
             }
 
             await Interop.InitAsync(CreateStatePayload(Store.GetStateSnapshot()));
+            Logger.DevToolsConnected();
 
             // Note: committedSnapshot is NOT updated here - it was set in constructor
             // and should only be updated via explicit COMMIT command
@@ -327,10 +363,12 @@ internal sealed class ReduxDevToolsService
         }
         catch (JSException)
         {
+            Logger.DevToolsConnectionFailed();
             return false;
         }
         catch (InvalidOperationException)
         {
+            Logger.DevToolsConnectionFailed();
             return false;
         }
         finally
