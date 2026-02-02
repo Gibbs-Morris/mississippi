@@ -1,6 +1,6 @@
 # Server-Side Saga Orchestration Plan
 
-Status: Draft
+Status: Plan ready for approval
 
 ## Index
 

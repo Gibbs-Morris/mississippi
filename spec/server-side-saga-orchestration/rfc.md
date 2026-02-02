@@ -33,6 +33,60 @@ Mississippi lacks first-class server-side saga orchestration for multi-step, lon
 - Discovery for steps/compensations uses attributes/types only; never namespace conventions.
 - Add a sample saga in samples/Spring to validate end-to-end usage.
 
+## Architecture Diagrams
+
+### As-Is vs To-Be (high level)
+
+```mermaid
+flowchart LR
+	subgraph AsIs[As-Is: Aggregate Command Flow]
+		A1[Client] --> A2[Aggregate Controller]
+		A2 --> A3[GenericAggregateGrain&lt;TAggregate&gt;]
+		A3 --> A4[RootCommandHandler]
+		A4 --> A5[Events Persisted]
+		A5 --> A6[RootReducer]
+		A6 --> A7[UxProjection + SignalR]
+	end
+
+	subgraph ToBe[To-Be: Saga Orchestration Flow]
+		B1[Client] --> B2[Saga Controller]
+		B2 --> B3[SagaOrchestrator]
+		B3 --> B4[GenericAggregateGrain&lt;TSagaState&gt;]
+		B4 --> B5[StartSagaCommandHandler]
+		B5 --> B6[Saga Events Persisted]
+		B6 --> B7[SagaStepStartedEffect]
+		B7 --> B8[Saga Step/Compensation]
+		B8 --> B9[RootReducer + SagaStatusProjection]
+		B9 --> B10[SignalR Updates]
+	end
+```
+
+### Saga Execution Sequence (critical path)
+
+```mermaid
+sequenceDiagram
+	participant Client
+	participant SagaController
+	participant Orchestrator
+	participant Grain as GenericAggregateGrain&lt;TSagaState&gt;
+	participant RootHandler as RootCommandHandler
+	participant RootReducer
+	participant StepEffect as SagaStepStartedEffect
+	participant Step as SagaStepBase
+
+	Client->>SagaController: POST /api/sagas/{saga}/{sagaId}
+	SagaController->>Orchestrator: StartAsync(sagaId, input)
+	Orchestrator->>Grain: ExecuteAsync(StartSagaCommand)
+	Grain->>RootHandler: Handle(StartSagaCommand)
+	RootHandler-->>Grain: SagaStartedEvent + SagaStepStartedEvent
+	Grain->>RootReducer: Reduce(events)
+	Grain->>StepEffect: Dispatch SagaStepStartedEvent
+	StepEffect->>Step: ExecuteAsync(context, state)
+	Step-->>StepEffect: StepResult (events or error)
+	StepEffect-->>Grain: Persist events / emit failure
+	Grain->>RootReducer: Reduce(step events)
+```
+
 ## Alternatives Considered
 
 - Manual orchestration in application code: rejected due to DX inconsistency and boilerplate.
