@@ -51,4 +51,5 @@
 - 2026-02-03: Added SagaStartedEvent as a standalone event file.
 - 2026-02-03: Added SagaStepCompleted as a standalone event file.
 - 2026-02-03: Added SagaStepFailed as a standalone event file.
+- 2026-02-03: Added SagaCompensating as a standalone event file.
 - 2026-02-03: Updated progress log to reflect current implementation status.
