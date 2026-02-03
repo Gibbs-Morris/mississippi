@@ -12,3 +12,4 @@
 - 2026-02-03: Added `StartSagaCommand<TInput>` to standardize saga start inputs.
 - 2026-02-03: Added saga step metadata types and DI registration helper.
 - 2026-02-03: Added saga abstractions project to the Mississippi solution file for build inclusion.
+- 2026-02-03: Added EventSourcing.Sagas runtime project file for saga orchestration implementations.
