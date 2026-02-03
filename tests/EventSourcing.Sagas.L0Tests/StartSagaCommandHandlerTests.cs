@@ -16,7 +16,7 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests;
 /// <summary>
 ///     Tests for <see cref="StartSagaCommandHandler{TSaga,TInput}" />.
 /// </summary>
-internal sealed class StartSagaCommandHandlerTests
+public sealed class StartSagaCommandHandlerTests
 {
     /// <summary>
     ///     Verifies the handler emits a saga-started event for new sagas.

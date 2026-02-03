@@ -78,4 +78,5 @@
 - 2026-02-03: Documented saga client generator tests for analyzer compliance.
 - 2026-02-03: Fixed saga silo registration generator typing and formatting warnings.
 - 2026-02-03: Adjusted saga controller generator collection typing and spacing.
+- 2026-02-03: Made saga runtime test classes public to satisfy xUnit analyzers.
 - 2026-02-03: Updated progress log to reflect current implementation status.

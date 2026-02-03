@@ -8,7 +8,7 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests;
 /// <summary>
 ///     Tests for saga infrastructure reducers.
 /// </summary>
-internal sealed class SagaInfrastructureReducerTests
+public sealed class SagaInfrastructureReducerTests
 {
     /// <summary>
     ///     Verifies the saga started reducer updates state.
