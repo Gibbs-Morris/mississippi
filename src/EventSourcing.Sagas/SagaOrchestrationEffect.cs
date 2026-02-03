@@ -228,13 +228,13 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
     private bool TryGetStep(
         int stepIndex,
-        out SagaStepInfo? stepInfo
+        out SagaStepInfo stepInfo
     )
     {
         IReadOnlyList<SagaStepInfo> steps = StepInfoProvider.Steps;
         if (stepIndex < 0 || stepIndex >= steps.Count)
         {
-            stepInfo = null;
+            stepInfo = default!;
             return false;
         }
 

@@ -68,4 +68,5 @@
 - 2026-02-03: Added default applicability check to saga step info provider.
 - 2026-02-03: Adjusted SagaStepInfo constructor docs for StyleCop compliance.
 - 2026-02-03: Split saga infrastructure reducers into separate files with updated helpers.
+- 2026-02-03: Tightened saga orchestration step lookup to avoid nullable warnings.
 - 2026-02-03: Updated progress log to reflect current implementation status.
