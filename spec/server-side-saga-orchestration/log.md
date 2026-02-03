@@ -23,3 +23,4 @@
 - 2026-02-03: Added InputType to GenerateSagaEndpoints for explicit saga input binding in generators.
 - 2026-02-03: Added saga controller generator and start DTO generation for server endpoints.
 - 2026-02-03: Added saga silo registration generator for steps and reducers.
+- 2026-02-03: Added saga runtime project reference to Inlet.Silo for generated registrations.
