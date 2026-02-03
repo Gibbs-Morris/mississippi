@@ -74,7 +74,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         {
             SagaStartedEvent => ExecuteStepAsync(currentState, 0, cancellationToken),
             SagaStepCompleted completed => ExecuteNextOrCompleteAsync(currentState, completed.StepIndex, cancellationToken),
-            SagaStepFailed failed => StartCompensationAsync(currentState, failed.StepIndex, cancellationToken),
+            SagaStepFailed => AsyncEnumerable.Empty<object>(),
             SagaCompensating compensating => ExecuteCompensationAsync(currentState, compensating.FromStepIndex, cancellationToken),
             SagaStepCompensated compensated => ExecutePreviousCompensationAsync(currentState, compensated.StepIndex, cancellationToken),
             _ => AsyncEnumerable.Empty<object>(),
@@ -145,19 +145,6 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         }
 
         await foreach (object evt in ExecuteStepAsync(state, nextStepIndex, cancellationToken))
-        {
-            yield return evt;
-        }
-    }
-
-    private async IAsyncEnumerable<object> StartCompensationAsync(
-        TSaga state,
-        int failedStepIndex,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
-        int fromStepIndex = failedStepIndex - 1;
-        await foreach (object evt in ExecuteCompensationAsync(state, fromStepIndex, cancellationToken))
         {
             yield return evt;
         }

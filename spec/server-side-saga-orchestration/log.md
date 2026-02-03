@@ -16,3 +16,4 @@
 - 2026-02-03: Added saga runtime project to the Mississippi solution file for build inclusion.
 - 2026-02-03: Added saga orchestration effect to execute steps and drive compensation flow.
 - 2026-02-03: Added LoggerExtensions for saga orchestration diagnostics.
+- 2026-02-03: Adjusted orchestration effect to avoid duplicate compensation execution.
