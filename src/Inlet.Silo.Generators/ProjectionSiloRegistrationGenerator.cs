@@ -30,11 +30,20 @@ namespace Mississippi.Inlet.Silo.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 {
+    private const string ReducerRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
+
     private const string EventReducerBaseFullName =
         "Mississippi.EventSourcing.Reducers.Abstractions.EventReducerBase`2";
 
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
+
+    private const string SnapshotRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.Snapshots.SnapshotRegistrations";
+
+    private const string UxProjectionRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.UxProjections.UxProjectionRegistrations";
 
     /// <summary>
     ///     Recursively finds projections in a namespace.
@@ -318,6 +327,11 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             _
         ) =>
         {
+            if (!HasRegistrationDependencies(source.Compilation))
+            {
+                return [];
+            }
+
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
                 out string? rootNamespace);
@@ -347,6 +361,15 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
                         SourceText.From(registrationSource, Encoding.UTF8));
                 }
             });
+    }
+
+    private static bool HasRegistrationDependencies(
+        Compilation compilation
+    )
+    {
+        return compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
+               compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null &&
+               compilation.GetTypeByMetadataName(UxProjectionRegistrationsTypeFullName) is not null;
     }
 
     /// <summary>

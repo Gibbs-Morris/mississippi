@@ -68,6 +68,27 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                               {
                                               }
                                           }
+
+                                          namespace Mississippi.EventSourcing.Reducers
+                                          {
+                                              public static class ReducerRegistrations
+                                              {
+                                              }
+                                          }
+
+                                          namespace Mississippi.EventSourcing.Sagas
+                                          {
+                                              public static class SagaRegistrations
+                                              {
+                                              }
+                                          }
+
+                                          namespace Mississippi.EventSourcing.Snapshots
+                                          {
+                                              public static class SnapshotRegistrations
+                                              {
+                                              }
+                                          }
                                           """;
 
     private static CSharpCompilation CreateCompilation(

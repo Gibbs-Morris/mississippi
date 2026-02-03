@@ -22,6 +22,9 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     private const string CompensatableInterfaceFullName =
         "Mississippi.EventSourcing.Sagas.Abstractions.ICompensatable`1";
 
+    private const string ReducerRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
+
     private const string EventReducerBaseFullName =
         "Mississippi.EventSourcing.Reducers.Abstractions.EventReducerBase`2";
 
@@ -36,6 +39,12 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     private const string SagaStepAttributeFullName = "Mississippi.EventSourcing.Sagas.Abstractions.SagaStepAttribute";
 
     private const string SagaStepInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaStep`1";
+
+    private const string SagaRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.Sagas.SagaRegistrations";
+
+    private const string SnapshotRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.Snapshots.SnapshotRegistrations";
 
     private static string GenerateRegistration(
         SagaRegistrationInfo saga
@@ -374,6 +383,11 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             _
         ) =>
         {
+            if (!HasRegistrationDependencies(pair.Compilation))
+            {
+                return [];
+            }
+
             string? rootNamespace = pair.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
                 out string? rootNs)
@@ -403,6 +417,15 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                     spc.AddSource($"{saga.SagaName}SagaRegistrations.g.cs", SourceText.From(sourceText, Encoding.UTF8));
                 }
             });
+    }
+
+    private static bool HasRegistrationDependencies(
+        Compilation compilation
+    )
+    {
+        return compilation.GetTypeByMetadataName(SagaRegistrationsTypeFullName) is not null &&
+               compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
+               compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null;
     }
 
     private sealed class ReducerInfo

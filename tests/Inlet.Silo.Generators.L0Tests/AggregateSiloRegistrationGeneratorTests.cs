@@ -56,6 +56,27 @@ public class AggregateSiloRegistrationGeneratorTests
                                                      {
                                                      }
                                                  }
+
+                                                 namespace Mississippi.EventSourcing.Aggregates
+                                                 {
+                                                     public static class AggregateRegistrations
+                                                     {
+                                                     }
+                                                 }
+
+                                                 namespace Mississippi.EventSourcing.Reducers
+                                                 {
+                                                     public static class ReducerRegistrations
+                                                     {
+                                                     }
+                                                 }
+
+                                                 namespace Mississippi.EventSourcing.Snapshots
+                                                 {
+                                                     public static class SnapshotRegistrations
+                                                     {
+                                                     }
+                                                 }
                                                  """;
 
     /// <summary>
