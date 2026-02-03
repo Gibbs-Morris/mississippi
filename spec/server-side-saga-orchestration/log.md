@@ -64,4 +64,5 @@
 - 2026-02-03: Documented ISagaState and SagaPhase to satisfy saga abstractions warnings.
 - 2026-02-03: Documented saga step interfaces for analyzer compliance.
 - 2026-02-03: Documented SagaStepAttribute for analyzer compliance.
+- 2026-02-03: Documented StepResult for analyzer compliance.
 - 2026-02-03: Updated progress log to reflect current implementation status.
