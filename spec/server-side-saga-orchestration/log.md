@@ -71,4 +71,5 @@
 - 2026-02-03: Tightened saga orchestration step lookup to avoid nullable warnings.
 - 2026-02-03: Split saga runtime tests into focused files with documented test names.
 - 2026-02-03: Cleared legacy saga infrastructure reducers file after split.
+- 2026-02-03: Fixed saga controller generator typing and formatting warnings.
 - 2026-02-03: Updated progress log to reflect current implementation status.

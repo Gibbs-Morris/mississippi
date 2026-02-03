@@ -32,7 +32,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
     )
     {
         IncrementalValueProvider<IReadOnlyList<SagaInfo>> sagaProvider = context.CompilationProvider
-            .Select((compilation, _) => GetSagasFromCompilation(compilation, string.Empty))
+            .Select((compilation, _) => GetSagasFromCompilation(compilation))
             .WithTrackingName("SagaControllerGenerator_Sagas");
 
         context.RegisterSourceOutput(sagaProvider, (spc, sagas) =>
@@ -238,13 +238,12 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             sb.AppendLine($"    {prop.Name} = request.{prop.Name}{comma}");
         }
 
-        sb.Append("}");
+        sb.Append('}');
         return sb.ToString();
     }
 
-    private static List<SagaInfo> GetSagasFromCompilation(
-        Compilation compilation,
-        string targetRootNamespace
+    private static IReadOnlyList<SagaInfo> GetSagasFromCompilation(
+        Compilation compilation
     )
     {
         List<SagaInfo> sagas = [];
@@ -258,8 +257,11 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
-            FindSagasInNamespace(referencedAssembly.GlobalNamespace, sagaAttrSymbol, sagaStateSymbol, sagas,
-                targetRootNamespace);
+            FindSagasInNamespace(
+                referencedAssembly.GlobalNamespace,
+                sagaAttrSymbol,
+                sagaStateSymbol,
+                sagas);
         }
 
         return sagas;
@@ -269,13 +271,12 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol sagaAttrSymbol,
         INamedTypeSymbol sagaStateSymbol,
-        List<SagaInfo> sagas,
-        string targetRootNamespace
+        List<SagaInfo> sagas
     )
     {
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            SagaInfo? info = TryGetSagaInfo(typeSymbol, sagaAttrSymbol, sagaStateSymbol, targetRootNamespace);
+            SagaInfo? info = TryGetSagaInfo(typeSymbol, sagaAttrSymbol, sagaStateSymbol);
             if (info is not null)
             {
                 sagas.Add(info);
@@ -284,15 +285,14 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindSagasInNamespace(childNs, sagaAttrSymbol, sagaStateSymbol, sagas, targetRootNamespace);
+            FindSagasInNamespace(childNs, sagaAttrSymbol, sagaStateSymbol, sagas);
         }
     }
 
     private static SagaInfo? TryGetSagaInfo(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol sagaAttrSymbol,
-        INamedTypeSymbol sagaStateSymbol,
-        string targetRootNamespace
+        INamedTypeSymbol sagaStateSymbol
     )
     {
         AttributeData? attr = typeSymbol.GetAttributes()
