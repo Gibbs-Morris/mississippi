@@ -28,8 +28,22 @@ public static class SagaRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddAggregateSupport();
+        services.AddEventType<SagaStartedEvent>();
+        services.AddEventType<SagaStepCompleted>();
+        services.AddEventType<SagaStepFailed>();
+        services.AddEventType<SagaCompensating>();
+        services.AddEventType<SagaStepCompensated>();
+        services.AddEventType<SagaCompleted>();
+        services.AddEventType<SagaCompensated>();
+        services.AddEventType<SagaFailed>();
+        services.AddCommandHandler<StartSagaCommand<TInput>, TSaga, StartSagaCommandHandler<TSaga, TInput>>();
+        services.AddReducer<SagaStartedEvent, TSaga, SagaStartedReducer<TSaga>>();
+        services.AddReducer<SagaStepCompleted, TSaga, SagaStepCompletedReducer<TSaga>>();
+        services.AddReducer<SagaCompensating, TSaga, SagaCompensatingReducer<TSaga>>();
+        services.AddReducer<SagaCompleted, TSaga, SagaCompletedReducer<TSaga>>();
+        services.AddReducer<SagaCompensated, TSaga, SagaCompensatedReducer<TSaga>>();
+        services.AddReducer<SagaFailed, TSaga, SagaFailedReducer<TSaga>>();
         services.AddRootEventEffect<TSaga>();
-        services.AddRootReducer<TSaga>();
         services.AddTransient<IEventEffect<TSaga>, SagaOrchestrationEffect<TSaga>>();
         return services;
     }

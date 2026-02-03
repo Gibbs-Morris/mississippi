@@ -26,3 +26,4 @@
 - 2026-02-03: Added saga runtime project reference to Inlet.Silo for generated registrations.
 - 2026-02-03: Added StartSagaCommand handler to emit saga-started events with step hash.
 - 2026-02-03: Added saga infrastructure reducers to apply lifecycle events to saga state.
+- 2026-02-03: Registered saga infrastructure events, reducers, and start handler in DI.
