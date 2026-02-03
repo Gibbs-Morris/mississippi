@@ -8,3 +8,4 @@
 - 2026-02-03: Added `SagaStepAttribute` to mark and order saga steps.
 - 2026-02-03: Added `StepResult` to represent step success/failure with emitted events.
 - 2026-02-03: Added `CompensationResult` to represent compensation outcomes.
+- 2026-02-03: Added saga infrastructure event records for lifecycle and compensation flow.
