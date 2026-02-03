@@ -3,8 +3,10 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
+using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Emit;
 using Mississippi.Inlet.Generators.Core.Naming;
 

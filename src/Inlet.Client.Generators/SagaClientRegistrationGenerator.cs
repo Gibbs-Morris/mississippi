@@ -1,4 +1,8 @@
+using System.Collections.Generic;
+using System.Text;
+
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Emit;
