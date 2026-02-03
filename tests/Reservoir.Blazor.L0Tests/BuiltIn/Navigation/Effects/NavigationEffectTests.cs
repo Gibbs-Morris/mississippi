@@ -249,6 +249,116 @@ public sealed class NavigationEffectTests
     }
 
     /// <summary>
+    ///     Verifies that NavigateAction rejects non-http/https absolute URIs.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsyncNavigateActionWithNonHttpSchemeThrows()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        NavigationEffect effect = new(nav);
+        NavigateAction action = new("mailto:test@example.com");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*External navigation*");
+    }
+
+    /// <summary>
+    ///     Verifies that NavigateAction rejects protocol-relative URIs.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsyncNavigateActionWithProtocolRelativeUriThrows()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        NavigationEffect effect = new(nav);
+        NavigateAction action = new("//contoso.example/target");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*External navigation*");
+    }
+
+    /// <summary>
+    ///     Verifies that NavigateAction accepts relative paths without a leading slash.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsyncNavigateActionWithRelativePathCallsNavigateTo()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        NavigationEffect effect = new(nav);
+        NavigateAction action = new("investigations");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        await ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        nav.Navigations.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(new TestableNavigationManager.NavigationRecord("investigations", false, false));
+    }
+
+    /// <summary>
+    ///     Verifies that NavigateAction accepts root-relative URIs with query and fragment.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsyncNavigateActionWithRootRelativeQueryAndFragmentCallsNavigateTo()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        NavigationEffect effect = new(nav);
+        NavigateAction action = new("/investigations?filter=high#top");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        await ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        nav.Navigations.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(
+                new TestableNavigationManager.NavigationRecord("/investigations?filter=high#top", false, false));
+    }
+
+    /// <summary>
+    ///     Verifies that NavigateAction accepts root-relative URIs.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsyncNavigateActionWithRootRelativeUriCallsNavigateTo()
+    {
+        // Arrange
+        TestableNavigationManager nav = new();
+        NavigationEffect effect = new(nav);
+        NavigateAction action = new("/investigations");
+        NavigationState state = CreateDefaultState();
+
+        // Act
+        await ConsumeEffectAsync(effect, action, state);
+
+        // Assert
+        nav.Navigations.Should()
+            .ContainSingle()
+            .Which.Should()
+            .BeEquivalentTo(new TestableNavigationManager.NavigationRecord("/investigations", false, false));
+    }
+
+    /// <summary>
     ///     Verifies that HandleAsync for ReplaceRouteAction calls NavigateTo with ReplaceHistoryEntry option.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>

@@ -150,6 +150,11 @@ public sealed class NavigationEffect : IActionEffect<NavigationState>
         string uri
     )
     {
+        if ((uri.Length > 0) && (uri[0] == '/') && !uri.StartsWith("//", StringComparison.Ordinal))
+        {
+            return uri;
+        }
+
         if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri? absoluteUri))
         {
             return uri;
