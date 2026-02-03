@@ -18,17 +18,19 @@ The Spring sample does not yet demonstrate a saga-driven money transfer between 
 
 ## Current State
 
-- Spring.Domain has BankAccount aggregate commands for deposit/withdraw/open with generated endpoints. (VERIFIED)
-- There is no Spring sample saga demonstrating multi-account transfers. (UNVERIFIED)
-- Unit test coverage is not currently at 100% for all src projects. (UNVERIFIED)
+- Spring.Domain has BankAccount aggregate commands for deposit/withdraw/open with generated endpoints. (VERIFIED: samples/Spring/Spring.Domain/Aggregates/BankAccount/)
+- There is no Spring sample saga demonstrating multi-account transfers. (VERIFIED: grep GenerateSagaEndpoints in samples/)
+- StartSagaCommand includes Input, but StartSagaCommandHandler only emits SagaStartedEvent and does not persist input. (VERIFIED: src/EventSourcing.Sagas.Abstractions/StartSagaCommand.cs, src/EventSourcing.Sagas/StartSagaCommandHandler.cs)
+- Unit test coverage for all src projects is not verified at 100%. (UNVERIFIED)
 
 ## Proposed Design
 
 - Add a saga state type in Spring.Domain that orchestrates a transfer: debit source account, credit destination account, and compensate on failure.
+- Resolve saga input persistence so steps can access source/destination/amount (likely via new saga event or extended saga start handling).
 - Use saga step attributes and saga orchestration effect to drive the transfer steps.
 - Add server/silo registrations for saga endpoints in Spring sample.
 - Add Spring.Client UI flow to trigger the saga and show status (using generated saga client actions/state).
-- Extend L0 tests for Spring.Domain and new saga runtime code to maintain 100% coverage across src.
+- Extend L0 tests for Spring.Domain and saga framework code to target 100% coverage across src.
 
 ## Alternatives Considered
 
@@ -50,4 +52,5 @@ The Spring sample does not yet demonstrate a saga-driven money transfer between 
 ## Risks
 
 - Achieving 100% unit test coverage across all src projects may be large and time-consuming.
+- Saga input persistence may require a public API/contract change to saga events or handlers.
 - Saga sample may require UI/UX updates and coordination across Client/Server/Silo.

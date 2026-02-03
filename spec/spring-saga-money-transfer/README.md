@@ -6,11 +6,11 @@ Draft
 
 ## Size
 
-Large (tentative)
+Large
 
 ## Approval Checkpoint
 
-TBD
+Yes — likely requires public saga contract changes to persist input and a broad coverage push across src.
 
 ## Index
 
