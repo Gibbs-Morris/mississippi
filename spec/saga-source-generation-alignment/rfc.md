@@ -23,10 +23,17 @@ Saga DTOs, mappers, and reducers do not follow the same source-generated pattern
 - Refactor unrelated sample code.
 - Change runtime behavior beyond generation parity.
 
-## Current state (UNVERIFIED)
-- `SagaPhaseDto` and `SagaPhaseDtoMapper` are hand-authored in samples.
-- Saga reducers are hand-authored and may duplicate patterns.
-- Aggregates/projections already use source generation for DTOs/mappers/reducers.
+## Current state
+- `SagaPhaseDto` and `SagaPhaseDtoMapper` are hand-authored in Spring samples:
+	- samples/Spring/Spring.Server/Controllers/Projections/SagaPhaseDto.cs
+	- samples/Spring/Spring.Server/Controllers/Projections/Mappers/SagaPhaseDtoMapper.cs
+	- samples/Spring/Spring.Client/Features/MoneyTransferStatus/Dtos/SagaPhaseDto.cs
+- Saga status reducers are hand-authored in Spring projection reducers:
+	- samples/Spring/Spring.Domain/Projections/MoneyTransferStatus/Reducers/Saga*StatusReducer.cs
+- Projection generator patterns already exist:
+	- Server DTO/mapper/controller/registrations: src/Inlet.Server.Generators/ProjectionEndpointsGenerator.cs
+	- Client DTO generation: src/Inlet.Client.Generators/ProjectionClientDtoGenerator.cs
+	- Silo registration (reducers + snapshots): src/Inlet.Silo.Generators/ProjectionSiloRegistrationGenerator.cs
 
 ## Proposed design (initial)
 - Add source generator(s) for saga DTOs, saga phase mapping, and standard saga reducers, mirroring aggregate/projection patterns.

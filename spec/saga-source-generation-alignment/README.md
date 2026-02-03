@@ -2,9 +2,9 @@
 
 Status: Draft
 
-Size: TBD
+Size: Medium
 
-Approval checkpoint: TBD
+Approval checkpoint: Yes (potential public API/contract changes via generic attribute and generated DTOs)
 
 ## Index
 - [learned.md](learned.md)

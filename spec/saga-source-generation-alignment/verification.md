@@ -21,4 +21,35 @@
 12. What analyzer or StyleCop constraints apply to generated code (doc comments, file-scoped namespaces, etc.)?
 
 ## Answers
-- TBD.
+1. `SagaPhaseDto` appears in Spring server and client samples, and `SagaPhaseDtoMapper` in Spring server:
+	- samples/Spring/Spring.Server/Controllers/Projections/SagaPhaseDto.cs
+	- samples/Spring/Spring.Server/Controllers/Projections/Mappers/SagaPhaseDtoMapper.cs
+	- samples/Spring/Spring.Client/Features/MoneyTransferStatus/Dtos/SagaPhaseDto.cs
+2. Aggregate/projection generator patterns live in the Inlet generators:
+	- Server DTO/mapper/controller/registrations: src/Inlet.Server.Generators/ProjectionEndpointsGenerator.cs
+	- Client DTO generation: src/Inlet.Client.Generators/ProjectionClientDtoGenerator.cs
+	- Silo registration for reducers/snapshot converter: src/Inlet.Silo.Generators/ProjectionSiloRegistrationGenerator.cs
+3. Saga status reducers in Spring projection map saga lifecycle events to projection state:
+	- samples/Spring/Spring.Domain/Projections/MoneyTransferStatus/Reducers/Saga*StatusReducer.cs
+4. Target frameworks and language versions:
+	- Directory.Build.props: TargetFramework net10.0, LangVersion 14.0
+	- Inlet.*.Generators csproj: TargetFramework netstandard2.0, LangVersion 14.0
+5. Generic attributes are supported in C# 11+ (C# version history lists generic attributes in C# 11), and
+	the repo uses LangVersion 14.0 (so compiler support is present). Evidence:
+	- https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-version-history#c-version-11
+	- Directory.Build.props LangVersion 14.0
+6. Generated API surface should mirror existing manual saga DTOs/mappers/reducers in samples. Evidence will
+	require comparing generated output to existing Spring DTOs/mappers/reducers once design is finalized.
+7. UNVERIFIED: compilation with generated saga DTOs/mappers/reducers will be verified after implementation.
+8. Potential public API changes depend on introducing a generic attribute (new public type) or removing existing
+	manual DTOs/mappers in samples. Impact to be assessed after design.
+9. Generator test conventions exist in L0 tests for projection generators:
+	- tests/Inlet.Client.Generators.L0Tests/ProjectionClientDtoGeneratorTests.cs
+	- tests/Inlet.Server.Generators.L0Tests/ProjectionEndpointsGeneratorTests.cs
+	- tests/Inlet.Silo.Generators.L0Tests/ProjectionSiloRegistrationGeneratorTests.cs
+10. UNVERIFIED: No evidence yet that saga reducers contain custom logic beyond repeated phase/status updates.
+11. Existing generator helpers include SourceBuilder and naming utilities:
+	- src/Inlet.Generators.Core/Emit/SourceBuilder.cs
+	- src/Inlet.Generators.Core/Naming/TargetNamespaceResolver.cs
+12. Generated code follows auto-generated headers, file-scoped namespaces, and XML docs in current projection
+	generators (e.g., ProjectionEndpointsGenerator). Evidence in generator code and tests above.
