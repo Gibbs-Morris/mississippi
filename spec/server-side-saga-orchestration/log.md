@@ -15,3 +15,4 @@
 - 2026-02-03: Added EventSourcing.Sagas runtime project file for saga orchestration implementations.
 - 2026-02-03: Added saga runtime project to the Mississippi solution file for build inclusion.
 - 2026-02-03: Added saga orchestration effect to execute steps and drive compensation flow.
+- 2026-02-03: Added LoggerExtensions for saga orchestration diagnostics.
