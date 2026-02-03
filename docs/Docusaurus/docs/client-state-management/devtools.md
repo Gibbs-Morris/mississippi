@@ -30,7 +30,27 @@ builder.Services.AddReservoirDevTools(options =>
 
 ([ReservoirDevToolsRegistrations.AddReservoirDevTools](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs#L33-L52))
 
-### 2. Install the Browser Extension
+### 2. Add the Initializer Component
+
+Add `ReservoirDevToolsInitializerComponent` to your `App.razor`:
+
+```razor
+@using Mississippi.Reservoir.Blazor
+
+<ReservoirDevToolsInitializerComponent/>
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <!-- ... -->
+</Router>
+```
+
+:::important
+This step is required. The component calls `Initialize()` after the Blazor rendering context is available. Without it, DevTools will not connect.
+:::
+
+([ReservoirDevToolsInitializerComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsInitializerComponent.razor))
+
+### 3. Install the Browser Extension
 
 Install the Redux DevTools extension for your browser:
 
@@ -38,7 +58,7 @@ Install the Redux DevTools extension for your browser:
 - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/reduxdevtools/)
 - [Edge](https://microsoftedge.microsoft.com/addons/detail/redux-devtools/nnkgneoiohoecpdiaponcejilbhhikei)
 
-### 3. Run Your Application
+### 4. Run Your Application
 
 Open DevTools in your browser and navigate to the Redux tab. You will see actions and state as they are dispatched.
 
@@ -91,10 +111,11 @@ The `ReservoirDevToolsOptions` class provides configuration for the DevTools int
 | `Latency` | `int?` | `null` | Batching latency in milliseconds. Actions dispatched within this window are batched together. |
 | `AutoPause` | `bool?` | `null` | When `true`, pauses recording when DevTools window is not open to reduce overhead. |
 | `IsStrictStateRehydrationEnabled` | `bool` | `false` | When `true`, time-travel rejects payloads missing any feature state. See [Strict State Rehydration](#strict-state-rehydration). |
+| `ThrowOnMissingInitializer` | `bool?` | `null` | Controls error handling when the initializer component is missing. See [Missing Component Detection](#missing-component-detection). |
 | `ActionSanitizer` | `Func<IAction, object?>?` | `null` | Transform actions before sending. Return `null` to use default serialization. See [Sanitizers](#sanitizers). |
 | `StateSanitizer` | `Func<IReadOnlyDictionary<string, object>, object?>?` | `null` | Transform state snapshot before sending. Return `null` to use original. See [Sanitizers](#sanitizers). |
 
-([ReservoirDevToolsOptions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L14-L82))
+([ReservoirDevToolsOptions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L14-L91))
 
 ### Example Configuration
 
@@ -109,10 +130,14 @@ builder.Services.AddReservoirDevTools(options =>
 
 ## How It Works
 
-DevTools integration uses composition rather than inheritance. When enabled, `AddReservoirDevTools` registers `ReduxDevToolsService` as an `IHostedService` that subscribes to [`IStore.StoreEvents`](./store.md#observable-store-events). This approach keeps the store implementation unchanged while allowing external integrations to observe its activity.
+DevTools integration uses composition rather than inheritance. When enabled, `AddReservoirDevTools` registers `ReduxDevToolsService` as a **scoped service** that subscribes to [`IStore.StoreEvents`](./store.md#observable-store-events). The service is initialized via `ReservoirDevToolsInitializerComponent`, which calls `Initialize()` after the Blazor rendering context is available. This approach keeps the store implementation unchanged while allowing external integrations to observe its activity.
 
 ```mermaid
 flowchart LR
+    subgraph Blazor
+        COMP[ReservoirDevToolsInitializerComponent] -->|Initialize| DTS
+    end
+    
     subgraph Store
         A[Dispatch Action] --> B[Reducers]
         B --> C[Notify Listeners]
@@ -126,12 +151,85 @@ flowchart LR
     EXT -.->|Time-Travel Commands| SA[System Actions]
     SA --> A
     
+    style COMP fill:#3498db,color:#fff
     style SE fill:#9b59b6,color:#fff
     style DTS fill:#f4a261,color:#fff
     style JS fill:#6c5ce7,color:#fff
     style EXT fill:#50c878,color:#fff
     style SA fill:#e74c3c,color:#fff
 ```
+
+### Scoped Service Lifetime
+
+`ReduxDevToolsService` is registered as a **scoped service** to match the lifetime of `IStore`. In Blazor WebAssembly, scoped services are effectively singletons (one scope for the application lifetime). In Blazor Server, each circuit gets its own scope with its own store and DevTools instance.
+
+### Initialization via Component
+
+The `ReservoirDevToolsInitializerComponent` is a renderless Blazor component that:
+
+1. Calls `Initialize()` on first render (when JS interop is available)
+2. Calls `Stop()` on disposal to unsubscribe from store events
+
+This design ensures DevTools connects only after the Blazor rendering context is ready, avoiding JavaScript interop errors during server prerendering.
+
+### Connection Logging
+
+When DevTools connects successfully, `ReduxDevToolsService` logs at `Information` level:
+
+> Redux DevTools connected successfully.
+
+If connection fails (e.g., the browser extension is not installed), a `Warning` is logged:
+
+> Failed to connect to Redux DevTools. Ensure the Redux DevTools browser extension is installed and the page is open in a supported browser.
+
+([DevToolsLoggerExtensions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/DevToolsLoggerExtensions.cs#L39-L56))
+
+## Missing Component Detection
+
+Reservoir includes a hosted service that detects when DevTools is enabled but the initializer component is missing. This prevents silent failures where DevTools appears to be configured but never connects.
+
+### How Detection Works
+
+After startup, `DevToolsInitializationCheckerService` waits 5 seconds and checks whether `Initialize()` was called. If DevTools is enabled (not `Off`) and initialization has not occurred, the service either throws an exception or logs a warning depending on configuration.
+
+```mermaid
+flowchart LR
+    START[App Starts] --> WAIT[Wait 5 seconds]
+    WAIT --> CHECK{Was Initialize called?}
+    CHECK -->|Yes| OK[No action]
+    CHECK -->|No| MODE{ThrowOnMissingInitializer?}
+    MODE -->|true| THROW[Throw InvalidOperationException]
+    MODE -->|false| WARN[Log Warning]
+    MODE -->|null| ENV{IsDevelopment?}
+    ENV -->|Yes| THROW
+    ENV -->|No| WARN
+```
+
+### ThrowOnMissingInitializer Behavior
+
+| Value | Behavior |
+|-------|----------|
+| `null` (default) | Throws in Development environments; logs a warning in Production. |
+| `true` | Always throws an `InvalidOperationException`. |
+| `false` | Always logs a warning without throwing. |
+
+### Configuration Example
+
+```csharp
+builder.Services.AddReservoirDevTools(options =>
+{
+    options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
+    
+    // Explicitly control missing-component behavior
+    options.ThrowOnMissingInitializer = true; // Always throw
+});
+```
+
+:::tip
+Leave `ThrowOnMissingInitializer` at its default (`null`) to get fail-fast behavior during development while avoiding runtime exceptions in production.
+:::
+
+([DevToolsInitializationCheckerService](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/DevToolsInitializationCheckerService.cs))
 
 ### Composition Pattern
 
@@ -273,9 +371,12 @@ Sanitizers run on every action dispatch. Keep them fast to avoid impacting appli
 
 | Concept | Description |
 |---------|-------------|
-| **Architecture** | Composition via `IHostedService` subscribing to `IStore.StoreEvents` |
+| **Architecture** | Scoped service subscribing to `IStore.StoreEvents`, initialized via component |
 | **Registration** | `AddReservoirDevTools()` after `AddReservoir()` |
+| **Initialization** | Add `<ReservoirDevToolsInitializerComponent/>` to `App.razor` |
+| **Missing Component Detection** | Hosted service checks initialization after 5 seconds; behavior controlled by `ThrowOnMissingInitializer` |
 | **Enablement** | `Off` (default), `DevelopmentOnly`, or `Always` |
+| **Connection Logging** | Logs `Information` on successful connection; `Warning` on failure |
 | **Time-travel** | Commands become system actions (`RestoreStateAction`, `ResetToInitialStateAction`) |
 | **Strict mode** | `IsStrictStateRehydrationEnabled` requires all features in time-travel payloads |
 | **Sanitizers** | Transform actions/state before sending to DevTools |

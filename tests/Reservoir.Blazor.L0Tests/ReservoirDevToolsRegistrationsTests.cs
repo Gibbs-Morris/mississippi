@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
@@ -27,6 +26,7 @@ public sealed class ReservoirDevToolsRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        services.AddLogging();
         services.AddReservoir();
         services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
@@ -41,28 +41,6 @@ public sealed class ReservoirDevToolsRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReservoirDevTools should register ReduxDevToolsService as a hosted service.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task AddReservoirDevToolsRegistersHostedServiceAsync()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
-        services.AddSingleton(new Mock<IJSRuntime>().Object);
-        await using ServiceProvider provider = services.BuildServiceProvider();
-        await using AsyncServiceScope scope = provider.CreateAsyncScope();
-
-        // Act
-        IEnumerable<IHostedService> hostedServices = scope.ServiceProvider.GetServices<IHostedService>();
-
-        // Assert - ReduxDevToolsService should be registered as IHostedService
-        Assert.Contains(hostedServices, s => s.GetType().Name == "ReduxDevToolsService");
-    }
-
-    /// <summary>
     ///     AddReservoirDevTools should register ReservoirDevToolsInterop.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
@@ -71,6 +49,7 @@ public sealed class ReservoirDevToolsRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        services.AddLogging();
         services.AddReservoir();
         services.AddReservoirDevTools();
         services.AddSingleton(new Mock<IJSRuntime>().Object);
@@ -85,26 +64,26 @@ public sealed class ReservoirDevToolsRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReservoirDevTools should register Lazy IStore factory.
+    ///     AddReservoirDevTools should register ReduxDevToolsService as a scoped service.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task AddReservoirDevToolsRegistersLazyStoreFactoryAsync()
+    public async Task AddReservoirDevToolsRegistersScopedServiceAsync()
     {
         // Arrange
         ServiceCollection services = [];
+        services.AddLogging();
         services.AddReservoir();
-        services.AddReservoirDevTools();
+        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
 
         // Act
-        Lazy<IStore> storeFactory = scope.ServiceProvider.GetRequiredService<Lazy<IStore>>();
+        ReduxDevToolsService devToolsService = scope.ServiceProvider.GetRequiredService<ReduxDevToolsService>();
 
-        // Assert
-        Assert.NotNull(storeFactory);
-        Assert.NotNull(storeFactory.Value);
+        // Assert - ReduxDevToolsService should be resolvable as a scoped service
+        Assert.NotNull(devToolsService);
     }
 
     /// <summary>
@@ -118,5 +97,81 @@ public sealed class ReservoirDevToolsRegistrationsTests
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => services!.AddReservoirDevTools());
+    }
+
+    /// <summary>
+    ///     DevToolsService should receive the same store instance as scoped component resolution.
+    /// </summary>
+    /// <remarks>
+    ///     This test verifies the fix for the captive dependency bug where the singleton
+    ///     hosted service captured a different store instance than user components.
+    ///     With scoped registration, DevTools and components share the same store per scope.
+    /// </remarks>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DevToolsServiceReceivesSameStoreInstanceAsScopedComponentsAsync()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        services.AddLogging();
+        services.AddReservoir();
+        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        services.AddSingleton(new Mock<IJSRuntime>().Object);
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Act - resolve store and DevToolsService in the same scope
+        await using AsyncServiceScope scope = provider.CreateAsyncScope();
+        IStore scopedStore = scope.ServiceProvider.GetRequiredService<IStore>();
+        ReduxDevToolsService devToolsService = scope.ServiceProvider.GetRequiredService<ReduxDevToolsService>();
+
+        // Also verify different scopes get different store instances
+        await using AsyncServiceScope scope2 = provider.CreateAsyncScope();
+        IStore scopedStore2 = scope2.ServiceProvider.GetRequiredService<IStore>();
+        ReduxDevToolsService devToolsService2 = scope2.ServiceProvider.GetRequiredService<ReduxDevToolsService>();
+
+        // Assert - Use reflection to verify DevTools received the same store instance.
+        // This validates the captive dependency fix: before the fix, the singleton service
+        // would have captured a different store instance than the scoped component resolution.
+        PropertyInfo? storeProperty = typeof(ReduxDevToolsService).GetProperty(
+            "Store",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(storeProperty);
+        IStore? devToolsStore = storeProperty.GetValue(devToolsService) as IStore;
+        IStore? devToolsStore2 = storeProperty.GetValue(devToolsService2) as IStore;
+
+        // Key assertion: DevTools in scope1 uses the same store as scope1's component resolution
+        Assert.Same(scopedStore, devToolsStore);
+
+        // Key assertion: DevTools in scope2 uses the same store as scope2's component resolution
+        Assert.Same(scopedStore2, devToolsStore2);
+
+        // Different scopes should have different store instances
+        Assert.NotSame(scopedStore, scopedStore2);
+        Assert.NotSame(devToolsStore, devToolsStore2);
+    }
+
+    /// <summary>
+    ///     Multiple scopes should each get their own DevToolsService instance.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task EachScopeGetsOwnDevToolsServiceInstanceAsync()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        services.AddLogging();
+        services.AddReservoir();
+        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        services.AddSingleton(new Mock<IJSRuntime>().Object);
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Act - resolve DevToolsService from two different scopes
+        await using AsyncServiceScope scope1 = provider.CreateAsyncScope();
+        await using AsyncServiceScope scope2 = provider.CreateAsyncScope();
+        ReduxDevToolsService devTools1 = scope1.ServiceProvider.GetRequiredService<ReduxDevToolsService>();
+        ReduxDevToolsService devTools2 = scope2.ServiceProvider.GetRequiredService<ReduxDevToolsService>();
+
+        // Assert - each scope should have its own DevToolsService
+        Assert.NotSame(devTools1, devTools2);
     }
 }
