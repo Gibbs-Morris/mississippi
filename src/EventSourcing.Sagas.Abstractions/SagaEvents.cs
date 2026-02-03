@@ -1,5 +1,7 @@
 using System;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+
 using Orleans;
 
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
@@ -9,6 +11,7 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions;
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaStartedEvent")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTARTED")]
 public sealed record SagaStartedEvent
 {
     /// <summary>
@@ -41,6 +44,7 @@ public sealed record SagaStartedEvent
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaStepCompleted")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPCOMPLETED")]
 public sealed record SagaStepCompleted
 {
     /// <summary>
@@ -67,6 +71,7 @@ public sealed record SagaStepCompleted
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaStepFailed")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPFAILED")]
 public sealed record SagaStepFailed
 {
     /// <summary>
@@ -99,6 +104,7 @@ public sealed record SagaStepFailed
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaCompensating")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGACOMPENSATING")]
 public sealed record SagaCompensating
 {
     /// <summary>
@@ -113,6 +119,7 @@ public sealed record SagaCompensating
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaStepCompensated")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPCOMPENSATED")]
 public sealed record SagaStepCompensated
 {
     /// <summary>
@@ -133,6 +140,7 @@ public sealed record SagaStepCompensated
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaCompleted")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGACOMPLETED")]
 public sealed record SagaCompleted
 {
     /// <summary>
@@ -147,6 +155,7 @@ public sealed record SagaCompleted
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaCompensated")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGACOMPENSATED")]
 public sealed record SagaCompensated
 {
     /// <summary>
@@ -161,6 +170,7 @@ public sealed record SagaCompensated
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaFailed")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGAFAILED")]
 public sealed record SagaFailed
 {
     /// <summary>
