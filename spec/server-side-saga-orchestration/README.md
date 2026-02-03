@@ -4,13 +4,11 @@ Status: **Design Complete - Awaiting Approval**
 
 ## Index
 
-- [**updated-design.md**](updated-design.md) ← **Authoritative design reference**
+- [**rfc.md**](rfc.md) ← **Authoritative design reference**
 - [learned.md](learned.md)
-- [rfc.md](rfc.md)
 - [verification.md](verification.md)
 - [implementation-plan.md](implementation-plan.md)
 - [progress.md](progress.md)
-- [gap-analysis.md](gap-analysis.md) ← Historical findings (all gaps now resolved)
 
 ## Task Size
 
@@ -40,7 +38,7 @@ Status: **Design Complete - Awaiting Approval**
 | #4 Infrastructure reducers | ✅ Resolved | Generic reducers provided by framework |
 | #5 Effect orchestration | ✅ Resolved | Single `SagaOrchestrationEffect<TSaga>` |
 | #6 SignalR projection key | ✅ Resolved | `saga/{sagaTypeName}/{sagaId}` |
-| #7 Step registry timing | ✅ Resolved | Runtime discovery via DI |
+| #7 Step registry timing | ✅ Resolved | Generated step metadata via `AddSagaStepInfo` registration |
 | #8 Boilerplate | ✅ Resolved | POCO steps reduce ceremony significantly |
 
 ## Summary

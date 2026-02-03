@@ -1,6 +1,6 @@
 # RFC: Server-Side Saga Orchestration
 
-> **Status:** Updated - See [updated-design.md](updated-design.md) for final design decisions.
+> **Status:** Updated - This RFC is the authoritative design reference.
 
 ## Problem
 
@@ -32,7 +32,7 @@ Mississippi lacks first-class server-side saga orchestration for multi-step, lon
 
 ## Proposed Design (Revised)
 
-See [updated-design.md](updated-design.md) for complete details. Key decisions:
+Key decisions:
 
 | Decision | Choice |
 |----------|--------|

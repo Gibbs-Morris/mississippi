@@ -1,7 +1,7 @@
 # Verification
 
 > **Status**: Updated to reflect the `SagaOrchestrationEffect<TSaga>` design.
-> See [updated-design.md](./updated-design.md) for the authoritative design reference.
+> See [rfc.md](./rfc.md) for the authoritative design reference.
 
 ## Claim List (revised after gap analysis)
 

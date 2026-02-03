@@ -1,7 +1,7 @@
 # Implementation Plan (Revised 2025-06-10)
 
 > **Status**: Updated to reflect the `SagaOrchestrationEffect<TSaga>` design.
-> See [updated-design.md](./updated-design.md) for the authoritative design reference.
+> See [rfc.md](./rfc.md) for the authoritative design reference.
 
 ## Requirements (from task.md)
 
@@ -152,7 +152,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : RootEventEffect<TSaga>
 
 **Registration Extension:**
 ```csharp
-public static IServiceCollection AddSaga<TSaga>(
+public static IServiceCollection AddSagaOrchestration<TSaga, TInput>(
     this IServiceCollection services)
     where TSaga : class, ISagaState
 {
@@ -220,7 +220,7 @@ public static class SagaRegistration
         this IServiceCollection services)
     {
         // For each discovered saga:
-        services.AddSaga<TransferSagaState>();
+        services.AddSagaOrchestration<TransferSagaState, TransferSagaInput>();
         
         // Register step types (discovered by attribute)
         services.AddTransient<DebitSourceStep>();
