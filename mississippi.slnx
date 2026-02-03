@@ -28,6 +28,7 @@
   </Folder>
   <Folder Name="/Framework/EventSourcing/Sagas/">
     <Project Path="src\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Sagas\EventSourcing.Sagas.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Serialization/">
     <Project Path="src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
