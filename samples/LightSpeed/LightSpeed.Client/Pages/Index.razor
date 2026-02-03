@@ -1,4 +1,6 @@
 @page "/"
+@using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions
+@inherits StoreComponent
 
 <main>
 	<header>
@@ -12,7 +14,9 @@
 		<h2>Foundations</h2>
 		<p>Baseline elements and typography for quick verification.</p>
 		<ol>
-			<li><a href="/base-styles">Base styles (HTML controls)</a></li>
+			<li>
+				<button type="button" @onclick="NavigateToBaseStyles">Base styles (HTML controls)</button>
+			</li>
 		</ol>
 	</section>
 
@@ -28,3 +32,10 @@
 		</ul>
 	</section>
 </main>
+
+@code {
+	private void NavigateToBaseStyles()
+	{
+		Dispatch(new NavigateAction("base-styles"));
+	}
+}
