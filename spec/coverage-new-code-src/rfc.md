@@ -43,10 +43,15 @@ Coverage for new/changed code under src is below the 95% target required for thi
 ## Mermaid
 ```mermaid
 flowchart TD
-  A[Identify changed src files] --> B[Map to test projects]
-  B --> C[Add/adjust L0 tests]
-  C --> D[Run coverage]
-  D --> E[>=95% coverage for changed src]
+  subgraph AsIs[As-Is]
+    A1[Changed src code] --> A2[Limited tests]
+    A2 --> A3[Coverage below target]
+  end
+  subgraph ToBe[To-Be]
+    B1[Changed src code] --> B2[Targeted L0 tests]
+    B2 --> B3[Coverage >= 95% for changed src]
+  end
+  A3 -.-> B2
 ```
 
 ```mermaid
