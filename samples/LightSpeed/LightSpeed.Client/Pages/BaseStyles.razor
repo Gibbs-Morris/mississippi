@@ -1,0 +1,196 @@
+@page "/base-styles"
+
+<main>
+    <h1>Heading Level 1</h1>
+    <p>
+        This page shows baseline HTML elements to validate typography and layout tokens.
+        The quick brown fox jumps over the lazy dog.
+    </p>
+
+    <h2>Heading Level 2</h2>
+    <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.
+    </p>
+
+    <h3>Heading Level 3</h3>
+    <p>
+        Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet.
+    </p>
+
+    <h4>Heading Level 4</h4>
+    <p>
+        Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta.
+    </p>
+
+    <h5>Heading Level 5</h5>
+    <p>
+        Mauris ipsum. Nulla metus metus, ullamcorper vel, tincidunt sed, euismod in, nibh.
+    </p>
+
+    <h6>Heading Level 6</h6>
+    <p>
+        Quisque volutpat condimentum velit. Class aptent taciti sociosqu ad litora torquent per conubia nostra.
+    </p>
+
+    <hr />
+
+    <section>
+        <h2>Text Elements</h2>
+        <p><strong>Strong text</strong> and <em>emphasized text</em> with <a href="https://example.com">a link</a>.</p>
+        <p><small>Small text</small> and <code>inline code</code> in a sentence.</p>
+        <blockquote>
+            <p>
+                Blockquote example for callouts and long-form emphasis.
+            </p>
+            <footer>— Example Author</footer>
+        </blockquote>
+
+        <pre>
+<code>public sealed record Sample(int Value);
+</code>
+        </pre>
+    </section>
+
+    <hr />
+
+    <section>
+        <h2>Lists</h2>
+        <h3>Unordered List</h3>
+        <ul>
+            <li>First item</li>
+            <li>Second item</li>
+            <li>Third item</li>
+        </ul>
+
+        <h3>Ordered List</h3>
+        <ol>
+            <li>Step one</li>
+            <li>Step two</li>
+            <li>Step three</li>
+        </ol>
+
+        <h3>Description List</h3>
+        <dl>
+            <dt>Term</dt>
+            <dd>Description for the term.</dd>
+            <dt>Another term</dt>
+            <dd>Another definition line.</dd>
+        </dl>
+    </section>
+
+    <hr />
+
+    <section>
+        <h2>Form Controls</h2>
+        <form>
+            <p>
+                <label for="text-input">Text input</label><br />
+                <input id="text-input" name="text-input" type="text" placeholder="Type here" />
+            </p>
+
+            <p>
+                <label for="email-input">Email input</label><br />
+                <input id="email-input" name="email-input" type="email" placeholder="name@example.com" />
+            </p>
+
+            <p>
+                <label for="password-input">Password input</label><br />
+                <input id="password-input" name="password-input" type="password" placeholder="Password" />
+            </p>
+
+            <p>
+                <label for="number-input">Number input</label><br />
+                <input id="number-input" name="number-input" type="number" value="5" />
+            </p>
+
+            <p>
+                <label for="range-input">Range input</label><br />
+                <input id="range-input" name="range-input" type="range" min="0" max="100" value="50" />
+            </p>
+
+            <p>
+                <label for="date-input">Date input</label><br />
+                <input id="date-input" name="date-input" type="date" />
+            </p>
+
+            <p>
+                <label for="select-input">Select</label><br />
+                <select id="select-input" name="select-input">
+                    <option>Option A</option>
+                    <option>Option B</option>
+                    <option>Option C</option>
+                </select>
+            </p>
+
+            <fieldset>
+                <legend>Radio group</legend>
+                <p>
+                    <label>
+                        <input type="radio" name="radio-group" value="one" checked />
+                        Option one
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input type="radio" name="radio-group" value="two" />
+                        Option two
+                    </label>
+                </p>
+            </fieldset>
+
+            <fieldset>
+                <legend>Checkboxes</legend>
+                <p>
+                    <label>
+                        <input type="checkbox" name="checkbox-one" checked />
+                        Checkbox one
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <input type="checkbox" name="checkbox-two" />
+                        Checkbox two
+                    </label>
+                </p>
+            </fieldset>
+
+            <p>
+                <label for="textarea-input">Textarea</label><br />
+                <textarea id="textarea-input" name="textarea-input" rows="4">Multiline text</textarea>
+            </p>
+
+            <p>
+                <button type="button">Button</button>
+                <button type="submit">Submit</button>
+                <button type="reset">Reset</button>
+            </p>
+        </form>
+    </section>
+
+    <hr />
+
+    <section>
+        <h2>Table</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Column A</th>
+                    <th>Column B</th>
+                    <th>Column C</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Row 1</td>
+                    <td>Value</td>
+                    <td>Value</td>
+                </tr>
+                <tr>
+                    <td>Row 2</td>
+                    <td>Value</td>
+                    <td>Value</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+</main>

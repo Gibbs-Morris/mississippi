@@ -1,0 +1,321 @@
+/*
+ * Refraction Design System Tokens
+ * ================================
+ * All tokens use the rf.* namespace in code and --rf-* prefix in CSS.
+ *
+ * Token Families:
+ * - Spectrum: Color palette (background, surface, text, accents)
+ * - Radiance: Glow and emission intensity
+ * - Veil: Opacity, blur, and frosting values
+ * - Depth: Z-index, elevation, parallax
+ * - Flow: Timing, easing, motion curves
+ * - Signal: Semantic states (ok, attention, critical)
+ */
+
+/* ============================================
+   SHARED TOKENS (Theme-Independent)
+   ============================================ */
+:root {
+    /* === Flow (Timing) === */
+    --rf-flow-micro: 100ms;
+    --rf-flow-panel: 200ms;
+    --rf-flow-scene: 350ms;
+    --rf-flow-current: 4s;
+
+    /* === Easing Curves === */
+    --rf-ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+    --rf-ease-in-out: cubic-bezier(0.4, 0.0, 0.2, 1);
+    --rf-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* === Depth (Z-Index Layers) === */
+    --rf-depth-seabed: -1;
+    --rf-depth-mist: 0;
+    --rf-depth-horizon: 100;
+    --rf-depth-lens: 200;
+    --rf-depth-shoals: 300;
+    --rf-depth-tide-ribbon: 400;
+    --rf-depth-ripples: 500;
+
+    /* === Spacing Scale === */
+    --rf-space-0: 0;
+    --rf-space-1: 0.25rem;
+    --rf-space-2: 0.5rem;
+    --rf-space-3: 0.75rem;
+    --rf-space-4: 1rem;
+    --rf-space-5: 1.5rem;
+    --rf-space-6: 2rem;
+    --rf-space-8: 3rem;
+    --rf-space-10: 4rem;
+    --rf-space-12: 6rem;
+
+    /* === Touch Targets (Accessibility) === */
+    --rf-touch-min: 44px;
+
+    /* === Border Radius === */
+    --rf-radius-none: 0;
+    --rf-radius-sm: 4px;
+    --rf-radius-md: 8px;
+    --rf-radius-lg: 12px;
+    --rf-radius-xl: 16px;
+    --rf-radius-full: 9999px;
+
+    /* === Typography Families === */
+    --rf-font-display: 'Space Grotesk', sans-serif;
+    --rf-font-body: 'Inter', sans-serif;
+    --rf-font-mono: 'JetBrains Mono', monospace;
+
+    /* === Typography Scale === */
+    --rf-text-display: 2rem;
+    --rf-text-h1: 1.5rem;
+    --rf-text-h2: 1.25rem;
+    --rf-text-body: 1rem;
+    --rf-text-small: 0.8125rem;
+    --rf-text-micro: 0.6875rem;
+
+    --rf-line-display: 2.5rem;
+    --rf-line-h1: 2rem;
+    --rf-line-h2: 1.75rem;
+    --rf-line-body: 1.5rem;
+    --rf-line-small: 1.125rem;
+    --rf-line-micro: 1rem;
+
+    /* === Typography Weights === */
+    --rf-weight-regular: 400;
+    --rf-weight-medium: 500;
+    --rf-weight-semibold: 600;
+    --rf-weight-bold: 700;
+
+    /* === Shared Accent Colors (Theme-Independent) === */
+    --rf-spectrum-cyan-050: #E6FAFF;
+    --rf-spectrum-cyan-100: #CCEFFF;
+    --rf-spectrum-cyan-200: #99E0FF;
+    --rf-spectrum-cyan-300: #5EEBFF;
+    --rf-spectrum-cyan-400: #33D6FF;
+    --rf-spectrum-cyan-500: #00C8FF;
+    --rf-spectrum-cyan-600: #00A3D4;
+    --rf-spectrum-cyan-700: #0077A8;
+    --rf-spectrum-cyan-800: #005A80;
+    --rf-spectrum-cyan-900: #003D57;
+    --rf-spectrum-cyan-950: #002940;
+
+    --rf-spectrum-white: #EAF6FF;
+
+    /* === Signal Colors (Semantic States) === */
+    --rf-signal-ok: #2BE4A7;
+    --rf-signal-ok-muted: rgba(43, 228, 167, 0.2);
+    --rf-signal-attn: #FFB020;
+    --rf-signal-attn-muted: rgba(255, 176, 32, 0.2);
+    --rf-signal-critical: #FF3B3B;
+    --rf-signal-critical-muted: rgba(255, 59, 59, 0.2);
+}
+
+/* ============================================
+   DARK THEME (Default)
+   ============================================ */
+:root,
+:root[data-theme="dark"] {
+    /* === Spectrum (Background/Surface Palette) === */
+    --rf-spectrum-bg: #05070B;
+    --rf-spectrum-surface1: #0B1220;
+    --rf-spectrum-surface2: #0F1A2B;
+    --rf-spectrum-border: #163349;
+    --rf-spectrum-text: #E9F2FF;
+    --rf-spectrum-text-muted: #B6C6DA;
+    --rf-spectrum-ghost: #7AA6C3;
+
+    /* === Veil (Opacity Tiers) === */
+    --rf-veil-ambient: 0.06;
+    --rf-veil-readable: 0.14;
+    --rf-veil-focus: 0.28;
+    --rf-veil-solid: 0.62;
+
+    /* === Radiance (Glow Effects) === */
+    --rf-radiance-edge-soft: 0 0 4px var(--rf-spectrum-cyan-500);
+    --rf-radiance-edge-strong: 0 0 8px var(--rf-spectrum-cyan-500);
+    --rf-radiance-bloom: 0 0 16px var(--rf-spectrum-cyan-300);
+    --rf-radiance-bloom-subtle: 0 0 8px var(--rf-spectrum-cyan-500);
+
+    /* === Signal Glow (for dark theme visibility) === */
+    --rf-signal-ok-glow: 0 0 8px var(--rf-signal-ok);
+    --rf-signal-attn-glow: 0 0 8px var(--rf-signal-attn);
+    --rf-signal-critical-glow: 0 0 8px var(--rf-signal-critical);
+
+    /* === Surface Composites === */
+    --rf-surface-glass: rgba(11, 18, 32, var(--rf-veil-readable));
+    --rf-surface-glass-focus: rgba(11, 18, 32, var(--rf-veil-focus));
+    --rf-surface-glass-solid: rgba(11, 18, 32, var(--rf-veil-solid));
+}
+
+/* ============================================
+   LIGHT THEME
+   ============================================ */
+:root[data-theme="light"] {
+    /* === Spectrum (Background/Surface Palette) === */
+    --rf-spectrum-bg: #F6FAFF;
+    --rf-spectrum-surface1: #FFFFFF;
+    --rf-spectrum-surface2: #EDF6FF;
+    --rf-spectrum-border: #B7D4E8;
+    --rf-spectrum-text: #0B1020;
+    --rf-spectrum-text-muted: #2A3A52;
+    --rf-spectrum-ghost: #4B6E8A;
+
+    /* === Veil (Opacity Tiers - adjusted for light) === */
+    --rf-veil-ambient: 0.04;
+    --rf-veil-readable: 0.10;
+    --rf-veil-focus: 0.18;
+    --rf-veil-solid: 0.78;
+
+    /* === Radiance (Glow Effects - use darker cyan for contrast) === */
+    --rf-radiance-edge-soft: 0 0 4px var(--rf-spectrum-cyan-700);
+    --rf-radiance-edge-strong: 0 0 8px var(--rf-spectrum-cyan-700);
+    --rf-radiance-bloom: 0 0 12px var(--rf-spectrum-cyan-500);
+    --rf-radiance-bloom-subtle: 0 0 6px var(--rf-spectrum-cyan-700);
+
+    /* === Signal Glow (muted for light theme) === */
+    --rf-signal-ok-glow: 0 0 6px rgba(43, 228, 167, 0.5);
+    --rf-signal-attn-glow: 0 0 6px rgba(255, 176, 32, 0.5);
+    --rf-signal-critical-glow: 0 0 6px rgba(255, 59, 59, 0.5);
+
+    /* === Surface Composites === */
+    --rf-surface-glass: rgba(255, 255, 255, var(--rf-veil-readable));
+    --rf-surface-glass-focus: rgba(255, 255, 255, var(--rf-veil-focus));
+    --rf-surface-glass-solid: rgba(255, 255, 255, var(--rf-veil-solid));
+}
+
+/* ============================================
+   MOTION PRIMITIVES (CSS Keyframes)
+   ============================================ */
+
+/* Emerge: Element fades in and slightly scales up */
+@keyframes rf-emerge {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Disperse: Element fades out and slightly scales down */
+@keyframes rf-disperse {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+}
+
+/* Coalesce: Elements gather together, subtle scale */
+@keyframes rf-coalesce {
+    from {
+        opacity: 0;
+        transform: scale(1.04);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Ripple: Expanding ring for confirmation feedback */
+@keyframes rf-ripple {
+    0% {
+        transform: scale(0.8);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Pulse: Subtle attention pulse for beacons */
+@keyframes rf-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.1);
+    }
+}
+
+/* Current: Slow ambient drift motion */
+@keyframes rf-current {
+    0% {
+        transform: translate(0, 0);
+    }
+    50% {
+        transform: translate(2px, 1px);
+    }
+    100% {
+        transform: translate(0, 0);
+    }
+}
+
+/* Gyre: Slow rotation for radial elements */
+@keyframes rf-gyre {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Moor: Line grows from origin to destination */
+@keyframes rf-moor {
+    from {
+        stroke-dashoffset: 100%;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Animation utilities */
+.rf-animate-emerge {
+    animation: rf-emerge var(--rf-flow-panel) var(--rf-ease-out) forwards;
+}
+
+.rf-animate-disperse {
+    animation: rf-disperse var(--rf-flow-panel) var(--rf-ease-out) forwards;
+}
+
+.rf-animate-coalesce {
+    animation: rf-coalesce var(--rf-flow-panel) var(--rf-ease-out) forwards;
+}
+
+.rf-animate-ripple {
+    animation: rf-ripple var(--rf-flow-micro) var(--rf-ease-out) forwards;
+}
+
+.rf-animate-pulse {
+    animation: rf-pulse 2s var(--rf-ease-in-out) infinite;
+}
+
+.rf-animate-current {
+    animation: rf-current var(--rf-flow-current) var(--rf-ease-in-out) infinite;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .rf-animate-emerge,
+    .rf-animate-disperse,
+    .rf-animate-coalesce,
+    .rf-animate-ripple,
+    .rf-animate-pulse,
+    .rf-animate-current {
+        animation: none;
+    }
+}
