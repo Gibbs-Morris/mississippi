@@ -29,3 +29,4 @@
 - 2026-02-03: Registered saga infrastructure events, reducers, and start handler in DI.
 - 2026-02-03: Added EventSourcing.Sagas L0 test project for saga runtime coverage.
 - 2026-02-03: Added L0 tests for saga start handling and infrastructure reducers.
+- 2026-02-03: Added saga L0 test project to the Mississippi solution.
