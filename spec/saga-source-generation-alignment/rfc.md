@@ -1,7 +1,18 @@
 # RFC: Saga source generation alignment
 
 ## Problem
-Saga DTOs, mapper, and reducers do not follow the same source-generated patterns as aggregates and projections. This can lead to duplicated manual code and inconsistent patterns.
+Saga DTOs, mappers, and reducers do not follow the same source-generated patterns as aggregates and projections. This can lead to duplicated manual code and inconsistent patterns.
+
+## Requirements (from request)
+- `SagaPhaseDto` should be source-generated.
+- Research generic attribute support and consider usage for saga endpoint generation.
+- Saga reducer patterns that would be duplicated should be source-generated.
+- `SagaPhaseDtoMapper` should follow a source-generated pattern.
+
+## Constraints
+- Follow existing aggregate/projection generation patterns in this repo.
+- Avoid breaking public APIs unless explicitly approved.
+- Keep changes minimal and aligned with current generator conventions.
 
 ## Goals
 - Align saga DTOs, mappers, and reducers with aggregate/projection source generation patterns.
@@ -20,6 +31,15 @@ Saga DTOs, mapper, and reducers do not follow the same source-generated patterns
 ## Proposed design (initial)
 - Add source generator(s) for saga DTOs, saga phase mapping, and standard saga reducers, mirroring aggregate/projection patterns.
 - If generic attributes are supported by current target framework, evaluate introducing generic attribute usage for saga endpoint generation, or keep existing attribute shape but document rationale.
+
+## Assumptions
+- Existing aggregate/projection generators provide a reusable pattern for saga generation.
+- Saga DTOs/mappers can be generated without altering runtime behavior.
+
+## Unknowns
+- Where the authoritative aggregate/projection generator patterns live in the repo.
+- Whether the current C# language version/tooling enables generic attributes.
+- Exact list of saga reducers that should be generated.
 
 ## Alternatives
 - Keep manual saga DTOs/mappers/reducers.
