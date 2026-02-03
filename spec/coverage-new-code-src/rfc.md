@@ -13,10 +13,11 @@ Coverage for new/changed code under src is below the 95% target required for thi
 - Broad refactors or new features.
 
 ## Current state (UNVERIFIED)
-- Recent saga-related changes under src likely have low coverage.
+- Recent saga-related changes under src likely have low coverage; exact changed file list and coverage per module still need verification.
 
 ## Proposed design (UNVERIFIED)
 - Identify changed src files via git diff.
+- Map changed files to L0 test projects via project references.
 - Add focused L0 tests to cover changed logic.
 - Re-run coverage per affected test project(s) and confirm >=95% for changed src code.
 
