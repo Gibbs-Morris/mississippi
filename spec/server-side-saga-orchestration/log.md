@@ -10,3 +10,4 @@
 - 2026-02-03: Added `CompensationResult` to represent compensation outcomes.
 - 2026-02-03: Added saga infrastructure event records for lifecycle and compensation flow.
 - 2026-02-03: Added `StartSagaCommand<TInput>` to standardize saga start inputs.
+- 2026-02-03: Added saga step metadata types and DI registration helper.
