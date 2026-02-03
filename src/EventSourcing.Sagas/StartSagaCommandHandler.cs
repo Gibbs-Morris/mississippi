@@ -42,6 +42,7 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
         TSaga? state
     )
     {
+        ArgumentNullException.ThrowIfNull(command);
         if (state is not null && state.Phase != SagaPhase.NotStarted)
         {
             return OperationResult.Fail<IReadOnlyList<object>>(
