@@ -69,4 +69,5 @@
 - 2026-02-03: Adjusted SagaStepInfo constructor docs for StyleCop compliance.
 - 2026-02-03: Split saga infrastructure reducers into separate files with updated helpers.
 - 2026-02-03: Tightened saga orchestration step lookup to avoid nullable warnings.
+- 2026-02-03: Split saga runtime tests into focused files with documented test names.
 - 2026-02-03: Updated progress log to reflect current implementation status.
