@@ -73,6 +73,8 @@ public sealed class SnapshotStorageMetricsTests
         int prunedCount
     )
     {
+        // Use unique snapshot type to isolate from other tests running in parallel
+        const string snapshotType = "PruneTestSnapshot";
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
@@ -101,8 +103,14 @@ public sealed class SnapshotStorageMetricsTests
             measurements.Add(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
-        SnapshotStorageMetrics.RecordPrune("TestSnapshot", prunedCount);
-        Assert.DoesNotContain(measurements, measurement => measurement.InstrumentName == "cosmos.snapshot.prune.count");
+        SnapshotStorageMetrics.RecordPrune(snapshotType, prunedCount);
+
+        // Filter by unique snapshot type to isolate from parallel tests
+        Assert.DoesNotContain(
+            measurements,
+            measurement => (measurement.InstrumentName == "cosmos.snapshot.prune.count") &&
+                           measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
+                           ((string?)snapType == snapshotType));
     }
 
     /// <summary>
@@ -270,6 +278,8 @@ public sealed class SnapshotStorageMetricsTests
     [Fact]
     public void RecordWriteDoesNotEmitSizeWhenZero()
     {
+        // Use unique snapshot type to isolate from other tests running in parallel
+        const string snapshotType = "WriteNoSizeSnapshot";
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
@@ -307,8 +317,14 @@ public sealed class SnapshotStorageMetricsTests
             // Ignore histogram
         });
         listener.Start();
-        SnapshotStorageMetrics.RecordWrite("TestSnapshot", 50.0, true);
-        Assert.DoesNotContain(measurements, measurement => measurement.InstrumentName == "cosmos.snapshot.size");
+        SnapshotStorageMetrics.RecordWrite(snapshotType, 50.0, true);
+
+        // Filter by unique snapshot type to isolate from parallel tests
+        Assert.DoesNotContain(
+            measurements,
+            measurement => (measurement.InstrumentName == "cosmos.snapshot.size") &&
+                           measurement.Tags.TryGetValue("snapshot.type", out object? snapType) &&
+                           ((string?)snapType == snapshotType));
     }
 
     /// <summary>
