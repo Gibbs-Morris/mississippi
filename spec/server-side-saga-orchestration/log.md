@@ -59,4 +59,5 @@
 - 2026-02-03: Split saga step info definitions into separate files.
 - 2026-02-03: Added ISagaStepInfoProvider abstraction file for saga step metadata.
 - 2026-02-03: Added SagaStepInfoProvider implementation for saga step metadata.
+- 2026-02-03: Added AddSagaStepInfo registration helper for saga step metadata.
 - 2026-02-03: Updated progress log to reflect current implementation status.
