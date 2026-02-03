@@ -8,7 +8,7 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions;
 public sealed record SagaStepInfo
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SagaStepInfo" /> record.
+    ///     Initializes a new instance of the <see cref="SagaStepInfo" /> class.
     /// </summary>
     /// <param name="stepIndex">The zero-based step index.</param>
     /// <param name="stepName">The step name.</param>
