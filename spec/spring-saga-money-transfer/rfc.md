@@ -25,12 +25,13 @@ The Spring sample does not yet demonstrate a saga-driven money transfer between 
 
 ## Proposed Design
 
+- Define a saga input command type (e.g., StartMoneyTransferCommand) in Spring.Domain and use it as the saga InputType so schema-first generation remains consistent with aggregates/projections.
+- Persist saga input by emitting a dedicated saga input event from StartSagaCommandHandler and applying it via a saga reducer (so steps can read input from state).
 - Add a saga state type in Spring.Domain that orchestrates a transfer: debit source account, credit destination account, and compensate on failure.
-- Resolve saga input persistence so steps can access source/destination/amount (likely via new saga event or extended saga start handling).
 - Use saga step attributes and saga orchestration effect to drive the transfer steps.
-- Add server/silo registrations for saga endpoints in Spring sample.
+- Add server/silo registrations for saga endpoints in Spring sample and register the generated saga feature in the client.
 - Add Spring.Client UI flow to trigger the saga and show status (using generated saga client actions/state).
-- Extend L0 tests for Spring.Domain and saga framework code to target 100% coverage across src.
+- Extend L0 tests for Spring.Domain and saga framework code to target 100% coverage for new src changes.
 
 ## Alternatives Considered
 
@@ -51,6 +52,5 @@ The Spring sample does not yet demonstrate a saga-driven money transfer between 
 
 ## Risks
 
-- Achieving 100% unit test coverage across all src projects may be large and time-consuming.
-- Saga input persistence may require a public API/contract change to saga events or handlers.
+- Saga input persistence introduces a public API/contract change to saga events/handlers.
 - Saga sample may require UI/UX updates and coordination across Client/Server/Silo.

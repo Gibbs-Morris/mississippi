@@ -6,28 +6,29 @@ Implement a Spring sample saga that transfers money between bank accounts, surfa
 
 ## Changes From Initial Draft
 
-- Added explicit framework change to persist saga input (required for realistic transfer steps).
+- Added explicit framework change to persist saga input via a dedicated input event.
+- Updated saga input to use a command type with [GenerateCommand] to mirror aggregate generation patterns.
 - Added requirement to update instruction docs when Spring sample patterns change.
 
 ## Detailed Plan
 
 ### 1) Framework: Persist Saga Input (src)
 
-- Update SagaStartedEvent to carry saga input (e.g., add `Input` property) so steps can access transfer details.
-- Update StartSagaCommandHandler to populate the input field from `StartSagaCommand<TInput>`.
-- Update SagaStartedReducer to set the input property on saga state when present (use safe property setting to avoid exceptions when the saga state has no input property).
-- Add `TrySetProperty` or equivalent on SagaStatePropertyMap to avoid throwing when optional input fields are not defined.
+- Add a new saga infrastructure event (e.g., `SagaInputProvided<TInput>`) to carry the input payload.
+- Update StartSagaCommandHandler to emit the input event alongside SagaStartedEvent.
+- Add a saga reducer to set `Input` on saga state when the property exists and is assignable to `TInput`.
+- Add `TrySetProperty` on SagaStatePropertyMap to avoid throwing when optional input fields are not defined.
 - Add/extend L0 tests in tests/EventSourcing.Sagas.L0Tests to cover:
-	- StartSagaCommandHandler emits input on SagaStartedEvent
-	- SagaStartedReducer sets input when saga state includes an `Input` property
-	- SagaStartedReducer remains safe when saga state lacks `Input`
+	- StartSagaCommandHandler emits the input event
+	- Input reducer sets Input on saga state when present
+	- Input reducer remains safe when saga state lacks Input
 
 ### 2) Spring.Domain: Money Transfer Saga Types
 
 - Add a new saga state record under samples/Spring/Spring.Domain (e.g., Aggregates/MoneyTransferSaga/):
-	- Implement ISagaState and include an `Input` property of a new input type (e.g., MoneyTransferInput).
-	- Apply `[GenerateSagaEndpoints(InputType = typeof(MoneyTransferInput))]`, `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, `[Alias]`.
-- Add MoneyTransferInput record with required fields (SourceAccountId, DestinationAccountId, Amount), `[GenerateSerializer]`, `[Alias]`, `[Id]` attributes.
+	- Implement ISagaState and include an `Input` property of a new command type (e.g., StartMoneyTransferCommand).
+	- Apply `[GenerateSagaEndpoints(InputType = typeof(StartMoneyTransferCommand))]`, `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, `[Alias]`.
+- Define StartMoneyTransferCommand under the saga aggregate and mark with `[GenerateCommand]` to mirror aggregate command generation patterns.
 - Implement saga steps with `[SagaStep]` attributes:
 	- Step 0: Withdraw from source account (ICompensatable to deposit back on compensation failure in later steps).
 	- Step 1: Deposit to destination account.
@@ -54,9 +55,9 @@ Implement a Spring sample saga that transfers money between bank accounts, surfa
 	- MoneyTransfer saga step success paths
 	- Compensation path when deposit fails
 	- Input validation (negative amount, same account, etc.) if applicable
-- Add tests in src/test projects to fully cover new saga framework changes (StartSagaCommandHandler, SagaStartedReducer, SagaStatePropertyMap changes).
-- Run coverage scripts to identify src coverage gaps and add tests to reach 100%:
-	- Use eng/src/agent-scripts/test-project-quality.ps1 for each relevant test project.
+- Add tests in src/test projects to fully cover new saga framework changes.
+- Run coverage scripts for affected src projects to ensure 100% coverage for new src changes:
+	- Use eng/src/agent-scripts/test-project-quality.ps1 with -SkipMutation during iteration.
 
 ### 6) Quality Gates
 
