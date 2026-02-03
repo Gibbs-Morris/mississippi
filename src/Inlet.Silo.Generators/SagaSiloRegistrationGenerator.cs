@@ -41,18 +41,20 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValuesProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             source = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
-        IncrementalValueProvider<IReadOnlyList<SagaRegistrationInfo>> sagasProvider =
+        IncrementalValueProvider<List<SagaRegistrationInfo>> sagasProvider =
             source.Select((pair, _) =>
             {
                 string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                    pair.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.RootNamespaceProperty,
+                    pair.Options.GlobalOptions.TryGetValue(
+                        TargetNamespaceResolver.RootNamespaceProperty,
                         out string? rootNs)
                         ? rootNs
                         : null,
-                    pair.Options.GlobalOptions.TryGetValue(TargetNamespaceResolver.AssemblyNameProperty,
+                    pair.Options.GlobalOptions.TryGetValue(
+                        TargetNamespaceResolver.AssemblyNameProperty,
                         out string? asmName)
                         ? asmName
                         : null,
@@ -112,7 +114,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             foreach (StepInfo step in saga.Steps)
             {
                 sb.AppendLine(
-                    $"new({step.StepIndex}, \"{step.StepName}\", typeof({step.StepTypeName}), hasCompensation: {step.HasCompensation.ToString().ToLowerInvariant()}),");
+                        $"new({step.StepIndex}, \"{step.StepName}\", typeof({step.StepTypeName}), hasCompensation: {(step.HasCompensation ? "true" : "false")}),");
             }
 
             sb.CloseBrace();
@@ -156,7 +158,10 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
         foreach (INamedTypeSymbol typeSymbol in allTypes)
         {
-            SagaRegistrationInfo? info = TryGetSagaInfo(typeSymbol, sagaAttrSymbol, sagaStateSymbol,
+            SagaRegistrationInfo? info = TryGetSagaInfo(
+                typeSymbol,
+                sagaAttrSymbol,
+                sagaStateSymbol,
                 targetRootNamespace);
             if (info is not null)
             {
@@ -166,7 +171,10 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
         foreach (INamedTypeSymbol typeSymbol in allTypes)
         {
-            StepInfo? step = TryGetStepInfo(typeSymbol, sagaStepAttrSymbol, sagaStepInterfaceSymbol,
+            StepInfo? step = TryGetStepInfo(
+                typeSymbol,
+                sagaStepAttrSymbol,
+                sagaStepInterfaceSymbol,
                 compensatableInterfaceSymbol);
             if (step is not null && sagaMap.TryGetValue(step.SagaStateSymbol, out SagaRegistrationInfo? sagaInfo))
             {
@@ -293,15 +301,10 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
         else
         {
-            foreach (INamedTypeSymbol iface in typeSymbol.AllInterfaces)
-            {
-                if (iface.OriginalDefinition is not null &&
-                    SymbolEqualityComparer.Default.Equals(iface.OriginalDefinition, sagaStepInterfaceSymbol))
-                {
-                    sagaStateSymbol = iface.TypeArguments[0] as INamedTypeSymbol;
-                    break;
-                }
-            }
+            INamedTypeSymbol? sagaInterface = typeSymbol.AllInterfaces.FirstOrDefault(iface =>
+                iface.OriginalDefinition is not null &&
+                SymbolEqualityComparer.Default.Equals(iface.OriginalDefinition, sagaStepInterfaceSymbol));
+            sagaStateSymbol = sagaInterface?.TypeArguments[0] as INamedTypeSymbol;
         }
 
         if (sagaStateSymbol is null)
@@ -382,6 +385,13 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         public string SagaStateTypeName { get; }
 
         public List<StepInfo> Steps { get; }
+
+        private static string RemoveSagaSuffix(
+            string typeName
+        ) =>
+            typeName.EndsWith("SagaState", StringComparison.Ordinal)
+                ? typeName.Substring(0, typeName.Length - "SagaState".Length)
+                : typeName;
     }
 
     private sealed class StepInfo
@@ -440,10 +450,4 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         public INamedTypeSymbol SagaStateSymbol { get; }
     }
 
-    private static string RemoveSagaSuffix(
-        string typeName
-    ) =>
-        typeName.EndsWith("SagaState", StringComparison.Ordinal)
-            ? typeName.Substring(0, typeName.Length - "SagaState".Length)
-            : typeName;
 }

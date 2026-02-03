@@ -31,7 +31,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<IReadOnlyList<SagaInfo>> sagaProvider = context.CompilationProvider
+        IncrementalValueProvider<List<SagaInfo>> sagaProvider = context.CompilationProvider
             .Select((compilation, _) => GetSagasFromCompilation(compilation))
             .WithTrackingName("SagaControllerGenerator_Sagas");
 
@@ -67,6 +67,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         {
             sb.AppendUsing(saga.InputTypeNamespace);
         }
+
         sb.AppendUsing(saga.StartDtoNamespace);
         sb.AppendFileScopedNamespace(saga.ControllerNamespace);
         sb.AppendLine();
@@ -242,7 +243,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
-    private static IReadOnlyList<SagaInfo> GetSagasFromCompilation(
+    private static List<SagaInfo> GetSagasFromCompilation(
         Compilation compilation
     )
     {
