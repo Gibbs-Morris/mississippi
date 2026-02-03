@@ -5,3 +5,4 @@
 - 2026-02-03: Added DI abstractions package to enable saga registration helpers.
 - 2026-02-03: Added `ISagaState` and `SagaPhase` to define saga lifecycle state shape.
 - 2026-02-03: Added `ISagaStep<TSaga>` and `ICompensatable<TSaga>` contracts for step execution and compensation.
+- 2026-02-03: Added `SagaStepAttribute` to mark and order saga steps.
