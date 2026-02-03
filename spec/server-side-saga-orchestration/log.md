@@ -25,3 +25,4 @@
 - 2026-02-03: Added saga silo registration generator for steps and reducers.
 - 2026-02-03: Added saga runtime project reference to Inlet.Silo for generated registrations.
 - 2026-02-03: Added StartSagaCommand handler to emit saga-started events with step hash.
+- 2026-02-03: Added saga infrastructure reducers to apply lifecycle events to saga state.
