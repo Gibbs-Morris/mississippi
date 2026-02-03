@@ -13,4 +13,11 @@ public interface ISagaStepInfoProvider<TSaga>
     ///     Gets the ordered set of saga step metadata.
     /// </summary>
     IReadOnlyList<SagaStepInfo> Steps { get; }
+
+    /// <summary>
+    ///     Determines whether the provider applies to the supplied saga state.
+    /// </summary>
+    /// <param name="state">The saga state instance or null when starting.</param>
+    /// <returns><c>true</c> if the provider applies to the supplied state.</returns>
+    bool AppliesTo(TSaga? state) => true;
 }
