@@ -1,5 +1,14 @@
 # Gap Analysis: Server-Side Saga Orchestration First Draft
 
+> **Status:** Historical reference only. This document reflects the first-draft gaps and uses **outdated names** in some examples. The authoritative design is in [updated-design.md](updated-design.md). Do not implement from this document.
+
+## First-Draft vs Updated Design (quick deltas)
+
+- Infrastructure events are now: `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaStepCompensated`, `SagaCompleted`, `SagaCompensated`, `SagaFailed`.
+- Result types are now `StepResult` and `CompensationResult` (with success flags, error codes/messages, and step event lists).
+- `ISagaState` now includes `SagaId`, `Phase`, `LastCompletedStepIndex`, `CorrelationId`, `StartedAt`, and `StepHash` (no apply methods).
+- Projection key format is `saga/{sagaTypeName}/{sagaId}`.
+
 ## Executive Summary
 
 After reviewing `task.md`, the first draft spec, and the existing aggregate infrastructure, this document identifies **critical gaps, inconsistencies, and developer experience concerns** that must be addressed before implementation.
