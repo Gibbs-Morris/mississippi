@@ -32,3 +32,4 @@
 - 2026-02-03: Added saga L0 test project to the Mississippi solution.
 - 2026-02-03: Added saga client generator helper to share saga metadata across client generators.
 - 2026-02-03: Added saga client DTO generator for start request payloads.
+- 2026-02-03: Added saga client actions generator for saga start lifecycle actions.
