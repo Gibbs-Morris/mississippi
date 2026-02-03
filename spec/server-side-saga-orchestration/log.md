@@ -47,4 +47,5 @@
 - 2026-02-03: Renamed CompensationResult skipped factory to avoid name collision.
 - 2026-02-03: Fixed saga runtime tests to use correct FakeTimeProvider namespace.
 - 2026-02-03: Added null guard to saga start command handler.
+- 2026-02-03: Cleared combined saga events file to split events into individual files.
 - 2026-02-03: Updated progress log to reflect current implementation status.
