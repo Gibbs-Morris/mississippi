@@ -123,10 +123,14 @@ public sealed class SagaSiloRegistrationGeneratorTests
     )
     {
         MethodInfo method = typeof(SagaSiloRegistrationGenerator).GetMethod(
-                                "GetSagasFromCompilation",
+                                "GetSagasWithDiagnostics",
                                 BindingFlags.NonPublic | BindingFlags.Static) ??
-                            throw new InvalidOperationException("GetSagasFromCompilation not found.");
-        IEnumerable sagas = (IEnumerable)method.Invoke(null, new object[] { compilation, targetRootNamespace })!;
+                            throw new InvalidOperationException("GetSagasWithDiagnostics not found.");
+        object result = method.Invoke(null, new object[] { compilation, targetRootNamespace }) ??
+                        throw new InvalidOperationException("Saga generation result not returned.");
+        PropertyInfo sagasProperty = result.GetType().GetProperty("Sagas") ??
+                                     throw new InvalidOperationException("Sagas property not found.");
+        IEnumerable sagas = (IEnumerable)sagasProperty.GetValue(result)!;
         return sagas.Cast<object>().ToList();
     }
 
@@ -193,7 +197,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       }
 
                                       [SagaStep(1, Saga = typeof(TransferSagaState))]
-                                      public sealed class CreditStep
+                                      public sealed class CreditStep : ISagaStep<TransferSagaState>
                                       {
                                       }
 
@@ -260,10 +264,12 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       }
                                   }
                                   """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, sagaSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1002"));
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
 
     /// <summary>
@@ -289,10 +295,12 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       }
                                   }
                                   """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, sagaSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1007"));
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
 
     /// <summary>
@@ -419,9 +427,11 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       }
                                   }
                                   """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, sagaSource);
         Assert.Empty(runResult.GeneratedTrees);
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1000"));
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
 
     /// <summary>
@@ -446,8 +456,10 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       }
                                   }
                                   """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, sagaSource);
         Assert.Empty(runResult.GeneratedTrees);
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1001"));
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
 }

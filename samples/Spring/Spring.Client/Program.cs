@@ -12,6 +12,7 @@ using Spring.Client;
 using Spring.Client.Features;
 using Spring.Client.Features.BankAccountAggregate;
 using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.DemoAccounts;
 using Spring.Client.Features.EntitySelection;
 using Spring.Client.Features.MoneyTransferSaga;
 
@@ -35,6 +36,7 @@ builder.Services.AddMoneyTransferSagaFeature();
 
 // Navigation/UI: entity selection
 builder.Services.AddEntitySelectionFeature();
+builder.Services.AddDemoAccountsFeature();
 
 // Built-in Reservoir features: navigation, lifecycle
 builder.Services.AddReservoirBlazorBuiltIns();

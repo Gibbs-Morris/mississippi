@@ -30,14 +30,13 @@ namespace Mississippi.Inlet.Silo.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 {
-    private const string ReducerRegistrationsTypeFullName =
-        "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
-
     private const string EventReducerBaseFullName =
         "Mississippi.EventSourcing.Reducers.Abstractions.EventReducerBase`2";
 
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
+
+    private const string ReducerRegistrationsTypeFullName = "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
 
     private const string SnapshotRegistrationsTypeFullName =
         "Mississippi.EventSourcing.Snapshots.SnapshotRegistrations";
@@ -271,6 +270,13 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static bool HasRegistrationDependencies(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(UxProjectionRegistrationsTypeFullName) is not null;
+
     /// <summary>
     ///     Tries to get projection info from a type symbol.
     /// </summary>
@@ -361,15 +367,6 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
                         SourceText.From(registrationSource, Encoding.UTF8));
                 }
             });
-    }
-
-    private static bool HasRegistrationDependencies(
-        Compilation compilation
-    )
-    {
-        return compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
-               compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null &&
-               compilation.GetTypeByMetadataName(UxProjectionRegistrationsTypeFullName) is not null;
     }
 
     /// <summary>

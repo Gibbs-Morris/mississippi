@@ -1,0 +1,55 @@
+@page "/accounts"
+@inherits InletComponent
+
+<main>
+    <BankAccountPageHeader ConnectionStatusText="@ConnectionStatus.ToString()"
+                           IsConnectionModalOpen="@isConnectionModalOpen"
+                           OnNavigateInvestigations="@NavigateToInvestigations"
+                           OnToggleConnectionModal="@ToggleConnectionModal"/>
+
+    <DemoAccountsSection IsExecutingOrLoading="@IsExecutingOrLoading"
+                         IsInitialized="@IsDemoAccountsInitialized"
+                         AccountAId="@DemoAccountAId"
+                         AccountAName="@DemoAccountAName"
+                         AccountBId="@DemoAccountBId"
+                         AccountBName="@DemoAccountBName"
+                         IsSelectedAccountA="@IsSelectedAccountA"
+                         IsSelectedAccountB="@IsSelectedAccountB"
+                         OnInitialize="@InitializeDemoAccounts"
+                         OnSwitchToA="@SwitchToDemoAccountA"
+                         OnSwitchToB="@SwitchToDemoAccountB"/>
+
+    @if (string.IsNullOrEmpty(SelectedEntityId))
+    {
+        <AccountSelectionSection AccountIdInput="@accountIdInput"
+                                 AccountIdInputChanged="@((
+                                                            string value
+                                                        ) => accountIdInput = value)"
+                                 OnContinue="@SetEntityId"/>
+    }
+    else
+    {
+        <section>
+            <h2>Selected Account</h2>
+            <p>Current account: @SelectedEntityId</p>
+            <button type="button" @onclick="ClearEntity">Switch account</button>
+            <NavLink href="/operations">Go to Operations</NavLink>
+        </section>
+    }
+
+    <ConnectionStatusModal IsOpen="@isConnectionModalOpen"
+                           ConnectionStatusText="@ConnectionStatus.ToString()"
+                           ConnectionIdText="@ConnectionIdDisplay"
+                           ReconnectAttemptCount="@ReconnectAttemptCount"
+                           LastConnectedAtText="@LastConnectedAtDisplay"
+                           LastDisconnectedAtText="@LastDisconnectedAtDisplay"
+                           LastMessageReceivedAtText="@LastMessageReceivedAtDisplay"
+                           LastError="@LastError"
+                           OnClose="@CloseConnectionModal"/>
+
+    <ConnectionLostModal IsOpen="@IsDisconnected"
+                         ConnectionStatusText="@ConnectionStatus.ToString()"
+                         ReconnectAttemptCount="@ReconnectAttemptCount"
+                         LastError="@LastError"
+                         OnReconnect="@RequestReconnect"/>
+</main>

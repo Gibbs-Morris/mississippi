@@ -1,0 +1,81 @@
+@page "/operations"
+@inherits InletComponent
+
+<main>
+    <BankAccountPageHeader ConnectionStatusText="@ConnectionStatus.ToString()"
+                           IsConnectionModalOpen="@isConnectionModalOpen"
+                           OnNavigateInvestigations="@NavigateToInvestigations"
+                           OnToggleConnectionModal="@ToggleConnectionModal"/>
+
+    @if (string.IsNullOrEmpty(SelectedEntityId))
+    {
+        <section>
+            <h2>No Account Selected</h2>
+            <p>Select or create an account before performing operations.</p>
+            <NavLink href="/accounts">Go to Accounts</NavLink>
+        </section>
+    }
+    else
+    {
+        <AccountOperationsSection SelectedEntityId="@SelectedEntityId"
+                                  IsExecutingOrLoading="@IsExecutingOrLoading"
+                                  IsAccountOpen="@IsAccountOpen"
+                                  HolderName="@holderName"
+                                  HolderNameChanged="@((
+                                                         string value
+                                                     ) => holderName = value)"
+                                  InitialDeposit="@initialDeposit"
+                                  InitialDepositChanged="@((
+                                                             decimal value
+                                                         ) => initialDeposit = value)"
+                                  OnOpenAccount="@OpenAccount"
+                                  DepositAmount="@depositAmount"
+                                  DepositAmountChanged="@((
+                                                            decimal value
+                                                        ) => depositAmount = value)"
+                                  OnDeposit="@Deposit"
+                                  OnDepositSingle100="@DepositSingle100"
+                                  OnDepositBurst20="@DepositBurst20"
+                                  OnDepositBurst200="@DepositBurst200"
+                                  WithdrawAmount="@withdrawAmount"
+                                  WithdrawAmountChanged="@((
+                                                             decimal value
+                                                         ) => withdrawAmount = value)"
+                                  OnWithdraw="@Withdraw"
+                                  OnWithdrawSingle100="@WithdrawSingle100"
+                                  OnWithdrawBurst20="@WithdrawBurst20"
+                                  OnWithdrawBurst200="@WithdrawBurst200"
+                                  TransferDestinationAccountId="@transferDestinationAccountId"
+                                  TransferDestinationAccountIdChanged="@((
+                                                                           string value
+                                                                       ) => transferDestinationAccountId = value)"
+                                  TransferAmount="@transferAmount"
+                                  TransferAmountChanged="@((
+                                                             decimal value
+                                                         ) => transferAmount = value)"
+                                  OnStartTransfer="@StartTransfer"
+                                  TransferSagaId="@transferSagaId"
+                                  TransferStatusProjection="@TransferStatusProjection"
+                                  BalanceProjection="@BalanceProjection"
+                                  ErrorMessage="@ErrorMessage"
+                                  LastCommandSucceeded="@LastCommandSucceeded"
+                                  LedgerProjection="@LedgerProjection"
+                                  OnSwitchAccount="@ClearEntity"/>
+    }
+
+    <ConnectionStatusModal IsOpen="@isConnectionModalOpen"
+                           ConnectionStatusText="@ConnectionStatus.ToString()"
+                           ConnectionIdText="@ConnectionIdDisplay"
+                           ReconnectAttemptCount="@ReconnectAttemptCount"
+                           LastConnectedAtText="@LastConnectedAtDisplay"
+                           LastDisconnectedAtText="@LastDisconnectedAtDisplay"
+                           LastMessageReceivedAtText="@LastMessageReceivedAtDisplay"
+                           LastError="@LastError"
+                           OnClose="@CloseConnectionModal"/>
+
+    <ConnectionLostModal IsOpen="@IsDisconnected"
+                         ConnectionStatusText="@ConnectionStatus.ToString()"
+                         ReconnectAttemptCount="@ReconnectAttemptCount"
+                         LastError="@LastError"
+                         OnReconnect="@RequestReconnect"/>
+</main>

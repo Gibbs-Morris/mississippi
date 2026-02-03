@@ -192,6 +192,12 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     {
         if (!TryGetStep(stepIndex, out SagaStepInfo? stepInfo))
         {
+            yield return new SagaFailed
+            {
+                ErrorCode = "STEP_METADATA_MISSING",
+                ErrorMessage = "Step metadata not found.",
+                FailedAt = TimeProvider.GetUtcNow(),
+            };
             yield break;
         }
 

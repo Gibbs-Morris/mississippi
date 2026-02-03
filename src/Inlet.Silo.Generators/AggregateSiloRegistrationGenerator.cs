@@ -49,11 +49,10 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     private const string GenerateAggregateEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
 
+    private const string ReducerRegistrationsTypeFullName = "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
+
     private const string SimpleEventEffectBaseFullName =
         "Mississippi.EventSourcing.Aggregates.Abstractions.SimpleEventEffectBase`2";
-
-    private const string ReducerRegistrationsTypeFullName =
-        "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
 
     private const string SnapshotRegistrationsTypeFullName =
         "Mississippi.EventSourcing.Snapshots.SnapshotRegistrations";
@@ -431,6 +430,13 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static bool HasRegistrationDependencies(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(AggregateRegistrationsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null;
+
     /// <summary>
     ///     Determines if a type extends CommandHandlerBase.
     /// </summary>
@@ -743,15 +749,6 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
                         SourceText.From(registrationSource, Encoding.UTF8));
                 }
             });
-    }
-
-    private static bool HasRegistrationDependencies(
-        Compilation compilation
-    )
-    {
-        return compilation.GetTypeByMetadataName(AggregateRegistrationsTypeFullName) is not null &&
-               compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
-               compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null;
     }
 
     /// <summary>

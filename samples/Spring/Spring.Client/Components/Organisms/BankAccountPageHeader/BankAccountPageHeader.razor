@@ -1,0 +1,21 @@
+@namespace Spring.Client.Components.Organisms
+
+<nav>
+    <button type="button" @onclick="OnNavigateInvestigations">View Investigations</button>
+    <a href="@ApiDocsUrl" target="_blank" rel="noopener noreferrer">API Docs</a>
+</nav>
+
+<header>
+    <h1>@Title</h1>
+    <p>@Subtitle</p>
+    <p>
+        <strong>Tip:</strong> @TipText
+    </p>
+    <button type="button"
+            aria-label="Connection status"
+            aria-haspopup="dialog"
+            aria-expanded="@IsConnectionModalOpen"
+            @onclick="OnToggleConnectionModal">
+        @ConnectionStatusText
+    </button>
+</header>

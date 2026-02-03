@@ -475,7 +475,8 @@ public sealed class SagaOrchestrationEffectTests
                 "saga",
                 0,
                 CancellationToken.None));
-        Assert.Empty(events);
+        SagaFailed failure = Assert.IsType<SagaFailed>(Assert.Single(events));
+        Assert.Equal("STEP_METADATA_MISSING", failure.ErrorCode);
     }
 
     /// <summary>

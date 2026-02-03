@@ -1,0 +1,22 @@
+@namespace Spring.Client.Components.Organisms
+
+@if (IsOpen)
+{
+    <dialog open>
+        <header>
+            <h2>Connection Lost</h2>
+        </header>
+        <div>
+            <p>@ConnectionStatusText</p>
+            @if (ReconnectAttemptCount > 0)
+            {
+                <p>Reconnect Attempt @ReconnectAttemptCount</p>
+            }
+            @if (!string.IsNullOrEmpty(LastError))
+            {
+                <p>@LastError</p>
+            }
+            <button type="button" @onclick="OnReconnect">Reconnect</button>
+        </div>
+    </dialog>
+}
