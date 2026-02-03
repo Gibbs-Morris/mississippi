@@ -12,8 +12,11 @@ Coverage for new/changed code under src is below the 95% target required for thi
 - Raising coverage for unrelated legacy code.
 - Broad refactors or new features.
 
-## Current state (UNVERIFIED)
-- Recent saga-related changes under src likely have low coverage; exact changed file list and coverage per module still need verification.
+## Current state
+- Changed src files include saga abstractions/runtime and new saga client/server/silo generators.
+- Baseline coverage is below target for affected test projects (e.g., EventSourcing.Sagas.L0Tests 13.74%,
+  Inlet.Client.Generators.L0Tests 69.64%, Inlet.Server.Generators.L0Tests 56.59%,
+  Inlet.Silo.Generators.L0Tests 53.16%).
 
 ## Proposed design (UNVERIFIED)
 - Identify changed src files via git diff.

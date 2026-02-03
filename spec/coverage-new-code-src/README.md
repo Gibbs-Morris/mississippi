@@ -2,9 +2,9 @@
 
 Status: Draft
 
-Size: Medium (initial guess)
+Size: Medium
 
-Approval checkpoint: TBD
+Approval checkpoint: No (tests-only changes, no breaking API or data migration)
 
 ## Index
 - [learned.md](learned.md)
