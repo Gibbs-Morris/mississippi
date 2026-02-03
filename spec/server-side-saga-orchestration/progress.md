@@ -11,16 +11,17 @@
 - 2025-06-10T03:00:00Z: Updated implementation-plan.md with new design, code samples, and test plan.
 - 2025-06-10T03:15:00Z: Updated verification.md with revised claim list (10→13 claims).
 - 2025-06-10T03:20:00Z: Updated learned.md with design decisions table and gap resolution.
+- 2026-02-03T14:00:00Z: Began implementation of saga abstractions, runtime, and registrations.
+- 2026-02-03T15:30:00Z: Added saga start handler, infrastructure reducers, and L0 runtime tests.
+- 2026-02-03T16:30:00Z: Added client saga generators (DTOs, actions, effects, reducers, state, registration) and tests.
 
 ## Status
 
-All spec files updated to align with the `SagaOrchestrationEffect<TSaga>` design documented in [rfc.md](./rfc.md).
+Core saga abstractions, runtime orchestration, infrastructure reducers, and client generators are implemented. L0 tests cover saga runtime and client generator output. Sample saga and generator tests for server/silo remain outstanding.
 
 ## Next Actions Required
 
-1. **Approval Checkpoint** - Required before implementation begins
-2. **Implementation Phase 1** - Create `EventSourcing.Sagas.Abstractions` project
-3. **Implementation Phase 2** - Create `EventSourcing.Sagas` runtime project
-4. **Implementation Phase 3** - Add server/client/silo generators
-5. **Implementation Phase 4** - Add sample saga in Spring
-6. **Implementation Phase 5** - Add tests (L0, L2)
+1. **Sample Saga** - Add a Spring sample saga and verify generated endpoints.
+2. **Generator Tests** - Add L0 tests for saga server and silo generators.
+3. **Integration Tests** - Add L2 saga flow tests if required by scope.
+4. **Quality Gates** - Run cleanup, unit tests, and mutation tests for Mississippi.
