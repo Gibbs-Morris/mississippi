@@ -25,12 +25,19 @@
 	- Inlet.Server.Generators -> tests/Inlet.Server.Generators.L0Tests
 	- Inlet.Silo.Generators -> tests/Inlet.Silo.Generators.L0Tests
 3. Current coverage (test-project-quality, SkipMutation):
-	- EventSourcing.Sagas.L0Tests: 13.74%
-	- Inlet.Client.Generators.L0Tests: 69.64%
-	- Inlet.Server.Generators.L0Tests: 56.59%
-	- Inlet.Silo.Generators.L0Tests: 53.16%
-4. UNVERIFIED: No inherent L0 blockers identified yet; needs confirmation after adding targeted tests.
-5. Planned tests will be deterministic (L0, no I/O). Not yet verified post-change.
-6. Not yet met; requires new tests and coverage reruns.
-7. Not yet documented; pending final coverage results.
-8. Builds/tests currently pass before coverage changes; post-change verification pending.
+	- EventSourcing.Sagas.L0Tests: 20.39%
+	- Inlet.Client.Generators.L0Tests: 84.48%
+	- Inlet.Server.Generators.L0Tests: 72.58%
+	- Inlet.Silo.Generators.L0Tests: 71.71%
+4. Yes. SagaStateMutator.cs contains a defensive null-instance guard after Activator.CreateInstance<T>()
+	(lines 50-51 in file) that is not reachable in practice; Activator throws before returning null for
+	invalid types. This leaves 2 lines uncovered (85.71% line-rate) and is documented as the exception.
+5. Verified. All new tests use fixed timestamps or FakeTimeProvider, no sleeps, and no external I/O.
+6. For changed src files, per-file line-rate is >=97% for all except SagaStateMutator.cs (85.71% due to
+	the unreachable guard). SagaStatePropertyMap.cs is 97.05%. Generator files are 99.50–100%.
+7. Exception documented: SagaStateMutator.cs unreachable guard lines (see item 4).
+8. Builds/tests pass for updated test projects:
+	- EventSourcing.Sagas.L0Tests: PASS
+	- Inlet.Client.Generators.L0Tests: PASS
+	- Inlet.Server.Generators.L0Tests: PASS
+	- Inlet.Silo.Generators.L0Tests: PASS
