@@ -19,3 +19,4 @@
 - 2026-02-03: Adjusted orchestration effect to avoid duplicate compensation execution.
 - 2026-02-03: Added saga registration extensions to wire orchestration into DI.
 - 2026-02-03: Added EventStorageName attributes to saga infrastructure events for brook storage.
+- 2026-02-03: Added GenerateSagaEndpoints attribute to mark saga state types for generation.
