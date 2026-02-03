@@ -30,3 +30,4 @@
 - 2026-02-03: Added EventSourcing.Sagas L0 test project for saga runtime coverage.
 - 2026-02-03: Added L0 tests for saga start handling and infrastructure reducers.
 - 2026-02-03: Added saga L0 test project to the Mississippi solution.
+- 2026-02-03: Added saga client generator helper to share saga metadata across client generators.
