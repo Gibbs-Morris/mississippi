@@ -52,6 +52,52 @@ Saga DTOs, mappers, and reducers do not follow the same source-generated pattern
 - Keep manual saga DTOs/mappers/reducers.
 - Use shared helper libraries instead of source generators.
 
+## As-is vs to-be (architecture)
+```mermaid
+flowchart TD
+	subgraph AS_IS[As-is]
+		A1[Domain projection
+		MoneyTransferStatusProjection] --> A2[Manual saga status reducers
+		(Saga*StatusReducer)]
+		A2 --> A3[Projection state]
+		A3 --> A4[Server projection endpoint
+		generated controller]
+		A4 --> A5[Manual SagaPhaseDto
+		+ SagaPhaseDtoMapper]
+		A5 --> A6[HTTP response DTO]
+		A7[Client]
+		A6 --> A7
+	end
+
+	subgraph TO_BE[To-be]
+		B1[Domain projection
+		MoneyTransferStatusProjection] --> B2[Generated saga status reducers]
+		B2 --> B3[Projection state]
+		B3 --> B4[Generated projection endpoint + mapper]
+		B4 --> B5[Generated SagaPhaseDto + mapper]
+		B5 --> B6[HTTP response DTO]
+		B7[Client]
+		B6 --> B7
+	end
+```
+
+## Critical path (sequence)
+```mermaid
+sequenceDiagram
+	participant Brook as Brook/Event Stream
+	participant Reducer as SagaStatusReducer (generated)
+	participant Projection as MoneyTransferStatusProjection
+	participant Controller as Projection Controller (generated)
+	participant Mapper as Projection Mapper (generated)
+	participant Client as Client
+
+	Brook->>Reducer: SagaCompleted/SagaFailed/etc
+	Reducer->>Projection: ReduceCore(state, event)
+	Projection->>Controller: State read
+	Controller->>Mapper: Map projection -> DTO
+	Mapper->>Client: DTO response
+```
+
 ## Security
 - No new external inputs; generators operate on compile-time symbols only.
 
