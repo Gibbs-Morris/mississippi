@@ -74,4 +74,5 @@
 - 2026-02-03: Fixed saga controller generator typing and formatting warnings.
 - 2026-02-03: Added missing usings in saga client generators for compilation.
 - 2026-02-03: Documented saga client generator helper metadata and relocated namespace helper.
+- 2026-02-03: Cleared legacy saga runtime tests file after split.
 - 2026-02-03: Updated progress log to reflect current implementation status.
