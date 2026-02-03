@@ -6,7 +6,7 @@ Draft
 
 ## Size
 
-TBD
+Large (tentative)
 
 ## Approval Checkpoint
 
