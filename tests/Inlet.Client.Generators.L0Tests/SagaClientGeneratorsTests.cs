@@ -71,6 +71,9 @@ public sealed class SagaClientGeneratorsTests
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
+    /// <summary>
+    ///     Verifies the actions generator emits start saga actions.
+    /// </summary>
     [Fact]
     public void ActionsGeneratorProducesStartSagaActions()
     {
@@ -100,6 +103,9 @@ public sealed class SagaClientGeneratorsTests
             tree.FilePath.Contains("StartTransferSagaExecutingAction.g.cs", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    ///     Verifies the DTO generator emits the start saga request DTO.
+    /// </summary>
     [Fact]
     public void DtoGeneratorProducesStartSagaDto()
     {
