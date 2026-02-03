@@ -17,3 +17,4 @@
 - 2026-02-03: Added saga orchestration effect to execute steps and drive compensation flow.
 - 2026-02-03: Added LoggerExtensions for saga orchestration diagnostics.
 - 2026-02-03: Adjusted orchestration effect to avoid duplicate compensation execution.
+- 2026-02-03: Added saga registration extensions to wire orchestration into DI.
