@@ -4,3 +4,4 @@
 - 2026-02-03: Added EventSourcing.Sagas.Abstractions project file to introduce saga abstractions layer.
 - 2026-02-03: Added DI abstractions package to enable saga registration helpers.
 - 2026-02-03: Added `ISagaState` and `SagaPhase` to define saga lifecycle state shape.
+- 2026-02-03: Added `ISagaStep<TSaga>` and `ICompensatable<TSaga>` contracts for step execution and compensation.
