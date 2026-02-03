@@ -81,3 +81,4 @@
 - 2026-02-03: Made saga runtime test classes public to satisfy xUnit analyzers.
 - 2026-02-03: Updated progress log to reflect current implementation status.
 - 2026-02-03: Fixed StyleCop warnings in saga silo registration generator formatting.
+- 2026-02-03: Simplified saga silo generator namespace resolution to satisfy StyleCop SA1118.

@@ -45,17 +45,20 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         IncrementalValueProvider<List<SagaRegistrationInfo>> sagasProvider =
             source.Select((pair, _) =>
             {
+                string? rootNamespace = pair.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNs)
+                    ? rootNs
+                    : null;
+                string? assemblyName = pair.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? asmName)
+                    ? asmName
+                    : null;
+
                 string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                    pair.Options.GlobalOptions.TryGetValue(
-                        TargetNamespaceResolver.RootNamespaceProperty,
-                        out string? rootNs)
-                        ? rootNs
-                        : null,
-                    pair.Options.GlobalOptions.TryGetValue(
-                        TargetNamespaceResolver.AssemblyNameProperty,
-                        out string? asmName)
-                        ? asmName
-                        : null,
+                    rootNamespace,
+                    assemblyName,
                     pair.Compilation);
 
                 return GetSagasFromCompilation(pair.Compilation, targetRootNamespace);
