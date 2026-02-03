@@ -200,11 +200,12 @@ public sealed class AqueductMetricsTests
         });
         listener.Start();
 
-        // Zero count should not emit
+        // Zero count should not emit - verify by checking no zero-value measurement exists
+        // (parallel tests would emit positive values, so this assertion is isolated)
         AqueductMetrics.RecordDeadServers(0);
-        Assert.DoesNotContain(measurements, measurement => measurement.InstrumentName == "signalr.server.dead");
+        Assert.DoesNotContain(measurements, m => (m.InstrumentName == "signalr.server.dead") && (m.LongValue == 0));
 
-        // Positive count should emit
+        // Positive count should emit with the exact value
         AqueductMetrics.RecordDeadServers(3);
         Assert.Contains(
             measurements,

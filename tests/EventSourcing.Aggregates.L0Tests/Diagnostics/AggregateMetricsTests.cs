@@ -286,6 +286,9 @@ public sealed class AggregateMetricsTests
     [Fact]
     public void RecordCommandSuccessNoEventsProducedDoesNotEmitEventMetric()
     {
+        // Use unique names to isolate from other tests running in parallel
+        const string aggregateType = "NoEventsAggregate";
+        const string commandType = "NoEventsCommand";
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
@@ -316,10 +319,15 @@ public sealed class AggregateMetricsTests
         listener.Start();
 
         // Act
-        AggregateMetrics.RecordCommandSuccess("OrderAggregate", "PlaceOrder", 50.0, 0);
+        AggregateMetrics.RecordCommandSuccess(aggregateType, commandType, 50.0, 0);
 
-        // Assert
-        MetricMeasurement? eventMeasurement = measurements.Find(m => m.InstrumentName == "aggregate.events.produced");
+        // Assert - filter by unique aggregate/command types to isolate from parallel tests
+        MetricMeasurement? eventMeasurement = measurements.Find(m =>
+            (m.InstrumentName == "aggregate.events.produced") &&
+            m.Tags.TryGetValue("aggregate.type", out object? aggType) &&
+            ((string?)aggType == aggregateType) &&
+            m.Tags.TryGetValue("command.type", out object? cmdType) &&
+            ((string?)cmdType == commandType));
         Assert.Null(eventMeasurement);
     }
 
