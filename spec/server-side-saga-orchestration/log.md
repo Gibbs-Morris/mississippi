@@ -45,4 +45,5 @@
 - 2026-02-03: Removed unused using from saga client reducers generator.
 - 2026-02-03: Removed unused using from saga client registration generator.
 - 2026-02-03: Renamed CompensationResult skipped factory to avoid name collision.
+- 2026-02-03: Fixed saga runtime tests to use correct FakeTimeProvider namespace.
 - 2026-02-03: Updated progress log to reflect current implementation status.

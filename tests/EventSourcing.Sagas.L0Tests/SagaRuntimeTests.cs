@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.TimeProvider.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Sagas;
