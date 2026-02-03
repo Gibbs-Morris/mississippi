@@ -41,4 +41,5 @@
 - 2026-02-03: Added L0 tests for saga client generators.
 - 2026-02-03: Removed unused using from saga client DTO generator.
 - 2026-02-03: Removed unused using from saga client mappers generator.
+- 2026-02-03: Removed unused using from saga client action effects generator.
 - 2026-02-03: Updated progress log to reflect current implementation status.
