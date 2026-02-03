@@ -37,9 +37,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         "Mississippi.EventSourcing.Sagas.Abstractions.ICompensatable`1";
 
     /// <inheritdoc />
-    public void Initialize(
-        IncrementalGeneratorInitializationContext context
-    )
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             source = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
@@ -449,5 +447,4 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
         public INamedTypeSymbol SagaStateSymbol { get; }
     }
-
 }
