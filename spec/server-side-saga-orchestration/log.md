@@ -36,3 +36,4 @@
 - 2026-02-03: Added saga client action mapper generator for start request DTO mapping.
 - 2026-02-03: Added saga client action effects generator for start endpoint calls.
 - 2026-02-03: Added saga client state generator for saga start tracking state.
+- 2026-02-03: Added saga client reducers generator for saga start lifecycle updates.
