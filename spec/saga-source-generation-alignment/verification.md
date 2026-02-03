@@ -15,6 +15,10 @@
 6. What would be the generated API surface for saga DTOs/mappers/reducers, and does it match current usage?
 7. Do sample apps compile with generated saga DTOs/mappers/reducers?
 8. Are any public API changes introduced by replacing manual code with generated equivalents?
+9. Where are aggregate/projection generator outputs validated in tests, and what conventions should saga generators match?
+10. Do any existing saga reducers rely on handwritten logic that would not be safe to generate?
+11. Are there existing generator helper utilities (naming, emitters, analysis) that should be reused?
+12. What analyzer or StyleCop constraints apply to generated code (doc comments, file-scoped namespaces, etc.)?
 
 ## Answers
 - TBD.
