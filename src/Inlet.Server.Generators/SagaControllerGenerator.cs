@@ -5,12 +5,12 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Emit;
 using Mississippi.Inlet.Generators.Core.Naming;
+
 
 namespace Mississippi.Inlet.Server.Generators;
 
@@ -23,29 +23,32 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute";
 
-    private const string SagaStateInterfaceFullName =
-        "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
+    private const string GenerateSagaEndpointsAttributeGenericFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
-    /// <inheritdoc />
-    public void Initialize(
-        IncrementalGeneratorInitializationContext context
+    private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
+
+    private static void FindSagasInNamespace(
+        INamespaceSymbol namespaceSymbol,
+        INamedTypeSymbol? sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrGenericSymbol,
+        INamedTypeSymbol sagaStateSymbol,
+        List<SagaInfo> sagas
     )
     {
-        IncrementalValueProvider<List<SagaInfo>> sagaProvider = context.CompilationProvider
-            .Select((compilation, _) => GetSagasFromCompilation(compilation))
-            .WithTrackingName("SagaControllerGenerator_Sagas");
-
-        context.RegisterSourceOutput(sagaProvider, (spc, sagas) =>
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            foreach (SagaInfo saga in sagas)
+            SagaInfo? info = TryGetSagaInfo(typeSymbol, sagaAttrSymbol, sagaAttrGenericSymbol, sagaStateSymbol);
+            if (info is not null)
             {
-                string dtoSource = GenerateStartDto(saga);
-                spc.AddSource($"{saga.StartDtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
-
-                string controllerSource = GenerateController(saga);
-                spc.AddSource($"{saga.ControllerTypeName}.g.cs", SourceText.From(controllerSource, Encoding.UTF8));
+                sagas.Add(info);
             }
-        });
+        }
+
+        foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
+        {
+            FindSagasInNamespace(childNs, sagaAttrSymbol, sagaAttrGenericSymbol, sagaStateSymbol, sagas);
+        }
     }
 
     private static string GenerateController(
@@ -71,14 +74,12 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendUsing(saga.StartDtoNamespace);
         sb.AppendFileScopedNamespace(saga.ControllerNamespace);
         sb.AppendLine();
-
         sb.AppendSummary($"Controller for {saga.SagaName} saga operations.");
         sb.AppendGeneratedCodeAttribute("SagaControllerGenerator");
         sb.AppendLine($"[Route(\"api/sagas/{saga.RoutePrefix}/{{sagaId}}\")]");
         sb.AppendLine(
             $"public sealed class {saga.ControllerTypeName} : AggregateControllerBase<{saga.SagaStateTypeName}>");
         sb.OpenBrace();
-
         sb.AppendSummary($"Initializes a new instance of the <see cref=\"{saga.ControllerTypeName}\" /> class.");
         sb.AppendLine("/// <param name=\"aggregateGrainFactory\">Factory for resolving saga grains.</param>");
         sb.AppendLine("/// <param name=\"logger\">The logger for diagnostic output.</param>");
@@ -95,7 +96,6 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendLine("AggregateGrainFactory = aggregateGrainFactory;");
         sb.CloseBrace();
         sb.AppendLine();
-
         sb.AppendLine("private IAggregateGrainFactory AggregateGrainFactory { get; }");
         sb.AppendLine();
 
@@ -106,7 +106,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
         sb.AppendLine("/// <returns>The operation result.</returns>");
         sb.AppendLine("[HttpPost]");
-        sb.AppendLine($"public Task<ActionResult<OperationResult>> StartAsync(");
+        sb.AppendLine("public Task<ActionResult<OperationResult>> StartAsync(");
         sb.IncreaseIndent();
         sb.AppendLine("[FromRoute] Guid sagaId,");
         sb.AppendLine($"[FromBody] {saga.StartDtoTypeName} request,");
@@ -115,7 +115,8 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendLine(")");
         sb.OpenBrace();
         sb.AppendLine("ArgumentNullException.ThrowIfNull(request);");
-        sb.AppendLine("return ExecuteAsync(sagaId.ToString(), MapRequest(sagaId, request), ExecuteCommandAsync, cancellationToken);");
+        sb.AppendLine(
+            "return ExecuteAsync(sagaId.ToString(), MapRequest(sagaId, request), ExecuteCommandAsync, cancellationToken);");
         sb.CloseBrace();
         sb.AppendLine();
 
@@ -172,8 +173,31 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             $"IGenericAggregateGrain<{saga.SagaStateTypeName}> grain = AggregateGrainFactory.GetGenericAggregate<{saga.SagaStateTypeName}>(sagaId);");
         sb.AppendLine("return grain.ExecuteAsync(command, cancellationToken);");
         sb.CloseBrace();
-
         sb.CloseBrace();
+        return sb.ToString();
+    }
+
+    private static string GenerateInputMapping(
+        SagaInfo saga
+    )
+    {
+        if (saga.IsInputPositionalRecord)
+        {
+            string args = string.Join(", ", saga.InputProperties.Select(p => $"request.{p.Name}"));
+            return $"new {saga.InputTypeName}({args})";
+        }
+
+        StringBuilder sb = new();
+        sb.AppendLine("new()");
+        sb.AppendLine("{");
+        for (int i = 0; i < saga.InputProperties.Length; i++)
+        {
+            PropertyModel prop = saga.InputProperties[i];
+            string comma = i < (saga.InputProperties.Length - 1) ? "," : string.Empty;
+            sb.AppendLine($"    {prop.Name} = request.{prop.Name}{comma}");
+        }
+
+        sb.Append('}');
         return sb.ToString();
     }
 
@@ -219,28 +243,18 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
-    private static string GenerateInputMapping(
-        SagaInfo saga
+    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
+        Compilation compilation
     )
     {
-        if (saga.IsInputPositionalRecord)
+        yield return compilation.Assembly;
+        foreach (MetadataReference reference in compilation.References)
         {
-            string args = string.Join(", ", saga.InputProperties.Select(p => $"request.{p.Name}"));
-            return $"new {saga.InputTypeName}({args})";
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
+            {
+                yield return assemblySymbol;
+            }
         }
-
-        StringBuilder sb = new();
-        sb.AppendLine("new()");
-        sb.AppendLine("{");
-        for (int i = 0; i < saga.InputProperties.Length; i++)
-        {
-            PropertyModel prop = saga.InputProperties[i];
-            string comma = i < (saga.InputProperties.Length - 1) ? "," : string.Empty;
-            sb.AppendLine($"    {prop.Name} = request.{prop.Name}{comma}");
-        }
-
-        sb.Append('}');
-        return sb.ToString();
     }
 
     private static List<SagaInfo> GetSagasFromCompilation(
@@ -248,10 +262,11 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
     )
     {
         List<SagaInfo> sagas = [];
-        INamedTypeSymbol? sagaAttrSymbol =
-            compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
+        INamedTypeSymbol? sagaAttrSymbol = compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
+        INamedTypeSymbol? sagaAttrGenericSymbol =
+            compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
         INamedTypeSymbol? sagaStateSymbol = compilation.GetTypeByMetadataName(SagaStateInterfaceFullName);
-        if (sagaAttrSymbol is null || sagaStateSymbol is null)
+        if ((sagaAttrSymbol is null && sagaAttrGenericSymbol is null) || sagaStateSymbol is null)
         {
             return sagas;
         }
@@ -261,6 +276,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             FindSagasInNamespace(
                 referencedAssembly.GlobalNamespace,
                 sagaAttrSymbol,
+                sagaAttrGenericSymbol,
                 sagaStateSymbol,
                 sagas);
         }
@@ -268,36 +284,68 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         return sagas;
     }
 
-    private static void FindSagasInNamespace(
-        INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol sagaAttrSymbol,
-        INamedTypeSymbol sagaStateSymbol,
-        List<SagaInfo> sagas
+    private static bool MatchesSagaAttribute(
+        AttributeData attr,
+        INamedTypeSymbol? sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrGenericSymbol
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        if (attr.AttributeClass is null)
         {
-            SagaInfo? info = TryGetSagaInfo(typeSymbol, sagaAttrSymbol, sagaStateSymbol);
-            if (info is not null)
-            {
-                sagas.Add(info);
-            }
+            return false;
         }
 
-        foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
+        if (sagaAttrSymbol is not null && SymbolEqualityComparer.Default.Equals(attr.AttributeClass, sagaAttrSymbol))
         {
-            FindSagasInNamespace(childNs, sagaAttrSymbol, sagaStateSymbol, sagas);
+            return true;
         }
+
+        return sagaAttrGenericSymbol is not null &&
+               SymbolEqualityComparer.Default.Equals(attr.AttributeClass.OriginalDefinition, sagaAttrGenericSymbol);
+    }
+
+    private static string RemoveSagaSuffix(
+        string typeName
+    ) =>
+        typeName.EndsWith("SagaState", StringComparison.Ordinal)
+            ? typeName.Substring(0, typeName.Length - "SagaState".Length)
+            : typeName;
+
+    private static bool TryGetInputType(
+        AttributeData attr,
+        out INamedTypeSymbol? inputTypeSymbol
+    )
+    {
+        inputTypeSymbol = null;
+        if (attr.AttributeClass is not null && attr.AttributeClass.IsGenericType)
+        {
+            inputTypeSymbol = attr.AttributeClass.TypeArguments.FirstOrDefault() as INamedTypeSymbol;
+        }
+
+        if (inputTypeSymbol is not null)
+        {
+            return true;
+        }
+
+        inputTypeSymbol =
+            attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value.Value as INamedTypeSymbol;
+        return inputTypeSymbol is not null;
     }
 
     private static SagaInfo? TryGetSagaInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrGenericSymbol,
         INamedTypeSymbol sagaStateSymbol
     )
     {
+        if (sagaAttrSymbol is null && sagaAttrGenericSymbol is null)
+        {
+            return null;
+        }
+
         AttributeData? attr = typeSymbol.GetAttributes()
-            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, sagaAttrSymbol));
+            .FirstOrDefault(a => MatchesSagaAttribute(a, sagaAttrSymbol, sagaAttrGenericSymbol));
         if (attr is null)
         {
             return null;
@@ -308,13 +356,14 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             return null;
         }
 
-        ITypeSymbol? inputType = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value.Value as ITypeSymbol;
-        if (inputType is not INamedTypeSymbol inputTypeSymbol)
+        if (!TryGetInputType(attr, out INamedTypeSymbol? inputTypeSymbol) || inputTypeSymbol is null)
         {
             return null;
         }
 
-        string? routePrefix = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "RoutePrefix").Value.Value?.ToString();
+        INamedTypeSymbol inputType = inputTypeSymbol;
+        string? routePrefix =
+            attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "RoutePrefix").Value.Value?.ToString();
         if (string.IsNullOrWhiteSpace(routePrefix))
         {
             routePrefix = NamingConventions.ToKebabCase(RemoveSagaSuffix(typeSymbol.Name));
@@ -326,29 +375,34 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             featureKey = NamingConventions.ToCamelCase(RemoveSagaSuffix(typeSymbol.Name));
         }
 
-        return new SagaInfo(typeSymbol, inputTypeSymbol, routePrefix!, featureKey!);
+        return new(typeSymbol, inputType, routePrefix!, featureKey!);
     }
 
-    private static string RemoveSagaSuffix(
-        string typeName
-    ) =>
-        typeName.EndsWith("SagaState", StringComparison.Ordinal)
-            ? typeName.Substring(0, typeName.Length - "SagaState".Length)
-            : typeName;
-
-    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
-        Compilation compilation
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
     )
     {
-        yield return compilation.Assembly;
-
-        foreach (MetadataReference reference in compilation.References)
-        {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
+        IncrementalValueProvider<List<SagaInfo>> sagaProvider = context.CompilationProvider.Select((
+                compilation,
+                _
+            ) => GetSagasFromCompilation(compilation))
+            .WithTrackingName("SagaControllerGenerator_Sagas");
+        context.RegisterSourceOutput(
+            sagaProvider,
+            (
+                spc,
+                sagas
+            ) =>
             {
-                yield return assemblySymbol;
-            }
-        }
+                foreach (SagaInfo saga in sagas)
+                {
+                    string dtoSource = GenerateStartDto(saga);
+                    spc.AddSource($"{saga.StartDtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
+                    string controllerSource = GenerateController(saga);
+                    spc.AddSource($"{saga.ControllerTypeName}.g.cs", SourceText.From(controllerSource, Encoding.UTF8));
+                }
+            });
     }
 
     private sealed class SagaInfo
@@ -373,7 +427,6 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             ControllerNamespace = SagaNamespace + ".Controllers";
             StartDtoNamespace = SagaNamespace + ".Dtos";
             StartDtoTypeName = "Start" + SagaName + "SagaDto";
-
             IMethodSymbol? primaryConstructor =
                 inputType.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
             IsInputPositionalRecord = inputType.IsRecord && (primaryConstructor?.Parameters.Length > 0);
@@ -392,9 +445,9 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
         public string FeatureKey { get; }
 
-        public ITypeSymbol InputType { get; }
-
         public ImmutableArray<PropertyModel> InputProperties { get; }
+
+        public ITypeSymbol InputType { get; }
 
         public string InputTypeName { get; }
 

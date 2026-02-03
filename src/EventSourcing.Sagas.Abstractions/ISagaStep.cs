@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>
@@ -16,7 +17,10 @@ public interface ISagaStep<TSaga>
     /// <param name="state">The current saga state.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The step execution result.</returns>
-    Task<StepResult> ExecuteAsync(TSaga state, CancellationToken cancellationToken);
+    Task<StepResult> ExecuteAsync(
+        TSaga state,
+        CancellationToken cancellationToken
+    );
 }
 
 /// <summary>
@@ -32,5 +36,8 @@ public interface ICompensatable<TSaga>
     /// <param name="state">The current saga state.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The compensation result.</returns>
-    Task<CompensationResult> CompensateAsync(TSaga state, CancellationToken cancellationToken);
+    Task<CompensationResult> CompensateAsync(
+        TSaga state,
+        CancellationToken cancellationToken
+    );
 }

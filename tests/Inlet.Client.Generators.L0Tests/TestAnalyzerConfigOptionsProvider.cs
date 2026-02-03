@@ -11,33 +11,29 @@ namespace Mississippi.Inlet.Client.Generators.L0Tests;
 /// </summary>
 internal sealed class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
 {
-    private readonly AnalyzerConfigOptions options;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="TestAnalyzerConfigOptionsProvider" /> class.
     /// </summary>
     /// <param name="globalOptions">The global options to expose.</param>
     public TestAnalyzerConfigOptionsProvider(
         IReadOnlyDictionary<string, string>? globalOptions = null
-    )
-    {
-        options = new TestAnalyzerConfigOptions(globalOptions ?? new Dictionary<string, string>());
-    }
+    ) =>
+        GlobalOptions = new TestAnalyzerConfigOptions(globalOptions ?? new Dictionary<string, string>());
 
     /// <inheritdoc />
-    public override AnalyzerConfigOptions GlobalOptions => options;
+    public override AnalyzerConfigOptions GlobalOptions { get; }
 
     /// <inheritdoc />
     public override AnalyzerConfigOptions GetOptions(
         SyntaxTree tree
     ) =>
-        options;
+        GlobalOptions;
 
     /// <inheritdoc />
     public override AnalyzerConfigOptions GetOptions(
         AdditionalText textFile
     ) =>
-        options;
+        GlobalOptions;
 
     private sealed class TestAnalyzerConfigOptions : AnalyzerConfigOptions
     {
@@ -45,10 +41,8 @@ internal sealed class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsP
 
         public TestAnalyzerConfigOptions(
             IReadOnlyDictionary<string, string> options
-        )
-        {
+        ) =>
             this.options = options;
-        }
 
         public override bool TryGetValue(
             string key,

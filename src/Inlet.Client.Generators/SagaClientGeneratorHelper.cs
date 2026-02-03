@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Naming;
 
+
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
@@ -19,8 +20,10 @@ internal static class SagaClientGeneratorHelper
     private const string GenerateSagaEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute";
 
-    private const string SagaStateInterfaceFullName =
-        "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
+    private const string GenerateSagaEndpointsAttributeGenericFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
+
+    private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
 
     /// <summary>
     ///     Collects saga metadata from the compilation for client code generation.
@@ -34,10 +37,11 @@ internal static class SagaClientGeneratorHelper
     )
     {
         List<SagaClientInfo> sagas = [];
-        INamedTypeSymbol? sagaAttrSymbol =
-            compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
+        INamedTypeSymbol? sagaAttrSymbol = compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
+        INamedTypeSymbol? sagaAttrGenericSymbol =
+            compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
         INamedTypeSymbol? sagaStateSymbol = compilation.GetTypeByMetadataName(SagaStateInterfaceFullName);
-        if (sagaAttrSymbol is null || sagaStateSymbol is null)
+        if ((sagaAttrSymbol is null && sagaAttrGenericSymbol is null) || sagaStateSymbol is null)
         {
             return sagas;
         }
@@ -50,12 +54,12 @@ internal static class SagaClientGeneratorHelper
             out string? assemblyName);
         string targetRootNamespace =
             TargetNamespaceResolver.GetTargetRootNamespace(rootNamespace, assemblyName, compilation);
-
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
             FindSagasInNamespace(
                 referencedAssembly.GlobalNamespace,
                 sagaAttrSymbol,
+                sagaAttrGenericSymbol,
                 sagaStateSymbol,
                 sagas,
                 targetRootNamespace);
@@ -66,7 +70,8 @@ internal static class SagaClientGeneratorHelper
 
     private static void FindSagasInNamespace(
         INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrGenericSymbol,
         INamedTypeSymbol sagaStateSymbol,
         List<SagaClientInfo> sagas,
         string targetRootNamespace
@@ -74,7 +79,12 @@ internal static class SagaClientGeneratorHelper
     {
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            SagaClientInfo? info = TryGetSagaInfo(typeSymbol, sagaAttrSymbol, sagaStateSymbol, targetRootNamespace);
+            SagaClientInfo? info = TryGetSagaInfo(
+                typeSymbol,
+                sagaAttrSymbol,
+                sagaAttrGenericSymbol,
+                sagaStateSymbol,
+                targetRootNamespace);
             if (info is not null)
             {
                 sagas.Add(info);
@@ -83,19 +93,93 @@ internal static class SagaClientGeneratorHelper
 
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindSagasInNamespace(childNs, sagaAttrSymbol, sagaStateSymbol, sagas, targetRootNamespace);
+            FindSagasInNamespace(
+                childNs,
+                sagaAttrSymbol,
+                sagaAttrGenericSymbol,
+                sagaStateSymbol,
+                sagas,
+                targetRootNamespace);
         }
+    }
+
+    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
+        Compilation compilation
+    )
+    {
+        yield return compilation.Assembly;
+        foreach (MetadataReference reference in compilation.References)
+        {
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
+            {
+                yield return assemblySymbol;
+            }
+        }
+    }
+
+    private static bool MatchesSagaAttribute(
+        AttributeData attr,
+        INamedTypeSymbol? sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrGenericSymbol
+    )
+    {
+        if (attr.AttributeClass is null)
+        {
+            return false;
+        }
+
+        if (sagaAttrSymbol is not null && SymbolEqualityComparer.Default.Equals(attr.AttributeClass, sagaAttrSymbol))
+        {
+            return true;
+        }
+
+        return sagaAttrGenericSymbol is not null &&
+               SymbolEqualityComparer.Default.Equals(attr.AttributeClass.OriginalDefinition, sagaAttrGenericSymbol);
+    }
+
+    private static string RemoveSagaSuffix(
+        string typeName
+    ) =>
+        typeName.EndsWith("SagaState", StringComparison.Ordinal)
+            ? typeName.Substring(0, typeName.Length - "SagaState".Length)
+            : typeName;
+
+    private static bool TryGetInputType(
+        AttributeData attr,
+        out INamedTypeSymbol? inputTypeSymbol
+    )
+    {
+        inputTypeSymbol = null;
+        if (attr.AttributeClass is not null && attr.AttributeClass.IsGenericType)
+        {
+            inputTypeSymbol = attr.AttributeClass.TypeArguments.FirstOrDefault() as INamedTypeSymbol;
+        }
+
+        if (inputTypeSymbol is not null)
+        {
+            return true;
+        }
+
+        inputTypeSymbol =
+            attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value.Value as INamedTypeSymbol;
+        return inputTypeSymbol is not null;
     }
 
     private static SagaClientInfo? TryGetSagaInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrGenericSymbol,
         INamedTypeSymbol sagaStateSymbol,
         string targetRootNamespace
     )
     {
+        if (sagaAttrSymbol is null && sagaAttrGenericSymbol is null)
+        {
+            return null;
+        }
+
         AttributeData? attr = typeSymbol.GetAttributes()
-            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, sagaAttrSymbol));
+            .FirstOrDefault(a => MatchesSagaAttribute(a, sagaAttrSymbol, sagaAttrGenericSymbol));
         if (attr is null)
         {
             return null;
@@ -106,52 +190,26 @@ internal static class SagaClientGeneratorHelper
             return null;
         }
 
-        INamedTypeSymbol? inputTypeSymbol = attr.NamedArguments
-            .FirstOrDefault(kvp => kvp.Key == "InputType")
-            .Value
-            .Value as INamedTypeSymbol;
-        if (inputTypeSymbol is null)
+        if (!TryGetInputType(attr, out INamedTypeSymbol? inputTypeSymbol) || inputTypeSymbol is null)
         {
             return null;
         }
 
-        string? routePrefix = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "RoutePrefix").Value.Value
-            ?.ToString();
+        INamedTypeSymbol inputType = inputTypeSymbol;
+        string? routePrefix =
+            attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "RoutePrefix").Value.Value?.ToString();
         if (string.IsNullOrWhiteSpace(routePrefix))
         {
             routePrefix = NamingConventions.ToKebabCase(RemoveSagaSuffix(typeSymbol.Name));
         }
 
-        string? featureKey = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "FeatureKey").Value.Value
-            ?.ToString();
+        string? featureKey = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "FeatureKey").Value.Value?.ToString();
         if (string.IsNullOrWhiteSpace(featureKey))
         {
             featureKey = NamingConventions.ToCamelCase(RemoveSagaSuffix(typeSymbol.Name));
         }
 
-        return new SagaClientInfo(typeSymbol, inputTypeSymbol, routePrefix!, featureKey!, targetRootNamespace);
-    }
-
-    private static string RemoveSagaSuffix(
-        string typeName
-    ) =>
-        typeName.EndsWith("SagaState", StringComparison.Ordinal)
-            ? typeName.Substring(0, typeName.Length - "SagaState".Length)
-            : typeName;
-
-    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
-        Compilation compilation
-    )
-    {
-        yield return compilation.Assembly;
-
-        foreach (MetadataReference reference in compilation.References)
-        {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
-        }
+        return new(typeSymbol, inputType, routePrefix!, featureKey!, targetRootNamespace);
     }
 
     /// <summary>
@@ -229,14 +287,14 @@ internal static class SagaClientGeneratorHelper
         public string FeatureRootNamespace { get; }
 
         /// <summary>
-        ///     Gets the input type symbol.
-        /// </summary>
-        public ITypeSymbol InputType { get; }
-
-        /// <summary>
         ///     Gets the input properties.
         /// </summary>
         public ImmutableArray<PropertyModel> InputProperties { get; }
+
+        /// <summary>
+        ///     Gets the input type symbol.
+        /// </summary>
+        public ITypeSymbol InputType { get; }
 
         /// <summary>
         ///     Gets the input type name.

@@ -160,6 +160,42 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Generated DTOs should include enum DTOs for top-level enum properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoGeneratesTopLevelEnumDto()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum SagaPhase
+                                            {
+                                                NotStarted = 0,
+                                                Running = 1,
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("saga-status")]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public SagaPhase Phase { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string? enumDtoSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("SagaPhaseDto", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(enumDtoSource);
+        Assert.Contains("public enum SagaPhaseDto", enumDtoSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated DTO should handle collection of custom types.
     /// </summary>
     [Fact]

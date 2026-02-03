@@ -2,6 +2,7 @@ using System;
 
 using Orleans;
 
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>
@@ -13,10 +14,10 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions;
 public sealed record StartSagaCommand<TInput>
 {
     /// <summary>
-    ///     Gets the saga identifier.
+    ///     Gets the optional correlation identifier.
     /// </summary>
-    [Id(0)]
-    public required Guid SagaId { get; init; }
+    [Id(2)]
+    public string? CorrelationId { get; init; }
 
     /// <summary>
     ///     Gets the input payload for the saga.
@@ -25,8 +26,8 @@ public sealed record StartSagaCommand<TInput>
     public required TInput Input { get; init; }
 
     /// <summary>
-    ///     Gets the optional correlation identifier.
+    ///     Gets the saga identifier.
     /// </summary>
-    [Id(2)]
-    public string? CorrelationId { get; init; }
+    [Id(0)]
+    public required Guid SagaId { get; init; }
 }

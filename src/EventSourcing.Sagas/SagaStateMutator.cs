@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
+
 namespace Mississippi.EventSourcing.Sagas;
 
 /// <summary>
@@ -52,5 +53,6 @@ internal static class SagaStateMutator
 
     private static SagaStatePropertyMap GetMap(
         Type stateType
-    ) => PropertyMaps.GetOrAdd(stateType, static type => new SagaStatePropertyMap(type));
+    ) =>
+        PropertyMaps.GetOrAdd(stateType, static type => new(type));
 }

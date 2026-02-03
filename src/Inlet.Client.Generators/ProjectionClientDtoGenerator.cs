@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -114,6 +115,14 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
 
         // Add source
         context.AddSource($"{dtoName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+
+        // Generate enum DTOs for enum properties on the projection
+        foreach (EnumDtoInfo enumInfo in GetEnumDtosForProjection(projection)
+                     .Where(enumInfo => !generatedNestedTypes.Contains(enumInfo.DtoName)))
+        {
+            generatedNestedTypes.Add(enumInfo.DtoName);
+            GenerateNestedEnumDto(context, enumInfo.EnumType, enumInfo.DtoName, clientNamespace);
+        }
 
         // Generate DTOs for nested custom types (e.g., collection element types)
         // Use GroupBy to avoid duplicate generation for the same DTO type name
@@ -252,6 +261,41 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             string enumDtoName = enumType.Name + "Dto";
             GenerateNestedEnumDto(context, enumType, enumDtoName, targetNamespace);
         }
+    }
+
+    /// <summary>
+    ///     Gets enum DTOs required for a projection.
+    /// </summary>
+    private static List<EnumDtoInfo> GetEnumDtosForProjection(
+        ProjectionInfo projection
+    )
+    {
+        List<EnumDtoInfo> enumInfos = new();
+        HashSet<string> seen = new(StringComparer.Ordinal);
+        foreach (PropertyModel prop in projection.Model.Properties)
+        {
+            if (prop.IsEnum && prop.SourceTypeSymbol is INamedTypeSymbol enumType)
+            {
+                string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                if (seen.Add(key))
+                {
+                    enumInfos.Add(new(enumType, prop.DtoTypeName));
+                }
+            }
+
+            if (prop.ElementIsEnum &&
+                prop.ElementTypeSymbol is INamedTypeSymbol elementEnum &&
+                prop.ElementDtoTypeName is not null)
+            {
+                string key = elementEnum.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                if (seen.Add(key))
+                {
+                    enumInfos.Add(new(elementEnum, prop.ElementDtoTypeName));
+                }
+            }
+        }
+
+        return enumInfos;
     }
 
     /// <summary>
@@ -403,6 +447,22 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
                     GenerateClientDto(spc, projection, data.TargetRootNamespace, generatedNestedTypes);
                 }
             });
+    }
+
+    private sealed class EnumDtoInfo
+    {
+        public EnumDtoInfo(
+            INamedTypeSymbol enumType,
+            string dtoName
+        )
+        {
+            EnumType = enumType;
+            DtoName = dtoName;
+        }
+
+        public string DtoName { get; }
+
+        public INamedTypeSymbol EnumType { get; }
     }
 
     /// <summary>

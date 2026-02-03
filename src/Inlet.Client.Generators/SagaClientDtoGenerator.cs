@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 using Mississippi.Inlet.Generators.Core.Emit;
 using Mississippi.Inlet.Generators.Core.Naming;
 
+
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
@@ -17,25 +18,6 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientDtoGenerator : IIncrementalGenerator
 {
-    /// <inheritdoc />
-    public void Initialize(
-        IncrementalGeneratorInitializationContext context
-    )
-    {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
-            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
-            compilationAndOptions.Select((source, _) =>
-                SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
-        context.RegisterSourceOutput(sagasProvider, static (spc, sagas) =>
-        {
-            foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
-            {
-                GenerateClientDto(spc, saga);
-            }
-        });
-    }
-
     private static void GenerateClientDto(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
@@ -47,15 +29,13 @@ public sealed class SagaClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendSummary($"Request DTO for starting the {saga.SagaName} saga.");
         sb.AppendLine("/// <remarks>");
-        sb.AppendLine(
-            $"///     Mirrors server DTO: <c>{saga.SagaNamespace}.Dtos.Start{saga.SagaName}SagaDto</c>.");
+        sb.AppendLine($"///     Mirrors server DTO: <c>{saga.SagaNamespace}.Dtos.Start{saga.SagaName}SagaDto</c>.");
         sb.AppendLine("/// </remarks>");
         saga.InputProperties.ToList()
             .ForEach(prop => sb.AppendLine(
                 $"/// <param name=\"{prop.Name}\">The {NamingConventions.ToCamelCase(prop.Name)} value.</param>"));
         sb.AppendLine("/// <param name=\"CorrelationId\">The optional correlation identifier.</param>");
         sb.AppendGeneratedCodeAttribute("SagaClientDtoGenerator");
-
         string parameters = string.Join(", ", saga.InputProperties.Select(p => $"{p.SourceTypeName} {p.Name}"));
         if (!string.IsNullOrEmpty(parameters))
         {
@@ -66,5 +46,31 @@ public sealed class SagaClientDtoGenerator : IIncrementalGenerator
         string dtoTypeName = $"Start{saga.SagaName}SagaRequestDto";
         sb.AppendLine($"internal sealed record {dtoTypeName}({parameters});");
         context.AddSource($"{dtoTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) => SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
+        context.RegisterSourceOutput(
+            sagasProvider,
+            static (
+                spc,
+                sagas
+            ) =>
+            {
+                foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
+                {
+                    GenerateClientDto(spc, saga);
+                }
+            });
     }
 }

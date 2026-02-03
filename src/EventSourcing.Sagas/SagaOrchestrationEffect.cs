@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions;
+
 
 namespace Mississippi.EventSourcing.Sagas;
 
@@ -43,13 +43,13 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         Logger = logger;
     }
 
-    private ISagaStepInfoProvider<TSaga> StepInfoProvider { get; }
+    private ILogger<SagaOrchestrationEffect<TSaga>>? Logger { get; }
 
     private IServiceProvider ServiceProvider { get; }
 
-    private TimeProvider TimeProvider { get; }
+    private ISagaStepInfoProvider<TSaga> StepInfoProvider { get; }
 
-    private ILogger<SagaOrchestrationEffect<TSaga>>? Logger { get; }
+    private TimeProvider TimeProvider { get; }
 
     /// <inheritdoc />
     public bool CanHandle(
@@ -57,7 +57,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return eventData is SagaStartedEvent or SagaStepCompleted or SagaStepFailed or SagaCompensating or SagaStepCompensated;
+        return eventData is SagaStartedEvent or SagaStepCompleted or SagaStepFailed or SagaCompensating
+            or SagaStepCompensated;
     }
 
     /// <inheritdoc />
@@ -73,12 +74,114 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         return eventData switch
         {
             SagaStartedEvent => ExecuteStepAsync(currentState, 0, cancellationToken),
-            SagaStepCompleted completed => ExecuteNextOrCompleteAsync(currentState, completed.StepIndex, cancellationToken),
+            SagaStepCompleted completed => ExecuteNextOrCompleteAsync(
+                currentState,
+                completed.StepIndex,
+                cancellationToken),
             SagaStepFailed => AsyncEnumerable.Empty<object>(),
-            SagaCompensating compensating => ExecuteCompensationAsync(currentState, compensating.FromStepIndex, cancellationToken),
-            SagaStepCompensated compensated => ExecutePreviousCompensationAsync(currentState, compensated.StepIndex, cancellationToken),
-            _ => AsyncEnumerable.Empty<object>(),
+            SagaCompensating compensating => ExecuteCompensationAsync(
+                currentState,
+                compensating.FromStepIndex,
+                cancellationToken),
+            SagaStepCompensated compensated => ExecutePreviousCompensationAsync(
+                currentState,
+                compensated.StepIndex,
+                cancellationToken),
+            var _ => AsyncEnumerable.Empty<object>(),
         };
+    }
+
+    private async IAsyncEnumerable<object> ExecuteCompensationAsync(
+        TSaga state,
+        int stepIndex,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        if (stepIndex < 0)
+        {
+            yield return new SagaCompensated
+            {
+                CompletedAt = TimeProvider.GetUtcNow(),
+            };
+            yield break;
+        }
+
+        if (!TryGetStep(stepIndex, out SagaStepInfo? stepInfo))
+        {
+            yield return new SagaFailed
+            {
+                ErrorCode = "COMPENSATION_FAILED",
+                ErrorMessage = "Step metadata not found.",
+                FailedAt = TimeProvider.GetUtcNow(),
+            };
+            yield break;
+        }
+
+        object stepInstance = ServiceProvider.GetRequiredService(stepInfo.StepType);
+        if (stepInstance is not ICompensatable<TSaga> compensatable)
+        {
+            yield return new SagaStepCompensated
+            {
+                StepIndex = stepIndex,
+                StepName = stepInfo.StepName,
+            };
+            yield break;
+        }
+
+        Logger?.SagaStepCompensating(typeof(TSaga).Name, stepInfo.StepName, stepIndex);
+        CompensationResult result = await compensatable.CompensateAsync(state, cancellationToken).ConfigureAwait(false);
+        if (result.Success || result.Skipped)
+        {
+            yield return new SagaStepCompensated
+            {
+                StepIndex = stepIndex,
+                StepName = stepInfo.StepName,
+            };
+        }
+        else
+        {
+            yield return new SagaFailed
+            {
+                ErrorCode = result.ErrorCode ?? "COMPENSATION_FAILED",
+                ErrorMessage = result.ErrorMessage,
+                FailedAt = TimeProvider.GetUtcNow(),
+            };
+        }
+    }
+
+    private async IAsyncEnumerable<object> ExecuteNextOrCompleteAsync(
+        TSaga state,
+        int completedStepIndex,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        int nextStepIndex = completedStepIndex + 1;
+        if (!TryGetStep(nextStepIndex, out SagaStepInfo _))
+        {
+            yield return new SagaCompleted
+            {
+                CompletedAt = TimeProvider.GetUtcNow(),
+            };
+            yield break;
+        }
+
+        await foreach (object evt in ExecuteStepAsync(state, nextStepIndex, cancellationToken))
+        {
+            yield return evt;
+        }
+    }
+
+    private async IAsyncEnumerable<object> ExecutePreviousCompensationAsync(
+        TSaga state,
+        int compensatedStepIndex,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        int nextIndex = compensatedStepIndex - 1;
+        await foreach (object evt in ExecuteCompensationAsync(state, nextIndex, cancellationToken))
+        {
+            yield return evt;
+        }
     }
 
     private async IAsyncEnumerable<object> ExecuteStepAsync(
@@ -95,7 +198,6 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         ISagaStep<TSaga> step = ResolveStep(stepInfo);
         Logger?.SagaStepExecuting(typeof(TSaga).Name, stepInfo.StepName, stepIndex);
         StepResult result = await step.ExecuteAsync(state, cancellationToken).ConfigureAwait(false);
-
         if (result.Success)
         {
             foreach (object evt in result.Events)
@@ -119,127 +221,11 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
                 ErrorCode = result.ErrorCode ?? "SAGA_STEP_FAILED",
                 ErrorMessage = result.ErrorMessage,
             };
-
             yield return new SagaCompensating
             {
                 FromStepIndex = stepIndex - 1,
             };
         }
-    }
-
-    private async IAsyncEnumerable<object> ExecuteNextOrCompleteAsync(
-        TSaga state,
-        int completedStepIndex,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
-        int nextStepIndex = completedStepIndex + 1;
-        if (!TryGetStep(nextStepIndex, out _))
-        {
-            yield return new SagaCompleted
-            {
-                CompletedAt = TimeProvider.GetUtcNow(),
-            };
-
-            yield break;
-        }
-
-        await foreach (object evt in ExecuteStepAsync(state, nextStepIndex, cancellationToken))
-        {
-            yield return evt;
-        }
-    }
-
-    private async IAsyncEnumerable<object> ExecuteCompensationAsync(
-        TSaga state,
-        int stepIndex,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
-        if (stepIndex < 0)
-        {
-            yield return new SagaCompensated
-            {
-                CompletedAt = TimeProvider.GetUtcNow(),
-            };
-
-            yield break;
-        }
-
-        if (!TryGetStep(stepIndex, out SagaStepInfo? stepInfo))
-        {
-            yield return new SagaFailed
-            {
-                ErrorCode = "COMPENSATION_FAILED",
-                ErrorMessage = "Step metadata not found.",
-                FailedAt = TimeProvider.GetUtcNow(),
-            };
-
-            yield break;
-        }
-
-        object stepInstance = ServiceProvider.GetRequiredService(stepInfo.StepType);
-        if (stepInstance is not ICompensatable<TSaga> compensatable)
-        {
-            yield return new SagaStepCompensated
-            {
-                StepIndex = stepIndex,
-                StepName = stepInfo.StepName,
-            };
-
-            yield break;
-        }
-
-        Logger?.SagaStepCompensating(typeof(TSaga).Name, stepInfo.StepName, stepIndex);
-        CompensationResult result = await compensatable.CompensateAsync(state, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (result.Success || result.Skipped)
-        {
-            yield return new SagaStepCompensated
-            {
-                StepIndex = stepIndex,
-                StepName = stepInfo.StepName,
-            };
-        }
-        else
-        {
-            yield return new SagaFailed
-            {
-                ErrorCode = result.ErrorCode ?? "COMPENSATION_FAILED",
-                ErrorMessage = result.ErrorMessage,
-                FailedAt = TimeProvider.GetUtcNow(),
-            };
-        }
-    }
-
-    private async IAsyncEnumerable<object> ExecutePreviousCompensationAsync(
-        TSaga state,
-        int compensatedStepIndex,
-        [EnumeratorCancellation] CancellationToken cancellationToken
-    )
-    {
-        int nextIndex = compensatedStepIndex - 1;
-        await foreach (object evt in ExecuteCompensationAsync(state, nextIndex, cancellationToken))
-        {
-            yield return evt;
-        }
-    }
-
-    private bool TryGetStep(
-        int stepIndex,
-        out SagaStepInfo stepInfo
-    )
-    {
-        IReadOnlyList<SagaStepInfo> steps = StepInfoProvider.Steps;
-        if (stepIndex < 0 || stepIndex >= steps.Count)
-        {
-            stepInfo = default!;
-            return false;
-        }
-
-        stepInfo = steps[stepIndex];
-        return true;
     }
 
     private ISagaStep<TSaga> ResolveStep(
@@ -254,5 +240,21 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
         throw new InvalidOperationException(
             $"Step type '{stepInfo.StepType.FullName}' does not implement ISagaStep<{typeof(TSaga).Name}>.");
+    }
+
+    private bool TryGetStep(
+        int stepIndex,
+        out SagaStepInfo stepInfo
+    )
+    {
+        IReadOnlyList<SagaStepInfo> steps = StepInfoProvider.Steps;
+        if ((stepIndex < 0) || (stepIndex >= steps.Count))
+        {
+            stepInfo = default!;
+            return false;
+        }
+
+        stepInfo = steps[stepIndex];
+        return true;
     }
 }

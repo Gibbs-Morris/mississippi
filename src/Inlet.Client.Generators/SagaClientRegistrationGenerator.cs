@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Emit;
 
+
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
@@ -15,25 +16,6 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientRegistrationGenerator : IIncrementalGenerator
 {
-    /// <inheritdoc />
-    public void Initialize(
-        IncrementalGeneratorInitializationContext context
-    )
-    {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
-            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
-            compilationAndOptions.Select((source, _) =>
-                SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
-        context.RegisterSourceOutput(sagasProvider, static (spc, sagas) =>
-        {
-            foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
-            {
-                GenerateRegistration(spc, saga);
-            }
-        });
-    }
-
     private static void GenerateRegistration(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
@@ -61,13 +43,11 @@ public sealed class SagaClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendSummary($"Extension methods for registering the {saga.SagaName} saga feature.");
         sb.AppendLine("/// <remarks>");
-        sb.AppendLine(
-            $"///     This feature handles saga start requests for the {saga.SagaName} saga.");
+        sb.AppendLine($"///     This feature handles saga start requests for the {saga.SagaName} saga.");
         sb.AppendLine("/// </remarks>");
         sb.AppendGeneratedCodeAttribute("SagaClientRegistrationGenerator");
         sb.AppendLine($"internal static class {registrationTypeName}");
         sb.OpenBrace();
-
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Adds the {saga.SagaName} saga feature to the service collection.");
         sb.AppendLine("/// </summary>");
@@ -79,12 +59,10 @@ public sealed class SagaClientRegistrationGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-
         sb.AppendLine("// Mappers (Action → DTO)");
         sb.AppendLine(
             $"services.AddMapper<{actionPrefix}Action, {actionPrefix}RequestDto, {actionPrefix}ActionMapper>();");
         sb.AppendLine();
-
         sb.AppendLine($"// Reducers - {actionPrefix}");
         sb.AppendLine($"services.AddReducer<{actionPrefix}ExecutingAction, {stateTypeName}>(");
         sb.IncreaseIndent();
@@ -99,7 +77,6 @@ public sealed class SagaClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine($"{reducersTypeName}.{actionPrefix}Failed);");
         sb.DecreaseIndent();
         sb.AppendLine();
-
         sb.AppendLine("// Action Effects");
         sb.AppendLine($"services.AddActionEffect<{stateTypeName}, {actionPrefix}ActionEffect>();");
         sb.AppendLine();
@@ -107,5 +84,31 @@ public sealed class SagaClientRegistrationGenerator : IIncrementalGenerator
         sb.CloseBrace();
         sb.CloseBrace();
         context.AddSource($"{registrationTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) => SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
+        context.RegisterSourceOutput(
+            sagasProvider,
+            static (
+                spc,
+                sagas
+            ) =>
+            {
+                foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
+                {
+                    GenerateRegistration(spc, saga);
+                }
+            });
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Emit;
 
+
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
@@ -15,25 +16,6 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
 {
-    /// <inheritdoc />
-    public void Initialize(
-        IncrementalGeneratorInitializationContext context
-    )
-    {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
-            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
-            compilationAndOptions.Select((source, _) =>
-                SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
-        context.RegisterSourceOutput(sagasProvider, static (spc, sagas) =>
-        {
-            foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
-            {
-                GenerateActionEffect(spc, saga);
-            }
-        });
-    }
-
     private static void GenerateActionEffect(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
@@ -67,10 +49,10 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine($"internal sealed class {effectTypeName}");
         sb.IncreaseIndent();
         sb.AppendLine($": CommandActionEffectBase<{actionName}, {dtoName}, {stateTypeName},");
-        sb.AppendLine($"    Start{saga.SagaName}SagaExecutingAction, Start{saga.SagaName}SagaSucceededAction, Start{saga.SagaName}SagaFailedAction>");
+        sb.AppendLine(
+            $"    Start{saga.SagaName}SagaExecutingAction, Start{saga.SagaName}SagaSucceededAction, Start{saga.SagaName}SagaFailedAction>");
         sb.DecreaseIndent();
         sb.OpenBrace();
-
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Initializes a new instance of the <see cref=\"{effectTypeName}\" /> class.");
         sb.AppendLine("/// </summary>");
@@ -90,21 +72,44 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.CloseBrace();
         sb.AppendLine();
-
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine($"protected override string AggregateRoutePrefix => \"/api/sagas/{saga.RoutePrefix}\";");
         sb.AppendLine();
-
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine("protected override string Route => string.Empty;");
         sb.AppendLine();
-
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine($"protected override string GetEndpoint({actionName} action) =>");
         sb.IncreaseIndent();
-        sb.AppendLine($"$\"{{AggregateRoutePrefix}}/{{action.SagaId}}\";");
+        sb.AppendLine("$\"{AggregateRoutePrefix}/{action.SagaId}\";");
         sb.DecreaseIndent();
         sb.CloseBrace();
         context.AddSource($"{effectTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) => SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
+        context.RegisterSourceOutput(
+            sagasProvider,
+            static (
+                spc,
+                sagas
+            ) =>
+            {
+                foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
+                {
+                    GenerateActionEffect(spc, saga);
+                }
+            });
     }
 }

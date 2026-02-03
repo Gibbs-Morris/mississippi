@@ -1,5 +1,6 @@
 using System;
 
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>
@@ -30,6 +31,11 @@ public sealed record SagaStepInfo
     }
 
     /// <summary>
+    ///     Gets a value indicating whether the step supports compensation.
+    /// </summary>
+    public bool HasCompensation { get; }
+
+    /// <summary>
     ///     Gets the zero-based step index.
     /// </summary>
     public int StepIndex { get; }
@@ -43,9 +49,4 @@ public sealed record SagaStepInfo
     ///     Gets the step implementation type.
     /// </summary>
     public Type StepType { get; }
-
-    /// <summary>
-    ///     Gets a value indicating whether the step supports compensation.
-    /// </summary>
-    public bool HasCompensation { get; }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>

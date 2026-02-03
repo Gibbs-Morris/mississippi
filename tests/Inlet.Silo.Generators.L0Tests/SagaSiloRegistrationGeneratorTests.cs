@@ -9,8 +9,6 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-using Mississippi.Inlet.Silo.Generators;
-
 
 namespace Mississippi.Inlet.Silo.Generators.L0Tests;
 
@@ -72,40 +70,6 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                           }
                                           """;
 
-    private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
-        RunResult) RunGenerator(
-            params string[] sources
-        )
-    {
-        SyntaxTree[] syntaxTrees = sources.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray();
-        string runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-        List<MetadataReference> references =
-        [
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
-        ];
-        string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
-        if (File.Exists(netstandardPath))
-        {
-            references.Add(MetadataReference.CreateFromFile(netstandardPath));
-        }
-
-        CSharpCompilation compilation = CSharpCompilation.Create(
-            "TestApp.Silo",
-            syntaxTrees,
-            references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
-                NullableContextOptions.Enable));
-        SagaSiloRegistrationGenerator generator = new();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-        driver = driver.RunGeneratorsAndUpdateCompilation(
-            compilation,
-            out Compilation outputCompilation,
-            out ImmutableArray<Diagnostic> diagnostics);
-        return (outputCompilation, diagnostics, driver.GetRunResult());
-    }
-
     private static CSharpCompilation CreateCompilation(
         params string[] sources
     )
@@ -138,11 +102,45 @@ public sealed class SagaSiloRegistrationGeneratorTests
     )
     {
         MethodInfo method = typeof(SagaSiloRegistrationGenerator).GetMethod(
-            "GetSagasFromCompilation",
-            BindingFlags.NonPublic | BindingFlags.Static) ??
-            throw new InvalidOperationException("GetSagasFromCompilation not found.");
+                                "GetSagasFromCompilation",
+                                BindingFlags.NonPublic | BindingFlags.Static) ??
+                            throw new InvalidOperationException("GetSagasFromCompilation not found.");
         IEnumerable sagas = (IEnumerable)method.Invoke(null, new object[] { compilation, targetRootNamespace })!;
         return sagas.Cast<object>().ToList();
+    }
+
+    private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
+        RunResult) RunGenerator(
+            params string[] sources
+        )
+    {
+        SyntaxTree[] syntaxTrees = sources.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray();
+        string runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+        List<MetadataReference> references =
+        [
+            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
+        ];
+        string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
+        if (File.Exists(netstandardPath))
+        {
+            references.Add(MetadataReference.CreateFromFile(netstandardPath));
+        }
+
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "TestApp.Silo",
+            syntaxTrees,
+            references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
+                NullableContextOptions.Enable));
+        SagaSiloRegistrationGenerator generator = new();
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
+        driver = driver.RunGeneratorsAndUpdateCompilation(
+            compilation,
+            out Compilation outputCompilation,
+            out ImmutableArray<Diagnostic> diagnostics);
+        return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
     /// <summary>
@@ -195,6 +193,10 @@ public sealed class SagaSiloRegistrationGeneratorTests
             generatedCode,
             StringComparison.Ordinal);
         Assert.Contains(
+            "AddSnapshotStateConverter<global::TestApp.Domain.Sagas.TransferSagaState>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
             "AddTransient<global::TestApp.Domain.Sagas.DebitStep>",
             generatedCode,
             StringComparison.Ordinal);
@@ -202,140 +204,11 @@ public sealed class SagaSiloRegistrationGeneratorTests
             "AddSagaStepInfo<global::TestApp.Domain.Sagas.TransferSagaState>",
             generatedCode,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "typeof(global::TestApp.Domain.Sagas.CreditStep)",
-            generatedCode,
-            StringComparison.Ordinal);
+        Assert.Contains("typeof(global::TestApp.Domain.Sagas.CreditStep)", generatedCode, StringComparison.Ordinal);
         Assert.Contains(
             "AddReducer<global::TestApp.Domain.Sagas.TransferStarted",
             generatedCode,
             StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Verifies sagas missing input types are skipped.
-    /// </summary>
-    [Fact]
-    public void SkipsSagaWithoutInputType()
-    {
-        const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      [GenerateSagaEndpoints]
-                                      public sealed record TransferSagaState : ISagaState
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, sagaSource);
-        Assert.Empty(runResult.GeneratedTrees);
-    }
-
-    /// <summary>
-    ///     Verifies no step registrations are emitted when no steps exist.
-    /// </summary>
-    [Fact]
-    public void OmitsStepInfoWhenNoSteps()
-    {
-        const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      public sealed record TransferInput
-                                      {
-                                          public string AccountId { get; init; }
-                                      }
-
-                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
-                                      public sealed record TransferSagaState : ISagaState
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Verifies no output when required symbols are missing.
-    /// </summary>
-    [Fact]
-    public void SkipsSagaWhenRequiredSymbolsMissing()
-    {
-        const string missingStepStubs = """
-                                        namespace Mississippi.Inlet.Generators.Abstractions
-                                        {
-                                            using System;
-
-                                            [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-                                            public sealed class GenerateSagaEndpointsAttribute : Attribute
-                                            {
-                                                public Type? InputType { get; set; }
-                                            }
-                                        }
-
-                                        namespace Mississippi.EventSourcing.Sagas.Abstractions
-                                        {
-                                            public interface ISagaState
-                                            {
-                                            }
-                                        }
-                                        """;
-        const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      public sealed record TransferInput
-                                      {
-                                          public string AccountId { get; init; }
-                                      }
-
-                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
-                                      public sealed record TransferSagaState : ISagaState
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(missingStepStubs, sagaSource);
-        Assert.Empty(runResult.GeneratedTrees);
-    }
-
-    /// <summary>
-    ///     Verifies sagas not implementing the saga state interface are ignored.
-    /// </summary>
-    [Fact]
-    public void SkipsSagaWithoutSagaInterface()
-    {
-        const string sagaSource = """
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      public sealed record TransferInput
-                                      {
-                                          public string AccountId { get; init; }
-                                      }
-
-                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
-                                      public sealed record TransferSagaState
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, sagaSource);
-        Assert.Empty(runResult.GeneratedTrees);
     }
 
     /// <summary>
@@ -362,6 +235,35 @@ public sealed class SagaSiloRegistrationGeneratorTests
 
                                       [SagaStep(0)]
                                       public sealed class MissingSagaStep
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies no step registrations are emitted when no steps exist.
+    /// </summary>
+    [Fact]
+    public void OmitsStepInfoWhenNoSteps()
+    {
+        const string sagaSource = """
+                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
                                       {
                                       }
                                   }
@@ -429,5 +331,102 @@ public sealed class SagaSiloRegistrationGeneratorTests
         Assert.NotNull(eventType);
         Assert.NotNull(reducerType);
         Assert.NotNull(stepType);
+    }
+
+    /// <summary>
+    ///     Verifies no output when required symbols are missing.
+    /// </summary>
+    [Fact]
+    public void SkipsSagaWhenRequiredSymbolsMissing()
+    {
+        const string missingStepStubs = """
+                                        namespace Mississippi.Inlet.Generators.Abstractions
+                                        {
+                                            using System;
+
+                                            [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                            public sealed class GenerateSagaEndpointsAttribute : Attribute
+                                            {
+                                                public Type? InputType { get; set; }
+                                            }
+                                        }
+
+                                        namespace Mississippi.EventSourcing.Sagas.Abstractions
+                                        {
+                                            public interface ISagaState
+                                            {
+                                            }
+                                        }
+                                        """;
+        const string sagaSource = """
+                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(missingStepStubs, sagaSource);
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     Verifies sagas missing input types are skipped.
+    /// </summary>
+    [Fact]
+    public void SkipsSagaWithoutInputType()
+    {
+        const string sagaSource = """
+                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      [GenerateSagaEndpoints]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     Verifies sagas not implementing the saga state interface are ignored.
+    /// </summary>
+    [Fact]
+    public void SkipsSagaWithoutSagaInterface()
+    {
+        const string sagaSource = """
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        Assert.Empty(runResult.GeneratedTrees);
     }
 }

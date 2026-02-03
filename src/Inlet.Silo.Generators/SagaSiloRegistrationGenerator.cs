@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 using Mississippi.Inlet.Generators.Core.Emit;
 using Mississippi.Inlet.Generators.Core.Naming;
 
+
 namespace Mississippi.Inlet.Silo.Generators;
 
 /// <summary>
@@ -18,61 +19,23 @@ namespace Mississippi.Inlet.Silo.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 {
+    private const string CompensatableInterfaceFullName =
+        "Mississippi.EventSourcing.Sagas.Abstractions.ICompensatable`1";
+
     private const string EventReducerBaseFullName =
         "Mississippi.EventSourcing.Reducers.Abstractions.EventReducerBase`2";
 
     private const string GenerateSagaEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute";
 
-    private const string SagaStepAttributeFullName =
-        "Mississippi.EventSourcing.Sagas.Abstractions.SagaStepAttribute";
+    private const string GenerateSagaEndpointsAttributeGenericFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
-    private const string SagaStateInterfaceFullName =
-        "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
+    private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
 
-    private const string SagaStepInterfaceFullName =
-        "Mississippi.EventSourcing.Sagas.Abstractions.ISagaStep`1";
+    private const string SagaStepAttributeFullName = "Mississippi.EventSourcing.Sagas.Abstractions.SagaStepAttribute";
 
-    private const string CompensatableInterfaceFullName =
-        "Mississippi.EventSourcing.Sagas.Abstractions.ICompensatable`1";
-
-    /// <inheritdoc />
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
-            source = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-
-        IncrementalValueProvider<List<SagaRegistrationInfo>> sagasProvider =
-            source.Select((pair, _) =>
-            {
-                string? rootNamespace = pair.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.RootNamespaceProperty,
-                    out string? rootNs)
-                    ? rootNs
-                    : null;
-                string? assemblyName = pair.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.AssemblyNameProperty,
-                    out string? asmName)
-                    ? asmName
-                    : null;
-
-                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                    rootNamespace,
-                    assemblyName,
-                    pair.Compilation);
-
-                return GetSagasFromCompilation(pair.Compilation, targetRootNamespace);
-            });
-
-        context.RegisterSourceOutput(sagasProvider, (spc, sagas) =>
-        {
-            foreach (SagaRegistrationInfo saga in sagas)
-            {
-                string sourceText = GenerateRegistration(saga);
-                spc.AddSource($"{saga.SagaName}SagaRegistrations.g.cs", SourceText.From(sourceText, Encoding.UTF8));
-            }
-        });
-    }
+    private const string SagaStepInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaStep`1";
 
     private static string GenerateRegistration(
         SagaRegistrationInfo saga
@@ -84,25 +47,23 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.Extensions.DependencyInjection");
         sb.AppendUsing("Mississippi.EventSourcing.Sagas");
         sb.AppendUsing("Mississippi.EventSourcing.Sagas.Abstractions");
+        sb.AppendUsing("Mississippi.EventSourcing.Snapshots");
         sb.AppendUsing("Mississippi.EventSourcing.Reducers");
         sb.AppendUsing(saga.SagaNamespace);
         sb.AppendFileScopedNamespace(saga.OutputNamespace);
         sb.AppendLine();
-
         sb.AppendSummary($"Registrations for the {saga.SagaName} saga.");
         sb.AppendGeneratedCodeAttribute("SagaSiloRegistrationGenerator");
         sb.AppendLine($"public static class {saga.SagaName}SagaRegistrations");
         sb.OpenBrace();
-
         sb.AppendSummary($"Adds the {saga.SagaName} saga registrations.");
         sb.AppendLine("/// <param name=\"services\">The service collection.</param>");
         sb.AppendLine("/// <returns>The updated service collection.</returns>");
         sb.AppendLine($"public static IServiceCollection Add{saga.SagaName}Saga(this IServiceCollection services)");
         sb.OpenBrace();
         sb.AppendLine("ArgumentNullException.ThrowIfNull(services);");
-        sb.AppendLine(
-            $"services.AddSagaOrchestration<{saga.SagaStateTypeName}, {saga.InputTypeName}>();");
-
+        sb.AppendLine($"services.AddSagaOrchestration<{saga.SagaStateTypeName}, {saga.InputTypeName}>();");
+        sb.AppendLine($"services.AddSnapshotStateConverter<{saga.SagaStateTypeName}>();");
         foreach (StepInfo step in saga.Steps)
         {
             sb.AppendLine($"services.AddTransient<{step.StepTypeName}>();");
@@ -115,7 +76,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             foreach (StepInfo step in saga.Steps)
             {
                 sb.AppendLine(
-                        $"new({step.StepIndex}, \"{step.StepName}\", typeof({step.StepTypeName}), hasCompensation: {(step.HasCompensation ? "true" : "false")}),");
+                    $"new({step.StepIndex}, \"{step.StepName}\", typeof({step.StepTypeName}), hasCompensation: {(step.HasCompensation ? "true" : "false")}),");
             }
 
             sb.CloseBrace();
@@ -134,34 +95,82 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
+    private static IEnumerable<INamespaceSymbol> GetAllNamespaces(
+        INamespaceSymbol namespaceSymbol
+    )
+    {
+        yield return namespaceSymbol;
+        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
+        {
+            foreach (INamespaceSymbol descendant in GetAllNamespaces(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
+    private static IEnumerable<INamedTypeSymbol> GetAllTypes(
+        Compilation compilation
+    )
+    {
+        foreach (IAssemblySymbol assembly in GetReferencedAssemblies(compilation))
+        {
+            foreach (INamespaceSymbol namespaceSymbol in GetAllNamespaces(assembly.GlobalNamespace))
+            {
+                foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+                {
+                    yield return typeSymbol;
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
+        Compilation compilation
+    )
+    {
+        yield return compilation.Assembly;
+        foreach (MetadataReference reference in compilation.References)
+        {
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
+            {
+                yield return assemblySymbol;
+            }
+        }
+    }
+
     private static List<SagaRegistrationInfo> GetSagasFromCompilation(
         Compilation compilation,
         string targetRootNamespace
     )
     {
         List<SagaRegistrationInfo> sagas = [];
-
-        INamedTypeSymbol? sagaAttrSymbol =
-            compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
+        INamedTypeSymbol? sagaAttrSymbol = compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
+        INamedTypeSymbol? sagaAttrGenericSymbol =
+            compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
         INamedTypeSymbol? sagaStateSymbol = compilation.GetTypeByMetadataName(SagaStateInterfaceFullName);
         INamedTypeSymbol? sagaStepAttrSymbol = compilation.GetTypeByMetadataName(SagaStepAttributeFullName);
         INamedTypeSymbol? sagaStepInterfaceSymbol = compilation.GetTypeByMetadataName(SagaStepInterfaceFullName);
-        INamedTypeSymbol? compensatableInterfaceSymbol = compilation.GetTypeByMetadataName(CompensatableInterfaceFullName);
+        INamedTypeSymbol? compensatableInterfaceSymbol =
+            compilation.GetTypeByMetadataName(CompensatableInterfaceFullName);
         INamedTypeSymbol? reducerBaseSymbol = compilation.GetTypeByMetadataName(EventReducerBaseFullName);
-        if (sagaAttrSymbol is null || sagaStateSymbol is null || sagaStepAttrSymbol is null ||
-            sagaStepInterfaceSymbol is null || reducerBaseSymbol is null)
+        if ((sagaAttrSymbol is null && sagaAttrGenericSymbol is null) ||
+            sagaStateSymbol is null ||
+            sagaStepAttrSymbol is null ||
+            sagaStepInterfaceSymbol is null ||
+            reducerBaseSymbol is null)
         {
             return sagas;
         }
 
         List<INamedTypeSymbol> allTypes = GetAllTypes(compilation).ToList();
         Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap = new(SymbolEqualityComparer.Default);
-
         foreach (INamedTypeSymbol typeSymbol in allTypes)
         {
             SagaRegistrationInfo? info = TryGetSagaInfo(
                 typeSymbol,
                 sagaAttrSymbol,
+                sagaAttrGenericSymbol,
                 sagaStateSymbol,
                 targetRootNamespace);
             if (info is not null)
@@ -194,67 +203,99 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
         foreach (SagaRegistrationInfo saga in sagaMap.Values)
         {
-            saga.Steps.Sort((a, b) => a.StepIndex.CompareTo(b.StepIndex));
+            saga.Steps.Sort((
+                a,
+                b
+            ) => a.StepIndex.CompareTo(b.StepIndex));
             sagas.Add(saga);
         }
 
         return sagas;
     }
 
-    private static IEnumerable<INamedTypeSymbol> GetAllTypes(
-        Compilation compilation
+    private static bool MatchesSagaAttribute(
+        AttributeData attr,
+        INamedTypeSymbol? sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrGenericSymbol
     )
     {
-        foreach (IAssemblySymbol assembly in GetReferencedAssemblies(compilation))
+        if (attr.AttributeClass is null)
         {
-            foreach (INamespaceSymbol namespaceSymbol in GetAllNamespaces(assembly.GlobalNamespace))
+            return false;
+        }
+
+        if (sagaAttrSymbol is not null && SymbolEqualityComparer.Default.Equals(attr.AttributeClass, sagaAttrSymbol))
+        {
+            return true;
+        }
+
+        return sagaAttrGenericSymbol is not null &&
+               SymbolEqualityComparer.Default.Equals(attr.AttributeClass.OriginalDefinition, sagaAttrGenericSymbol);
+    }
+
+    private static bool TryGetInputType(
+        AttributeData attr,
+        out INamedTypeSymbol? inputTypeSymbol
+    )
+    {
+        inputTypeSymbol = null;
+        if (attr.AttributeClass is not null && attr.AttributeClass.IsGenericType)
+        {
+            inputTypeSymbol = attr.AttributeClass.TypeArguments.FirstOrDefault() as INamedTypeSymbol;
+        }
+
+        if (inputTypeSymbol is not null)
+        {
+            return true;
+        }
+
+        inputTypeSymbol =
+            attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value.Value as INamedTypeSymbol;
+        return inputTypeSymbol is not null;
+    }
+
+    private static ReducerInfo? TryGetReducerInfo(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol reducerBaseSymbol
+    )
+    {
+        INamedTypeSymbol? current = typeSymbol;
+        while (current is not null)
+        {
+            if (current.IsGenericType &&
+                SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, reducerBaseSymbol))
             {
-                foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+                INamedTypeSymbol? sagaState = current.TypeArguments[1] as INamedTypeSymbol;
+                INamedTypeSymbol? eventType = current.TypeArguments[0] as INamedTypeSymbol;
+                if (sagaState is null || eventType is null)
                 {
-                    yield return typeSymbol;
+                    return null;
                 }
-            }
-        }
-    }
 
-    private static IEnumerable<INamespaceSymbol> GetAllNamespaces(
-        INamespaceSymbol namespaceSymbol
-    )
-    {
-        yield return namespaceSymbol;
-        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
-        {
-            foreach (INamespaceSymbol descendant in GetAllNamespaces(child))
-            {
-                yield return descendant;
+                return new(sagaState, typeSymbol, eventType);
             }
-        }
-    }
 
-    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
-        Compilation compilation
-    )
-    {
-        yield return compilation.Assembly;
-
-        foreach (MetadataReference reference in compilation.References)
-        {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
+            current = current.BaseType;
         }
+
+        return null;
     }
 
     private static SagaRegistrationInfo? TryGetSagaInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrSymbol,
+        INamedTypeSymbol? sagaAttrGenericSymbol,
         INamedTypeSymbol sagaStateSymbol,
         string targetRootNamespace
     )
     {
+        if (sagaAttrSymbol is null && sagaAttrGenericSymbol is null)
+        {
+            return null;
+        }
+
         AttributeData? attr = typeSymbol.GetAttributes()
-            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, sagaAttrSymbol));
+            .FirstOrDefault(a => MatchesSagaAttribute(a, sagaAttrSymbol, sagaAttrGenericSymbol));
         if (attr is null)
         {
             return null;
@@ -265,16 +306,16 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             return null;
         }
 
-        ITypeSymbol? inputType = attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value.Value as ITypeSymbol;
-        if (inputType is not INamedTypeSymbol inputTypeSymbol)
+        if (!TryGetInputType(attr, out INamedTypeSymbol? inputTypeSymbol) || inputTypeSymbol is null)
         {
             return null;
         }
 
+        INamedTypeSymbol inputType = inputTypeSymbol;
         string outputNamespace = NamingConventions.GetSiloRegistrationNamespace(
             typeSymbol.ContainingNamespace.ToDisplayString(),
             targetRootNamespace);
-        return new SagaRegistrationInfo(typeSymbol, inputTypeSymbol, outputNamespace);
+        return new(typeSymbol, inputType, outputNamespace);
     }
 
     private static StepInfo? TryGetStepInfo(
@@ -291,10 +332,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             return null;
         }
 
-        int stepIndex = (attr.ConstructorArguments.Length > 0)
-            ? (int)attr.ConstructorArguments[0].Value!
-            : 0;
-
+        int stepIndex = attr.ConstructorArguments.Length > 0 ? (int)attr.ConstructorArguments[0].Value! : 0;
         INamedTypeSymbol? sagaStateSymbol = null;
         if (attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Saga").Value.Value is INamedTypeSymbol sagaType)
         {
@@ -321,33 +359,76 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, compensatableInterfaceSymbol));
         }
 
-        return new StepInfo(sagaStateSymbol, typeSymbol, stepIndex, hasCompensation);
+        return new(sagaStateSymbol, typeSymbol, stepIndex, hasCompensation);
     }
 
-    private static ReducerInfo? TryGetReducerInfo(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol reducerBaseSymbol
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
     )
     {
-        INamedTypeSymbol? current = typeSymbol;
-        while (current is not null)
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> source =
+            context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<SagaRegistrationInfo>> sagasProvider = source.Select((
+            pair,
+            _
+        ) =>
         {
-            if (current.IsGenericType && SymbolEqualityComparer.Default.Equals(current.OriginalDefinition, reducerBaseSymbol))
+            string? rootNamespace = pair.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNs)
+                ? rootNs
+                : null;
+            string? assemblyName = pair.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? asmName)
+                ? asmName
+                : null;
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                pair.Compilation);
+            return GetSagasFromCompilation(pair.Compilation, targetRootNamespace);
+        });
+        context.RegisterSourceOutput(
+            sagasProvider,
+            (
+                spc,
+                sagas
+            ) =>
             {
-                INamedTypeSymbol? sagaState = current.TypeArguments[1] as INamedTypeSymbol;
-                INamedTypeSymbol? eventType = current.TypeArguments[0] as INamedTypeSymbol;
-                if (sagaState is null || eventType is null)
+                foreach (SagaRegistrationInfo saga in sagas)
                 {
-                    return null;
+                    string sourceText = GenerateRegistration(saga);
+                    spc.AddSource($"{saga.SagaName}SagaRegistrations.g.cs", SourceText.From(sourceText, Encoding.UTF8));
                 }
+            });
+    }
 
-                return new ReducerInfo(sagaState, typeSymbol, eventType);
-            }
-
-            current = current.BaseType;
+    private sealed class ReducerInfo
+    {
+        public ReducerInfo(
+            INamedTypeSymbol sagaStateSymbol,
+            INamedTypeSymbol reducerType,
+            INamedTypeSymbol eventType
+        )
+        {
+            SagaStateSymbol = sagaStateSymbol;
+            ReducerType = reducerType;
+            EventType = eventType;
+            ReducerTypeName = reducerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            EventTypeName = eventType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         }
 
-        return null;
+        public INamedTypeSymbol EventType { get; }
+
+        public string EventTypeName { get; }
+
+        public INamedTypeSymbol ReducerType { get; }
+
+        public string ReducerTypeName { get; }
+
+        public INamedTypeSymbol SagaStateSymbol { get; }
     }
 
     private sealed class SagaRegistrationInfo
@@ -423,31 +504,5 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         public INamedTypeSymbol StepType { get; }
 
         public string StepTypeName { get; }
-    }
-
-    private sealed class ReducerInfo
-    {
-        public ReducerInfo(
-            INamedTypeSymbol sagaStateSymbol,
-            INamedTypeSymbol reducerType,
-            INamedTypeSymbol eventType
-        )
-        {
-            SagaStateSymbol = sagaStateSymbol;
-            ReducerType = reducerType;
-            EventType = eventType;
-            ReducerTypeName = reducerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            EventTypeName = eventType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        }
-
-        public INamedTypeSymbol EventType { get; }
-
-        public string EventTypeName { get; }
-
-        public INamedTypeSymbol ReducerType { get; }
-
-        public string ReducerTypeName { get; }
-
-        public INamedTypeSymbol SagaStateSymbol { get; }
     }
 }

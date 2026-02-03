@@ -14,6 +14,8 @@ using Spring.Client.Features.BankAccountBalance.Selectors;
 using Spring.Client.Features.BankAccountLedger.Dtos;
 using Spring.Client.Features.EntitySelection;
 using Spring.Client.Features.EntitySelection.Selectors;
+using Spring.Client.Features.MoneyTransferSaga.Actions;
+using Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
 namespace Spring.Client.Pages;
@@ -56,6 +58,14 @@ public sealed partial class Index
     private bool statusJustChanged;
 
     private string? subscribedEntityId;
+
+    private string? subscribedTransferSagaId;
+
+    private decimal transferAmount;
+
+    private string transferDestinationAccountId = string.Empty;
+
+    private string? transferSagaId;
 
     private decimal withdrawAmount;
 
@@ -168,6 +178,12 @@ public sealed partial class Index
     /// </remarks>
     private string? SelectedEntityId => Select<EntitySelectionState, string?>(EntitySelectionSelectors.GetEntityId);
 
+    /// <summary>
+    ///     Gets the transfer saga status projection for the last started transfer.
+    /// </summary>
+    private MoneyTransferStatusProjectionDto? TransferStatusProjection =>
+        string.IsNullOrEmpty(transferSagaId) ? null : GetProjection<MoneyTransferStatusProjectionDto>(transferSagaId);
+
     private static string FormatTimestamp(
         DateTimeOffset? timestamp
     ) =>
@@ -184,6 +200,11 @@ public sealed partial class Index
             UnsubscribeFromProjection<BankAccountLedgerProjectionDto>(subscribedEntityId);
         }
 
+        if (disposing && !string.IsNullOrEmpty(subscribedTransferSagaId))
+        {
+            UnsubscribeFromProjection<MoneyTransferStatusProjectionDto>(subscribedTransferSagaId);
+        }
+
         base.Dispose(disposing);
     }
 
@@ -194,6 +215,7 @@ public sealed partial class Index
     {
         base.OnAfterRender(firstRender);
         ManageProjectionSubscription();
+        ManageTransferStatusSubscription();
         DetectProjectionChanges();
     }
 
@@ -302,6 +324,25 @@ public sealed partial class Index
         }
     }
 
+    private void ManageTransferStatusSubscription()
+    {
+        string? currentSagaId = transferSagaId;
+        if (currentSagaId != subscribedTransferSagaId)
+        {
+            if (!string.IsNullOrEmpty(subscribedTransferSagaId))
+            {
+                UnsubscribeFromProjection<MoneyTransferStatusProjectionDto>(subscribedTransferSagaId);
+            }
+
+            if (!string.IsNullOrEmpty(currentSagaId))
+            {
+                SubscribeToProjection<MoneyTransferStatusProjectionDto>(currentSagaId);
+            }
+
+            subscribedTransferSagaId = currentSagaId;
+        }
+    }
+
     private void NavigateToInvestigations() => Dispatch(new NavigateAction("/investigations"));
 
     private void OpenAccount() => Dispatch(new OpenAccountAction(SelectedEntityId!, holderName, initialDeposit));
@@ -309,6 +350,24 @@ public sealed partial class Index
     private void RequestReconnect() => Dispatch(new RequestSignalRConnectionAction());
 
     private void SetEntityId() => Dispatch(new SetEntityIdAction(accountIdInput));
+
+    private void StartTransfer()
+    {
+        if (string.IsNullOrWhiteSpace(SelectedEntityId))
+        {
+            return;
+        }
+
+        Guid sagaId = Guid.NewGuid();
+        transferSagaId = sagaId.ToString();
+        Dispatch(
+            new StartMoneyTransferSagaAction(
+                sagaId,
+                transferAmount,
+                transferDestinationAccountId,
+                SelectedEntityId,
+                null));
+    }
 
     private void ToggleConnectionModal() => isConnectionModalOpen = !isConnectionModalOpen;
 

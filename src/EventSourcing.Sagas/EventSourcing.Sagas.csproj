@@ -4,4 +4,8 @@
 		<ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
 		<ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="SagaInfrastructureReducers.cs" />
+	</ItemGroup>
 </Project>

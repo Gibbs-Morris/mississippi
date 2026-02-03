@@ -40,7 +40,10 @@
 	- Directory.Build.props LangVersion 14.0
 6. Generated API surface should mirror existing manual saga DTOs/mappers/reducers in samples. Evidence will
 	require comparing generated output to existing Spring DTOs/mappers/reducers once design is finalized.
-7. UNVERIFIED: compilation with generated saga DTOs/mappers/reducers will be verified after implementation.
+7. UNVERIFIED for full sample apps; generator L0 tests pass for server/client/silo:
+	- test-project-quality.ps1 -TestProject Inlet.Server.Generators.L0Tests -SkipMutation
+	- test-project-quality.ps1 -TestProject Inlet.Client.Generators.L0Tests -SkipMutation
+	- test-project-quality.ps1 -TestProject Inlet.Silo.Generators.L0Tests -SkipMutation
 8. Potential public API changes depend on introducing a generic attribute (new public type) or removing existing
 	manual DTOs/mappers in samples. Impact to be assessed after design.
 9. Generator test conventions exist in L0 tests for projection generators:

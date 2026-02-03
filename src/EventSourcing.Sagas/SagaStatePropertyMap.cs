@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+
 namespace Mississippi.EventSourcing.Sagas;
 
 /// <summary>
@@ -10,9 +11,9 @@ namespace Mississippi.EventSourcing.Sagas;
 /// </summary>
 internal sealed class SagaStatePropertyMap
 {
-    private readonly PropertyInfo[] settableProperties;
-
     private readonly Dictionary<string, PropertyInfo> propertyLookup;
+
+    private readonly PropertyInfo[] settableProperties;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SagaStatePropertyMap" /> class.
@@ -68,5 +69,45 @@ internal sealed class SagaStatePropertyMap
         }
 
         property.SetValue(target, value);
+    }
+
+    /// <summary>
+    ///     Attempts to set a property value on the target saga instance.
+    /// </summary>
+    /// <param name="target">The target saga state instance.</param>
+    /// <param name="propertyName">The property name.</param>
+    /// <param name="value">The property value.</param>
+    /// <returns><c>true</c> when the property is set; otherwise <c>false</c>.</returns>
+    public bool TrySetProperty(
+        object target,
+        string propertyName,
+        object? value
+    )
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+        if (!propertyLookup.TryGetValue(propertyName, out PropertyInfo? property))
+        {
+            return false;
+        }
+
+        if (value is null)
+        {
+            if (property.PropertyType.IsValueType && Nullable.GetUnderlyingType(property.PropertyType) is null)
+            {
+                return false;
+            }
+
+            property.SetValue(target, null);
+            return true;
+        }
+
+        if (!property.PropertyType.IsInstanceOfType(value))
+        {
+            return false;
+        }
+
+        property.SetValue(target, value);
+        return true;
     }
 }

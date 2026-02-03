@@ -3,6 +3,7 @@ using System;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
+
 namespace Mississippi.EventSourcing.Sagas;
 
 /// <summary>
@@ -19,7 +20,11 @@ public sealed class SagaCompletedReducer<TSaga> : EventReducerBase<SagaCompleted
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return SagaStateMutator.CreateUpdated(state, (map, instance) =>
-            map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Completed));
+        return SagaStateMutator.CreateUpdated(
+            state,
+            (
+                map,
+                instance
+            ) => map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Completed));
     }
 }

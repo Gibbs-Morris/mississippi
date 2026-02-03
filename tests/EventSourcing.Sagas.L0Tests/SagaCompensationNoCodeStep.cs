@@ -18,11 +18,12 @@ internal sealed class SagaCompensationNoCodeStep
         TestSagaState state,
         CancellationToken cancellationToken
     ) =>
-        Task.FromResult(new CompensationResult
-        {
-            ErrorMessage = "nope",
-            Success = false,
-        });
+        Task.FromResult(
+            new CompensationResult
+            {
+                ErrorMessage = "nope",
+                Success = false,
+            });
 
     /// <inheritdoc />
     public Task<StepResult> ExecuteAsync(

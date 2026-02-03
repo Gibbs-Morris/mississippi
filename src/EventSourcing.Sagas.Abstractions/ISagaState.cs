@@ -1,5 +1,6 @@
 using System;
 
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>
@@ -8,14 +9,9 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions;
 public interface ISagaState
 {
     /// <summary>
-    ///     Gets the unique identifier for the saga instance.
+    ///     Gets the correlation identifier for the saga instance.
     /// </summary>
-    Guid SagaId { get; }
-
-    /// <summary>
-    ///     Gets the current saga phase.
-    /// </summary>
-    SagaPhase Phase { get; }
+    string? CorrelationId { get; }
 
     /// <summary>
     ///     Gets the index of the last completed step.
@@ -23,9 +19,14 @@ public interface ISagaState
     int LastCompletedStepIndex { get; }
 
     /// <summary>
-    ///     Gets the correlation identifier for the saga instance.
+    ///     Gets the current saga phase.
     /// </summary>
-    string? CorrelationId { get; }
+    SagaPhase Phase { get; }
+
+    /// <summary>
+    ///     Gets the unique identifier for the saga instance.
+    /// </summary>
+    Guid SagaId { get; }
 
     /// <summary>
     ///     Gets the timestamp when the saga started.

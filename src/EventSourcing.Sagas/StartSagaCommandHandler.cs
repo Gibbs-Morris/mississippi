@@ -6,6 +6,7 @@ using System.Text;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
+
 namespace Mississippi.EventSourcing.Sagas;
 
 /// <summary>
@@ -36,38 +37,6 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
 
     private TimeProvider TimeProvider { get; }
 
-    /// <inheritdoc />
-    protected override OperationResult<IReadOnlyList<object>> HandleCore(
-        StartSagaCommand<TInput> command,
-        TSaga? state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        if (state is not null && state.Phase != SagaPhase.NotStarted)
-        {
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidState,
-                $"Saga '{typeof(TSaga).Name}' has already started.");
-        }
-
-        if (StepInfoProvider.Steps.Count == 0)
-        {
-            return OperationResult.Fail<IReadOnlyList<object>>(
-                AggregateErrorCodes.InvalidState,
-                $"Saga '{typeof(TSaga).Name}' has no registered steps.");
-        }
-
-        SagaStartedEvent started = new()
-        {
-            SagaId = command.SagaId,
-            StepHash = ComputeStepHash(StepInfoProvider.Steps),
-            StartedAt = TimeProvider.GetUtcNow(),
-            CorrelationId = command.CorrelationId,
-        };
-
-        return OperationResult.Ok<IReadOnlyList<object>>([started]);
-    }
-
     private static string ComputeStepHash(
         IReadOnlyList<SagaStepInfo> steps
     )
@@ -94,5 +63,41 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
 
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
         return Convert.ToHexString(bytes);
+    }
+
+    /// <inheritdoc />
+    protected override OperationResult<IReadOnlyList<object>> HandleCore(
+        StartSagaCommand<TInput> command,
+        TSaga? state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        if (state is not null && (state.Phase != SagaPhase.NotStarted))
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                $"Saga '{typeof(TSaga).Name}' has already started.");
+        }
+
+        if (StepInfoProvider.Steps.Count == 0)
+        {
+            return OperationResult.Fail<IReadOnlyList<object>>(
+                AggregateErrorCodes.InvalidState,
+                $"Saga '{typeof(TSaga).Name}' has no registered steps.");
+        }
+
+        SagaStartedEvent started = new()
+        {
+            SagaId = command.SagaId,
+            StepHash = ComputeStepHash(StepInfoProvider.Steps),
+            StartedAt = TimeProvider.GetUtcNow(),
+            CorrelationId = command.CorrelationId,
+        };
+        SagaInputProvided<TInput> inputProvided = new()
+        {
+            SagaId = command.SagaId,
+            Input = command.Input,
+        };
+        return OperationResult.Ok<IReadOnlyList<object>>([started, inputProvided]);
     }
 }

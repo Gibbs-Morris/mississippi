@@ -4,6 +4,7 @@ using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>
@@ -15,6 +16,12 @@ namespace Mississippi.EventSourcing.Sagas.Abstractions;
 public sealed record SagaStepCompleted
 {
     /// <summary>
+    ///     Gets the timestamp when the step completed.
+    /// </summary>
+    [Id(2)]
+    public required DateTimeOffset CompletedAt { get; init; }
+
+    /// <summary>
     ///     Gets the step index that completed.
     /// </summary>
     [Id(0)]
@@ -25,10 +32,4 @@ public sealed record SagaStepCompleted
     /// </summary>
     [Id(1)]
     public required string StepName { get; init; }
-
-    /// <summary>
-    ///     Gets the timestamp when the step completed.
-    /// </summary>
-    [Id(2)]
-    public required DateTimeOffset CompletedAt { get; init; }
 }

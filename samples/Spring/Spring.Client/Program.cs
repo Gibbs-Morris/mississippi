@@ -13,6 +13,7 @@ using Spring.Client.Features;
 using Spring.Client.Features.BankAccountAggregate;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 using Spring.Client.Features.EntitySelection;
+using Spring.Client.Features.MoneyTransferSaga;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -30,6 +31,7 @@ builder.Services.AddScoped(_ => new HttpClient
 // Register features (one line per feature - scales cleanly)
 // Write side: aggregate commands
 builder.Services.AddBankAccountAggregateFeature();
+builder.Services.AddMoneyTransferSagaFeature();
 
 // Navigation/UI: entity selection
 builder.Services.AddEntitySelectionFeature();

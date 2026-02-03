@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Emit;
 
+
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
@@ -16,25 +17,6 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientMappersGenerator : IIncrementalGenerator
 {
-    /// <inheritdoc />
-    public void Initialize(
-        IncrementalGeneratorInitializationContext context
-    )
-    {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
-            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
-            compilationAndOptions.Select((source, _) =>
-                SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
-        context.RegisterSourceOutput(sagasProvider, static (spc, sagas) =>
-        {
-            foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
-            {
-                GenerateMapper(spc, saga);
-            }
-        });
-    }
-
     private static void GenerateMapper(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
@@ -61,7 +43,6 @@ public sealed class SagaClientMappersGenerator : IIncrementalGenerator
         sb.AppendLine("/// <inheritdoc />");
         sb.AppendLine($"public {dtoName} Map({actionName} input) =>");
         sb.IncreaseIndent();
-
         string dtoArgs = string.Join(", ", saga.InputProperties.Select(p => $"input.{p.Name}"));
         if (!string.IsNullOrEmpty(dtoArgs))
         {
@@ -73,5 +54,31 @@ public sealed class SagaClientMappersGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.CloseBrace();
         context.AddSource($"{mapperName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) => SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
+        context.RegisterSourceOutput(
+            sagasProvider,
+            static (
+                spc,
+                sagas
+            ) =>
+            {
+                foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
+                {
+                    GenerateMapper(spc, saga);
+                }
+            });
     }
 }

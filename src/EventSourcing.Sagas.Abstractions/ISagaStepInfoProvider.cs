@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>
@@ -19,5 +20,8 @@ public interface ISagaStepInfoProvider<TSaga>
     /// </summary>
     /// <param name="state">The saga state instance or null when starting.</param>
     /// <returns><c>true</c> if the provider applies to the supplied state.</returns>
-    bool AppliesTo(TSaga? state) => true;
+    bool AppliesTo(
+        TSaga? state
+    ) =>
+        true;
 }

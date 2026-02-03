@@ -1,13 +1,13 @@
 # Learned
 
 ## Verified
-- `SagaPhaseDto` exists in Spring server and client samples:
+- `SagaPhaseDto` and `SagaPhaseDtoMapper` are now generated via projection generators; manual sample files were retired:
 	- samples/Spring/Spring.Server/Controllers/Projections/SagaPhaseDto.cs
-	- samples/Spring/Spring.Client/Features/MoneyTransferStatus/Dtos/SagaPhaseDto.cs
-- `SagaPhaseDtoMapper` exists in Spring server sample:
 	- samples/Spring/Spring.Server/Controllers/Projections/Mappers/SagaPhaseDtoMapper.cs
-- Saga status reducers in Spring projection are hand-authored and map saga lifecycle events to projection state:
-	- samples/Spring/Spring.Domain/Projections/MoneyTransferStatus/Reducers/Saga*StatusReducer.cs
+	- samples/Spring/Spring.Client/Features/MoneyTransferStatus/Dtos/SagaPhaseDto.cs
+- Saga status reducers are now generated for projections marked with `GenerateSagaStatusReducersAttribute`:
+	- src/Inlet.Silo.Generators/SagaStatusReducersGenerator.cs
+	- src/Inlet.Generators.Abstractions/GenerateSagaStatusReducersAttribute.cs
 - Aggregate/projection generator patterns for DTOs/mappers/registrations exist in Inlet generators:
 	- Server: src/Inlet.Server.Generators/ProjectionEndpointsGenerator.cs (DTO, mapper, registrations, controller)
 	- Client: src/Inlet.Client.Generators/ProjectionClientDtoGenerator.cs (DTO generation)
@@ -16,6 +16,8 @@
 	- tests/Inlet.Server.Generators.L0Tests/ProjectionEndpointsGeneratorTests.cs
 	- tests/Inlet.Client.Generators.L0Tests/ProjectionClientDtoGeneratorTests.cs
 	- tests/Inlet.Silo.Generators.L0Tests/ProjectionSiloRegistrationGeneratorTests.cs
+- Saga status reducer generator tests live in:
+	- tests/Inlet.Silo.Generators.L0Tests/SagaStatusReducersGeneratorTests.cs
 - `GenerateSagaEndpointsAttribute` is currently non-generic and uses properties for input type, feature key, and route prefix:
 	- src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs
 - Generic attributes are supported in C# 11+ and the repo compiles with LangVersion 14.0:

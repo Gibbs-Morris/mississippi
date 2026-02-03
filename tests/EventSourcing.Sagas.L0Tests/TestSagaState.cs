@@ -2,6 +2,7 @@ using System;
 
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
+
 namespace Mississippi.EventSourcing.Sagas.L0Tests;
 
 /// <summary>
@@ -10,14 +11,9 @@ namespace Mississippi.EventSourcing.Sagas.L0Tests;
 internal sealed record TestSagaState : ISagaState
 {
     /// <summary>
-    ///     Gets the saga identifier.
+    ///     Gets the correlation identifier.
     /// </summary>
-    public Guid SagaId { get; init; }
-
-    /// <summary>
-    ///     Gets the saga phase.
-    /// </summary>
-    public SagaPhase Phase { get; init; }
+    public string? CorrelationId { get; init; }
 
     /// <summary>
     ///     Gets the index of the last completed step.
@@ -25,9 +21,19 @@ internal sealed record TestSagaState : ISagaState
     public int LastCompletedStepIndex { get; init; } = -1;
 
     /// <summary>
-    ///     Gets the correlation identifier.
+    ///     Gets the test name for verification.
     /// </summary>
-    public string? CorrelationId { get; init; }
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     Gets the saga phase.
+    /// </summary>
+    public SagaPhase Phase { get; init; }
+
+    /// <summary>
+    ///     Gets the saga identifier.
+    /// </summary>
+    public Guid SagaId { get; init; }
 
     /// <summary>
     ///     Gets the timestamp when the saga started.
@@ -38,9 +44,4 @@ internal sealed record TestSagaState : ISagaState
     ///     Gets the step hash.
     /// </summary>
     public string? StepHash { get; init; }
-
-    /// <summary>
-    ///     Gets the test name for verification.
-    /// </summary>
-    public string Name { get; init; } = string.Empty;
 }

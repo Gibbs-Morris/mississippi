@@ -1,5 +1,6 @@
 using System;
 
+
 namespace Mississippi.Inlet.Generators.Abstractions;
 
 /// <summary>
@@ -15,11 +16,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 public sealed class GenerateSagaEndpointsAttribute : Attribute
 {
     /// <summary>
-    ///     Gets or sets the saga input payload type.
-    /// </summary>
-    public Type? InputType { get; set; }
-
-    /// <summary>
     ///     Gets or sets the feature key for client-side state management.
     /// </summary>
     /// <remarks>
@@ -28,6 +24,11 @@ public sealed class GenerateSagaEndpointsAttribute : Attribute
     ///     </para>
     /// </remarks>
     public string? FeatureKey { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the saga input payload type.
+    /// </summary>
+    public Type? InputType { get; set; }
 
     /// <summary>
     ///     Gets or sets the route prefix for saga endpoints.

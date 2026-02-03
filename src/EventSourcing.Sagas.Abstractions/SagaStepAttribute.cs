@@ -1,5 +1,6 @@
 using System;
 
+
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
 /// <summary>
@@ -12,10 +13,10 @@ public sealed class SagaStepAttribute : Attribute
     ///     Initializes a new instance of the <see cref="SagaStepAttribute" /> class.
     /// </summary>
     /// <param name="order">The zero-based step order.</param>
-    public SagaStepAttribute(int order)
-    {
+    public SagaStepAttribute(
+        int order
+    ) =>
         Order = order;
-    }
 
     /// <summary>
     ///     Gets the zero-based step order.

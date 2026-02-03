@@ -7,6 +7,7 @@ using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
+
 namespace Mississippi.EventSourcing.Sagas;
 
 /// <summary>
@@ -29,6 +30,7 @@ public static class SagaRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.AddAggregateSupport();
         services.AddEventType<SagaStartedEvent>();
+        services.AddEventType<SagaInputProvided<TInput>>();
         services.AddEventType<SagaStepCompleted>();
         services.AddEventType<SagaStepFailed>();
         services.AddEventType<SagaCompensating>();
@@ -38,6 +40,7 @@ public static class SagaRegistrations
         services.AddEventType<SagaFailed>();
         services.AddCommandHandler<StartSagaCommand<TInput>, TSaga, StartSagaCommandHandler<TSaga, TInput>>();
         services.AddReducer<SagaStartedEvent, TSaga, SagaStartedReducer<TSaga>>();
+        services.AddReducer<SagaInputProvided<TInput>, TSaga, SagaInputProvidedReducer<TSaga, TInput>>();
         services.AddReducer<SagaStepCompleted, TSaga, SagaStepCompletedReducer<TSaga>>();
         services.AddReducer<SagaCompensating, TSaga, SagaCompensatingReducer<TSaga>>();
         services.AddReducer<SagaCompleted, TSaga, SagaCompletedReducer<TSaga>>();

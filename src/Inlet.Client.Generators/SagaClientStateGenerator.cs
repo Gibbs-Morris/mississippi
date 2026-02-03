@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Emit;
 
+
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
@@ -15,25 +16,6 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientStateGenerator : IIncrementalGenerator
 {
-    /// <inheritdoc />
-    public void Initialize(
-        IncrementalGeneratorInitializationContext context
-    )
-    {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
-            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
-            compilationAndOptions.Select((source, _) =>
-                SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
-        context.RegisterSourceOutput(sagasProvider, static (spc, sagas) =>
-        {
-            foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
-            {
-                GenerateState(spc, saga);
-            }
-        });
-    }
-
     private static void GenerateState(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
@@ -59,5 +41,31 @@ public sealed class SagaClientStateGenerator : IIncrementalGenerator
         sb.AppendLine($"public static string FeatureKey => \"{saga.FeatureKey}\";");
         sb.CloseBrace();
         context.AddSource($"{stateTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) => SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
+        context.RegisterSourceOutput(
+            sagasProvider,
+            static (
+                spc,
+                sagas
+            ) =>
+            {
+                foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
+                {
+                    GenerateState(spc, saga);
+                }
+            });
     }
 }

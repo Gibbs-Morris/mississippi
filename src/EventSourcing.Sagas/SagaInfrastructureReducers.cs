@@ -1,1 +1,9 @@
-// Intentionally left blank. Saga infrastructure reducers live in dedicated files.
+namespace Mississippi.EventSourcing.Sagas;
+
+/// <summary>
+///     Marker type for saga infrastructure reducers.
+/// </summary>
+internal static class SagaInfrastructureReducers
+{
+}
+

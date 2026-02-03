@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Emit;
 
+
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
@@ -15,25 +16,6 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientReducersGenerator : IIncrementalGenerator
 {
-    /// <inheritdoc />
-    public void Initialize(
-        IncrementalGeneratorInitializationContext context
-    )
-    {
-        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
-            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
-            compilationAndOptions.Select((source, _) =>
-                SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
-        context.RegisterSourceOutput(sagasProvider, static (spc, sagas) =>
-        {
-            foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
-            {
-                GenerateReducers(spc, saga);
-            }
-        });
-    }
-
     private static void GenerateReducers(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
@@ -55,17 +37,14 @@ public sealed class SagaClientReducersGenerator : IIncrementalGenerator
         sb.AppendLine("///     <para>");
         sb.AppendLine(
             "///         Each saga start request has lifecycle reducers (Executing, Failed, Succeeded) that delegate");
-        sb.AppendLine(
-            "///         to <see cref=\"AggregateCommandStateReducers\" /> for standard tracking logic.");
+        sb.AppendLine("///         to <see cref=\"AggregateCommandStateReducers\" /> for standard tracking logic.");
         sb.AppendLine("///     </para>");
         sb.AppendLine("/// </remarks>");
         sb.AppendGeneratedCodeAttribute("SagaClientReducersGenerator");
         sb.AppendLine($"internal static class {reducersTypeName}");
         sb.OpenBrace();
-
         sb.AppendLine($"// {actionPrefix} reducers");
         sb.AppendLine();
-
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Updates state when {actionPrefix} starts executing.");
         sb.AppendLine("/// </summary>");
@@ -82,7 +61,6 @@ public sealed class SagaClientReducersGenerator : IIncrementalGenerator
         sb.AppendLine("AggregateCommandStateReducers.ReduceCommandExecuting(state, action);");
         sb.DecreaseIndent();
         sb.AppendLine();
-
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Updates state when {actionPrefix} fails.");
         sb.AppendLine("/// </summary>");
@@ -99,7 +77,6 @@ public sealed class SagaClientReducersGenerator : IIncrementalGenerator
         sb.AppendLine("AggregateCommandStateReducers.ReduceCommandFailed(state, action);");
         sb.DecreaseIndent();
         sb.AppendLine();
-
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Updates state when {actionPrefix} succeeds.");
         sb.AppendLine("/// </summary>");
@@ -115,8 +92,33 @@ public sealed class SagaClientReducersGenerator : IIncrementalGenerator
         sb.IncreaseIndent();
         sb.AppendLine("AggregateCommandStateReducers.ReduceCommandSucceeded(state, action);");
         sb.DecreaseIndent();
-
         sb.CloseBrace();
         context.AddSource($"{reducersTypeName}.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
+    }
+
+    /// <inheritdoc />
+    public void Initialize(
+        IncrementalGeneratorInitializationContext context
+    )
+    {
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<SagaClientGeneratorHelper.SagaClientInfo>> sagasProvider =
+            compilationAndOptions.Select((
+                source,
+                _
+            ) => SagaClientGeneratorHelper.GetSagasFromCompilation(source.Compilation, source.Options));
+        context.RegisterSourceOutput(
+            sagasProvider,
+            static (
+                spc,
+                sagas
+            ) =>
+            {
+                foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
+                {
+                    GenerateReducers(spc, saga);
+                }
+            });
     }
 }
