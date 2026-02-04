@@ -1,8 +1,8 @@
 ---
-id: event-sourcing-sagas-public-apis
+id: public-apis
 title: Saga Public APIs
-sidebar_label: Saga APIs
-sidebar_position: 5
+sidebar_label: Public APIs
+sidebar_position: 2
 description: Public contracts, events, and registrations used by Mississippi saga orchestration.
 ---
 
@@ -132,8 +132,8 @@ It registers:
 
 ## Next Steps
 
-- [Event Sourcing Sagas](./event-sourcing-sagas.md)
-- [Documentation Guide](./contributing/documentation-guide.md)
+- [Event Sourcing Sagas](./sagas.md) - Return to the sagas overview.
+- [Brooks](../brooks/brooks.md) - Understand the event stream abstraction.
 
 <!-- Reference-style links -->
 [isagastate]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs
@@ -148,5 +148,5 @@ It registers:
 [sagastepinforegistrations]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfoRegistrations.cs
 [sagaregistrations]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas/SagaRegistrations.cs
 [generatesagaendpoints]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs
-[generatesagaendpoints-generic]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute%7BTInput%7D.cs
+[generatesagaendpoints-generic]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs
 [generatesagastatusreducers]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaStatusReducersAttribute.cs
