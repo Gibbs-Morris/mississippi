@@ -127,7 +127,7 @@ Call AddFeatureState<EntitySelectionState>() during service registration.
 When the store is created, it collects all `IFeatureStateRegistration` instances from DI:
 
 ```mermaid
-flowchart TB
+flowchart LR
     A[Service Collection] -->|Resolve| B[IFeatureStateRegistration instances]
     B --> C[Store Constructor]
     C --> D[Initialize featureStates dictionary]

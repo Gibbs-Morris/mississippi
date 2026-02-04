@@ -26,7 +26,7 @@ StoreComponent bridges Blazor's component model with the Reservoir store:
     ([StoreComponent.cs#L87-L96](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L87-L96), [StoreComponent.cs#L152-L156](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L152-L156))
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph Component Lifecycle
         OI[OnInitialized] --> SUB[Subscribe to Store]
         SUB --> RENDER[Render]

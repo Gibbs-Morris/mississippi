@@ -1,8 +1,8 @@
 ---
-id: event-sourcing-sagas
+id: sagas
 title: Event Sourcing Sagas
 sidebar_label: Sagas
-sidebar_position: 4
+sidebar_position: 1
 description: Orchestrate long-running workflows with saga steps, compensation, and event-driven state in Mississippi.
 ---
 
@@ -153,14 +153,6 @@ services.AddSagaStepInfo<TransferSagaState>(new[]
 
 ([AddSagaOrchestration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas/SagaRegistrations.cs), [AddSagaStepInfo](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfoRegistrations.cs))
 
-## Summary
+## Learn More
 
-- Saga orchestration executes ordered steps and emits lifecycle events.
-- Steps implement `ISagaStep<TSaga>` and optionally `ICompensatable<TSaga>` for rollback.
-- Use `[GenerateSagaEndpoints]` for automatic registration or `AddSagaOrchestration` for manual control.
-- Both paths produce equivalent runtime behavior.
-
-## Next Steps
-
-- [Saga Public APIs](./event-sourcing-sagas-public-apis.md)
-- [Documentation Guide](./contributing/documentation-guide.md)
+- [Saga Public APIs](./public-apis.md) - Contracts, events, and registration helpers.
