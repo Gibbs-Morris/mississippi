@@ -22,6 +22,7 @@ Governing thought: Every documentation page exists to enable a decision or actio
 - Authors **MUST** link concepts, features, and commands to their descriptions on first mention. Why: Enables bottom-up navigation.
 - Code samples **MUST** be minimal but complete, placed in fenced blocks with language identifiers. Why: Working examples accelerate understanding.
 - Diagrams and flowcharts **SHOULD** be used for architecture, processes, and data relationships; all images **MUST** include alt text. Why: Accessibility and comprehension.
+- Mermaid diagrams **MUST** use `flowchart LR` (left-to-right) by default; `flowchart TB` (top-to-bottom) **MUST NOT** be used unless the diagram explicitly represents a vertical hierarchy. Why: Mobile screens display LR diagrams without horizontal scrolling.
 - Authors **MUST** update docs when features, performance characteristics, or components change; authors **MUST NOT** add "last updated" or timestamp fields because Git history is the source of truth. Why: Prevents drift and conflicting metadata.
 
 ## Scope and Audience

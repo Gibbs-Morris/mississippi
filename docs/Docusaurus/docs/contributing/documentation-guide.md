@@ -125,7 +125,8 @@ flowchart LR
 
 ### Mermaid Rules
 
-- Use `flowchart LR` by default for process diagrams.
+- **MUST** use `flowchart LR` (left-to-right) by default. Why: Documentation may be viewed on mobile screens where vertical (TB) diagrams overflow and require horizontal scrolling.
+- **MUST NOT** use `flowchart TB` (top-to-bottom) unless the diagram explicitly represents a vertical hierarchy (e.g., class inheritance, call stacks) where LR would misrepresent the relationship.
 - Keep diagrams small (7 nodes or fewer) unless the doc is explicitly about architecture.
 - Prefer labels that match section terminology.
 - Do NOT embed images for diagrams.
