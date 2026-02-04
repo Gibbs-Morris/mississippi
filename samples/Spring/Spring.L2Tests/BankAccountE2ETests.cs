@@ -11,9 +11,10 @@ namespace Spring.L2Tests;
 public sealed class BankAccountE2ETests
 {
     /// <summary>
-    ///     Timeout for waiting on SignalR projection updates (30 seconds).
+    ///     Timeout for waiting on SignalR projection updates (60 seconds).
+    ///     Extended from 30s to accommodate CI environments with slower container/cluster startup.
     /// </summary>
-    private const float ProjectionTimeout = 30_000;
+    private const float ProjectionTimeout = 60_000;
 
     private readonly SpringFixture fixture;
 

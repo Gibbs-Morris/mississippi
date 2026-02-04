@@ -99,10 +99,7 @@ public sealed class BankAccountIntegrationTests
     {
         // Arrange
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        using HttpClient client = new()
-        {
-            BaseAddress = fixture.ServerBaseUri,
-        };
+        using HttpClient client = fixture.CreateHttpClient();
         string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "John Doe";
         const decimal initialDeposit = 100.00m;
@@ -176,10 +173,7 @@ public sealed class BankAccountIntegrationTests
     {
         // Arrange
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        using HttpClient client = new()
-        {
-            BaseAddress = fixture.ServerBaseUri,
-        };
+        using HttpClient client = fixture.CreateHttpClient();
         string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "Jane Smith";
         const decimal initialDeposit = 500.00m;
