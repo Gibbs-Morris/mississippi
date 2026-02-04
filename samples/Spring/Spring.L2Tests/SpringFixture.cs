@@ -1,8 +1,6 @@
 using System.Net.Http;
 using System.Threading;
 
-using Aspire.Hosting.Testing;
-
 using Projects;
 
 
