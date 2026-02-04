@@ -1,7 +1,3 @@
-using System.Linq;
-
-using AngleSharp.Dom;
-
 using Bunit;
 
 using Microsoft.AspNetCore.Components;
@@ -29,20 +25,5 @@ public sealed class DemoAccountsSectionTests : BunitContext
             .Add(c => c.OnInitialize, EventCallback.Factory.Create(this, () => initialized = true)));
         cut.Find("button").Click();
         Assert.True(initialized);
-    }
-
-    /// <summary>
-    ///     Switch buttons respect selection state.
-    /// </summary>
-    [Fact]
-    public void SwitchButtonsReflectSelectionState()
-    {
-        using IRenderedComponent<DemoAccountsSection> cut = Render<DemoAccountsSection>(p => p
-            .Add(c => c.IsInitialized, true)
-            .Add(c => c.IsSelectedAccountA, true)
-            .Add(c => c.IsSelectedAccountB, false));
-        IElement[] buttons = cut.FindAll("button").ToArray();
-        Assert.True(buttons[1].HasAttribute("disabled"));
-        Assert.False(buttons[2].HasAttribute("disabled"));
     }
 }

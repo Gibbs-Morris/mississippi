@@ -32,23 +32,7 @@ public sealed partial class DemoAccountsSection
     [Parameter]
     public bool IsInitialized { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether account A is selected.</summary>
-    [Parameter]
-    public bool IsSelectedAccountA { get; set; }
-
-    /// <summary>Gets or sets a value indicating whether account B is selected.</summary>
-    [Parameter]
-    public bool IsSelectedAccountB { get; set; }
-
     /// <summary>Gets or sets the initialize callback.</summary>
     [Parameter]
     public EventCallback OnInitialize { get; set; }
-
-    /// <summary>Gets or sets the switch-to-A callback.</summary>
-    [Parameter]
-    public EventCallback OnSwitchToA { get; set; }
-
-    /// <summary>Gets or sets the switch-to-B callback.</summary>
-    [Parameter]
-    public EventCallback OnSwitchToB { get; set; }
 }

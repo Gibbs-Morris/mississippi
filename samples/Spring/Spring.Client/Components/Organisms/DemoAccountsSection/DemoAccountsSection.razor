@@ -13,17 +13,11 @@
                 <span>Account A:</span>
                 <span>@(AccountAName ?? "Account A")</span>
                 <span>@AccountAId</span>
-                <button type="button" @onclick="OnSwitchToA" disabled="@IsSelectedAccountA">
-                    Switch to A
-                </button>
             </div>
             <div>
                 <span>Account B:</span>
                 <span>@(AccountBName ?? "Account B")</span>
                 <span>@AccountBId</span>
-                <button type="button" @onclick="OnSwitchToB" disabled="@IsSelectedAccountB">
-                    Switch to B
-                </button>
             </div>
         </div>
     }

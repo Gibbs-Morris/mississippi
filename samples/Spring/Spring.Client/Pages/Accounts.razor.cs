@@ -9,8 +9,8 @@ using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Selectors;
 using Spring.Client.Features.BankAccountAggregate.State;
 using Spring.Client.Features.DemoAccounts;
-using Spring.Client.Features.EntitySelection;
-using Spring.Client.Features.EntitySelection.Selectors;
+using Spring.Client.Features.DualEntitySelection;
+using Spring.Client.Features.DualEntitySelection.Selectors;
 
 
 namespace Spring.Client.Pages;
@@ -20,9 +20,17 @@ namespace Spring.Client.Pages;
 /// </summary>
 public sealed partial class Accounts
 {
-    private string accountIdInput = string.Empty;
-
     private bool isConnectionModalOpen;
+
+    /// <summary>
+    ///     Gets account A identifier from selection state.
+    /// </summary>
+    private string? AccountAId => Select<DualEntitySelectionState, string?>(DualEntitySelectionSelectors.GetAccountAId);
+
+    /// <summary>
+    ///     Gets account B identifier from selection state.
+    /// </summary>
+    private string? AccountBId => Select<DualEntitySelectionState, string?>(DualEntitySelectionSelectors.GetAccountBId);
 
     /// <summary>
     ///     Gets the current connection identifier.
@@ -75,15 +83,7 @@ public sealed partial class Accounts
     /// </summary>
     private bool IsExecutingOrLoading =>
         Select<BankAccountAggregateState, ProjectionsFeatureState, bool>(
-            BankAccountCompositeSelectors.IsOperationInProgress(SelectedEntityId));
-
-    private bool IsSelectedAccountA =>
-        !string.IsNullOrEmpty(DemoAccountAId) &&
-        string.Equals(SelectedEntityId, DemoAccountAId, StringComparison.Ordinal);
-
-    private bool IsSelectedAccountB =>
-        !string.IsNullOrEmpty(DemoAccountBId) &&
-        string.Equals(SelectedEntityId, DemoAccountBId, StringComparison.Ordinal);
+            BankAccountCompositeSelectors.IsOperationInProgress(AccountAId ?? DemoAccountAId));
 
     /// <summary>
     ///     Gets the timestamp when the connection was last successfully established.
@@ -123,23 +123,50 @@ public sealed partial class Accounts
     /// </summary>
     private string LastMessageReceivedAtDisplay => FormatTimestamp(LastMessageReceivedAt);
 
+    private string OperationsUrl => BuildOperationsUrl(AccountAId ?? DemoAccountAId, AccountBId ?? DemoAccountBId);
+
     /// <summary>
     ///     Gets the current reconnection attempt count.
     /// </summary>
     private int ReconnectAttemptCount =>
         Select<SignalRConnectionState, int>(SignalRConnectionSelectors.GetReconnectAttemptCount);
 
-    /// <summary>
-    ///     Gets the currently selected entity ID from entity selection state.
-    /// </summary>
-    private string? SelectedEntityId => Select<EntitySelectionState, string?>(EntitySelectionSelectors.GetEntityId);
+    private static string BuildOperationsUrl(
+        string? accountAId,
+        string? accountBId
+    )
+    {
+        string? encodedA = NormalizeAccountId(accountAId) is { } valueA ? Uri.EscapeDataString(valueA) : null;
+        string? encodedB = NormalizeAccountId(accountBId) is { } valueB ? Uri.EscapeDataString(valueB) : null;
+        string url = "/operations";
+        if (encodedA is null && encodedB is null)
+        {
+            return url;
+        }
+
+        if (encodedA is not null)
+        {
+            url += $"?a={encodedA}";
+        }
+
+        if (encodedB is not null)
+        {
+            string separator = encodedA is null ? "?" : "&";
+            url += $"{separator}b={encodedB}";
+        }
+
+        return url;
+    }
 
     private static string FormatTimestamp(
         DateTimeOffset? timestamp
     ) =>
         timestamp?.ToString("HH:mm:ss", CultureInfo.InvariantCulture) ?? "—";
 
-    private void ClearEntity() => Dispatch(new SetEntityIdAction(string.Empty));
+    private static string? NormalizeAccountId(
+        string? accountId
+    ) =>
+        string.IsNullOrWhiteSpace(accountId) ? null : accountId.Trim();
 
     private void CloseConnectionModal() => isConnectionModalOpen = false;
 
@@ -152,30 +179,13 @@ public sealed partial class Accounts
         Dispatch(new SetDemoAccountsAction(accountAId, accountAName, accountBId, accountBName));
         Dispatch(new OpenAccountAction(accountAId, accountAName, 500m));
         Dispatch(new OpenAccountAction(accountBId, accountBName, 500m));
-        Dispatch(new SetEntityIdAction(accountAId));
+        Dispatch(new SetEntityAIdAction(accountAId));
+        Dispatch(new SetEntityBIdAction(accountBId));
     }
 
     private void NavigateToInvestigations() => Dispatch(new NavigateAction("/investigations"));
 
     private void RequestReconnect() => Dispatch(new RequestSignalRConnectionAction());
-
-    private void SetEntityId() => Dispatch(new SetEntityIdAction(accountIdInput));
-
-    private void SwitchToDemoAccountA()
-    {
-        if (!string.IsNullOrWhiteSpace(DemoAccountAId))
-        {
-            Dispatch(new SetEntityIdAction(DemoAccountAId));
-        }
-    }
-
-    private void SwitchToDemoAccountB()
-    {
-        if (!string.IsNullOrWhiteSpace(DemoAccountBId))
-        {
-            Dispatch(new SetEntityIdAction(DemoAccountBId));
-        }
-    }
 
     private void ToggleConnectionModal() => isConnectionModalOpen = !isConnectionModalOpen;
 }

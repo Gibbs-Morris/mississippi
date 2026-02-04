@@ -13,27 +13,14 @@
                          AccountAName="@DemoAccountAName"
                          AccountBId="@DemoAccountBId"
                          AccountBName="@DemoAccountBName"
-                         IsSelectedAccountA="@IsSelectedAccountA"
-                         IsSelectedAccountB="@IsSelectedAccountB"
-                         OnInitialize="@InitializeDemoAccounts"
-                         OnSwitchToA="@SwitchToDemoAccountA"
-                         OnSwitchToB="@SwitchToDemoAccountB"/>
+                         OnInitialize="@InitializeDemoAccounts"/>
 
-    @if (string.IsNullOrEmpty(SelectedEntityId))
-    {
-        <AccountSelectionSection AccountIdInput="@accountIdInput"
-                                 AccountIdInputChanged="@((
-                                                            string value
-                                                        ) => accountIdInput = value)"
-                                 OnContinue="@SetEntityId"/>
-    }
-    else
+    @if (IsDemoAccountsInitialized)
     {
         <section>
-            <h2>Selected Account</h2>
-            <p>Current account: @SelectedEntityId</p>
-            <button type="button" @onclick="ClearEntity">Switch account</button>
-            <NavLink href="/operations">Go to Operations</NavLink>
+            <h2>Continue</h2>
+            <p>Demo accounts are ready. Open Operations to view both accounts side by side.</p>
+            <NavLink href="@OperationsUrl">Go to Operations</NavLink>
         </section>
     }
 
