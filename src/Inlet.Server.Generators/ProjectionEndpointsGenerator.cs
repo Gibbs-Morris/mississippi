@@ -39,6 +39,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
     private const string MapperSuffix = "Mapper";
 
+    private const string MappersNamespaceSuffix = ".Mappers";
+
     private const string MappingNamespace = "Mississippi.Common.Abstractions.Mapping";
 
     private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
@@ -315,7 +317,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendUsing(MappingNamespace);
         sb.AppendUsing(sourceType.ContainingNamespace.ToDisplayString());
         sb.AppendUsing(outputNamespace);
-        sb.AppendFileScopedNamespace(outputNamespace + ".Mappers");
+        sb.AppendFileScopedNamespace(outputNamespace + MappersNamespaceSuffix);
         sb.AppendLine();
         string mapperName = dtoName + MapperSuffix;
         string sourceTypeName = sourceType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
@@ -354,7 +356,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
 
         sb.AppendUsing(MappingNamespace);
         sb.AppendUsing(projection.Model.Namespace);
-        sb.AppendFileScopedNamespace(projection.OutputNamespace + ".Mappers");
+        sb.AppendFileScopedNamespace(projection.OutputNamespace + MappersNamespaceSuffix);
         sb.AppendLine();
         string mapperName = GetMapperTypeName(projection);
         sb.AppendSummary($"Maps {projection.Model.TypeName} to {projection.Model.DtoTypeName}.");
@@ -483,7 +485,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.Extensions.DependencyInjection");
         sb.AppendUsing(MappingNamespace);
         sb.AppendUsing(projection.Model.Namespace);
-        sb.AppendFileScopedNamespace(projection.OutputNamespace + ".Mappers");
+        sb.AppendFileScopedNamespace(projection.OutputNamespace + MappersNamespaceSuffix);
         sb.AppendLine();
         string registrationsName = GetRegistrationsTypeName(projection);
         string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
@@ -631,7 +633,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendUsing(MappingNamespace);
         sb.AppendUsing(sourceType.ContainingNamespace.ToDisplayString());
         sb.AppendUsing(outputNamespace); // For DTO types like EnumDto
-        sb.AppendFileScopedNamespace(outputNamespace + ".Mappers");
+        sb.AppendFileScopedNamespace(outputNamespace + MappersNamespaceSuffix);
         sb.AppendLine();
         string mapperName = dtoName + MapperSuffix;
         sb.AppendSummary($"Maps {sourceTypeName} to {dtoName}.");
