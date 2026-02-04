@@ -52,7 +52,7 @@
       "rollForward": false
     },
     "jetbrains.dotcover.commandlinetools": {
-      "version": "2025.3.0.4",
+      "version": "2025.3.2",
       "commands": [
         "dotCover"
       ],
