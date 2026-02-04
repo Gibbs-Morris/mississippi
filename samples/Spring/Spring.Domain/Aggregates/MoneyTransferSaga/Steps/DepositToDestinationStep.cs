@@ -15,6 +15,14 @@ namespace Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 /// <summary>
 ///     Saga step that deposits funds into the destination account.
 /// </summary>
+/// <remarks>
+///     <para>
+///         This step intentionally does not implement <see cref="ICompensatable{TSaga}" />
+///         to demonstrate that saga steps can be non-compensatable. In a production scenario,
+///         you might add compensation logic to withdraw the deposited funds if a subsequent
+///         step fails. For this sample, the deposit is the final step so no compensation is needed.
+///     </para>
+/// </remarks>
 [SagaStep<MoneyTransferSagaState>(1)]
 internal sealed class DepositToDestinationStep : ISagaStep<MoneyTransferSagaState>
 {

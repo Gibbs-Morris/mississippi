@@ -120,7 +120,7 @@ It registers:
 
 ### GenerateSagaEndpointsAttribute (generic)
 
-`[GenerateSagaEndpoints<TInput>]` provides the same behavior with a strongly typed input payload. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/Saga/GenerateSagaEndpointsAttribute.cs)
+`[GenerateSagaEndpoints<TInput>]` provides the same behavior with a strongly typed input payload. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute%7BTInput%7D.cs)
 
 ### GenerateSagaStatusReducersAttribute
 
