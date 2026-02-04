@@ -20,7 +20,6 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Source generation **SHOULD** be used for all supported concerns (DTOs, actions, action effects, endpoints, mappers) when a generator exists; manual implementations **MAY** be used only when no generator supports the scenario. Why: Reduces boilerplate and ensures consistency while preserving escape hatches.
 - Generators consume Domain project types (aggregates, commands, events, projections) and emit Client artifacts (actions, action effects, feature registrations, DTOs); see the Generator Inputs table below and Inlet and Client-Server Integration. Why: Centralizes the source of truth in Domain while producing artifacts for all targets.
 - Types marked with `[PendingSourceGenerator]` (defined in `src/Inlet.Generators.Abstractions/`) **MUST** be treated as reference implementations for generator validation only; they exist to enable test comparisons between generated and expected code and **MUST NOT** be used as patterns for new development. Why: Scoped to generator testing infrastructure.
-- Files starting with `#if false` are temporary training artifacts; they are non-authoritative and **MUST NOT** be referenced or copied. Why: These files demonstrate expected generator output and will be removed once generators are complete.
 - Contributors **SHOULD** review `src/Inlet.Client.Generators/` and `src/Inlet.Server.Generators/` for generator implementations, `src/Inlet.Generators.Abstractions/` for attribute definitions, and `src/Reservoir/` for state management. Why: Understanding the framework internals aids correct usage; abstractions define the attribute surface while generator projects contain the logic.
 
 #### Generator Inputs by Project
@@ -202,8 +201,6 @@ Contributors write domain logic (aggregates, commands, events, projections) **in
             ├── {Projection}Projection.cs  # Projection state record
             └── Reducers/                   # Projection reducers
 ```
-
-> **Important**: Files wrapped in `#if false` in the samples are temporary training examples and will be deleted. They are not valid patterns and should not be referenced or copied.
 
 ### Typical Workflow
 
