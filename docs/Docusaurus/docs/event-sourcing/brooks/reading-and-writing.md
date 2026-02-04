@@ -1,16 +1,16 @@
 ---
 id: reading-and-writing
-title: Reading and Writing Brooks
+title: Reading and Writing
 sidebar_label: Reading and Writing
 sidebar_position: 4
 description: Orleans grain interfaces for appending events and reading event streams.
 ---
 
-# Reading and Writing Brooks
+# Reading and Writing
 
 ## Overview
 
-Mississippi provides Orleans grain interfaces for brook operations. Writer grains append events atomically, reader grains retrieve events in batches or streams, and cursor grains track the latest position. Consumers access these grains through `IBrookGrainFactory`.
+Mississippi provides Orleans grain interfaces for brook operations. Writer grains append events atomically, reader grains retrieve events in batches or streams, and cursor grains track the latest position. Access these grains through `IBrookGrainFactory`.
 
 This page focuses on **Public API / Developer Experience**.
 
@@ -18,14 +18,14 @@ This page focuses on **Public API / Developer Experience**.
 
 | Grain | Purpose |
 |-------|---------|
-| [`IBrookWriterGrain`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Writer/IBrookWriterGrain.cs) | Appends events to a brook with optimistic concurrency. |
-| [`IBrookReaderGrain`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Reader/IBrookReaderGrain.cs) | Reads events as batches (stateless worker). |
-| [`IBrookAsyncReaderGrain`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Reader/IBrookAsyncReaderGrain.cs) | Reads events as `IAsyncEnumerable` (single-use). |
-| [`IBrookCursorGrain`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Cursor/IBrookCursorGrain.cs) | Returns the current brook position. |
+| [`IBrookWriterGrain`][writerinterface] | Appends events with optimistic concurrency. |
+| [`IBrookReaderGrain`][readerinterface] | Reads events as batches (stateless worker). |
+| [`IBrookAsyncReaderGrain`][asyncreaderinterface] | Reads events as `IAsyncEnumerable` (single-use). |
+| [`IBrookCursorGrain`][cursorinterface] | Returns the current brook position. |
 
 ## IBrookGrainFactory
 
-The `IBrookGrainFactory` interface resolves grain references from brook keys:
+Inject [`IBrookGrainFactory`][factoryinterface] to resolve grain references:
 
 ```csharp
 public interface IBrookGrainFactory
@@ -37,13 +37,9 @@ public interface IBrookGrainFactory
 }
 ```
 
-([IBrookGrainFactory source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Factory/IBrookGrainFactory.cs))
-
 ## Writing Events
 
 ### Appending Events
-
-Use `IBrookWriterGrain.AppendEventsAsync` to persist events:
 
 ```csharp
 IBrookGrainFactory factory = serviceProvider.GetRequiredService<IBrookGrainFactory>();
@@ -71,7 +67,6 @@ BrookPosition newPosition = await writer.AppendEventsAsync(events);
 Pass an expected position for concurrency control:
 
 ```csharp
-// Only append if brook is at position 5
 BrookPosition newPosition = await writer.AppendEventsAsync(
     events,
     expectedCursorPosition: new BrookPosition(5));
@@ -81,9 +76,7 @@ If the actual position differs, the storage provider throws `OptimisticConcurren
 
 ### Cursor Moved Events
 
-After a successful append, the writer grain publishes a `BrookCursorMovedEvent` to an Orleans stream. Downstream consumers (projections, sagas, effects) subscribe to these events for real-time updates.
-
-([BrookCursorMovedEvent source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Streaming/BrookCursorMovedEvent.cs))
+After a successful append, the writer grain publishes a [`BrookCursorMovedEvent`][cursormovedevent] to an Orleans stream. Downstream consumers (projections, sagas, effects) subscribe to these events for real-time updates.
 
 ```mermaid
 flowchart LR
@@ -103,14 +96,12 @@ flowchart LR
 ```csharp
 IBrookReaderGrain reader = factory.GetBrookReaderGrain(key);
 
+// Read specific range
 ImmutableArray<BrookEvent> events = await reader.ReadEventsBatchAsync(
     readFrom: new BrookPosition(0),
     readTo: new BrookPosition(99));
-```
 
-Omit parameters to read the full brook:
-
-```csharp
+// Read all events
 ImmutableArray<BrookEvent> allEvents = await reader.ReadEventsBatchAsync();
 ```
 
@@ -128,14 +119,10 @@ await foreach (BrookEvent evt in asyncReader.ReadEventsAsync())
 ```
 
 :::note Single-Use Semantics
-Each call to `GetBrookAsyncReaderGrain` returns a unique grain instance with a random suffix in its key. The grain deactivates after enumeration completes. This design avoids Orleans' `IAsyncEnumerable` routing issues with stateless workers.
+Each call to `GetBrookAsyncReaderGrain` returns a unique grain instance with a random suffix in its key. The grain deactivates after enumeration completes.
 :::
 
-([IBrookAsyncReaderGrain remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Reader/IBrookAsyncReaderGrain.cs#L12-L28))
-
 ## Cursor Operations
-
-### Get Current Position
 
 Query the latest position without reading events:
 
@@ -145,7 +132,7 @@ IBrookCursorGrain cursor = factory.GetBrookCursorGrain(key);
 // Cached read (fast)
 BrookPosition position = await cursor.GetLatestPositionAsync();
 
-// Storage read (confirmed)
+// Storage read (strongly consistent)
 BrookPosition confirmed = await cursor.GetLatestPositionConfirmedAsync();
 ```
 
@@ -154,8 +141,6 @@ Use `GetLatestPositionConfirmedAsync` when you need strong consistency guarantee
 ## Registration
 
 ### Silo Registration
-
-Configure Orleans silo to support brooks:
 
 ```csharp
 siloBuilder.AddEventSourcing(options =>
@@ -170,8 +155,6 @@ The host must configure streams separately:
 siloBuilder.AddMemoryStreams("MyStreams");
 siloBuilder.AddMemoryGrainStorage("PubSubStore");
 ```
-
-([EventSourcingRegistrations source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks/EventSourcingRegistrations.cs))
 
 ### Service Registration
 
@@ -189,3 +172,10 @@ Brook grains provide a clean abstraction over event stream operations. Writers a
 
 - [Storage Providers](./storage-providers.md) - Configure persistence backends.
 - [Brooks](./brooks.md) - Return to the overview.
+
+[writerinterface]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Writer/IBrookWriterGrain.cs
+[readerinterface]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Reader/IBrookReaderGrain.cs
+[asyncreaderinterface]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Reader/IBrookAsyncReaderGrain.cs
+[cursorinterface]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Cursor/IBrookCursorGrain.cs
+[factoryinterface]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Factory/IBrookGrainFactory.cs
+[cursormovedevent]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Streaming/BrookCursorMovedEvent.cs

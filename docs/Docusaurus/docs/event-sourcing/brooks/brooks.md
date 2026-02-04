@@ -1,18 +1,18 @@
 ---
 id: brooks
-title: Brooks Event Streams
+title: Brooks
 sidebar_label: Brooks
 sidebar_position: 1
-description: Append-only event stream storage abstraction for Mississippi event sourcing.
+description: Append-only event stream abstraction for Mississippi event sourcing.
 ---
 
-# Brooks Event Streams
+# Brooks
 
 ## Overview
 
-Brooks are Mississippi's append-only event stream abstraction. Each brook represents a durable sequence of events for a specific entity, identified by a composite key containing a brook name and entity identifier. Aggregates, sagas, and projections use brooks to persist and read their event history.
+Brooks are Mississippi's append-only event stream abstraction. Each brook represents a durable sequence of events for a single entity, identified by a composite key combining a brook name and entity identifier. Aggregates, sagas, and projections use brooks to persist and replay their event history.
 
-This page focuses on **Public API / Developer Experience** for consumers building on Mississippi's event sourcing capabilities.
+This page focuses on **Public API / Developer Experience**.
 
 ## Key Concepts
 
@@ -20,86 +20,77 @@ This page focuses on **Public API / Developer Experience** for consumers buildin
 |---------|-------------|
 | **Brook** | An append-only sequence of events for a single entity. |
 | **BrookKey** | Composite identifier combining a brook name and entity ID. |
-| **BrookPosition** | A logical position within a brook (0-based index). |
+| **BrookPosition** | A logical position within a brook (0-based index, -1 means not set). |
 | **BrookEvent** | The envelope containing event metadata and binary payload. |
-| **Cursor** | The current position (latest event index) of a brook. |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    A[Aggregate Grain] --> B[IBrookGrainFactory]
-    B --> C[IBrookWriterGrain]
-    B --> D[IBrookReaderGrain]
-    B --> E[IBrookCursorGrain]
+    A[Your Code] --> B[IBrookGrainFactory]
+    B --> C[Writer Grain]
+    B --> D[Reader Grain]
+    B --> E[Cursor Grain]
     C --> F[IBrookStorageProvider]
     D --> F
     E --> F
-    F --> G[Cosmos DB]
+    F --> G[Storage Backend]
 ```
 
-## Package Structure
-
-Brooks span three NuGet packages with distinct responsibilities:
+Brooks consist of two packages:
 
 | Package | Purpose |
 |---------|---------|
-| `Mississippi.EventSourcing.Brooks.Abstractions` | Public contracts, interfaces, and types consumers depend on. |
-| `Mississippi.EventSourcing.Brooks` | Orleans grain implementations and service registrations. |
-| `Mississippi.EventSourcing.Brooks.Cosmos` | Cosmos DB storage provider implementation. |
+| `Mississippi.EventSourcing.Brooks.Abstractions` | Public contracts and interfaces. |
+| `Mississippi.EventSourcing.Brooks` | Orleans grain implementations. |
 
-([EventSourcing.Brooks.Abstractions](https://github.com/Gibbs-Morris/mississippi/tree/main/src/EventSourcing.Brooks.Abstractions), [EventSourcing.Brooks](https://github.com/Gibbs-Morris/mississippi/tree/main/src/EventSourcing.Brooks), [EventSourcing.Brooks.Cosmos](https://github.com/Gibbs-Morris/mississippi/tree/main/src/EventSourcing.Brooks.Cosmos))
+Storage providers are separate packages (e.g., `Mississippi.EventSourcing.Brooks.Cosmos`). See [Storage Providers](./storage-providers.md) for available implementations.
 
 ## Getting Started
 
 ### Step 1: Add Package References
-
-Add the Brooks packages to your Orleans silo project:
 
 ```xml
 <PackageReference Include="Mississippi.EventSourcing.Brooks" />
 <PackageReference Include="Mississippi.EventSourcing.Brooks.Cosmos" />
 ```
 
-### Step 2: Configure the Silo
-
-Register Brooks and the Cosmos storage provider in your silo builder:
+### Step 2: Configure Orleans Silo
 
 ```csharp
+// Configure Orleans streams (required for event notifications)
+siloBuilder.AddMemoryStreams("EventStreams");
+siloBuilder.AddMemoryGrainStorage("PubSubStore");
+
+// Register Brooks with the stream provider name
 siloBuilder.AddEventSourcing(options =>
 {
     options.OrleansStreamProviderName = "EventStreams";
 });
 
+// Add a storage provider (Cosmos DB shown here)
 services.AddCosmosBrookStorageProvider(
     cosmosConnectionString: configuration["Cosmos:ConnectionString"]!,
-    blobStorageConnectionString: configuration["BlobStorage:ConnectionString"]!,
-    configureOptions: options =>
-    {
-        options.DatabaseId = "myapp-events";
-        options.ContainerId = "brooks";
-    });
-
-// Required: configure Orleans streams
-siloBuilder.AddMemoryStreams("EventStreams");
-siloBuilder.AddMemoryGrainStorage("PubSubStore");
+    blobStorageConnectionString: configuration["BlobStorage:ConnectionString"]!);
 ```
 
 ### Step 3: Define a Brook Name
 
-Apply the `[BrookName]` attribute to your aggregate or projection:
+Apply `[BrookName]` to your aggregate or projection type:
 
 ```csharp
 [BrookName("MYAPP", "ORDERS", "ORDER")]
-public sealed class OrderAggregateGrain : GenericAggregateGrain<OrderState>
+public sealed class OrderAggregateGrain : AggregateGrainBase<OrderState>
 {
-    // Your aggregate implementation
+    // Implementation
 }
 ```
 
-### Step 4: Read and Write Events
+The attribute enforces uppercase alphanumeric segments: `{AppName}.{ModuleName}.{Name}`.
 
-Use `IBrookGrainFactory` to access brook grains:
+### Step 4: Use the Grain Factory
+
+Inject `IBrookGrainFactory` to access brook grains:
 
 ```csharp
 public class OrderService
@@ -111,28 +102,18 @@ public class OrderService
         BrookFactory = brookFactory;
     }
 
-    public async Task<BrookPosition> AppendOrderEvent(string orderId, BrookEvent evt)
+    public async Task<IReadOnlyList<BrookEvent>> ReadOrderHistory(string orderId)
     {
         BrookKey key = BrookKey.ForGrain<OrderAggregateGrain>(orderId);
-        IBrookWriterGrain writer = BrookFactory.GetBrookWriterGrain(key);
-        return await writer.AppendEventsAsync(ImmutableArray.Create(evt));
-    }
-
-    public async IAsyncEnumerable<BrookEvent> ReadOrderEvents(string orderId)
-    {
-        BrookKey key = BrookKey.ForGrain<OrderAggregateGrain>(orderId);
-        IBrookAsyncReaderGrain reader = BrookFactory.GetBrookAsyncReaderGrain(key);
-        await foreach (BrookEvent evt in reader.ReadEventsAsync())
-        {
-            yield return evt;
-        }
+        IBrookReaderGrain reader = BrookFactory.GetBrookReaderGrain(key);
+        return await reader.ReadEventsBatchAsync();
     }
 }
 ```
 
 ## Learn More
 
-- [Brook Keys](./brook-keys.md) - Understand the composite key structure.
+- [Brook Keys](./brook-keys.md) - Composite key structure and naming conventions.
 - [Brook Events](./brook-events.md) - Event envelope format and metadata.
 - [Reading and Writing](./reading-and-writing.md) - Grain-based stream operations.
 - [Storage Providers](./storage-providers.md) - Pluggable persistence backends.

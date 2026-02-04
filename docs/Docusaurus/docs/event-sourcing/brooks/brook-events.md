@@ -10,7 +10,7 @@ description: Event envelope format containing metadata and binary payload.
 
 ## Overview
 
-`BrookEvent` is the envelope type that wraps every event persisted to a brook. It contains metadata describing the event and a binary payload that holds the serialized domain event. The envelope format follows CloudEvents semantics for interoperability.
+`BrookEvent` is the envelope type that wraps every event persisted to a brook. It contains metadata describing the event and a binary payload holding the serialized domain event.
 
 This page focuses on **Public API / Developer Experience**.
 
@@ -26,12 +26,12 @@ This page focuses on **Public API / Developer Experience**.
 | `Data` | `ImmutableArray<byte>` | Serialized event payload. |
 | `DataSizeBytes` | `long` | Denormalized payload size for efficient queries. |
 
-([BrookEvent source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/BrookEvent.cs))
+([BrookEvent source][brookevent])
 
-## Example Event
+## Creating Events
 
 ```csharp
-BrookEvent brookEvent = new()
+BrookEvent evt = new()
 {
     Id = Guid.NewGuid().ToString(),
     EventType = "OrderPlaced",
@@ -45,44 +45,28 @@ BrookEvent brookEvent = new()
 
 ## Event Metadata
 
-### Event Type
+### EventType
 
-The `EventType` property identifies how to interpret the payload. Mississippi serialization uses this value to resolve the correct deserializer. Common patterns include:
+The `EventType` property identifies how to interpret the payload. Common patterns:
 
-- Fully qualified type names: `MyApp.Orders.Events.OrderPlaced`
 - Short semantic names: `OrderPlaced`
+- Fully qualified type names: `MyApp.Orders.Events.OrderPlaced`
 - Versioned names: `OrderPlaced.v2`
 
 ### Source
 
-The `Source` property typically contains the brook name that produced the event. This enables downstream consumers to filter events by origin.
+The `Source` property typically contains the brook name that produced the event, enabling downstream consumers to filter by origin.
 
-### Content Type
-
-The `DataContentType` property declares the payload format:
+### DataContentType
 
 | Value | Description |
 |-------|-------------|
-| `application/json` | JSON-serialized payload (default for Mississippi). |
+| `application/json` | JSON-serialized payload (default). |
 | `application/octet-stream` | Binary payload with custom encoding. |
-
-## Payload Handling
-
-The `Data` property stores the serialized domain event as an immutable byte array. Mississippi's serialization subsystem handles encoding and decoding transparently when using aggregate grains.
-
-```csharp
-// Reading: deserialize from brook event
-OrderPlacedEvent domainEvent = JsonSerializer.Deserialize<OrderPlacedEvent>(
-    brookEvent.Data.AsSpan());
-
-// Writing: serialize to brook event (typically handled by aggregates)
-ImmutableArray<byte> payload = JsonSerializer.SerializeToUtf8Bytes(domainEvent)
-    .ToImmutableArray();
-```
 
 ## BrookPosition
 
-Each event in a brook has a position represented by `BrookPosition`:
+Each event in a brook has a position represented by [`BrookPosition`][brookposition]:
 
 | Property | Description |
 |----------|-------------|
@@ -91,40 +75,34 @@ Each event in a brook has a position represented by `BrookPosition`:
 
 Positions are monotonically increasing. The first event has position `0`, the second has position `1`, and so on.
 
-([BrookPosition source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/BrookPosition.cs))
-
 ```csharp
-// Check current position
 BrookPosition position = new(42);
-Console.WriteLine(position.Value); // 42
+Console.WriteLine(position.Value);  // 42
 
-// Default position (not set)
 BrookPosition empty = new();
-Console.WriteLine(empty.NotSet); // true
+Console.WriteLine(empty.NotSet);    // true
 ```
 
 ## Orleans Serialization
 
-`BrookEvent` and `BrookPosition` are decorated with Orleans serialization attributes for efficient grain communication:
+`BrookEvent` and `BrookPosition` are decorated with Orleans serialization attributes:
 
 ```csharp
 [GenerateSerializer]
 [Alias("Mississippi.EventSourcing.Brooks.Abstractions.BrookEvent")]
-public sealed record BrookEvent
-{
-    [Id(0)]
-    public string EventType { get; init; } = string.Empty;
-    // ...
-}
+public sealed record BrookEvent { ... }
 ```
 
 The `[Alias]` attribute ensures stable type identity across assembly versions.
 
 ## Summary
 
-Brook events are immutable envelopes containing metadata and a binary payload. The envelope follows CloudEvents semantics for interoperability while using Orleans serialization for efficient grain communication.
+Brook events are immutable envelopes containing metadata and a binary payload. The envelope follows CloudEvents-like semantics while using Orleans serialization for efficient grain communication.
 
 ## Next Steps
 
 - [Reading and Writing](./reading-and-writing.md) - Persist and retrieve events.
 - [Storage Providers](./storage-providers.md) - Understand how events are stored.
+
+[brookevent]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/BrookEvent.cs
+[brookposition]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/BrookPosition.cs

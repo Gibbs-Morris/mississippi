@@ -1,16 +1,16 @@
 ---
 id: storage-providers
-title: Brook Storage Providers
+title: Storage Providers
 sidebar_label: Storage Providers
 sidebar_position: 5
 description: Pluggable persistence backends for brook event storage.
 ---
 
-# Brook Storage Providers
+# Storage Providers
 
 ## Overview
 
-Brook storage providers implement the persistence layer for event streams. Mississippi defines a storage abstraction that separates grain logic from the underlying database. The default implementation uses Azure Cosmos DB, but the architecture supports custom providers.
+Brook storage providers implement the persistence layer for event streams. Mississippi defines a storage abstraction that separates grain logic from the underlying database. The Cosmos DB provider ships as a reference implementation, but the architecture supports custom providers for other databases.
 
 This page focuses on **Public API / Developer Experience** for configuring and extending storage providers.
 
@@ -18,12 +18,12 @@ This page focuses on **Public API / Developer Experience** for configuring and e
 
 | Interface | Purpose |
 |-----------|---------|
-| [`IBrookStorageProvider`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/IBrookStorageProvider.cs) | Combined read/write access with format identifier. |
-| [`IBrookStorageReader`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/IBrookStorageReader.cs) | Read cursor position and stream events. |
-| [`IBrookStorageWriter`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/IBrookStorageWriter.cs) | Append events with optimistic concurrency. |
+| [`IBrookStorageProvider`][storageprovider] | Combined read/write access with format identifier. |
+| [`IBrookStorageReader`][storagereader] | Read cursor position and stream events. |
+| [`IBrookStorageWriter`][storagewriter] | Append events with optimistic concurrency. |
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[IBrookStorageProvider] --> B[IBrookStorageReader]
     A --> C[IBrookStorageWriter]
     B --> D[ReadCursorPositionAsync]
@@ -31,9 +31,7 @@ flowchart TD
     C --> F[AppendEventsAsync]
 ```
 
-## IBrookStorageReader
-
-The reader interface provides two operations:
+### IBrookStorageReader
 
 ```csharp
 public interface IBrookStorageReader
@@ -48,11 +46,7 @@ public interface IBrookStorageReader
 }
 ```
 
-([IBrookStorageReader source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/IBrookStorageReader.cs))
-
-## IBrookStorageWriter
-
-The writer interface handles atomic appends:
+### IBrookStorageWriter
 
 ```csharp
 public interface IBrookStorageWriter
@@ -65,80 +59,31 @@ public interface IBrookStorageWriter
 }
 ```
 
-([IBrookStorageWriter source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/IBrookStorageWriter.cs))
+### IBrookStorageProvider
 
-## Cosmos DB Provider
-
-Mississippi includes a production-ready Cosmos DB provider in the `EventSourcing.Brooks.Cosmos` package.
-
-### Registration
+Combines both interfaces and adds a format identifier:
 
 ```csharp
-services.AddCosmosBrookStorageProvider(
-    cosmosConnectionString: "AccountEndpoint=...",
-    blobStorageConnectionString: "DefaultEndpointsProtocol=...",
-    configureOptions: options =>
-    {
-        options.DatabaseId = "myapp-events";
-        options.ContainerId = "brooks";
-    });
+public interface IBrookStorageProvider : IBrookStorageReader, IBrookStorageWriter
+{
+    string Format { get; }
+}
 ```
 
-([BrookStorageProviderRegistrations source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Cosmos/BrookStorageProviderRegistrations.cs))
+The `Format` property (e.g., `"cosmos"`, `"sql"`) enables the system to route operations to the appropriate storage implementation.
 
-### Configuration Options
+## Available Providers
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `DatabaseId` | `MississippiDefaults.DatabaseId` | Cosmos DB database identifier. |
-| `ContainerId` | `MississippiDefaults.ContainerIds.Brooks` | Container for event storage. |
-| `CosmosClientServiceKey` | `MississippiDefaults.ServiceKeys.CosmosBrooksClient` | Keyed service key for `CosmosClient`. |
-| `LockContainerName` | `MississippiDefaults.ContainerIds.Locks` | Blob container for distributed locking. |
-| `LeaseDurationSeconds` | `60` | Distributed lock lease duration. |
-| `MaxEventsPerBatch` | (configurable) | Maximum events per batch operation. |
-
-([BrookStorageOptions source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Cosmos/BrookStorageOptions.cs))
-
-### Architecture
-
-The Cosmos provider uses several internal components:
-
-| Component | Purpose |
-|-----------|---------|
-| `IEventBrookReader` | Reads events from Cosmos containers. |
-| `IEventBrookWriter` | Writes events with batching optimization. |
-| `IBrookRecoveryService` | Manages cursor position recovery. |
-| `IDistributedLockManager` | Coordinates concurrent writes via blob leases. |
-| `ICosmosRepository` | Low-level Cosmos operations. |
-
-```mermaid
-flowchart LR
-    A[BrookStorageProvider] --> B[IEventBrookWriter]
-    A --> C[IEventBrookReader]
-    A --> D[IBrookRecoveryService]
-    B --> E[ICosmosRepository]
-    C --> E
-    B --> F[IDistributedLockManager]
-    F --> G[Azure Blob Storage]
-    E --> H[Cosmos DB]
-```
-
-### Container Initialization
-
-The provider includes a hosted service that creates the Cosmos container on startup:
-
-```csharp
-services.AddHostedService<CosmosContainerInitializer>();
-```
-
-This ensures the required container exists before the application accepts requests.
+| Package | Database | Status |
+|---------|----------|--------|
+| `Mississippi.EventSourcing.Brooks.Cosmos` | Azure Cosmos DB | Production-ready |
 
 ## Custom Providers
 
 To implement a custom storage provider:
 
-1. Implement `IBrookStorageProvider` (or both `IBrookStorageReader` and `IBrookStorageWriter`).
-2. Register your implementation in the DI container.
+1. Implement `IBrookStorageProvider` (or both reader and writer interfaces).
+2. Register your implementation in DI.
 3. Use the registration helper to expose both reader and writer interfaces.
 
 ```csharp
@@ -177,11 +122,9 @@ Register using the helper extension:
 services.RegisterBrookStorageProvider<SqlBrookStorageProvider>();
 ```
 
-([BrookStorageProviderExtensions source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/BrookStorageProviderExtensions.cs))
-
 ## Optimistic Concurrency
 
-Storage providers enforce optimistic concurrency when `expectedVersion` is provided. If the actual cursor position differs from the expected value, the provider throws `OptimisticConcurrencyException`.
+Storage providers enforce optimistic concurrency when `expectedVersion` is provided:
 
 ```csharp
 try
@@ -191,19 +134,21 @@ try
         events,
         expectedVersion: new BrookPosition(5));
 }
-catch (OptimisticConcurrencyException ex)
+catch (OptimisticConcurrencyException)
 {
     // Handle conflict: reload state and retry
 }
 ```
 
-([OptimisticConcurrencyException source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Cosmos/OptimisticConcurrencyException.cs))
-
 ## Summary
 
-Storage providers separate persistence concerns from grain logic. The Cosmos DB provider handles production workloads with batching, distributed locking, and automatic container initialization. Custom providers can target alternative databases by implementing the storage interfaces.
+Storage providers separate persistence concerns from grain logic. The abstraction enables multiple database implementations while keeping the grain layer unchanged. Implement `IBrookStorageProvider` to add support for your preferred database.
 
 ## Next Steps
 
+- [Cosmos DB Provider](./cosmos-provider.md) - Configure the production Cosmos DB implementation.
 - [Brooks](./brooks.md) - Return to the overview.
-- [Brook Keys](./brook-keys.md) - Understand key structure.
+
+[storageprovider]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/IBrookStorageProvider.cs
+[storagereader]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/IBrookStorageReader.cs
+[storagewriter]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Brooks.Abstractions/Storage/IBrookStorageWriter.cs
