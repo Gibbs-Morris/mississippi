@@ -37,16 +37,17 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                               using System;
 
                                               [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-                                              public sealed class SagaStepAttribute : Attribute
+                                              public sealed class SagaStepAttribute<TSaga> : Attribute
                                               {
                                                   public SagaStepAttribute(int order)
                                                   {
                                                       Order = order;
+                                                      Saga = typeof(TSaga);
                                                   }
 
                                                   public int Order { get; }
 
-                                                  public Type? Saga { get; set; }
+                                                  public Type Saga { get; }
                                               }
 
                                               public interface ISagaState
@@ -191,12 +192,12 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       {
                                       }
 
-                                      [SagaStep(0)]
+                                      [SagaStep<TransferSagaState>(0)]
                                       public sealed class DebitStep : ISagaStep<TransferSagaState>, ICompensatable<TransferSagaState>
                                       {
                                       }
 
-                                      [SagaStep(1, Saga = typeof(TransferSagaState))]
+                                      [SagaStep<TransferSagaState>(1)]
                                       public sealed class CreditStep : ISagaStep<TransferSagaState>
                                       {
                                       }
@@ -258,7 +259,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       {
                                       }
 
-                                      [SagaStep(0)]
+                                      [SagaStep<TransferSagaState>(0)]
                                       public sealed class MissingSagaStep
                                       {
                                       }
@@ -268,7 +269,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
             RunGenerator(AttributeStubs, sagaSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
-        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1002"));
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1004"));
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
 
@@ -326,7 +327,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       {
                                       }
 
-                                      [SagaStep(0)]
+                                      [SagaStep<TransferSagaState>(0)]
                                       public sealed class DebitStep : ISagaStep<TransferSagaState>
                                       {
                                       }

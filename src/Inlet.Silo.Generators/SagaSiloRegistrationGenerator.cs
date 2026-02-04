@@ -37,7 +37,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
     private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
 
-    private const string SagaStepAttributeFullName = "Mississippi.EventSourcing.Sagas.Abstractions.SagaStepAttribute";
+    private const string SagaStepAttributeGenericFullName =
+        "Mississippi.EventSourcing.Sagas.Abstractions.SagaStepAttribute`1";
 
     private const string SagaStepInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaStep`1";
 
@@ -103,7 +104,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor SagaStepMissingSagaDescriptor = new(
         "MSI1002",
         "Saga step missing saga association",
-        "Saga step '{0}' must implement ISagaStep<TSaga> or specify Saga = typeof(TSaga) on the attribute",
+        "Saga step '{0}' must implement ISagaStep<TSaga> or use SagaStep<TSaga>",
         "Mississippi.Inlet.Sagas",
         DiagnosticSeverity.Error,
         true);
@@ -237,14 +238,15 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? sagaAttrGenericSymbol =
             compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
         INamedTypeSymbol? sagaStateSymbol = compilation.GetTypeByMetadataName(SagaStateInterfaceFullName);
-        INamedTypeSymbol? sagaStepAttrSymbol = compilation.GetTypeByMetadataName(SagaStepAttributeFullName);
+        INamedTypeSymbol? sagaStepAttrGenericSymbol =
+            compilation.GetTypeByMetadataName(SagaStepAttributeGenericFullName);
         INamedTypeSymbol? sagaStepInterfaceSymbol = compilation.GetTypeByMetadataName(SagaStepInterfaceFullName);
         INamedTypeSymbol? compensatableInterfaceSymbol =
             compilation.GetTypeByMetadataName(CompensatableInterfaceFullName);
         INamedTypeSymbol? reducerBaseSymbol = compilation.GetTypeByMetadataName(EventReducerBaseFullName);
         if ((sagaAttrSymbol is null && sagaAttrGenericSymbol is null) ||
             sagaStateSymbol is null ||
-            sagaStepAttrSymbol is null ||
+            sagaStepAttrGenericSymbol is null ||
             sagaStepInterfaceSymbol is null ||
             reducerBaseSymbol is null)
         {
@@ -273,7 +275,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         {
             StepInfoResult stepResult = TryGetStepInfo(
                 typeSymbol,
-                sagaStepAttrSymbol,
+                sagaStepAttrGenericSymbol,
                 sagaStepInterfaceSymbol,
                 sagaStateSymbol,
                 compensatableInterfaceSymbol);
@@ -352,6 +354,20 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
         return sagaAttrGenericSymbol is not null &&
                SymbolEqualityComparer.Default.Equals(attr.AttributeClass.OriginalDefinition, sagaAttrGenericSymbol);
+    }
+
+    private static bool MatchesStepAttribute(
+        AttributeData attr,
+        INamedTypeSymbol sagaStepAttrGenericSymbol
+    )
+    {
+        if (attr.AttributeClass is null)
+        {
+            return false;
+        }
+
+        return attr.AttributeClass.IsGenericType &&
+               SymbolEqualityComparer.Default.Equals(attr.AttributeClass.OriginalDefinition, sagaStepAttrGenericSymbol);
     }
 
     private static bool TryGetInputType(
@@ -448,14 +464,19 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
     private static StepInfoResult TryGetStepInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol sagaStepAttrSymbol,
+        INamedTypeSymbol? sagaStepAttrGenericSymbol,
         INamedTypeSymbol sagaStepInterfaceSymbol,
         INamedTypeSymbol sagaStateInterfaceSymbol,
         INamedTypeSymbol? compensatableInterfaceSymbol
     )
     {
+        if (sagaStepAttrGenericSymbol is null)
+        {
+            return StepInfoResult.None;
+        }
+
         AttributeData? attr = typeSymbol.GetAttributes()
-            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, sagaStepAttrSymbol));
+            .FirstOrDefault(a => MatchesStepAttribute(a, sagaStepAttrGenericSymbol));
         if (attr is null)
         {
             return StepInfoResult.None;
@@ -473,11 +494,12 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         INamedTypeSymbol? sagaStateSymbol = null;
-        if (attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Saga").Value.Value is INamedTypeSymbol sagaType)
+        if (attr.AttributeClass is not null && attr.AttributeClass.IsGenericType)
         {
-            sagaStateSymbol = sagaType;
+            sagaStateSymbol = attr.AttributeClass.TypeArguments.FirstOrDefault() as INamedTypeSymbol;
         }
-        else
+
+        if (sagaStateSymbol is null)
         {
             INamedTypeSymbol? sagaInterface = typeSymbol.AllInterfaces.FirstOrDefault(iface =>
                 iface.OriginalDefinition is not null &&

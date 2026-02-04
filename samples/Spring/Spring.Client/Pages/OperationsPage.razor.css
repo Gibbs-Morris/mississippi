@@ -1,0 +1,36 @@
+.account-selection {
+    margin-bottom: 1.5rem;
+}
+
+.account-selection-row {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.account-selection-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.operations-panels {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.operations-panel {
+    border: 1px solid var(--ifm-color-emphasis-200);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+@media (max-width: 960px) {
+    .operations-panels {
+        grid-template-columns: 1fr;
+    }
+}

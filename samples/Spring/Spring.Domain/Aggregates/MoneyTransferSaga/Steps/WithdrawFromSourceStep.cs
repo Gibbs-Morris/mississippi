@@ -15,7 +15,7 @@ namespace Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 /// <summary>
 ///     Saga step that withdraws funds from the source account.
 /// </summary>
-[SagaStep(0, Saga = typeof(MoneyTransferSagaState))]
+[SagaStep<MoneyTransferSagaState>(0)]
 internal sealed class WithdrawFromSourceStep
     : ISagaStep<MoneyTransferSagaState>,
       ICompensatable<MoneyTransferSagaState>

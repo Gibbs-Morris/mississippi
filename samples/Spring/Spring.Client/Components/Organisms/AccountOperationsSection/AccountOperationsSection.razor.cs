@@ -52,6 +52,10 @@ public sealed partial class AccountOperationsSection
     [Parameter]
     public bool IsExecutingOrLoading { get; set; }
 
+    /// <summary>Gets or sets a value indicating whether the transfer destination is read-only.</summary>
+    [Parameter]
+    public bool IsTransferDestinationReadOnly { get; set; }
+
     /// <summary>Gets or sets the last command success state.</summary>
     [Parameter]
     public bool? LastCommandSucceeded { get; set; }
@@ -103,6 +107,10 @@ public sealed partial class AccountOperationsSection
     /// <summary>Gets or sets the callback for the single £100 withdrawal.</summary>
     [Parameter]
     public EventCallback OnWithdrawSingle100 { get; set; }
+
+    /// <summary>Gets or sets the panel label shown in the header.</summary>
+    [Parameter]
+    public string PanelLabel { get; set; } = "Account";
 
     /// <summary>Gets or sets the selected entity identifier.</summary>
     [Parameter]

@@ -1,0 +1,101 @@
+---
+applyTo: 'docs/**/event-sourcing-*.md'
+---
+
+# Feature Documentation Pattern
+
+Governing thought: Feature docs for components with Inlet source generators teach concepts first, then branch into source-generated (recommended) and manual registration paths so readers understand both the easy path and the underlying mechanics.
+
+> Drift check: Align with `docs/Docusaurus/docs/contributing/documentation-guide.md`; update both when patterns evolve.
+
+## When This Pattern Applies
+
+This pattern applies to documentation for Mississippi features that have **both** Inlet source generation and manual registration options:
+
+- Sagas (`[GenerateSagaEndpoints]`)
+- Aggregates (`[GenerateAggregateEndpoints]`)
+- UX Projections (`[GenerateUxProjectionEndpoints]`)
+- Other Inlet-generated features
+
+This pattern does **not** apply to:
+
+- API reference pages (use standard reference structure)
+- Client-state-management docs (Reservoir has no source gen)
+- Contributing/authoring guides
+- Index/landing pages
+
+## Rules (RFC 2119)
+
+- Feature docs with source generation options **MUST** follow the structure: Overview → Key Concepts → Implementation (with branching) → Summary → Next Steps. Why: Predictable structure aids navigation and learning.
+- The Implementation section **MUST** start with shared steps (define types, configure state) before branching. Why: Teaches core concepts before diverging.
+- After shared steps, docs **MUST** branch into "Using Source Generation (Recommended)" and "Manual Registration" subsections. Why: Provides both the easy path and the explicit path.
+- The source-generation path **MUST** appear first and be marked as recommended. Why: Guides users toward the simpler, less error-prone approach.
+- Both paths **MUST** result in equivalent runtime behavior and **MUST** explain what each approach does. Why: Users need to understand trade-offs.
+- Shared steps **SHOULD** use numbered headings (Step 1, Step 2) to show progression. Why: Makes the implementation sequence explicit.
+- A `:::tip Registration Options` callout **SHOULD** introduce the branching point. Why: Signals the divergence clearly.
+- Code samples **MUST** be minimal, complete, and compile in isolation. Why: Enables copy-paste usage.
+
+## Scope and Audience
+
+Authors documenting Mississippi features that have both source-generated and manual registration options (sagas, aggregates, reducers, brooks, projections).
+
+## At-a-Glance Quick-Start
+
+Use this structure for feature docs:
+
+```markdown
+# Feature Title
+
+## Overview
+One paragraph: what is this feature and why use it.
+
+## Key Concepts
+Explain core abstractions/types. Use a table for quick reference.
+
+## Implementation
+
+### Step 1: Define the State/Entity
+Show the type definition with required interfaces.
+
+### Step 2: Define Behavior (Steps/Reducers/Effects)
+Show behavior implementations.
+
+### Step 3: Register
+
+:::tip Registration Options
+Mississippi supports two registration paths:
+- **Source Generation (Recommended)**: Generators emit registration code; less boilerplate.
+- **Manual Registration**: Explicit DI calls; useful for understanding or customization.
+:::
+
+#### Using Source Generation (Recommended)
+
+Show the generator attribute and what it produces.
+
+#### Manual Registration
+
+Show explicit DI registration calls.
+
+## Summary
+Bullet list of key points.
+
+## Next Steps
+Links to related pages.
+```
+
+## Core Principles
+
+- **Concepts before code**: Teach the model before showing implementation.
+- **Recommended path first**: Guide users toward the simpler approach.
+- **Both paths explained**: Users understand what happens under the hood.
+- **Shared steps reduce duplication**: Common setup appears once, before branching.
+
+## Example: Saga Documentation
+
+The saga docs at `docs/Docusaurus/docs/event-sourcing-sagas.md` serve as the canonical implementation of this pattern.
+
+## References
+
+- Documentation guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
+- Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
+- Markdown standards: `.github/instructions/markdown.instructions.md`

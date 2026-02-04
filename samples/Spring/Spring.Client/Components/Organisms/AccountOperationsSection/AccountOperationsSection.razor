@@ -1,7 +1,7 @@
 @namespace Spring.Client.Components.Organisms
 
 <div>
-    <span>Account: @SelectedEntityId</span>
+    <span>@PanelLabel: @SelectedEntityId</span>
     <button type="button" @onclick="OnSwitchAccount">Switch</button>
 </div>
 
@@ -101,6 +101,8 @@
             <label for="transfer-destination-input">Destination Account</label>
             <InputText id="transfer-destination-input"
                        type="text"
+                       disabled="@IsTransferDestinationReadOnly"
+                       readonly="@IsTransferDestinationReadOnly"
                        Value="TransferDestinationAccountId"
                        ValueChanged="TransferDestinationAccountIdChanged"
                        ValueExpression="() => TransferDestinationAccountId"

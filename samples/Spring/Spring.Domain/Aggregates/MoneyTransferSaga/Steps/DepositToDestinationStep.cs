@@ -15,7 +15,7 @@ namespace Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 /// <summary>
 ///     Saga step that deposits funds into the destination account.
 /// </summary>
-[SagaStep(1, Saga = typeof(MoneyTransferSagaState))]
+[SagaStep<MoneyTransferSagaState>(1)]
 internal sealed class DepositToDestinationStep : ISagaStep<MoneyTransferSagaState>
 {
     /// <summary>

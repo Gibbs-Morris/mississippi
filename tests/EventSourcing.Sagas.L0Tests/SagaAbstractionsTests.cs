@@ -96,10 +96,7 @@ public sealed class SagaAbstractionsTests
     [Fact]
     public void SagaStepAttributeCapturesOrderAndSaga()
     {
-        SagaStepAttribute attribute = new(3)
-        {
-            Saga = typeof(TestSagaState),
-        };
+        SagaStepAttribute<TestSagaState> attribute = new(3);
         Assert.Equal(3, attribute.Order);
         Assert.Equal(typeof(TestSagaState), attribute.Saga);
     }
