@@ -47,11 +47,11 @@ public sealed class SagaClientGeneratorsTests
         List<MetadataReference> references =
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-        string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
+        string netstandardPath = Path.Join(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
             references.Add(MetadataReference.CreateFromFile(netstandardPath));
@@ -76,11 +76,11 @@ public sealed class SagaClientGeneratorsTests
         List<MetadataReference> references =
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-        string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
+        string netstandardPath = Path.Join(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
             references.Add(MetadataReference.CreateFromFile(netstandardPath));

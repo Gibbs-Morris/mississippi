@@ -77,18 +77,16 @@ internal static class SagaClientGeneratorHelper
         string targetRootNamespace
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        foreach (SagaClientInfo info in namespaceSymbol.GetTypeMembers()
+                     .Select(typeSymbol => TryGetSagaInfo(
+                         typeSymbol,
+                         sagaAttrSymbol,
+                         sagaAttrGenericSymbol,
+                         sagaStateSymbol,
+                         targetRootNamespace))
+                     .Where(info => info is not null)!)
         {
-            SagaClientInfo? info = TryGetSagaInfo(
-                typeSymbol,
-                sagaAttrSymbol,
-                sagaAttrGenericSymbol,
-                sagaStateSymbol,
-                targetRootNamespace);
-            if (info is not null)
-            {
-                sagas.Add(info);
-            }
+            sagas.Add(info);
         }
 
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
@@ -108,12 +106,11 @@ internal static class SagaClientGeneratorHelper
     )
     {
         yield return compilation.Assembly;
-        foreach (MetadataReference reference in compilation.References)
+        foreach (IAssemblySymbol assemblySymbol in compilation.References
+                     .Select(compilation.GetAssemblyOrModuleSymbol)
+                     .OfType<IAssemblySymbol>())
         {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
+            yield return assemblySymbol;
         }
     }
 

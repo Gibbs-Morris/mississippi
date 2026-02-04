@@ -220,12 +220,11 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     )
     {
         yield return compilation.Assembly;
-        foreach (MetadataReference reference in compilation.References)
+        foreach (IAssemblySymbol assemblySymbol in compilation.References
+                     .Select(compilation.GetAssemblyOrModuleSymbol)
+                     .OfType<IAssemblySymbol>())
         {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
+            yield return assemblySymbol;
         }
     }
 
@@ -671,19 +670,16 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
         Dictionary<int, List<StepInfo>> stepGroups = saga.Steps.GroupBy(step => step.StepIndex)
             .ToDictionary(group => group.Key, group => group.ToList());
-        foreach (KeyValuePair<int, List<StepInfo>> group in stepGroups)
+        foreach (KeyValuePair<int, List<StepInfo>> group in stepGroups.Where(group => group.Value.Count > 1))
         {
-            if (group.Value.Count > 1)
+            foreach (StepInfo step in group.Value)
             {
-                foreach (StepInfo step in group.Value)
-                {
-                    diagnostics.Add(
-                        Diagnostic.Create(
-                            SagaDuplicateStepDescriptor,
-                            step.Location ?? step.StepType.Locations.FirstOrDefault(),
-                            saga.SagaName,
-                            group.Key));
-                }
+                diagnostics.Add(
+                    Diagnostic.Create(
+                        SagaDuplicateStepDescriptor,
+                        step.Location ?? step.StepType.Locations.FirstOrDefault(),
+                        saga.SagaName,
+                        group.Key));
             }
         }
 

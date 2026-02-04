@@ -168,7 +168,7 @@ flowchart LR
 
 ## Feature Documentation Pattern
 
-Feature docs for components with Inlet source generation (sagas, aggregates, UX projections) MUST follow a consistent branching structure. This pattern teaches concepts first, then guides users to the recommended path while preserving the manual path for understanding or customization.
+Feature docs for components with Inlet source generation (sagas, aggregates, UX projections) should follow a consistent branching structure. This pattern teaches concepts first, then guides users to the recommended path while preserving the manual path for understanding or customization.
 
 :::note When to use this pattern
 This pattern applies only to features that have **both** source-generated and manual registration options. API reference pages, client-state-management docs, and contributing guides use the standard page structure instead.
@@ -216,10 +216,10 @@ Explicit DI registration calls.
 
 ### Pattern Rules
 
-- Shared implementation steps MUST appear before the branching point.
-- Source generation (recommended) MUST appear first in the branch.
-- Both paths MUST result in equivalent runtime behavior.
-- A `:::tip Registration Options` callout SHOULD introduce the branching point.
+- Shared implementation steps should appear before the branching point.
+- Source generation (recommended) should appear first in the branch.
+- Both paths should result in equivalent runtime behavior.
+- A `:::tip Registration Options` callout is expected to introduce the branching point.
 
 ### Canonical Example
 
