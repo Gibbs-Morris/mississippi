@@ -26,10 +26,12 @@ public sealed class PropertyModel
         }
 
         Name = propertySymbol.Name;
+        SourceTypeSymbol = propertySymbol.Type;
         SourceTypeName = propertySymbol.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
         DtoTypeName = TypeAnalyzer.GetDtoTypeName(propertySymbol.Type, customTypeSuffix);
         IsFrameworkType = TypeAnalyzer.IsFrameworkType(propertySymbol.Type);
         IsCollection = TypeAnalyzer.IsCollectionType(propertySymbol.Type);
+        IsEnum = TypeAnalyzer.IsEnumType(propertySymbol.Type);
         RequiresMapper = TypeAnalyzer.RequiresMapper(propertySymbol.Type);
         RequiresEnumerableMapper = TypeAnalyzer.RequiresEnumerableMapper(propertySymbol.Type);
         bool isNullableAnnotation = propertySymbol.Type.NullableAnnotation == NullableAnnotation.Annotated;
@@ -53,6 +55,8 @@ public sealed class PropertyModel
                 ElementDtoTypeName = TypeAnalyzer.GetDtoTypeName(elementType, customTypeSuffix);
                 ElementTypeSymbol = elementType;
             }
+
+            ElementIsEnum = elementType is not null && TypeAnalyzer.IsEnumType(elementType);
         }
     }
 
@@ -65,6 +69,11 @@ public sealed class PropertyModel
     ///     Gets the element DTO type name for collections, if applicable.
     /// </summary>
     public string? ElementDtoTypeName { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the collection element is an enum type.
+    /// </summary>
+    public bool ElementIsEnum { get; }
 
     /// <summary>
     ///     Gets the element source type name for collections, if applicable.
@@ -85,6 +94,11 @@ public sealed class PropertyModel
     ///     Gets a value indicating whether this is a collection type.
     /// </summary>
     public bool IsCollection { get; }
+
+    /// <summary>
+    ///     Gets a value indicating whether this property is an enum type.
+    /// </summary>
+    public bool IsEnum { get; }
 
     /// <summary>
     ///     Gets a value indicating whether this is a framework type.
@@ -125,6 +139,11 @@ public sealed class PropertyModel
     ///     Gets the source type name (fully qualified).
     /// </summary>
     public string SourceTypeName { get; }
+
+    /// <summary>
+    ///     Gets the source type symbol.
+    /// </summary>
+    public ITypeSymbol SourceTypeSymbol { get; }
 
     /// <summary>
     ///     Determines whether a property has a default value.

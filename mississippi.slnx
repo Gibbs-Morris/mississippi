@@ -26,6 +26,10 @@
     <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
   </Folder>
+  <Folder Name="/Framework/EventSourcing/Sagas/">
+    <Project Path="src\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
+    <Project Path="src\EventSourcing.Sagas\EventSourcing.Sagas.csproj" />
+  </Folder>
   <Folder Name="/Framework/EventSourcing/Serialization/">
     <Project Path="src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
@@ -106,6 +110,9 @@
   <Folder Name="/Tests/EventSourcing/Reducers/">
     <Project Path="tests\EventSourcing.Reducers.Abstractions.L0Tests\EventSourcing.Reducers.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Reducers.L0Tests\EventSourcing.Reducers.L0Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/EventSourcing/Sagas/">
+    <Project Path="tests\EventSourcing.Sagas.L0Tests\EventSourcing.Sagas.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Serialization/">
     <Project Path="tests\EventSourcing.Serialization.L0Tests\EventSourcing.Serialization.L0Tests.csproj" />

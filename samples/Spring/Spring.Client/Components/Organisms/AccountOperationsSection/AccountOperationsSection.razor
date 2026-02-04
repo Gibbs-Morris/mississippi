@@ -1,0 +1,229 @@
+@namespace Spring.Client.Components.Organisms
+
+<div>
+    <span>@PanelLabel: @SelectedEntityId</span>
+    <button type="button" @onclick="OnSwitchAccount">Switch</button>
+</div>
+
+<section>
+    <h2>Open Account</h2>
+    <fieldset disabled="@(IsExecutingOrLoading || IsAccountOpen)">
+        <legend>Open Account</legend>
+        @if (IsAccountOpen)
+        {
+            <p>
+                <em>Account is already open.</em>
+            </p>
+        }
+        else
+        {
+            <div>
+                <label for="holder-name-input">Holder Name</label>
+                <InputText id="holder-name-input"
+                           type="text"
+                           Value="HolderName"
+                           ValueChanged="HolderNameChanged"
+                           ValueExpression="() => HolderName"
+                           placeholder="Account holder name"/>
+            </div>
+            <div>
+                <label for="initial-deposit-input">Initial Deposit (£)</label>
+                <InputNumber id="initial-deposit-input"
+                             Value="InitialDeposit"
+                             ValueChanged="InitialDepositChanged"
+                             ValueExpression="() => InitialDeposit"
+                             placeholder="0.00"
+                             step="0.01"
+                             min="0"/>
+            </div>
+            <button type="button" @onclick="OnOpenAccount" disabled="@IsExecutingOrLoading">
+                Open Account
+            </button>
+        }
+    </fieldset>
+</section>
+
+<section>
+    <h2>Deposit (£)</h2>
+    <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+        <legend>Deposit Funds (GBP)</legend>
+        <div>
+            <label for="deposit-amount-input">Amount (£)</label>
+            <InputNumber id="deposit-amount-input"
+                         Value="DepositAmount"
+                         ValueChanged="DepositAmountChanged"
+                         ValueExpression="() => DepositAmount"
+                         placeholder="0.00"
+                         step="0.01"
+                         min="0"/>
+        </div>
+        <button type="button" @onclick="OnDeposit" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+            Deposit £
+        </button>
+        <div>
+            <span>Quick:</span>
+            <button type="button" @onclick="OnDepositSingle100" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">+£100</button>
+            <button type="button" @onclick="OnDepositBurst20" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">20×£5</button>
+            <button type="button" @onclick="OnDepositBurst200" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">200×£10</button>
+        </div>
+    </fieldset>
+</section>
+
+<section>
+    <h2>Withdraw</h2>
+    <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+        <legend>Withdraw Funds</legend>
+        <div>
+            <label for="withdraw-amount-input">Amount (£)</label>
+            <InputNumber id="withdraw-amount-input"
+                         Value="WithdrawAmount"
+                         ValueChanged="WithdrawAmountChanged"
+                         ValueExpression="() => WithdrawAmount"
+                         placeholder="0.00"
+                         step="0.01"
+                         min="0"/>
+        </div>
+        <button type="button" @onclick="OnWithdraw" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">Withdraw</button>
+        <div>
+            <span>Quick:</span>
+            <button type="button" @onclick="OnWithdrawSingle100" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">-£100</button>
+            <button type="button" @onclick="OnWithdrawBurst20" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">20×£5</button>
+            <button type="button" @onclick="OnWithdrawBurst200" disabled="@(IsExecutingOrLoading || !IsAccountOpen)">200×£10</button>
+        </div>
+    </fieldset>
+</section>
+
+<section>
+    <h2>Transfer</h2>
+    <fieldset disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+        <legend>Transfer Between Accounts</legend>
+        <div>
+            <label for="transfer-destination-input">Destination Account</label>
+            <InputText id="transfer-destination-input"
+                       type="text"
+                       disabled="@IsTransferDestinationReadOnly"
+                       readonly="@IsTransferDestinationReadOnly"
+                       Value="TransferDestinationAccountId"
+                       ValueChanged="TransferDestinationAccountIdChanged"
+                       ValueExpression="() => TransferDestinationAccountId"
+                       placeholder="Destination account ID"/>
+        </div>
+        <div>
+            <label for="transfer-amount-input">Amount (£)</label>
+            <InputNumber id="transfer-amount-input"
+                         Value="TransferAmount"
+                         ValueChanged="TransferAmountChanged"
+                         ValueExpression="() => TransferAmount"
+                         placeholder="0.00"
+                         step="0.01"
+                         min="0"/>
+        </div>
+        <button type="button"
+                @onclick="OnStartTransfer"
+                disabled="@(IsExecutingOrLoading || !IsAccountOpen)">
+            Start Transfer
+        </button>
+        @if (!string.IsNullOrEmpty(TransferSagaId))
+        {
+            <div>
+                <span>Transfer Saga Id:</span>
+                <span>@TransferSagaId</span>
+            </div>
+        }
+    </fieldset>
+
+    @if (TransferStatusProjection is not null)
+    {
+        <div>
+            <div>
+                <span>Phase:</span>
+                <span>@TransferStatusProjection.Phase</span>
+            </div>
+            <div>
+                <span>Last Step:</span>
+                <span>@TransferStatusProjection.LastCompletedStepIndex</span>
+            </div>
+            @if (!string.IsNullOrEmpty(TransferStatusProjection.ErrorMessage))
+            {
+                <div>
+                    <span>Error:</span>
+                    <span>@TransferStatusProjection.ErrorMessage</span>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p>Start a transfer to see saga status.</p>
+    }
+</section>
+
+<section>
+    <h2>Account Status</h2>
+    @if (BalanceProjection is not null)
+    {
+        <div>
+            <div>
+                <span>Balance:</span>
+                <span>@BalanceProjection.Balance.ToString("C")</span>
+            </div>
+            <div>
+                <span>Holder:</span>
+                <span>@BalanceProjection.HolderName</span>
+            </div>
+            <div>
+                <span>Status:</span>
+                <span>@(BalanceProjection.IsOpen ? "Open" : "Closed")</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div>
+            <h3>Awaiting Data</h3>
+            <p>Open an account to begin viewing real-time projection data.</p>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div role="alert">
+            <strong>Error:</strong> @ErrorMessage
+        </div>
+    }
+
+    @if (LastCommandSucceeded is true)
+    {
+        <div role="status">
+            Command executed successfully.
+        </div>
+    }
+</section>
+
+<section>
+    <h2>Transaction Ledger</h2>
+    @if (LedgerProjection?.Entries.Length > 0)
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Type</th>
+                <th>Amount (£)</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (LedgerEntryDto entry in LedgerProjection.Entries)
+            {
+                <tr>
+                    <td>@entry.EntryType</td>
+                    <td>@entry.Amount</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No transactions yet.</p>
+    }
+</section>

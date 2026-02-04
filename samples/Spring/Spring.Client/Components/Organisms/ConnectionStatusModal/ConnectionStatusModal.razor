@@ -1,0 +1,37 @@
+@namespace Spring.Client.Components.Organisms
+
+@if (IsOpen)
+{
+    <dialog open>
+        <header>
+            <h2>SignalR Connection</h2>
+            <button type="button" @onclick="OnClose">Close</button>
+        </header>
+        <div>
+            <div>
+                <span>Status:</span> <span>@ConnectionStatusText</span>
+            </div>
+            <div>
+                <span>Connection ID:</span> <span>@ConnectionIdText</span>
+            </div>
+            <div>
+                <span>Reconnect Attempts:</span> <span>@ReconnectAttemptCount</span>
+            </div>
+            <div>
+                <span>Last Connected:</span> <span>@LastConnectedAtText</span>
+            </div>
+            <div>
+                <span>Last Disconnected:</span> <span>@LastDisconnectedAtText</span>
+            </div>
+            <div>
+                <span>Last Message:</span> <span>@LastMessageReceivedAtText</span>
+            </div>
+            @if (!string.IsNullOrEmpty(LastError))
+            {
+                <div>
+                    <span>Last Error:</span> <span>@LastError</span>
+                </div>
+            }
+        </div>
+    </dialog>
+}

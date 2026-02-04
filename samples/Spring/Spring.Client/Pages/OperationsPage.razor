@@ -1,0 +1,135 @@
+@page "/operations"
+@inherits InletComponent
+
+<main>
+    <BankAccountPageHeader ConnectionStatusText="@ConnectionStatus.ToString()"
+                           IsConnectionModalOpen="@isConnectionModalOpen"
+                           OnNavigateInvestigations="@NavigateToInvestigations"
+                           OnToggleConnectionModal="@ToggleConnectionModal"/>
+
+    @if (!HasAccountPair)
+    {
+        <section>
+            <h2>No Account Pair Selected</h2>
+            <p>Select or create two accounts before performing operations.</p>
+            <NavLink href="/accounts">Go to Accounts</NavLink>
+        </section>
+    }
+    else
+    {
+        <div class="operations-panels">
+            <div class="operations-panel">
+                <AccountOperationsSection PanelLabel="Account A"
+                                          SelectedEntityId="@AccountAIdDisplay"
+                                          IsExecutingOrLoading="@IsExecutingOrLoadingFor(AccountAId)"
+                                          IsAccountOpen="@IsAccountOpenFor(AccountAId)"
+                                          HolderName="@panelA.HolderName"
+                                          HolderNameChanged="@((
+                                                                 string value
+                                                             ) => panelA.HolderName = value)"
+                                          InitialDeposit="@panelA.InitialDeposit"
+                                          InitialDepositChanged="@((
+                                                                     decimal value
+                                                                 ) => panelA.InitialDeposit = value)"
+                                          OnOpenAccount="@OpenAccountA"
+                                          DepositAmount="@panelA.DepositAmount"
+                                          DepositAmountChanged="@((
+                                                                    decimal value
+                                                                ) => panelA.DepositAmount = value)"
+                                          OnDeposit="@DepositA"
+                                          OnDepositSingle100="@DepositSingle100A"
+                                          OnDepositBurst20="@DepositBurst20A"
+                                          OnDepositBurst200="@DepositBurst200A"
+                                          WithdrawAmount="@panelA.WithdrawAmount"
+                                          WithdrawAmountChanged="@((
+                                                                     decimal value
+                                                                 ) => panelA.WithdrawAmount = value)"
+                                          OnWithdraw="@WithdrawA"
+                                          OnWithdrawSingle100="@WithdrawSingle100A"
+                                          OnWithdrawBurst20="@WithdrawBurst20A"
+                                          OnWithdrawBurst200="@WithdrawBurst200A"
+                                          TransferDestinationAccountId="@panelA.TransferDestinationAccountId"
+                                          TransferDestinationAccountIdChanged="@((
+                                                                                   string value
+                                                                               ) => panelA.TransferDestinationAccountId = value)"
+                                          IsTransferDestinationReadOnly="true"
+                                          TransferAmount="@panelA.TransferAmount"
+                                          TransferAmountChanged="@((
+                                                                     decimal value
+                                                                 ) => panelA.TransferAmount = value)"
+                                          OnStartTransfer="@StartTransferA"
+                                          TransferSagaId="@panelA.TransferSagaId"
+                                          TransferStatusProjection="@TransferStatusProjectionA"
+                                          BalanceProjection="@BalanceProjectionA"
+                                          ErrorMessage="@GetErrorMessageFor(AccountAId)"
+                                          LastCommandSucceeded="@LastCommandSucceeded"
+                                          LedgerProjection="@LedgerProjectionA"
+                                          OnSwitchAccount="@ClearAccountA"/>
+            </div>
+            <div class="operations-panel">
+                <AccountOperationsSection PanelLabel="Account B"
+                                          SelectedEntityId="@AccountBIdDisplay"
+                                          IsExecutingOrLoading="@IsExecutingOrLoadingFor(AccountBId)"
+                                          IsAccountOpen="@IsAccountOpenFor(AccountBId)"
+                                          HolderName="@panelB.HolderName"
+                                          HolderNameChanged="@((
+                                                                 string value
+                                                             ) => panelB.HolderName = value)"
+                                          InitialDeposit="@panelB.InitialDeposit"
+                                          InitialDepositChanged="@((
+                                                                     decimal value
+                                                                 ) => panelB.InitialDeposit = value)"
+                                          OnOpenAccount="@OpenAccountB"
+                                          DepositAmount="@panelB.DepositAmount"
+                                          DepositAmountChanged="@((
+                                                                    decimal value
+                                                                ) => panelB.DepositAmount = value)"
+                                          OnDeposit="@DepositB"
+                                          OnDepositSingle100="@DepositSingle100B"
+                                          OnDepositBurst20="@DepositBurst20B"
+                                          OnDepositBurst200="@DepositBurst200B"
+                                          WithdrawAmount="@panelB.WithdrawAmount"
+                                          WithdrawAmountChanged="@((
+                                                                     decimal value
+                                                                 ) => panelB.WithdrawAmount = value)"
+                                          OnWithdraw="@WithdrawB"
+                                          OnWithdrawSingle100="@WithdrawSingle100B"
+                                          OnWithdrawBurst20="@WithdrawBurst20B"
+                                          OnWithdrawBurst200="@WithdrawBurst200B"
+                                          TransferDestinationAccountId="@panelB.TransferDestinationAccountId"
+                                          TransferDestinationAccountIdChanged="@((
+                                                                                   string value
+                                                                               ) => panelB.TransferDestinationAccountId = value)"
+                                          IsTransferDestinationReadOnly="true"
+                                          TransferAmount="@panelB.TransferAmount"
+                                          TransferAmountChanged="@((
+                                                                     decimal value
+                                                                 ) => panelB.TransferAmount = value)"
+                                          OnStartTransfer="@StartTransferB"
+                                          TransferSagaId="@panelB.TransferSagaId"
+                                          TransferStatusProjection="@TransferStatusProjectionB"
+                                          BalanceProjection="@BalanceProjectionB"
+                                          ErrorMessage="@GetErrorMessageFor(AccountBId)"
+                                          LastCommandSucceeded="@LastCommandSucceeded"
+                                          LedgerProjection="@LedgerProjectionB"
+                                          OnSwitchAccount="@ClearAccountB"/>
+            </div>
+        </div>
+    }
+
+    <ConnectionStatusModal IsOpen="@isConnectionModalOpen"
+                           ConnectionStatusText="@ConnectionStatus.ToString()"
+                           ConnectionIdText="@ConnectionIdDisplay"
+                           ReconnectAttemptCount="@ReconnectAttemptCount"
+                           LastConnectedAtText="@LastConnectedAtDisplay"
+                           LastDisconnectedAtText="@LastDisconnectedAtDisplay"
+                           LastMessageReceivedAtText="@LastMessageReceivedAtDisplay"
+                           LastError="@LastError"
+                           OnClose="@CloseConnectionModal"/>
+
+    <ConnectionLostModal IsOpen="@IsDisconnected"
+                         ConnectionStatusText="@ConnectionStatus.ToString()"
+                         ReconnectAttemptCount="@ReconnectAttemptCount"
+                         LastError="@LastError"
+                         OnReconnect="@RequestReconnect"/>
+</main>

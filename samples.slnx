@@ -23,4 +23,7 @@
         <Project Path="samples\LightSpeed\LightSpeed.Server\LightSpeed.Server.csproj" />
         <Project Path="samples\LightSpeed\LightSpeed.AppHost\LightSpeed.AppHost.csproj" />
     </Folder>
+    <Folder Name="/Tests/Spring/">
+        <Project Path="tests\Spring.Client.L0Tests\Spring.Client.L0Tests.csproj" />
+    </Folder>
 </Solution>

@@ -15,6 +15,10 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     </ItemGroup>
+    <ItemGroup>
+        <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
     <!-- Expose the Inlet.Generators.Core assembly alongside this generator when consumed as an analyzer -->
     <Target Name="GetAnalyzerDependencies" DependsOnTargets="ResolveProjectReferences">
         <ItemGroup>

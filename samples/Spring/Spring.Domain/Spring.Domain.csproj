@@ -11,14 +11,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Mississippi Event Sourcing Framework - Abstractions Only -->
+    <!-- Mississippi Event Sourcing Framework -->
     <ProjectReference Include="..\..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Inlet.Silo.Generators\Inlet.Silo.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

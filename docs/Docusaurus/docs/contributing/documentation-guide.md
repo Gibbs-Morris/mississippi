@@ -166,6 +166,65 @@ flowchart LR
 - Section entry pages MUST summarize their purpose and list child pages.
 - Component pages MUST end with a closing navigation section that links to at least two related pages. Acceptable titles include `Next Steps` and `Related Documentation`; new or updated pages SHOULD standardize on `Next Steps`, while legacy pages MAY retain older patterns until they are revised.
 
+## Feature Documentation Pattern
+
+Feature docs for components with Inlet source generation (sagas, aggregates, UX projections) should follow a consistent branching structure. This pattern teaches concepts first, then guides users to the recommended path while preserving the manual path for understanding or customization.
+
+:::note When to use this pattern
+This pattern applies only to features that have **both** source-generated and manual registration options. API reference pages, client-state-management docs, and contributing guides use the standard page structure instead.
+:::
+
+### Required Structure
+
+```markdown
+# Feature Title
+
+## Overview
+What is this feature and why use it.
+
+## Key Concepts
+Core abstractions/types explained. Use tables for quick reference.
+
+## Implementation
+
+### Step 1: Define the State/Entity
+Type definition with required interfaces.
+
+### Step 2: Define Behavior
+Behavior implementations (steps, reducers, effects).
+
+### Step 3: Register
+
+:::tip Registration Options
+Mississippi supports two registration paths:
+- **Source Generation (Recommended)**: Generators emit registration code.
+- **Manual Registration**: Explicit DI calls for understanding or customization.
+:::
+
+#### Using Source Generation (Recommended)
+
+Generator attribute and what it produces.
+
+#### Manual Registration
+
+Explicit DI registration calls.
+
+## Summary
+
+## Next Steps
+```
+
+### Pattern Rules
+
+- Shared implementation steps should appear before the branching point.
+- Source generation (recommended) should appear first in the branch.
+- Both paths should result in equivalent runtime behavior.
+- A `:::tip Registration Options` callout is expected to introduce the branching point.
+
+### Canonical Example
+
+See [Event Sourcing Sagas](../event-sourcing-sagas.md) for the reference implementation of this pattern.
+
 ## Visuals and Examples
 
 - Use Mermaid for process and architecture diagrams.

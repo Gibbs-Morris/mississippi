@@ -95,6 +95,7 @@ builder.Services.AddBankAccountAggregateMappers();
 builder.Services.AddBankAccountBalanceProjectionMappers();
 builder.Services.AddBankAccountLedgerProjectionMappers();
 builder.Services.AddFlaggedTransactionsProjectionMappers();
+builder.Services.AddMoneyTransferStatusProjectionMappers();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files

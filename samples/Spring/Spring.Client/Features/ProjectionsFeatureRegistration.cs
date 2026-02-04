@@ -10,6 +10,7 @@ using Mississippi.Reservoir;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 using Spring.Client.Features.BankAccountLedger.Dtos;
 using Spring.Client.Features.FlaggedTransactions.Dtos;
+using Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
 namespace Spring.Client.Features;
@@ -32,6 +33,7 @@ public static class ProjectionsFeatureRegistration
         RegisterProjectionReducers<BankAccountBalanceProjectionDto>(services);
         RegisterProjectionReducers<BankAccountLedgerProjectionDto>(services);
         RegisterProjectionReducers<FlaggedTransactionsProjectionDto>(services);
+        RegisterProjectionReducers<MoneyTransferStatusProjectionDto>(services);
         return services;
     }
 

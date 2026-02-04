@@ -49,6 +49,27 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                      {
                                                      }
                                                  }
+
+                                                 namespace Mississippi.EventSourcing.Reducers
+                                                 {
+                                                     public static class ReducerRegistrations
+                                                     {
+                                                     }
+                                                 }
+
+                                                 namespace Mississippi.EventSourcing.Snapshots
+                                                 {
+                                                     public static class SnapshotRegistrations
+                                                     {
+                                                     }
+                                                 }
+
+                                                 namespace Mississippi.EventSourcing.UxProjections
+                                                 {
+                                                     public static class UxProjectionRegistrations
+                                                     {
+                                                     }
+                                                 }
                                                  """;
 
     /// <summary>

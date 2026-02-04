@@ -36,6 +36,14 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
+    private const string ReducerRegistrationsTypeFullName = "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
+
+    private const string SnapshotRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.Snapshots.SnapshotRegistrations";
+
+    private const string UxProjectionRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.UxProjections.UxProjectionRegistrations";
+
     /// <summary>
     ///     Recursively finds projections in a namespace.
     /// </summary>
@@ -262,6 +270,13 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static bool HasRegistrationDependencies(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(UxProjectionRegistrationsTypeFullName) is not null;
+
     /// <summary>
     ///     Tries to get projection info from a type symbol.
     /// </summary>
@@ -318,6 +333,11 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             _
         ) =>
         {
+            if (!HasRegistrationDependencies(source.Compilation))
+            {
+                return [];
+            }
+
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
                 out string? rootNamespace);

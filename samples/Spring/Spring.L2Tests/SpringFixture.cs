@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Threading;
 
 using Projects;
@@ -57,6 +58,23 @@ public sealed class SpringFixture
     ///     Gets the base URI for the Spring.Server application.
     /// </summary>
     public Uri ServerBaseUri { get; private set; } = new("about:blank");
+
+    /// <summary>
+    ///     Creates an <see cref="HttpClient" /> configured to communicate with the Spring server.
+    ///     Uses Aspire's <see cref="DistributedApplicationHostingTestingExtensions.CreateHttpClient" />
+    ///     which handles internal proxy routing correctly.
+    /// </summary>
+    /// <returns>An <see cref="HttpClient" /> configured for the Spring server.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the app is not initialized.</exception>
+    public HttpClient CreateHttpClient()
+    {
+        if (app is null)
+        {
+            throw new InvalidOperationException("Application not initialized.");
+        }
+
+        return app.CreateHttpClient("spring-server");
+    }
 
     /// <summary>
     ///     Creates a new browser page for testing.

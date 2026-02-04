@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<ProjectReference Include="..\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
+		<ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+		<ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="SagaInfrastructureReducers.cs" />
+	</ItemGroup>
+</Project>

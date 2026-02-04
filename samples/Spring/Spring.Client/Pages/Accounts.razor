@@ -1,0 +1,42 @@
+@page "/accounts"
+@inherits InletComponent
+
+<main>
+    <BankAccountPageHeader ConnectionStatusText="@ConnectionStatus.ToString()"
+                           IsConnectionModalOpen="@isConnectionModalOpen"
+                           OnNavigateInvestigations="@NavigateToInvestigations"
+                           OnToggleConnectionModal="@ToggleConnectionModal"/>
+
+    <DemoAccountsSection IsExecutingOrLoading="@IsExecutingOrLoading"
+                         IsInitialized="@IsDemoAccountsInitialized"
+                         AccountAId="@DemoAccountAId"
+                         AccountAName="@DemoAccountAName"
+                         AccountBId="@DemoAccountBId"
+                         AccountBName="@DemoAccountBName"
+                         OnInitialize="@InitializeDemoAccounts"/>
+
+    @if (IsDemoAccountsInitialized)
+    {
+        <section>
+            <h2>Continue</h2>
+            <p>Demo accounts are ready. Open Operations to view both accounts side by side.</p>
+            <NavLink href="@OperationsUrl">Go to Operations</NavLink>
+        </section>
+    }
+
+    <ConnectionStatusModal IsOpen="@isConnectionModalOpen"
+                           ConnectionStatusText="@ConnectionStatus.ToString()"
+                           ConnectionIdText="@ConnectionIdDisplay"
+                           ReconnectAttemptCount="@ReconnectAttemptCount"
+                           LastConnectedAtText="@LastConnectedAtDisplay"
+                           LastDisconnectedAtText="@LastDisconnectedAtDisplay"
+                           LastMessageReceivedAtText="@LastMessageReceivedAtDisplay"
+                           LastError="@LastError"
+                           OnClose="@CloseConnectionModal"/>
+
+    <ConnectionLostModal IsOpen="@IsDisconnected"
+                         ConnectionStatusText="@ConnectionStatus.ToString()"
+                         ReconnectAttemptCount="@ReconnectAttemptCount"
+                         LastError="@LastError"
+                         OnReconnect="@RequestReconnect"/>
+</main>

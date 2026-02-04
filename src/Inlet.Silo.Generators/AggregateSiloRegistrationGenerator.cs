@@ -34,6 +34,9 @@ namespace Mississippi.Inlet.Silo.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
 {
+    private const string AggregateRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.Aggregates.AggregateRegistrations";
+
     private const string CommandHandlerBaseFullName =
         "Mississippi.EventSourcing.Aggregates.Abstractions.CommandHandlerBase`2";
 
@@ -46,8 +49,13 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     private const string GenerateAggregateEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
 
+    private const string ReducerRegistrationsTypeFullName = "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
+
     private const string SimpleEventEffectBaseFullName =
         "Mississippi.EventSourcing.Aggregates.Abstractions.SimpleEventEffectBase`2";
+
+    private const string SnapshotRegistrationsTypeFullName =
+        "Mississippi.EventSourcing.Snapshots.SnapshotRegistrations";
 
     /// <summary>
     ///     Recursively finds aggregates in a namespace.
@@ -422,6 +430,13 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static bool HasRegistrationDependencies(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(AggregateRegistrationsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null;
+
     /// <summary>
     ///     Determines if a type extends CommandHandlerBase.
     /// </summary>
@@ -700,6 +715,11 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             _
         ) =>
         {
+            if (!HasRegistrationDependencies(source.Compilation))
+            {
+                return [];
+            }
+
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
                 out string? rootNamespace);
