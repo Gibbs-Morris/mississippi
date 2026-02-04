@@ -248,8 +248,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
     )
     {
         yield return compilation.Assembly;
-        foreach (IAssemblySymbol assemblySymbol in compilation.References
-                     .Select(compilation.GetAssemblyOrModuleSymbol)
+        foreach (IAssemblySymbol assemblySymbol in compilation.References.Select(compilation.GetAssemblyOrModuleSymbol)
                      .OfType<IAssemblySymbol>())
         {
             yield return assemblySymbol;

@@ -14,7 +14,7 @@ This page lists the public saga contracts and registration helpers used by Missi
 
 ## Saga State Contract
 
-`ISagaState` defines the required saga state properties. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs)
+[`ISagaState`][isagastate] defines the required saga state properties.
 
 | Member | Type | Purpose |
 |--------|------|---------|
@@ -25,13 +25,13 @@ This page lists the public saga contracts and registration helpers used by Missi
 | `StartedAt` | `DateTimeOffset?` | Timestamp when the saga started |
 | `StepHash` | `string?` | Hash of ordered steps |
 
-`SagaPhase` describes lifecycle phases: `NotStarted`, `Running`, `Compensating`, `Completed`, `Compensated`, and `Failed`. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs)
+`SagaPhase` describes lifecycle phases: `NotStarted`, `Running`, `Compensating`, `Completed`, `Compensated`, and `Failed`. See [`ISagaState.cs`][isagastate].
 
 ## Start Command and Lifecycle Events
 
 ### Start Command
 
-`StartSagaCommand<TInput>` starts a saga instance with an input payload. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/StartSagaCommand.cs)
+[`StartSagaCommand<TInput>`][startsagacommand] starts a saga instance with an input payload.
 
 | Property | Type | Purpose |
 |----------|------|---------|
@@ -41,7 +41,7 @@ This page lists the public saga contracts and registration helpers used by Missi
 
 ### Lifecycle Events
 
-These events represent saga lifecycle transitions and step outcomes. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions)
+These events represent saga lifecycle transitions and step outcomes. See the [Sagas Abstractions folder][sagas-abstractions].
 
 | Event | Purpose |
 |-------|---------|
@@ -59,13 +59,13 @@ These events represent saga lifecycle transitions and step outcomes. (https://gi
 
 ### ISagaStep and ICompensatable
 
-`ISagaStep<TSaga>` executes a step and returns `StepResult`. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs)
+[`ISagaStep<TSaga>`][isagastep] executes a step and returns `StepResult`.
 
-`ICompensatable<TSaga>` provides optional compensation and returns `CompensationResult`. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs)
+[`ICompensatable<TSaga>`][isagastep] provides optional compensation and returns `CompensationResult`.
 
 ### StepResult
 
-`StepResult` communicates success/failure and optional emitted events. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/StepResult.cs)
+[`StepResult`][stepresult] communicates success/failure and optional emitted events.
 
 | Member | Purpose |
 |--------|---------|
@@ -76,7 +76,7 @@ These events represent saga lifecycle transitions and step outcomes. (https://gi
 
 ### CompensationResult
 
-`CompensationResult` communicates success/failure/skip for compensation. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/CompensationResult.cs)
+[`CompensationResult`][compensationresult] communicates success/failure/skip for compensation.
 
 | Member | Purpose |
 |--------|---------|
@@ -89,19 +89,19 @@ These events represent saga lifecycle transitions and step outcomes. (https://gi
 
 ### SagaStepAttribute
 
-`SagaStepAttribute<TSaga>` marks a class as a saga step, defines a zero-based order, and binds the step to a saga state type via the type parameter. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepAttribute.cs)
+[`SagaStepAttribute<TSaga>`][sagastepattribute] marks a class as a saga step, defines a zero-based order, and binds the step to a saga state type via the type parameter.
 
 ### SagaStepInfo and Providers
 
-`SagaStepInfo` describes a step with index, name, type, and compensation capability. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfo.cs)
+[`SagaStepInfo`][sagastepinfo] describes a step with index, name, type, and compensation capability.
 
-`ISagaStepInfoProvider<TSaga>` exposes ordered `SagaStepInfo` entries for orchestration. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStepInfoProvider.cs)
+[`ISagaStepInfoProvider<TSaga>`][isagastepinfoprovider] exposes ordered `SagaStepInfo` entries for orchestration.
 
-`AddSagaStepInfo<TSaga>` registers a default provider for a saga state. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfoRegistrations.cs)
+[`AddSagaStepInfo<TSaga>`][sagastepinforegistrations] registers a default provider for a saga state.
 
 ## Registrations
 
-`AddSagaOrchestration<TSaga, TInput>` wires saga infrastructure into DI. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas/SagaRegistrations.cs)
+[`AddSagaOrchestration<TSaga, TInput>`][sagaregistrations] wires saga infrastructure into DI.
 
 It registers:
 
@@ -110,29 +110,43 @@ It registers:
 - Reducers for saga lifecycle events.
 - The saga orchestration effect as an event effect.
 
-(https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas/SagaRegistrations.cs)
-
 ## Generator Attributes
 
 ### GenerateSagaEndpointsAttribute
 
-`[GenerateSagaEndpoints]` marks a saga state for infrastructure code generation. It includes optional `FeatureKey`, `InputType`, and `RoutePrefix` settings, with documented defaults and a route pattern of `api/sagas/{RoutePrefix}/{sagaId}`. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs)
+[`[GenerateSagaEndpoints]`][generatesagaendpoints] marks a saga state for infrastructure code generation. It includes optional `FeatureKey`, `InputType`, and `RoutePrefix` settings, with documented defaults and a route pattern of `api/sagas/{RoutePrefix}/{sagaId}`.
 
 ### GenerateSagaEndpointsAttribute (generic)
 
-`[GenerateSagaEndpoints<TInput>]` provides the same behavior with a strongly typed input payload. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute%7BTInput%7D.cs)
+[`[GenerateSagaEndpoints<TInput>]`][generatesagaendpoints-generic] provides the same behavior with a strongly typed input payload.
 
 ### GenerateSagaStatusReducersAttribute
 
-`[GenerateSagaStatusReducers]` marks a projection for saga status reducer generation. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaStatusReducersAttribute.cs)
+[`[GenerateSagaStatusReducers]`][generatesagastatusreducers] marks a projection for saga status reducer generation.
 
 ## Summary
 
-- `ISagaState` and `SagaPhase` define saga state shape and lifecycle phases. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs)
-- Steps implement `ISagaStep<TSaga>` and optionally `ICompensatable<TSaga>`, using `StepResult` and `CompensationResult` for outcomes. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs, https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/StepResult.cs, https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/CompensationResult.cs)
-- `AddSagaOrchestration` and `AddSagaStepInfo` are the core registration helpers. (https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas/SagaRegistrations.cs, https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfoRegistrations.cs)
+- [`ISagaState`][isagastate] and `SagaPhase` define saga state shape and lifecycle phases.
+- Steps implement [`ISagaStep<TSaga>`][isagastep] and optionally [`ICompensatable<TSaga>`][isagastep], using [`StepResult`][stepresult] and [`CompensationResult`][compensationresult] for outcomes.
+- [`AddSagaOrchestration`][sagaregistrations] and [`AddSagaStepInfo`][sagastepinforegistrations] are the core registration helpers.
 
 ## Next Steps
 
 - [Event Sourcing Sagas](./event-sourcing-sagas.md)
 - [Documentation Guide](./contributing/documentation-guide.md)
+
+<!-- Reference-style links -->
+[isagastate]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs
+[startsagacommand]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/StartSagaCommand.cs
+[sagas-abstractions]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions
+[isagastep]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs
+[stepresult]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/StepResult.cs
+[compensationresult]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/CompensationResult.cs
+[sagastepattribute]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepAttribute.cs
+[sagastepinfo]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfo.cs
+[isagastepinfoprovider]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStepInfoProvider.cs
+[sagastepinforegistrations]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfoRegistrations.cs
+[sagaregistrations]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas/SagaRegistrations.cs
+[generatesagaendpoints]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs
+[generatesagaendpoints-generic]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute%7BTInput%7D.cs
+[generatesagastatusreducers]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaStatusReducersAttribute.cs

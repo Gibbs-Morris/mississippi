@@ -22,6 +22,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     private const string CompensatableInterfaceFullName =
         "Mississippi.EventSourcing.Sagas.Abstractions.ICompensatable`1";
 
+    private const string DiagnosticCategory = "Mississippi.Inlet.Sagas";
+
     private const string EventReducerBaseFullName =
         "Mississippi.EventSourcing.Reducers.Abstractions.EventReducerBase`2";
 
@@ -44,8 +46,6 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
     private const string SnapshotRegistrationsTypeFullName =
         "Mississippi.EventSourcing.Snapshots.SnapshotRegistrations";
-
-    private const string DiagnosticCategory = "Mississippi.Inlet.Sagas";
 
     private static readonly DiagnosticDescriptor SagaDuplicateStepDescriptor = new(
         "MSI1008",
@@ -126,6 +126,89 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         DiagnosticCategory,
         DiagnosticSeverity.Error,
         true);
+
+    private static Dictionary<INamedTypeSymbol, SagaRegistrationInfo> BuildSagaMap(
+        List<INamedTypeSymbol> allTypes,
+        SagaSymbolContext context,
+        string targetRootNamespace,
+        List<Diagnostic> diagnostics
+    )
+    {
+        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap = new(SymbolEqualityComparer.Default);
+        foreach (INamedTypeSymbol typeSymbol in allTypes)
+        {
+            SagaRegistrationInfo? info = TryGetSagaInfo(
+                typeSymbol,
+                context.SagaAttrSymbol,
+                context.SagaAttrGenericSymbol,
+                context.SagaStateSymbol,
+                targetRootNamespace,
+                diagnostics);
+            if (info is not null)
+            {
+                sagaMap[typeSymbol] = info;
+            }
+        }
+
+        return sagaMap;
+    }
+
+    private static void CollectReducers(
+        List<INamedTypeSymbol> allTypes,
+        INamedTypeSymbol reducerBaseSymbol,
+        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap
+    )
+    {
+        foreach (INamedTypeSymbol typeSymbol in allTypes)
+        {
+            ReducerInfo? reducer = TryGetReducerInfo(typeSymbol, reducerBaseSymbol);
+            if (reducer is not null && sagaMap.TryGetValue(reducer.SagaStateSymbol, out SagaRegistrationInfo? sagaInfo))
+            {
+                sagaInfo.Reducers.Add(reducer);
+            }
+        }
+    }
+
+    private static HashSet<INamedTypeSymbol> CollectStepsAndDiagnostics(
+        List<INamedTypeSymbol> allTypes,
+        SagaSymbolContext context,
+        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap,
+        List<Diagnostic> diagnostics
+    )
+    {
+        HashSet<INamedTypeSymbol> sagaStatesWithStepAttributes = new(SymbolEqualityComparer.Default);
+        foreach (INamedTypeSymbol typeSymbol in allTypes)
+        {
+            StepInfoResult stepResult = TryGetStepInfo(
+                typeSymbol,
+                context.SagaStepAttrGenericSymbol,
+                context.SagaStepInterfaceSymbol,
+                context.SagaStateSymbol,
+                context.CompensatableInterfaceSymbol);
+            ProcessStepResult(stepResult, typeSymbol, sagaMap, sagaStatesWithStepAttributes, diagnostics);
+        }
+
+        return sagaStatesWithStepAttributes;
+    }
+
+    private static void FinalizeSagas(
+        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap,
+        HashSet<INamedTypeSymbol> sagaStatesWithStepAttributes,
+        List<SagaRegistrationInfo> sagas,
+        List<Diagnostic> diagnostics
+    )
+    {
+        foreach (SagaRegistrationInfo saga in sagaMap.Values)
+        {
+            saga.Steps.Sort((
+                a,
+                b
+            ) => a.StepIndex.CompareTo(b.StepIndex));
+            bool hasStepAttributes = sagaStatesWithStepAttributes.Contains(saga.SagaStateType);
+            ValidateSteps(saga, diagnostics, hasStepAttributes);
+            sagas.Add(saga);
+        }
+    }
 
     private static string GenerateRegistration(
         SagaRegistrationInfo saga
@@ -220,8 +303,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     )
     {
         yield return compilation.Assembly;
-        foreach (IAssemblySymbol assemblySymbol in compilation.References
-                     .Select(compilation.GetAssemblyOrModuleSymbol)
+        foreach (IAssemblySymbol assemblySymbol in compilation.References.Select(compilation.GetAssemblyOrModuleSymbol)
                      .OfType<IAssemblySymbol>())
         {
             yield return assemblySymbol;
@@ -242,203 +324,16 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         List<INamedTypeSymbol> allTypes = GetAllTypes(compilation).ToList();
-        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap =
-            BuildSagaMap(allTypes, symbolContext, targetRootNamespace, diagnostics);
+        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap = BuildSagaMap(
+            allTypes,
+            symbolContext,
+            targetRootNamespace,
+            diagnostics);
         HashSet<INamedTypeSymbol> sagaStatesWithStepAttributes =
             CollectStepsAndDiagnostics(allTypes, symbolContext, sagaMap, diagnostics);
         CollectReducers(allTypes, symbolContext.ReducerBaseSymbol, sagaMap);
         FinalizeSagas(sagaMap, sagaStatesWithStepAttributes, sagas, diagnostics);
-
         return new(sagas, diagnostics);
-    }
-
-    private static SagaSymbolContext? TryBuildSymbolContext(
-        Compilation compilation
-    )
-    {
-        INamedTypeSymbol? sagaAttrSymbol = compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
-        INamedTypeSymbol? sagaAttrGenericSymbol =
-            compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
-        INamedTypeSymbol? sagaStateSymbol = compilation.GetTypeByMetadataName(SagaStateInterfaceFullName);
-        INamedTypeSymbol? sagaStepAttrGenericSymbol =
-            compilation.GetTypeByMetadataName(SagaStepAttributeGenericFullName);
-        INamedTypeSymbol? sagaStepInterfaceSymbol = compilation.GetTypeByMetadataName(SagaStepInterfaceFullName);
-        INamedTypeSymbol? compensatableInterfaceSymbol =
-            compilation.GetTypeByMetadataName(CompensatableInterfaceFullName);
-        INamedTypeSymbol? reducerBaseSymbol = compilation.GetTypeByMetadataName(EventReducerBaseFullName);
-
-        if ((sagaAttrSymbol is null && sagaAttrGenericSymbol is null) ||
-            sagaStateSymbol is null ||
-            sagaStepAttrGenericSymbol is null ||
-            sagaStepInterfaceSymbol is null ||
-            reducerBaseSymbol is null)
-        {
-            return null;
-        }
-
-        return new(
-            sagaAttrSymbol,
-            sagaAttrGenericSymbol,
-            sagaStateSymbol,
-            sagaStepAttrGenericSymbol,
-            sagaStepInterfaceSymbol,
-            compensatableInterfaceSymbol,
-            reducerBaseSymbol);
-    }
-
-    private static Dictionary<INamedTypeSymbol, SagaRegistrationInfo> BuildSagaMap(
-        List<INamedTypeSymbol> allTypes,
-        SagaSymbolContext context,
-        string targetRootNamespace,
-        List<Diagnostic> diagnostics
-    )
-    {
-        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap = new(SymbolEqualityComparer.Default);
-        foreach (INamedTypeSymbol typeSymbol in allTypes)
-        {
-            SagaRegistrationInfo? info = TryGetSagaInfo(
-                typeSymbol,
-                context.SagaAttrSymbol,
-                context.SagaAttrGenericSymbol,
-                context.SagaStateSymbol,
-                targetRootNamespace,
-                diagnostics);
-            if (info is not null)
-            {
-                sagaMap[typeSymbol] = info;
-            }
-        }
-
-        return sagaMap;
-    }
-
-    private static HashSet<INamedTypeSymbol> CollectStepsAndDiagnostics(
-        List<INamedTypeSymbol> allTypes,
-        SagaSymbolContext context,
-        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap,
-        List<Diagnostic> diagnostics
-    )
-    {
-        HashSet<INamedTypeSymbol> sagaStatesWithStepAttributes = new(SymbolEqualityComparer.Default);
-        foreach (INamedTypeSymbol typeSymbol in allTypes)
-        {
-            StepInfoResult stepResult = TryGetStepInfo(
-                typeSymbol,
-                context.SagaStepAttrGenericSymbol,
-                context.SagaStepInterfaceSymbol,
-                context.SagaStateSymbol,
-                context.CompensatableInterfaceSymbol);
-            ProcessStepResult(stepResult, typeSymbol, sagaMap, sagaStatesWithStepAttributes, diagnostics);
-        }
-
-        return sagaStatesWithStepAttributes;
-    }
-
-    private static void ProcessStepResult(
-        StepInfoResult stepResult,
-        INamedTypeSymbol typeSymbol,
-        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap,
-        HashSet<INamedTypeSymbol> sagaStatesWithStepAttributes,
-        List<Diagnostic> diagnostics
-    )
-    {
-        if (stepResult.Diagnostic is not null)
-        {
-            diagnostics.Add(stepResult.Diagnostic);
-        }
-
-        if (stepResult.SagaStateSymbol is not null)
-        {
-            sagaStatesWithStepAttributes.Add(stepResult.SagaStateSymbol);
-        }
-
-        if (stepResult.Step is null)
-        {
-            return;
-        }
-
-        if (sagaMap.TryGetValue(stepResult.Step.SagaStateSymbol, out SagaRegistrationInfo? sagaInfo))
-        {
-            sagaInfo.Steps.Add(stepResult.Step);
-        }
-        else
-        {
-            Location? location = stepResult.Step.Location ?? typeSymbol.Locations.FirstOrDefault();
-            diagnostics.Add(
-                Diagnostic.Create(
-                    SagaStepMissingSagaRegistrationDescriptor,
-                    location,
-                    stepResult.Step.StepName,
-                    stepResult.Step.SagaStateSymbol.Name));
-        }
-    }
-
-    private static void CollectReducers(
-        List<INamedTypeSymbol> allTypes,
-        INamedTypeSymbol reducerBaseSymbol,
-        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap
-    )
-    {
-        foreach (INamedTypeSymbol typeSymbol in allTypes)
-        {
-            ReducerInfo? reducer = TryGetReducerInfo(typeSymbol, reducerBaseSymbol);
-            if (reducer is not null && sagaMap.TryGetValue(reducer.SagaStateSymbol, out SagaRegistrationInfo? sagaInfo))
-            {
-                sagaInfo.Reducers.Add(reducer);
-            }
-        }
-    }
-
-    private static void FinalizeSagas(
-        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap,
-        HashSet<INamedTypeSymbol> sagaStatesWithStepAttributes,
-        List<SagaRegistrationInfo> sagas,
-        List<Diagnostic> diagnostics
-    )
-    {
-        foreach (SagaRegistrationInfo saga in sagaMap.Values)
-        {
-            saga.Steps.Sort((a, b) => a.StepIndex.CompareTo(b.StepIndex));
-            bool hasStepAttributes = sagaStatesWithStepAttributes.Contains(saga.SagaStateType);
-            ValidateSteps(saga, diagnostics, hasStepAttributes);
-            sagas.Add(saga);
-        }
-    }
-
-    private sealed class SagaSymbolContext
-    {
-        public SagaSymbolContext(
-            INamedTypeSymbol? sagaAttrSymbol,
-            INamedTypeSymbol? sagaAttrGenericSymbol,
-            INamedTypeSymbol sagaStateSymbol,
-            INamedTypeSymbol sagaStepAttrGenericSymbol,
-            INamedTypeSymbol sagaStepInterfaceSymbol,
-            INamedTypeSymbol? compensatableInterfaceSymbol,
-            INamedTypeSymbol reducerBaseSymbol
-        )
-        {
-            SagaAttrSymbol = sagaAttrSymbol;
-            SagaAttrGenericSymbol = sagaAttrGenericSymbol;
-            SagaStateSymbol = sagaStateSymbol;
-            SagaStepAttrGenericSymbol = sagaStepAttrGenericSymbol;
-            SagaStepInterfaceSymbol = sagaStepInterfaceSymbol;
-            CompensatableInterfaceSymbol = compensatableInterfaceSymbol;
-            ReducerBaseSymbol = reducerBaseSymbol;
-        }
-
-        public INamedTypeSymbol? SagaAttrSymbol { get; }
-
-        public INamedTypeSymbol? SagaAttrGenericSymbol { get; }
-
-        public INamedTypeSymbol SagaStateSymbol { get; }
-
-        public INamedTypeSymbol SagaStepAttrGenericSymbol { get; }
-
-        public INamedTypeSymbol SagaStepInterfaceSymbol { get; }
-
-        public INamedTypeSymbol? CompensatableInterfaceSymbol { get; }
-
-        public INamedTypeSymbol ReducerBaseSymbol { get; }
     }
 
     private static bool HasRegistrationDependencies(
@@ -480,6 +375,78 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
         return attr.AttributeClass.IsGenericType &&
                SymbolEqualityComparer.Default.Equals(attr.AttributeClass.OriginalDefinition, sagaStepAttrGenericSymbol);
+    }
+
+    private static void ProcessStepResult(
+        StepInfoResult stepResult,
+        INamedTypeSymbol typeSymbol,
+        Dictionary<INamedTypeSymbol, SagaRegistrationInfo> sagaMap,
+        HashSet<INamedTypeSymbol> sagaStatesWithStepAttributes,
+        List<Diagnostic> diagnostics
+    )
+    {
+        if (stepResult.Diagnostic is not null)
+        {
+            diagnostics.Add(stepResult.Diagnostic);
+        }
+
+        if (stepResult.SagaStateSymbol is not null)
+        {
+            sagaStatesWithStepAttributes.Add(stepResult.SagaStateSymbol);
+        }
+
+        if (stepResult.Step is null)
+        {
+            return;
+        }
+
+        if (sagaMap.TryGetValue(stepResult.Step.SagaStateSymbol, out SagaRegistrationInfo? sagaInfo))
+        {
+            sagaInfo.Steps.Add(stepResult.Step);
+        }
+        else
+        {
+            Location? location = stepResult.Step.Location ?? typeSymbol.Locations.FirstOrDefault();
+            diagnostics.Add(
+                Diagnostic.Create(
+                    SagaStepMissingSagaRegistrationDescriptor,
+                    location,
+                    stepResult.Step.StepName,
+                    stepResult.Step.SagaStateSymbol.Name));
+        }
+    }
+
+    private static SagaSymbolContext? TryBuildSymbolContext(
+        Compilation compilation
+    )
+    {
+        INamedTypeSymbol? sagaAttrSymbol = compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
+        INamedTypeSymbol? sagaAttrGenericSymbol =
+            compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
+        INamedTypeSymbol? sagaStateSymbol = compilation.GetTypeByMetadataName(SagaStateInterfaceFullName);
+        INamedTypeSymbol? sagaStepAttrGenericSymbol =
+            compilation.GetTypeByMetadataName(SagaStepAttributeGenericFullName);
+        INamedTypeSymbol? sagaStepInterfaceSymbol = compilation.GetTypeByMetadataName(SagaStepInterfaceFullName);
+        INamedTypeSymbol? compensatableInterfaceSymbol =
+            compilation.GetTypeByMetadataName(CompensatableInterfaceFullName);
+        INamedTypeSymbol? reducerBaseSymbol = compilation.GetTypeByMetadataName(EventReducerBaseFullName);
+        if ((sagaAttrSymbol is null && sagaAttrGenericSymbol is null) ||
+            sagaStateSymbol is null ||
+            sagaStepAttrGenericSymbol is null ||
+            sagaStepInterfaceSymbol is null ||
+            reducerBaseSymbol is null)
+        {
+            return null;
+        }
+
+        return new(
+            sagaAttrSymbol,
+            sagaAttrGenericSymbol,
+            sagaStateSymbol,
+            sagaStepAttrGenericSymbol,
+            sagaStepInterfaceSymbol,
+            compensatableInterfaceSymbol,
+            reducerBaseSymbol);
     }
 
     private static bool TryGetInputType(
@@ -841,6 +808,42 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             typeName.EndsWith("SagaState", StringComparison.Ordinal)
                 ? typeName.Substring(0, typeName.Length - "SagaState".Length)
                 : typeName;
+    }
+
+    private sealed class SagaSymbolContext
+    {
+        public SagaSymbolContext(
+            INamedTypeSymbol? sagaAttrSymbol,
+            INamedTypeSymbol? sagaAttrGenericSymbol,
+            INamedTypeSymbol sagaStateSymbol,
+            INamedTypeSymbol sagaStepAttrGenericSymbol,
+            INamedTypeSymbol sagaStepInterfaceSymbol,
+            INamedTypeSymbol? compensatableInterfaceSymbol,
+            INamedTypeSymbol reducerBaseSymbol
+        )
+        {
+            SagaAttrSymbol = sagaAttrSymbol;
+            SagaAttrGenericSymbol = sagaAttrGenericSymbol;
+            SagaStateSymbol = sagaStateSymbol;
+            SagaStepAttrGenericSymbol = sagaStepAttrGenericSymbol;
+            SagaStepInterfaceSymbol = sagaStepInterfaceSymbol;
+            CompensatableInterfaceSymbol = compensatableInterfaceSymbol;
+            ReducerBaseSymbol = reducerBaseSymbol;
+        }
+
+        public INamedTypeSymbol? CompensatableInterfaceSymbol { get; }
+
+        public INamedTypeSymbol ReducerBaseSymbol { get; }
+
+        public INamedTypeSymbol? SagaAttrGenericSymbol { get; }
+
+        public INamedTypeSymbol? SagaAttrSymbol { get; }
+
+        public INamedTypeSymbol SagaStateSymbol { get; }
+
+        public INamedTypeSymbol SagaStepAttrGenericSymbol { get; }
+
+        public INamedTypeSymbol SagaStepInterfaceSymbol { get; }
     }
 
     private sealed class StepInfo

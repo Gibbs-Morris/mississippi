@@ -11,7 +11,7 @@ namespace Spring.L2Tests;
 public sealed class BankAccountE2ETests
 {
     /// <summary>
-    ///     Timeout for waiting on SignalR projection updates (10 seconds).
+    ///     Timeout for waiting on SignalR projection updates (30 seconds).
     /// </summary>
     private const float ProjectionTimeout = 30_000;
 
@@ -27,6 +27,57 @@ public sealed class BankAccountE2ETests
         this.fixture = fixture;
 
     /// <summary>
+    ///     Sets up demo accounts and navigates to the operations page.
+    /// </summary>
+    /// <param name="page">The Playwright page instance.</param>
+    /// <returns>The operations page object ready for interactions.</returns>
+    private async Task<OperationsPage> SetupDemoAccountsAndNavigateToOperationsAsync(
+        IPage page
+    )
+    {
+        // Navigate to accounts page and initialize demo accounts
+        AccountsPage accountsPage = new(page);
+        await accountsPage.NavigateAsync(fixture.ServerBaseUri);
+        await accountsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
+        await accountsPage.ClickInitializeDemoAccountsAsync();
+        await accountsPage.WaitForDemoAccountsInitializedAsync(ProjectionTimeout);
+        await accountsPage.ClickGoToOperationsAsync();
+
+        // Return operations page for further interactions
+        OperationsPage operationsPage = new(page);
+        await operationsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
+        return operationsPage;
+    }
+
+    /// <summary>
+    ///     Verifies the accounts page loads and displays the correct title.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task AccountsPageShouldDisplayTitle()
+    {
+        // Arrange
+        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        IPage page = await fixture.CreatePageAsync();
+        try
+        {
+            AccountsPage accountsPage = new(page);
+
+            // Act
+            await accountsPage.NavigateAsync(fixture.ServerBaseUri);
+            await accountsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
+            string? title = await page.Locator("h1").TextContentAsync();
+
+            // Assert
+            title.Should().Be("Bank Account Operations");
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
+    }
+
+    /// <summary>
     ///     Verifies the complete bank account flow via UI: open, deposit, withdraw,
     ///     and confirms the balance updates in real-time via SignalR projection.
     /// </summary>
@@ -39,55 +90,39 @@ public sealed class BankAccountE2ETests
         IPage page = await fixture.CreatePageAsync();
         try
         {
-            IndexPage indexPage = new(page);
-            await indexPage.NavigateAsync(fixture.ServerBaseUri);
-            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
-            string accountId = $"e2e-{Guid.NewGuid():N}";
-            const string holderName = "E2E Test User";
-            const decimal initialDeposit = 100.00m;
-            const decimal depositAmount = 50.00m;
-            const decimal withdrawAmount = 25.00m;
-            decimal expectedFinalBalance = (initialDeposit + depositAmount) - withdrawAmount;
-
-            // Act - Set account ID
-            await indexPage.SetAccountAsync(accountId);
-            string? accountHeader = await indexPage.GetAccountHeaderAsync();
-            accountHeader.Should().Contain(accountId, "account header should show the set account ID");
-
-            // Act - Open account with initial deposit
-            await indexPage.EnterHolderNameAsync(holderName);
-            await indexPage.EnterInitialDepositAsync(initialDeposit);
-            await indexPage.ClickOpenAccountAsync();
-            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
+            // Demo accounts are pre-opened with £500 each
+            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
 
             // Wait for projection to show the balance via SignalR
-            await indexPage.WaitForBalanceAsync(ProjectionTimeout);
+            await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
 
-            // Assert - Verify initial state
-            string? balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("100.00", "initial balance should be 100.00");
-            string? holderText = await indexPage.GetHolderNameTextAsync();
-            holderText.Should().Contain(holderName, "holder name should be displayed");
-            string? statusText = await indexPage.GetStatusTextAsync();
+            // Assert - Verify initial state (demo accounts start with £500)
+            string? balanceText = await operationsPage.GetBalanceTextAsync();
+            balanceText.Should().Contain("500.00", "demo account should start with £500");
+            string? holderText = await operationsPage.GetHolderNameTextAsync();
+            holderText.Should().NotBeNullOrEmpty("holder name should be displayed");
+            string? statusText = await operationsPage.GetStatusTextAsync();
             statusText.Should().Contain("Open", "account status should be Open");
 
             // Act - Deposit funds
-            await indexPage.EnterDepositAmountAsync(depositAmount);
-            await indexPage.ClickDepositAsync();
-            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
-            await indexPage.WaitForBalanceValueAsync("150.00", ProjectionTimeout);
-            balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("150.00", "balance should be 150.00 after deposit");
+            const decimal depositAmount = 50.00m;
+            await operationsPage.EnterDepositAmountAsync(depositAmount);
+            await operationsPage.ClickDepositAsync();
+            await operationsPage.WaitForCommandSuccessAsync(ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("550.00", ProjectionTimeout);
+            balanceText = await operationsPage.GetBalanceTextAsync();
+            balanceText.Should().Contain("550.00", "balance should be £550 after deposit");
 
             // Act - Withdraw funds
-            await indexPage.EnterWithdrawAmountAsync(withdrawAmount);
-            await indexPage.ClickWithdrawAsync();
-            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
-            await indexPage.WaitForBalanceValueAsync("125.00", ProjectionTimeout);
+            const decimal withdrawAmount = 25.00m;
+            await operationsPage.EnterWithdrawAmountAsync(withdrawAmount);
+            await operationsPage.ClickWithdrawAsync();
+            await operationsPage.WaitForCommandSuccessAsync(ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("525.00", ProjectionTimeout);
 
             // Assert - Final balance
-            balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain($"{expectedFinalBalance:F2}", "final balance should reflect all transactions");
+            balanceText = await operationsPage.GetBalanceTextAsync();
+            balanceText.Should().Contain("525.00", "final balance should reflect all transactions");
         }
         finally
         {
@@ -107,30 +142,19 @@ public sealed class BankAccountE2ETests
         IPage page = await fixture.CreatePageAsync();
         try
         {
-            IndexPage indexPage = new(page);
-            await indexPage.NavigateAsync(fixture.ServerBaseUri);
-            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
-            string accountId = $"deposit-{Guid.NewGuid():N}";
-            const string holderName = "Deposit Test";
-            const decimal initialDeposit = 50.00m;
-            const decimal additionalDeposit = 75.00m;
-
-            // Act - Set up account
-            await indexPage.SetAccountAsync(accountId);
-            await indexPage.EnterHolderNameAsync(holderName);
-            await indexPage.EnterInitialDepositAsync(initialDeposit);
-            await indexPage.ClickOpenAccountAsync();
-            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
-            await indexPage.WaitForBalanceAsync(ProjectionTimeout);
+            // Demo accounts are pre-opened with £500 each
+            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
+            await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
 
             // Act - Deposit
-            await indexPage.EnterDepositAmountAsync(additionalDeposit);
-            await indexPage.ClickDepositAsync();
-            await indexPage.WaitForBalanceValueAsync("125.00", ProjectionTimeout);
+            const decimal additionalDeposit = 75.00m;
+            await operationsPage.EnterDepositAmountAsync(additionalDeposit);
+            await operationsPage.ClickDepositAsync();
+            await operationsPage.WaitForBalanceValueAsync("575.00", ProjectionTimeout);
 
             // Assert
-            string? balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("125.00");
+            string? balanceText = await operationsPage.GetBalanceTextAsync();
+            balanceText.Should().Contain("575.00");
         }
         finally
         {
@@ -151,68 +175,30 @@ public sealed class BankAccountE2ETests
     }
 
     /// <summary>
-    ///     Verifies the index page loads and displays the correct title.
+    ///     Verifies that demo account initialization displays the balance projection.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task IndexPageShouldDisplayTitle()
+    public async Task InitializeDemoAccountsShouldDisplayBalanceProjection()
     {
         // Arrange
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
         IPage page = await fixture.CreatePageAsync();
         try
         {
-            IndexPage indexPage = new(page);
-
-            // Act
-            await indexPage.NavigateAsync(fixture.ServerBaseUri);
-            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
-            string? title = await indexPage.GetTitleAsync();
-
-            // Assert
-            title.Should().Be("Bank Account Operations");
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that opening an account displays the balance projection.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task OpenAccountShouldDisplayBalanceProjection()
-    {
-        // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        IPage page = await fixture.CreatePageAsync();
-        try
-        {
-            IndexPage indexPage = new(page);
-            await indexPage.NavigateAsync(fixture.ServerBaseUri);
-            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
-            string accountId = $"open-{Guid.NewGuid():N}";
-            const string holderName = "Jane Doe";
-            const decimal initialDeposit = 250.00m;
-
-            // Act - Set account and open it
-            await indexPage.SetAccountAsync(accountId);
-            await indexPage.EnterHolderNameAsync(holderName);
-            await indexPage.EnterInitialDepositAsync(initialDeposit);
-            await indexPage.ClickOpenAccountAsync();
+            // Demo accounts are pre-opened with £500 each
+            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
 
             // Wait for projection update via SignalR
-            await indexPage.WaitForBalanceAsync(ProjectionTimeout);
+            await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
 
             // Assert
-            string? balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("250.00");
-            string? holderText = await indexPage.GetHolderNameTextAsync();
-            holderText.Should().Contain(holderName);
-            string? statusText = await indexPage.GetStatusTextAsync();
-            statusText.Should().Contain("Open");
+            string? balanceText = await operationsPage.GetBalanceTextAsync();
+            balanceText.Should().Contain("500.00", "demo account should have £500 initial balance");
+            string? holderText = await operationsPage.GetHolderNameTextAsync();
+            holderText.Should().NotBeNullOrEmpty("holder name should be displayed");
+            string? statusText = await operationsPage.GetStatusTextAsync();
+            statusText.Should().Contain("Open", "account status should be Open");
         }
         finally
         {
@@ -221,27 +207,24 @@ public sealed class BankAccountE2ETests
     }
 
     /// <summary>
-    ///     Verifies that setting an account ID displays the account header.
+    ///     Verifies that the operations page shows account headers after setup.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task SetAccountShouldDisplayAccountHeader()
+    public async Task OperationsPageShouldDisplayAccountHeader()
     {
         // Arrange
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
         IPage page = await fixture.CreatePageAsync();
         try
         {
-            IndexPage indexPage = new(page);
-            await indexPage.NavigateAsync(fixture.ServerBaseUri);
-            const string accountId = "test-account-123";
-
-            // Act
-            await indexPage.SetAccountAsync(accountId);
+            // Demo accounts are pre-opened with £500 each
+            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
 
             // Assert
-            string? accountHeader = await indexPage.GetAccountHeaderAsync();
-            accountHeader.Should().Contain(accountId);
+            string? accountHeader = await operationsPage.GetAccountHeaderAsync();
+            accountHeader.Should().NotBeNullOrEmpty("account header should be displayed");
+            accountHeader.Should().Contain("Account A", "should show Account A panel label");
         }
         finally
         {
@@ -261,31 +244,20 @@ public sealed class BankAccountE2ETests
         IPage page = await fixture.CreatePageAsync();
         try
         {
-            IndexPage indexPage = new(page);
-            await indexPage.NavigateAsync(fixture.ServerBaseUri);
-            await indexPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
-            string accountId = $"withdraw-{Guid.NewGuid():N}";
-            const string holderName = "Withdraw Test";
-            const decimal initialDeposit = 200.00m;
-            const decimal withdrawAmount = 50.00m;
-
-            // Act - Set up account
-            await indexPage.SetAccountAsync(accountId);
-            await indexPage.EnterHolderNameAsync(holderName);
-            await indexPage.EnterInitialDepositAsync(initialDeposit);
-            await indexPage.ClickOpenAccountAsync();
-            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
-            await indexPage.WaitForBalanceAsync(ProjectionTimeout);
+            // Demo accounts are pre-opened with £500 each
+            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
+            await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
 
             // Act - Withdraw
-            await indexPage.EnterWithdrawAmountAsync(withdrawAmount);
-            await indexPage.ClickWithdrawAsync();
-            await indexPage.WaitForCommandSuccessAsync(ProjectionTimeout);
-            await indexPage.WaitForBalanceValueAsync("150.00", ProjectionTimeout);
+            const decimal withdrawAmount = 50.00m;
+            await operationsPage.EnterWithdrawAmountAsync(withdrawAmount);
+            await operationsPage.ClickWithdrawAsync();
+            await operationsPage.WaitForCommandSuccessAsync(ProjectionTimeout);
+            await operationsPage.WaitForBalanceValueAsync("450.00", ProjectionTimeout);
 
             // Assert
-            string? balanceText = await indexPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("150.00");
+            string? balanceText = await operationsPage.GetBalanceTextAsync();
+            balanceText.Should().Contain("450.00");
         }
         finally
         {

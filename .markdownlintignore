@@ -9,3 +9,7 @@ docs/Docusaurus/node_modules/**
 
 # Ignore all node_modules
 **/node_modules/**
+
+# Ignore AnalyzerReleases files (Roslyn release tracking format)
+**/AnalyzerReleases.Shipped.md
+**/AnalyzerReleases.Unshipped.md
