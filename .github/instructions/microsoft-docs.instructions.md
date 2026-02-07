@@ -1,0 +1,39 @@
+---
+applyTo: '**'
+---
+
+# Microsoft Documentation Tools Usage
+
+Governing thought: Use official Microsoft documentation MCP tools for authoritative, current answers on C#, F#, ASP.NET Core, Microsoft.Extensions, NuGet, Entity Framework, and dotnet runtime questions.
+
+> Drift check: Tool names/signatures come from MCP server definitions; verify against active tool definitions before updating this file.
+
+## Rules (RFC 2119)
+
+- Questions about C#, F#, ASP.NET Core, Microsoft.Extensions, NuGet, Entity Framework, or dotnet runtime **MUST** use `microsoft_docs_search` first to retrieve official Microsoft Learn content. Why: Ensures accuracy from first-party sources.
+- When `microsoft_docs_search` identifies high-value pages but returns incomplete content, you **MUST** follow up with `microsoft_docs_fetch` to retrieve full article details. Why: Completes context for comprehensive answers.
+- Code generation involving Microsoft/Azure SDKs, APIs, or frameworks **MUST** use `microsoft_code_sample_search` to retrieve official, current code examples before generating. Why: Ensures latest official patterns are used.
+- `microsoft_code_sample_search` **SHOULD** include the optional `language` parameter (e.g., `csharp`, `fsharp`) when known to improve result quality. Why: Filters irrelevant language samples.
+- Answers citing Microsoft documentation **MUST** include source URLs from search/fetch results for verification. Why: Enables readers to validate and explore further.
+
+## Scope and Audience
+
+All contributors working with Microsoft technologies in the Mississippi framework and samples.
+
+## At-a-Glance Quick-Start
+
+- Use `microsoft_docs_search` for concepts, APIs, configuration guidance.
+- Follow with `microsoft_docs_fetch` for full articles when search truncates.
+- Use `microsoft_code_sample_search` before generating Microsoft-related code.
+- Always cite source URLs in responses.
+
+## Core Principles
+
+- Official Microsoft documentation is the authoritative source for .NET ecosystem guidance.
+- Fetch-after-search pattern ensures comprehensive understanding without overloading initial queries.
+- Code samples from official sources reduce bugs and align with current best practices.
+
+## References
+
+- Tool definitions: MCP server tool signatures (microsoft-learn namespace)
+- Supported languages for code search: `csharp`, `fsharp`, `javascript`, `typescript`, `python`, `powershell`, `sql`, `java`, `cpp`, `go`, `rust`, `ruby`, `php`

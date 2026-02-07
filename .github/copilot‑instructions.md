@@ -17,6 +17,7 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 - After touching `.Abstractions`, Copilot **MUST** follow abstractions-project rules (create/use abstractions when triggers apply). Why: Maintains contract/implementation split.
 - All generated/refactored code **MUST** match Microsoft C# conventions (file-scoped namespaces, expression bodies when beneficial, nullable guidance) and **MUST** verify SOLID after each change, fixing violations immediately. Why: Prevents design debt.
 - Before answering usage/run questions, Copilot **MUST** consult `README.md` and treat it as authoritative for public APIs/env vars/examples. Why: Avoids drift.
+- DI registration classes **MUST** follow `{Feature}Registrations` naming pattern with `Add{Feature}()` extension methods per service-registration guidance. Why: Keeps DI discoverable and consistent.
 - Copilot **SHOULD** prioritize public APIs from README when suggesting symbols and **SHOULD** respond concisely with file paths/lines when referencing code. Why: Improves traceability.
 - When work spans many small fixes, Copilot **SHOULD** stage via `.scratchpad/tasks` per scratchpad rules and **MUST NOT** reference `.scratchpad/` from source/tests. Why: Enables safe coordination.
 
@@ -42,6 +43,7 @@ These rules apply to Copilot chat/search responses for this repository.
 ## References
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
+- Service registration: `.github/instructions/service-registration.instructions.md`
 - C#/naming/logging/testing: see respective instruction files under `.github/instructions/`
 
 ## Cleanup Script Details

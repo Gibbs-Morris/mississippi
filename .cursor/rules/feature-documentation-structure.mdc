@@ -1,6 +1,11 @@
 ---
-applyTo: 'docs/**/*.md'
+description: Feature Documentation Structure
+globs: ["docs/**/*.md"]
+alwaysApply: false
 ---
+# Feature Documentation Structure
+**Source:** .github/instructions/feature-documentation-structure.instructions.md
+
 
 # Feature Documentation Structure
 
