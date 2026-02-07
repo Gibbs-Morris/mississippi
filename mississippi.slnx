@@ -87,6 +87,7 @@
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
     <Project Path="tests\Common.Abstractions.L0Tests\Common.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Common.Cosmos.L0Tests\Common.Cosmos.L0Tests.csproj" />
+    <Project Path="tests\PotetnalBugs.L0Tests\PotetnalBugs.L0Tests.csproj" />
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
   </Folder>
   <Folder Name="/Tests/Aqueduct/">
