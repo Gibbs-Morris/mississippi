@@ -79,7 +79,7 @@ docs/
 
 Every feature entry page **MUST** follow this structure:
 
-```markdown
+````markdown
 ---
 id: {feature}
 title: {Feature Title}
@@ -120,7 +120,7 @@ flowchart LR
 - [Topic Page](./topic.md) - Description
 - [Configuration](./configuration.md) - Description
 
-```markdown
+````
 
 ## Category JSON Template
 
