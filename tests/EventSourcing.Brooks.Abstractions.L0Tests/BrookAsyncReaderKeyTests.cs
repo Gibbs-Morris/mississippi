@@ -188,6 +188,15 @@ public sealed class BrookAsyncReaderKeyTests
     }
 
     /// <summary>
+    ///     Parse should throw when value is null.
+    /// </summary>
+    [Fact]
+    public void ParseThrowsWhenValueIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => BrookAsyncReaderKey.Parse(null!));
+    }
+
+    /// <summary>
     ///     Roundtrip through string and back preserves key.
     /// </summary>
     [Fact]

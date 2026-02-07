@@ -335,6 +335,10 @@ public class Store : IStore
         }
     }
 
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Listener exceptions must not break the dispatch notification chain")]
     private void NotifyListeners()
     {
         List<Action> snapshot;
@@ -345,7 +349,14 @@ public class Store : IStore
 
         foreach (Action listener in snapshot)
         {
-            listener();
+            try
+            {
+                listener();
+            }
+            catch (Exception)
+            {
+                // Ignore listener exceptions to keep dispatch stable and notify remaining listeners.
+            }
         }
     }
 

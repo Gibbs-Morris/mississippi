@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
+    <ProjectReference Include="..\..\src\Common.Cosmos\Common.Cosmos.csproj" />
+    <ProjectReference Include="..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+    <ProjectReference Include="..\..\src\Reservoir\Reservoir.csproj" />
+    <ProjectReference Include="..\..\src\Aqueduct\Aqueduct.csproj" />
+    <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+  </ItemGroup>
+
+</Project>

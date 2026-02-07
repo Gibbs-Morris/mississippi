@@ -25,6 +25,18 @@ public sealed class SignalRClientKeyTests
     }
 
     /// <summary>
+    ///     Default key should have non-null components.
+    /// </summary>
+    [Fact(DisplayName = "Default Key Has NonNull Components")]
+    public void DefaultKeyHasNonNullComponents()
+    {
+        SignalRClientKey key = default;
+        Assert.Equal(string.Empty, key.HubName);
+        Assert.Equal(string.Empty, key.ConnectionId);
+        Assert.Equal(":", key.ToString());
+    }
+
+    /// <summary>
     ///     Verifies that connection ID containing separator throws ArgumentException.
     /// </summary>
     [Fact(DisplayName = "Constructor Throws When ConnectionId Contains Separator")]

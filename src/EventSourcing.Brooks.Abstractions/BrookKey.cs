@@ -46,13 +46,13 @@ public readonly record struct BrookKey
     ///     Gets the brook name component of the brook key.
     /// </summary>
     [Id(0)]
-    public string BrookName { get; }
+    public string BrookName { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Gets the entity id component of the brook key.
     /// </summary>
     [Id(1)]
-    public string EntityId { get; }
+    public string EntityId { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Creates a brook key from a grain type decorated with <see cref="Attributes.BrookNameAttribute" />

@@ -59,25 +59,25 @@ public readonly record struct SnapshotStreamKey
     ///     Gets the brook name identifying the event stream (e.g., "CRESCENT.NEWMODEL.CHAT").
     /// </summary>
     [Id(0)]
-    public string BrookName { get; }
+    public string BrookName { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Gets the entity instance identifier.
     /// </summary>
     [Id(2)]
-    public string EntityId { get; }
+    public string EntityId { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Gets the reducers hash that scopes compatibility for this projection stream.
     /// </summary>
     [Id(3)]
-    public string ReducersHash { get; }
+    public string ReducersHash { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Gets the snapshot storage name identifier.
     /// </summary>
     [Id(1)]
-    public string SnapshotStorageName { get; }
+    public string SnapshotStorageName { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Converts the stream key to its composite string representation.

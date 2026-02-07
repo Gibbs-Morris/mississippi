@@ -42,6 +42,11 @@ internal sealed class SnapshotTypeRegistry : ISnapshotTypeRegistry
         ArgumentException.ThrowIfNullOrWhiteSpace(snapshotName);
         ArgumentNullException.ThrowIfNull(snapshotType);
 
+        if (typeToName.ContainsKey(snapshotType))
+        {
+            return;
+        }
+
         // Use TryAdd to avoid overwriting - first registration wins
         if (nameToType.TryAdd(snapshotName, snapshotType))
         {
@@ -82,10 +87,33 @@ internal sealed class SnapshotTypeRegistry : ISnapshotTypeRegistry
                 continue;
             }
 
-            Register(attribute.StorageName, type);
-            registeredCount++;
+            if (TryRegister(attribute.StorageName, type))
+            {
+                registeredCount++;
+            }
         }
 
         return registeredCount;
+    }
+
+    private bool TryRegister(
+        string snapshotName,
+        Type snapshotType
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(snapshotName);
+        ArgumentNullException.ThrowIfNull(snapshotType);
+
+        if (typeToName.ContainsKey(snapshotType))
+        {
+            return false;
+        }
+
+        if (!nameToType.TryAdd(snapshotName, snapshotType))
+        {
+            return false;
+        }
+
+        return typeToName.TryAdd(snapshotType, snapshotName);
     }
 }
