@@ -9,22 +9,23 @@ using Mississippi.Testing.Utilities;
 namespace Mississippi.PotetnalBugs.L0Tests;
 
 /// <summary>
-///     Validates default-value invariant breaks in composite key structs.
+///     Validates that default-value invariant breaks in composite key structs are now fixed
+///     via C# 14 field keyword null-coalescing in property getters.
 /// </summary>
 public sealed class CompositeKeyDefaultValueTests
 {
     /// <summary>
-    ///     default(BrookKey) bypasses constructor validation and produces null components.
+    ///     FIXED: default(BrookKey) now returns non-null components via C# 14 field keyword.
     /// </summary>
     [Fact]
     [ValidatingPotetnalBug(
-        "default(BrookKey) bypasses constructor null validation, producing null BrookName and EntityId. " +
-        "ToString then emits a delimiter-only key that looks valid but contains no components.",
+        "FIXED: default(BrookKey) previously produced null BrookName and EntityId. " +
+        "C# 14 field keyword null-coalescing now ensures components are string.Empty.",
         FilePath = "src/EventSourcing.Brooks.Abstractions/BrookKey.cs",
         LineNumbers = "29,49,55,159",
         Severity = "Low",
         Category = "MissingValidation")]
-    public void DefaultBrookKeyHasNullComponentsAndDelimiterString()
+    public void DefaultBrookKeyHasNonNullComponentsAndDelimiterString()
     {
         // Arrange - constructor rejects null components
         Assert.Throws<ArgumentNullException>(() => new BrookKey(null!, "entity"));
@@ -33,24 +34,24 @@ public sealed class CompositeKeyDefaultValueTests
         // Act
         BrookKey key = default;
 
-        // Assert
-        Assert.Null(key.BrookName);
-        Assert.Null(key.EntityId);
+        // Assert - components are now string.Empty, not null
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.EntityId);
         Assert.Equal("|", key.ToString());
     }
 
     /// <summary>
-    ///     default(SignalRGroupKey) bypasses constructor validation and produces null components.
+    ///     FIXED: default(SignalRGroupKey) now returns non-null components via C# 14 field keyword.
     /// </summary>
     [Fact]
     [ValidatingPotetnalBug(
-        "default(SignalRGroupKey) bypasses constructor null validation, producing null HubName and GroupName. " +
-        "ToString then emits ':' which resembles a valid key but has empty components.",
+        "FIXED: default(SignalRGroupKey) previously produced null HubName and GroupName. " +
+        "C# 14 field keyword null-coalescing now ensures components are string.Empty.",
         FilePath = "src/Aqueduct.Abstractions/Keys/SignalRGroupKey.cs",
         LineNumbers = "34,54,60,115",
         Severity = "Low",
         Category = "MissingValidation")]
-    public void DefaultSignalRGroupKeyHasNullComponentsAndDelimiterString()
+    public void DefaultSignalRGroupKeyHasNonNullComponentsAndDelimiterString()
     {
         // Arrange - constructor rejects null components
         Assert.Throws<ArgumentNullException>(() => new SignalRGroupKey(null!, "group"));
@@ -59,24 +60,24 @@ public sealed class CompositeKeyDefaultValueTests
         // Act
         SignalRGroupKey key = default;
 
-        // Assert
-        Assert.Null(key.HubName);
-        Assert.Null(key.GroupName);
+        // Assert - components are now string.Empty, not null
+        Assert.Equal(string.Empty, key.HubName);
+        Assert.Equal(string.Empty, key.GroupName);
         Assert.Equal(":", key.ToString());
     }
 
     /// <summary>
-    ///     default(SignalRClientKey) bypasses constructor validation and produces null components.
+    ///     FIXED: default(SignalRClientKey) now returns non-null components via C# 14 field keyword.
     /// </summary>
     [Fact]
     [ValidatingPotetnalBug(
-        "default(SignalRClientKey) bypasses constructor null validation, producing null HubName and ConnectionId. " +
-        "ToString then emits ':' which resembles a valid key but has empty components.",
+        "FIXED: default(SignalRClientKey) previously produced null HubName and ConnectionId. " +
+        "C# 14 field keyword null-coalescing now ensures components are string.Empty.",
         FilePath = "src/Aqueduct.Abstractions/Keys/SignalRClientKey.cs",
         LineNumbers = "34,54,60,115",
         Severity = "Low",
         Category = "MissingValidation")]
-    public void DefaultSignalRClientKeyHasNullComponentsAndDelimiterString()
+    public void DefaultSignalRClientKeyHasNonNullComponentsAndDelimiterString()
     {
         // Arrange - constructor rejects null components
         Assert.Throws<ArgumentNullException>(() => new SignalRClientKey(null!, "connection"));
@@ -85,24 +86,25 @@ public sealed class CompositeKeyDefaultValueTests
         // Act
         SignalRClientKey key = default;
 
-        // Assert
-        Assert.Null(key.HubName);
-        Assert.Null(key.ConnectionId);
+        // Assert - components are now string.Empty, not null
+        Assert.Equal(string.Empty, key.HubName);
+        Assert.Equal(string.Empty, key.ConnectionId);
         Assert.Equal(":", key.ToString());
     }
 
     /// <summary>
-    ///     default(SnapshotStreamKey) bypasses constructor validation and produces null components.
+    ///     FIXED: default(SnapshotStreamKey) now returns non-null components via C# 14 field keyword.
     /// </summary>
     [Fact]
     [ValidatingPotetnalBug(
-        "default(SnapshotStreamKey) bypasses constructor null validation, producing null components for " +
-        "BrookName, SnapshotStorageName, EntityId, and ReducersHash.",
+        "FIXED: default(SnapshotStreamKey) previously produced null components for " +
+        "BrookName, SnapshotStorageName, EntityId, and ReducersHash. " +
+        "C# 14 field keyword null-coalescing now ensures all components are string.Empty.",
         FilePath = "src/EventSourcing.Snapshots.Abstractions/SnapshotStreamKey.cs",
         LineNumbers = "36,62,68,74,80,161",
         Severity = "Low",
         Category = "MissingValidation")]
-    public void DefaultSnapshotStreamKeyHasNullComponentsAndDelimiterString()
+    public void DefaultSnapshotStreamKeyHasNonNullComponentsAndDelimiterString()
     {
         // Arrange - constructor rejects null components
         Assert.Throws<ArgumentNullException>(() => new SnapshotStreamKey(null!, "SNAP", "id", "hash"));
@@ -113,11 +115,11 @@ public sealed class CompositeKeyDefaultValueTests
         // Act
         SnapshotStreamKey key = default;
 
-        // Assert
-        Assert.Null(key.BrookName);
-        Assert.Null(key.SnapshotStorageName);
-        Assert.Null(key.EntityId);
-        Assert.Null(key.ReducersHash);
+        // Assert - all components are now string.Empty, not null
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.SnapshotStorageName);
+        Assert.Equal(string.Empty, key.EntityId);
+        Assert.Equal(string.Empty, key.ReducersHash);
         Assert.Equal("|||", key.ToString());
     }
 }

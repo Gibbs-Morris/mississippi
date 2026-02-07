@@ -12,6 +12,9 @@ namespace Mississippi.EventSourcing.Brooks.Abstractions;
 [Alias("Mississippi.EventSourcing.Brooks.Abstractions.BrookPosition")]
 public readonly record struct BrookPosition
 {
+    [Id(0)]
+    private readonly long value;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookPosition" /> struct with the specified value.
     /// </summary>
@@ -28,13 +31,13 @@ public readonly record struct BrookPosition
             throw new ArgumentOutOfRangeException(nameof(value), "Brook position cannot be less than -1.");
         }
 
-        Value = value;
+        this.value = value;
     }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BrookPosition" /> struct with the default value (-1).
     /// </summary>
-    public BrookPosition() => Value = -1;
+    public BrookPosition() => value = -1;
 
     /// <summary>
     ///     Gets a value indicating whether the position has not been set.
@@ -47,8 +50,7 @@ public readonly record struct BrookPosition
     /// <summary>
     ///     Gets the raw position value. A value of -1 indicates not set.
     /// </summary>
-    [Id(0)]
-    public long Value { get; }
+    public long Value => value;
 
     /// <summary>
     ///     Creates a <see cref="BrookPosition" /> from an <see cref="long" /> value.

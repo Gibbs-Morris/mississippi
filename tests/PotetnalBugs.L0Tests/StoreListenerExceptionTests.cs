@@ -8,8 +8,8 @@ using Mississippi.Testing.Utilities;
 namespace Mississippi.PotetnalBugs.L0Tests;
 
 /// <summary>
-///     Validates that a throwing store listener breaks the notification chain
-///     and propagates its exception to the <c>Dispatch</c> caller.
+///     Validates that store listener exception handling is now fixed:
+///     throwing listeners no longer break the notification chain or propagate to Dispatch callers.
 /// </summary>
 public sealed class StoreListenerExceptionTests : IDisposable
 {
@@ -24,21 +24,19 @@ public sealed class StoreListenerExceptionTests : IDisposable
     public void Dispose() => sut.Dispose();
 
     /// <summary>
-    ///     When a subscriber's listener throws during notification, all subsequent
-    ///     listeners registered after it are never notified because
-    ///     <c>NotifyListeners</c> iterates a snapshot in a plain foreach without
-    ///     wrapping each callback invocation in a try-catch.
+    ///     FIXED: A throwing listener no longer prevents subsequent listeners from being notified.
+    ///     Each listener invocation is now wrapped in try-catch.
     /// </summary>
     [Fact]
     [ValidatingPotetnalBug(
-        "NotifyListeners iterates a listener snapshot in a plain foreach without " +
-        "wrapping each callback in try-catch. A throwing listener prevents all subsequent " +
-        "listeners from being notified.",
+        "FIXED: NotifyListeners previously iterated listeners without try-catch. " +
+        "A throwing listener prevented subsequent listeners from being notified. " +
+        "Each listener invocation is now wrapped in try-catch.",
         FilePath = "src/Reservoir/Store.cs",
         LineNumbers = "338-350",
         Severity = "Medium",
         Category = "LogicError")]
-    public void ThrowingListenerPreventsSubsequentListenersFromNotification()
+    public void ThrowingListenerDoesNotPreventSubsequentListenerNotification()
     {
         // Arrange
         bool secondListenerNotified = false;
@@ -49,33 +47,33 @@ public sealed class StoreListenerExceptionTests : IDisposable
         // Act
         Exception? caught = Record.Exception(() => sut.Dispatch(new NoOpAction()));
 
-        // Assert – first listener's exception propagates and second listener never fires
-        Assert.IsType<InvalidOperationException>(caught);
-        Assert.False(secondListenerNotified);
+        // Assert – exception is caught; second listener now fires
+        Assert.Null(caught);
+        Assert.True(secondListenerNotified);
     }
 
     /// <summary>
-    ///     When a listener throws, the exception propagates out of <c>Dispatch</c>
-    ///     because <c>NotifyListeners</c> does not guard individual listener invocations.
-    ///     The caller of <c>Dispatch</c> receives an exception it has no relationship to.
+    ///     FIXED: A listener exception no longer propagates out of Dispatch.
+    ///     Listener invocations are now guarded by try-catch.
     /// </summary>
     [Fact]
     [ValidatingPotetnalBug(
-        "A listener exception propagates out of Dispatch because NotifyListeners " +
-        "does not guard individual listener invocations. The caller of Dispatch " +
-        "receives an exception originating from an unrelated subscriber.",
+        "FIXED: A listener exception previously propagated out of Dispatch. " +
+        "Listener invocations are now guarded by try-catch so callers " +
+        "do not receive exceptions from unrelated subscribers.",
         FilePath = "src/Reservoir/Store.cs",
         LineNumbers = "338-350",
         Severity = "Medium",
         Category = "LogicError")]
-    public void ThrowingListenerCausesDispatchToThrow()
+    public void ThrowingListenerDoesNotCauseDispatchToThrow()
     {
         // Arrange
         using IDisposable sub = sut.Subscribe(
             () => throw new InvalidOperationException("subscriber failure"));
 
-        // Act & Assert – Dispatch propagates the listener's exception
-        Assert.Throws<InvalidOperationException>(() => sut.Dispatch(new NoOpAction()));
+        // Act & Assert – Dispatch no longer propagates the listener's exception
+        Exception? caught = Record.Exception(() => sut.Dispatch(new NoOpAction()));
+        Assert.Null(caught);
     }
 
     /// <summary>

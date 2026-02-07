@@ -27,6 +27,11 @@ public sealed class CosmosRetryPolicy : IRetryPolicy
     )
     {
         ArgumentNullException.ThrowIfNull(logger);
+        if (maxRetries < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxRetries), "Max retries cannot be negative.");
+        }
+
         MaxRetries = maxRetries;
         Logger = logger;
     }

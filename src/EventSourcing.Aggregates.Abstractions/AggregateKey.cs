@@ -46,7 +46,7 @@ public readonly record struct AggregateKey
     ///     Gets the entity identifier.
     /// </summary>
     [Id(0)]
-    public string EntityId { get; }
+    public string EntityId { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Creates an <see cref="AggregateKey" /> from its string representation.

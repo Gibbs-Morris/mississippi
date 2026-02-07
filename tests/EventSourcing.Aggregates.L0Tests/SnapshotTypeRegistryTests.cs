@@ -1,5 +1,7 @@
 using System;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+
 
 namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
@@ -31,6 +33,22 @@ public class SnapshotTypeRegistryTests
         registry.Register("TestState", typeof(AnotherState));
         Type? resolved = registry.ResolveType("TestState");
         Assert.Equal(typeof(TestState), resolved);
+    }
+
+    /// <summary>
+    ///     Register should not add a second name for the same snapshot type.
+    /// </summary>
+    [Fact]
+    public void RegisterIgnoresSecondNameForSameType()
+    {
+        SnapshotTypeRegistry registry = new();
+        registry.Register("TestState", typeof(TestState));
+        registry.Register("TestStateAlias", typeof(TestState));
+
+        Assert.Single(registry.RegisteredTypes);
+        Assert.Equal(typeof(TestState), registry.ResolveType("TestState"));
+        Assert.Null(registry.ResolveType("TestStateAlias"));
+        Assert.Equal("TestState", registry.ResolveName(typeof(TestState)));
     }
 
     /// <summary>
@@ -212,6 +230,24 @@ public class SnapshotTypeRegistryTests
     }
 
     /// <summary>
+    ///     ScanAssembly should only count newly registered snapshot types when names are duplicated.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyCountsOnlyNewRegistrations()
+    {
+        SnapshotTypeRegistry registry = new();
+
+        // Pre-register the duplicate name so the scan has something to skip
+        registry.Register("POTBUG.SNAP.DUPLICATE.V1", typeof(DuplicateSnapshotNameOne));
+        int preCount = registry.RegisteredTypes.Count;
+
+        int count = registry.ScanAssembly(typeof(DuplicateSnapshotNameOne).Assembly);
+
+        // Scan should not count the duplicate nor the already-registered type
+        Assert.Equal(registry.RegisteredTypes.Count - preCount, count);
+    }
+
+    /// <summary>
     ///     ScanAssembly should throw when assembly is null.
     /// </summary>
     [Fact]
@@ -220,4 +256,10 @@ public class SnapshotTypeRegistryTests
         SnapshotTypeRegistry registry = new();
         Assert.Throws<ArgumentNullException>(() => registry.ScanAssembly(null!));
     }
+
+    [SnapshotStorageName("POTBUG", "SNAP", "DUPLICATE", 1)]
+    private sealed record DuplicateSnapshotNameOne(int Value);
+
+    [SnapshotStorageName("POTBUG", "SNAP", "DUPLICATE", 1)]
+    private sealed record DuplicateSnapshotNameTwo(int Value);
 }

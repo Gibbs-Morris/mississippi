@@ -18,6 +18,15 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 [Alias("Mississippi.EventSourcing.Aggregates.OperationResult")]
 public readonly record struct OperationResult
 {
+    [Id(0)]
+    private readonly bool success;
+
+    [Id(1)]
+    private readonly string? errorCode;
+
+    [Id(2)]
+    private readonly string? errorMessage;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="OperationResult" /> struct.
     /// </summary>
@@ -30,30 +39,32 @@ public readonly record struct OperationResult
         string? errorMessage
     )
     {
-        Success = success;
-        ErrorCode = errorCode;
-        ErrorMessage = errorMessage;
+        this.success = success;
+        this.errorCode = errorCode;
+        this.errorMessage = errorMessage;
     }
+
+    /// <summary>
+    ///     Gets a value indicating whether this instance was default-initialized.
+    /// </summary>
+    private bool IsDefault => !success && (errorCode is null) && (errorMessage is null);
 
     /// <summary>
     ///     Gets the error code when the operation failed.
     /// </summary>
-    [Id(1)]
-    public string? ErrorCode { get; }
+    public string? ErrorCode => errorCode;
 
     /// <summary>
     ///     Gets the error message when the operation failed.
     /// </summary>
-    [Id(2)]
-    public string? ErrorMessage { get; }
+    public string? ErrorMessage => errorMessage;
 
     /// <summary>
     ///     Gets a value indicating whether the operation succeeded.
     /// </summary>
-    [Id(0)]
     [MemberNotNullWhen(false, nameof(ErrorCode))]
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
-    public bool Success { get; }
+    public bool Success => success || IsDefault;
 
     /// <summary>
     ///     Creates a failed operation result with the specified error details.
@@ -140,6 +151,11 @@ public readonly record struct OperationResult<T>
     }
 
     /// <summary>
+    ///     Gets a value indicating whether this instance was default-initialized.
+    /// </summary>
+    private bool IsDefault => !Success && (ErrorCode is null) && (ErrorMessage is null);
+
+    /// <summary>
     ///     Gets the error code when the operation failed.
     /// </summary>
     [Id(2)]
@@ -159,6 +175,7 @@ public readonly record struct OperationResult<T>
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
     [MemberNotNullWhen(true, nameof(Value))]
     public bool Success { get; }
+
 
     /// <summary>
     ///     Gets the success value when the operation succeeded.
@@ -192,5 +209,5 @@ public readonly record struct OperationResult<T>
     ///     Converts this result to a non-generic <see cref="OperationResult" />.
     /// </summary>
     /// <returns>An <see cref="OperationResult" /> with the same success/failure state.</returns>
-    public OperationResult ToResult() => Success ? OperationResult.Ok() : OperationResult.Fail(ErrorCode, ErrorMessage);
+    public OperationResult ToResult() => (IsDefault || Success) ? OperationResult.Ok() : OperationResult.Fail(ErrorCode, ErrorMessage);
 }

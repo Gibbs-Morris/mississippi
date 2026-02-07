@@ -72,6 +72,16 @@ public sealed class CosmosRetryPolicyTests
     }
 
     /// <summary>
+    ///     Verifies negative retry counts are rejected.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenMaxRetriesIsNegative()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new CosmosRetryPolicy(NullLogger<CosmosRetryPolicy>.Instance, maxRetries: -1));
+    }
+
+    /// <summary>
     ///     Verifies cancellation tokens propagate as <see cref="OperationCanceledException" />.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test execution.</returns>
