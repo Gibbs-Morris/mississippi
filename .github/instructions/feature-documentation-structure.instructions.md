@@ -41,7 +41,7 @@ All contributors writing or updating feature documentation in `docs/Docusaurus/`
 
 ## Hierarchy
 
-```
+```text
 docs/
 └── {area}/                        # e.g., event-sourcing, client-state-management
     ├── _category_.json
@@ -79,7 +79,7 @@ docs/
 
 Every feature entry page **MUST** follow this structure:
 
-```markdown
+````markdown
 ---
 id: {feature}
 title: {Feature Title}
@@ -119,7 +119,7 @@ flowchart LR
 
 - [Topic Page](./topic.md) - Description
 - [Configuration](./configuration.md) - Description
-```
+````
 
 ## Category JSON Template
 
@@ -162,7 +162,7 @@ Use this table to determine where content belongs:
 
 ## Example: Brooks Feature
 
-```
+```text
 docs/event-sourcing/brooks/
 ├── _category_.json           # label: "Brooks", link to "brooks"
 ├── brooks.md                 # Entry: intro, concepts, getting started
