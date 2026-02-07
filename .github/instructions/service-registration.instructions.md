@@ -4,7 +4,7 @@ applyTo: '**/*.cs'
 
 # Service Registration Pattern
 
-Governing thought: Use hierarchical `ServiceRegistration` extension methods with options-based overloads and synchronous registration; defer async work to hosted services or Orleans lifecycle participants.
+Governing thought: Use hierarchical `{Feature}Registrations` extension methods with options-based overloads and synchronous registration; defer async work to hosted services or Orleans lifecycle participants.
 
 > Drift check: Review DI settings in `Directory.Build.props` and any referenced scripts/config before editing registration code.
 
