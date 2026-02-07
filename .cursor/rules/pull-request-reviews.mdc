@@ -19,8 +19,6 @@ Governing thought: Deliver high-signal reviews that enforce small, single-respon
 - Reviewers **MUST** verify the author ran `pwsh ./go.ps1` or targeted quality scripts before approval. Why: Ensures gates passed.
 - Pull requests **MUST** follow single-responsibility; mixed concerns **MUST** be split. Why: Prevents bundled refactors/features/cleanup.
 - Feedback **SHOULD** be actionable (alternatives, slices) and **SHOULD** balance critique with reinforcement. Why: Helps authors improve quickly.
-- Reviews **MUST** flag when code changes affect behavior documented in `docs/Docusaurus/docs/` but corresponding documentation is not updated. Why: Prevents documentation drift.
-- When flagging documentation drift, reviewers **SHOULD** identify the specific documentation files that need updates. Why: Actionable feedback enables faster fixes.
 
 ## Scope and Audience
 
@@ -31,8 +29,7 @@ PR reviewers in this repository.
 - Read description/links/screenshots; confirm single narrative and change type.
 - Stop/split if scope or size is too large.
 - Check build/test/mutation evidence (`./go.ps1` or equivalent).
-- Inspect architecture boundaries, DI/logging patterns, and docs/tests.
-- Check if code changes require documentation updates in `docs/Docusaurus/docs/`.
+- Inspect architecture boundaries, DI/logging patterns, and tests.
 - Summarize must-fix items plus notable positives.
 
 ## Core Principles
@@ -45,4 +42,4 @@ PR reviewers in this repository.
 
 - Testing: `.github/instructions/testing.instructions.md`
 - Logging/DI guardrails: `.github/instructions/logging-rules.instructions.md`, `.github/instructions/shared-policies.instructions.md`
-- Documentation agent: `.github/agents/doc-writer.agent.md`
+- Documentation agent: `.github/agents/CoV-mississippi-docs.agent.md`

@@ -1,0 +1,85 @@
+---
+description: Documentation Page Focus
+globs: ["docs/**/*.md"]
+alwaysApply: false
+---
+# Documentation Page Focus
+**Source:** .github/instructions/documentation-page-focus.instructions.md
+
+
+# Documentation Page Focus
+
+Governing thought: Every documentation page serves one audience with one purpose—mixing public API guidance with internal implementation details creates confusion.
+
+> Drift check: This file defines page focus rules for `docs/Docusaurus/`; update as documentation patterns evolve.
+
+## Rules (RFC 2119)
+
+- Each page **MUST** declare its focus in the Overview section as either **Public API / Developer Experience** or **Internal Implementation**. Why: Readers must know immediately whether the page helps them build on the framework or understand its internals.
+- **Public API / Developer Experience** pages **MUST** focus on contracts, usage patterns, configuration, and outcomes a developer building on Mississippi will encounter. They **MUST NOT** explain implementation internals beyond what is necessary to use the API correctly. Why: DX-focused readers need actionable guidance, not source-code walkthroughs.
+- **Internal Implementation** pages **MUST** focus on how the framework works under the hood, architectural decisions, performance characteristics, and extension points. They **SHOULD** assume the reader already understands the public API. Why: Implementation-focused readers need depth, not introductory usage examples.
+- Pages **MUST NOT** mix both concerns; if a topic requires both, authors **MUST** split into separate pages and cross-link them. Why: Mixed pages force readers to skip irrelevant sections and obscure the page's purpose.
+- The page's focus **SHOULD** be reflected in its location within the sidebar hierarchy (e.g., `internals/` vs feature folders). Why: Consistent placement aids discoverability.
+
+## Scope and Audience
+
+All contributors writing or updating documentation in `docs/Docusaurus/`.
+
+## At-a-Glance Quick-Start
+
+- Decide before writing: Is this page for someone **using** the feature or someone **understanding** how it works internally?
+- State the focus explicitly in the Overview section.
+- Keep content aligned with the declared focus; split if needed.
+- Place pages in the appropriate sidebar section.
+
+## Focus Types
+
+### Public API / Developer Experience
+
+These pages answer: *How do I use this?*
+
+| Include | Exclude |
+|---------|---------|
+| Public types, interfaces, and contracts | Private/internal types |
+| Configuration options and defaults | Implementation algorithms |
+| Code examples showing typical usage | Source-code line-by-line walkthroughs |
+| Error messages and troubleshooting | Performance internals (unless user-actionable) |
+| Migration guidance and breaking changes | Historical design decisions |
+
+**Indicators**: The reader is building an application on Mississippi.
+
+### Internal Implementation
+
+These pages answer: *How does this work?*
+
+| Include | Exclude |
+|---------|---------|
+| Architectural diagrams and data flow | Step-by-step usage tutorials |
+| Algorithm explanations and trade-offs | Configuration quickstarts |
+| Performance characteristics and benchmarks | Basic "hello world" examples |
+| Extension points and customization hooks | Public API reference tables |
+| Design rationale and alternatives considered | Getting started guidance |
+
+**Indicators**: The reader is contributing to Mississippi, debugging deep issues, or evaluating the framework's design.
+
+## Example Overview Statements
+
+### Public API Focus
+
+> This page documents the `IBrookGrainFactory` interface and shows how to read and write events to brooks in your application.
+
+### Internal Implementation Focus
+
+> This page explains how the saga orchestration effect drives step execution and compensation internally. For usage guidance, see [Sagas](../event-sourcing/sagas/sagas.md).
+
+## Core Principles
+
+- **Single Audience**: One page, one reader profile.
+- **Clear Purpose**: The overview tells the reader if they're in the right place.
+- **Navigable Split**: Cross-links connect related pages with different focuses.
+
+## References
+
+- Feature documentation structure: `.github/instructions/feature-documentation-structure.instructions.md`
+- Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
+- Documentation guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
