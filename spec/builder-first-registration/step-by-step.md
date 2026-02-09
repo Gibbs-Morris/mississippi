@@ -7,12 +7,12 @@
 | src/Common.Abstractions/Builders/IMississippiClientBuilder.cs | Add | Define client builder contract | UNVERIFIED path/name |
 | src/Common.Abstractions/Builders/IMississippiServerBuilder.cs | Add | Define server builder contract | UNVERIFIED path/name |
 | src/Common.Abstractions/Builders/IMississippiSiloBuilder.cs | Add | Define silo builder contract | UNVERIFIED path/name |
-| src/Common.Client/Builders/MississippiClientBuilder.cs | Add | Implement client builder | UNVERIFIED project has no sources today |
-| src/Common.Client/MississippiClientBuilderExtensions.cs | Add | HostApplicationBuilder entry point | UNVERIFIED path/name |
-| src/Common.Server/Builders/MississippiServerBuilder.cs | Add | Implement server builder | UNVERIFIED project has no sources today |
-| src/Common.Server/MississippiServerBuilderExtensions.cs | Add | HostApplicationBuilder entry point | UNVERIFIED path/name |
-| src/Common.Silo/Builders/MississippiSiloBuilder.cs | Add | Implement silo builder | UNVERIFIED project has no sources today |
-| src/Common.Silo/MississippiSiloBuilderExtensions.cs | Add | ISiloBuilder entry point | UNVERIFIED path/name |
+| src/Sdk.Client/Builders/MississippiClientBuilder.cs | Add | Implement client builder | Use existing meta-package |
+| src/Sdk.Client/MississippiClientBuilderExtensions.cs | Add | HostApplicationBuilder entry point | UNVERIFIED path/name |
+| src/Sdk.Server/Builders/MississippiServerBuilder.cs | Add | Implement server builder | Use existing meta-package |
+| src/Sdk.Server/MississippiServerBuilderExtensions.cs | Add | HostApplicationBuilder entry point | UNVERIFIED path/name |
+| src/Sdk.Silo/Builders/MississippiSiloBuilder.cs | Add | Implement silo builder | Use existing meta-package |
+| src/Sdk.Silo/MississippiSiloBuilderExtensions.cs | Add | ISiloBuilder entry point | UNVERIFIED path/name |
 | src/Reservoir/Builders/ReservoirBuilder.cs | Add | Builder-first Reservoir registration | NEW |
 | src/Reservoir/Builders/ReservoirFeatureBuilder.cs | Add | Feature-level registration builder | NEW |
 | src/Reservoir/ReservoirRegistrations.cs | Update/Delete | Replace with builder-first API | Remove legacy IServiceCollection surface |

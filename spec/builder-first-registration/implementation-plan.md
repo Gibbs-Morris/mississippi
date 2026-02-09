@@ -12,7 +12,7 @@
 	- Add `IMississippiClientBuilder`, `IMississippiServerBuilder`, `IMississippiSiloBuilder` contracts in `Common.Abstractions` (UNVERIFIED exact names/placement).
 	- Each contract emphasizes `ConfigureServices`/`ConfigureOptions` hooks without exposing raw `IServiceCollection`.
 2. Implement builder adapters
-	- Implement builder classes in `Common.Client`, `Common.Server`, and `Common.Silo` projects (if empty, add new source files).
+	- Implement builder classes in `Sdk.Client`, `Sdk.Server`, and `Sdk.Silo` projects (these are the existing meta-packages for host builders).
 	- Provide extension entry points on `HostApplicationBuilder` and `ISiloBuilder` to create Mississippi builders.
 3. Reservoir builder-first surface
 	- Add `ReservoirBuilder` and `ReservoirFeatureBuilder` to the Reservoir project.
@@ -39,7 +39,7 @@
 ## Expected Files and Modules
 
 - New/updated builder contracts in `src/Common.Abstractions`.
-- New builder implementations in `src/Common.Client`, `src/Common.Server`, `src/Common.Silo` (if empty, add new files).
+- New builder implementations in `src/Sdk.Client`, `src/Sdk.Server`, `src/Sdk.Silo`.
 - Update Reservoir registration files and add builder types in `src/Reservoir`.
 - Update Aqueduct registration files and add builder types in `src/Aqueduct` and `src/Aqueduct.Grains`.
 - Update Inlet and EventSourcing registration entry points to expose builder surfaces.
