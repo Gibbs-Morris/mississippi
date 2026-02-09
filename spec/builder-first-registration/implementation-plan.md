@@ -1,12 +1,73 @@
 # Implementation Plan
 
-## Outline
+## Changes From Initial Draft
 
-1. Inventory existing registration surfaces, builder types, and legacy entry points across src/ and tests/.
-2. Identify standalone-capable packages and current native builder registrations.
-3. Define a shared builder base interface with ConfigureServices and ConfigureOptions.
-4. Refactor Reservoir and Aqueduct registration to builder-first patterns; remove legacy registration paths.
-5. Standardize options wiring on builder surfaces.
-6. Update tests to use builder-first registrations and add coverage.
-7. Update docs and instruction files; add migration guidance.
-8. Run build/cleanup/tests and mutation testing as required.
+- Replace generic builder concept with explicit Mississippi client/server/silo builders plus package-specific builders (Reservoir, Aqueduct).
+- Add explicit migration scope for docs/samples/tests based on verified usage.
+- Add explicit abstraction-leak cleanup for registrations living in Abstractions projects.
+
+## Detailed Steps
+
+1. Define builder contracts in Abstractions
+	- Add `IMississippiClientBuilder`, `IMississippiServerBuilder`, `IMississippiSiloBuilder` contracts in `Common.Abstractions` (UNVERIFIED exact names/placement).
+	- Each contract exposes `IServiceCollection Services` and options hooks without referencing implementation types.
+2. Implement builder adapters
+	- Implement builder classes in `Common.Client`, `Common.Server`, and `Common.Silo` projects (if empty, add new source files).
+	- Provide extension entry points on `HostApplicationBuilder` and `ISiloBuilder` to create Mississippi builders.
+3. Reservoir builder-first surface
+	- Add `ReservoirBuilder` and `ReservoirFeatureBuilder` to the Reservoir project.
+	- Move registrations (`AddReservoir`, `AddReducer`, `AddActionEffect`, `AddFeatureState`, `AddMiddleware`) into builder-based APIs.
+	- Keep `IServiceCollection` extensions as fallback (documented) or move them to a legacy namespace with `Obsolete` warnings (final decision required).
+4. Aqueduct builder-first surface
+	- Add `AqueductServerBuilder` (ASP.NET) and `AqueductSiloBuilder` wrappers for Orleans.
+	- Align `AddAqueduct`/`UseAqueduct` with builder interfaces and consistent options configuration.
+5. Inlet/EventSourcing alignment
+	- Add Mississippi builder extensions that wrap existing `AddInlet*` and `AddEventSourcing*` registrations.
+	- Decide which ServiceCollection methods remain as fallback vs removed, and apply consistent Obsolete/migration notes.
+6. Fix abstraction leaks
+	- Move `InletInProcessRegistrations` and any concrete registration helpers out of Abstractions if required, or convert to pure contract-only helpers.
+7. Update tests to builder-first APIs
+	- Refactor L0 tests in Reservoir, Inlet, Aqueduct to use the new builders.
+	- Add tests for builder entry points and verify fallback behavior (if retained).
+8. Update docs and samples
+	- Replace `builder.Services.Add*` examples with builder-first usage in Docusaurus pages.
+	- Add migration guidance doc (new page) and update sample `Program.cs` registrations.
+9. Validate
+	- Build + cleanup + unit tests + mutation (Mississippi) per repo scripts.
+	- Update docs lint/format if required by existing tooling.
+
+## Expected Files and Modules
+
+- New/updated builder contracts in `src/Common.Abstractions`.
+- New builder implementations in `src/Common.Client`, `src/Common.Server`, `src/Common.Silo` (if empty, add new files).
+- Update Reservoir registration files and add builder types in `src/Reservoir`.
+- Update Aqueduct registration files and add builder types in `src/Aqueduct` and `src/Aqueduct.Grains`.
+- Update Inlet and EventSourcing registration entry points to expose builder surfaces.
+- Update tests in `tests/*` and docs in `docs/Docusaurus/docs/**`.
+- Update samples in `samples/**/Program.cs` and `samples/**/CrescentFixture.cs`.
+
+## API/Contract Changes
+
+- New public builder interfaces and fluent registration APIs.
+- Deprecation or removal of `IServiceCollection` registration methods (breaking change). Migration guidance required.
+
+## Observability
+
+- No new logging/metrics expected; reuse existing logging in registration components.
+
+## Test Plan
+
+- Build/cleanup: `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`, `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`.
+- Unit tests: `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`.
+- Mutation tests: `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1`.
+
+## Rollout Plan
+
+- Update samples and docs first to validate API shape.
+- Remove or obsolete legacy methods only after builder replacements and tests/docs are updated.
+- Provide migration notes and before/after code snippets.
+
+## Risks and Mitigations
+
+- Risk: Large surface area changes across many packages. Mitigation: keep changes mechanical, update tests immediately, and gate on full build/test/mutation.
+- Risk: Abstractions rules violations. Mitigation: keep contracts in Abstractions, implementations in main projects, and review registrations for concrete types.
