@@ -49,7 +49,7 @@
     <PackageVersion Include="Microsoft.Orleans.Streaming.AzureStorage" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Orleans.Persistence.Memory" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Orleans.Persistence.AzureStorage" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Orleans.Clustering.AzureStorage" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Orleans.Clustering.AzureStorage" Version="10.0.1" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.2" />
     <!-- .NET Aspire -->
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.1.0" />
