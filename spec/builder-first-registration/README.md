@@ -4,7 +4,7 @@ Status: Draft
 
 Task size: Large
 
-Approval checkpoint: TBD
+Approval checkpoint: Yes (public registration APIs and builders will change across multiple packages)
 
 ## Summary
 
