@@ -1,8 +1,8 @@
 # builder-first-docs-update
 
-Status: Draft
+Status: Verified
 Task size: Medium
-Approval checkpoint: TBD
+Approval checkpoint: No (docs-only changes, no runtime behavior or public API changes)
 
 ## Index
 - learned.md

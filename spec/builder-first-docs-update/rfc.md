@@ -17,9 +17,9 @@ Documentation still shows legacy IServiceCollection-based registration APIs for 
 - Do not introduce new runtime behavior or public contracts.
 - Avoid touching generated or build output under docs/Docusaurus/build.
 
-## Current State (UNVERIFIED)
-- Multiple docs reference `services.AddReservoir()`, `services.AddReducer(...)`, `services.AddActionEffect(...)`.
-- Sagas documentation references `services.AddInletSilo()`.
+## Current State (Verified)
+- Docusaurus docs now show builder-first registration patterns for Reservoir, reducers, effects, feature state, DevTools, and sagas.
+- Links in these docs point to builder extension and builder classes instead of removed ReservoirRegistrations APIs.
 
 ## Proposed Design
 - Replace IServiceCollection registration snippets with builder-first equivalents:
