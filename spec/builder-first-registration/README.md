@@ -2,9 +2,13 @@
 
 Status: Draft
 
-Task size: TBD
+Task size: Large
 
 Approval checkpoint: TBD
+
+## Summary
+
+Define and enforce a builder-first registration model across Mississippi, Reservoir, and Aqueduct. Remove legacy registration entry points after builder-first replacements exist. Align options configuration on builder surfaces, and update docs/tests to teach and validate the model.
 
 ## Index
 
