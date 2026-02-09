@@ -24,7 +24,8 @@ public sealed class MississippiServerBuilder : IMississippiServerBuilder
         Services = services;
     }
 
-    private IServiceCollection Services { get; }
+    /// <inheritdoc />
+    public IServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiServerBuilder ConfigureServices(

@@ -7,3 +7,4 @@
 - 2026-02-09T21:36:03.8706435Z Aligned RFC/plan with branch summary requirements (remove legacy registrations, builder ConfigureServices emphasis).
 - 2026-02-09T21:36:03.8706435Z Updated plan locations to use Sdk.* meta-packages for builder adapters.
 - 2026-02-09T21:36:03.8706435Z Implemented builder contracts and Sdk.* builder adapters.
+- 2026-02-09T21:36:03.8706435Z Added Reservoir builder interfaces and core builder implementation; removed legacy registrations and updated built-in Blazor registration surfaces.

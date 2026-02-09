@@ -1,5 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
+using System;
 
+using Mississippi.Reservoir.Abstractions.Builders;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Reducers;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
@@ -16,16 +17,16 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle;
 ///         It tracks the current lifecycle phase (NotStarted, Initializing, Ready) in the store.
 ///     </para>
 ///     <para>
-///         Register with <see cref="AddBuiltInLifecycle" /> after calling <c>AddReservoir</c>.
+    ///         Register with <see cref="AddBuiltInLifecycle" /> after calling <c>AddReservoir</c> on the builder.
 ///     </para>
 /// </remarks>
 public static class LifecycleFeatureRegistration
 {
     /// <summary>
-    ///     Adds the built-in lifecycle feature to the service collection.
+    ///     Adds the built-in lifecycle feature to the Reservoir builder.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
+    /// <param name="builder">The Reservoir builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
     /// <remarks>
     ///     This registers:
     ///     <list type="bullet">
@@ -34,12 +35,15 @@ public static class LifecycleFeatureRegistration
     ///         <item>Reducer for <see cref="AppReadyAction" /></item>
     ///     </list>
     /// </remarks>
-    public static IServiceCollection AddBuiltInLifecycle(
-        this IServiceCollection services
+    public static IReservoirBuilder AddBuiltInLifecycle(
+        this IReservoirBuilder builder
     )
     {
-        services.AddReducer<AppInitAction, LifecycleState>(LifecycleReducers.OnAppInit);
-        services.AddReducer<AppReadyAction, LifecycleState>(LifecycleReducers.OnAppReady);
-        return services;
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.AddFeature<LifecycleState>()
+            .AddReducer<AppInitAction>(LifecycleReducers.OnAppInit)
+            .AddReducer<AppReadyAction>(LifecycleReducers.OnAppReady)
+            .Done();
+        return builder;
     }
 }

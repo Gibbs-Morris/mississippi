@@ -1,5 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
+using System;
 
+using Mississippi.Reservoir.Abstractions.Builders;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Effects;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Reducers;
@@ -17,7 +18,7 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation;
 ///         It tracks the current URI, previous URI, and navigation count in the store.
 ///     </para>
 ///     <para>
-///         Register with <see cref="AddBuiltInNavigation" /> after calling <c>AddReservoir</c>.
+    ///         Register with <see cref="AddBuiltInNavigation" /> after calling <c>AddReservoir</c> on the builder.
 ///     </para>
 ///     <para>
 ///         <strong>Important:</strong> You must also render the
@@ -28,10 +29,10 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation;
 public static class NavigationFeatureRegistration
 {
     /// <summary>
-    ///     Adds the built-in navigation feature to the service collection.
+    ///     Adds the built-in navigation feature to the Reservoir builder.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
+    /// <param name="builder">The Reservoir builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
     /// <remarks>
     ///     This registers:
     ///     <list type="bullet">
@@ -40,15 +41,17 @@ public static class NavigationFeatureRegistration
     ///         <item><see cref="NavigationEffect" /> for handling navigation actions</item>
     ///     </list>
     /// </remarks>
-    public static IServiceCollection AddBuiltInNavigation(
-        this IServiceCollection services
+    public static IReservoirBuilder AddBuiltInNavigation(
+        this IReservoirBuilder builder
     )
     {
-        // Register the reducer for LocationChangedAction
-        services.AddReducer<LocationChangedAction, NavigationState>(NavigationReducers.OnLocationChanged);
+        ArgumentNullException.ThrowIfNull(builder);
 
-        // Register the navigation effect
-        services.AddActionEffect<NavigationState, NavigationEffect>();
-        return services;
+        // Register the reducer for LocationChangedAction and the navigation effect.
+        builder.AddFeature<NavigationState>()
+            .AddReducer<LocationChangedAction>(NavigationReducers.OnLocationChanged)
+            .AddActionEffect<NavigationEffect>()
+            .Done();
+        return builder;
     }
 }

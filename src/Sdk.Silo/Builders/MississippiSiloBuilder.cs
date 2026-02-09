@@ -28,7 +28,8 @@ public sealed class MississippiSiloBuilder : IMississippiSiloBuilder
 
     private ISiloBuilder SiloBuilder { get; }
 
-    private IServiceCollection Services => SiloBuilder.Services;
+    /// <inheritdoc />
+    public IServiceCollection Services => SiloBuilder.Services;
 
     /// <inheritdoc />
     public IMississippiSiloBuilder ConfigureServices(
