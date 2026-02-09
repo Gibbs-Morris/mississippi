@@ -37,18 +37,23 @@ Reservoir provides two ways to register reducers, depending on your preference.
 
 ### Option 1: Delegate Reducers
 
-Register a static method or lambda directly with `AddReducer`:
+Register a static method or lambda directly with `AddReducer` on a feature builder:
 
 ```csharp
 // Using a static method from a reducer class
-services.AddReducer<SetEntityIdAction, EntitySelectionState>(EntitySelectionReducers.SetEntityId);
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+
+reservoir.AddFeature<EntitySelectionState>()
+    .AddReducer<SetEntityIdAction>(EntitySelectionReducers.SetEntityId)
+    .Done();
 
 ```
 
 This approach uses [`DelegateActionReducer<TAction, TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/DelegateActionReducer.cs) internally.
 
 This option registers a delegate-based reducer for the action/state pair.
-([AddReducer overloads](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130))
+([ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L53-L76))
 
 ### Option 2: Class-Based Reducers
 
@@ -63,11 +68,13 @@ public sealed class MyReducer : ActionReducerBase<MyAction, MyState>
 }
 
 // Registration
-services.AddReducer<MyAction, MyState, MyReducer>();
+reservoir.AddFeature<MyState>()
+    .AddReducer<MyAction, MyReducer>()
+    .Done();
 ```
 
 This option registers the reducer class as a transient service and composes it into the root reducer.
-([AddReducer overloads](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130))
+([ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L53-L76))
 
 ## Organizing Reducers
 
@@ -93,7 +100,9 @@ internal static class EntitySelectionReducers
 Then register each reducer separately:
 
 ```csharp
-services.AddReducer<SetEntityIdAction, EntitySelectionState>(EntitySelectionReducers.SetEntityId);
+reservoir.AddFeature<EntitySelectionState>()
+    .AddReducer<SetEntityIdAction>(EntitySelectionReducers.SetEntityId)
+    .Done();
 ```
 
 ([Spring sample: EntitySelectionReducers](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/EntitySelectionReducers.cs))
@@ -156,22 +165,23 @@ public static MyState MaybeUpdate(MyState state, SomeAction action)
 
 ## Automatic Registration Side Effects
 
-Both `AddReducer` overloads automatically:
+`AddFeature` and `AddReducer` automatically:
 
 1. Register the [`IRootReducer<TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IRootReducer.cs) that composes all reducers for the feature
 2. Register the [`IFeatureStateRegistration`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureStateRegistration.cs) that provides initial state
 
-You don't need to call `AddFeatureState` or `AddRootReducer` separately when using `AddReducer`.
+You don't need to register a root reducer separately when using `AddReducer` on the feature builder.
 
-([ReservoirRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130))
+([ReservoirBuilder.AddFeature](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L60-L65),
+[ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L53-L76))
 
 ## Summary
 
 | Concept | Description |
 |---------|-------------|
 | **Reducer** | Pure function: `(state, action) => newState` |
-| **Delegate registration** | `AddReducer<TAction, TState>(func)` |
-| **Class registration** | `AddReducer<TAction, TState, TReducer>()` |
+| **Delegate registration** | `AddFeature().AddReducer<TAction>(func)` |
+| **Class registration** | `AddFeature().AddReducer<TAction, TReducer>()` |
 | **Base class** | `ActionReducerBase<TAction, TState>` handles type checking |
 | **Immutability** | Feature states are expected to be immutable records; reducers return new instances when state changes |
 

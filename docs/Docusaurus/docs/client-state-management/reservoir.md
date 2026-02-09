@@ -142,15 +142,20 @@ public static class CounterReducers
 }
 
 // 4. Register in DI
-services.AddReservoir(); // Registers IStore
-services.AddReducer<IncrementAction, CounterState>(CounterReducers.Increment);
-services.AddReducer<DecrementAction, CounterState>(CounterReducers.Decrement);
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+
+reservoir.AddFeature<CounterState>()
+    .AddReducer<IncrementAction>(CounterReducers.Increment)
+    .AddReducer<DecrementAction>(CounterReducers.Decrement)
+    .Done();
 ```
 
 :::note
-`AddReducer` registers the feature state and root reducer by calling `AddFeatureState` and `AddRootReducer` internally, and `AddReservoir()` registers the `IStore` that coordinates dispatch.
-([ReservoirRegistrations.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130),
-[ReservoirRegistrations.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L139-L148))
+`AddFeature<TState>()` registers the feature state and returns a feature builder. `AddReducer` registers the root reducer, and `mississippi.AddReservoir()` registers the `IStore` that coordinates dispatch.
+([ReservoirBuilder.AddFeature](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L60-L65),
+[ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L53-L76),
+[ReservoirBuilderExtensions.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirBuilderExtensions.cs#L20-L25))
 :::
 
 ## Built-in Features
@@ -165,8 +170,9 @@ Reservoir.Blazor includes ready-to-use features for common Blazor application ne
 Register both with a single call:
 
 ```csharp
-builder.Services.AddReservoir();
-builder.Services.AddReservoirBlazorBuiltIns();
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+reservoir.AddReservoirBlazorBuiltIns();
 ```
 
 ## Learn More

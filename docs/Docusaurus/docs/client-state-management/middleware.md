@@ -140,16 +140,15 @@ private sealed class OrderedMiddleware : IMiddleware
 Register middleware using `AddMiddleware<TMiddleware>()`:
 
 ```csharp
-public static IServiceCollection AddMiddleware<TMiddleware>(
-    this IServiceCollection services
-)
-    where TMiddleware : class, IMiddleware;
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+reservoir.AddMiddleware<MyMiddleware>();
 ```
 
-([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81))
+([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L54-L58))
 
 Middleware is registered as transient and resolved when the store is created.
-([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81),
+([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L54-L58),
 [Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L50-L90))
 
 ### Runtime Registration
@@ -225,7 +224,7 @@ public void RegisterMiddlewareAddsToDispatchPipeline()
 | **Transient lifetime** | Middleware is registered as transient and resolved when the store is created |
 | **Dispatch order** | Runs before reducers and effects in the dispatch pipeline |
 
-([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81),
+([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L54-L58),
 [Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L213-L231))
 
 ## Next Steps

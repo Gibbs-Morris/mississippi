@@ -18,17 +18,18 @@ This page covers registration, configuration options, enablement modes, the comp
 
 ### 1. Register DevTools
 
-Register DevTools after `AddReservoir()` in your `Program.cs`:
+Register DevTools after `mississippi.AddReservoir()` in your `Program.cs`:
 
 ```csharp
-builder.Services.AddReservoir();
-builder.Services.AddReservoirDevTools(options =>
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
 });
 ```
 
-([ReservoirDevToolsRegistrations.AddReservoirDevTools](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs#L33-L52))
+([ReservoirDevToolsRegistrations.AddReservoirDevTools](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs#L45-L73))
 
 ### 2. Add the Initializer Component
 
@@ -62,6 +63,8 @@ Install the Redux DevTools extension for your browser:
 
 Open DevTools in your browser and navigate to the Redux tab. You will see actions and state as they are dispatched.
 
+All examples below assume an `IReservoirBuilder` named `reservoir` created via `builder.AddMississippiClient().AddReservoir()`.
+
 ## Enablement Modes
 
 DevTools integration is disabled by default. Use the `Enablement` property to control when integration is active.
@@ -88,7 +91,7 @@ public enum ReservoirDevToolsEnablement
 ### Example
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     // Only enable in development
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
@@ -120,7 +123,7 @@ The `ReservoirDevToolsOptions` class provides configuration for the DevTools int
 ### Example Configuration
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
     options.Name = "My Blazor App";
@@ -216,7 +219,7 @@ flowchart LR
 ### Configuration Example
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
     
@@ -266,7 +269,7 @@ By default, time-travel operations use best-effort rehydration: if a feature sta
 Enable strict mode to require all registered feature states to be present and valid in the incoming payload:
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.DevelopmentOnly;
     options.IsStrictStateRehydrationEnabled = true;
@@ -329,7 +332,7 @@ Func<IReadOnlyDictionary<string, object>, object?>? StateSanitizer
 Receives each dispatched `IAction` and can return a replacement object for DevTools display:
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.ActionSanitizer = action =>
     {
@@ -350,7 +353,7 @@ builder.Services.AddReservoirDevTools(options =>
 Receives the full state snapshot (keyed by feature key) and can return a modified snapshot:
 
 ```csharp
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.StateSanitizer = state =>
     {
@@ -372,7 +375,7 @@ Sanitizers run on every action dispatch. Keep them fast to avoid impacting appli
 | Concept | Description |
 |---------|-------------|
 | **Architecture** | Scoped service subscribing to `IStore.StoreEvents`, initialized via component |
-| **Registration** | `AddReservoirDevTools()` after `AddReservoir()` |
+| **Registration** | `reservoir.AddReservoirDevTools()` after `mississippi.AddReservoir()` |
 | **Initialization** | Add `<ReservoirDevToolsInitializerComponent/>` to `App.razor` |
 | **Missing Component Detection** | Hosted service checks initialization after 5 seconds; behavior controlled by `ThrowOnMissingInitializer` |
 | **Enablement** | `Off` (default), `DevelopmentOnly`, or `Always` |

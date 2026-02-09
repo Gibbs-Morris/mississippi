@@ -113,11 +113,12 @@ public sealed record TransferSagaState : ISagaState
 }
 ```
 
-The generated registration is called automatically when you use `AddInletSilo()`:
+The generated registration is called automatically when you use `mississippi.AddInletSilo()`:
 
 ```csharp
 // In your silo configuration
-services.AddInletSilo();
+IMississippiSiloBuilder mississippi = siloBuilder.AddMississippiSilo();
+mississippi.AddInletSilo();
 ```
 
 ([GenerateSagaEndpointsAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs), [SagaSiloRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Silo.Generators/SagaSiloRegistrationGenerator.cs))
@@ -137,14 +138,18 @@ For full control or when not using Inlet generators, register explicitly:
 
 ```csharp
 // Register orchestration (command handler, reducers, events, effect)
-services.AddSagaOrchestration<TransferSagaState, TransferInput>();
+IMississippiSiloBuilder mississippi = siloBuilder.AddMississippiSilo();
+mississippi.AddSagaOrchestration<TransferSagaState, TransferInput>();
 
 // Register step implementations
-services.AddTransient<ValidateTransferStep>();
-services.AddTransient<ReserveFundsStep>();
+mississippi.ConfigureServices(services =>
+{
+    services.AddTransient<ValidateTransferStep>();
+    services.AddTransient<ReserveFundsStep>();
+});
 
 // Register step metadata for the orchestration effect
-services.AddSagaStepInfo<TransferSagaState>(new[]
+mississippi.AddSagaStepInfo<TransferSagaState>(new[]
 {
     new SagaStepInfo(0, nameof(ValidateTransferStep), typeof(ValidateTransferStep), hasCompensation: false),
     new SagaStepInfo(1, nameof(ReserveFundsStep), typeof(ReserveFundsStep), hasCompensation: true),

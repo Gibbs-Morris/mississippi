@@ -18,15 +18,17 @@ The built-in navigation feature provides Redux-style navigation state management
 
 ```csharp
 // Program.cs
-builder.Services.AddReservoir();
-builder.Services.AddReservoirBlazorBuiltIns(); // Registers navigation + lifecycle
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+reservoir.AddReservoirBlazorBuiltIns(); // Registers navigation + lifecycle
 ```
 
 Or register navigation only:
 
 ```csharp
-builder.Services.AddReservoir();
-builder.Services.AddBuiltInNavigation();
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+reservoir.AddBuiltInNavigation();
 ```
 
 ### 2. Add the Navigation Provider

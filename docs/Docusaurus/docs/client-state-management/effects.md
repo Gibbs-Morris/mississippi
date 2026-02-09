@@ -156,15 +156,19 @@ The base class handles:
 
 ## Registering Effects
 
-Register effects using `AddActionEffect<TState, TEffect>()`:
+Register effects using `AddActionEffect<TEffect>()` on a feature builder:
 
 ```csharp
-services.AddReservoir();
-services.AddActionEffect<MyFeatureState, LoadDataEffect>();
-services.AddActionEffect<MyFeatureState, LogAnalyticsEffect>();
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+
+reservoir.AddFeature<MyFeatureState>()
+    .AddActionEffect<LoadDataEffect>()
+    .AddActionEffect<LogAnalyticsEffect>()
+    .Done();
 ```
 
-([ReservoirRegistrations.AddActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L31-L42))
+([ReservoirFeatureBuilder.AddActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L44-L49))
 
 This method:
 

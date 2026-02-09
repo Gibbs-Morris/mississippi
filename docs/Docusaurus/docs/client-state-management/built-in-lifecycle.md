@@ -18,15 +18,17 @@ The built-in lifecycle feature provides Redux-style application lifecycle state 
 
 ```csharp
 // Program.cs
-builder.Services.AddReservoir();
-builder.Services.AddReservoirBlazorBuiltIns(); // Registers navigation + lifecycle
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+reservoir.AddReservoirBlazorBuiltIns(); // Registers navigation + lifecycle
 ```
 
 Or register lifecycle only:
 
 ```csharp
-builder.Services.AddReservoir();
-builder.Services.AddBuiltInLifecycle();
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
+reservoir.AddBuiltInLifecycle();
 ```
 
 ### 2. Dispatch Lifecycle Actions

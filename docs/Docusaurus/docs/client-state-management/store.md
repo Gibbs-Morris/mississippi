@@ -45,29 +45,37 @@ public interface IStore : IDisposable
 
 ## Registering the Store
 
-Register the Store via `AddReservoir()`:
+Register the Store via `AddReservoir()` on the Mississippi client builder:
 
 ```csharp
-services.AddReservoir();
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
 ```
 
-This registers `IStore` as scoped, resolving all `IFeatureStateRegistration` and `IMiddleware` instances from DI:
+`AddReservoir` creates a Reservoir builder and wires the Store registration:
 
 ```csharp
-public static IServiceCollection AddReservoir(
-    this IServiceCollection services
+public static IReservoirBuilder AddReservoir(
+    this IMississippiClientBuilder builder
 )
 {
-    services.TryAddSingleton(TimeProvider.System);
-    services.TryAddScoped<IStore>(sp => new Store(
-        sp.GetServices<IFeatureStateRegistration>(),
-        sp.GetServices<IMiddleware>(),
-        sp.GetRequiredService<TimeProvider>()));
-    return services;
+    ArgumentNullException.ThrowIfNull(builder);
+    return new ReservoirBuilder(builder.Services);
 }
 ```
 
-([ReservoirRegistrations.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L139-L148))
+The builder registers `IStore` as scoped, resolving all `IFeatureStateRegistration` and `IMiddleware` instances from DI:
+
+```csharp
+Services.TryAddSingleton(TimeProvider.System);
+Services.TryAddScoped<IStore>(sp => new Store(
+    sp.GetServices<IFeatureStateRegistration>(),
+    sp.GetServices<IMiddleware>(),
+    sp.GetRequiredService<TimeProvider>()));
+```
+
+([ReservoirBuilderExtensions.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirBuilderExtensions.cs#L20-L25),
+[ReservoirBuilder.AddStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L49-L67))
 
 :::note Scoped Lifetime
 The Store is registered as **scoped**. Its lifetime follows the dependency-injection scope configured by the host.
@@ -169,7 +177,7 @@ private string? SelectedEntityId =>
 
 ```text
 No feature state registered for 'entitySelection'.
-Call AddFeatureState<EntitySelectionState>() during service registration.
+Call AddFeature<EntitySelectionState>() during service registration.
 ```
 
 ([Store.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L131-L144))
@@ -226,7 +234,7 @@ private void OnStoreChanged()
 
 The Store can be constructed two ways:
 
-1. **Via DI (recommended)** — `AddReservoir()` registers the Store with feature registrations and middleware resolved from DI
+1. **Via DI (recommended)** — `mississippi.AddReservoir()` registers the Store with feature registrations and middleware resolved from DI
 2. **Manually** — Pass feature registrations and middleware directly to the constructor
 
 Manual construction is used in tests to validate middleware behavior.

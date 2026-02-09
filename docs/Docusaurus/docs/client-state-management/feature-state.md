@@ -70,31 +70,29 @@ In the Spring sample, reducers update feature state by returning new record inst
 
 ## Registering Feature State
 
-Feature state is registered automatically when you add reducers or effects:
+Feature state is registered automatically when you add reducers or effects via a feature builder:
 
 ```csharp
-// AddReducer automatically registers the feature state
-services.AddReducer<SetEntityIdAction, EntitySelectionState>(
-    (state, action) => state with { EntityId = action.EntityId });
+IMississippiClientBuilder mississippi = builder.AddMississippiClient();
+IReservoirBuilder reservoir = mississippi.AddReservoir();
 
-// AddActionEffect also registers the feature state
-services.AddActionEffect<EntitySelectionState, MyEffect>();
+reservoir.AddFeature<EntitySelectionState>()
+    .AddReducer<SetEntityIdAction>((state, action) => state with { EntityId = action.EntityId })
+    .AddActionEffect<MyEffect>()
+    .Done();
 ```
 
 For feature states without reducers or effects, register directly:
 
 ```csharp
-public static IServiceCollection AddFeatureState<TState>(
-    this IServiceCollection services
-)
-    where TState : class, IFeatureState, new();
+reservoir.AddFeature<MyFeatureState>().Done();
 ```
 
-([ReservoirRegistrations.AddFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L53-L65))
+([ReservoirBuilder.AddFeature](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L60-L65))
 
 :::note Automatic Deduplication
-`AddFeatureState` uses `TryAddEnumerable` to prevent duplicate registrations. You can call it multiple times for the same state type without side effects.
-([ReservoirRegistrations source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L58-L63))
+`AddFeature` uses `TryAddEnumerable` to prevent duplicate registrations. You can call it multiple times for the same state type without side effects.
+([ReservoirBuilder.AddFeature](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L60-L65))
 :::
 
 ## Accessing Feature State
@@ -119,7 +117,7 @@ If the feature state is not registered, `GetState` throws:
 
 ```text
 InvalidOperationException: No feature state registered for 'entitySelection'.
-Call AddFeatureState<EntitySelectionState>() during service registration.
+Call AddFeature<EntitySelectionState>() during service registration.
 ```
 
 ## How Feature State Works
@@ -167,13 +165,13 @@ The `FeatureKey` must be unique across all registered feature states. Initial st
 |---------|-------------|
 | **Feature state** | Immutable record implementing `IFeatureState` |
 | **FeatureKey** | Unique string identifier for the state slice |
-| **Registration** | Automatic via `AddReducer`/`AddActionEffect`, or explicit via `AddFeatureState` |
+| **Registration** | Automatic via `AddFeature().AddReducer`/`AddActionEffect`, or explicit via `AddFeature().Done()` |
 | **Access** | `store.GetState<TState>()` or `GetState<TState>()` in components |
 | **Initialization** | Initial state is created via `new TState()` in the registration path |
 
 ([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs),
 [IFeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureStateRegistration.cs),
-[ReservoirRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs))
+[ReservoirBuilder](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs))
 
 ## Next Steps
 
