@@ -12,6 +12,11 @@ Documentation still shows legacy IServiceCollection-based registration APIs for 
 - No production code changes or new APIs.
 - No behavior changes to runtime registration logic.
 
+## Requirements and Constraints
+- Must keep documentation aligned with builder-first registration APIs.
+- Do not introduce new runtime behavior or public contracts.
+- Avoid touching generated or build output under docs/Docusaurus/build.
+
 ## Current State (UNVERIFIED)
 - Multiple docs reference `services.AddReservoir()`, `services.AddReducer(...)`, `services.AddActionEffect(...)`.
 - Sagas documentation references `services.AddInletSilo()`.
