@@ -6,8 +6,8 @@ Registration surfaces across the framework are inconsistent (builder vs direct I
 
 ## Goals
 
-- Establish a builder-first registration model across Mississippi builder surfaces, native host builders (only for standalone-capable packages), and IServiceCollection as a documented fallback.
-- Remove legacy registration entry points after builder-first replacements exist.
+- Establish a builder-first registration model across Mississippi builder surfaces and native host builders (only for standalone-capable packages).
+- Remove legacy registration entry points after builder-first replacements exist (no fallback-only legacy APIs).
 - Align Reservoir to a store/feature builder model that mirrors Redux concepts.
 - Standardize options configuration via builder surface methods.
 - Keep public contracts in Abstractions projects and implementations in main projects.
@@ -27,12 +27,12 @@ Registration surfaces across the framework are inconsistent (builder vs direct I
 
 ## Proposed Design
 
-- Introduce builder contracts in Abstractions and concrete builders in main projects (per abstractions rules). Proposed contracts: `IMississippiClientBuilder`, `IMississippiServerBuilder`, `IMississippiSiloBuilder` (UNVERIFIED names/placement) that expose `IServiceCollection Services` and options hooks without hard dependencies on implementations.
+- Introduce builder contracts in Abstractions and concrete builders in main projects (per abstractions rules). Proposed contracts: `IMississippiClientBuilder`, `IMississippiServerBuilder`, `IMississippiSiloBuilder` (UNVERIFIED names/placement) that emphasize `ConfigureServices`/`ConfigureOptions` instead of exposing raw `IServiceCollection`.
 - Add builder entry points on `HostApplicationBuilder`/`ISiloBuilder` to create Mississippi builders and make builder-first registration the primary path for Inlet/EventSourcing/Aqueduct/Reservoir composition.
 - Create package-specific builders for standalone-capable packages:
     - Reservoir: `ReservoirBuilder` + `ReservoirFeatureBuilder` to register store, middleware, reducers, effects, and feature state through a fluent API.
     - Aqueduct: server builder for ASP.NET-hosted backplane (`IAqueductServerBuilder`) plus existing `ISiloBuilder` usage for grains.
-- Keep `IServiceCollection` registration as a documented fallback for tests/advanced scenarios, but remove or deprecate legacy entry points from primary docs/samples after builder-first replacements exist.
+- Keep advanced/test customization via builder `ConfigureServices` hooks, but remove legacy `IServiceCollection` registration surfaces once builder-first replacements exist.
 - Standardize options configuration: builder surface overloads accept `Action<TOptions>` and `IConfiguration` for consistent options wiring across packages.
 - Fix abstraction leakage where concrete registrations live in Abstractions by moving those registrations to main projects or converting to pure contract-only helpers.
 
@@ -51,7 +51,7 @@ flowchart LR
         B1[App Host] --> B2[Mississippi Builder]
         B2 --> B3[Reservoir/Aqueduct/Inlet Builders]
         B3 --> B4[Services + Options]
-        B4 -.-> B5[IServiceCollection Fallback (documented)]
+        B4 --> B5[ConfigureServices hooks]
     end
 ```
 

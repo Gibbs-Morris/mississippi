@@ -15,24 +15,24 @@
 | src/Common.Silo/MississippiSiloBuilderExtensions.cs | Add | ISiloBuilder entry point | UNVERIFIED path/name |
 | src/Reservoir/Builders/ReservoirBuilder.cs | Add | Builder-first Reservoir registration | NEW |
 | src/Reservoir/Builders/ReservoirFeatureBuilder.cs | Add | Feature-level registration builder | NEW |
-| src/Reservoir/ReservoirRegistrations.cs | Update | Redirect to builder-first API or mark legacy | Keep fallback behavior decision |
-| src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs | Update | Add builder-first entry point | Keep IServiceCollection fallback if retained |
-| src/Reservoir.Blazor/BuiltIn/ReservoirBlazorBuiltInRegistrations.cs | Update | Add builder-first entry point | Keep IServiceCollection fallback if retained |
+| src/Reservoir/ReservoirRegistrations.cs | Update/Delete | Replace with builder-first API | Remove legacy IServiceCollection surface |
+| src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs | Update/Delete | Add builder-first entry point | Remove legacy IServiceCollection surface |
+| src/Reservoir.Blazor/BuiltIn/ReservoirBlazorBuiltInRegistrations.cs | Update/Delete | Add builder-first entry point | Remove legacy IServiceCollection surface |
 | src/Aqueduct/Builders/AqueductServerBuilder.cs | Add | Builder-first Aqueduct server registration | NEW |
-| src/Aqueduct/AqueductRegistrations.cs | Update | Redirect to builder-first API or mark legacy | Ensure options config consistent |
+| src/Aqueduct/AqueductRegistrations.cs | Update/Delete | Replace with builder-first API | Remove legacy IServiceCollection surface |
 | src/Aqueduct.Grains/AqueductGrainsRegistrations.cs | Update | Align ISiloBuilder usage with builder model | Keep existing Orleans support |
-| src/Inlet.Client/InletClientRegistrations.cs | Update | Add builder-first entry point | Keep fallback if retained |
-| src/Inlet.Client/InletBlazorRegistrations.cs | Update | Add builder-first entry point | Use InletBlazorSignalRBuilder |
-| src/Inlet.Silo/InletSiloRegistrations.cs | Update | Add builder-first entry point | Keep ScanProjectionAssemblies behavior |
-| src/Inlet.Server/InletServerRegistrations.cs | Update | Add builder-first entry point | Preserve Aqueduct composition |
+| src/Inlet.Client/InletClientRegistrations.cs | Update/Delete | Add builder-first entry point | Remove legacy IServiceCollection surface |
+| src/Inlet.Client/InletBlazorRegistrations.cs | Update/Delete | Add builder-first entry point | Use InletBlazorSignalRBuilder |
+| src/Inlet.Silo/InletSiloRegistrations.cs | Update/Delete | Add builder-first entry point | Preserve ScanProjectionAssemblies behavior |
+| src/Inlet.Server/InletServerRegistrations.cs | Update/Delete | Add builder-first entry point | Preserve Aqueduct composition |
 | src/Inlet.Server.Abstractions/InletInProcessRegistrations.cs | Update/Move | Remove concrete registrations from Abstractions | Target location UNVERIFIED |
-| src/EventSourcing.Brooks/EventSourcingRegistrations.cs | Update | Add Mississippi builder entry points | Preserve ISiloBuilder/HostApplicationBuilder overloads |
-| src/EventSourcing.Snapshots/SnapshotRegistrations.cs | Update | Add builder-first entry points | Preserve existing behavior |
-| src/EventSourcing.Sagas/SagaRegistrations.cs | Update | Add builder-first entry points | Preserve existing behavior |
+| src/EventSourcing.Brooks/EventSourcingRegistrations.cs | Update/Delete | Add Mississippi builder entry points | Preserve ISiloBuilder/HostApplicationBuilder overloads |
+| src/EventSourcing.Snapshots/SnapshotRegistrations.cs | Update/Delete | Add builder-first entry points | Preserve existing behavior |
+| src/EventSourcing.Sagas/SagaRegistrations.cs | Update/Delete | Add builder-first entry points | Preserve existing behavior |
 | src/EventSourcing.Sagas.Abstractions/SagaStepInfoRegistrations.cs | Update/Move | Remove concrete provider registration from Abstractions | Target location UNVERIFIED |
-| src/EventSourcing.Brooks.Abstractions/Storage/BrookStorageProviderExtensions.cs | Update | Add builder-friendly wrappers | Optional depending on fallback policy |
-| src/EventSourcing.Snapshots.Abstractions/SnapshotStorageProviderExtensions.cs | Update | Add builder-friendly wrappers | Optional depending on fallback policy |
-| src/EventSourcing.Serialization.Abstractions/SerializationStorageProviderExtensions.cs | Update | Add builder-friendly wrappers | Optional depending on fallback policy |
+| src/EventSourcing.Brooks.Abstractions/Storage/BrookStorageProviderExtensions.cs | Update | Add builder-friendly wrappers | Mirror builder-first extension points |
+| src/EventSourcing.Snapshots.Abstractions/SnapshotStorageProviderExtensions.cs | Update | Add builder-friendly wrappers | Mirror builder-first extension points |
+| src/EventSourcing.Serialization.Abstractions/SerializationStorageProviderExtensions.cs | Update | Add builder-friendly wrappers | Mirror builder-first extension points |
 | docs/Docusaurus/docs/client-state-management/reservoir.md | Update | Builder-first usage examples | Replace ServiceCollection snippets |
 | docs/Docusaurus/docs/client-state-management/devtools.md | Update | Builder-first usage examples | Replace ServiceCollection snippets |
 | docs/Docusaurus/docs/client-state-management/built-in-navigation.md | Update | Builder-first usage examples | Replace ServiceCollection snippets |

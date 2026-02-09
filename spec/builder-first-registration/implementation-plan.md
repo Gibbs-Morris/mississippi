@@ -10,20 +10,20 @@
 
 1. Define builder contracts in Abstractions
 	- Add `IMississippiClientBuilder`, `IMississippiServerBuilder`, `IMississippiSiloBuilder` contracts in `Common.Abstractions` (UNVERIFIED exact names/placement).
-	- Each contract exposes `IServiceCollection Services` and options hooks without referencing implementation types.
+	- Each contract emphasizes `ConfigureServices`/`ConfigureOptions` hooks without exposing raw `IServiceCollection`.
 2. Implement builder adapters
 	- Implement builder classes in `Common.Client`, `Common.Server`, and `Common.Silo` projects (if empty, add new source files).
 	- Provide extension entry points on `HostApplicationBuilder` and `ISiloBuilder` to create Mississippi builders.
 3. Reservoir builder-first surface
 	- Add `ReservoirBuilder` and `ReservoirFeatureBuilder` to the Reservoir project.
 	- Move registrations (`AddReservoir`, `AddReducer`, `AddActionEffect`, `AddFeatureState`, `AddMiddleware`) into builder-based APIs.
-	- Keep `IServiceCollection` extensions as fallback (documented) or move them to a legacy namespace with `Obsolete` warnings (final decision required).
+	- Remove legacy `IServiceCollection` registrations once builder-first API is in place.
 4. Aqueduct builder-first surface
 	- Add `AqueductServerBuilder` (ASP.NET) and `AqueductSiloBuilder` wrappers for Orleans.
 	- Align `AddAqueduct`/`UseAqueduct` with builder interfaces and consistent options configuration.
 5. Inlet/EventSourcing alignment
 	- Add Mississippi builder extensions that wrap existing `AddInlet*` and `AddEventSourcing*` registrations.
-	- Decide which ServiceCollection methods remain as fallback vs removed, and apply consistent Obsolete/migration notes.
+	- Remove ServiceCollection registration methods after builder-first replacements are available and docs/tests are updated.
 6. Fix abstraction leaks
 	- Move `InletInProcessRegistrations` and any concrete registration helpers out of Abstractions if required, or convert to pure contract-only helpers.
 7. Update tests to builder-first APIs
@@ -49,7 +49,7 @@
 ## API/Contract Changes
 
 - New public builder interfaces and fluent registration APIs.
-- Deprecation or removal of `IServiceCollection` registration methods (breaking change). Migration guidance required.
+- Removal of `IServiceCollection` registration methods (breaking change). Migration guidance required.
 
 ## Observability
 
@@ -64,7 +64,7 @@
 ## Rollout Plan
 
 - Update samples and docs first to validate API shape.
-- Remove or obsolete legacy methods only after builder replacements and tests/docs are updated.
+- Remove legacy methods after builder replacements and tests/docs are updated.
 - Provide migration notes and before/after code snippets.
 
 ## Risks and Mitigations
