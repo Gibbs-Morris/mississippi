@@ -10,8 +10,10 @@
 
 ## Questions
 - Q1: Which docs still reference services.AddReservoir or services.AddReducer?
-- Q2: Do the Reservoir docs point to ReservoirBuilderExtensions and ReservoirFeatureBuilder?
-- Q3: Are DevTools examples using reservoir.AddReservoirDevTools and updated link targets?
-- Q4: Do reducers/effects docs show AddFeature-based registration?
-- Q5: Does event-sourcing-sagas use mississippi.AddInletSilo in the example?
-- Q6: Are any doc links still pointing to deleted ReservoirRegistrations?
+- Q2: Which docs still reference AddFeatureState or AddRootReducer directly?
+- Q3: Do Reservoir docs point to ReservoirBuilderExtensions and ReservoirFeatureBuilder (no ReservoirRegistrations links)?
+- Q4: Are DevTools examples using reservoir.AddReservoirDevTools with updated link targets?
+- Q5: Do reducers/effects/feature-state docs show AddFeature-based registration patterns?
+- Q6: Does event-sourcing-sagas use mississippi.AddInletSilo in the example?
+- Q7: Are any docs still pointing to deleted ReservoirRegistrations APIs?
+- Q8: Do Store docs describe AddReservoir via Mississippi client builder?
