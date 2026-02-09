@@ -3,6 +3,9 @@
         <Description>Abstractions for Orleans-SignalR bridge infrastructure. Provides grain interfaces and contracts for distributed SignalR backplane functionality.</Description>
     </PropertyGroup>
     <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="Microsoft.Orleans.Sdk"/>
     </ItemGroup>
     <ItemGroup>

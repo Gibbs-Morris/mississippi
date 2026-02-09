@@ -8,3 +8,4 @@
 - 2026-02-09T21:36:03.8706435Z Updated plan locations to use Sdk.* meta-packages for builder adapters.
 - 2026-02-09T21:36:03.8706435Z Implemented builder contracts and Sdk.* builder adapters.
 - 2026-02-09T21:36:03.8706435Z Added Reservoir builder interfaces and core builder implementation; removed legacy registrations and updated built-in Blazor registration surfaces.
+- 2026-02-09T21:36:03.8706435Z Added Aqueduct server builder contract and implementation; removed legacy Aqueduct registrations.
