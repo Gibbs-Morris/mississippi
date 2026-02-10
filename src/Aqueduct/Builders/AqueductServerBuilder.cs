@@ -43,26 +43,6 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     }
 
     /// <inheritdoc />
-    public IAqueductServerBuilder ConfigureServices(
-        Action<IServiceCollection> configure
-    )
-    {
-        ArgumentNullException.ThrowIfNull(configure);
-        configureServices(configure);
-        return this;
-    }
-
-    /// <inheritdoc />
-    public IAqueductServerBuilder ConfigureOptions(
-        Action<AqueductOptions> configure
-    )
-    {
-        ArgumentNullException.ThrowIfNull(configure);
-        ConfigureServices(services => services.Configure(configure));
-        return this;
-    }
-
-    /// <inheritdoc />
     public IAqueductServerBuilder AddBackplane<THub>()
         where THub : Hub
     {
@@ -87,6 +67,26 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
             services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
             services.TryAddSingleton<IAqueductNotifier, AqueductNotifier>();
         });
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IAqueductServerBuilder ConfigureOptions(
+        Action<AqueductOptions> configure
+    )
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        ConfigureServices(services => services.Configure(configure));
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IAqueductServerBuilder ConfigureServices(
+        Action<IServiceCollection> configure
+    )
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        configureServices(configure);
         return this;
     }
 }

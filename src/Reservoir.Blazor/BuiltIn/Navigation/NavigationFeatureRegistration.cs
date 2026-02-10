@@ -18,7 +18,7 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation;
 ///         It tracks the current URI, previous URI, and navigation count in the store.
 ///     </para>
 ///     <para>
-    ///         Register with <see cref="AddBuiltInNavigation" /> after calling <c>AddReservoir</c> on the builder.
+///         Register with <see cref="AddBuiltInNavigation" /> after calling <c>AddReservoir</c> on the builder.
 ///     </para>
 ///     <para>
 ///         <strong>Important:</strong> You must also render the
@@ -48,10 +48,11 @@ public static class NavigationFeatureRegistration
         ArgumentNullException.ThrowIfNull(builder);
 
         // Register the reducer for LocationChangedAction and the navigation effect.
-        builder.AddFeature<NavigationState>()
-            .AddReducer<LocationChangedAction>(NavigationReducers.OnLocationChanged)
-            .AddActionEffect<NavigationEffect>()
-            .Done();
+        builder.AddFeature<NavigationState>(featureBuilder =>
+        {
+            featureBuilder.AddReducer<LocationChangedAction>(NavigationReducers.OnLocationChanged);
+            featureBuilder.AddActionEffect<NavigationEffect>();
+        });
         return builder;
     }
 }

@@ -76,16 +76,12 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
         return this;
     }
 
-    /// <inheritdoc />
-    public IReservoirBuilder Done() => parent;
-
     private void AddFeatureState()
     {
-        parent.ConfigureServices(services =>
-            services.TryAddEnumerable(
-                ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp => new(
-                    sp.GetService<IRootReducer<TState>>(),
-                    sp.GetService<IRootActionEffect<TState>>()))));
+        parent.ConfigureServices(services => services.TryAddEnumerable(
+            ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp => new(
+                sp.GetService<IRootReducer<TState>>(),
+                sp.GetService<IRootActionEffect<TState>>()))));
     }
 
     private void AddRootActionEffect()
@@ -96,7 +92,6 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
 
     private void AddRootReducer()
     {
-        parent.ConfigureServices(services =>
-            services.TryAddTransient<IRootReducer<TState>, RootReducer<TState>>());
+        parent.ConfigureServices(services => services.TryAddTransient<IRootReducer<TState>, RootReducer<TState>>());
     }
 }

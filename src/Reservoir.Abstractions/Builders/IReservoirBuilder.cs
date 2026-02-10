@@ -13,11 +13,15 @@ namespace Mississippi.Reservoir.Abstractions.Builders;
 public interface IReservoirBuilder
 {
     /// <summary>
-    ///     Configures services for the builder.
+    ///     Adds a Reservoir feature for the specified state type.
     /// </summary>
-    /// <param name="configure">The services configuration action.</param>
+    /// <typeparam name="TState">The feature state type.</typeparam>
+    /// <param name="configure">The feature builder configuration action.</param>
     /// <returns>The builder for chaining.</returns>
-    IReservoirBuilder ConfigureServices(Action<IServiceCollection> configure);
+    IReservoirBuilder AddFeature<TState>(
+        Action<IReservoirFeatureBuilder<TState>> configure
+    )
+        where TState : class, IFeatureState, new();
 
     /// <summary>
     ///     Adds a middleware implementation.
@@ -28,10 +32,11 @@ public interface IReservoirBuilder
         where TMiddleware : class, IMiddleware;
 
     /// <summary>
-    ///     Adds a Reservoir feature for the specified state type.
+    ///     Configures services for the builder.
     /// </summary>
-    /// <typeparam name="TState">The feature state type.</typeparam>
-    /// <returns>The feature builder.</returns>
-    IReservoirFeatureBuilder<TState> AddFeature<TState>()
-        where TState : class, IFeatureState, new();
+    /// <param name="configure">The services configuration action.</param>
+    /// <returns>The builder for chaining.</returns>
+    IReservoirBuilder ConfigureServices(
+        Action<IServiceCollection> configure
+    );
 }

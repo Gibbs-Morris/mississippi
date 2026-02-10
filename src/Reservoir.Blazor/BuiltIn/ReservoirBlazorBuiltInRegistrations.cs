@@ -16,7 +16,7 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn;
 ///         You can also register features individually using their specific extension methods.
 ///     </para>
 ///     <para>
-    ///         Register with <see cref="AddReservoirBlazorBuiltIns" /> after calling <c>AddReservoir</c> on the builder.
+///         Register with <see cref="AddReservoirBlazorBuiltIns" /> after calling <c>AddReservoir</c> on the builder.
 ///     </para>
 /// </remarks>
 public static class ReservoirBlazorBuiltInRegistrations

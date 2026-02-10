@@ -159,7 +159,7 @@ public class Store : IStore
 
         throw new InvalidOperationException(
             $"No feature state registered for '{featureKey}'. " +
-            $"Call AddFeature<{typeof(TState).Name}>() during service registration.");
+            $"Call AddFeature<{typeof(TState).Name}>(...) during service registration.");
     }
 
     /// <inheritdoc />

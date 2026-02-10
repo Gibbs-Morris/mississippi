@@ -3,10 +3,9 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Reservoir.Abstractions;
 using Mississippi.Common.Abstractions.Builders;
+using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Builders;
-using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 using Mississippi.Reservoir.State;
 
@@ -23,7 +22,7 @@ public sealed class ReservoirBuilder : IReservoirBuilder
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReservoirBuilder" /> class.
     /// </summary>
-    /// <param name="services">The service collection.</param>
+    /// <param name="parent">The parent builder.</param>
     public ReservoirBuilder(
         IMississippiClientBuilder parent
     )
@@ -34,12 +33,14 @@ public sealed class ReservoirBuilder : IReservoirBuilder
     }
 
     /// <inheritdoc />
-    public IReservoirBuilder ConfigureServices(
-        Action<IServiceCollection> configure
+    public IReservoirBuilder AddFeature<TState>(
+        Action<IReservoirFeatureBuilder<TState>> configure
     )
+        where TState : class, IFeatureState, new()
     {
         ArgumentNullException.ThrowIfNull(configure);
-        parent.ConfigureServices(configure);
+        AddFeatureState<TState>();
+        configure(new ReservoirFeatureBuilder<TState>(this));
         return this;
     }
 
@@ -52,11 +53,22 @@ public sealed class ReservoirBuilder : IReservoirBuilder
     }
 
     /// <inheritdoc />
-    public IReservoirFeatureBuilder<TState> AddFeature<TState>()
+    public IReservoirBuilder ConfigureServices(
+        Action<IServiceCollection> configure
+    )
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        parent.ConfigureServices(configure);
+        return this;
+    }
+
+    private void AddFeatureState<TState>()
         where TState : class, IFeatureState, new()
     {
-        AddFeatureState<TState>();
-        return new ReservoirFeatureBuilder<TState>(this);
+        ConfigureServices(services => services.TryAddEnumerable(
+            ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp => new(
+                sp.GetService<IRootReducer<TState>>(),
+                sp.GetService<IRootActionEffect<TState>>()))));
     }
 
     private void AddStore()
@@ -69,15 +81,5 @@ public sealed class ReservoirBuilder : IReservoirBuilder
                 sp.GetServices<IMiddleware>(),
                 sp.GetRequiredService<TimeProvider>()));
         });
-    }
-
-    private void AddFeatureState<TState>()
-        where TState : class, IFeatureState, new()
-    {
-        ConfigureServices(services =>
-            services.TryAddEnumerable(
-                ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp => new(
-                    sp.GetService<IRootReducer<TState>>(),
-                    sp.GetService<IRootActionEffect<TState>>()))));
     }
 }

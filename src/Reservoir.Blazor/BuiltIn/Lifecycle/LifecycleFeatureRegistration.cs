@@ -17,7 +17,7 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle;
 ///         It tracks the current lifecycle phase (NotStarted, Initializing, Ready) in the store.
 ///     </para>
 ///     <para>
-    ///         Register with <see cref="AddBuiltInLifecycle" /> after calling <c>AddReservoir</c> on the builder.
+///         Register with <see cref="AddBuiltInLifecycle" /> after calling <c>AddReservoir</c> on the builder.
 ///     </para>
 /// </remarks>
 public static class LifecycleFeatureRegistration
@@ -40,10 +40,11 @@ public static class LifecycleFeatureRegistration
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
-        builder.AddFeature<LifecycleState>()
-            .AddReducer<AppInitAction>(LifecycleReducers.OnAppInit)
-            .AddReducer<AppReadyAction>(LifecycleReducers.OnAppReady)
-            .Done();
+        builder.AddFeature<LifecycleState>(featureBuilder =>
+        {
+            featureBuilder.AddReducer<AppInitAction>(LifecycleReducers.OnAppInit);
+            featureBuilder.AddReducer<AppReadyAction>(LifecycleReducers.OnAppReady);
+        });
         return builder;
     }
 }

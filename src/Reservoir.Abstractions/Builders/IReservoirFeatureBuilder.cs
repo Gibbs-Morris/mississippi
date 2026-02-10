@@ -41,10 +41,4 @@ public interface IReservoirFeatureBuilder<TState>
     IReservoirFeatureBuilder<TState> AddReducer<TAction, TReducer>()
         where TAction : IAction
         where TReducer : class, IActionReducer<TAction, TState>;
-
-    /// <summary>
-    ///     Returns to the parent Reservoir builder.
-    /// </summary>
-    /// <returns>The Reservoir builder.</returns>
-    IReservoirBuilder Done();
 }

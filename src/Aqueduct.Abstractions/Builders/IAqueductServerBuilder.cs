@@ -12,20 +12,6 @@ namespace Mississippi.Aqueduct.Abstractions.Builders;
 public interface IAqueductServerBuilder
 {
     /// <summary>
-    ///     Configures services for the builder.
-    /// </summary>
-    /// <param name="configure">The services configuration action.</param>
-    /// <returns>The builder for chaining.</returns>
-    IAqueductServerBuilder ConfigureServices(Action<IServiceCollection> configure);
-
-    /// <summary>
-    ///     Configures Aqueduct options.
-    /// </summary>
-    /// <param name="configure">The options configuration action.</param>
-    /// <returns>The builder for chaining.</returns>
-    IAqueductServerBuilder ConfigureOptions(Action<AqueductOptions> configure);
-
-    /// <summary>
     ///     Adds the Aqueduct backplane for the specified hub type.
     /// </summary>
     /// <typeparam name="THub">The hub type.</typeparam>
@@ -38,4 +24,22 @@ public interface IAqueductServerBuilder
     /// </summary>
     /// <returns>The builder for chaining.</returns>
     IAqueductServerBuilder AddNotifier();
+
+    /// <summary>
+    ///     Configures Aqueduct options.
+    /// </summary>
+    /// <param name="configure">The options configuration action.</param>
+    /// <returns>The builder for chaining.</returns>
+    IAqueductServerBuilder ConfigureOptions(
+        Action<AqueductOptions> configure
+    );
+
+    /// <summary>
+    ///     Configures services for the builder.
+    /// </summary>
+    /// <param name="configure">The services configuration action.</param>
+    /// <returns>The builder for chaining.</returns>
+    IAqueductServerBuilder ConfigureServices(
+        Action<IServiceCollection> configure
+    );
 }
