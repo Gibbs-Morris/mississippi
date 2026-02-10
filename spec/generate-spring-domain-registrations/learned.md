@@ -1,7 +1,7 @@
 # Learned
 
-- UNVERIFIED: Current generator extension points for emitting domain-level registration wrappers.
-- UNVERIFIED: Best placement for generated AddSpringDomain methods per SDK type.
-- UNVERIFIED: Required inputs for Spring domain aggregation (aggregates, projections, sagas, mappers).
-- UNVERIFIED: Existing generator discovery options that can target Spring sample only.
-- Spring client/server/silo projects reference Inlet generators as analyzers. Evidence: samples/Spring/Spring.Client/Spring.Client.csproj, samples/Spring/Spring.Server/Spring.Server.csproj, samples/Spring/Spring.Silo/Spring.Silo.csproj.
+- Manual SpringDomain*Registrations exist in Spring.Client/Registrations, Spring.Server/Registrations, Spring.Silo/Registrations and call generated Add* methods. Evidence: samples/Spring/Spring.Client/Registrations/SpringDomainClientRegistrations.cs, samples/Spring/Spring.Server/Registrations/SpringDomainServerRegistrations.cs, samples/Spring/Spring.Silo/Registrations/SpringDomainSiloRegistrations.cs.
+- Spring programs already call AddSpringDomain in client/server/silo. Evidence: samples/Spring/Spring.Client/Program.cs, samples/Spring/Spring.Server/Program.cs, samples/Spring/Spring.Silo/Program.cs.
+- Inlet generators emit per-aggregate/per-projection/per-saga registration methods; no domain-level wrapper generation exists. Evidence: src/Inlet.Client.Generators/CommandClientRegistrationGenerator.cs, src/Inlet.Client.Generators/ProjectionClientRegistrationGenerator.cs, src/Inlet.Silo.Generators/AggregateSiloRegistrationGenerator.cs, src/Inlet.Silo.Generators/ProjectionSiloRegistrationGenerator.cs, src/Inlet.Silo.Generators/SagaSiloRegistrationGenerator.cs, src/Inlet.Server.Generators/CommandServerDtoGenerator.cs, src/Inlet.Server.Generators/ProjectionEndpointsGenerator.cs.
+- Generator pipelines use AnalyzerConfigOptionsProvider with RootNamespace/AssemblyName to derive target root namespace, enabling project-scoped gating. Evidence: src/Inlet.Generators.Core/Naming/TargetNamespaceResolver.cs, src/Inlet.Client.Generators/CommandClientDtoGenerator.cs.
+- PendingSourceGenerator is a manual marker for future generation, not required for discovery. Evidence: src/Inlet.Generators.Abstractions/PendingSourceGeneratorAttribute.cs.

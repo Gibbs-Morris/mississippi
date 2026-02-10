@@ -2,8 +2,8 @@
 
 ## Status
 - Status: Draft
-- Size: Medium (initial)
-- Approval checkpoint: TBD
+- Size: Medium
+- Approval checkpoint: No (generator output for samples only)
 
 ## Requirements
 - Generate AddSpringDomain wrappers for Spring client/server/silo via source generators.

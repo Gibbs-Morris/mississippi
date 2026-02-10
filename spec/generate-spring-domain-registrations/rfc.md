@@ -15,11 +15,14 @@ Spring sample uses manual registration wrappers for AddSpringDomain in client/se
 - Introduce new public APIs outside Spring sample scope unless required for generator support.
 
 ## Current State
-UNVERIFIED: Spring has manual registration wrappers under Registrations folders.
+Spring has manual SpringDomain*Registrations wrappers in client/server/silo that aggregate generated
+Add* registrations. Programs call AddSpringDomain already. Evidence: samples/Spring/Spring.Client/Registrations/
+SpringDomainClientRegistrations.cs, samples/Spring/Spring.Server/Registrations/SpringDomainServerRegistrations.cs,
+samples/Spring/Spring.Silo/Registrations/SpringDomainSiloRegistrations.cs, samples/Spring/Spring.*/*Program.cs.
 
 ## Proposed Design
-UNVERIFIED: Add generator outputs in each SDK generator to emit AddSpringDomain wrappers for Spring projects only.
-UNVERIFIED: Use analyzer config or project metadata to scope Spring-only generation.
+Add generator outputs in each SDK generator to emit AddSpringDomain wrappers for Spring projects only.
+Use target root namespace derived from RootNamespace/AssemblyName to scope Spring-only generation.
 
 ## Alternatives
 - Keep manual registration wrappers (rejected by request).
