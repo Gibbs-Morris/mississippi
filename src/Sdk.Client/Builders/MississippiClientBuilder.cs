@@ -27,16 +27,6 @@ public sealed class MississippiClientBuilder : IMississippiClientBuilder
     }
 
     /// <inheritdoc />
-    public IMississippiClientBuilder ConfigureServices(
-        Action<IServiceCollection> configure
-    )
-    {
-        ArgumentNullException.ThrowIfNull(configure);
-        configure(services);
-        return this;
-    }
-
-    /// <inheritdoc />
     public IMississippiClientBuilder ConfigureOptions<TOptions>(
         Action<TOptions> configure
     )
@@ -44,6 +34,16 @@ public sealed class MississippiClientBuilder : IMississippiClientBuilder
     {
         ArgumentNullException.ThrowIfNull(configure);
         services.Configure(configure);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IMississippiClientBuilder ConfigureServices(
+        Action<IServiceCollection> configure
+    )
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        configure(services);
         return this;
     }
 }

@@ -13,18 +13,22 @@ public interface IMississippiBuilder<out TBuilder>
     where TBuilder : IMississippiBuilder<TBuilder>
 {
     /// <summary>
-    ///     Configures services for the builder.
-    /// </summary>
-    /// <param name="configure">The services configuration action.</param>
-    /// <returns>The builder for chaining.</returns>
-    TBuilder ConfigureServices(Action<IServiceCollection> configure);
-
-    /// <summary>
     ///     Configures options for the builder.
     /// </summary>
     /// <typeparam name="TOptions">The options type.</typeparam>
     /// <param name="configure">The options configuration action.</param>
     /// <returns>The builder for chaining.</returns>
-    TBuilder ConfigureOptions<TOptions>(Action<TOptions> configure)
+    TBuilder ConfigureOptions<TOptions>(
+        Action<TOptions> configure
+    )
         where TOptions : class;
+
+    /// <summary>
+    ///     Configures services for the builder.
+    /// </summary>
+    /// <param name="configure">The services configuration action.</param>
+    /// <returns>The builder for chaining.</returns>
+    TBuilder ConfigureServices(
+        Action<IServiceCollection> configure
+    );
 }

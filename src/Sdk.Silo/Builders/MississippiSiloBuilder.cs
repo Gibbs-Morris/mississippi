@@ -29,16 +29,6 @@ public sealed class MississippiSiloBuilder : IMississippiSiloBuilder
     private ISiloBuilder SiloBuilder { get; }
 
     /// <inheritdoc />
-    public IMississippiSiloBuilder ConfigureServices(
-        Action<IServiceCollection> configure
-    )
-    {
-        ArgumentNullException.ThrowIfNull(configure);
-        configure(SiloBuilder.Services);
-        return this;
-    }
-
-    /// <inheritdoc />
     public IMississippiSiloBuilder ConfigureOptions<TOptions>(
         Action<TOptions> configure
     )
@@ -46,6 +36,16 @@ public sealed class MississippiSiloBuilder : IMississippiSiloBuilder
     {
         ArgumentNullException.ThrowIfNull(configure);
         SiloBuilder.Services.Configure(configure);
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IMississippiSiloBuilder ConfigureServices(
+        Action<IServiceCollection> configure
+    )
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        configure(SiloBuilder.Services);
         return this;
     }
 }
