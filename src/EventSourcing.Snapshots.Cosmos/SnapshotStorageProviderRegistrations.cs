@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.Common.Cosmos.Retry;
@@ -30,10 +31,86 @@ public static class SnapshotStorageProviderRegistrations
     ///     Registers Cosmos snapshot storage provider services using an externally provided <see cref="CosmosClient" /> and
     ///     previously configured <see cref="SnapshotStorageOptions" />; ensures the container initializer runs at startup.
     /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <returns>The updated service collection.</returns>
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
-        this IServiceCollection services
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <returns>The updated builder.</returns>
+    public static IMississippiSiloBuilder AddCosmosSnapshotStorageProvider(
+        this IMississippiSiloBuilder builder
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(AddCosmosSnapshotStorageProviderServices);
+        return builder;
+    }
+
+    /// <summary>
+    ///     Creates a keyed <see cref="CosmosClient" /> from the supplied connection string and registers the Cosmos snapshot
+    ///     storage
+    ///     provider.
+    /// </summary>
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <param name="cosmosConnectionString">Cosmos connection string used for client creation.</param>
+    /// <param name="configureOptions">Optional options configuration applied during registration.</param>
+    /// <returns>The builder configured with a keyed Cosmos client.</returns>
+    public static IMississippiSiloBuilder AddCosmosSnapshotStorageProvider(
+        this IMississippiSiloBuilder builder,
+        string cosmosConnectionString,
+        Action<SnapshotStorageOptions>? configureOptions = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services =>
+        {
+            // Register keyed CosmosClient for Snapshots storage
+            services.AddKeyedSingleton<CosmosClient>(
+                MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
+                (
+                    _,
+                    _
+                ) => new(cosmosConnectionString));
+            if (configureOptions != null)
+            {
+                services.Configure(configureOptions);
+            }
+        });
+        return builder.AddCosmosSnapshotStorageProvider();
+    }
+
+    /// <summary>
+    ///     Applies the provided options configuration delegate and registers the Cosmos snapshot storage provider using an
+    ///     existing <see cref="CosmosClient" /> in DI.
+    /// </summary>
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <param name="configureOptions">Options configuration action applied before registration.</param>
+    /// <returns>The builder with configured snapshot storage options.</returns>
+    public static IMississippiSiloBuilder AddCosmosSnapshotStorageProvider(
+        this IMississippiSiloBuilder builder,
+        Action<SnapshotStorageOptions> configureOptions
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services => services.Configure(configureOptions));
+        return builder.AddCosmosSnapshotStorageProvider();
+    }
+
+    /// <summary>
+    ///     Binds <see cref="SnapshotStorageOptions" /> from configuration and registers the Cosmos snapshot storage provider
+    ///     that relies on an external <see cref="CosmosClient" />.
+    /// </summary>
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <param name="configuration">Configuration section containing snapshot storage settings.</param>
+    /// <returns>The builder with bound snapshot storage options.</returns>
+    public static IMississippiSiloBuilder AddCosmosSnapshotStorageProvider(
+        this IMississippiSiloBuilder builder,
+        IConfiguration configuration
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services => services.Configure<SnapshotStorageOptions>(configuration));
+        return builder.AddCosmosSnapshotStorageProvider();
+    }
+
+    private static void AddCosmosSnapshotStorageProviderServices(
+        IServiceCollection services
     )
     {
         // Register container operations abstraction (single point of Cosmos SDK contact)
@@ -64,69 +141,6 @@ public static class SnapshotStorageProviderRegistrations
                 Database database = client.GetDatabase(options.DatabaseId);
                 return database.GetContainer(options.ContainerId);
             });
-        return services;
-    }
-
-    /// <summary>
-    ///     Creates a keyed <see cref="CosmosClient" /> from the supplied connection string and registers the Cosmos snapshot
-    ///     storage
-    ///     provider.
-    /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <param name="cosmosConnectionString">Cosmos connection string used for client creation.</param>
-    /// <param name="configureOptions">Optional options configuration applied during registration.</param>
-    /// <returns>The service collection configured with a keyed Cosmos client.</returns>
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
-        this IServiceCollection services,
-        string cosmosConnectionString,
-        Action<SnapshotStorageOptions>? configureOptions = null
-    )
-    {
-        // Register keyed CosmosClient for Snapshots storage
-        services.AddKeyedSingleton<CosmosClient>(
-            MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
-            (
-                _,
-                _
-            ) => new(cosmosConnectionString));
-        if (configureOptions != null)
-        {
-            services.Configure(configureOptions);
-        }
-
-        return services.AddCosmosSnapshotStorageProvider();
-    }
-
-    /// <summary>
-    ///     Applies the provided options configuration delegate and registers the Cosmos snapshot storage provider using an
-    ///     existing <see cref="CosmosClient" /> in DI.
-    /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <param name="configureOptions">Options configuration action applied before registration.</param>
-    /// <returns>The service collection with configured snapshot storage options.</returns>
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
-        this IServiceCollection services,
-        Action<SnapshotStorageOptions> configureOptions
-    )
-    {
-        services.Configure(configureOptions);
-        return services.AddCosmosSnapshotStorageProvider();
-    }
-
-    /// <summary>
-    ///     Binds <see cref="SnapshotStorageOptions" /> from configuration and registers the Cosmos snapshot storage provider
-    ///     that relies on an external <see cref="CosmosClient" />.
-    /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <param name="configuration">Configuration section containing snapshot storage settings.</param>
-    /// <returns>The service collection with bound snapshot storage options.</returns>
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        services.Configure<SnapshotStorageOptions>(configuration);
-        return services.AddCosmosSnapshotStorageProvider();
     }
 
     private sealed class CosmosContainerInitializer : IHostedService

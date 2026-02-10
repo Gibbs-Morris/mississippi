@@ -258,6 +258,7 @@
       "Mississippi.EventSourcing.Reducers": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )"
         }
       },
@@ -293,7 +294,10 @@
         "type": "Project"
       },
       "Mississippi.Inlet.Server.Abstractions": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
+        }
       },
       "Mississippi.Inlet.Silo": {
         "type": "Project",

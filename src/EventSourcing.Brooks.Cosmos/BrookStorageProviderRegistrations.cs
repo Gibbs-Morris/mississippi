@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.Common.Cosmos.Retry;
@@ -35,10 +36,132 @@ public static class BrookStorageProviderRegistrations
     /// <summary>
     ///     Adds Cosmos DB brook storage provider services to the service collection.
     /// </summary>
-    /// <param name="services">The service collection to add services to.</param>
-    /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
-        this IServiceCollection services
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <returns>The modified builder.</returns>
+    public static IMississippiSiloBuilder AddCosmosBrookStorageProvider(
+        this IMississippiSiloBuilder builder
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(AddCosmosBrookStorageProviderServices);
+        return builder;
+    }
+
+    /// <summary>
+    ///     Adds Cosmos DB brook storage provider services to the service collection with configuration.
+    /// </summary>
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <param name="cosmosConnectionString">The Cosmos DB connection string.</param>
+    /// <param name="blobStorageConnectionString">The Azure Blob Storage connection string for distributed locking.</param>
+    /// <param name="configureOptions">Action to configure the BrookStorageOptions.</param>
+    /// <returns>The modified builder.</returns>
+    public static IMississippiSiloBuilder AddCosmosBrookStorageProvider(
+        this IMississippiSiloBuilder builder,
+        string cosmosConnectionString,
+        string blobStorageConnectionString,
+        Action<BrookStorageOptions>? configureOptions = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services =>
+        {
+            // Register keyed CosmosClient for Brooks storage
+            services.AddKeyedSingleton<CosmosClient>(
+                MississippiDefaults.ServiceKeys.CosmosBrooksClient,
+                (
+                    _,
+                    _
+                ) => new(cosmosConnectionString));
+
+            // Register keyed BlobServiceClient for distributed locking
+            services.AddKeyedSingleton(
+                MississippiDefaults.ServiceKeys.BlobLocking,
+                (
+                    _,
+                    _
+                ) => new BlobServiceClient(blobStorageConnectionString));
+
+            // Configure options if provided
+            if (configureOptions != null)
+            {
+                services.Configure(configureOptions);
+            }
+        });
+        return builder.AddCosmosBrookStorageProvider();
+    }
+
+    /// <summary>
+    ///     Adds Cosmos DB brook storage provider services to the service collection with configuration.
+    /// </summary>
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <param name="configureOptions">Action to configure the BrookStorageOptions.</param>
+    /// <returns>The modified builder.</returns>
+    public static IMississippiSiloBuilder AddCosmosBrookStorageProvider(
+        this IMississippiSiloBuilder builder,
+        Action<BrookStorageOptions> configureOptions
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services => services.Configure(configureOptions));
+        return builder.AddCosmosBrookStorageProvider();
+    }
+
+    /// <summary>
+    ///     Adds Cosmos DB brook storage provider services to the service collection with configuration from appsettings.
+    /// </summary>
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <param name="cosmosConnectionString">The Cosmos DB connection string.</param>
+    /// <param name="blobStorageConnectionString">The Azure Blob Storage connection string for distributed locking.</param>
+    /// <param name="configuration">The configuration section containing BrookStorageOptions.</param>
+    /// <returns>The modified builder.</returns>
+    public static IMississippiSiloBuilder AddCosmosBrookStorageProvider(
+        this IMississippiSiloBuilder builder,
+        string cosmosConnectionString,
+        string blobStorageConnectionString,
+        IConfiguration configuration
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services =>
+        {
+            // Register keyed CosmosClient for Brooks storage
+            services.AddKeyedSingleton<CosmosClient>(
+                MississippiDefaults.ServiceKeys.CosmosBrooksClient,
+                (
+                    _,
+                    _
+                ) => new(cosmosConnectionString));
+
+            // Register keyed BlobServiceClient for distributed locking
+            services.AddKeyedSingleton(
+                MississippiDefaults.ServiceKeys.BlobLocking,
+                (
+                    _,
+                    _
+                ) => new BlobServiceClient(blobStorageConnectionString));
+            services.Configure<BrookStorageOptions>(configuration);
+        });
+        return builder.AddCosmosBrookStorageProvider();
+    }
+
+    /// <summary>
+    ///     Adds Cosmos DB brook storage provider services to the service collection with configuration from appsettings.
+    /// </summary>
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <param name="configuration">The configuration section containing BrookStorageOptions.</param>
+    /// <returns>The modified builder.</returns>
+    public static IMississippiSiloBuilder AddCosmosBrookStorageProvider(
+        this IMississippiSiloBuilder builder,
+        IConfiguration configuration
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services => services.Configure<BrookStorageOptions>(configuration));
+        return builder.AddCosmosBrookStorageProvider();
+    }
+
+    private static void AddCosmosBrookStorageProviderServices(
+        IServiceCollection services
     )
     {
         services.AddSingleton<IBrookStorageProvider, BrookStorageProvider>();
@@ -81,111 +204,6 @@ public static class BrookStorageProviderRegistrations
                 Database database = cosmosClient.GetDatabase(options.DatabaseId);
                 return database.GetContainer(options.ContainerId);
             });
-        return services;
-    }
-
-    /// <summary>
-    ///     Adds Cosmos DB brook storage provider services to the service collection with configuration.
-    /// </summary>
-    /// <param name="services">The service collection to add services to.</param>
-    /// <param name="cosmosConnectionString">The Cosmos DB connection string.</param>
-    /// <param name="blobStorageConnectionString">The Azure Blob Storage connection string for distributed locking.</param>
-    /// <param name="configureOptions">Action to configure the BrookStorageOptions.</param>
-    /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
-        this IServiceCollection services,
-        string cosmosConnectionString,
-        string blobStorageConnectionString,
-        Action<BrookStorageOptions>? configureOptions = null
-    )
-    {
-        // Register keyed CosmosClient for Brooks storage
-        services.AddKeyedSingleton<CosmosClient>(
-            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
-            (
-                _,
-                _
-            ) => new(cosmosConnectionString));
-
-        // Register keyed BlobServiceClient for distributed locking
-        services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.BlobLocking,
-            (
-                _,
-                _
-            ) => new BlobServiceClient(blobStorageConnectionString));
-
-        // Configure options if provided
-        if (configureOptions != null)
-        {
-            services.Configure(configureOptions);
-        }
-
-        return services.AddCosmosBrookStorageProvider();
-    }
-
-    /// <summary>
-    ///     Adds Cosmos DB brook storage provider services to the service collection with configuration.
-    /// </summary>
-    /// <param name="services">The service collection to add services to.</param>
-    /// <param name="configureOptions">Action to configure the BrookStorageOptions.</param>
-    /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
-        this IServiceCollection services,
-        Action<BrookStorageOptions> configureOptions
-    )
-    {
-        services.Configure(configureOptions);
-        return services.AddCosmosBrookStorageProvider();
-    }
-
-    /// <summary>
-    ///     Adds Cosmos DB brook storage provider services to the service collection with configuration from appsettings.
-    /// </summary>
-    /// <param name="services">The service collection to add services to.</param>
-    /// <param name="cosmosConnectionString">The Cosmos DB connection string.</param>
-    /// <param name="blobStorageConnectionString">The Azure Blob Storage connection string for distributed locking.</param>
-    /// <param name="configuration">The configuration section containing BrookStorageOptions.</param>
-    /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
-        this IServiceCollection services,
-        string cosmosConnectionString,
-        string blobStorageConnectionString,
-        IConfiguration configuration
-    )
-    {
-        // Register keyed CosmosClient for Brooks storage
-        services.AddKeyedSingleton<CosmosClient>(
-            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
-            (
-                _,
-                _
-            ) => new(cosmosConnectionString));
-
-        // Register keyed BlobServiceClient for distributed locking
-        services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.BlobLocking,
-            (
-                _,
-                _
-            ) => new BlobServiceClient(blobStorageConnectionString));
-        services.Configure<BrookStorageOptions>(configuration);
-        return services.AddCosmosBrookStorageProvider();
-    }
-
-    /// <summary>
-    ///     Adds Cosmos DB brook storage provider services to the service collection with configuration from appsettings.
-    /// </summary>
-    /// <param name="services">The service collection to add services to.</param>
-    /// <param name="configuration">The configuration section containing BrookStorageOptions.</param>
-    /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
-    {
-        services.Configure<BrookStorageOptions>(configuration);
-        return services.AddCosmosBrookStorageProvider();
     }
 
     // Performs asynchronous Cosmos resource initialization without synchronous waits in DI

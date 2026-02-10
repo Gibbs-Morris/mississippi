@@ -3,6 +3,8 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using Mississippi.Common.Abstractions.Builders;
+
 
 namespace Mississippi.Inlet.Server.Abstractions;
 
@@ -12,10 +14,10 @@ namespace Mississippi.Inlet.Server.Abstractions;
 public static class InletInProcessRegistrations
 {
     /// <summary>
-    ///     Adds Inlet in-process server services to the service collection.
+    ///     Adds Inlet in-process server services to the server builder.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
+    /// <param name="builder">The Mississippi server builder.</param>
+    /// <returns>The builder for chaining.</returns>
     /// <remarks>
     ///     <para>
     ///         This registers the following services:
@@ -29,13 +31,17 @@ public static class InletInProcessRegistrations
     ///         for Redux-style state management in Blazor Server applications.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInletInProcess(
-        this IServiceCollection services
+    public static IMississippiServerBuilder AddInletInProcess(
+        this IMississippiServerBuilder builder
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
-        services.TryAddSingleton<InProcessProjectionNotifier>();
-        services.TryAddSingleton<IServerProjectionNotifier>(sp => sp.GetRequiredService<InProcessProjectionNotifier>());
-        return services;
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services =>
+        {
+            services.TryAddSingleton<InProcessProjectionNotifier>();
+            services.TryAddSingleton<IServerProjectionNotifier>(sp =>
+                sp.GetRequiredService<InProcessProjectionNotifier>());
+        });
+        return builder;
     }
 }

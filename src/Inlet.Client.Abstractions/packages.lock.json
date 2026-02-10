@@ -403,7 +403,10 @@
         }
       },
       "Mississippi.Reservoir.Abstractions": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
+        }
       },
       "Microsoft.CodeAnalysis.Common": {
         "type": "CentralTransitive",

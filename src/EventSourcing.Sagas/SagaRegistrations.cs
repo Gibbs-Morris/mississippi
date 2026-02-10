@@ -1,9 +1,7 @@
 using System;
 
-using Microsoft.Extensions.DependencyInjection;
-
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Aggregates;
-using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
@@ -20,34 +18,33 @@ public static class SagaRegistrations
     /// </summary>
     /// <typeparam name="TSaga">The saga state type.</typeparam>
     /// <typeparam name="TInput">The saga input type.</typeparam>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The updated service collection.</returns>
-    public static IServiceCollection AddSagaOrchestration<TSaga, TInput>(
-        this IServiceCollection services
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <returns>The builder for chaining.</returns>
+    public static IMississippiSiloBuilder AddSagaOrchestration<TSaga, TInput>(
+        this IMississippiSiloBuilder builder
     )
         where TSaga : class, ISagaState
     {
-        ArgumentNullException.ThrowIfNull(services);
-        services.AddAggregateSupport();
-        services.AddEventType<SagaStartedEvent>();
-        services.AddEventType<SagaInputProvided<TInput>>();
-        services.AddEventType<SagaStepCompleted>();
-        services.AddEventType<SagaStepFailed>();
-        services.AddEventType<SagaCompensating>();
-        services.AddEventType<SagaStepCompensated>();
-        services.AddEventType<SagaCompleted>();
-        services.AddEventType<SagaCompensated>();
-        services.AddEventType<SagaFailed>();
-        services.AddCommandHandler<StartSagaCommand<TInput>, TSaga, StartSagaCommandHandler<TSaga, TInput>>();
-        services.AddReducer<SagaStartedEvent, TSaga, SagaStartedReducer<TSaga>>();
-        services.AddReducer<SagaInputProvided<TInput>, TSaga, SagaInputProvidedReducer<TSaga, TInput>>();
-        services.AddReducer<SagaStepCompleted, TSaga, SagaStepCompletedReducer<TSaga>>();
-        services.AddReducer<SagaCompensating, TSaga, SagaCompensatingReducer<TSaga>>();
-        services.AddReducer<SagaCompleted, TSaga, SagaCompletedReducer<TSaga>>();
-        services.AddReducer<SagaCompensated, TSaga, SagaCompensatedReducer<TSaga>>();
-        services.AddReducer<SagaFailed, TSaga, SagaFailedReducer<TSaga>>();
-        services.AddRootEventEffect<TSaga>();
-        services.AddTransient<IEventEffect<TSaga>, SagaOrchestrationEffect<TSaga>>();
-        return services;
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.AddAggregateSupport();
+        builder.AddEventType<SagaStartedEvent>();
+        builder.AddEventType<SagaInputProvided<TInput>>();
+        builder.AddEventType<SagaStepCompleted>();
+        builder.AddEventType<SagaStepFailed>();
+        builder.AddEventType<SagaCompensating>();
+        builder.AddEventType<SagaStepCompensated>();
+        builder.AddEventType<SagaCompleted>();
+        builder.AddEventType<SagaCompensated>();
+        builder.AddEventType<SagaFailed>();
+        builder.AddCommandHandler<StartSagaCommand<TInput>, TSaga, StartSagaCommandHandler<TSaga, TInput>>();
+        builder.AddReducer<SagaStartedEvent, TSaga, SagaStartedReducer<TSaga>>();
+        builder.AddReducer<SagaInputProvided<TInput>, TSaga, SagaInputProvidedReducer<TSaga, TInput>>();
+        builder.AddReducer<SagaStepCompleted, TSaga, SagaStepCompletedReducer<TSaga>>();
+        builder.AddReducer<SagaCompensating, TSaga, SagaCompensatingReducer<TSaga>>();
+        builder.AddReducer<SagaCompleted, TSaga, SagaCompletedReducer<TSaga>>();
+        builder.AddReducer<SagaCompensated, TSaga, SagaCompensatedReducer<TSaga>>();
+        builder.AddReducer<SagaFailed, TSaga, SagaFailedReducer<TSaga>>();
+        builder.AddEventEffect<SagaOrchestrationEffect<TSaga>, TSaga>();
+        return builder;
     }
 }

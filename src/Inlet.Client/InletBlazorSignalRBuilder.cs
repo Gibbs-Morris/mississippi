@@ -11,7 +11,7 @@ using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.SignalRConnection;
-using Mississippi.Reservoir;
+using Mississippi.Reservoir.Abstractions.Builders;
 
 
 namespace Mississippi.Inlet.Client;
@@ -34,16 +34,16 @@ public sealed class InletBlazorSignalRBuilder
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletBlazorSignalRBuilder" /> class.
     /// </summary>
-    /// <param name="services">The service collection.</param>
+    /// <param name="builder">The Reservoir builder.</param>
     public InletBlazorSignalRBuilder(
-        IServiceCollection services
+        IReservoirBuilder builder
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
-        Services = services;
+        ArgumentNullException.ThrowIfNull(builder);
+        Builder = builder;
     }
 
-    private IServiceCollection Services { get; }
+    private IReservoirBuilder Builder { get; }
 
     /// <summary>
     ///     Registers a projection fetcher implementation.
@@ -117,51 +117,57 @@ public sealed class InletBlazorSignalRBuilder
     /// </summary>
     internal void Build()
     {
-        // Register options
-        Services.TryAddSingleton(options);
-
-        // Register the projection DTO registry (always available)
-        Services.TryAddSingleton<IProjectionDtoRegistry>(sp =>
+        Builder.ConfigureServices(services =>
         {
-            ProjectionDtoRegistry registry = new();
-            foreach (Assembly assembly in assembliesToScan)
+            // Register options
+            services.TryAddSingleton(options);
+
+            // Register the projection DTO registry (always available)
+            services.TryAddSingleton<IProjectionDtoRegistry>(sp =>
             {
-                registry.ScanAssemblies(assembly);
+                ProjectionDtoRegistry registry = new();
+                foreach (Assembly assembly in assembliesToScan)
+                {
+                    registry.ScanAssemblies(assembly);
+                }
+
+                return registry;
+            });
+
+            // Register the projection fetcher with scoped lifetime to match Store/Effect pattern (Fluxor style).
+            // In Blazor WASM, scoped = singleton. In Blazor Server, each circuit gets its own fetcher.
+            if (useAutoFetcher)
+            {
+                // Use the auto fetcher with registry
+                services.TryAddScoped<IProjectionFetcher>(sp =>
+                {
+                    HttpClient http = sp.GetRequiredService<HttpClient>();
+                    IProjectionDtoRegistry registry = sp.GetRequiredService<IProjectionDtoRegistry>();
+                    return new AutoProjectionFetcher(http, registry, routePrefix);
+                });
+            }
+            else if (projectionFetcherType is not null)
+            {
+                // Use custom fetcher
+                services.TryAddScoped(typeof(IProjectionFetcher), projectionFetcherType);
             }
 
-            return registry;
+            // Register the hub connection provider
+            services.TryAddScoped<IHubConnectionProvider, HubConnectionProvider>();
+
+            // Register Lazy<IInletStore> to break the circular dependency:
+            // Store resolves IActionEffect[] → InletSignalRActionEffect needs Store.
+            // By using Lazy<IInletStore>, the effect defers resolution until first use.
+            services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
         });
 
-        // Register the projection fetcher with scoped lifetime to match Store/Effect pattern (Fluxor style).
-        // In Blazor WASM, scoped = singleton. In Blazor Server, each circuit gets its own fetcher.
-        if (useAutoFetcher)
-        {
-            // Use the auto fetcher with registry
-            Services.TryAddScoped<IProjectionFetcher>(sp =>
-            {
-                HttpClient http = sp.GetRequiredService<HttpClient>();
-                IProjectionDtoRegistry registry = sp.GetRequiredService<IProjectionDtoRegistry>();
-                return new AutoProjectionFetcher(http, registry, routePrefix);
-            });
-        }
-        else if (projectionFetcherType is not null)
-        {
-            // Use custom fetcher
-            Services.TryAddScoped(typeof(IProjectionFetcher), projectionFetcherType);
-        }
-
-        // Register the hub connection provider
-        Services.TryAddScoped<IHubConnectionProvider, HubConnectionProvider>();
-
-        // Register Lazy<IInletStore> to break the circular dependency:
-        // Store resolves IActionEffect[] → InletSignalRActionEffect needs Store.
-        // By using Lazy<IInletStore>, the effect defers resolution until first use.
-        Services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
-
         // Register the Inlet connection feature state and SignalR effect
-        Services.AddActionEffect<InletConnectionState, InletSignalRActionEffect>();
+        Builder.AddFeature<InletConnectionState>(featureBuilder =>
+        {
+            featureBuilder.AddActionEffect<InletSignalRActionEffect>();
+        });
 
         // Register the SignalR connection feature (state, reducers, and lifecycle effect)
-        Services.AddSignalRConnectionFeature();
+        Builder.AddSignalRConnectionFeature();
     }
 }

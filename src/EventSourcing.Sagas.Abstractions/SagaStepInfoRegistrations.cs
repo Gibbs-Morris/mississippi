@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
+
 
 namespace Mississippi.EventSourcing.Sagas.Abstractions;
 
@@ -15,18 +17,19 @@ public static class SagaStepInfoRegistrations
     ///     Registers saga step metadata for the provided saga state type.
     /// </summary>
     /// <typeparam name="TSaga">The saga state type.</typeparam>
-    /// <param name="services">The service collection.</param>
+    /// <param name="builder">The Mississippi silo builder.</param>
     /// <param name="steps">The ordered saga step metadata.</param>
-    /// <returns>The updated service collection.</returns>
-    public static IServiceCollection AddSagaStepInfo<TSaga>(
-        this IServiceCollection services,
+    /// <returns>The builder for chaining.</returns>
+    public static IMississippiSiloBuilder AddSagaStepInfo<TSaga>(
+        this IMississippiSiloBuilder builder,
         IReadOnlyList<SagaStepInfo> steps
     )
         where TSaga : class, ISagaState
     {
-        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(steps);
-        services.AddSingleton<ISagaStepInfoProvider<TSaga>>(new SagaStepInfoProvider<TSaga>(steps));
-        return services;
+        builder.ConfigureServices(services =>
+            services.AddSingleton<ISagaStepInfoProvider<TSaga>>(new SagaStepInfoProvider<TSaga>(steps)));
+        return builder;
     }
 }

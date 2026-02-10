@@ -1,8 +1,8 @@
 using System;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
 
@@ -16,29 +16,30 @@ public static class SnapshotRegistrations
     /// <summary>
     ///     Adds snapshot caching infrastructure services to the service collection.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddSnapshotCaching(
-        this IServiceCollection services
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <returns>The builder for chaining.</returns>
+    public static IMississippiSiloBuilder AddSnapshotCaching(
+        this IMississippiSiloBuilder builder
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
-        services.TryAddSingleton<ISnapshotGrainFactory, SnapshotGrainFactory>();
-        return services;
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services => services.TryAddSingleton<ISnapshotGrainFactory, SnapshotGrainFactory>());
+        return builder;
     }
 
     /// <summary>
     ///     Registers a snapshot state converter for the specified state type.
     /// </summary>
     /// <typeparam name="TSnapshot">The state type to convert.</typeparam>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddSnapshotStateConverter<TSnapshot>(
-        this IServiceCollection services
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <returns>The builder for chaining.</returns>
+    public static IMississippiSiloBuilder AddSnapshotStateConverter<TSnapshot>(
+        this IMississippiSiloBuilder builder
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
-        services.TryAddTransient<ISnapshotStateConverter<TSnapshot>, SnapshotStateConverter<TSnapshot>>();
-        return services;
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.ConfigureServices(services =>
+            services.TryAddTransient<ISnapshotStateConverter<TSnapshot>, SnapshotStateConverter<TSnapshot>>());
+        return builder;
     }
 }
