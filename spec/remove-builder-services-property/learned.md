@@ -4,6 +4,9 @@
 - UNVERIFIED: Builder contracts expose `IServiceCollection Services { get; }` in IMississippiBuilder, IReservoirBuilder, and IAqueductServerBuilder.
 - UNVERIFIED: Builder implementations expose public Services properties used in registrations.
 
+## Requirements (from user)
+- Remove the public `Services` property to enforce a ConfigureServices-only pattern.
+
 ## Files to verify
 - src/Common.Abstractions/Builders/IMississippiBuilder.cs
 - src/Reservoir.Abstractions/Builders/IReservoirBuilder.cs

@@ -7,3 +7,7 @@
 4. Refactor all builder extension methods and registrations to use ConfigureServices.
 5. Update docs/samples/tests/generators to avoid `.Services` usage.
 6. Build and run tests per repo guidance.
+
+## Test Plan (placeholder)
+- Build Mississippi and Samples solutions with repo scripts.
+- Run unit tests (L0/L1) using repo scripts.

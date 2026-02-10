@@ -17,6 +17,14 @@ Public `IServiceCollection Services { get; }` properties on builder contracts al
 - Builder implementations expose the property and pass it to registration helpers.
 - Some extension methods or registrations may use the property directly.
 
+## Assumptions
+- Builder contracts are consumed by external users, so removing `Services` is a breaking change.
+- All direct `Services` usage can be replaced with `ConfigureServices` without losing capability.
+
+## Unknowns
+- The full list of internal call sites that directly access `.Services`.
+- Whether docs/samples/generators expose `.Services` usage that must be updated.
+
 ## Proposed Design
 - Remove `Services` from builder interfaces (IMississippiBuilder, IReservoirBuilder, IAqueductServerBuilder).
 - Update builder implementations to keep service collection private/internal.
