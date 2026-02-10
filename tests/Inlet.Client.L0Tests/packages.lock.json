@@ -646,18 +646,23 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
-          "Microsoft.Extensions.Logging.Abstractions": "[10.0.2, )"
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.2, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir.Abstractions": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.2, )"
+        }
       },
       "Mississippi.Reservoir.Blazor": {
         "type": "Project",

@@ -183,8 +183,12 @@ public sealed class StoreComponentTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
-        services.AddReservoir();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir()
+            .AddFeature<TestFeatureState>(featureBuilder =>
+            {
+                featureBuilder.AddReducer<TestAction, TestActionReducer>();
+            });
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore scopedStore = scope.ServiceProvider.GetRequiredService<IStore>();

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
@@ -27,6 +28,33 @@ namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
 /// </summary>
 public sealed class SnapshotStorageProviderRegistrationsTests
 {
+    private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
+    {
+        private readonly IServiceCollection services;
+
+        public TestMississippiSiloBuilder(
+            IServiceCollection services
+        ) =>
+            this.services = services;
+
+        public IMississippiSiloBuilder ConfigureOptions<TOptions>(
+            Action<TOptions> configure
+        )
+            where TOptions : class
+        {
+            services.Configure(configure);
+            return this;
+        }
+
+        public IMississippiSiloBuilder ConfigureServices(
+            Action<IServiceCollection> configure
+        )
+        {
+            configure(services);
+            return this;
+        }
+    }
+
     /// <summary>
     ///     Ensures the registrations wire dependencies when a CosmosClient is already in DI.
     /// </summary>
@@ -39,12 +67,13 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         Mock<CosmosClient> cosmosClient = new();
         cosmosClient.Setup(c => c.GetDatabase("db")).Returns(database.Object);
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddLogging();
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClient.Object);
         services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
-        services.AddCosmosSnapshotStorageProvider();
+        builder.AddCosmosSnapshotStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.NotNull(provider.GetRequiredService<ISnapshotContainerOperations>());
         Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
@@ -78,11 +107,12 @@ public sealed class SnapshotStorageProviderRegistrationsTests
                 })
             .Build();
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddLogging();
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClient.Object);
-        services.AddCosmosSnapshotStorageProvider(configuration);
+        builder.AddCosmosSnapshotStorageProvider(configuration);
         using ServiceProvider provider = services.BuildServiceProvider();
         SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
         Assert.Equal("config-db", options.DatabaseId);
@@ -101,11 +131,12 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         Mock<CosmosClient> cosmosClient = new();
         cosmosClient.Setup(c => c.GetDatabase("custom-db")).Returns(database.Object);
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddLogging();
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClient.Object);
-        services.AddCosmosSnapshotStorageProvider(o => o.DatabaseId = "custom-db");
+        builder.AddCosmosSnapshotStorageProvider(o => o.DatabaseId = "custom-db");
         using ServiceProvider provider = services.BuildServiceProvider();
         SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
         Assert.Equal("custom-db", options.DatabaseId);
@@ -119,7 +150,8 @@ public sealed class SnapshotStorageProviderRegistrationsTests
     public void AddCosmosSnapshotStorageProviderWithConnectionStringShouldBindOptions()
     {
         ServiceCollection services = new();
-        services.AddCosmosSnapshotStorageProvider("UseDevelopmentStorage=true", o => o.DatabaseId = "db2");
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddCosmosSnapshotStorageProvider("UseDevelopmentStorage=true", o => o.DatabaseId = "db2");
         using ServiceProvider provider = services.BuildServiceProvider();
         SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
         Assert.Equal("db2", options.DatabaseId);
@@ -163,6 +195,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(databaseResponseMock.Object);
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClientMock.Object);
@@ -171,7 +204,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "new-db";
             o.ContainerId = "new-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        builder.AddCosmosSnapshotStorageProvider();
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -221,6 +254,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(databaseResponseMock.Object);
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClientMock.Object);
@@ -229,7 +263,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "existing-db";
             o.ContainerId = "existing-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        builder.AddCosmosSnapshotStorageProvider();
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -281,6 +315,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(databaseResponseMock.Object);
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClientMock.Object);
@@ -289,7 +324,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "test-db";
             o.ContainerId = "test-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        builder.AddCosmosSnapshotStorageProvider();
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -353,11 +388,12 @@ public sealed class SnapshotStorageProviderRegistrationsTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(databaseResponseMock.Object);
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddKeyedSingleton<CosmosClient>(
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClientMock.Object);
         services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
-        services.AddCosmosSnapshotStorageProvider();
+        builder.AddCosmosSnapshotStorageProvider();
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act

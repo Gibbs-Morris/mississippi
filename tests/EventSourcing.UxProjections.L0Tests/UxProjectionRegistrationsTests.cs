@@ -3,6 +3,7 @@ using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
 
 
@@ -13,6 +14,36 @@ namespace Mississippi.EventSourcing.UxProjections.L0Tests;
 /// </summary>
 public sealed class UxProjectionRegistrationsTests
 {
+    private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
+    {
+        private readonly IServiceCollection services;
+
+        public TestMississippiSiloBuilder(
+            IServiceCollection services
+        )
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            this.services = services;
+        }
+
+        public IMississippiSiloBuilder ConfigureOptions<TOptions>(
+            Action<TOptions> configure
+        )
+            where TOptions : class
+        {
+            services.Configure(configure);
+            return this;
+        }
+
+        public IMississippiSiloBuilder ConfigureServices(
+            Action<IServiceCollection> configure
+        )
+        {
+            configure(services);
+            return this;
+        }
+    }
+
     /// <summary>
     ///     AddUxProjections should not register duplicate when called multiple times.
     /// </summary>
@@ -20,11 +51,12 @@ public sealed class UxProjectionRegistrationsTests
     public void AddUxProjectionsDoesNotDuplicateRegistration()
     {
         // Arrange
-        ServiceCollection services = new();
+        ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
 
         // Act
-        services.AddUxProjections();
-        services.AddUxProjections();
+        builder.AddUxProjections();
+        builder.AddUxProjections();
 
         // Assert
         int factoryCount = services.Count(sd => sd.ServiceType == typeof(IUxProjectionGrainFactory));
@@ -38,10 +70,11 @@ public sealed class UxProjectionRegistrationsTests
     public void AddUxProjectionsRegistersFactory()
     {
         // Arrange
-        ServiceCollection services = new();
+        ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
 
         // Act
-        services.AddUxProjections();
+        builder.AddUxProjections();
 
         // Assert
         ServiceDescriptor? factoryDescriptor = Assert.Single(
@@ -58,13 +91,13 @@ public sealed class UxProjectionRegistrationsTests
     public void AddUxProjectionsReturnsServicesForChaining()
     {
         // Arrange
-        ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
 
         // Act
-        IServiceCollection result = services.AddUxProjections();
+        IMississippiSiloBuilder result = builder.AddUxProjections();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -74,9 +107,9 @@ public sealed class UxProjectionRegistrationsTests
     public void AddUxProjectionsThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddUxProjections());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddUxProjections());
     }
 }

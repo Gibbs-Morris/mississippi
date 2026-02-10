@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Cosmos.Abstractions.Retry;
 using Mississippi.EventSourcing.Brooks.Abstractions;
@@ -27,6 +28,33 @@ namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
 /// </summary>
 public sealed class BrookStorageProviderRegistrationsTests
 {
+    private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
+    {
+        private readonly IServiceCollection services;
+
+        public TestMississippiSiloBuilder(
+            IServiceCollection services
+        ) =>
+            this.services = services;
+
+        public IMississippiSiloBuilder ConfigureOptions<TOptions>(
+            Action<TOptions> configure
+        )
+            where TOptions : class
+        {
+            services.Configure(configure);
+            return this;
+        }
+
+        public IMississippiSiloBuilder ConfigureServices(
+            Action<IServiceCollection> configure
+        )
+        {
+            configure(services);
+            return this;
+        }
+    }
+
     /// <summary>
     ///     Verifies core services and public abstractions are registered.
     /// </summary>
@@ -34,7 +62,8 @@ public sealed class BrookStorageProviderRegistrationsTests
     public void AddCosmosBrookStorageProviderRegistersServicesAndMappers()
     {
         ServiceCollection services = new();
-        services.AddCosmosBrookStorageProvider(options =>
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddCosmosBrookStorageProvider(options =>
         {
             options.DatabaseId = "db";
             options.LockContainerName = "locks";
@@ -98,9 +127,10 @@ public sealed class BrookStorageProviderRegistrationsTests
         };
         IConfigurationRoot configuration = new ConfigurationBuilder().AddInMemoryCollection(inMemory).Build();
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
 
         // Use the IConfiguration-only overload so we don't register SDK clients here.
-        services.AddCosmosBrookStorageProvider(configuration);
+        builder.AddCosmosBrookStorageProvider(configuration);
         using ServiceProvider provider = services.BuildServiceProvider();
         IOptions<BrookStorageOptions> opts = provider.GetRequiredService<IOptions<BrookStorageOptions>>();
         Assert.Equal("confdb", opts.Value.DatabaseId);
@@ -114,7 +144,8 @@ public sealed class BrookStorageProviderRegistrationsTests
     public void AddCosmosBrookStorageProviderWithConfigureOptionsAppliesOptions()
     {
         ServiceCollection services = new();
-        services.AddCosmosBrookStorageProvider(options => { options.DatabaseId = "mydb"; });
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddCosmosBrookStorageProvider(options => { options.DatabaseId = "mydb"; });
         using ServiceProvider provider = services.BuildServiceProvider();
         IOptions<BrookStorageOptions> opts = provider.GetRequiredService<IOptions<BrookStorageOptions>>();
         Assert.Equal("mydb", opts.Value.DatabaseId);
@@ -128,6 +159,7 @@ public sealed class BrookStorageProviderRegistrationsTests
     public void AddCosmosBrookStorageProviderWithConnectionStringsAndConfigurationBindsAndRegisters()
     {
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         IConfigurationRoot cfg = new ConfigurationBuilder().AddInMemoryCollection(
                 new Dictionary<string, string?>
                 {
@@ -135,7 +167,7 @@ public sealed class BrookStorageProviderRegistrationsTests
                     ["LockContainerName"] = "cfgLocks",
                 })
             .Build();
-        services.AddCosmosBrookStorageProvider(
+        builder.AddCosmosBrookStorageProvider(
             "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM=;",
             "UseDevelopmentStorage=true",
             cfg);
@@ -157,15 +189,16 @@ public sealed class BrookStorageProviderRegistrationsTests
     public void AddCosmosBrookStorageProviderWithConnectionStringsRegistersClients()
     {
         ServiceCollection services = new();
-        services.AddCosmosBrookStorageProvider(
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddCosmosBrookStorageProvider(
             "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM=;",
             "UseDevelopmentStorage=true",
             configureOptions: null);
 
         // Avoid resolving the real SDK clients (their constructors validate keys).
         // Instead assert that the service descriptors for the SDK clients were added.
-        List<Type> serviceTypes2 = services.Select(sd => sd.ServiceType).ToList();
-        Assert.Contains(typeof(CosmosClient), serviceTypes2);
-        Assert.Contains(typeof(BlobServiceClient), serviceTypes2);
+        List<Type> serviceTypes = services.Select(sd => sd.ServiceType).ToList();
+        Assert.Contains(typeof(CosmosClient), serviceTypes);
+        Assert.Contains(typeof(BlobServiceClient), serviceTypes);
     }
 }

@@ -154,7 +154,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "public static IServiceCollection AddAccountBalanceProjection(",
+            "public static IMississippiSiloBuilder AddAccountBalanceProjection(",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -400,7 +400,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddSnapshotStateConverter<AccountBalanceProjection>();",
+            "builder.AddSnapshotStateConverter<AccountBalanceProjection>();",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -441,7 +441,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("services.AddUxProjections();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("builder.AddUxProjections();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -529,11 +529,11 @@ public class ProjectionSiloRegistrationGeneratorTests
 
         // Both reducers should be registered
         Assert.Contains(
-            "services.AddReducer<BalanceIncreased, AccountBalanceProjection, BalanceIncreasedReducer>();",
+            "builder.AddReducer<BalanceIncreased, AccountBalanceProjection, BalanceIncreasedReducer>();",
             generatedCode,
             StringComparison.Ordinal);
         Assert.Contains(
-            "services.AddReducer<BalanceDecreased, AccountBalanceProjection, BalanceDecreasedReducer>();",
+            "builder.AddReducer<BalanceDecreased, AccountBalanceProjection, BalanceDecreasedReducer>();",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -574,7 +574,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("using Microsoft.Extensions.DependencyInjection;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.Common.Abstractions.Builders;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Mississippi.EventSourcing.Reducers;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Mississippi.EventSourcing.Snapshots;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Mississippi.EventSourcing.UxProjections;", generatedCode, StringComparison.Ordinal);
@@ -617,7 +617,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddReducer<BalanceUpdated, AccountBalanceProjection, BalanceUpdatedReducer>();",
+            "builder.AddReducer<BalanceUpdated, AccountBalanceProjection, BalanceUpdatedReducer>();",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -658,7 +658,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("return services;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return builder;", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

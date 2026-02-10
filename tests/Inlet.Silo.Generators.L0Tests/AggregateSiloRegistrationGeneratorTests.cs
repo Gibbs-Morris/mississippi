@@ -171,7 +171,10 @@ public class AggregateSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("public static IServiceCollection AddOrderAggregate(", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static IMississippiSiloBuilder AddOrderAggregate(",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -428,7 +431,7 @@ public class AggregateSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddSnapshotStateConverter<OrderAggregate>();",
+            "builder.AddSnapshotStateConverter<OrderAggregate>();",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -480,7 +483,7 @@ public class AggregateSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("services.AddAggregateSupport();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("builder.AddAggregateSupport();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -799,7 +802,7 @@ public class AggregateSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("using Microsoft.Extensions.DependencyInjection;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.Common.Abstractions.Builders;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Mississippi.EventSourcing.Aggregates;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Mississippi.EventSourcing.Reducers;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Mississippi.EventSourcing.Snapshots;", generatedCode, StringComparison.Ordinal);
@@ -853,7 +856,7 @@ public class AggregateSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddCommandHandler<CreateOrder, OrderAggregate, CreateOrderHandler>();",
+            "builder.AddCommandHandler<CreateOrder, OrderAggregate, CreateOrderHandler>();",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -913,7 +916,7 @@ public class AggregateSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddEventEffect<OrderCreatedEffect, OrderAggregate>();",
+            "builder.AddEventEffect<OrderCreatedEffect, OrderAggregate>();",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -965,7 +968,7 @@ public class AggregateSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("services.AddEventType<OrderCreated>();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("builder.AddEventType<OrderCreated>();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -1271,7 +1274,7 @@ public class AggregateSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddReducer<OrderCreated, OrderAggregate, OrderCreatedReducer>();",
+            "builder.AddReducer<OrderCreated, OrderAggregate, OrderCreatedReducer>();",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -1331,7 +1334,7 @@ public class AggregateSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddEventEffect<OrderCreatedSimpleEffect, OrderAggregate>();",
+            "builder.AddEventEffect<OrderCreatedSimpleEffect, OrderAggregate>();",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -1383,7 +1386,7 @@ public class AggregateSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("return services;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return builder;", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

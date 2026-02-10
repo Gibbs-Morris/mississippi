@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Abstractions.Builders;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
@@ -31,8 +32,8 @@ public sealed class LifecycleFeatureRegistrationTests : IDisposable
         fakeTimeProvider.SetUtcNow(new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero));
         ServiceCollection services = [];
         services.AddSingleton<TimeProvider>(fakeTimeProvider);
-        services.AddReservoir();
-        services.AddBuiltInLifecycle();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir().AddBuiltInLifecycle();
         serviceProvider = services.BuildServiceProvider();
         store = serviceProvider.GetRequiredService<IStore>();
     }
@@ -109,13 +110,14 @@ public sealed class LifecycleFeatureRegistrationTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir();
+        TestMississippiClientBuilder builder = new(services);
+        IReservoirBuilder reservoirBuilder = builder.AddReservoir();
 
         // Act
-        IServiceCollection result = services.AddBuiltInLifecycle();
+        IReservoirBuilder result = reservoirBuilder.AddBuiltInLifecycle();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 
     /// <summary>

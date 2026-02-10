@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Builders;
 
 using Moq;
 
@@ -81,6 +82,33 @@ public sealed class CosmosContainerInitializerTests
         return instance;
     }
 
+    private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
+    {
+        private readonly IServiceCollection services;
+
+        public TestMississippiSiloBuilder(
+            IServiceCollection services
+        ) =>
+            this.services = services;
+
+        public IMississippiSiloBuilder ConfigureOptions<TOptions>(
+            Action<TOptions> configure
+        )
+            where TOptions : class
+        {
+            services.Configure(configure);
+            return this;
+        }
+
+        public IMississippiSiloBuilder ConfigureServices(
+            Action<IServiceCollection> configure
+        )
+        {
+            configure(services);
+            return this;
+        }
+    }
+
     /// <summary>
     ///     Verifies that the initializer creates the database and container when not found.
     /// </summary>
@@ -126,9 +154,10 @@ public sealed class CosmosContainerInitializerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<ContainerResponse>());
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
         services.AddKeyedSingleton<CosmosClient>(MississippiDefaults.ServiceKeys.CosmosBrooksClient, cosmos.Object);
-        services.AddCosmosBrookStorageProvider();
+        builder.AddCosmosBrookStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
 
@@ -184,9 +213,10 @@ public sealed class CosmosContainerInitializerTests
         containerResp.SetupGet(r => r.Resource).Returns(new ContainerProperties("brooks", "/wrong"));
         existingContainer.Setup(c => c.ReadContainerAsync(null, default)).ReturnsAsync(containerResp.Object);
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
         services.AddKeyedSingleton<CosmosClient>(MississippiDefaults.ServiceKeys.CosmosBrooksClient, cosmos.Object);
-        services.AddCosmosBrookStorageProvider();
+        builder.AddCosmosBrookStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
 

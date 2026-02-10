@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
@@ -22,7 +23,8 @@ public sealed class SagaRegistrationsTests
     public void AddSagaOrchestrationRegistersSagaInputEventType()
     {
         ServiceCollection services = new();
-        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddSagaOrchestration<TestSagaState, TestInput>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
         string? eventName = registry.ResolveName(typeof(SagaInputProvided<TestInput>));
@@ -36,8 +38,9 @@ public sealed class SagaRegistrationsTests
     public void AddSagaOrchestrationReturnsServiceCollection()
     {
         ServiceCollection services = new();
-        IServiceCollection result = services.AddSagaOrchestration<TestSagaState, TestInput>();
-        Assert.Same(services, result);
+        TestMississippiSiloBuilder builder = new(services);
+        IMississippiSiloBuilder result = builder.AddSagaOrchestration<TestSagaState, TestInput>();
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -46,7 +49,7 @@ public sealed class SagaRegistrationsTests
     [Fact]
     public void AddSagaOrchestrationThrowsWhenServicesNull()
     {
-        IServiceCollection? services = null;
-        Assert.Throws<ArgumentNullException>(() => services!.AddSagaOrchestration<TestSagaState, TestInput>());
+        IMississippiSiloBuilder? builder = null;
+        Assert.Throws<ArgumentNullException>(() => builder!.AddSagaOrchestration<TestSagaState, TestInput>());
     }
 }

@@ -29,8 +29,8 @@ public sealed class CompositeInletStoreTests : IDisposable
     {
         // Set up DI container with Store and ProjectionsFeatureState
         ServiceCollection services = new();
-        services.AddReservoir();
-        services.AddFeatureState<ProjectionsFeatureState>();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir().AddFeature<ProjectionsFeatureState>(_ => { });
         serviceProvider = services.BuildServiceProvider();
         store = (Store)serviceProvider.GetRequiredService<IStore>();
     }
@@ -155,9 +155,10 @@ public sealed class CompositeInletStoreTests : IDisposable
     public void DisposeCanBeCalledMultipleTimes()
     {
         // Arrange - create a new isolated store for this test
-        using ServiceProvider localServiceProvider = new ServiceCollection().AddReservoir()
-            .AddFeatureState<ProjectionsFeatureState>()
-            .BuildServiceProvider();
+        ServiceCollection localServices = new();
+        TestMississippiClientBuilder builder = new(localServices);
+        builder.AddReservoir().AddFeature<ProjectionsFeatureState>(_ => { });
+        using ServiceProvider localServiceProvider = localServices.BuildServiceProvider();
         Store localStore = (Store)localServiceProvider.GetRequiredService<IStore>();
         CompositeInletStore sut = new(localStore);
 

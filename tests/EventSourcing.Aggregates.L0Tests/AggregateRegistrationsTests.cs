@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 
@@ -91,6 +92,42 @@ public class AggregateRegistrationsTests
             Task.CompletedTask;
     }
 
+    private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
+    {
+        private readonly IServiceCollection services;
+
+        public TestMississippiSiloBuilder(
+            IServiceCollection services
+        )
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            this.services = services;
+        }
+
+        public IMississippiSiloBuilder ConfigureOptions<TOptions>(
+            Action<TOptions> configure
+        )
+            where TOptions : class
+        {
+            services.Configure(configure);
+            return this;
+        }
+
+        public IMississippiSiloBuilder ConfigureServices(
+            Action<IServiceCollection> configure
+        )
+        {
+            configure(services);
+            return this;
+        }
+    }
+
+    private static (ServiceCollection Services, TestMississippiSiloBuilder Builder) CreateBuilder()
+    {
+        ServiceCollection services = [];
+        return (services, new TestMississippiSiloBuilder(services));
+    }
+
     /// <summary>
     ///     Test snapshot class.
     /// </summary>
@@ -109,8 +146,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddAggregateSupportRegistersEventTypeRegistry()
     {
-        ServiceCollection services = new();
-        services.AddAggregateSupport();
+        var (services, builder) = CreateBuilder();
+        builder.AddAggregateSupport();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
         Assert.NotNull(registry);
@@ -123,9 +160,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddAggregateSupportReturnsServiceCollection()
     {
-        ServiceCollection services = new();
-        IServiceCollection result = services.AddAggregateSupport();
-        Assert.Same(services, result);
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
+        IMississippiSiloBuilder result = builder.AddAggregateSupport();
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -134,8 +171,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddAggregateSupportThrowsWhenServicesIsNull()
     {
-        IServiceCollection? services = null;
-        Assert.Throws<ArgumentNullException>(() => services!.AddAggregateSupport());
+        IMississippiSiloBuilder? builder = null;
+        Assert.Throws<ArgumentNullException>(() => builder!.AddAggregateSupport());
     }
 
     /// <summary>
@@ -144,8 +181,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddCommandHandlerWithClassRegistersHandler()
     {
-        ServiceCollection services = new();
-        services.AddCommandHandler<TestCommand, TestState, TestCommandHandler>();
+        var (services, builder) = CreateBuilder();
+        builder.AddCommandHandler<TestCommand, TestState, TestCommandHandler>();
         using ServiceProvider provider = services.BuildServiceProvider();
         ICommandHandler<TestCommand, TestState>? handler =
             provider.GetService<ICommandHandler<TestCommand, TestState>>();
@@ -159,9 +196,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddCommandHandlerWithClassThrowsWhenServicesIsNull()
     {
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
         Assert.Throws<ArgumentNullException>(() =>
-            services!.AddCommandHandler<TestCommand, TestState, TestCommandHandler>());
+            builder!.AddCommandHandler<TestCommand, TestState, TestCommandHandler>());
     }
 
     /// <summary>
@@ -170,9 +207,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddCommandHandlerWithDelegateRegistersHandler()
     {
-        ServiceCollection services = new();
+        var (services, builder) = CreateBuilder();
         bool delegateCalled = false;
-        services.AddCommandHandler<TestCommand, TestState>((
+        builder.AddCommandHandler<TestCommand, TestState>((
             _,
             _
         ) =>
@@ -194,8 +231,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddCommandHandlerWithDelegateThrowsWhenHandlerIsNull()
     {
-        ServiceCollection services = new();
-        Assert.Throws<ArgumentNullException>(() => services.AddCommandHandler<TestCommand, TestState>(null!));
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
+        Assert.Throws<ArgumentNullException>(() => builder.AddCommandHandler<TestCommand, TestState>(null!));
     }
 
     /// <summary>
@@ -204,8 +241,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddCommandHandlerWithDelegateThrowsWhenServicesIsNull()
     {
-        IServiceCollection? services = null;
-        Assert.Throws<ArgumentNullException>(() => services!.AddCommandHandler<TestCommand, TestState>((
+        IMississippiSiloBuilder? builder = null;
+        Assert.Throws<ArgumentNullException>(() => builder!.AddCommandHandler<TestCommand, TestState>((
             _,
             _
         ) => OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>())));
@@ -218,10 +255,10 @@ public class AggregateRegistrationsTests
     public void AddEventEffectRegistersEffectInDI()
     {
         // Arrange
-        ServiceCollection services = new();
+        var (services, builder) = CreateBuilder();
 
         // Act
-        services.AddEventEffect<TestEventEffect, TestState>();
+        builder.AddEventEffect<TestEventEffect, TestState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IEventEffect<TestState>> effects = provider.GetServices<IEventEffect<TestState>>();
 
@@ -237,10 +274,10 @@ public class AggregateRegistrationsTests
     public void AddEventEffectRegistersRootEventEffect()
     {
         // Arrange
-        ServiceCollection services = new();
+        var (services, builder) = CreateBuilder();
 
         // Act
-        services.AddEventEffect<TestEventEffect, TestState>();
+        builder.AddEventEffect<TestEventEffect, TestState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IRootEventEffect<TestState>? rootEffect = provider.GetService<IRootEventEffect<TestState>>();
 
@@ -256,10 +293,10 @@ public class AggregateRegistrationsTests
     public void AddEventEffectThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddEventEffect<TestEventEffect, TestState>());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddEventEffect<TestEventEffect, TestState>());
     }
 
     /// <summary>
@@ -268,8 +305,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddEventTypeRegistersAggregateSupport()
     {
-        ServiceCollection services = new();
-        services.AddEventType<TestEvent>();
+        var (services, builder) = CreateBuilder();
+        builder.AddEventType<TestEvent>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
         Assert.NotNull(registry);
@@ -281,8 +318,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddEventTypeRegistersEventWithRegistry()
     {
-        ServiceCollection services = new();
-        services.AddEventType<TestEvent>();
+        var (services, builder) = CreateBuilder();
+        builder.AddEventType<TestEvent>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
         string eventName = EventStorageNameHelper.GetStorageName<TestEvent>();
@@ -295,9 +332,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddEventTypeReturnsServiceCollection()
     {
-        ServiceCollection services = new();
-        IServiceCollection result = services.AddEventType<TestEvent>();
-        Assert.Same(services, result);
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
+        IMississippiSiloBuilder result = builder.AddEventType<TestEvent>();
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -306,8 +343,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddEventTypeThrowsWhenServicesIsNull()
     {
-        IServiceCollection? services = null;
-        Assert.Throws<ArgumentNullException>(() => services!.AddEventType<TestEvent>());
+        IMississippiSiloBuilder? builder = null;
+        Assert.Throws<ArgumentNullException>(() => builder!.AddEventType<TestEvent>());
     }
 
     /// <summary>
@@ -317,10 +354,10 @@ public class AggregateRegistrationsTests
     public void AddFireAndForgetEventEffectRegistersEffectInDI()
     {
         // Arrange
-        ServiceCollection services = new();
+        var (services, builder) = CreateBuilder();
 
         // Act
-        services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+        builder.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IFireAndForgetEventEffect<TestEvent, TestState>? effect =
             provider.GetService<IFireAndForgetEventEffect<TestEvent, TestState>>();
@@ -337,10 +374,10 @@ public class AggregateRegistrationsTests
     public void AddFireAndForgetEventEffectRegistersEffectRegistration()
     {
         // Arrange
-        ServiceCollection services = new();
+        var (services, builder) = CreateBuilder();
 
         // Act
-        services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+        builder.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IFireAndForgetEffectRegistration<TestState>> registrations =
             provider.GetServices<IFireAndForgetEffectRegistration<TestState>>();
@@ -359,14 +396,14 @@ public class AggregateRegistrationsTests
     public void AddFireAndForgetEventEffectReturnsServiceCollection()
     {
         // Arrange
-        ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
 
         // Act
-        IServiceCollection result =
-            services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+        IMississippiSiloBuilder result =
+            builder.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -376,11 +413,11 @@ public class AggregateRegistrationsTests
     public void AddFireAndForgetEventEffectThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            services!.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>());
+            builder!.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>());
     }
 
     /// <summary>
@@ -389,9 +426,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddRootCommandHandlerRegistersHandler()
     {
-        ServiceCollection services = new();
-        services.AddAggregateSupport();
-        services.AddRootCommandHandler<TestState>();
+        var (services, builder) = CreateBuilder();
+        builder.AddAggregateSupport();
+        builder.AddRootCommandHandler<TestState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IRootCommandHandler<TestState>? handler = provider.GetService<IRootCommandHandler<TestState>>();
         Assert.NotNull(handler);
@@ -404,10 +441,10 @@ public class AggregateRegistrationsTests
     public void AddRootEventEffectRegistersRootEventEffect()
     {
         // Arrange
-        ServiceCollection services = new();
+        var (services, builder) = CreateBuilder();
 
         // Act
-        services.AddRootEventEffect<TestState>();
+        builder.AddRootEventEffect<TestState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IRootEventEffect<TestState>? rootEffect = provider.GetService<IRootEventEffect<TestState>>();
 
@@ -422,10 +459,10 @@ public class AggregateRegistrationsTests
     public void AddRootEventEffectThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddRootEventEffect<TestState>());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddRootEventEffect<TestState>());
     }
 
     /// <summary>
@@ -434,8 +471,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddSnapshotTypeRegistersAggregateSupport()
     {
-        ServiceCollection services = new();
-        services.AddSnapshotType<TestSnapshot>();
+        var (services, builder) = CreateBuilder();
+        builder.AddSnapshotType<TestSnapshot>();
         using ServiceProvider provider = services.BuildServiceProvider();
         ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
         Assert.NotNull(registry);
@@ -447,8 +484,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddSnapshotTypeRegistersSnapshotWithRegistry()
     {
-        ServiceCollection services = new();
-        services.AddSnapshotType<TestSnapshot>();
+        var (services, builder) = CreateBuilder();
+        builder.AddSnapshotType<TestSnapshot>();
         using ServiceProvider provider = services.BuildServiceProvider();
         ISnapshotTypeRegistry registry = provider.GetRequiredService<ISnapshotTypeRegistry>();
         string snapshotName = SnapshotStorageNameHelper.GetStorageName<TestSnapshot>();
@@ -461,9 +498,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddSnapshotTypeReturnsServiceCollection()
     {
-        ServiceCollection services = new();
-        IServiceCollection result = services.AddSnapshotType<TestSnapshot>();
-        Assert.Same(services, result);
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
+        IMississippiSiloBuilder result = builder.AddSnapshotType<TestSnapshot>();
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -472,8 +509,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void AddSnapshotTypeThrowsWhenServicesIsNull()
     {
-        IServiceCollection? services = null;
-        Assert.Throws<ArgumentNullException>(() => services!.AddSnapshotType<TestSnapshot>());
+        IMississippiSiloBuilder? builder = null;
+        Assert.Throws<ArgumentNullException>(() => builder!.AddSnapshotType<TestSnapshot>());
     }
 
     /// <summary>
@@ -482,8 +519,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForEventTypesRegistersAggregateSupport()
     {
-        ServiceCollection services = new();
-        services.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly);
+        var (services, builder) = CreateBuilder();
+        builder.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly);
         using ServiceProvider provider = services.BuildServiceProvider();
         IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
         Assert.NotNull(registry);
@@ -495,9 +532,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForEventTypesReturnsServiceCollection()
     {
-        ServiceCollection services = new();
-        IServiceCollection result = services.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly);
-        Assert.Same(services, result);
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
+        IMississippiSiloBuilder result = builder.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -506,8 +543,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForEventTypesThrowsWhenAssemblyIsNull()
     {
-        ServiceCollection services = new();
-        Assert.Throws<ArgumentNullException>(() => services.ScanAssemblyForEventTypes(null!));
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
+        Assert.Throws<ArgumentNullException>(() => builder.ScanAssemblyForEventTypes(null!));
     }
 
     /// <summary>
@@ -516,8 +553,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForEventTypesThrowsWhenServicesIsNull()
     {
-        IServiceCollection? services = null;
-        Assert.Throws<ArgumentNullException>(() => services!.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly));
+        IMississippiSiloBuilder? builder = null;
+        Assert.Throws<ArgumentNullException>(() => builder!.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly));
     }
 
     /// <summary>
@@ -526,8 +563,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForEventTypesWithMarkerRegistersAggregateSupport()
     {
-        ServiceCollection services = new();
-        services.ScanAssemblyForEventTypes<TestEvent>();
+        var (services, builder) = CreateBuilder();
+        builder.ScanAssemblyForEventTypes<TestEvent>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
         Assert.NotNull(registry);
@@ -539,8 +576,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForSnapshotTypesRegistersAggregateSupport()
     {
-        ServiceCollection services = new();
-        services.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly);
+        var (services, builder) = CreateBuilder();
+        builder.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly);
         using ServiceProvider provider = services.BuildServiceProvider();
         ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
         Assert.NotNull(registry);
@@ -552,9 +589,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForSnapshotTypesReturnsServiceCollection()
     {
-        ServiceCollection services = new();
-        IServiceCollection result = services.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly);
-        Assert.Same(services, result);
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
+        IMississippiSiloBuilder result = builder.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -563,8 +600,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForSnapshotTypesThrowsWhenAssemblyIsNull()
     {
-        ServiceCollection services = new();
-        Assert.Throws<ArgumentNullException>(() => services.ScanAssemblyForSnapshotTypes(null!));
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
+        Assert.Throws<ArgumentNullException>(() => builder.ScanAssemblyForSnapshotTypes(null!));
     }
 
     /// <summary>
@@ -573,9 +610,9 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForSnapshotTypesThrowsWhenServicesIsNull()
     {
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
         Assert.Throws<ArgumentNullException>(() =>
-            services!.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly));
+            builder!.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly));
     }
 
     /// <summary>
@@ -584,8 +621,8 @@ public class AggregateRegistrationsTests
     [Fact]
     public void ScanAssemblyForSnapshotTypesWithMarkerRegistersAggregateSupport()
     {
-        ServiceCollection services = new();
-        services.ScanAssemblyForSnapshotTypes<TestSnapshot>();
+        var (services, builder) = CreateBuilder();
+        builder.ScanAssemblyForSnapshotTypes<TestSnapshot>();
         using ServiceProvider provider = services.BuildServiceProvider();
         ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
         Assert.NotNull(registry);

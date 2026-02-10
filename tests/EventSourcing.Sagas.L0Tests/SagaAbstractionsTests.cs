@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Sagas.Abstractions;
 
 
@@ -20,12 +21,13 @@ public sealed class SagaAbstractionsTests
     public void AddSagaStepInfoRegistersProvider()
     {
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         List<SagaStepInfo> steps =
         [
             new(0, "Step", typeof(SagaStepMarker), false),
         ];
-        IServiceCollection result = services.AddSagaStepInfo<TestSagaState>(steps);
-        Assert.Same(services, result);
+        IMississippiSiloBuilder result = builder.AddSagaStepInfo<TestSagaState>(steps);
+        Assert.Same(builder, result);
         using ServiceProvider provider = services.BuildServiceProvider();
         ISagaStepInfoProvider<TestSagaState> resolved =
             provider.GetRequiredService<ISagaStepInfoProvider<TestSagaState>>();
@@ -38,9 +40,9 @@ public sealed class SagaAbstractionsTests
     [Fact]
     public void AddSagaStepInfoThrowsWhenServicesNull()
     {
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
         List<SagaStepInfo> steps = [new(0, "Step", typeof(SagaStepMarker), false)];
-        Assert.Throws<ArgumentNullException>(() => services!.AddSagaStepInfo<TestSagaState>(steps));
+        Assert.Throws<ArgumentNullException>(() => builder!.AddSagaStepInfo<TestSagaState>(steps));
     }
 
     /// <summary>
@@ -50,8 +52,9 @@ public sealed class SagaAbstractionsTests
     public void AddSagaStepInfoThrowsWhenStepsNull()
     {
         ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(services);
         IReadOnlyList<SagaStepInfo>? steps = null;
-        Assert.Throws<ArgumentNullException>(() => services.AddSagaStepInfo<TestSagaState>(steps!));
+        Assert.Throws<ArgumentNullException>(() => { builder.AddSagaStepInfo<TestSagaState>(steps!); });
     }
 
     /// <summary>

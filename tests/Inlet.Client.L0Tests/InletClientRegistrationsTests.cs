@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
@@ -29,9 +30,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiClientBuilder builder = new(services);
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IInletStore store = provider.GetRequiredService<IInletStore>();
 
@@ -47,9 +49,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiClientBuilder builder = new(services);
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionUpdateNotifier notifier = provider.GetRequiredService<IProjectionUpdateNotifier>();
 
@@ -65,9 +68,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiClientBuilder builder = new(services);
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IStore store1 = provider.GetRequiredService<IStore>();
         IStore store2 = provider.GetRequiredService<IStore>();
@@ -84,9 +88,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiClientBuilder builder = new(services);
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IStore store = provider.GetRequiredService<IStore>();
 
@@ -102,9 +107,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiClientBuilder builder = new(services);
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionRegistry registry = provider.GetRequiredService<IProjectionRegistry>();
 
@@ -120,10 +126,10 @@ public sealed class InletClientRegistrationsTests
     public void AddInletWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiClientBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddInletClient());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddInletClient());
     }
 
     /// <summary>
@@ -134,10 +140,11 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiClientBuilder builder = new(services);
 
         // Act
-        services.AddInletClient();
-        services.AddProjectionPath<TestProjection>("cascade/test");
+        builder.AddInletClient();
+        builder.AddProjectionPath<TestProjection>("cascade/test");
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IConfigureProjectionRegistry> configs = provider.GetServices<IConfigureProjectionRegistry>();
 
@@ -153,9 +160,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiClientBuilder builder = new(services);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services.AddProjectionPath<TestProjection>(null!));
+        Assert.Throws<ArgumentNullException>(() => { builder.AddProjectionPath<TestProjection>(null!); });
     }
 
     /// <summary>
@@ -165,10 +173,10 @@ public sealed class InletClientRegistrationsTests
     public void AddProjectionPathWithNullServicesThrowsArgumentNullException()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiClientBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddProjectionPath<TestProjection>("cascade/test"));
+        Assert.Throws<ArgumentNullException>(() => builder!.AddProjectionPath<TestProjection>("cascade/test"));
     }
 
     /// <summary>
@@ -179,8 +187,9 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInletClient();
-        services.AddProjectionPath<TestProjection>("cascade/test");
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddInletClient();
+        builder.AddProjectionPath<TestProjection>("cascade/test");
         using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act - Get the config and registry, then call Configure

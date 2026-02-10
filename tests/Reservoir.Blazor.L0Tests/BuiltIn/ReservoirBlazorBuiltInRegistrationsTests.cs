@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Abstractions.Builders;
 using Mississippi.Reservoir.Blazor.BuiltIn;
 using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
 using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
@@ -25,8 +26,8 @@ public sealed class ReservoirBlazorBuiltInRegistrationsTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddSingleton<NavigationManager>(new FakeNavigationManager());
-        services.AddReservoir();
-        services.AddReservoirBlazorBuiltIns();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir().AddReservoirBlazorBuiltIns();
         serviceProvider = services.BuildServiceProvider();
     }
 
@@ -115,12 +116,13 @@ public sealed class ReservoirBlazorBuiltInRegistrationsTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir();
+        TestMississippiClientBuilder builder = new(services);
+        IReservoirBuilder reservoirBuilder = builder.AddReservoir();
 
         // Act
-        IServiceCollection result = services.AddReservoirBlazorBuiltIns();
+        IReservoirBuilder result = reservoirBuilder.AddReservoirBlazorBuiltIns();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 }

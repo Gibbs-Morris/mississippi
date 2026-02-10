@@ -2,6 +2,9 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Reservoir;
+using Mississippi.Reservoir.Abstractions.Builders;
+
 
 namespace Mississippi.Inlet.Client.L0Tests.Registrations;
 
@@ -18,12 +21,14 @@ public sealed class InletBlazorRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiClientBuilder mississippiBuilder = new(services);
+        IReservoirBuilder reservoirBuilder = mississippiBuilder.AddReservoir();
 
         // Act
-        IServiceCollection result = services.AddInletBlazor();
+        IReservoirBuilder result = reservoirBuilder.AddInletBlazor();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 
     /// <summary>
@@ -34,12 +39,14 @@ public sealed class InletBlazorRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiClientBuilder mississippiBuilder = new(services);
+        IReservoirBuilder reservoirBuilder = mississippiBuilder.AddReservoir();
 
         // Act (should not throw with null/missing configure action)
-        IServiceCollection result = services.AddInletBlazorSignalR();
+        IReservoirBuilder result = reservoirBuilder.AddInletBlazorSignalR();
 
         // Assert - returns the same collection for chaining
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 
     /// <summary>
@@ -50,14 +57,16 @@ public sealed class InletBlazorRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiClientBuilder mississippiBuilder = new(services);
+        IReservoirBuilder reservoirBuilder = mississippiBuilder.AddReservoir();
         bool configureWasCalled = false;
 
         // Act
-        IServiceCollection result = services.AddInletBlazorSignalR(builder => { configureWasCalled = true; });
+        IReservoirBuilder result = reservoirBuilder.AddInletBlazorSignalR(builder => { configureWasCalled = true; });
 
         // Assert - action was invoked and returns same collection
         Assert.True(configureWasCalled);
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 
     /// <summary>
@@ -67,10 +76,10 @@ public sealed class InletBlazorRegistrationsTests
     public void AddInletBlazorSignalRThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IReservoirBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddInletBlazorSignalR());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddInletBlazorSignalR());
     }
 
     /// <summary>
@@ -80,9 +89,9 @@ public sealed class InletBlazorRegistrationsTests
     public void AddInletBlazorThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IReservoirBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddInletBlazor());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddInletBlazor());
     }
 }

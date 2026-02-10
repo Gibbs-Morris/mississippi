@@ -23,7 +23,8 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
     public ProjectionBrookRegistryTests()
     {
         ServiceCollection services = [];
-        services.AddInletSilo();
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddInletSilo();
         serviceProvider = services.BuildServiceProvider();
         registry = serviceProvider.GetRequiredService<IProjectionBrookRegistry>();
     }

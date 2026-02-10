@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Inlet.Server.Abstractions;
 
 
@@ -21,13 +22,14 @@ public sealed class InletInProcessRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
+        TestMississippiServerBuilder builder = new(services);
 
         // Act
-        services.AddInletInProcess();
-        IServiceCollection result = services.AddInletInProcess();
+        builder.AddInletInProcess();
+        IMississippiServerBuilder result = builder.AddInletInProcess();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.NotNull(provider.GetRequiredService<IServerProjectionNotifier>());
     }
@@ -41,7 +43,8 @@ public sealed class InletInProcessRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        TestMississippiServerBuilder builder = new(services);
+        builder.AddInletInProcess();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -61,7 +64,8 @@ public sealed class InletInProcessRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        TestMississippiServerBuilder builder = new(services);
+        builder.AddInletInProcess();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -79,12 +83,13 @@ public sealed class InletInProcessRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiServerBuilder builder = new(services);
 
         // Act
-        IServiceCollection result = services.AddInletInProcess();
+        IMississippiServerBuilder result = builder.AddInletInProcess();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -94,10 +99,10 @@ public sealed class InletInProcessRegistrationsTests
     public void AddInletInProcessThrowsWhenServicesNull()
     {
         // Arrange
-        IServiceCollection services = null!;
+        IMississippiServerBuilder? builder = null;
 
         // Act & Assert
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => services.AddInletInProcess());
-        Assert.Equal("services", exception.ParamName);
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => builder!.AddInletInProcess());
+        Assert.Equal("builder", exception.ParamName);
     }
 }

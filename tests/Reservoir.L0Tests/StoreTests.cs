@@ -223,8 +223,12 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddActionEffect<TestFeatureState, ReturningActionEffect>();
-        services.AddReservoir();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir()
+            .AddFeature<TestFeatureState>(featureBuilder =>
+            {
+                featureBuilder.AddActionEffect<ReturningActionEffect>();
+            });
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -249,11 +253,15 @@ public sealed class StoreTests : IDisposable
         // Arrange - use DI to register both effects
         bool secondEffectRan = false;
         ServiceCollection services = [];
-        services.AddTransient<IActionEffect<TestFeatureState>, ThrowingActionEffect>();
-        services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => secondEffectRan = true));
-        services.AddRootActionEffect<TestFeatureState>();
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir()
+            .AddFeature<TestFeatureState>(featureBuilder =>
+            {
+                featureBuilder.AddActionEffect<ThrowingActionEffect>();
+            });
+        builder.ConfigureServices(serviceCollection =>
+            serviceCollection.AddTransient<IActionEffect<TestFeatureState>>(_ =>
+                new TestActionEffect(() => secondEffectRan = true)));
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -385,10 +393,15 @@ public sealed class StoreTests : IDisposable
         // Arrange
         bool effectHandled = false;
         ServiceCollection services = [];
-        services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => effectHandled = true));
-        services.AddRootActionEffect<TestFeatureState>();
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir()
+            .AddFeature<TestFeatureState>(featureBuilder =>
+            {
+                featureBuilder.AddActionEffect<ReturningActionEffect>();
+            });
+        builder.ConfigureServices(serviceCollection =>
+            serviceCollection.AddTransient<IActionEffect<TestFeatureState>>(_ =>
+                new TestActionEffect(() => effectHandled = true)));
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -409,8 +422,8 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir().AddFeature<TestFeatureState>(_ => { });
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
 
@@ -515,8 +528,12 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReducer<IncrementAction, TestFeatureState, TestFeatureActionReducer>();
-        services.AddReservoir();
+        TestMississippiClientBuilder builder = new(services);
+        builder.AddReservoir()
+            .AddFeature<TestFeatureState>(featureBuilder =>
+            {
+                featureBuilder.AddReducer<IncrementAction, TestFeatureActionReducer>();
+            });
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore diStore = scope.ServiceProvider.GetRequiredService<IStore>();

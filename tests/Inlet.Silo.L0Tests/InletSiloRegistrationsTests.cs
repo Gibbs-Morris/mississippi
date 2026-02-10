@@ -4,6 +4,7 @@ using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Inlet.Silo.Abstractions;
 using Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 
@@ -23,13 +24,14 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
 
         // Act
-        services.AddInletSilo();
-        IServiceCollection result = services.AddInletSilo();
+        builder.AddInletSilo();
+        IMississippiSiloBuilder result = builder.AddInletSilo();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.NotNull(provider.GetRequiredService<IProjectionBrookRegistry>());
     }
@@ -42,7 +44,8 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInletSilo();
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddInletSilo();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -61,7 +64,8 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInletSilo();
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddInletSilo();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -79,12 +83,13 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
 
         // Act
-        IServiceCollection result = services.AddInletSilo();
+        IMississippiSiloBuilder result = builder.AddInletSilo();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -94,11 +99,11 @@ public sealed class InletSiloRegistrationsTests
     public void AddInletSiloThrowsWhenServicesNull()
     {
         // Arrange
-        IServiceCollection services = null!;
+        IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => services.AddInletSilo());
-        Assert.Equal("services", exception.ParamName);
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => builder!.AddInletSilo());
+        Assert.Equal("builder", exception.ParamName);
     }
 
     /// <summary>
@@ -109,10 +114,11 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
         Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
 
         // Act
-        services.ScanProjectionAssemblies(testAssembly);
+        builder.ScanProjectionAssemblies(testAssembly);
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
 
@@ -129,11 +135,12 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInletSilo();
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddInletSilo();
         Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
 
         // Act
-        services.ScanProjectionAssemblies(testAssembly);
+        builder.ScanProjectionAssemblies(testAssembly);
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
 
@@ -150,12 +157,13 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
 
         // Act
-        IServiceCollection result = services.ScanProjectionAssemblies();
+        IMississippiSiloBuilder result = builder.ScanProjectionAssemblies();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -166,10 +174,11 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
 
         // Act & Assert
         ArgumentNullException exception =
-            Assert.Throws<ArgumentNullException>(() => services.ScanProjectionAssemblies(null!));
+            Assert.Throws<ArgumentNullException>(() => builder.ScanProjectionAssemblies(null!));
         Assert.Equal("assemblies", exception.ParamName);
     }
 
@@ -180,12 +189,12 @@ public sealed class InletSiloRegistrationsTests
     public void ScanProjectionAssembliesThrowsWhenServicesNull()
     {
         // Arrange
-        IServiceCollection services = null!;
+        IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
         ArgumentNullException exception =
-            Assert.Throws<ArgumentNullException>(() => services.ScanProjectionAssemblies());
-        Assert.Equal("services", exception.ParamName);
+            Assert.Throws<ArgumentNullException>(() => builder!.ScanProjectionAssemblies());
+        Assert.Equal("builder", exception.ParamName);
     }
 
     /// <summary>
@@ -196,10 +205,11 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
         Assembly testAssembly = typeof(BrookNamedProjection).Assembly;
 
         // Act
-        services.ScanProjectionAssemblies(testAssembly);
+        builder.ScanProjectionAssemblies(testAssembly);
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
 
@@ -216,10 +226,11 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
         Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
 
         // Act
-        services.ScanProjectionAssemblies(testAssembly);
+        builder.ScanProjectionAssemblies(testAssembly);
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
 
@@ -236,7 +247,8 @@ public sealed class InletSiloRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.ScanProjectionAssemblies();
+        TestMississippiSiloBuilder builder = new(services);
+        builder.ScanProjectionAssemblies();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();

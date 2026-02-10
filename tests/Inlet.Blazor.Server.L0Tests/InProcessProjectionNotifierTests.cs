@@ -24,7 +24,8 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        TestMississippiServerBuilder builder = new(services);
+        builder.AddInletInProcess();
         serviceProvider = services.BuildServiceProvider();
         notifier = serviceProvider.GetRequiredService<IServerProjectionNotifier>();
     }

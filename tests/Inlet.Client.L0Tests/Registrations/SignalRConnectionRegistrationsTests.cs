@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.SignalRConnection;
+using Mississippi.Reservoir;
+using Mississippi.Reservoir.Abstractions.Builders;
 
 
 namespace Mississippi.Inlet.Client.L0Tests.Registrations;
@@ -18,10 +20,12 @@ public sealed class SignalRConnectionRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiClientBuilder mississippiBuilder = new(services);
+        IReservoirBuilder reservoirBuilder = mississippiBuilder.AddReservoir();
 
         // Act (should not throw)
-        services.AddSignalRConnectionFeature();
-        services.AddSignalRConnectionFeature();
+        reservoirBuilder.AddSignalRConnectionFeature();
+        reservoirBuilder.AddSignalRConnectionFeature();
 
         // Assert - just verify no exception was thrown
         Assert.True(services.Count > 0);
@@ -35,9 +39,11 @@ public sealed class SignalRConnectionRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiClientBuilder mississippiBuilder = new(services);
+        IReservoirBuilder reservoirBuilder = mississippiBuilder.AddReservoir();
 
         // Act
-        services.AddSignalRConnectionFeature();
+        reservoirBuilder.AddSignalRConnectionFeature();
 
         // Assert - verify that reducers were registered by checking service count increased
         // Each reducer registration adds at least one service
@@ -52,11 +58,13 @@ public sealed class SignalRConnectionRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiClientBuilder mississippiBuilder = new(services);
+        IReservoirBuilder reservoirBuilder = mississippiBuilder.AddReservoir();
 
         // Act
-        IServiceCollection result = services.AddSignalRConnectionFeature();
+        IReservoirBuilder result = reservoirBuilder.AddSignalRConnectionFeature();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 }

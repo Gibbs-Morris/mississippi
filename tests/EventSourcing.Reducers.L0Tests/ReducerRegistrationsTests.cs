@@ -3,6 +3,7 @@ using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Reducers.Abstractions;
 
 
@@ -44,6 +45,38 @@ public sealed class ReducerRegistrationsTests
         }
     }
 
+    private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
+    {
+        private readonly IServiceCollection services;
+
+        public TestMississippiSiloBuilder(
+            IServiceCollection services
+        )
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            this.services = services;
+        }
+
+        public IMississippiSiloBuilder ConfigureOptions<TOptions>(
+            Action<TOptions> configure
+        )
+            where TOptions : class
+        {
+            ArgumentNullException.ThrowIfNull(configure);
+            services.Configure(configure);
+            return this;
+        }
+
+        public IMississippiSiloBuilder ConfigureServices(
+            Action<IServiceCollection> configure
+        )
+        {
+            ArgumentNullException.ThrowIfNull(configure);
+            configure(services);
+            return this;
+        }
+    }
+
     private sealed record TestProjection(string Value);
 
     /// <summary>
@@ -52,8 +85,9 @@ public sealed class ReducerRegistrationsTests
     [Fact]
     public void AddReducerDelegateOverloadShouldRegisterReducerAndRootReducer()
     {
-        ServiceCollection services = new();
-        services.AddReducer<TestEvent, TestProjection>((
+        ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddReducer<TestEvent, TestProjection>((
             state,
             e
         ) => new($"{state.Value}-{e.Value}"));
@@ -74,8 +108,9 @@ public sealed class ReducerRegistrationsTests
     [Fact]
     public void AddReducerShouldRegisterReducerAsTransient()
     {
-        ServiceCollection services = new();
-        services.AddReducer<TestEvent, TestProjection, TestEventReducer>();
+        ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddReducer<TestEvent, TestProjection, TestEventReducer>();
         ServiceDescriptor projectionDescriptor = services.Single(x =>
             x.ServiceType == typeof(IEventReducer<TestProjection>));
         Assert.Equal(ServiceLifetime.Transient, projectionDescriptor.Lifetime);
@@ -96,9 +131,11 @@ public sealed class ReducerRegistrationsTests
     [Fact]
     public void AddReducerShouldRegisterRootReducerWhenMissing()
     {
-        ServiceCollection services = new();
-        services.AddReducer<TestEvent, TestProjection, TestEventReducer>();
-        ServiceDescriptor rootDescriptor = services.Single(x => x.ServiceType == typeof(IRootReducer<TestProjection>));
+        ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddReducer<TestEvent, TestProjection, TestEventReducer>();
+        ServiceDescriptor rootDescriptor = services.Single(x =>
+            x.ServiceType == typeof(IRootReducer<TestProjection>));
         Assert.Equal(ServiceLifetime.Transient, rootDescriptor.Lifetime);
         Assert.Equal(typeof(RootReducer<TestProjection>), rootDescriptor.ImplementationType);
         Assert.Null(rootDescriptor.ImplementationFactory);
@@ -111,9 +148,11 @@ public sealed class ReducerRegistrationsTests
     [Fact]
     public void AddRootReducerShouldRegisterRootReducerAsTransient()
     {
-        ServiceCollection services = new();
-        services.AddRootReducer<TestProjection>();
-        ServiceDescriptor descriptor = services.Single(x => x.ServiceType == typeof(IRootReducer<TestProjection>));
+        ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
+        builder.AddRootReducer<TestProjection>();
+        ServiceDescriptor descriptor = services.Single(x =>
+            x.ServiceType == typeof(IRootReducer<TestProjection>));
         Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
         Assert.Equal(typeof(RootReducer<TestProjection>), descriptor.ImplementationType);
         Assert.Null(descriptor.ImplementationFactory);

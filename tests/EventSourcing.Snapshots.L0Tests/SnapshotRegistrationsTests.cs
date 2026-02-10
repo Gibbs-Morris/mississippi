@@ -3,6 +3,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Serialization.Abstractions;
 using Mississippi.EventSourcing.Snapshots.Abstractions;
 
@@ -18,6 +19,36 @@ namespace Mississippi.EventSourcing.Snapshots.L0Tests;
 /// </summary>
 public sealed class SnapshotRegistrationsTests
 {
+    private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
+    {
+        private readonly IServiceCollection services;
+
+        public TestMississippiSiloBuilder(
+            IServiceCollection services
+        )
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            this.services = services;
+        }
+
+        public IMississippiSiloBuilder ConfigureOptions<TOptions>(
+            Action<TOptions> configure
+        )
+            where TOptions : class
+        {
+            services.Configure(configure);
+            return this;
+        }
+
+        public IMississippiSiloBuilder ConfigureServices(
+            Action<IServiceCollection> configure
+        )
+        {
+            configure(services);
+            return this;
+        }
+    }
+
     /// <summary>
     ///     Test state for snapshot registration tests.
     /// </summary>
@@ -30,12 +61,13 @@ public sealed class SnapshotRegistrationsTests
     public void AddSnapshotCachingRegistersSnapshotGrainFactory()
     {
         // Arrange
-        ServiceCollection services = new();
+        ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
         services.AddSingleton<IGrainFactory>(new Mock<IGrainFactory>().Object);
         services.AddSingleton(new Mock<ILogger<SnapshotGrainFactory>>().Object);
 
         // Act
-        services.AddSnapshotCaching();
+        builder.AddSnapshotCaching();
 
         // Assert
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -51,13 +83,13 @@ public sealed class SnapshotRegistrationsTests
     public void AddSnapshotCachingReturnsServiceCollection()
     {
         // Arrange
-        ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
 
         // Act
-        IServiceCollection result = services.AddSnapshotCaching();
+        IMississippiSiloBuilder result = builder.AddSnapshotCaching();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -67,10 +99,10 @@ public sealed class SnapshotRegistrationsTests
     public void AddSnapshotCachingThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddSnapshotCaching());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddSnapshotCaching());
     }
 
     /// <summary>
@@ -80,11 +112,12 @@ public sealed class SnapshotRegistrationsTests
     public void AddSnapshotStateConverterRegistersConverter()
     {
         // Arrange
-        ServiceCollection services = new();
+        ServiceCollection services = [];
+        TestMississippiSiloBuilder builder = new(services);
         services.AddSingleton(new Mock<ISerializationProvider>().Object);
 
         // Act
-        services.AddSnapshotStateConverter<TestState>();
+        builder.AddSnapshotStateConverter<TestState>();
 
         // Assert
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -100,13 +133,13 @@ public sealed class SnapshotRegistrationsTests
     public void AddSnapshotStateConverterReturnsServiceCollection()
     {
         // Arrange
-        ServiceCollection services = new();
+        TestMississippiSiloBuilder builder = new(new ServiceCollection());
 
         // Act
-        IServiceCollection result = services.AddSnapshotStateConverter<TestState>();
+        IMississippiSiloBuilder result = builder.AddSnapshotStateConverter<TestState>();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -116,9 +149,9 @@ public sealed class SnapshotRegistrationsTests
     public void AddSnapshotStateConverterThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddSnapshotStateConverter<TestState>());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddSnapshotStateConverter<TestState>());
     }
 }

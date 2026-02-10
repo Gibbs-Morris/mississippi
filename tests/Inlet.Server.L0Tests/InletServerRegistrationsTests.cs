@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Abstractions.Builders;
+
 
 namespace Mississippi.Inlet.Server.L0Tests;
 
@@ -25,12 +27,13 @@ public sealed class InletServerRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiServerBuilder builder = new(services);
 
         // Act
-        IServiceCollection result = services.AddInletServer();
+        IMississippiServerBuilder result = builder.AddInletServer();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -45,10 +48,11 @@ public sealed class InletServerRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiServerBuilder builder = new(services);
         string customNamespace = "Custom.Namespace";
 
         // Act
-        services.AddInletServer(options => options.AllClientsStreamNamespace = customNamespace);
+        builder.AddInletServer(options => options.AllClientsStreamNamespace = customNamespace);
         using ServiceProvider provider = services.BuildServiceProvider();
         IOptions<InletServerOptions> options = provider.GetRequiredService<IOptions<InletServerOptions>>();
 
@@ -68,9 +72,10 @@ public sealed class InletServerRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiServerBuilder builder = new(services);
 
         // Act
-        services.AddInletServer();
+        builder.AddInletServer();
 
         // Assert - TryAddSingleton only adds if not present; check any HubLifetimeManager-related type
         // The type is registered as open generic so we verify via service resolution in integration
@@ -92,9 +97,10 @@ public sealed class InletServerRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiServerBuilder builder = new(services);
 
         // Act
-        services.AddInletServer();
+        builder.AddInletServer();
 
         // Assert
         Assert.Contains(services, d => d.ServiceType == typeof(IHubContext<>));
@@ -112,12 +118,14 @@ public sealed class InletServerRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiServerBuilder builder = new(services);
 
         // Act - chain multiple extensions
-        IServiceCollection result = services.AddInletServer().AddSingleton(_ => "test-value");
+        IMississippiServerBuilder result = builder.AddInletServer()
+            .ConfigureServices(serviceCollection => serviceCollection.AddSingleton(_ => "test-value"));
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
         Assert.Contains(services, d => d.ServiceType == typeof(string));
     }
 
@@ -132,10 +140,10 @@ public sealed class InletServerRegistrationsTests
     public void AddInletServerThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiServerBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddInletServer());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddInletServer());
     }
 
     /// <summary>
@@ -150,12 +158,13 @@ public sealed class InletServerRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        TestMississippiServerBuilder builder = new(services);
 
         // Act
-        IServiceCollection result = services.AddInletSignalRGrainObserver();
+        IMississippiServerBuilder result = builder.AddInletSignalRGrainObserver();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>
@@ -169,9 +178,9 @@ public sealed class InletServerRegistrationsTests
     public void AddInletSignalRGrainObserverThrowsWhenServicesIsNull()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IMississippiServerBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddInletSignalRGrainObserver());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddInletSignalRGrainObserver());
     }
 }
