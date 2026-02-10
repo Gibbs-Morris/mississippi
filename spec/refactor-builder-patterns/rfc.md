@@ -37,8 +37,12 @@ Builder chaining uses terminal methods (for example, `Done()`) that do not feel 
 	- src/Inlet.Client/InletBlazorRegistrations.cs
 
 ## Proposed Design
-- Preferred hypothesis: move to configure-lambda patterns (for example `AddFeature<T>(Action<IReservoirFeatureBuilder<T>> configure)`), and remove the explicit return-to-parent method where practical.
-- Alternative if configure-lambda is not feasible everywhere: replace terminal methods with a name aligned to Microsoft patterns (for example, remove `Done()` in favor of returning the same builder and keep nesting shallow).
+- Adopt a configure-lambda pattern for feature registration:
+	- Replace `IReservoirBuilder.AddFeature<TState>()` with `IReservoirBuilder AddFeature<TState>(Action<IReservoirFeatureBuilder<TState>> configure)`.
+	- Remove `IReservoirFeatureBuilder<TState>.Done()` and update implementations/usages.
+	- Keep `IReservoirFeatureBuilder<TState>` as the fluent surface inside the lambda.
+- Update built-in and generated registrations to pass lambdas instead of chaining `Done()`.
+- Keep `InletBlazorSignalRBuilder` and other internal builders using configure-lambda or direct `AddFeature(..., configure)` calls so they do not require a terminal method.
 
 ## Alternatives
 - Rename `Done()` to `Build()` or `Finish()` while keeping return-to-parent pattern.
@@ -59,3 +63,37 @@ No new logging required.
 ## Risks
 - Widespread API changes could introduce breaking compilation changes.
 - Inconsistent patterns across builder types if refactor is partial.
+
+## As-Is vs To-Be
+```mermaid
+flowchart TB
+	subgraph AsIs[As-Is: Done-based chaining]
+		A1[Caller] --> A2[IReservoirBuilder.AddFeature<TState>()]
+		A2 --> A3[IReservoirFeatureBuilder.AddReducer/AddActionEffect]
+		A3 --> A4[IReservoirFeatureBuilder.Done()]
+		A4 --> A5[IReservoirBuilder]
+	end
+	subgraph ToBe[To-Be: Configure-lambda]
+		B1[Caller] --> B2[IReservoirBuilder.AddFeature<TState>(configure)]
+		B2 --> B3[configure lambda]
+		B3 --> B4[IReservoirFeatureBuilder.AddReducer/AddActionEffect]
+		B4 --> B5[IReservoirBuilder]
+	end
+```
+
+## Critical Path Sequence
+```mermaid
+sequenceDiagram
+	participant Caller
+	participant Builder as IReservoirBuilder
+	participant Feature as IReservoirFeatureBuilder
+	participant Services as IServiceCollection
+
+	Caller->>Builder: AddFeature<TState>(configure)
+	Builder->>Feature: create feature builder
+	Builder->>Feature: invoke configure(feature)
+	Feature->>Builder: ConfigureServices(...)
+	Builder->>Services: apply registrations
+	Feature-->>Builder: (no Done, returns via lambda)
+	Builder-->>Caller: returns IReservoirBuilder
+```
