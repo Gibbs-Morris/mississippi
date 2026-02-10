@@ -80,6 +80,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
   See Consistency Model Separation for the async/eventual nature of projection updates.
 - Client features **MUST** be registered via generated `Add{Aggregate}Feature()` extension methods; silo and server projects use `Add{Aggregate}()` (following `.github/instructions/service-registration.instructions.md` conventions). Why: Enables clean, scalable feature registration consistent with repo patterns while distinguishing client from server registrations.
+- Spring samples **SHOULD** use `AddSpringDomain` registration wrappers in client/server/silo projects to aggregate generated registrations and keep Program.cs minimal. Why: Reduces manual lists while preserving generator-driven wiring.
 
 ### Projection Subscriptions
 
