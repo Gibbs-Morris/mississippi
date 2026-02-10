@@ -12,10 +12,10 @@ Public `IServiceCollection Services { get; }` properties on builder contracts al
 - No new features beyond enforcing builder usage.
 - No changes to unrelated APIs or unrelated DI conventions.
 
-## Current State (UNVERIFIED)
-- Builder interfaces include a public `Services` property with remarks suggesting advanced usage.
-- Builder implementations expose the property and pass it to registration helpers.
-- Some extension methods or registrations may use the property directly.
+## Current State
+- Builder interfaces include a public `Services` property with remarks suggesting advanced usage. Evidence: src/Common.Abstractions/Builders/IMississippiBuilder.cs, src/Reservoir.Abstractions/Builders/IReservoirBuilder.cs, src/Aqueduct.Abstractions/Builders/IAqueductServerBuilder.cs.
+- Builder implementations expose the property and use it in ConfigureServices/ConfigureOptions. Evidence: src/Sdk.Client/Builders/MississippiClientBuilder.cs, src/Sdk.Server/Builders/MississippiServerBuilder.cs, src/Sdk.Silo/Builders/MississippiSiloBuilder.cs, src/Aqueduct/Builders/AqueductServerBuilder.cs.
+- Child builder extensions use `builder.Services` to construct builders. Evidence: src/Reservoir/ReservoirBuilderExtensions.cs, src/Aqueduct/AqueductBuilderExtensions.cs.
 
 ## Assumptions
 - Builder contracts are consumed by external users, so removing `Services` is a breaking change.
@@ -44,6 +44,7 @@ No changes to logging or metrics.
 ## Compatibility / Migration
 - This is a breaking change for any external consumers using `.Services` directly.
 - Internal usage in this repo must be updated to `ConfigureServices`.
+- User confirmed backwards compatibility is not required for this unreleased change.
 
 ## Risks
 - Breaks downstream code that used `Services`.

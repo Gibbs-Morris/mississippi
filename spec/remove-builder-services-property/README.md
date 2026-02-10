@@ -1,8 +1,8 @@
 # remove-builder-services-property
 
-Status: Draft
-Task size: TBD
-Approval checkpoint: TBD
+Status: Verified
+Task size: Large
+Approval checkpoint: Yes (public builder contracts change; breaking for external consumers)
 
 ## Index
 - learned.md
