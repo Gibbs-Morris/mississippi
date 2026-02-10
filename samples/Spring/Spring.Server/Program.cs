@@ -5,12 +5,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Mississippi.Aqueduct;
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.UxProjections;
 using Mississippi.Inlet.Server;
 using Mississippi.Inlet.Silo;
+using Mississippi.Sdk.Server;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -21,11 +22,11 @@ using Orleans.Hosting;
 using Scalar.AspNetCore;
 
 using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Server.Controllers.Aggregates.Mappers;
-using Spring.Server.Controllers.Projections.Mappers;
+using Spring.Server.Registrations;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+IMississippiServerBuilder mississippi = builder.AddMississippiServer();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
@@ -68,34 +69,17 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddJsonSerialization();
 
 // Add aggregate infrastructure support (IAggregateGrainFactory, IBrookEventConverter, etc.)
-builder.Services.AddAggregateSupport();
+mississippi.AddAggregateSupport();
 
 // Add UX projection infrastructure support (IUxProjectionGrainFactory)
-builder.Services.AddUxProjections();
-
-// Add Aqueduct backplane for InletHub (registers IServerIdProvider and other dependencies)
-builder.Services.AddSignalR();
-builder.Services.AddAqueduct<InletHub>(options =>
-{
-    // Use the same stream provider configured by Aspire's WithMemoryStreaming
-    options.StreamProviderName = "StreamProvider";
-});
+mississippi.AddUxProjections();
 
 // Add Inlet Server services for real-time projection updates
-builder.Services.AddInletServer();
-builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+mississippi.AddInletServer();
+mississippi.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add aggregate DTO to command mappers
-builder.Services.AddBankAccountAggregateMappers();
-
-// Note: TransactionInvestigationQueue aggregate has no public commands (only server-side effect dispatch)
-// so no mappers are generated or needed.
-
-// Add projection mappers
-builder.Services.AddBankAccountBalanceProjectionMappers();
-builder.Services.AddBankAccountLedgerProjectionMappers();
-builder.Services.AddFlaggedTransactionsProjectionMappers();
-builder.Services.AddMoneyTransferStatusProjectionMappers();
+mississippi.AddSpringDomain();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files

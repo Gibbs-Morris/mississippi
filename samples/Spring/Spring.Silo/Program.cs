@@ -8,12 +8,14 @@ using Microsoft.Extensions.Hosting;
 
 using Mississippi.Aqueduct.Grains;
 using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.Inlet.Silo;
+using Mississippi.Sdk.Silo;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -35,17 +37,6 @@ builder.Services.AddHttpClient();
 
 // Register notification service (stub for demo, replace with real provider in production)
 builder.Services.AddSingleton<INotificationService, StubNotificationService>();
-
-// Register Spring domain aggregates
-builder.Services.AddBankAccountAggregate();
-builder.Services.AddTransactionInvestigationQueueAggregate();
-builder.Services.AddMoneyTransferSaga();
-
-// Register Spring domain projections
-builder.Services.AddBankAccountBalanceProjection();
-builder.Services.AddBankAccountLedgerProjection();
-builder.Services.AddFlaggedTransactionsProjection();
-builder.Services.AddMoneyTransferStatusProjection();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
@@ -105,33 +96,8 @@ builder.Services.AddKeyedSingleton(
         _
     ) => sp.GetRequiredService<CosmosClient>());
 
-// Add Inlet Silo services for projection subscription management
-builder.Services.AddInletSilo();
-builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-
 // Add event sourcing infrastructure
 builder.Services.AddJsonSerialization();
-builder.Services.AddEventSourcingByService();
-builder.Services.AddSnapshotCaching();
-
-// Configure Cosmos storage for Brooks (event streams)
-builder.Services.AddCosmosBrookStorageProvider(options =>
-{
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "events";
-    options.QueryBatchSize = 50;
-    options.MaxEventsPerBatch = 50;
-});
-
-// Configure Cosmos storage for Snapshots
-builder.Services.AddCosmosSnapshotStorageProvider(options =>
-{
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "snapshots";
-    options.QueryBatchSize = 100;
-});
 
 // Configure Orleans silo - Aspire injects clustering config via environment variables
 builder.UseOrleans(siloBuilder =>
@@ -141,9 +107,39 @@ builder.UseOrleans(siloBuilder =>
     // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane
     siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
 
+    IMississippiSiloBuilder mississippi = siloBuilder.AddMississippiSilo();
+
+    mississippi.AddSpringDomain();
+
+    // Add Inlet Silo services for projection subscription management
+    mississippi.AddInletSilo();
+    mississippi.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+
+    // Add event sourcing infrastructure
+    mississippi.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
+    mississippi.AddSnapshotCaching();
+
+    // Configure Cosmos storage for Brooks (event streams)
+    mississippi.AddCosmosBrookStorageProvider(options =>
+    {
+        options.CosmosClientServiceKey = sharedCosmosKey;
+        options.DatabaseId = "spring-db";
+        options.ContainerId = "events";
+        options.QueryBatchSize = 50;
+        options.MaxEventsPerBatch = 50;
+    });
+
+    // Configure Cosmos storage for Snapshots
+    mississippi.AddCosmosSnapshotStorageProvider(options =>
+    {
+        options.CosmosClientServiceKey = sharedCosmosKey;
+        options.DatabaseId = "spring-db";
+        options.ContainerId = "snapshots";
+        options.QueryBatchSize = 100;
+    });
+
     // Configure event sourcing to use the Aspire-configured stream provider
     // Must match the stream provider name configured in AppHost via WithMemoryStreaming
-    siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
 });
 WebApplication app = builder.Build();
 
