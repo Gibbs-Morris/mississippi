@@ -26,6 +26,46 @@ UNVERIFIED: Add three registration classes (client/server/silo) in Spring sample
 Each class exposes an AddSpringDomain extension method for its SDK type and is tagged with the
 pending source gen attribute so downstream generators can discover and compose registrations.
 
+## As-Is vs To-Be
+
+```mermaid
+flowchart LR
+	subgraph AsIs[As-Is]
+		ClientProgram[Spring.Client Program] --> ClientManual[Manual Add*Feature calls]
+		ServerProgram[Spring.Server Program] --> ServerManual[Manual Add*Mapper calls]
+		SiloProgram[Spring.Silo Program] --> SiloManual[Manual Add*Aggregate/Projection/Saga calls]
+	end
+	subgraph ToBe[To-Be]
+		ClientProgram2[Spring.Client Program] --> ClientDomain[AddSpringDomain (client)]
+		ServerProgram2[Spring.Server Program] --> ServerDomain[AddSpringDomain (server)]
+		SiloProgram2[Spring.Silo Program] --> SiloDomain[AddSpringDomain (silo)]
+		ClientDomain --> ClientGenerated[Generated Add*Feature + AddProjectionsFeature]
+		ServerDomain --> ServerGenerated[Generated Add*AggregateMappers + Add*ProjectionMappers]
+		SiloDomain --> SiloGenerated[Generated Add*Aggregate/Projection/Saga]
+	end
+```
+
+## Runtime Registration Sequence
+
+```mermaid
+sequenceDiagram
+	participant Program as Program.cs
+	participant DomainReg as AddSpringDomain
+	participant Generated as Generated Add* methods
+	participant DI as DI/Builder
+
+	Program->>DomainReg: AddSpringDomain(...)
+	DomainReg->>Generated: AddBankAccountAggregate(...)
+	DomainReg->>Generated: AddMoneyTransferSaga(...)
+	DomainReg->>Generated: AddBankAccountBalanceProjection(...)
+	Generated->>DI: ConfigureServices/AddFeature/AddReducer
+	DomainReg-->>Program: returns builder
+```
+
+## Open Decisions
+- Confirm whether PendingSourceGenerator can be used in Spring samples despite guidance that it is
+  reserved for generator validation only.
+
 ## Alternatives
 - Keep manual registration in sample startup code (rejected: not scalable).
 - Create one monolithic registration type for all SDKs (rejected: unclear separation by SDK type).
