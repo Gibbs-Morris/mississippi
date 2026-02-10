@@ -1,11 +1,9 @@
 using System;
 
-using Microsoft.Extensions.DependencyInjection;
-
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.Reducers;
-using Mississippi.Reservoir;
+using Mississippi.Reservoir.Abstractions.Builders;
 
 using Spring.Client.Features.BankAccountBalance.Dtos;
 using Spring.Client.Features.BankAccountLedger.Dtos;
@@ -23,30 +21,33 @@ public static class ProjectionsFeatureRegistration
     /// <summary>
     ///     Adds projection reducers for all known projection DTOs.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddProjectionsFeature(
-        this IServiceCollection services
+    /// <param name="builder">The Reservoir builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
+    public static IReservoirBuilder AddProjectionsFeature(
+        this IReservoirBuilder builder
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
-        RegisterProjectionReducers<BankAccountBalanceProjectionDto>(services);
-        RegisterProjectionReducers<BankAccountLedgerProjectionDto>(services);
-        RegisterProjectionReducers<FlaggedTransactionsProjectionDto>(services);
-        RegisterProjectionReducers<MoneyTransferStatusProjectionDto>(services);
-        return services;
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.AddFeature<ProjectionsFeatureState>(featureBuilder =>
+        {
+            RegisterProjectionReducers<BankAccountBalanceProjectionDto>(featureBuilder);
+            RegisterProjectionReducers<BankAccountLedgerProjectionDto>(featureBuilder);
+            RegisterProjectionReducers<FlaggedTransactionsProjectionDto>(featureBuilder);
+            RegisterProjectionReducers<MoneyTransferStatusProjectionDto>(featureBuilder);
+        });
+        return builder;
     }
 
     private static void RegisterProjectionReducers<T>(
-        IServiceCollection services
+        IReservoirFeatureBuilder<ProjectionsFeatureState> featureBuilder
     )
         where T : class
     {
-        services.AddReducer<ProjectionLoadingAction<T>, ProjectionsFeatureState>(ProjectionsReducer.ReduceLoading);
-        services.AddReducer<ProjectionLoadedAction<T>, ProjectionsFeatureState>(ProjectionsReducer.ReduceLoaded);
-        services.AddReducer<ProjectionUpdatedAction<T>, ProjectionsFeatureState>(ProjectionsReducer.ReduceUpdated);
-        services.AddReducer<ProjectionErrorAction<T>, ProjectionsFeatureState>(ProjectionsReducer.ReduceError);
-        services.AddReducer<ProjectionConnectionChangedAction<T>, ProjectionsFeatureState>(
+        featureBuilder.AddReducer<ProjectionLoadingAction<T>>(ProjectionsReducer.ReduceLoading);
+        featureBuilder.AddReducer<ProjectionLoadedAction<T>>(ProjectionsReducer.ReduceLoaded);
+        featureBuilder.AddReducer<ProjectionUpdatedAction<T>>(ProjectionsReducer.ReduceUpdated);
+        featureBuilder.AddReducer<ProjectionErrorAction<T>>(ProjectionsReducer.ReduceError);
+        featureBuilder.AddReducer<ProjectionConnectionChangedAction<T>>(
             ProjectionsReducer.ReduceConnectionChanged);
     }
 }

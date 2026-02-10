@@ -5,6 +5,7 @@ using Crescent.Crescent.L2Tests.Domain.Counter.Reducers;
 using Crescent.Crescent.L2Tests.Domain.CounterSummary;
 using Crescent.Crescent.L2Tests.Domain.CounterSummary.Reducers;
 
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Reducers;
 using Mississippi.EventSourcing.Snapshots;
@@ -19,52 +20,52 @@ namespace Crescent.Crescent.L2Tests.Domain.Counter;
 internal static class CounterRegistrations
 {
     /// <summary>
-    ///     Adds the counter aggregate services to the service collection.
+    ///     Adds the counter aggregate services to the Mississippi silo builder.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddCounterAggregate(
-        this IServiceCollection services
+    /// <param name="builder">The Mississippi silo builder.</param>
+    /// <returns>The builder for chaining.</returns>
+    public static IMississippiSiloBuilder AddCounterAggregate(
+        this IMississippiSiloBuilder builder
     )
     {
         // Add aggregate infrastructure
-        services.AddAggregateSupport();
+        builder.AddAggregateSupport();
 
         // Register event types for hydration
-        services.AddEventType<CounterInitialized>();
-        services.AddEventType<CounterIncremented>();
-        services.AddEventType<CounterDecremented>();
-        services.AddEventType<CounterReset>();
+        builder.AddEventType<CounterInitialized>();
+        builder.AddEventType<CounterIncremented>();
+        builder.AddEventType<CounterDecremented>();
+        builder.AddEventType<CounterReset>();
 
         // Register command handlers
-        services.AddCommandHandler<InitializeCounter, CounterAggregate, InitializeCounterHandler>();
-        services.AddCommandHandler<IncrementCounter, CounterAggregate, IncrementCounterHandler>();
-        services.AddCommandHandler<DecrementCounter, CounterAggregate, DecrementCounterHandler>();
-        services.AddCommandHandler<ResetCounter, CounterAggregate, ResetCounterHandler>();
+        builder.AddCommandHandler<InitializeCounter, CounterAggregate, InitializeCounterHandler>();
+        builder.AddCommandHandler<IncrementCounter, CounterAggregate, IncrementCounterHandler>();
+        builder.AddCommandHandler<DecrementCounter, CounterAggregate, DecrementCounterHandler>();
+        builder.AddCommandHandler<ResetCounter, CounterAggregate, ResetCounterHandler>();
 
         // Register reducers for state computation
-        services.AddReducer<CounterInitialized, CounterAggregate, CounterInitializedEventReducer>();
-        services.AddReducer<CounterIncremented, CounterAggregate, CounterIncrementedEventReducer>();
-        services.AddReducer<CounterDecremented, CounterAggregate, CounterDecrementedEventReducer>();
-        services.AddReducer<CounterReset, CounterAggregate, CounterResetEventReducer>();
+        builder.AddReducer<CounterInitialized, CounterAggregate, CounterInitializedEventReducer>();
+        builder.AddReducer<CounterIncremented, CounterAggregate, CounterIncrementedEventReducer>();
+        builder.AddReducer<CounterDecremented, CounterAggregate, CounterDecrementedEventReducer>();
+        builder.AddReducer<CounterReset, CounterAggregate, CounterResetEventReducer>();
 
         // Add snapshot state converter for CounterAggregate (required for aggregate snapshots)
-        services.AddSnapshotStateConverter<CounterAggregate>();
+        builder.AddSnapshotStateConverter<CounterAggregate>();
 
         // Register reducers for CounterSummaryProjection (UX projection)
-        services.AddReducer<CounterInitialized, CounterSummaryProjection, CounterSummaryInitializedEventReducer>();
-        services.AddReducer<CounterIncremented, CounterSummaryProjection, CounterSummaryIncrementedEventReducer>();
-        services.AddReducer<CounterDecremented, CounterSummaryProjection, CounterSummaryDecrementedEventReducer>();
-        services.AddReducer<CounterReset, CounterSummaryProjection, CounterSummaryResetEventReducer>();
+        builder.AddReducer<CounterInitialized, CounterSummaryProjection, CounterSummaryInitializedEventReducer>();
+        builder.AddReducer<CounterIncremented, CounterSummaryProjection, CounterSummaryIncrementedEventReducer>();
+        builder.AddReducer<CounterDecremented, CounterSummaryProjection, CounterSummaryDecrementedEventReducer>();
+        builder.AddReducer<CounterReset, CounterSummaryProjection, CounterSummaryResetEventReducer>();
 
         // Add snapshot state converter for CounterSummaryProjection (required for projection verification)
-        services.AddSnapshotStateConverter<CounterSummaryProjection>();
+        builder.AddSnapshotStateConverter<CounterSummaryProjection>();
 
         // Add UX projections infrastructure for read-optimized views.
         // This enables the CounterSummaryProjectionGrain to serve cached projections.
         // Multiple projection types (like CounterSummaryProjection) can consume the same
         // CounterBrook event stream, each with their own key and cache.
-        services.AddUxProjections();
-        return services;
+        builder.AddUxProjections();
+        return builder;
     }
 }

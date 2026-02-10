@@ -7,6 +7,7 @@ using Crescent.Crescent.L2Tests.Domain.Counter;
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Common.Abstractions;
+using Mississippi.Common.Abstractions.Builders;
 using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks;
 using Mississippi.EventSourcing.Brooks.Cosmos;
@@ -14,6 +15,7 @@ using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.Snapshots;
 using Mississippi.EventSourcing.Snapshots.Cosmos;
 using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.Sdk.Silo;
 
 using Orleans;
 using Orleans.Configuration;
@@ -115,14 +117,8 @@ public sealed class CrescentFixture
         builder.Logging.AddFilter("Orleans", LogLevel.Warning);
         builder.Logging.AddFilter("Mississippi", LogLevel.Debug);
 
-        // Add Mississippi event sourcing services
-        builder.Services.AddEventSourcingByService();
-
         // Add JSON serialization for event sourcing
         builder.Services.AddJsonSerialization();
-
-        // Add snapshot caching infrastructure (required for aggregate grains)
-        builder.Services.AddSnapshotCaching();
 
         // Pre-register CosmosClient as keyed service with Gateway mode for Aspire emulator compatibility
         // IMPORTANT: Must be registered BEFORE UseOrleans() so Orleans grains can resolve them
@@ -164,32 +160,34 @@ public sealed class CrescentFixture
                 _
             ) => new BlobServiceClient(blobConnectionString));
 
-        // Configure Cosmos DB storage for brooks (event streams)
-        // Use the overload without connection strings since we pre-registered the clients
-        builder.Services.AddCosmosBrookStorageProvider(o =>
-        {
-            o.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosBrooksClient;
-            o.DatabaseId = "aspire-l2tests";
-            o.QueryBatchSize = 50;
-            o.MaxEventsPerBatch = 50;
-        });
-
-        // Configure Cosmos DB storage for snapshots
-        builder.Services.AddCosmosSnapshotStorageProvider(options =>
-        {
-            options.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosSnapshotsClient;
-            options.DatabaseId = "aspire-l2tests";
-            options.ContainerId = "snapshots";
-            options.QueryBatchSize = 100;
-        });
-
-        // Register Counter aggregate domain (events, handlers, reducers, projections)
-        builder.Services.AddCounterAggregate();
-
         // Configure Orleans silo
         // IMPORTANT: Must be after all service registrations so Orleans can see them
         builder.UseOrleans(silo =>
         {
+            IMississippiSiloBuilder mississippi = silo.AddMississippiSilo();
+
+            // Configure Cosmos DB storage for brooks (event streams)
+            // Use the overload without connection strings since we pre-registered the clients
+            mississippi.AddCosmosBrookStorageProvider(o =>
+            {
+                o.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosBrooksClient;
+                o.DatabaseId = "aspire-l2tests";
+                o.QueryBatchSize = 50;
+                o.MaxEventsPerBatch = 50;
+            });
+
+            // Configure Cosmos DB storage for snapshots
+            mississippi.AddCosmosSnapshotStorageProvider(options =>
+            {
+                options.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosSnapshotsClient;
+                options.DatabaseId = "aspire-l2tests";
+                options.ContainerId = "snapshots";
+                options.QueryBatchSize = 100;
+            });
+
+            // Register Counter aggregate domain (events, handlers, reducers, projections)
+            mississippi.AddCounterAggregate();
+
             silo.UseLocalhostClustering()
                 .Configure<ClusterOptions>(opt =>
                 {
@@ -202,7 +200,10 @@ public sealed class CrescentFixture
             silo.AddMemoryGrainStorage("PubSubStore");
 
             // Tell Brooks which stream provider to use
-            silo.AddEventSourcing();
+            mississippi.AddEventSourcing();
+
+            // Add snapshot caching infrastructure (required for aggregate grains)
+            mississippi.AddSnapshotCaching();
         });
         IHost host = builder.Build();
 
