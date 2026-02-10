@@ -25,6 +25,8 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
     private const string ProjectionPathAttributeFullName =
         "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
+    private static readonly char[] NamespaceSeparators = new[] { '.' };
+
     /// <inheritdoc />
     public void Initialize(
         IncrementalGeneratorInitializationContext context
@@ -74,9 +76,11 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             registrationNamespaces.Add(targetRootNamespace + ".Features." + aggregateName + "Aggregate");
         }
 
-        foreach (SagaClientGeneratorHelper.SagaClientInfo saga in sagas)
+        foreach (string featureRootNamespace in sagas
+            .Select(saga => saga.FeatureRootNamespace)
+            .Where(featureRootNamespace => !string.IsNullOrWhiteSpace(featureRootNamespace)))
         {
-            registrationNamespaces.Add(saga.FeatureRootNamespace);
+            registrationNamespaces.Add(featureRootNamespace);
         }
 
         string registrationsNamespace = targetRootNamespace + ".Registrations";
@@ -169,24 +173,15 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol projectionPathAttrSymbol
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        if (namespaceSymbol.GetTypeMembers()
+            .Any(typeSymbol => typeSymbol.GetAttributes()
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol))))
         {
-            if (typeSymbol.GetAttributes()
-                    .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol)))
-            {
-                return true;
-            }
+            return true;
         }
 
-        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
-        {
-            if (FindProjectionDtosInNamespace(child, projectionPathAttrSymbol))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return namespaceSymbol.GetNamespaceMembers()
+            .Any(child => FindProjectionDtosInNamespace(child, projectionPathAttrSymbol));
     }
 
     private static void FindCommandsInNamespace(
@@ -195,17 +190,15 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         HashSet<string> aggregateNames
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers()
+            .Where(typeSymbol => typeSymbol.GetAttributes()
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol))))
         {
-            if (typeSymbol.GetAttributes()
-                    .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol)))
+            string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(
+                typeSymbol.ContainingNamespace.ToDisplayString());
+            if (aggregateName is not null && !string.IsNullOrWhiteSpace(aggregateName))
             {
-                string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(
-                    typeSymbol.ContainingNamespace.ToDisplayString());
-                if (!string.IsNullOrWhiteSpace(aggregateName))
-                {
-                    aggregateNames.Add(aggregateName);
-                }
+                aggregateNames.Add(aggregateName);
             }
         }
 
@@ -257,10 +250,17 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
     }
 
     private static string BuildTypeName(
-        string namespacePrefix
+        string? namespacePrefix
     )
     {
-        string[] parts = namespacePrefix.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        if (string.IsNullOrWhiteSpace(namespacePrefix))
+        {
+            return string.Empty;
+        }
+
+        string[] parts = namespacePrefix!.Split(
+            NamespaceSeparators,
+            StringSplitOptions.RemoveEmptyEntries);
         return string.Concat(parts);
     }
 }

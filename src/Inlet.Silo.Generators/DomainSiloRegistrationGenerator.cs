@@ -31,6 +31,8 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
+    private static readonly char[] NamespaceSeparators = new[] { '.' };
+
     /// <inheritdoc />
     public void Initialize(
         IncrementalGeneratorInitializationContext context
@@ -53,7 +55,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     )
     {
         string targetRootNamespace = ResolveTargetRootNamespace(compilation, optionsProvider);
-        string? productNamespace = GetProductNamespace(targetRootNamespace, ".Silo");
+        string productNamespace = GetProductNamespace(targetRootNamespace, ".Silo") ?? string.Empty;
         if (string.IsNullOrWhiteSpace(productNamespace))
         {
             return;
@@ -183,18 +185,13 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         HashSet<string> aggregateNames
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
-        {
-            if (typeSymbol.GetAttributes()
-                    .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, aggregateAttrSymbol)))
-            {
-                string aggregateName = NamingConventions.RemoveSuffix(typeSymbol.Name, "Aggregate");
-                if (!string.IsNullOrWhiteSpace(aggregateName))
-                {
-                    aggregateNames.Add(aggregateName);
-                }
-            }
-        }
+        namespaceSymbol.GetTypeMembers()
+            .Where(typeSymbol => typeSymbol.GetAttributes()
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, aggregateAttrSymbol)))
+            .Select(typeSymbol => NamingConventions.RemoveSuffix(typeSymbol.Name, "Aggregate"))
+            .Where(aggregateName => !string.IsNullOrWhiteSpace(aggregateName))
+            .ToList()
+            .ForEach(aggregateName => aggregateNames.Add(aggregateName));
 
         foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
         {
@@ -208,18 +205,13 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         HashSet<string> projectionNames
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
-        {
-            if (typeSymbol.GetAttributes()
-                    .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionAttrSymbol)))
-            {
-                string projectionName = NamingConventions.RemoveSuffix(typeSymbol.Name, "Projection");
-                if (!string.IsNullOrWhiteSpace(projectionName))
-                {
-                    projectionNames.Add(projectionName);
-                }
-            }
-        }
+        namespaceSymbol.GetTypeMembers()
+            .Where(typeSymbol => typeSymbol.GetAttributes()
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionAttrSymbol)))
+            .Select(typeSymbol => NamingConventions.RemoveSuffix(typeSymbol.Name, "Projection"))
+            .Where(projectionName => !string.IsNullOrWhiteSpace(projectionName))
+            .ToList()
+            .ForEach(projectionName => projectionNames.Add(projectionName));
 
         foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
         {
@@ -234,17 +226,13 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         HashSet<string> sagaNames
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
-        {
-            if (typeSymbol.GetAttributes().Any(attr => MatchesSagaAttribute(attr, sagaAttrSymbol, sagaAttrGenericSymbol)))
-            {
-                string sagaName = RemoveSagaSuffix(typeSymbol.Name);
-                if (!string.IsNullOrWhiteSpace(sagaName))
-                {
-                    sagaNames.Add(sagaName);
-                }
-            }
-        }
+        namespaceSymbol.GetTypeMembers()
+            .Where(typeSymbol => typeSymbol.GetAttributes()
+                .Any(attr => MatchesSagaAttribute(attr, sagaAttrSymbol, sagaAttrGenericSymbol)))
+            .Select(typeSymbol => RemoveSagaSuffix(typeSymbol.Name))
+            .Where(sagaName => !string.IsNullOrWhiteSpace(sagaName))
+            .ToList()
+            .ForEach(sagaName => sagaNames.Add(sagaName));
 
         foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
         {
@@ -330,7 +318,12 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         string namespacePrefix
     )
     {
-        string[] parts = namespacePrefix.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        if (string.IsNullOrWhiteSpace(namespacePrefix))
+        {
+            return string.Empty;
+        }
+
+        string[] parts = namespacePrefix.Split(NamespaceSeparators, StringSplitOptions.RemoveEmptyEntries);
         return string.Concat(parts);
     }
 }

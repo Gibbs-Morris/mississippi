@@ -25,6 +25,8 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
+    private static readonly char[] NamespaceSeparators = new[] { '.' };
+
     /// <inheritdoc />
     public void Initialize(
         IncrementalGeneratorInitializationContext context
@@ -154,17 +156,15 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         HashSet<string> aggregateNames
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers()
+            .Where(typeSymbol => typeSymbol.GetAttributes()
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol))))
         {
-            if (typeSymbol.GetAttributes()
-                    .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol)))
+            string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(
+                typeSymbol.ContainingNamespace.ToDisplayString());
+            if (aggregateName is not null && !string.IsNullOrWhiteSpace(aggregateName))
             {
-                string? aggregateName = NamingConventions.GetAggregateNameFromNamespace(
-                    typeSymbol.ContainingNamespace.ToDisplayString());
-                if (!string.IsNullOrWhiteSpace(aggregateName))
-                {
-                    aggregateNames.Add(aggregateName);
-                }
+                aggregateNames.Add(aggregateName);
             }
         }
 
@@ -180,16 +180,14 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         HashSet<string> projectionNames
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers()
+            .Where(typeSymbol => typeSymbol.GetAttributes()
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionAttrSymbol))))
         {
-            if (typeSymbol.GetAttributes()
-                    .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionAttrSymbol)))
+            string projectionName = NamingConventions.RemoveSuffix(typeSymbol.Name, "Projection");
+            if (!string.IsNullOrWhiteSpace(projectionName))
             {
-                string projectionName = NamingConventions.RemoveSuffix(typeSymbol.Name, "Projection");
-                if (!string.IsNullOrWhiteSpace(projectionName))
-                {
-                    projectionNames.Add(projectionName);
-                }
+                projectionNames.Add(projectionName);
             }
         }
 
@@ -241,10 +239,17 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     }
 
     private static string BuildTypeName(
-        string namespacePrefix
+        string? namespacePrefix
     )
     {
-        string[] parts = namespacePrefix.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        if (string.IsNullOrWhiteSpace(namespacePrefix))
+        {
+            return string.Empty;
+        }
+
+        string[] parts = namespacePrefix!.Split(
+            NamespaceSeparators,
+            StringSplitOptions.RemoveEmptyEntries);
         return string.Concat(parts);
     }
 }
