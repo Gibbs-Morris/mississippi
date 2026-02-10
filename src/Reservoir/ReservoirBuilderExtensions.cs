@@ -22,6 +22,6 @@ public static class ReservoirBuilderExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
-        return new ReservoirBuilder(builder.Services);
+        return new ReservoirBuilder(builder);
     }
 }

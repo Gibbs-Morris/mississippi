@@ -12,6 +12,8 @@ namespace Mississippi.Sdk.Client.Builders;
 /// </summary>
 public sealed class MississippiClientBuilder : IMississippiClientBuilder
 {
+    private readonly IServiceCollection services;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="MississippiClientBuilder" /> class.
     /// </summary>
@@ -21,11 +23,8 @@ public sealed class MississippiClientBuilder : IMississippiClientBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        Services = services;
+        this.services = services;
     }
-
-    /// <inheritdoc />
-    public IServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiClientBuilder ConfigureServices(
@@ -33,7 +32,7 @@ public sealed class MississippiClientBuilder : IMississippiClientBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
-        configure(Services);
+        configure(services);
         return this;
     }
 
@@ -44,7 +43,7 @@ public sealed class MississippiClientBuilder : IMississippiClientBuilder
         where TOptions : class
     {
         ArgumentNullException.ThrowIfNull(configure);
-        Services.Configure(configure);
+        services.Configure(configure);
         return this;
     }
 }

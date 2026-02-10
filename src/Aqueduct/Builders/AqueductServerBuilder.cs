@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Builders;
+using Mississippi.Common.Abstractions.Builders;
 
 
 namespace Mississippi.Aqueduct.Builders;
@@ -15,6 +16,8 @@ namespace Mississippi.Aqueduct.Builders;
 /// </summary>
 public sealed class AqueductServerBuilder : IAqueductServerBuilder
 {
+    private readonly Action<Action<IServiceCollection>> configureServices;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="AqueductServerBuilder" /> class.
     /// </summary>
@@ -24,11 +27,20 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        Services = services;
+        configureServices = action => action(services);
     }
 
-    /// <inheritdoc />
-    public IServiceCollection Services { get; }
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="AqueductServerBuilder" /> class.
+    /// </summary>
+    /// <param name="builder">The Mississippi server builder.</param>
+    public AqueductServerBuilder(
+        IMississippiServerBuilder builder
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        configureServices = action => builder.ConfigureServices(action);
+    }
 
     /// <inheritdoc />
     public IAqueductServerBuilder ConfigureServices(
@@ -36,7 +48,7 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
-        configure(Services);
+        configureServices(configure);
         return this;
     }
 
@@ -46,7 +58,7 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
-        Services.Configure(configure);
+        ConfigureServices(services => services.Configure(configure));
         return this;
     }
 
@@ -54,21 +66,27 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     public IAqueductServerBuilder AddBackplane<THub>()
         where THub : Hub
     {
-        Services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
-        Services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
-        Services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
-        Services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
-        Services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
-        Services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
-        Services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
+        ConfigureServices(services =>
+        {
+            services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
+            services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
+            services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
+            services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
+            services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
+            services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
+            services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
+        });
         return this;
     }
 
     /// <inheritdoc />
     public IAqueductServerBuilder AddNotifier()
     {
-        Services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
-        Services.TryAddSingleton<IAqueductNotifier, AqueductNotifier>();
+        ConfigureServices(services =>
+        {
+            services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
+            services.TryAddSingleton<IAqueductNotifier, AqueductNotifier>();
+        });
         return this;
     }
 }

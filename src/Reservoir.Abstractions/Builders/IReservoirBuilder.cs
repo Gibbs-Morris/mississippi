@@ -13,14 +13,6 @@ namespace Mississippi.Reservoir.Abstractions.Builders;
 public interface IReservoirBuilder
 {
     /// <summary>
-    ///     Gets the underlying service collection.
-    /// </summary>
-    /// <remarks>
-    ///     Prefer <see cref="ConfigureServices" /> for most scenarios; this property is for advanced cases.
-    /// </remarks>
-    IServiceCollection Services { get; }
-
-    /// <summary>
     ///     Configures services for the builder.
     /// </summary>
     /// <param name="configure">The services configuration action.</param>

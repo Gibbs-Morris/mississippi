@@ -24,27 +24,21 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReservoirFeatureBuilder{TState}" /> class.
     /// </summary>
-    /// <param name="services">The service collection.</param>
     /// <param name="parent">The parent builder.</param>
     public ReservoirFeatureBuilder(
-        IServiceCollection services,
         IReservoirBuilder parent
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(parent);
-        Services = services;
         this.parent = parent;
         AddFeatureState();
     }
-
-    private IServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IReservoirFeatureBuilder<TState> AddActionEffect<TEffect>()
         where TEffect : class, IActionEffect<TState>
     {
-        Services.AddTransient<IActionEffect<TState>, TEffect>();
+        parent.ConfigureServices(services => services.AddTransient<IActionEffect<TState>, TEffect>());
         AddRootActionEffect();
         return this;
     }
@@ -56,11 +50,14 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
         where TAction : IAction
     {
         ArgumentNullException.ThrowIfNull(reduce);
-        Services.AddTransient<DelegateActionReducer<TAction, TState>>(_ => new(reduce));
-        Services.AddTransient<IActionReducer<TState>>(sp =>
-            sp.GetRequiredService<DelegateActionReducer<TAction, TState>>());
-        Services.AddTransient<IActionReducer<TAction, TState>>(sp =>
-            sp.GetRequiredService<DelegateActionReducer<TAction, TState>>());
+        parent.ConfigureServices(services =>
+        {
+            services.AddTransient<DelegateActionReducer<TAction, TState>>(_ => new(reduce));
+            services.AddTransient<IActionReducer<TState>>(sp =>
+                sp.GetRequiredService<DelegateActionReducer<TAction, TState>>());
+            services.AddTransient<IActionReducer<TAction, TState>>(sp =>
+                sp.GetRequiredService<DelegateActionReducer<TAction, TState>>());
+        });
         AddRootReducer();
         return this;
     }
@@ -70,8 +67,11 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
         where TAction : IAction
         where TReducer : class, IActionReducer<TAction, TState>
     {
-        Services.AddTransient<IActionReducer<TState>, TReducer>();
-        Services.AddTransient<IActionReducer<TAction, TState>, TReducer>();
+        parent.ConfigureServices(services =>
+        {
+            services.AddTransient<IActionReducer<TState>, TReducer>();
+            services.AddTransient<IActionReducer<TAction, TState>, TReducer>();
+        });
         AddRootReducer();
         return this;
     }
@@ -81,19 +81,22 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
 
     private void AddFeatureState()
     {
-        Services.TryAddEnumerable(
-            ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp => new(
-                sp.GetService<IRootReducer<TState>>(),
-                sp.GetService<IRootActionEffect<TState>>())));
+        parent.ConfigureServices(services =>
+            services.TryAddEnumerable(
+                ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp => new(
+                    sp.GetService<IRootReducer<TState>>(),
+                    sp.GetService<IRootActionEffect<TState>>()))));
     }
 
     private void AddRootActionEffect()
     {
-        Services.TryAddTransient<IRootActionEffect<TState>, RootActionEffect<TState>>();
+        parent.ConfigureServices(services =>
+            services.TryAddTransient<IRootActionEffect<TState>, RootActionEffect<TState>>());
     }
 
     private void AddRootReducer()
     {
-        Services.TryAddTransient<IRootReducer<TState>, RootReducer<TState>>();
+        parent.ConfigureServices(services =>
+            services.TryAddTransient<IRootReducer<TState>, RootReducer<TState>>());
     }
 }

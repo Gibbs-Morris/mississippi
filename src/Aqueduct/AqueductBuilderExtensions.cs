@@ -24,7 +24,7 @@ public static class AqueductBuilderExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
-        return new AqueductServerBuilder(builder.Services);
+        return new AqueductServerBuilder(builder);
     }
 
     /// <summary>
