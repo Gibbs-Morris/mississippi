@@ -8,9 +8,13 @@
 5. Docs and samples do not reference `.Services` for builder registration.
 
 ## Questions
-- Q1: Which builder interfaces currently expose `Services`?
-- Q2: Which builder implementations expose `Services` and how are they used?
-- Q3: Where in the repo do extension methods access `.Services` directly?
-- Q4: Can every `.Services` usage be replaced with `ConfigureServices`?
-- Q5: Do generator outputs or samples rely on `.Services` access?
-- Q6: What tests or docs need updates to align with the new pattern?
+- Q1: Which public builder interfaces expose `IServiceCollection Services` today?
+- Q2: Which builder implementations expose public `Services` properties and where are they used internally?
+- Q3: Which extension methods create child builders by accessing `.Services`?
+- Q4: Where do registration helpers call `.Services` on IMississippi* builders or IAqueductServerBuilder?
+- Q5: Do any tests depend on `.Services` for assertions or service provider construction?
+- Q6: Do any generator outputs or samples reference `.Services` on Mississippi builders?
+- Q7: Can all direct `.Services` usages be replaced by `ConfigureServices` without losing functionality?
+- Q8: What documentation references `.Services` on builder types?
+- Q9: Which namespaces/projects will need updates due to the public contract change?
+- Q10: Are there any Orleans-specific builder uses that require special handling (ISiloBuilder.Services)?
