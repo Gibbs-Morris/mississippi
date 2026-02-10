@@ -15,9 +15,26 @@ Builder chaining uses terminal methods (for example, `Done()`) that do not feel 
 - Change behavior of registrations beyond the builder API surface.
 
 ## Current State
-- UNVERIFIED: Feature builders return to parent via `Done()`.
-- UNVERIFIED: Some registrations use builder chaining instead of configure lambdas.
-- UNVERIFIED: Existing tests and generators rely on specific chaining patterns.
+- `IReservoirFeatureBuilder<TState>` exposes `Done()` to return to the parent builder.
+	- src/Reservoir.Abstractions/Builders/IReservoirFeatureBuilder.cs
+- `ReservoirFeatureBuilder<TState>` implements `Done()` by returning its parent builder.
+	- src/Reservoir/Builders/ReservoirFeatureBuilder.cs
+- Extension methods and built-in feature registrations rely on `Done()` to return to `IReservoirBuilder`.
+	- src/Inlet.Client/SignalRConnection/SignalRConnectionRegistrations.cs
+	- src/Reservoir.Blazor/BuiltIn/Navigation/NavigationFeatureRegistration.cs
+	- src/Reservoir.Blazor/BuiltIn/Lifecycle/LifecycleFeatureRegistration.cs
+- Client generators emit `featureBuilder.Done()` in generated registrations.
+	- src/Inlet.Client.Generators/CommandClientRegistrationGenerator.cs
+	- src/Inlet.Client.Generators/ProjectionClientRegistrationGenerator.cs
+	- src/Inlet.Client.Generators/SagaClientRegistrationGenerator.cs
+- Tests and samples call `Done()` in builder chains.
+	- tests/Reservoir.L0Tests/StoreTests.cs
+	- tests/Reservoir.L0Tests/ReservoirRegistrationsTests.cs
+	- tests/Reservoir.Blazor.L0Tests/StoreComponentTests.cs
+	- tests/Inlet.Client.L0Tests/CompositeInletStoreTests.cs
+	- samples/Spring/Spring.Client/Features/*.cs
+- The codebase already uses configure-lambda patterns in some registrations.
+	- src/Inlet.Client/InletBlazorRegistrations.cs
 
 ## Proposed Design
 - Preferred hypothesis: move to configure-lambda patterns (for example `AddFeature<T>(Action<IReservoirFeatureBuilder<T>> configure)`), and remove the explicit return-to-parent method where practical.

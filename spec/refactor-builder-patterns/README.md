@@ -1,8 +1,8 @@
 # refactor-builder-patterns
 
-Status: Draft
+Status: Verification complete
 Task size: Large
-Approval checkpoint: TBD
+Approval checkpoint: Yes (public API/contract changes)
 
 ## Index
 - learned.md
