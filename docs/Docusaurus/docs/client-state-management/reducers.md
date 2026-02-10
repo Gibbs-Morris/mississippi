@@ -44,9 +44,10 @@ Register a static method or lambda directly with `AddReducer` on a feature build
 IMississippiClientBuilder mississippi = builder.AddMississippiClient();
 IReservoirBuilder reservoir = mississippi.AddReservoir();
 
-reservoir.AddFeature<EntitySelectionState>()
-    .AddReducer<SetEntityIdAction>(EntitySelectionReducers.SetEntityId)
-    .Done();
+reservoir.AddFeature<EntitySelectionState>(featureBuilder =>
+{
+    featureBuilder.AddReducer<SetEntityIdAction>(EntitySelectionReducers.SetEntityId);
+});
 
 ```
 
@@ -68,9 +69,10 @@ public sealed class MyReducer : ActionReducerBase<MyAction, MyState>
 }
 
 // Registration
-reservoir.AddFeature<MyState>()
-    .AddReducer<MyAction, MyReducer>()
-    .Done();
+reservoir.AddFeature<MyState>(featureBuilder =>
+{
+    featureBuilder.AddReducer<MyAction, MyReducer>();
+});
 ```
 
 This option registers the reducer class as a transient service and composes it into the root reducer.
@@ -100,9 +102,10 @@ internal static class EntitySelectionReducers
 Then register each reducer separately:
 
 ```csharp
-reservoir.AddFeature<EntitySelectionState>()
-    .AddReducer<SetEntityIdAction>(EntitySelectionReducers.SetEntityId)
-    .Done();
+reservoir.AddFeature<EntitySelectionState>(featureBuilder =>
+{
+    featureBuilder.AddReducer<SetEntityIdAction>(EntitySelectionReducers.SetEntityId);
+});
 ```
 
 ([Spring sample: EntitySelectionReducers](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/EntitySelectionReducers.cs))

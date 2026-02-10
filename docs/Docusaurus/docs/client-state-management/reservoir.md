@@ -145,14 +145,15 @@ public static class CounterReducers
 IMississippiClientBuilder mississippi = builder.AddMississippiClient();
 IReservoirBuilder reservoir = mississippi.AddReservoir();
 
-reservoir.AddFeature<CounterState>()
-    .AddReducer<IncrementAction>(CounterReducers.Increment)
-    .AddReducer<DecrementAction>(CounterReducers.Decrement)
-    .Done();
+reservoir.AddFeature<CounterState>(featureBuilder =>
+{
+    featureBuilder.AddReducer<IncrementAction>(CounterReducers.Increment);
+    featureBuilder.AddReducer<DecrementAction>(CounterReducers.Decrement);
+});
 ```
 
 :::note
-`AddFeature<TState>()` registers the feature state and returns a feature builder. `AddReducer` registers the root reducer, and `mississippi.AddReservoir()` registers the `IStore` that coordinates dispatch.
+`AddFeature<TState>(...)` registers the feature state and executes the feature builder configuration. `AddReducer` registers the root reducer, and `mississippi.AddReservoir()` registers the `IStore` that coordinates dispatch.
 ([ReservoirBuilder.AddFeature](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L60-L65),
 [ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L53-L76),
 [ReservoirBuilderExtensions.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirBuilderExtensions.cs#L20-L25))

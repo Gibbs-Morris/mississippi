@@ -52,7 +52,7 @@ IMississippiClientBuilder mississippi = builder.AddMississippiClient();
 IReservoirBuilder reservoir = mississippi.AddReservoir();
 ```
 
-`AddReservoir` creates a Reservoir builder and wires the Store registration:
+`AddReservoir` creates a `ReservoirBuilder` that holds the parent `IMississippiClientBuilder` and registers the Store:
 
 ```csharp
 public static IReservoirBuilder AddReservoir(
@@ -60,19 +60,24 @@ public static IReservoirBuilder AddReservoir(
 )
 {
     ArgumentNullException.ThrowIfNull(builder);
-    return new ReservoirBuilder(builder.Services);
+    return new ReservoirBuilder(builder);
 }
 ```
 
-The builder registers `IStore` as scoped, resolving all `IFeatureStateRegistration` and `IMiddleware` instances from DI:
+The `ReservoirBuilder` constructor delegates service registration to the parent builder, registering `IStore` as scoped with all `IFeatureStateRegistration` and `IMiddleware` instances resolved from DI:
 
 ```csharp
-Services.TryAddSingleton(TimeProvider.System);
-Services.TryAddScoped<IStore>(sp => new Store(
-    sp.GetServices<IFeatureStateRegistration>(),
-    sp.GetServices<IMiddleware>(),
-    sp.GetRequiredService<TimeProvider>()));
+ConfigureServices(services =>
+{
+    services.TryAddSingleton(TimeProvider.System);
+    services.TryAddScoped<IStore>(sp => new Store(
+        sp.GetServices<IFeatureStateRegistration>(),
+        sp.GetServices<IMiddleware>(),
+        sp.GetRequiredService<TimeProvider>()));
+});
 ```
+
+See [Builder Pattern](../architecture/builder-pattern.md) for details on how builders compose and delegate registration.
 
 ([ReservoirBuilderExtensions.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirBuilderExtensions.cs#L20-L25),
 [ReservoirBuilder.AddStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L49-L67))

@@ -162,10 +162,11 @@ Register effects using `AddActionEffect<TEffect>()` on a feature builder:
 IMississippiClientBuilder mississippi = builder.AddMississippiClient();
 IReservoirBuilder reservoir = mississippi.AddReservoir();
 
-reservoir.AddFeature<MyFeatureState>()
-    .AddActionEffect<LoadDataEffect>()
-    .AddActionEffect<LogAnalyticsEffect>()
-    .Done();
+reservoir.AddFeature<MyFeatureState>(featureBuilder =>
+{
+    featureBuilder.AddActionEffect<LoadDataEffect>();
+    featureBuilder.AddActionEffect<LogAnalyticsEffect>();
+});
 ```
 
 ([ReservoirFeatureBuilder.AddActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L44-L49))

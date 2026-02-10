@@ -76,16 +76,17 @@ Feature state is registered automatically when you add reducers or effects via a
 IMississippiClientBuilder mississippi = builder.AddMississippiClient();
 IReservoirBuilder reservoir = mississippi.AddReservoir();
 
-reservoir.AddFeature<EntitySelectionState>()
-    .AddReducer<SetEntityIdAction>((state, action) => state with { EntityId = action.EntityId })
-    .AddActionEffect<MyEffect>()
-    .Done();
+reservoir.AddFeature<EntitySelectionState>(featureBuilder =>
+{
+    featureBuilder.AddReducer<SetEntityIdAction>((state, action) => state with { EntityId = action.EntityId });
+    featureBuilder.AddActionEffect<MyEffect>();
+});
 ```
 
 For feature states without reducers or effects, register directly:
 
 ```csharp
-reservoir.AddFeature<MyFeatureState>().Done();
+reservoir.AddFeature<MyFeatureState>(_ => { });
 ```
 
 ([ReservoirBuilder.AddFeature](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L60-L65))
@@ -117,7 +118,7 @@ If the feature state is not registered, `GetState` throws:
 
 ```text
 InvalidOperationException: No feature state registered for 'entitySelection'.
-Call AddFeature<EntitySelectionState>() during service registration.
+Call AddFeature<EntitySelectionState>(...) during service registration.
 ```
 
 ## How Feature State Works
@@ -125,7 +126,7 @@ Call AddFeature<EntitySelectionState>() during service registration.
 When the store is created, it collects all `IFeatureStateRegistration` instances from DI:
 
 ```mermaid
-flowchart TB
+flowchart LR
     A[Service Collection] -->|Resolve| B[IFeatureStateRegistration instances]
     B --> C[Store Constructor]
     C --> D[Initialize featureStates dictionary]
@@ -165,7 +166,7 @@ The `FeatureKey` must be unique across all registered feature states. Initial st
 |---------|-------------|
 | **Feature state** | Immutable record implementing `IFeatureState` |
 | **FeatureKey** | Unique string identifier for the state slice |
-| **Registration** | Automatic via `AddFeature().AddReducer`/`AddActionEffect`, or explicit via `AddFeature().Done()` |
+| **Registration** | Automatic via `AddFeature(..., featureBuilder => { ... })`, or explicit via `AddFeature(..., _ => { })` |
 | **Access** | `store.GetState<TState>()` or `GetState<TState>()` in components |
 | **Initialization** | Initial state is created via `new TState()` in the registration path |
 
