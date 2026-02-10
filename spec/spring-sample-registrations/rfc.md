@@ -22,9 +22,10 @@ Evidence: samples/Spring/Spring.Client/Program.cs, samples/Spring/Spring.Server/
 samples/Spring/Spring.Silo/Program.cs.
 
 ## Proposed Design
-UNVERIFIED: Add three registration classes (client/server/silo) in Spring sample domain projects.
-Each class exposes an AddSpringDomain extension method for its SDK type and is tagged with the
-pending source gen attribute so downstream generators can discover and compose registrations.
+Add three registration classes in Spring.Client, Spring.Server, and Spring.Silo under
+their respective Registrations namespaces. Each class exposes an AddSpringDomain extension method
+for its SDK type and is tagged with PendingSourceGenerator so downstream generators can discover
+and replace these manual wrappers.
 
 ## As-Is vs To-Be
 
