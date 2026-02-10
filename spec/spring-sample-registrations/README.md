@@ -2,8 +2,8 @@
 
 ## Status
 - Status: Draft
-- Size: Medium (initial)
-- Approval checkpoint: TBD
+- Size: Medium
+- Approval checkpoint: No (sample-only registrations; no public API change expected)
 
 ## Requirements
 - Add Spring sample registration entrypoints for client/server/silo SDK types.

@@ -16,8 +16,10 @@ to manually enumerate or understand Inlet-generated registrations.
 - Introduce new public feature sets outside Spring samples.
 
 ## Current State
-UNVERIFIED: Registration logic is split across sample project startup code and manual aggregate listing.
-UNVERIFIED: No single AddSpringDomain-style registration entrypoints exist for all SDK types.
+Spring registration logic lives in Program files and manually lists generated methods for aggregates,
+sagas, projections, and mappers across client/server/silo. No AddSpringDomain-style entrypoints exist.
+Evidence: samples/Spring/Spring.Client/Program.cs, samples/Spring/Spring.Server/Program.cs,
+samples/Spring/Spring.Silo/Program.cs.
 
 ## Proposed Design
 UNVERIFIED: Add three registration classes (client/server/silo) in Spring sample domain projects.
@@ -40,3 +42,5 @@ Sample-only; no breaking changes to Mississippi framework APIs expected.
 ## Risks
 - Missing a generated registration could lead to runtime failures.
 - Source generator attribute usage may differ between SDKs.
+- PendingSourceGenerator is documented as a validation aid, not a pattern for new development; tagging
+	Spring registrations may conflict with instructions and needs explicit confirmation.
