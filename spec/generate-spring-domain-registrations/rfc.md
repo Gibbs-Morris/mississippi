@@ -8,6 +8,7 @@ Spring sample uses manual registration wrappers for AddSpringDomain in client/se
 - Remove manual SpringDomain*Registrations classes.
 - Keep Program.cs calls to AddSpringDomain unchanged.
 - Ensure generated wrappers include all relevant generated registrations (aggregates, projections, sagas, mappers).
+- Keep AddSpringDomain as the single entrypoint for Spring registration in each SDK type.
 
 ## Non-Goals
 - Change runtime behavior beyond registration wiring.
@@ -18,6 +19,7 @@ UNVERIFIED: Spring has manual registration wrappers under Registrations folders.
 
 ## Proposed Design
 UNVERIFIED: Add generator outputs in each SDK generator to emit AddSpringDomain wrappers for Spring projects only.
+UNVERIFIED: Use analyzer config or project metadata to scope Spring-only generation.
 
 ## Alternatives
 - Keep manual registration wrappers (rejected by request).
