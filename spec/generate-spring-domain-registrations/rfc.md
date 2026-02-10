@@ -1,10 +1,11 @@
 # RFC: Generate Spring Domain Registrations
 
 ## Problem
-Spring sample uses manual registration wrappers for AddSpringDomain in client/server/silo. These should be source-generated so manual files can be removed.
+Spring uses manual registration wrappers for AddSpringDomain in client/server/silo. The generator implementation
+should be generic (like other generators) and operate on the target project context rather than hardcoding Spring.
 
 ## Goals
-- Generate AddSpringDomain wrappers for Spring client/server/silo using existing generator pipelines.
+- Generate Add{Product}Domain wrappers for client/server/silo using existing generator pipelines.
 - Remove manual SpringDomain*Registrations classes.
 - Keep Program.cs calls to AddSpringDomain unchanged.
 - Ensure generated wrappers include all relevant generated registrations (aggregates, projections, sagas, mappers).
@@ -21,8 +22,9 @@ SpringDomainClientRegistrations.cs, samples/Spring/Spring.Server/Registrations/S
 samples/Spring/Spring.Silo/Registrations/SpringDomainSiloRegistrations.cs, samples/Spring/Spring.*/*Program.cs.
 
 ## Proposed Design
-Add generator outputs in each SDK generator to emit AddSpringDomain wrappers for Spring projects only.
-Use target root namespace derived from RootNamespace/AssemblyName to scope Spring-only generation.
+Add generator outputs in each SDK generator to emit Add{Product}Domain wrappers for SDK projects.
+Use target root namespace derived from RootNamespace/AssemblyName to scope generation to .Client/.Server/.Silo
+projects and derive the product name from the root namespace.
 
 ## As-Is vs To-Be
 
@@ -53,8 +55,8 @@ sequenceDiagram
 	participant DI as DI/Builder
 
 	Program->>DomainReg: AddSpringDomain(...)
-	DomainReg->>Generated: AddBankAccountAggregateFeature()
-	DomainReg->>Generated: AddMoneyTransferSagaFeature()
+	DomainReg->>Generated: Add{Aggregate}AggregateFeature()
+	DomainReg->>Generated: Add{Saga}SagaFeature()
 	DomainReg->>Generated: AddProjectionsFeature()
 	Generated->>DI: ConfigureServices/AddFeature/AddReducer
 	DomainReg-->>Program: returns builder

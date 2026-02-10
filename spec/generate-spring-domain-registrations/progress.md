@@ -7,4 +7,6 @@
 - 2026-02-10T16:20:00Z - Revised plan and added diagrams.
 - 2026-02-10T16:30:00Z - Implemented Spring domain registration generators for client/server/silo.
 - 2026-02-10T16:32:00Z - Removed manual SpringDomain*Registrations files.
+- 2026-02-10T17:59:04Z - Removed remaining manual SpringDomain*Registrations files after verification.
 - 2026-02-10T16:35:00Z - Refreshed verification notes after implementation.
+- 2026-02-10T18:05:00Z - Refactored Spring-specific generators into generic domain wrapper generators.
