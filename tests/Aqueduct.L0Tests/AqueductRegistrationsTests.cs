@@ -21,19 +21,19 @@ public sealed class AqueductRegistrationsTests
 
     private sealed class TestMississippiServerBuilder : IMississippiServerBuilder
     {
-        private readonly IServiceCollection services;
+        private IServiceCollection Services { get; }
 
         public TestMississippiServerBuilder(
             IServiceCollection services
         ) =>
-            this.services = services;
+            Services = services;
 
         public IMississippiServerBuilder ConfigureOptions<TOptions>(
             Action<TOptions> configure
         )
             where TOptions : class
         {
-            services.Configure(configure);
+            Services.Configure(configure);
             return this;
         }
 
@@ -41,7 +41,7 @@ public sealed class AqueductRegistrationsTests
             Action<IServiceCollection> configure
         )
         {
-            configure(services);
+            configure(Services);
             return this;
         }
     }
@@ -135,7 +135,7 @@ public sealed class AqueductRegistrationsTests
 
         // Act
         builder.AddAqueduct()
-            .ConfigureOptions(options => options.StreamProviderName = "CustomProvider")
+            .ConfigureAqueductOptions(options => options.StreamProviderName = "CustomProvider")
             .AddBackplane<TestHub>();
 
         // Assert
@@ -212,7 +212,7 @@ public sealed class AqueductRegistrationsTests
         TestMississippiServerBuilder builder = new(services);
 
         // Act
-        builder.AddAqueduct().ConfigureOptions(options => { options.StreamProviderName = "CustomProvider"; });
+        builder.AddAqueduct().ConfigureAqueductOptions(options => { options.StreamProviderName = "CustomProvider"; });
 
         // Build provider and resolve options to trigger configuration
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -234,7 +234,7 @@ public sealed class AqueductRegistrationsTests
         TestMississippiServerBuilder builder = new(services);
 
         // Act
-        IAqueductServerBuilder result = builder.AddAqueduct().ConfigureOptions(_ => { });
+        IAqueductServerBuilder result = builder.AddAqueduct().ConfigureAqueductOptions(_ => { });
 
         // Assert
         Assert.NotNull(result);
@@ -247,7 +247,7 @@ public sealed class AqueductRegistrationsTests
     public void ConfigureOptionsShouldThrowWhenBuilderIsNull()
     {
         IMississippiServerBuilder? builder = null;
-        Assert.Throws<ArgumentNullException>(() => builder!.AddAqueduct().ConfigureOptions(_ => { }));
+        Assert.Throws<ArgumentNullException>(() => builder!.AddAqueduct().ConfigureAqueductOptions(_ => { }));
     }
 
     /// <summary>
@@ -261,6 +261,6 @@ public sealed class AqueductRegistrationsTests
         TestMississippiServerBuilder builder = new(services);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => builder.AddAqueduct().ConfigureOptions(null!));
+        Assert.Throws<ArgumentNullException>(() => builder.AddAqueduct().ConfigureAqueductOptions(null!));
     }
 }

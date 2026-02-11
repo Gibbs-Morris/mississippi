@@ -17,7 +17,7 @@ namespace Mississippi.Reservoir.Builders;
 /// </summary>
 public sealed class ReservoirBuilder : IReservoirBuilder
 {
-    private readonly IMississippiClientBuilder parent;
+    private IMississippiClientBuilder Parent { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReservoirBuilder" /> class.
@@ -28,7 +28,7 @@ public sealed class ReservoirBuilder : IReservoirBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(parent);
-        this.parent = parent;
+        Parent = parent;
         AddStore();
     }
 
@@ -53,12 +53,23 @@ public sealed class ReservoirBuilder : IReservoirBuilder
     }
 
     /// <inheritdoc />
+    public IReservoirBuilder ConfigureOptions<TOptions>(
+        Action<TOptions> configure
+    )
+        where TOptions : class
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        Parent.ConfigureOptions(configure);
+        return this;
+    }
+
+    /// <inheritdoc />
     public IReservoirBuilder ConfigureServices(
         Action<IServiceCollection> configure
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
-        parent.ConfigureServices(configure);
+        Parent.ConfigureServices(configure);
         return this;
     }
 

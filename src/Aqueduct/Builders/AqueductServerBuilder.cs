@@ -16,7 +16,7 @@ namespace Mississippi.Aqueduct.Builders;
 /// </summary>
 public sealed class AqueductServerBuilder : IAqueductServerBuilder
 {
-    private readonly Action<Action<IServiceCollection>> configureServices;
+    private Action<Action<IServiceCollection>> ConfigureServicesAction { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AqueductServerBuilder" /> class.
@@ -27,7 +27,7 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        configureServices = action => action(services);
+        ConfigureServicesAction = action => action(services);
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
-        configureServices = action => builder.ConfigureServices(action);
+        ConfigureServicesAction = action => builder.ConfigureServices(action);
     }
 
     /// <inheritdoc />
@@ -71,9 +71,20 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     }
 
     /// <inheritdoc />
-    public IAqueductServerBuilder ConfigureOptions(
+    public IAqueductServerBuilder ConfigureAqueductOptions(
         Action<AqueductOptions> configure
     )
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        ConfigureServices(services => services.Configure(configure));
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IAqueductServerBuilder ConfigureOptions<TOptions>(
+        Action<TOptions> configure
+    )
+        where TOptions : class
     {
         ArgumentNullException.ThrowIfNull(configure);
         ConfigureServices(services => services.Configure(configure));
@@ -86,7 +97,7 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
-        configureServices(configure);
+        ConfigureServicesAction(configure);
         return this;
     }
 }

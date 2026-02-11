@@ -21,14 +21,14 @@ public sealed class SnapshotRegistrationsTests
 {
     private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
     {
-        private readonly IServiceCollection services;
+        private IServiceCollection Services { get; }
 
         public TestMississippiSiloBuilder(
             IServiceCollection services
         )
         {
             ArgumentNullException.ThrowIfNull(services);
-            this.services = services;
+            Services = services;
         }
 
         public IMississippiSiloBuilder ConfigureOptions<TOptions>(
@@ -36,7 +36,7 @@ public sealed class SnapshotRegistrationsTests
         )
             where TOptions : class
         {
-            services.Configure(configure);
+            Services.Configure(configure);
             return this;
         }
 
@@ -44,7 +44,7 @@ public sealed class SnapshotRegistrationsTests
             Action<IServiceCollection> configure
         )
         {
-            configure(services);
+            configure(Services);
             return this;
         }
     }

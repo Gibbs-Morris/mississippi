@@ -84,19 +84,19 @@ public sealed class CosmosContainerInitializerTests
 
     private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
     {
-        private readonly IServiceCollection services;
+        private IServiceCollection Services { get; }
 
         public TestMississippiSiloBuilder(
             IServiceCollection services
         ) =>
-            this.services = services;
+            Services = services;
 
         public IMississippiSiloBuilder ConfigureOptions<TOptions>(
             Action<TOptions> configure
         )
             where TOptions : class
         {
-            services.Configure(configure);
+            Services.Configure(configure);
             return this;
         }
 
@@ -104,7 +104,7 @@ public sealed class CosmosContainerInitializerTests
             Action<IServiceCollection> configure
         )
         {
-            configure(services);
+            configure(Services);
             return this;
         }
     }

@@ -12,7 +12,7 @@ namespace Mississippi.Sdk.Server.Builders;
 /// </summary>
 public sealed class MississippiServerBuilder : IMississippiServerBuilder
 {
-    private readonly IServiceCollection services;
+    private IServiceCollection Services { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="MississippiServerBuilder" /> class.
@@ -23,7 +23,7 @@ public sealed class MississippiServerBuilder : IMississippiServerBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        this.services = services;
+        Services = services;
     }
 
     /// <inheritdoc />
@@ -33,7 +33,7 @@ public sealed class MississippiServerBuilder : IMississippiServerBuilder
         where TOptions : class
     {
         ArgumentNullException.ThrowIfNull(configure);
-        services.Configure(configure);
+        Services.Configure(configure);
         return this;
     }
 
@@ -43,7 +43,7 @@ public sealed class MississippiServerBuilder : IMississippiServerBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
-        configure(services);
+        configure(Services);
         return this;
     }
 }

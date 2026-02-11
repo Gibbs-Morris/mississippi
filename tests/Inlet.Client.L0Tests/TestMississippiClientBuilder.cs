@@ -12,8 +12,6 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// </summary>
 internal sealed class TestMississippiClientBuilder : IMississippiClientBuilder
 {
-    private readonly ServiceCollection services;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="TestMississippiClientBuilder" /> class.
     /// </summary>
@@ -23,8 +21,10 @@ internal sealed class TestMississippiClientBuilder : IMississippiClientBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        this.services = services;
+        Services = services;
     }
+
+    private ServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiClientBuilder ConfigureOptions<TOptions>(
@@ -33,7 +33,7 @@ internal sealed class TestMississippiClientBuilder : IMississippiClientBuilder
         where TOptions : class
     {
         ArgumentNullException.ThrowIfNull(configure);
-        services.Configure(configure);
+        Services.Configure(configure);
         return this;
     }
 
@@ -43,7 +43,7 @@ internal sealed class TestMississippiClientBuilder : IMississippiClientBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
-        configure(services);
+        configure(Services);
         return this;
     }
 }
