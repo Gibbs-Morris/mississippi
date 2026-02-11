@@ -32,6 +32,10 @@ public static class AqueductBuilderExtensions
     /// </summary>
     /// <param name="builder">The web application builder.</param>
     /// <returns>The Aqueduct server builder.</returns>
+    /// <remarks>
+    ///     This method bypasses the Mississippi builder pattern. Prefer using
+    ///     <c>builder.Services.AddMississippiServer().AddAqueduct()</c> for consistency.
+    /// </remarks>
     public static IAqueductServerBuilder AddAqueduct(
         this WebApplicationBuilder builder
     )
