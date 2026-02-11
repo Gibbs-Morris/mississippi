@@ -3,13 +3,15 @@ using System;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Abstractions.Builders;
+
 
 namespace Mississippi.Aqueduct.Abstractions.Builders;
 
 /// <summary>
 ///     Builder contract for Aqueduct server registration.
 /// </summary>
-public interface IAqueductServerBuilder
+public interface IAqueductServerBuilder : IMississippiBuilder<IAqueductServerBuilder>
 {
     /// <summary>
     ///     Adds the Aqueduct backplane for the specified hub type.
@@ -30,16 +32,7 @@ public interface IAqueductServerBuilder
     /// </summary>
     /// <param name="configure">The options configuration action.</param>
     /// <returns>The builder for chaining.</returns>
-    IAqueductServerBuilder ConfigureOptions(
+    IAqueductServerBuilder ConfigureAqueductOptions(
         Action<AqueductOptions> configure
-    );
-
-    /// <summary>
-    ///     Configures services for the builder.
-    /// </summary>
-    /// <param name="configure">The services configuration action.</param>
-    /// <returns>The builder for chaining.</returns>
-    IAqueductServerBuilder ConfigureServices(
-        Action<IServiceCollection> configure
     );
 }
