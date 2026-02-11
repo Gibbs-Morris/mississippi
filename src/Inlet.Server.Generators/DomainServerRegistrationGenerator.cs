@@ -25,6 +25,12 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
+    private const string BrookNameAttributeFullName =
+        "Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute";
+
+    private const string ProjectionPathAttributeFullName =
+        "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
+
     private static readonly char[] NamespaceSeparators = new[] { '.' };
 
     private static string BuildTypeName(
@@ -67,7 +73,9 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol projectionAttrSymbol,
-        HashSet<string> projectionNames
+        INamedTypeSymbol? projectionPathAttrSymbol,
+        INamedTypeSymbol? brookNameAttrSymbol,
+        List<(string Name, string? Path, string? BrookName)> projectionInfos
     )
     {
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers()
@@ -76,15 +84,47 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                              SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionAttrSymbol))))
         {
             string projectionName = NamingConventions.RemoveSuffix(typeSymbol.Name, "Projection");
-            if (!string.IsNullOrWhiteSpace(projectionName))
+            if (string.IsNullOrWhiteSpace(projectionName))
             {
-                projectionNames.Add(projectionName);
+                continue;
             }
+
+            string? path = null;
+            string? brookName = null;
+            if (projectionPathAttrSymbol is not null)
+            {
+                AttributeData? pathAttr = typeSymbol.GetAttributes()
+                    .FirstOrDefault(a =>
+                        SymbolEqualityComparer.Default.Equals(a.AttributeClass, projectionPathAttrSymbol));
+                path = pathAttr?.ConstructorArguments.Length > 0
+                    ? pathAttr.ConstructorArguments[0].Value as string
+                    : null;
+            }
+
+            if (brookNameAttrSymbol is not null)
+            {
+                AttributeData? brookAttr = typeSymbol.GetAttributes()
+                    .FirstOrDefault(a =>
+                        SymbolEqualityComparer.Default.Equals(a.AttributeClass, brookNameAttrSymbol));
+                if (brookAttr?.ConstructorArguments.Length >= 3)
+                {
+                    string? appName = brookAttr.ConstructorArguments[0].Value as string;
+                    string? moduleName = brookAttr.ConstructorArguments[1].Value as string;
+                    string? name = brookAttr.ConstructorArguments[2].Value as string;
+                    if (appName is not null && moduleName is not null && name is not null)
+                    {
+                        brookName = appName + "." + moduleName + "." + name;
+                    }
+                }
+            }
+
+            projectionInfos.Add((projectionName, path, brookName));
         }
 
         foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
         {
-            FindProjectionsInNamespace(child, projectionAttrSymbol, projectionNames);
+            FindProjectionsInNamespace(
+                child, projectionAttrSymbol, projectionPathAttrSymbol, brookNameAttrSymbol, projectionInfos);
         }
     }
 
@@ -103,8 +143,8 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
 
         string productTypeName = BuildTypeName(productNamespace);
         HashSet<string> aggregateNames = GetAggregateNames(compilation);
-        HashSet<string> projectionNames = GetProjectionNames(compilation);
-        if ((aggregateNames.Count == 0) && (projectionNames.Count == 0))
+        List<(string Name, string? Path, string? BrookName)> projectionInfos = GetProjectionInfos(compilation);
+        if ((aggregateNames.Count == 0) && (projectionInfos.Count == 0))
         {
             return;
         }
@@ -121,9 +161,19 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             sb.AppendUsing(targetRootNamespace + ".Controllers.Aggregates.Mappers");
         }
 
-        if (projectionNames.Count > 0)
+        if (projectionInfos.Count > 0)
         {
             sb.AppendUsing(targetRootNamespace + ".Controllers.Projections.Mappers");
+        }
+
+        List<(string Path, string BrookName)> brookMappings = projectionInfos
+            .Where(p => p.Path is not null && p.BrookName is not null)
+            .Select(p => (p.Path!, p.BrookName!))
+            .OrderBy(m => m.Item1, StringComparer.Ordinal)
+            .ToList();
+        if (brookMappings.Count > 0)
+        {
+            sb.AppendUsing("Mississippi.Inlet.Silo");
         }
 
         sb.AppendFileScopedNamespace(registrationsNamespace);
@@ -149,13 +199,26 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine($"services.Add{aggregateName}AggregateMappers();");
         }
 
-        foreach (string projectionName in projectionNames.OrderBy(x => x, StringComparer.Ordinal))
+        foreach ((string projectionName, _, _) in projectionInfos.OrderBy(x => x.Name, StringComparer.Ordinal))
         {
             sb.AppendLine($"services.Add{projectionName}ProjectionMappers();");
         }
 
         sb.CloseBrace();
         sb.AppendLine(");");
+        if (brookMappings.Count > 0)
+        {
+            sb.AppendLine("builder.RegisterProjectionBrookMappings(registry =>");
+            sb.OpenBrace();
+            foreach ((string path, string brookName) in brookMappings)
+            {
+                sb.AppendLine($"registry.Register(\"{path}\", \"{brookName}\");");
+            }
+
+            sb.CloseBrace();
+            sb.AppendLine(");");
+        }
+
         sb.AppendLine("return builder;");
         sb.CloseBrace();
         sb.CloseBrace();
@@ -194,24 +257,33 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         return targetRootNamespace.Substring(0, targetRootNamespace.Length - suffix.Length);
     }
 
-    private static HashSet<string> GetProjectionNames(
+    private static List<(string Name, string? Path, string? BrookName)> GetProjectionInfos(
         Compilation compilation
     )
     {
-        HashSet<string> projectionNames = new(StringComparer.Ordinal);
+        List<(string Name, string? Path, string? BrookName)> projectionInfos = new();
         INamedTypeSymbol? projectionAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
         if (projectionAttrSymbol is null)
         {
-            return projectionNames;
+            return projectionInfos;
         }
 
+        INamedTypeSymbol? projectionPathAttrSymbol =
+            compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
+        INamedTypeSymbol? brookNameAttrSymbol =
+            compilation.GetTypeByMetadataName(BrookNameAttributeFullName);
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
         {
-            FindProjectionsInNamespace(referencedAssembly.GlobalNamespace, projectionAttrSymbol, projectionNames);
+            FindProjectionsInNamespace(
+                referencedAssembly.GlobalNamespace,
+                projectionAttrSymbol,
+                projectionPathAttrSymbol,
+                brookNameAttrSymbol,
+                projectionInfos);
         }
 
-        return projectionNames;
+        return projectionInfos;
     }
 
     private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(

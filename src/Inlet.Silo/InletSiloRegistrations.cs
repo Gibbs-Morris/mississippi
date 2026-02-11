@@ -1,12 +1,9 @@
 using System;
-using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Common.Abstractions.Builders;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Silo.Abstractions;
 
 
@@ -31,9 +28,8 @@ public static class InletSiloRegistrations
     /// <remarks>
     ///     <para>
     ///         This method registers the <see cref="IProjectionBrookRegistry" /> as a singleton.
-    ///         You must call <see cref="ScanProjectionAssemblies(IMississippiSiloBuilder, Assembly[])" /> to populate the
-    ///         registry
-    ///         with projection-to-brook mappings from attributed types.
+    ///         The registry is populated automatically by source-generated domain registration code
+    ///         via <see cref="RegisterProjectionBrookMappings(IMississippiSiloBuilder, Action{IProjectionBrookRegistry})" />.
     ///     </para>
     /// </remarks>
     public static IMississippiSiloBuilder AddInletSilo(
@@ -62,33 +58,29 @@ public static class InletSiloRegistrations
     }
 
     /// <summary>
-    ///     Scans assemblies for projection types and registers them in the brook registry.
+    ///     Registers projection-to-brook mappings in the <see cref="IProjectionBrookRegistry" />.
     /// </summary>
     /// <param name="builder">The Mississippi silo builder.</param>
-    /// <param name="assemblies">The assemblies to scan for projection types.</param>
+    /// <param name="configure">
+    ///     An action that registers path-to-brook-name mappings on the registry.
+    /// </param>
     /// <returns>The builder for chaining.</returns>
     /// <remarks>
     ///     <para>
-    ///         This method scans the provided assemblies for types decorated with
-    ///         <see cref="ProjectionPathAttribute" /> and registers their path-to-brook
-    ///         mappings in the <see cref="IProjectionBrookRegistry" />.
-    ///     </para>
-    ///     <para>
-    ///         The brook name is determined from <see cref="BrookNameAttribute" /> if present,
-    ///         otherwise defaults to the path from <see cref="ProjectionPathAttribute" />.
-    ///     </para>
-    ///     <para>
-    ///         Call this after <see cref="AddInletSilo(IMississippiSiloBuilder)" /> to populate the registry.
+    ///         This method is called by source-generated domain registration code.
+    ///         It replaces the empty registry registered by <see cref="AddInletSilo(IMississippiSiloBuilder)" />
+    ///         with a populated instance containing all projection-to-brook mappings.
     ///     </para>
     /// </remarks>
-    public static IMississippiSiloBuilder ScanProjectionAssemblies(
+    public static IMississippiSiloBuilder RegisterProjectionBrookMappings(
         this IMississippiSiloBuilder builder,
-        params Assembly[] assemblies
+        Action<IProjectionBrookRegistry> configure
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(assemblies);
-        ProjectionBrookRegistry registry = BuildProjectionBrookRegistry(assemblies);
+        ArgumentNullException.ThrowIfNull(configure);
+        ProjectionBrookRegistry registry = new();
+        configure(registry);
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IProjectionBrookRegistry>();
@@ -98,49 +90,27 @@ public static class InletSiloRegistrations
     }
 
     /// <summary>
-    ///     Scans assemblies for projection types and registers them in the brook registry.
+    ///     Registers projection-to-brook mappings in the <see cref="IProjectionBrookRegistry" />.
     /// </summary>
     /// <param name="builder">The Mississippi server builder.</param>
-    /// <param name="assemblies">The assemblies to scan for projection types.</param>
+    /// <param name="configure">
+    ///     An action that registers path-to-brook-name mappings on the registry.
+    /// </param>
     /// <returns>The builder for chaining.</returns>
-    public static IMississippiServerBuilder ScanProjectionAssemblies(
+    public static IMississippiServerBuilder RegisterProjectionBrookMappings(
         this IMississippiServerBuilder builder,
-        params Assembly[] assemblies
+        Action<IProjectionBrookRegistry> configure
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(assemblies);
-        ProjectionBrookRegistry registry = BuildProjectionBrookRegistry(assemblies);
+        ArgumentNullException.ThrowIfNull(configure);
+        ProjectionBrookRegistry registry = new();
+        configure(registry);
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IProjectionBrookRegistry>();
             services.AddSingleton<IProjectionBrookRegistry>(registry);
         });
         return builder;
-    }
-
-    private static ProjectionBrookRegistry BuildProjectionBrookRegistry(
-        Assembly[] assemblies
-    )
-    {
-        ProjectionBrookRegistry registry = new();
-        foreach (Assembly assembly in assemblies)
-        {
-            foreach (Type type in assembly.GetExportedTypes())
-            {
-                ProjectionPathAttribute? pathAttr = type.GetCustomAttribute<ProjectionPathAttribute>();
-                if (pathAttr is null)
-                {
-                    continue;
-                }
-
-                // Brook name from BrookNameAttribute, or default to path
-                BrookNameAttribute? brookAttr = type.GetCustomAttribute<BrookNameAttribute>();
-                string brookName = brookAttr?.BrookName ?? pathAttr.Path;
-                registry.Register(pathAttr.Path, brookName);
-            }
-        }
-
-        return registry;
     }
 }
