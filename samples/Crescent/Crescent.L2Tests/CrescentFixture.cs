@@ -187,7 +187,6 @@ public sealed class CrescentFixture
 
             // Register Counter aggregate domain (events, handlers, reducers, projections)
             mississippi.AddCounterAggregate();
-
             silo.UseLocalhostClustering()
                 .Configure<ClusterOptions>(opt =>
                 {

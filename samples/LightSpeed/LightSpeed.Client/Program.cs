@@ -11,7 +11,5 @@ using Mississippi.Sdk.Client;
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
-builder.AddMississippiClient()
-    .AddReservoir()
-    .AddReservoirDevTools();
+builder.AddMississippiClient().AddReservoir().AddReservoirDevTools();
 await builder.Build().RunAsync();

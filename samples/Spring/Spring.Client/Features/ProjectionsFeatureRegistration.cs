@@ -47,7 +47,6 @@ public static class ProjectionsFeatureRegistration
         featureBuilder.AddReducer<ProjectionLoadedAction<T>>(ProjectionsReducer.ReduceLoaded);
         featureBuilder.AddReducer<ProjectionUpdatedAction<T>>(ProjectionsReducer.ReduceUpdated);
         featureBuilder.AddReducer<ProjectionErrorAction<T>>(ProjectionsReducer.ReduceError);
-        featureBuilder.AddReducer<ProjectionConnectionChangedAction<T>>(
-            ProjectionsReducer.ReduceConnectionChanged);
+        featureBuilder.AddReducer<ProjectionConnectionChangedAction<T>>(ProjectionsReducer.ReduceConnectionChanged);
     }
 }

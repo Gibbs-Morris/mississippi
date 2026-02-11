@@ -106,9 +106,7 @@ builder.UseOrleans(siloBuilder =>
 
     // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane
     siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
-
     IMississippiSiloBuilder mississippi = siloBuilder.AddMississippiSilo();
-
     mississippi.AddSpringDomain();
 
     // Add Inlet Silo services for projection subscription management
