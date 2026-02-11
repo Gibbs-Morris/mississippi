@@ -1,7 +1,5 @@
 using System;
 
-using Microsoft.Extensions.DependencyInjection;
-
 using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Reservoir.Abstractions.State;
 

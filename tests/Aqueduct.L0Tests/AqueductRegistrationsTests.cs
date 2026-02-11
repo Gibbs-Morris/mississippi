@@ -21,12 +21,12 @@ public sealed class AqueductRegistrationsTests
 
     private sealed class TestMississippiServerBuilder : IMississippiServerBuilder
     {
-        private IServiceCollection Services { get; }
-
         public TestMississippiServerBuilder(
             IServiceCollection services
         ) =>
             Services = services;
+
+        private IServiceCollection Services { get; }
 
         public IMississippiServerBuilder ConfigureOptions<TOptions>(
             Action<TOptions> configure

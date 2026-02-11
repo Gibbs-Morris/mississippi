@@ -16,8 +16,6 @@ namespace Mississippi.Aqueduct.Builders;
 /// </summary>
 public sealed class AqueductServerBuilder : IAqueductServerBuilder
 {
-    private Action<Action<IServiceCollection>> ConfigureServicesAction { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="AqueductServerBuilder" /> class.
     /// </summary>
@@ -41,6 +39,8 @@ public sealed class AqueductServerBuilder : IAqueductServerBuilder
         ArgumentNullException.ThrowIfNull(builder);
         ConfigureServicesAction = action => builder.ConfigureServices(action);
     }
+
+    private Action<Action<IServiceCollection>> ConfigureServicesAction { get; }
 
     /// <inheritdoc />
     public IAqueductServerBuilder AddBackplane<THub>()

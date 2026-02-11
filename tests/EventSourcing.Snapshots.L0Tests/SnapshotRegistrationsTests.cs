@@ -21,8 +21,6 @@ public sealed class SnapshotRegistrationsTests
 {
     private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
     {
-        private IServiceCollection Services { get; }
-
         public TestMississippiSiloBuilder(
             IServiceCollection services
         )
@@ -30,6 +28,8 @@ public sealed class SnapshotRegistrationsTests
             ArgumentNullException.ThrowIfNull(services);
             Services = services;
         }
+
+        private IServiceCollection Services { get; }
 
         public IMississippiSiloBuilder ConfigureOptions<TOptions>(
             Action<TOptions> configure

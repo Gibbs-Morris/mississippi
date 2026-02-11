@@ -47,8 +47,6 @@ public sealed class ReducerRegistrationsTests
 
     private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
     {
-        private IServiceCollection Services { get; }
-
         public TestMississippiSiloBuilder(
             IServiceCollection services
         )
@@ -56,6 +54,8 @@ public sealed class ReducerRegistrationsTests
             ArgumentNullException.ThrowIfNull(services);
             Services = services;
         }
+
+        private IServiceCollection Services { get; }
 
         public IMississippiSiloBuilder ConfigureOptions<TOptions>(
             Action<TOptions> configure
@@ -134,8 +134,7 @@ public sealed class ReducerRegistrationsTests
         ServiceCollection services = [];
         TestMississippiSiloBuilder builder = new(services);
         builder.AddReducer<TestEvent, TestProjection, TestEventReducer>();
-        ServiceDescriptor rootDescriptor = services.Single(x =>
-            x.ServiceType == typeof(IRootReducer<TestProjection>));
+        ServiceDescriptor rootDescriptor = services.Single(x => x.ServiceType == typeof(IRootReducer<TestProjection>));
         Assert.Equal(ServiceLifetime.Transient, rootDescriptor.Lifetime);
         Assert.Equal(typeof(RootReducer<TestProjection>), rootDescriptor.ImplementationType);
         Assert.Null(rootDescriptor.ImplementationFactory);
@@ -151,8 +150,7 @@ public sealed class ReducerRegistrationsTests
         ServiceCollection services = [];
         TestMississippiSiloBuilder builder = new(services);
         builder.AddRootReducer<TestProjection>();
-        ServiceDescriptor descriptor = services.Single(x =>
-            x.ServiceType == typeof(IRootReducer<TestProjection>));
+        ServiceDescriptor descriptor = services.Single(x => x.ServiceType == typeof(IRootReducer<TestProjection>));
         Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
         Assert.Equal(typeof(RootReducer<TestProjection>), descriptor.ImplementationType);
         Assert.Null(descriptor.ImplementationFactory);

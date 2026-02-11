@@ -20,8 +20,6 @@ public sealed class EventSourcingRegistrationsTests
 {
     private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
     {
-        private IServiceCollection Services { get; }
-
         public TestMississippiSiloBuilder(
             IServiceCollection services
         )
@@ -29,6 +27,8 @@ public sealed class EventSourcingRegistrationsTests
             ArgumentNullException.ThrowIfNull(services);
             Services = services;
         }
+
+        private IServiceCollection Services { get; }
 
         public IMississippiSiloBuilder ConfigureOptions<TOptions>(
             Action<TOptions> configure

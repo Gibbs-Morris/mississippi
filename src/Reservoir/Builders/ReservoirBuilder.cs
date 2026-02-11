@@ -17,8 +17,6 @@ namespace Mississippi.Reservoir.Builders;
 /// </summary>
 public sealed class ReservoirBuilder : IReservoirBuilder
 {
-    private IMississippiClientBuilder Parent { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReservoirBuilder" /> class.
     /// </summary>
@@ -31,6 +29,8 @@ public sealed class ReservoirBuilder : IReservoirBuilder
         Parent = parent;
         AddStore();
     }
+
+    private IMississippiClientBuilder Parent { get; }
 
     /// <inheritdoc />
     public IReservoirBuilder AddFeature<TState>(

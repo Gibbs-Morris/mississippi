@@ -1,7 +1,6 @@
 using System;
 
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Builders;
 

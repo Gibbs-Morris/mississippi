@@ -84,12 +84,12 @@ public sealed class CosmosContainerInitializerTests
 
     private sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
     {
-        private IServiceCollection Services { get; }
-
         public TestMississippiSiloBuilder(
             IServiceCollection services
         ) =>
             Services = services;
+
+        private IServiceCollection Services { get; }
 
         public IMississippiSiloBuilder ConfigureOptions<TOptions>(
             Action<TOptions> configure

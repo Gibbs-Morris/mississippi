@@ -12,8 +12,6 @@ namespace Mississippi.Sdk.Server.Builders;
 /// </summary>
 public sealed class MississippiServerBuilder : IMississippiServerBuilder
 {
-    private IServiceCollection Services { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="MississippiServerBuilder" /> class.
     /// </summary>
@@ -25,6 +23,8 @@ public sealed class MississippiServerBuilder : IMississippiServerBuilder
         ArgumentNullException.ThrowIfNull(services);
         Services = services;
     }
+
+    private IServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiServerBuilder ConfigureOptions<TOptions>(
