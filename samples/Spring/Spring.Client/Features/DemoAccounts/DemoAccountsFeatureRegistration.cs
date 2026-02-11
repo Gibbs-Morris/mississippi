@@ -11,7 +11,7 @@ namespace Spring.Client.Features.DemoAccounts;
 internal static class DemoAccountsFeatureRegistration
 {
     /// <summary>
-    ///     Adds the demo accounts feature to the service collection.
+    ///     Adds the demo accounts feature to the Reservoir builder.
     /// </summary>
     /// <param name="builder">The Reservoir builder.</param>
     /// <returns>The Reservoir builder for chaining.</returns>
