@@ -77,24 +77,24 @@ reservoir.AddReservoirDevTools(options =>
 ```csharp
 public sealed class MississippiClientBuilder : IMississippiClientBuilder
 {
-    private readonly IServiceCollection services;
+    private IServiceCollection Services { get; }
 
     public MississippiClientBuilder(IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        this.services = services;
+        Services = services;
     }
 
     public IMississippiClientBuilder ConfigureOptions<TOptions>(Action<TOptions> configure)
         where TOptions : class
     {
-        services.Configure(configure);
+        Services.Configure(configure);
         return this;
     }
 
     public IMississippiClientBuilder ConfigureServices(Action<IServiceCollection> configure)
     {
-        configure(services);
+        configure(Services);
         return this;
     }
 }
@@ -142,7 +142,7 @@ builder.UseOrleansClient(clientBuilder => clientBuilder.AddActivityPropagation()
 // Framework infrastructure
 mississippi.AddAggregateSupport();
 mississippi.AddUxProjections();
-mississippi.AddInletServer();
+mississippi.AddInletServer(options => options.StreamProviderName = "StreamProvider");
 mississippi.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Domain registration — one call registers all server mappers
@@ -158,24 +158,24 @@ mississippi.AddSpringDomain();
 ```csharp
 public sealed class MississippiServerBuilder : IMississippiServerBuilder
 {
-    private readonly IServiceCollection services;
+    private IServiceCollection Services { get; }
 
     public MississippiServerBuilder(IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        this.services = services;
+        Services = services;
     }
 
     public IMississippiServerBuilder ConfigureOptions<TOptions>(Action<TOptions> configure)
         where TOptions : class
     {
-        services.Configure(configure);
+        Services.Configure(configure);
         return this;
     }
 
     public IMississippiServerBuilder ConfigureServices(Action<IServiceCollection> configure)
     {
-        configure(services);
+        configure(Services);
         return this;
     }
 }

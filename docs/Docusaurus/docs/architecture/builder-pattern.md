@@ -92,37 +92,36 @@ Sub-builders do not implement `IMississippiBuilder<T>` directly. They define the
 
 ### Reservoir Example
 
-[`IReservoirBuilder`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Builders/IReservoirBuilder.cs) is a sub-builder of `IMississippiClientBuilder`:
+[`IReservoirBuilder`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/Builders/IReservoirBuilder.cs) is a sub-builder of `IMississippiClientBuilder` that also extends the base builder contract:
 
 ```csharp
-public interface IReservoirBuilder
+public interface IReservoirBuilder : IMississippiBuilder<IReservoirBuilder>
 {
     IReservoirBuilder AddFeature<TState>(Action<IReservoirFeatureBuilder<TState>> configure)
         where TState : class, IFeatureState, new();
 
     IReservoirBuilder AddMiddleware<TMiddleware>()
         where TMiddleware : class, IMiddleware;
-
-    IReservoirBuilder ConfigureServices(Action<IServiceCollection> configure);
 }
 ```
 
-Its implementation holds a reference to the parent `IMississippiClientBuilder` and delegates `ConfigureServices`:
+Its implementation stores the parent as a get-only property and delegates `ConfigureServices`:
 
 ```csharp
 public sealed class ReservoirBuilder : IReservoirBuilder
 {
-    private readonly IMississippiClientBuilder parent;
+    private IMississippiClientBuilder Parent { get; }
 
     public ReservoirBuilder(IMississippiClientBuilder parent)
     {
-        this.parent = parent;
+        ArgumentNullException.ThrowIfNull(parent);
+        Parent = parent;
         AddStore(); // Registers IStore on construction
     }
 
     public IReservoirBuilder ConfigureServices(Action<IServiceCollection> configure)
     {
-        parent.ConfigureServices(configure);
+        Parent.ConfigureServices(configure);
         return this;
     }
 }
@@ -228,11 +227,12 @@ public interface IMyLibraryBuilder
 ```csharp
 public sealed class MyLibraryBuilder : IMyLibraryBuilder
 {
-    private readonly IMississippiServerBuilder parent;
+    private IMississippiServerBuilder Parent { get; }
 
     public MyLibraryBuilder(IMississippiServerBuilder parent)
     {
-        this.parent = parent;
+        ArgumentNullException.ThrowIfNull(parent);
+        Parent = parent;
     }
 
     public IMyLibraryBuilder AddWidget<TWidget>() where TWidget : class, IWidget
@@ -243,7 +243,7 @@ public sealed class MyLibraryBuilder : IMyLibraryBuilder
 
     public IMyLibraryBuilder ConfigureServices(Action<IServiceCollection> configure)
     {
-        parent.ConfigureServices(configure);
+        Parent.ConfigureServices(configure);
         return this;
     }
 }
@@ -264,10 +264,10 @@ public static class MyLibraryBuilderExtensions
 ### Rules for Builder Authors
 
 - Interface goes in `*.Abstractions`; implementation goes in the main project.
+- Store the parent as a get-only property (`private IMississippiServerBuilder Parent { get; }`) — do not use `private readonly` fields for injected dependencies.
 - Delegate `ConfigureServices` to the parent builder — do not hold a direct `IServiceCollection` reference unless the builder is a root builder.
 - Return `this` from every method for fluent chaining.
 - Use `ArgumentNullException.ThrowIfNull` on all public parameters.
-- Register infrastructure services in the constructor when they are always required (e.g., `ReservoirBuilder` registers `IStore` in its constructor).
 
 ## Learn More
 
