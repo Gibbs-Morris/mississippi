@@ -12,8 +12,6 @@ namespace Mississippi.Inlet.Server.L0Tests;
 /// </summary>
 internal sealed class TestMississippiServerBuilder : IMississippiServerBuilder
 {
-    private IServiceCollection Services { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="TestMississippiServerBuilder" /> class.
     /// </summary>
@@ -25,6 +23,8 @@ internal sealed class TestMississippiServerBuilder : IMississippiServerBuilder
         ArgumentNullException.ThrowIfNull(services);
         Services = services;
     }
+
+    private IServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiServerBuilder ConfigureOptions<TOptions>(

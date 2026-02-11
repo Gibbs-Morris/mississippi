@@ -12,8 +12,6 @@ namespace Mississippi.Inlet.Silo.L0Tests;
 /// </summary>
 internal sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
 {
-    private IServiceCollection Services { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="TestMississippiSiloBuilder" /> class.
     /// </summary>
@@ -25,6 +23,8 @@ internal sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
         ArgumentNullException.ThrowIfNull(services);
         Services = services;
     }
+
+    private IServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiSiloBuilder ConfigureOptions<TOptions>(
