@@ -24,7 +24,6 @@ using OpenTelemetry.Trace;
 using Orleans.Hosting;
 using Orleans.Runtime;
 
-using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Domain.Services;
 using Spring.Silo.Registrations;
 using Spring.Silo.Services;
@@ -111,7 +110,6 @@ builder.UseOrleans(siloBuilder =>
 
     // Add Inlet Silo services for projection subscription management
     mississippi.AddInletSilo();
-    mississippi.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
     // Add event sourcing infrastructure
     mississippi.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");

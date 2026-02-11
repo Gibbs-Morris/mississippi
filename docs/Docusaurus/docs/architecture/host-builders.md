@@ -143,9 +143,8 @@ builder.UseOrleansClient(clientBuilder => clientBuilder.AddActivityPropagation()
 mississippi.AddAggregateSupport();
 mississippi.AddUxProjections();
 mississippi.AddInletServer(options => options.StreamProviderName = "StreamProvider");
-mississippi.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
-// Domain registration — one call registers all server mappers
+// Domain registration — one call registers all server mappers and projection brook mappings
 mississippi.AddSpringDomain();
 ```
 
@@ -224,7 +223,6 @@ builder.UseOrleans(siloBuilder =>
 
     // Framework infrastructure
     mississippi.AddInletSilo();
-    mississippi.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
     mississippi.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
     mississippi.AddSnapshotCaching();
 

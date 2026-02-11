@@ -10,7 +10,6 @@ using Mississippi.EventSourcing.Aggregates;
 using Mississippi.EventSourcing.Serialization.Json;
 using Mississippi.EventSourcing.UxProjections;
 using Mississippi.Inlet.Server;
-using Mississippi.Inlet.Silo;
 using Mississippi.Sdk.Server;
 
 using OpenTelemetry;
@@ -21,7 +20,6 @@ using Orleans.Hosting;
 
 using Scalar.AspNetCore;
 
-using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Server.Registrations;
 
 
@@ -76,7 +74,6 @@ mississippi.AddUxProjections();
 
 // Add Inlet Server services for real-time projection updates
 mississippi.AddInletServer(options => options.StreamProviderName = "StreamProvider");
-mississippi.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add aggregate DTO to command mappers
 mississippi.AddSpringDomain();

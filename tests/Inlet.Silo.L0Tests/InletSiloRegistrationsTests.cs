@@ -1,12 +1,10 @@
 using System;
 using System.Linq;
-using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Abstractions.Builders;
 using Mississippi.Inlet.Silo.Abstractions;
-using Mississippi.Inlet.Silo.L0Tests.Infrastructure;
 
 
 namespace Mississippi.Inlet.Silo.L0Tests;
@@ -107,148 +105,117 @@ public sealed class InletSiloRegistrationsTests
     }
 
     /// <summary>
-    ///     ScanProjectionAssemblies discovers types with ProjectionPathAttribute.
+    ///     RegisterProjectionBrookMappings populates registry with configured mappings.
     /// </summary>
     [Fact]
-    public void ScanProjectionAssembliesDiscoversProjectionPathAttribute()
+    public void RegisterProjectionBrookMappingsPopulatesRegistry()
     {
         // Arrange
         ServiceCollection services = [];
         TestMississippiSiloBuilder builder = new(services);
-        Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
 
         // Act
-        builder.ScanProjectionAssemblies(testAssembly);
+        builder.RegisterProjectionBrookMappings(registry =>
+        {
+            registry.Register("bank-account-balance", "SPRING.BANKING.ACCOUNT");
+            registry.Register("money-transfer-status", "SPRING.BANKING.TRANSFER");
+        });
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
 
         // Assert
         string[] paths = registry.GetAllPaths().ToArray();
-        Assert.Contains("/api/path-only-projection", paths);
+        Assert.Equal(2, paths.Length);
+        Assert.Contains("bank-account-balance", paths);
+        Assert.Contains("money-transfer-status", paths);
+        Assert.Equal("SPRING.BANKING.ACCOUNT", registry.GetBrookName("bank-account-balance"));
+        Assert.Equal("SPRING.BANKING.TRANSFER", registry.GetBrookName("money-transfer-status"));
     }
 
     /// <summary>
-    ///     ScanProjectionAssemblies replaces existing registry.
+    ///     RegisterProjectionBrookMappings replaces existing registry from AddInletSilo.
     /// </summary>
     [Fact]
-    public void ScanProjectionAssembliesReplacesExistingRegistry()
+    public void RegisterProjectionBrookMappingsReplacesExistingRegistry()
     {
         // Arrange
         ServiceCollection services = [];
         TestMississippiSiloBuilder builder = new(services);
         builder.AddInletSilo();
-        Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
 
         // Act
-        builder.ScanProjectionAssemblies(testAssembly);
+        builder.RegisterProjectionBrookMappings(registry =>
+        {
+            registry.Register("test-projection", "TEST.MODULE.PROJECTION");
+        });
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
 
-        // Assert - Should have the scanned projections, not the empty default
+        // Assert - Should have the configured mappings, not the empty default
         string[] paths = registry.GetAllPaths().ToArray();
-        Assert.Contains("/api/path-only-projection", paths);
+        Assert.Single(paths);
+        Assert.Equal("test-projection", paths[0]);
+        Assert.Equal("TEST.MODULE.PROJECTION", registry.GetBrookName("test-projection"));
     }
 
     /// <summary>
-    ///     ScanProjectionAssemblies should return the same services collection for chaining.
+    ///     RegisterProjectionBrookMappings returns the same builder for chaining.
     /// </summary>
     [Fact]
-    public void ScanProjectionAssembliesReturnsSameCollection()
+    public void RegisterProjectionBrookMappingsReturnsSameBuilder()
     {
         // Arrange
         ServiceCollection services = [];
         TestMississippiSiloBuilder builder = new(services);
 
         // Act
-        IMississippiSiloBuilder result = builder.ScanProjectionAssemblies();
+        IMississippiSiloBuilder result = builder.RegisterProjectionBrookMappings(_ => { });
 
         // Assert
         Assert.Same(builder, result);
     }
 
     /// <summary>
-    ///     ScanProjectionAssemblies should throw when assemblies is null.
+    ///     RegisterProjectionBrookMappings throws when builder is null.
     /// </summary>
     [Fact]
-    public void ScanProjectionAssembliesThrowsWhenAssembliesNull()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        TestMississippiSiloBuilder builder = new(services);
-
-        // Act & Assert
-        ArgumentNullException exception =
-            Assert.Throws<ArgumentNullException>(() => builder.ScanProjectionAssemblies(null!));
-        Assert.Equal("assemblies", exception.ParamName);
-    }
-
-    /// <summary>
-    ///     ScanProjectionAssemblies should throw when services is null.
-    /// </summary>
-    [Fact]
-    public void ScanProjectionAssembliesThrowsWhenServicesNull()
+    public void RegisterProjectionBrookMappingsThrowsWhenBuilderNull()
     {
         // Arrange
         IMississippiSiloBuilder? builder = null;
 
         // Act & Assert
         ArgumentNullException exception =
-            Assert.Throws<ArgumentNullException>(() => builder!.ScanProjectionAssemblies());
+            Assert.Throws<ArgumentNullException>(() => builder!.RegisterProjectionBrookMappings(_ => { }));
         Assert.Equal("builder", exception.ParamName);
     }
 
     /// <summary>
-    ///     ScanProjectionAssemblies uses BrookNameAttribute value when present.
+    ///     RegisterProjectionBrookMappings throws when configure is null.
     /// </summary>
     [Fact]
-    public void ScanProjectionAssembliesUsesBrookNameAttributeWhenPresent()
+    public void RegisterProjectionBrookMappingsThrowsWhenConfigureNull()
     {
         // Arrange
         ServiceCollection services = [];
         TestMississippiSiloBuilder builder = new(services);
-        Assembly testAssembly = typeof(BrookNamedProjection).Assembly;
 
-        // Act
-        builder.ScanProjectionAssemblies(testAssembly);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
-
-        // Assert
-        string? brookName = registry.GetBrookName("/api/brook-named-projection");
-        Assert.Equal("TEST.MODULE.BROOKNAME", brookName);
+        // Act & Assert
+        ArgumentNullException exception =
+            Assert.Throws<ArgumentNullException>(() => builder.RegisterProjectionBrookMappings(null!));
+        Assert.Equal("configure", exception.ParamName);
     }
 
     /// <summary>
-    ///     ScanProjectionAssemblies uses path as brook name when BrookNameAttribute is absent.
+    ///     RegisterProjectionBrookMappings with empty configure creates empty registry.
     /// </summary>
     [Fact]
-    public void ScanProjectionAssembliesUsesPathAsBrookNameByDefault()
+    public void RegisterProjectionBrookMappingsWithEmptyConfigureCreatesEmptyRegistry()
     {
         // Arrange
         ServiceCollection services = [];
         TestMississippiSiloBuilder builder = new(services);
-        Assembly testAssembly = typeof(PathOnlyProjection).Assembly;
-
-        // Act
-        builder.ScanProjectionAssemblies(testAssembly);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
-
-        // Assert
-        string? brookName = registry.GetBrookName("/api/path-only-projection");
-        Assert.Equal("/api/path-only-projection", brookName);
-    }
-
-    /// <summary>
-    ///     ScanProjectionAssemblies with no assemblies creates empty registry.
-    /// </summary>
-    [Fact]
-    public void ScanProjectionAssembliesWithNoAssembliesCreatesEmptyRegistry()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        TestMississippiSiloBuilder builder = new(services);
-        builder.ScanProjectionAssemblies();
+        builder.RegisterProjectionBrookMappings(_ => { });
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
