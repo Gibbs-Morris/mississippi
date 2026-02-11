@@ -43,13 +43,18 @@ public static class InletServerRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
+        InletServerOptions inletOptions = new();
+        configureOptions?.Invoke(inletOptions);
         builder.ConfigureServices(services =>
         {
             services.AddSignalR();
             services.Configure(configureOptions ?? (_ => { }));
         });
         builder.AddInletSilo();
-        builder.AddAqueduct().AddBackplane<InletHub>();
+        builder.AddAqueduct()
+            .ConfigureAqueductOptions(aqueductOptions =>
+                aqueductOptions.StreamProviderName = inletOptions.StreamProviderName)
+            .AddBackplane<InletHub>();
         return builder;
     }
 

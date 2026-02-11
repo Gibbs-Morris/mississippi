@@ -58,8 +58,5 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
                 return registry;
             });
         });
-
-        // Required for memory streams pub/sub validation
-        siloBuilder.AddMemoryGrainStorage("PubSubStore");
     }
 }

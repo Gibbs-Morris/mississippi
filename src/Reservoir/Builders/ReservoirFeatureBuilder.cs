@@ -7,7 +7,6 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Builders;
 using Mississippi.Reservoir.Abstractions.State;
-using Mississippi.Reservoir.State;
 
 
 namespace Mississippi.Reservoir.Builders;
@@ -19,8 +18,6 @@ namespace Mississippi.Reservoir.Builders;
 public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<TState>
     where TState : class, IFeatureState, new()
 {
-    private readonly IReservoirBuilder parent;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReservoirFeatureBuilder{TState}" /> class.
     /// </summary>
@@ -30,15 +27,16 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
     )
     {
         ArgumentNullException.ThrowIfNull(parent);
-        this.parent = parent;
-        AddFeatureState();
+        Parent = parent;
     }
+
+    private IReservoirBuilder Parent { get; }
 
     /// <inheritdoc />
     public IReservoirFeatureBuilder<TState> AddActionEffect<TEffect>()
         where TEffect : class, IActionEffect<TState>
     {
-        parent.ConfigureServices(services => services.AddTransient<IActionEffect<TState>, TEffect>());
+        Parent.ConfigureServices(services => services.AddTransient<IActionEffect<TState>, TEffect>());
         AddRootActionEffect();
         return this;
     }
@@ -50,7 +48,7 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
         where TAction : IAction
     {
         ArgumentNullException.ThrowIfNull(reduce);
-        parent.ConfigureServices(services =>
+        Parent.ConfigureServices(services =>
         {
             services.AddTransient<DelegateActionReducer<TAction, TState>>(_ => new(reduce));
             services.AddTransient<IActionReducer<TState>>(sp =>
@@ -67,7 +65,7 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
         where TAction : IAction
         where TReducer : class, IActionReducer<TAction, TState>
     {
-        parent.ConfigureServices(services =>
+        Parent.ConfigureServices(services =>
         {
             services.AddTransient<IActionReducer<TState>, TReducer>();
             services.AddTransient<IActionReducer<TAction, TState>, TReducer>();
@@ -76,22 +74,14 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
         return this;
     }
 
-    private void AddFeatureState()
-    {
-        parent.ConfigureServices(services => services.TryAddEnumerable(
-            ServiceDescriptor.Scoped<IFeatureStateRegistration, FeatureStateRegistration<TState>>(sp => new(
-                sp.GetService<IRootReducer<TState>>(),
-                sp.GetService<IRootActionEffect<TState>>()))));
-    }
-
     private void AddRootActionEffect()
     {
-        parent.ConfigureServices(services =>
+        Parent.ConfigureServices(services =>
             services.TryAddTransient<IRootActionEffect<TState>, RootActionEffect<TState>>());
     }
 
     private void AddRootReducer()
     {
-        parent.ConfigureServices(services => services.TryAddTransient<IRootReducer<TState>, RootReducer<TState>>());
+        Parent.ConfigureServices(services => services.TryAddTransient<IRootReducer<TState>, RootReducer<TState>>());
     }
 }
