@@ -17,14 +17,14 @@ internal sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
     /// </summary>
     /// <param name="services">The service collection.</param>
     public TestMississippiSiloBuilder(
-        ServiceCollection services
+        IServiceCollection services
     )
     {
         ArgumentNullException.ThrowIfNull(services);
         Services = services;
     }
 
-    private ServiceCollection Services { get; }
+    private IServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiSiloBuilder ConfigureOptions<TOptions>(

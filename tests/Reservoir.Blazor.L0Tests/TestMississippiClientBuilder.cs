@@ -12,19 +12,19 @@ namespace Mississippi.Reservoir.Blazor.L0Tests;
 /// </summary>
 internal sealed class TestMississippiClientBuilder : IMississippiClientBuilder
 {
+    private IServiceCollection Services { get; }
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="TestMississippiClientBuilder" /> class.
     /// </summary>
     /// <param name="services">The service collection.</param>
     public TestMississippiClientBuilder(
-        ServiceCollection services
+        IServiceCollection services
     )
     {
         ArgumentNullException.ThrowIfNull(services);
         Services = services;
     }
-
-    private ServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiClientBuilder ConfigureOptions<TOptions>(

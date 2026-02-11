@@ -12,19 +12,19 @@ namespace Mississippi.Inlet.Silo.L0Tests;
 /// </summary>
 internal sealed class TestMississippiSiloBuilder : IMississippiSiloBuilder
 {
+    private IServiceCollection Services { get; }
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="TestMississippiSiloBuilder" /> class.
     /// </summary>
     /// <param name="services">The service collection.</param>
     public TestMississippiSiloBuilder(
-        ServiceCollection services
+        IServiceCollection services
     )
     {
         ArgumentNullException.ThrowIfNull(services);
         Services = services;
     }
-
-    private ServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IMississippiSiloBuilder ConfigureOptions<TOptions>(
