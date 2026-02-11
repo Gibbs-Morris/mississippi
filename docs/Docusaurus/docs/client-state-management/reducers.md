@@ -54,7 +54,7 @@ reservoir.AddFeature<EntitySelectionState>(featureBuilder =>
 This approach uses [`DelegateActionReducer<TAction, TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/DelegateActionReducer.cs) internally.
 
 This option registers a delegate-based reducer for the action/state pair.
-([ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L53-L76))
+([ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L45-L74))
 
 ### Option 2: Class-Based Reducers
 
@@ -76,7 +76,7 @@ reservoir.AddFeature<MyState>(featureBuilder =>
 ```
 
 This option registers the reducer class as a transient service and composes it into the root reducer.
-([ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L53-L76))
+([ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L45-L74))
 
 ## Organizing Reducers
 
@@ -175,8 +175,8 @@ public static MyState MaybeUpdate(MyState state, SomeAction action)
 
 You don't need to register a root reducer separately when using `AddReducer` on the feature builder.
 
-([ReservoirBuilder.AddFeature](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L60-L65),
-[ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L53-L76))
+([ReservoirBuilder.AddFeature](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L35-L44),
+[ReservoirFeatureBuilder.AddReducer](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L45-L74))
 
 ## Summary
 

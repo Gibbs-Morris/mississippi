@@ -169,7 +169,7 @@ reservoir.AddFeature<MyFeatureState>(featureBuilder =>
 });
 ```
 
-([ReservoirFeatureBuilder.AddActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L44-L49))
+([ReservoirFeatureBuilder.AddActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirFeatureBuilder.cs#L36-L42))
 
 This method:
 

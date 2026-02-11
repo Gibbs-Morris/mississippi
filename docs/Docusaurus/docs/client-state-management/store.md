@@ -80,7 +80,7 @@ ConfigureServices(services =>
 See [Builder Pattern](../architecture/builder-pattern.md) for details on how builders compose and delegate registration.
 
 ([ReservoirBuilderExtensions.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirBuilderExtensions.cs#L20-L25),
-[ReservoirBuilder.AddStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L49-L67))
+[ReservoirBuilder.AddStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L85-L95))
 
 :::note Scoped Lifetime
 The Store is registered as **scoped**. Its lifetime follows the dependency-injection scope configured by the host.

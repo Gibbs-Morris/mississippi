@@ -145,10 +145,10 @@ IReservoirBuilder reservoir = mississippi.AddReservoir();
 reservoir.AddMiddleware<MyMiddleware>();
 ```
 
-([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L54-L58))
+([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L47-L52))
 
 Middleware is registered as transient and resolved when the store is created.
-([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L54-L58),
+([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L47-L52),
 [Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L50-L90))
 
 ### Runtime Registration
@@ -224,7 +224,7 @@ public void RegisterMiddlewareAddsToDispatchPipeline()
 | **Transient lifetime** | Middleware is registered as transient and resolved when the store is created |
 | **Dispatch order** | Runs before reducers and effects in the dispatch pipeline |
 
-([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L54-L58),
+([ReservoirBuilder.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Builders/ReservoirBuilder.cs#L47-L52),
 [Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L213-L231))
 
 ## Next Steps
