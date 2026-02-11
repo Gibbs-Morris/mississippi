@@ -14,8 +14,6 @@ namespace Mississippi.Sdk.Silo.Builders;
 /// </summary>
 public sealed class MississippiSiloBuilder : IMississippiSiloBuilder
 {
-    private ISiloBuilder SiloBuilder { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="MississippiSiloBuilder" /> class.
     /// </summary>
@@ -27,6 +25,8 @@ public sealed class MississippiSiloBuilder : IMississippiSiloBuilder
         ArgumentNullException.ThrowIfNull(siloBuilder);
         SiloBuilder = siloBuilder;
     }
+
+    private ISiloBuilder SiloBuilder { get; }
 
     /// <inheritdoc />
     public IMississippiSiloBuilder ConfigureOptions<TOptions>(

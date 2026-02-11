@@ -18,8 +18,6 @@ namespace Mississippi.Reservoir.Builders;
 public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<TState>
     where TState : class, IFeatureState, new()
 {
-    private IReservoirBuilder Parent { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReservoirFeatureBuilder{TState}" /> class.
     /// </summary>
@@ -31,6 +29,8 @@ public sealed class ReservoirFeatureBuilder<TState> : IReservoirFeatureBuilder<T
         ArgumentNullException.ThrowIfNull(parent);
         Parent = parent;
     }
+
+    private IReservoirBuilder Parent { get; }
 
     /// <inheritdoc />
     public IReservoirFeatureBuilder<TState> AddActionEffect<TEffect>()

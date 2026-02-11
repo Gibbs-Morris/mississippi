@@ -48,7 +48,10 @@ public static class InletServerRegistrations
         builder.ConfigureServices(services =>
         {
             services.AddSignalR();
-            services.Configure(configureOptions ?? (_ => { }));
+            if (configureOptions is not null)
+            {
+                services.Configure(configureOptions);
+            }
         });
         builder.AddInletSilo();
         builder.AddAqueduct()

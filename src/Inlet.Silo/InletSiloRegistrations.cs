@@ -88,24 +88,7 @@ public static class InletSiloRegistrations
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(assemblies);
-        ProjectionBrookRegistry registry = new();
-        foreach (Assembly assembly in assemblies)
-        {
-            foreach (Type type in assembly.GetExportedTypes())
-            {
-                ProjectionPathAttribute? pathAttr = type.GetCustomAttribute<ProjectionPathAttribute>();
-                if (pathAttr is null)
-                {
-                    continue;
-                }
-
-                // Brook name from BrookNameAttribute, or default to path
-                BrookNameAttribute? brookAttr = type.GetCustomAttribute<BrookNameAttribute>();
-                string brookName = brookAttr?.BrookName ?? pathAttr.Path;
-                registry.Register(pathAttr.Path, brookName);
-            }
-        }
-
+        ProjectionBrookRegistry registry = BuildProjectionBrookRegistry(assemblies);
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IProjectionBrookRegistry>();
@@ -127,6 +110,19 @@ public static class InletSiloRegistrations
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(assemblies);
+        ProjectionBrookRegistry registry = BuildProjectionBrookRegistry(assemblies);
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IProjectionBrookRegistry>();
+            services.AddSingleton<IProjectionBrookRegistry>(registry);
+        });
+        return builder;
+    }
+
+    private static ProjectionBrookRegistry BuildProjectionBrookRegistry(
+        Assembly[] assemblies
+    )
+    {
         ProjectionBrookRegistry registry = new();
         foreach (Assembly assembly in assemblies)
         {
@@ -145,11 +141,6 @@ public static class InletSiloRegistrations
             }
         }
 
-        builder.ConfigureServices(services =>
-        {
-            services.RemoveAll<IProjectionBrookRegistry>();
-            services.AddSingleton<IProjectionBrookRegistry>(registry);
-        });
-        return builder;
+        return registry;
     }
 }
