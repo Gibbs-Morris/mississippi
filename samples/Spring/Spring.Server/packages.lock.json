@@ -657,7 +657,10 @@
         }
       },
       "Mississippi.Reservoir.Abstractions": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Abstractions": "[1.0.0, )"
+        }
       },
       "Mississippi.Reservoir.Blazor": {
         "type": "Project",

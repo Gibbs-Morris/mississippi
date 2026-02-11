@@ -75,7 +75,7 @@ mississippi.AddAggregateSupport();
 mississippi.AddUxProjections();
 
 // Add Inlet Server services for real-time projection updates
-mississippi.AddInletServer();
+mississippi.AddInletServer(options => options.StreamProviderName = "StreamProvider");
 mississippi.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add aggregate DTO to command mappers
