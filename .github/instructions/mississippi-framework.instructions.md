@@ -81,7 +81,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - UX screens **SHOULD** subscribe to many small projections rather than one large monolithic projection. Why: Minimizes unnecessary updates when data changes.
 - Projections **MUST** be subscribed and unsubscribed using the Inlet subscription APIs. Why: Manages SignalR connections consistently.
 - Design projections so each UI surface subscribes only to what it needs, minimizing updates; a single event may legitimately update multiple projections. Why: Improves performance and reduces re-renders while allowing the 1-to-many brook-to-projection pattern.
-- Client-side projection DTOs **MUST** use `[ProjectionPath]` matching the server projection's path. Why: Enables Inlet to route subscription requests correctly.
+- Client-side projection DTOs are source-generated with paths auto-derived from the projection type name or set explicitly via `[GenerateProjectionEndpoints(Path = "...")]`. Why: Enables Inlet to route subscription requests correctly without manual duplication.
 
 ### Domain Modeling (Aggregates)
 
@@ -100,7 +100,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
 - Multiple projections **MAY** be defined over the same brook (event stream). Why: Enables different read-optimized views of the same data.
 - Projections **SHOULD** be small and highly componentized. Why: Enables reuse across different UX contexts.
-- Projections **MUST** use `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Projections exposed to clients **MUST** also use `[ProjectionPath]` and `[GenerateProjectionEndpoints]` (see Projection Subscriptions and Framework Attributes Reference). Why: Core attributes enable event sourcing; client-facing attributes are conditional on exposure.
+- Projections **MUST** use `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Projections exposed to clients **MUST** also use `[GenerateProjectionEndpoints]` (see Projection Subscriptions and Framework Attributes Reference); the optional `Path` property sets an explicit route—when omitted the path auto-derives from the type name (strips `Projection` suffix, converts to kebab-case). Why: Core attributes enable event sourcing; client-facing attributes are conditional on exposure.
 - Projection reducers **MUST** inherit from `EventReducerBase<TEvent, TProjection>` and return new instances (using `with` expressions or constructors). Why: Enforces immutability.
 
 ### Brooks (Event Streams)
@@ -163,9 +163,8 @@ Contributors **SHOULD** review all custom attributes under `src/` (particularly 
 | `[SnapshotStorageName]` | Stable snapshot storage identity with versioning `(APP, MODULE, NAME, version)` | Required on aggregates and projections to persist state | Snapshot naming and storage; version enables schema evolution; names are immutable once deployed |
 | `[EventStorageName]` | Stable event storage identity with versioning `(APP, MODULE, NAME, version)` | Required on all event types | Event versioning; enables safe refactoring without breaking stored events; names are immutable once deployed |
 | `[GenerateAggregateEndpoints]` | Generates silo registration, server controller, and client feature code | Required on aggregate records exposed via API | Endpoint generation; creates `Add{Aggregate}()` extension methods |
-| `[GenerateProjectionEndpoints]` | Generates read-only GET endpoint and SignalR subscription code | Required on projections exposed to clients | Endpoint generation; creates projection controller and client subscription |
+| `[GenerateProjectionEndpoints]` | Generates read-only GET endpoint, SignalR subscription, and client-side DTO code | Required on projections exposed to clients | Endpoint generation; optional `Path` property sets the route (`api/projections/{Path}/{entityId}`); auto-derived from type name when omitted (strips `Projection`, kebab-case) |
 | `[GenerateCommand]` | Exposes command as HTTP POST endpoint with generated client action | Required on commands that should be callable from UX | Command exposure; `Route` property controls endpoint path |
-| `[ProjectionPath]` | Defines subscription and API path for projections | Required on server projections and matching client DTOs | Subscription routing; path must match between server and client |
 | `[GenerateSerializer]` | Orleans serialization support | Required on all types that cross grain boundaries | Orleans serialization; requires pairing with `[Id(n)]` on properties—IDs start at 0 and must be unique per inheritance level |
 | `[Alias]` | Stable Orleans type identity that survives refactoring | Required on all serialized types | Type versioning; use fully qualified name format |
 
@@ -212,7 +211,7 @@ Contributors only write code in the **Domain project**; client-side actions, eff
 3. Create events with `[EventStorageName]`
 4. Implement command handlers extending `CommandHandlerBase`
 5. Implement aggregate reducers extending `EventReducerBase`
-6. Define projections with `[ProjectionPath]` and `[GenerateProjectionEndpoints]` (if exposed to clients)
+6. Define projections with `[GenerateProjectionEndpoints]` (if exposed to clients); optionally set `Path = "..."` for explicit paths
 7. Implement projection reducers
 8. **Build** — source generators create silo registrations, server controllers, and client features
 9. Client subscribes via Inlet; dispatches generated actions to trigger commands
