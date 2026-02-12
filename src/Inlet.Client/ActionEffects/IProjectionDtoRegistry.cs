@@ -1,7 +1,4 @@
 using System;
-using System.Reflection;
-
-using Mississippi.Inlet.Abstractions;
 
 
 namespace Mississippi.Inlet.Client.ActionEffects;
@@ -11,10 +8,9 @@ namespace Mississippi.Inlet.Client.ActionEffects;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This registry is populated by scanning assemblies for types decorated with
-///         <see cref="ProjectionPathAttribute" />. The <see cref="AutoProjectionFetcher" />
-///         uses this registry to determine which DTO type to deserialize based on
-///         the path received in SignalR notifications.
+///         This registry is populated at startup by generated registration code.
+///         The <see cref="AutoProjectionFetcher" /> uses this registry to determine
+///         which DTO type to deserialize based on the path received in SignalR notifications.
 ///     </para>
 /// </remarks>
 public interface IProjectionDtoRegistry
@@ -45,15 +41,6 @@ public interface IProjectionDtoRegistry
     void Register(
         string path,
         Type dtoType
-    );
-
-    /// <summary>
-    ///     Scans the specified assemblies for types decorated with
-    ///     <see cref="ProjectionPathAttribute" /> and registers them.
-    /// </summary>
-    /// <param name="assemblies">The assemblies to scan.</param>
-    void ScanAssemblies(
-        params Assembly[] assemblies
     );
 
     /// <summary>

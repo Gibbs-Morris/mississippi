@@ -9,7 +9,6 @@
         <ProjectReference Include="..\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
         <ProjectReference Include="..\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
         <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
-        <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>

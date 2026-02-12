@@ -27,11 +27,15 @@ public sealed class ProjectionModel
     ///     Initializes a new instance of the <see cref="ProjectionModel" /> class.
     /// </summary>
     /// <param name="typeSymbol">The type symbol representing the projection.</param>
-    /// <param name="projectionPath">The projection path from [ProjectionPath] attribute.</param>
+    /// <param name="projectionPath">The projection path from [GenerateProjectionEndpoints] attribute.</param>
+    /// <param name="isExplicitPath">
+    ///     Whether the path was explicitly set on the attribute rather than auto-derived.
+    /// </param>
     /// <param name="dtoSuffix">The suffix for generated DTOs.</param>
     public ProjectionModel(
         INamedTypeSymbol typeSymbol,
         string projectionPath,
+        bool isExplicitPath = true,
         string dtoSuffix = "Dto"
     )
     {
@@ -49,6 +53,7 @@ public sealed class ProjectionModel
         FullTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         Namespace = TypeAnalyzer.GetFullNamespace(typeSymbol);
         ProjectionPath = projectionPath;
+        IsExplicitPath = isExplicitPath;
         DtoTypeName = TypeAnalyzer.GetDtoTypeName(typeSymbol, dtoSuffix);
 
         // Derive projection name without "Projection" suffix
@@ -99,6 +104,16 @@ public sealed class ProjectionModel
     public bool HasMappedProperties => Properties.Any(p => p.RequiresMapper);
 
     /// <summary>
+    ///     Gets a value indicating whether the path was explicitly set on the attribute.
+    /// </summary>
+    /// <remarks>
+    ///     When <see langword="false" />, the path was auto-derived from the type name.
+    ///     This is used by <c>RequireExplicitProjectionPaths</c> enforcement to fail at startup
+    ///     when all paths must be explicitly declared.
+    /// </remarks>
+    public bool IsExplicitPath { get; }
+
+    /// <summary>
     ///     Gets the namespace of the projection.
     /// </summary>
     public string Namespace { get; }
@@ -114,7 +129,7 @@ public sealed class ProjectionModel
     public string ProjectionName { get; }
 
     /// <summary>
-    ///     Gets the projection path from [ProjectionPath] attribute.
+    ///     Gets the projection path from [GenerateProjectionEndpoints] attribute.
     /// </summary>
     public string ProjectionPath { get; }
 

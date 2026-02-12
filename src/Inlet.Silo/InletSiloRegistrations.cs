@@ -29,7 +29,7 @@ public static class InletSiloRegistrations
     ///     <para>
     ///         This method registers the <see cref="IProjectionBrookRegistry" /> as a singleton.
     ///         The registry is populated automatically by source-generated domain registration code
-    ///         via <see cref="RegisterProjectionBrookMappings(IMississippiSiloBuilder, Action{IProjectionBrookRegistry})" />.
+    ///         via <see cref="RegisterProjectionBrookMappings(IMississippiSiloBuilder, Action{IProjectionBrookRegistry}, bool)" />.
     ///     </para>
     /// </remarks>
     public static IMississippiSiloBuilder AddInletSilo(
@@ -64,6 +64,10 @@ public static class InletSiloRegistrations
     /// <param name="configure">
     ///     An action that registers path-to-brook-name mappings on the registry.
     /// </param>
+    /// <param name="requireExplicitPaths">
+    ///     When <c>true</c>, validates that all projection paths were explicitly defined
+    ///     via <c>[GenerateProjectionEndpoints(Path = "...")]</c> and throws if any were auto-derived.
+    /// </param>
     /// <returns>The builder for chaining.</returns>
     /// <remarks>
     ///     <para>
@@ -74,13 +78,19 @@ public static class InletSiloRegistrations
     /// </remarks>
     public static IMississippiSiloBuilder RegisterProjectionBrookMappings(
         this IMississippiSiloBuilder builder,
-        Action<IProjectionBrookRegistry> configure
+        Action<IProjectionBrookRegistry> configure,
+        bool requireExplicitPaths = false
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
         ProjectionBrookRegistry registry = new();
         configure(registry);
+        if (requireExplicitPaths)
+        {
+            registry.ValidateExplicitPaths();
+        }
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IProjectionBrookRegistry>();
@@ -96,16 +106,26 @@ public static class InletSiloRegistrations
     /// <param name="configure">
     ///     An action that registers path-to-brook-name mappings on the registry.
     /// </param>
+    /// <param name="requireExplicitPaths">
+    ///     When <c>true</c>, validates that all projection paths were explicitly defined
+    ///     via <c>[GenerateProjectionEndpoints(Path = "...")]</c> and throws if any were auto-derived.
+    /// </param>
     /// <returns>The builder for chaining.</returns>
     public static IMississippiServerBuilder RegisterProjectionBrookMappings(
         this IMississippiServerBuilder builder,
-        Action<IProjectionBrookRegistry> configure
+        Action<IProjectionBrookRegistry> configure,
+        bool requireExplicitPaths = false
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
         ProjectionBrookRegistry registry = new();
         configure(registry);
+        if (requireExplicitPaths)
+        {
+            registry.ValidateExplicitPaths();
+        }
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IProjectionBrookRegistry>();

@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
 		<ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
-		<ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -20,7 +20,7 @@ namespace Mississippi.Inlet.Client.Generators;
 ///     <para>
 ///         This generator scans referenced assemblies (including Domain projects referenced
 ///         with ExcludeAssets="runtime") to find projection types and generates matching
-///         client-side DTOs with [ProjectionPath] attributes.
+///         client-side DTOs.
 ///     </para>
 ///     <para>
 ///         The ExcludeAssets="runtime" pattern allows the generator to see Domain types at
@@ -33,22 +33,19 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
     private const string GenerateProjectionEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
-    private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
-
     /// <summary>
     ///     Recursively finds projections in a namespace.
     /// </summary>
     private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol generateAttrSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol,
         List<ProjectionInfo> projections
     )
     {
         // Check types in this namespace
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            ProjectionInfo? info = TryGetProjectionInfo(typeSymbol, generateAttrSymbol, projectionPathAttrSymbol);
+            ProjectionInfo? info = TryGetProjectionInfo(typeSymbol, generateAttrSymbol);
             if (info is not null)
             {
                 projections.Add(info);
@@ -58,7 +55,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindProjectionsInNamespace(childNs, generateAttrSymbol, projectionPathAttrSymbol, projections);
+            FindProjectionsInNamespace(childNs, generateAttrSymbol, projections);
         }
     }
 
@@ -84,18 +81,15 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Collections.Immutable;");
         sb.AppendLine();
-        sb.AppendLine("using Mississippi.Inlet.Abstractions;");
-        sb.AppendLine();
 
         // Namespace
         sb.AppendLine($"namespace {clientNamespace};");
         sb.AppendLine();
 
-        // DTO record with ProjectionPath attribute
+        // DTO record
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"///     Client-side DTO for <see cref=\"{projection.Namespace}.{projection.TypeName}\"/>.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine($"[ProjectionPath(\"{projection.Path}\")]");
         sb.Append($"public sealed record {dtoName}(");
 
         // Generate constructor parameters from properties
@@ -307,11 +301,10 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
     {
         List<ProjectionInfo> projections = new();
 
-        // Get the attribute symbols
+        // Get the attribute symbol
         INamedTypeSymbol? generateAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
-        INamedTypeSymbol? projectionPathAttrSymbol = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
-        if (generateAttrSymbol is null || projectionPathAttrSymbol is null)
+        if (generateAttrSymbol is null)
         {
             return projections;
         }
@@ -322,7 +315,6 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 referencedAssembly.GlobalNamespace,
                 generateAttrSymbol,
-                projectionPathAttrSymbol,
                 projections);
         }
 
@@ -354,36 +346,29 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
     /// </summary>
     private static ProjectionInfo? TryGetProjectionInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol generateAttrSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol
+        INamedTypeSymbol generateAttrSymbol
     )
     {
         // Check for [GenerateProjectionEndpoints] attribute
-        bool hasGenerateAttribute = typeSymbol.GetAttributes()
-            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
-        if (!hasGenerateAttribute)
-        {
-            return null;
-        }
-
-        // Check for [ProjectionPath] attribute and get path
-        AttributeData? projectionPathAttr = typeSymbol.GetAttributes()
+        AttributeData? genAttr = typeSymbol.GetAttributes()
             .FirstOrDefault(attr =>
-                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol));
-        if (projectionPathAttr is null)
+                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
+        if (genAttr is null)
         {
             return null;
         }
 
-        // Get the path from constructor argument
-        string? projectionPath = projectionPathAttr.ConstructorArguments.FirstOrDefault().Value?.ToString();
-        if (string.IsNullOrEmpty(projectionPath))
+        // Read Path from [GenerateProjectionEndpoints(Path = "...")] named argument
+        string? projectionPath = genAttr.NamedArguments
+            .FirstOrDefault(kvp => kvp.Key == "Path").Value.Value?.ToString();
+        bool isExplicitPath = !string.IsNullOrEmpty(projectionPath);
+        if (!isExplicitPath)
         {
-            return null;
+            projectionPath = NamingConventions.GetRoutePrefix(typeSymbol.Name);
         }
 
         // Build projection model
-        ProjectionModel model = new(typeSymbol, projectionPath!);
+        ProjectionModel model = new(typeSymbol, projectionPath!, isExplicitPath);
         return new(typeSymbol.ContainingNamespace.ToDisplayString(), typeSymbol.Name, projectionPath!, model);
     }
 

@@ -12,7 +12,7 @@ using Mississippi.Reservoir.Blazor.BuiltIn;
 using Mississippi.Sdk.Client;
 
 using Spring.Client;
-using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features;
 using Spring.Client.Features.DemoAccounts;
 using Spring.Client.Features.DualEntitySelection;
 using Spring.Client.Registrations;
@@ -52,8 +52,8 @@ reservoir.AddReservoirDevTools(options =>
 });
 
 // Configure Inlet with SignalR effect for real-time projection updates
-// ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
+// RegisterProjectionDtos uses generated registration code for path-to-type mappings
 reservoir.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
-    .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+    .RegisterProjectionDtos(ProjectionsFeatureRegistration.RegisterProjectionDtoMappings));
 await builder.Build().RunAsync();

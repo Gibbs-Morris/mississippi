@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Emit;
+using Mississippi.Inlet.Generators.Core.Naming;
 
 
 namespace Mississippi.Inlet.Server.Generators;
@@ -42,8 +43,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private const string MappersNamespaceSuffix = ".Mappers";
 
     private const string MappingNamespace = "Mississippi.Common.Abstractions.Mapping";
-
-    private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
     private const string ProjectionSuffix = "Projection";
 
@@ -81,14 +80,13 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol generateAttrSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol,
         List<ProjectionInfo> projections
     )
     {
         // Check types in this namespace
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            ProjectionInfo? info = TryGetProjectionInfo(typeSymbol, generateAttrSymbol, projectionPathAttrSymbol);
+            ProjectionInfo? info = TryGetProjectionInfo(typeSymbol, generateAttrSymbol);
             if (info is not null)
             {
                 projections.Add(info);
@@ -98,7 +96,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindProjectionsInNamespace(childNs, generateAttrSymbol, projectionPathAttrSymbol, projections);
+            FindProjectionsInNamespace(childNs, generateAttrSymbol, projections);
         }
     }
 
@@ -744,11 +742,10 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     {
         List<ProjectionInfo> projections = new();
 
-        // Get the attribute symbols
+        // Get the attribute symbol
         INamedTypeSymbol? generateAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
-        INamedTypeSymbol? projectionPathAttrSymbol = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
-        if (generateAttrSymbol is null || projectionPathAttrSymbol is null)
+        if (generateAttrSymbol is null)
         {
             return projections;
         }
@@ -759,7 +756,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 referencedAssembly.GlobalNamespace,
                 generateAttrSymbol,
-                projectionPathAttrSymbol,
                 projections);
         }
 
@@ -817,36 +813,28 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     /// </summary>
     private static ProjectionInfo? TryGetProjectionInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol generateAttrSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol
+        INamedTypeSymbol generateAttrSymbol
     )
     {
         // Check for [GenerateProjectionEndpoints] attribute
-        bool hasGenerateAttribute = typeSymbol.GetAttributes()
-            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
-        if (!hasGenerateAttribute)
+        AttributeData? generateAttr = typeSymbol.GetAttributes()
+            .FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
+        if (generateAttr is null)
         {
             return null;
         }
 
-        // Check for [ProjectionPath] attribute and get path
-        AttributeData? projectionPathAttr = typeSymbol.GetAttributes()
-            .FirstOrDefault(attr =>
-                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol));
-        if (projectionPathAttr is null)
+        // Get Path from the named argument, auto-derive from type name if not set
+        string? projectionPath = generateAttr.NamedArguments
+            .FirstOrDefault(kvp => kvp.Key == "Path").Value.Value?.ToString();
+        bool isExplicitPath = !string.IsNullOrEmpty(projectionPath);
+        if (!isExplicitPath)
         {
-            return null;
-        }
-
-        // Get the path from constructor argument
-        string? projectionPath = projectionPathAttr.ConstructorArguments.FirstOrDefault().Value?.ToString();
-        if (string.IsNullOrEmpty(projectionPath))
-        {
-            return null;
+            projectionPath = NamingConventions.GetRoutePrefix(typeSymbol.Name);
         }
 
         // Create projection model
-        ProjectionModel model = new(typeSymbol, projectionPath!);
+        ProjectionModel model = new(typeSymbol, projectionPath!, isExplicitPath);
 
         // Determine output namespace (replace Domain with Server, add Controllers.Projections)
         string outputNamespace = DeriveOutputNamespace(model.Namespace);

@@ -2,7 +2,6 @@ using System;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
 using Mississippi.EventSourcing.Sagas.Abstractions;
-using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 
 using Orleans;
@@ -13,10 +12,9 @@ namespace Spring.Domain.Projections.MoneyTransferStatus;
 /// <summary>
 ///     Read-optimized projection for tracking money transfer saga status.
 /// </summary>
-[ProjectionPath("money-transfer-status")]
 [BrookName("SPRING", "BANKING", "TRANSFER")]
 [SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATUS")]
-[GenerateProjectionEndpoints]
+[GenerateProjectionEndpoints(Path = "money-transfer-status")]
 [GenerateSerializer]
 [GenerateSagaStatusReducers]
 [Alias("Spring.Domain.Projections.MoneyTransferStatus.MoneyTransferStatusProjection")]

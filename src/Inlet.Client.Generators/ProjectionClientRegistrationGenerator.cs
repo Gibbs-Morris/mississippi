@@ -13,51 +13,54 @@ using Mississippi.Inlet.Generators.Core.Naming;
 namespace Mississippi.Inlet.Client.Generators;
 
 /// <summary>
-///     Generates client-side reducer registrations for projections marked with [ProjectionPath].
+///     Generates client-side reducer registrations and DTO registry mappings for projections
+///     marked with [GenerateProjectionEndpoints].
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         This generator produces a static registration class that wires up reducers
-///         for all projection action types (Loading, Loaded, Updated, Error, ConnectionChanged).
+///         for all projection action types (Loading, Loaded, Updated, Error, ConnectionChanged)
+///         and a DTO registry mapping method for path-to-type resolution.
 ///     </para>
 ///     <para>
-///         Example: For a projection DTO "BankAccountOverviewDto" with [ProjectionPath],
-///         generates reducer registrations for ProjectionLoadingAction&lt;BankAccountOverviewDto&gt;, etc.
+///         Example: For a projection "BankAccountBalanceProjection" with
+///         [GenerateProjectionEndpoints(Path = "bank-account-balance")],
+///         generates reducer registrations for ProjectionLoadingAction&lt;BankAccountBalanceDto&gt;,
+///         etc., and a registry mapping from "bank-account-balance" to typeof(BankAccountBalanceDto).
 ///     </para>
 /// </remarks>
 [Generator(LanguageNames.CSharp)]
 public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerator
 {
-    private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
+    private const string GenerateProjectionEndpointsAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
     /// <summary>
-    ///     Recursively finds projection DTOs in a namespace.
+    ///     Recursively finds projections in a namespace.
     /// </summary>
-    private static void FindProjectionDtosInNamespace(
+    private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol,
+        INamedTypeSymbol generateAttrSymbol,
         List<ProjectionDtoInfo> projectionDtos
     )
     {
-        // Check types in this namespace
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            ProjectionDtoInfo? info = TryGetProjectionDtoInfo(typeSymbol, projectionPathAttrSymbol);
+            ProjectionDtoInfo? info = TryGetProjectionDtoInfo(typeSymbol, generateAttrSymbol);
             if (info is not null)
             {
                 projectionDtos.Add(info);
             }
         }
 
-        // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindProjectionDtosInNamespace(childNs, projectionPathAttrSymbol, projectionDtos);
+            FindProjectionsInNamespace(childNs, generateAttrSymbol, projectionDtos);
         }
     }
 
     /// <summary>
-    ///     Generates the registration class for all projection reducers.
+    ///     Generates the registration class for all projection reducers and DTO mappings.
     /// </summary>
     private static void GenerateRegistration(
         SourceProductionContext context,
@@ -78,12 +81,13 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
         sb.AppendLine();
         sb.AppendLine("using Mississippi.Inlet.Client.Abstractions.Actions;");
         sb.AppendLine("using Mississippi.Inlet.Client.Abstractions.State;");
+        sb.AppendLine("using Mississippi.Inlet.Client.ActionEffects;");
         sb.AppendLine("using Mississippi.Inlet.Client.Reducers;");
         sb.AppendLine("using Mississippi.Reservoir.Abstractions.Builders;");
         sb.AppendLine();
 
-        // Add using for each unique namespace containing projection DTOs
-        IEnumerable<string> uniqueNamespaces = projectionDtos.Select(p => p.Namespace).Distinct().OrderBy(n => n);
+        // Add unique namespaces for DTO types (derived from projection namespaces)
+        IEnumerable<string> uniqueNamespaces = projectionDtos.Select(p => p.DtoNamespace).Distinct().OrderBy(n => n);
         foreach (string ns in uniqueNamespaces)
         {
             sb.AppendLine($"using {ns};");
@@ -132,7 +136,7 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
         sb.AppendLine("        {");
 
         // Generate reducer registrations for each projection DTO (use Select + ToList + ForEach to satisfy S3267)
-        projectionDtos.Select(dto => dto.TypeName)
+        projectionDtos.Select(dto => dto.DtoTypeName)
             .OrderBy(typeName => typeName, StringComparer.Ordinal)
             .ToList()
             .ForEach(typeName =>
@@ -153,29 +157,82 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
         sb.AppendLine("        });");
         sb.AppendLine("        return builder;");
         sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Generate DTO registry mappings method
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    ///     Registers projection DTO type mappings in the given registry.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    /// <param name=\"registry\">The projection DTO registry to populate.</param>");
+        sb.AppendLine("    public static void RegisterProjectionDtoMappings(");
+        sb.AppendLine("        IProjectionDtoRegistry registry");
+        sb.AppendLine("    )");
+        sb.AppendLine("    {");
+        projectionDtos.OrderBy(dto => dto.Path, StringComparer.Ordinal)
+            .ToList()
+            .ForEach(dto =>
+            {
+                sb.AppendLine($"        registry.Register(\"{dto.Path}\", typeof({dto.DtoTypeName}));");
+            });
+        sb.AppendLine("    }");
+
         sb.AppendLine("}");
         context.AddSource("ProjectionsFeatureRegistration.g.cs", SourceText.From(sb.ToString(), Encoding.UTF8));
     }
 
     /// <summary>
-    ///     Gets projection DTO information from the compilation (current assembly only).
+    ///     Gets projection DTO information from the compilation by scanning referenced assemblies.
     /// </summary>
     private static List<ProjectionDtoInfo> GetProjectionDtosFromCompilation(
-        Compilation compilation
+        Compilation compilation,
+        string targetRootNamespace
     )
     {
         List<ProjectionDtoInfo> projectionDtos = new();
 
         // Get the attribute symbol
-        INamedTypeSymbol? projectionPathAttrSymbol = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
-        if (projectionPathAttrSymbol is null)
+        INamedTypeSymbol? generateAttrSymbol =
+            compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+        if (generateAttrSymbol is null)
         {
             return projectionDtos;
         }
 
-        // Only scan the current assembly (where generated DTOs live)
-        FindProjectionDtosInNamespace(compilation.Assembly.GlobalNamespace, projectionPathAttrSymbol, projectionDtos);
-        return projectionDtos;
+        // Scan referenced assemblies for [GenerateProjectionEndpoints]
+        foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
+        {
+            FindProjectionsInNamespace(
+                referencedAssembly.GlobalNamespace, generateAttrSymbol, projectionDtos);
+        }
+
+        // Resolve DTO namespaces based on projection namespaces and target root namespace
+        List<ProjectionDtoInfo> resolved = projectionDtos.Select(dto =>
+            new ProjectionDtoInfo(
+                NamingConventions.GetClientNamespace(dto.SourceNamespace, targetRootNamespace),
+                NamingConventions.GetDtoName(dto.SourceTypeName),
+                dto.Path,
+                dto.SourceNamespace,
+                dto.SourceTypeName))
+            .ToList();
+
+        return resolved;
+    }
+
+    /// <summary>
+    ///     Gets all referenced assemblies from the compilation.
+    /// </summary>
+    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
+        Compilation compilation
+    )
+    {
+        yield return compilation.Assembly;
+        foreach (MetadataReference reference in compilation.References)
+        {
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
+            {
+                yield return assemblySymbol;
+            }
+        }
     }
 
     /// <summary>
@@ -183,26 +240,33 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
     /// </summary>
     private static ProjectionDtoInfo? TryGetProjectionDtoInfo(
         INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol
+        INamedTypeSymbol generateAttrSymbol
     )
     {
-        // Check for [ProjectionPath] attribute
-        AttributeData? projectionPathAttr = typeSymbol.GetAttributes()
+        // Check for [GenerateProjectionEndpoints] attribute
+        AttributeData? genAttr = typeSymbol.GetAttributes()
             .FirstOrDefault(attr =>
-                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol));
-        if (projectionPathAttr is null)
+                SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol));
+        if (genAttr is null)
         {
             return null;
         }
 
-        // Get the path from constructor argument
-        string? projectionPath = projectionPathAttr.ConstructorArguments.FirstOrDefault().Value?.ToString();
+        // Read Path from [GenerateProjectionEndpoints(Path = "...")] named argument
+        string? projectionPath = genAttr.NamedArguments
+            .FirstOrDefault(kvp => kvp.Key == "Path").Value.Value?.ToString();
         if (string.IsNullOrEmpty(projectionPath))
         {
-            return null;
+            projectionPath = NamingConventions.GetRoutePrefix(typeSymbol.Name);
         }
 
-        return new(typeSymbol.ContainingNamespace.ToDisplayString(), typeSymbol.Name, projectionPath!);
+        // Store the source namespace/name; DTO name/namespace will be resolved later
+        return new(
+            typeSymbol.ContainingNamespace.ToDisplayString(),
+            typeSymbol.Name,
+            projectionPath!,
+            typeSymbol.ContainingNamespace.ToDisplayString(),
+            typeSymbol.Name);
     }
 
     /// <summary>
@@ -217,14 +281,12 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
-        // Use the compilation provider to find projection DTOs
         IncrementalValueProvider<(List<ProjectionDtoInfo> ProjectionDtos, string TargetRootNamespace)>
             projectionsProvider = compilationAndOptions.Select((
                 source,
                 _
             ) =>
             {
-                List<ProjectionDtoInfo> projectionDtos = GetProjectionDtosFromCompilation(source.Compilation);
                 source.Options.GlobalOptions.TryGetValue(
                     TargetNamespaceResolver.RootNamespaceProperty,
                     out string? rootNamespace);
@@ -235,6 +297,8 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
                     rootNamespace,
                     assemblyName,
                     source.Compilation);
+                List<ProjectionDtoInfo> projectionDtos =
+                    GetProjectionDtosFromCompilation(source.Compilation, targetRootNamespace);
                 return (projectionDtos, targetRootNamespace);
             });
 
@@ -253,20 +317,28 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
     private sealed class ProjectionDtoInfo
     {
         public ProjectionDtoInfo(
-            string @namespace,
-            string typeName,
-            string path
+            string dtoNamespace,
+            string dtoTypeName,
+            string path,
+            string sourceNamespace,
+            string sourceTypeName
         )
         {
-            Namespace = @namespace;
-            TypeName = typeName;
+            DtoNamespace = dtoNamespace;
+            DtoTypeName = dtoTypeName;
             Path = path;
+            SourceNamespace = sourceNamespace;
+            SourceTypeName = sourceTypeName;
         }
 
-        public string Namespace { get; }
+        public string DtoNamespace { get; }
+
+        public string DtoTypeName { get; }
 
         public string Path { get; }
 
-        public string TypeName { get; }
+        public string SourceNamespace { get; }
+
+        public string SourceTypeName { get; }
     }
 }

@@ -22,7 +22,8 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
 
-    private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
+    private const string GenerateProjectionEndpointsAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
     private static readonly char[] NamespaceSeparators = new[] { '.' };
 
@@ -63,20 +64,20 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         }
     }
 
-    private static bool FindProjectionDtosInNamespace(
+    private static bool FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol projectionPathAttrSymbol
+        INamedTypeSymbol generateAttrSymbol
     )
     {
         if (namespaceSymbol.GetTypeMembers()
             .Any(typeSymbol => typeSymbol.GetAttributes()
-                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionPathAttrSymbol))))
+                .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, generateAttrSymbol))))
         {
             return true;
         }
 
         return namespaceSymbol.GetNamespaceMembers()
-            .Any(child => FindProjectionDtosInNamespace(child, projectionPathAttrSymbol));
+            .Any(child => FindProjectionsInNamespace(child, generateAttrSymbol));
     }
 
     private static void Generate(
@@ -96,7 +97,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         HashSet<string> aggregateNames = GetAggregateNames(compilation);
         List<SagaClientGeneratorHelper.SagaClientInfo> sagas =
             SagaClientGeneratorHelper.GetSagasFromCompilation(compilation, optionsProvider);
-        bool hasProjections = HasProjectionDtos(compilation);
+        bool hasProjections = HasProjections(compilation);
         if ((aggregateNames.Count == 0) && (sagas.Count == 0) && !hasProjections)
         {
             return;
@@ -214,17 +215,19 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         }
     }
 
-    private static bool HasProjectionDtos(
+    private static bool HasProjections(
         Compilation compilation
     )
     {
-        INamedTypeSymbol? projectionPathAttrSymbol = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
-        if (projectionPathAttrSymbol is null)
+        INamedTypeSymbol? generateAttrSymbol =
+            compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
+        if (generateAttrSymbol is null)
         {
             return false;
         }
 
-        return FindProjectionDtosInNamespace(compilation.Assembly.GlobalNamespace, projectionPathAttrSymbol);
+        return GetReferencedAssemblies(compilation)
+            .Any(assembly => FindProjectionsInNamespace(assembly.GlobalNamespace, generateAttrSymbol));
     }
 
     private static string ResolveTargetRootNamespace(

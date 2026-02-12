@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 
 using Orleans;
@@ -24,10 +23,9 @@ namespace Spring.Domain.Projections.FlaggedTransactions;
 ///         aggregate which collects flags from all bank accounts.
 ///     </para>
 /// </remarks>
-[ProjectionPath("flagged-transactions")]
 [BrookName("SPRING", "COMPLIANCE", "INVESTIGATION")]
 [SnapshotStorageName("SPRING", "COMPLIANCE", "FLAGGEDTXPROJECTION")]
-[GenerateProjectionEndpoints]
+[GenerateProjectionEndpoints(Path = "flagged-transactions")]
 [GenerateSerializer]
 [Alias("Spring.Domain.Projections.FlaggedTransactions.FlaggedTransactionsProjection")]
 public sealed record FlaggedTransactionsProjection

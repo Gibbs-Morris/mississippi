@@ -26,19 +26,8 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                      [AttributeUsage(AttributeTargets.Class, Inherited = false)]
                                                      public sealed class GenerateProjectionEndpointsAttribute : Attribute
                                                      {
+                                                         public string? Path { get; set; }
                                                          public bool GenerateClientSubscription { get; set; } = true;
-                                                     }
-                                                 }
-
-                                                 namespace Mississippi.Inlet.Abstractions
-                                                 {
-                                                     using System;
-
-                                                     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-                                                     public sealed class ProjectionPathAttribute : Attribute
-                                                     {
-                                                         public ProjectionPathAttribute(string path) { Path = path; }
-                                                         public string Path { get; }
                                                      }
                                                  }
 
@@ -125,13 +114,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -167,13 +154,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -209,13 +194,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -248,13 +231,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -289,13 +270,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -328,13 +307,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -371,13 +348,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -413,13 +388,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -452,13 +425,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -493,13 +464,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -546,13 +515,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -588,13 +555,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -630,13 +595,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -689,12 +652,10 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -714,13 +675,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -752,13 +711,11 @@ public class ProjectionSiloRegistrationGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
                                         using Mississippi.EventSourcing.Reducers.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
+                                            [GenerateProjectionEndpoints(Path = "account-balance")]
                                             public sealed record AccountBalanceProjection
                                             {
                                                 public decimal Balance { get; init; }
@@ -779,8 +736,7 @@ public class ProjectionSiloRegistrationGeneratorTests
 
                                         namespace TestApp.Domain.Projections.TransactionHistory
                                         {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("transaction-history")]
+                                            [GenerateProjectionEndpoints(Path = "transaction-history")]
                                             public sealed record TransactionHistoryProjection
                                             {
                                                 public int TransactionCount { get; init; }

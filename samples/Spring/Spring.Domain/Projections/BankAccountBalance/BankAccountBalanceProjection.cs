@@ -1,5 +1,4 @@
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 
 using Orleans;
@@ -16,10 +15,9 @@ namespace Spring.Domain.Projections.BankAccountBalance;
 ///         It subscribes to events from the BankAccount aggregate: AccountOpened, FundsDeposited, FundsWithdrawn.
 ///     </para>
 /// </remarks>
-[ProjectionPath("bank-account-balance")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE")]
-[GenerateProjectionEndpoints]
+[GenerateProjectionEndpoints(Path = "bank-account-balance")]
 [GenerateSerializer]
 [Alias("Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection")]
 public sealed record BankAccountBalanceProjection

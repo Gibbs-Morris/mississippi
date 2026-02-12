@@ -1,12 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
-using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.ActionEffects;
@@ -21,7 +18,7 @@ namespace Mississippi.Inlet.Client;
 /// </summary>
 public sealed class InletBlazorSignalRBuilder
 {
-    private readonly List<Assembly> assembliesToScan = [];
+    private Action<IProjectionDtoRegistry>? dtoRegistrationCallback;
 
     private InletSignalRActionEffectOptions options = new();
 
@@ -59,11 +56,12 @@ public sealed class InletBlazorSignalRBuilder
     }
 
     /// <summary>
-    ///     Scans the specified assemblies for types decorated with
-    ///     <see cref="ProjectionPathAttribute" /> and registers them in the
-    ///     <see cref="IProjectionDtoRegistry" />.
+    ///     Registers projection DTO type mappings using a generated registration callback.
     /// </summary>
-    /// <param name="assemblies">The assemblies to scan.</param>
+    /// <param name="configure">
+    ///     A callback that populates the <see cref="IProjectionDtoRegistry" /> with
+    ///     path-to-type mappings. Typically provided by generated registration code.
+    /// </param>
     /// <returns>The builder for chaining.</returns>
     /// <remarks>
     ///     <para>
@@ -71,12 +69,12 @@ public sealed class InletBlazorSignalRBuilder
     ///         the registry to automatically fetch projections based on DTO type.
     ///     </para>
     /// </remarks>
-    public InletBlazorSignalRBuilder ScanProjectionDtos(
-        params Assembly[] assemblies
+    public InletBlazorSignalRBuilder RegisterProjectionDtos(
+        Action<IProjectionDtoRegistry> configure
     )
     {
-        ArgumentNullException.ThrowIfNull(assemblies);
-        assembliesToScan.AddRange(assemblies);
+        ArgumentNullException.ThrowIfNull(configure);
+        dtoRegistrationCallback = configure;
         useAutoFetcher = true;
         return this;
     }
@@ -126,11 +124,7 @@ public sealed class InletBlazorSignalRBuilder
             services.TryAddSingleton<IProjectionDtoRegistry>(sp =>
             {
                 ProjectionDtoRegistry registry = new();
-                foreach (Assembly assembly in assembliesToScan)
-                {
-                    registry.ScanAssemblies(assembly);
-                }
-
+                dtoRegistrationCallback?.Invoke(registry);
                 return registry;
             });
 

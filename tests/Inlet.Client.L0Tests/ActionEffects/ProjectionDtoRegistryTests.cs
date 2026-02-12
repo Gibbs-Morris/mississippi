@@ -164,67 +164,6 @@ public sealed class ProjectionDtoRegistryTests
     }
 
     /// <summary>
-    ///     ScanAssemblies handles empty array.
-    /// </summary>
-    [Fact]
-    public void ScanAssembliesHandlesEmptyArray()
-    {
-        // Arrange
-        ProjectionDtoRegistry registry = new();
-
-        // Act (should not throw)
-        registry.ScanAssemblies();
-
-        // Assert - registry is empty
-        Assert.Null(registry.GetDtoType("any/path"));
-    }
-
-    /// <summary>
-    ///     ScanAssemblies registers types with ProjectionPathAttribute.
-    /// </summary>
-    [Fact]
-    public void ScanAssembliesRegistersDecoratedTypes()
-    {
-        // Arrange
-        ProjectionDtoRegistry registry = new();
-
-        // Act
-        registry.ScanAssemblies(typeof(DecoratedTestProjection).Assembly);
-
-        // Assert
-        Assert.Equal(typeof(DecoratedTestProjection), registry.GetDtoType("test/decorated"));
-    }
-
-    /// <summary>
-    ///     ScanAssemblies scans multiple assemblies.
-    /// </summary>
-    [Fact]
-    public void ScanAssembliesScansMultipleAssemblies()
-    {
-        // Arrange
-        ProjectionDtoRegistry registry = new();
-
-        // Act - scan the test assembly twice (should not throw)
-        registry.ScanAssemblies(typeof(DecoratedTestProjection).Assembly, typeof(DecoratedTestProjection).Assembly);
-
-        // Assert
-        Assert.Equal(typeof(DecoratedTestProjection), registry.GetDtoType("test/decorated"));
-    }
-
-    /// <summary>
-    ///     ScanAssemblies throws ArgumentNullException when assemblies is null.
-    /// </summary>
-    [Fact]
-    public void ScanAssembliesThrowsWhenAssembliesIsNull()
-    {
-        // Arrange
-        ProjectionDtoRegistry registry = new();
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => registry.ScanAssemblies(null!));
-    }
-
-    /// <summary>
     ///     TryGetDtoType returns false when not found.
     /// </summary>
     [Fact]

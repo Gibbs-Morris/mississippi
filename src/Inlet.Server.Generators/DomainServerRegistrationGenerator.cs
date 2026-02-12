@@ -28,9 +28,6 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     private const string BrookNameAttributeFullName =
         "Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute";
 
-    private const string ProjectionPathAttributeFullName =
-        "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
-
     private static readonly char[] NamespaceSeparators = new[] { '.' };
 
     private static string BuildTypeName(
@@ -73,34 +70,36 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol projectionAttrSymbol,
-        INamedTypeSymbol? projectionPathAttrSymbol,
         INamedTypeSymbol? brookNameAttrSymbol,
-        List<(string Name, string? Path, string? BrookName)> projectionInfos
+        List<(string Name, string? Path, string? BrookName, bool IsExplicitPath)> projectionInfos
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers()
-                     .Where(typeSymbol => typeSymbol.GetAttributes()
-                         .Any(attr =>
-                             SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionAttrSymbol))))
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
+            AttributeData? genAttr = typeSymbol.GetAttributes()
+                .FirstOrDefault(attr =>
+                    SymbolEqualityComparer.Default.Equals(attr.AttributeClass, projectionAttrSymbol));
+            if (genAttr is null)
+            {
+                continue;
+            }
+
             string projectionName = NamingConventions.RemoveSuffix(typeSymbol.Name, "Projection");
             if (string.IsNullOrWhiteSpace(projectionName))
             {
                 continue;
             }
 
-            string? path = null;
-            string? brookName = null;
-            if (projectionPathAttrSymbol is not null)
+            // Read Path from [GenerateProjectionEndpoints(Path = "...")] named argument
+            string? path = genAttr.NamedArguments
+                .FirstOrDefault(kvp => kvp.Key == "Path").Value.Value?.ToString();
+            bool isExplicitPath = !string.IsNullOrEmpty(path);
+            if (!isExplicitPath)
             {
-                AttributeData? pathAttr = typeSymbol.GetAttributes()
-                    .FirstOrDefault(a =>
-                        SymbolEqualityComparer.Default.Equals(a.AttributeClass, projectionPathAttrSymbol));
-                path = pathAttr?.ConstructorArguments.Length > 0
-                    ? pathAttr.ConstructorArguments[0].Value as string
-                    : null;
+                path = NamingConventions.GetRoutePrefix(typeSymbol.Name);
             }
 
+            string? brookName = null;
             if (brookNameAttrSymbol is not null)
             {
                 AttributeData? brookAttr = typeSymbol.GetAttributes()
@@ -118,13 +117,12 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 }
             }
 
-            projectionInfos.Add((projectionName, path, brookName));
+            projectionInfos.Add((projectionName, path, brookName, isExplicitPath));
         }
 
         foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
         {
-            FindProjectionsInNamespace(
-                child, projectionAttrSymbol, projectionPathAttrSymbol, brookNameAttrSymbol, projectionInfos);
+            FindProjectionsInNamespace(child, projectionAttrSymbol, brookNameAttrSymbol, projectionInfos);
         }
     }
 
@@ -143,7 +141,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
 
         string productTypeName = BuildTypeName(productNamespace);
         HashSet<string> aggregateNames = GetAggregateNames(compilation);
-        List<(string Name, string? Path, string? BrookName)> projectionInfos = GetProjectionInfos(compilation);
+        List<(string Name, string? Path, string? BrookName, bool IsExplicitPath)> projectionInfos = GetProjectionInfos(compilation);
         if ((aggregateNames.Count == 0) && (projectionInfos.Count == 0))
         {
             return;
@@ -166,10 +164,10 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             sb.AppendUsing(targetRootNamespace + ".Controllers.Projections.Mappers");
         }
 
-        List<(string Path, string BrookName)> brookMappings = projectionInfos
+        List<(string Path, string BrookName, bool IsExplicit)> brookMappings = projectionInfos
             .Where(p => p.Path is not null && p.BrookName is not null)
-            .Select(p => (p.Path!, p.BrookName!))
-            .OrderBy(m => m.Item1, StringComparer.Ordinal)
+            .Select(p => (Path: p.Path!, BrookName: p.BrookName!, IsExplicit: p.IsExplicitPath))
+            .OrderBy(m => m.Path, StringComparer.Ordinal)
             .ToList();
         if (brookMappings.Count > 0)
         {
@@ -199,7 +197,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine($"services.Add{aggregateName}AggregateMappers();");
         }
 
-        foreach ((string projectionName, _, _) in projectionInfos.OrderBy(x => x.Name, StringComparer.Ordinal))
+        foreach ((string projectionName, _, _, _) in projectionInfos.OrderBy(x => x.Name, StringComparer.Ordinal))
         {
             sb.AppendLine($"services.Add{projectionName}ProjectionMappers();");
         }
@@ -210,9 +208,9 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         {
             sb.AppendLine("builder.RegisterProjectionBrookMappings(registry =>");
             sb.OpenBrace();
-            foreach ((string path, string brookName) in brookMappings)
+            foreach ((string path, string brookName, bool isExplicit) in brookMappings)
             {
-                sb.AppendLine($"registry.Register(\"{path}\", \"{brookName}\");");
+                sb.AppendLine($"registry.Register(\"{path}\", \"{brookName}\", isExplicit: {(isExplicit ? "true" : "false")});");
             }
 
             sb.CloseBrace();
@@ -257,11 +255,11 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         return targetRootNamespace.Substring(0, targetRootNamespace.Length - suffix.Length);
     }
 
-    private static List<(string Name, string? Path, string? BrookName)> GetProjectionInfos(
+    private static List<(string Name, string? Path, string? BrookName, bool IsExplicitPath)> GetProjectionInfos(
         Compilation compilation
     )
     {
-        List<(string Name, string? Path, string? BrookName)> projectionInfos = new();
+        List<(string Name, string? Path, string? BrookName, bool IsExplicitPath)> projectionInfos = new();
         INamedTypeSymbol? projectionAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
         if (projectionAttrSymbol is null)
@@ -269,8 +267,6 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             return projectionInfos;
         }
 
-        INamedTypeSymbol? projectionPathAttrSymbol =
-            compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
         INamedTypeSymbol? brookNameAttrSymbol =
             compilation.GetTypeByMetadataName(BrookNameAttributeFullName);
         foreach (IAssemblySymbol referencedAssembly in GetReferencedAssemblies(compilation))
@@ -278,7 +274,6 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             FindProjectionsInNamespace(
                 referencedAssembly.GlobalNamespace,
                 projectionAttrSymbol,
-                projectionPathAttrSymbol,
                 brookNameAttrSymbol,
                 projectionInfos);
         }

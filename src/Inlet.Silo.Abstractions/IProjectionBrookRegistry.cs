@@ -12,7 +12,7 @@ namespace Mississippi.Inlet.Silo.Abstractions;
 ///         This registry provides a runtime lookup for path-to-brook mappings,
 ///         allowing the subscription system to determine which brook stream to subscribe
 ///         to for a given projection path. The registry is populated at startup by
-///         scanning assemblies for types decorated with <c>[ProjectionPath]</c> attributes.
+///         generated registration code.
 ///     </para>
 ///     <para>
 ///         This abstraction allows clients to subscribe to projections by path
@@ -42,12 +42,17 @@ public interface IProjectionBrookRegistry
     /// </summary>
     /// <param name="path">The projection path.</param>
     /// <param name="brookName">The brook name to associate with the projection.</param>
+    /// <param name="isExplicit">
+    ///     Whether the path was explicitly set via [GenerateProjectionEndpoints(Path = "...")].
+    ///     When <c>false</c>, the path was auto-derived from the type name.
+    /// </param>
     /// <exception cref="ArgumentNullException">
     ///     Thrown when <paramref name="path" /> or <paramref name="brookName" /> is null.
     /// </exception>
     void Register(
         string path,
-        string brookName
+        string brookName,
+        bool isExplicit = true
     );
 
     /// <summary>
@@ -60,4 +65,12 @@ public interface IProjectionBrookRegistry
         string path,
         out string? brookName
     );
+
+    /// <summary>
+    ///     Validates that all registered projection paths were explicitly defined.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when one or more projection paths were auto-derived and enforcement is enabled.
+    /// </exception>
+    void ValidateExplicitPaths();
 }

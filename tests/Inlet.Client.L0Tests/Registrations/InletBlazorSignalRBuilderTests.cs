@@ -138,14 +138,14 @@ public sealed class InletBlazorSignalRBuilderTests
     }
 
     /// <summary>
-    ///     Build with ScanProjectionDtos registers AutoProjectionFetcher.
+    ///     Build with RegisterProjectionDtos registers AutoProjectionFetcher.
     /// </summary>
     [Fact]
-    public void BuildWithScanProjectionDtosRegistersAutoProjectionFetcher()
+    public void BuildWithRegisterProjectionDtosRegistersAutoProjectionFetcher()
     {
         // Arrange
         InletBlazorSignalRBuilder builder = CreateBuilder(out ServiceCollection services);
-        builder.ScanProjectionDtos(typeof(InletBlazorSignalRBuilderTests).Assembly);
+        builder.RegisterProjectionDtos(_ => { });
 
         // Act
         builder.Build();
@@ -180,32 +180,32 @@ public sealed class InletBlazorSignalRBuilderTests
     }
 
     /// <summary>
-    ///     ScanProjectionDtos returns builder for chaining.
+    ///     RegisterProjectionDtos returns builder for chaining.
     /// </summary>
     [Fact]
-    public void ScanProjectionDtosReturnsBuilderForChaining()
+    public void RegisterProjectionDtosReturnsBuilderForChaining()
     {
         // Arrange
         InletBlazorSignalRBuilder builder = CreateBuilder(out ServiceCollection _);
 
         // Act
-        InletBlazorSignalRBuilder result = builder.ScanProjectionDtos(typeof(InletBlazorSignalRBuilderTests).Assembly);
+        InletBlazorSignalRBuilder result = builder.RegisterProjectionDtos(_ => { });
 
         // Assert
         Assert.Same(builder, result);
     }
 
     /// <summary>
-    ///     ScanProjectionDtos throws ArgumentNullException when assemblies is null.
+    ///     RegisterProjectionDtos throws ArgumentNullException when configure is null.
     /// </summary>
     [Fact]
-    public void ScanProjectionDtosThrowsWhenAssembliesIsNull()
+    public void RegisterProjectionDtosThrowsWhenConfigureIsNull()
     {
         // Arrange
         InletBlazorSignalRBuilder builder = CreateBuilder(out ServiceCollection _);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => builder.ScanProjectionDtos(null!));
+        Assert.Throws<ArgumentNullException>(() => builder.RegisterProjectionDtos(null!));
     }
 
     /// <summary>

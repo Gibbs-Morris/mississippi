@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Reflection;
-
-using Mississippi.Inlet.Abstractions;
 
 
 namespace Mississippi.Inlet.Client.ActionEffects;
@@ -13,9 +10,8 @@ namespace Mississippi.Inlet.Client.ActionEffects;
 /// <remarks>
 ///     <para>
 ///         This registry maintains bidirectional mappings between projection paths
-///         and DTO types. It is populated at application startup by calling
-///         <see cref="ScanAssemblies" /> with assemblies containing
-///         <see cref="ProjectionPathAttribute" />-decorated types.
+///         and DTO types. It is populated at application startup by generated
+///         registration code that calls <see cref="Register" />.
 ///     </para>
 /// </remarks>
 internal sealed class ProjectionDtoRegistry : IProjectionDtoRegistry
@@ -55,18 +51,6 @@ internal sealed class ProjectionDtoRegistry : IProjectionDtoRegistry
     }
 
     /// <inheritdoc />
-    public void ScanAssemblies(
-        params Assembly[] assemblies
-    )
-    {
-        ArgumentNullException.ThrowIfNull(assemblies);
-        foreach (Assembly assembly in assemblies)
-        {
-            ScanAssembly(assembly);
-        }
-    }
-
-    /// <inheritdoc />
     public bool TryGetDtoType(
         string path,
         out Type? dtoType
@@ -84,19 +68,5 @@ internal sealed class ProjectionDtoRegistry : IProjectionDtoRegistry
     {
         ArgumentNullException.ThrowIfNull(dtoType);
         return DtoTypeToPath.TryGetValue(dtoType, out path);
-    }
-
-    private void ScanAssembly(
-        Assembly assembly
-    )
-    {
-        foreach (Type type in assembly.GetTypes())
-        {
-            ProjectionPathAttribute? attr = type.GetCustomAttribute<ProjectionPathAttribute>();
-            if (attr is not null)
-            {
-                Register(attr.Path, type);
-            }
-        }
     }
 }

@@ -8,9 +8,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Projections must also have <c>ProjectionPathAttribute</c> applied for full generation.
-///     </para>
-///     <para>
 ///         When applied, the following code is generated:
 ///     </para>
 ///     <list type="bullet">
@@ -18,7 +15,7 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///             <term>Sdk.Silo.Generators</term>
 ///             <description>
 ///                 <c>Add{Projection}()</c> extension method that registers
-///                 reducers and snapshot converters.
+///                 reducers, snapshot converters, and projection brook mappings.
 ///             </description>
 ///         </item>
 ///         <item>
@@ -29,10 +26,26 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///                 <c>{Projection}Mapper</c> - Maps projection to DTO.
 ///             </description>
 ///         </item>
+///         <item>
+///             <term>Sdk.Client.Generators</term>
+///             <description>
+///                 Client DTO, reducers, and projection DTO registration.
+///             </description>
+///         </item>
 ///     </list>
 ///     <para>
-///         The HTTP route is derived from <c>ProjectionPathAttribute.Path</c>.
+///         The HTTP route is derived from <see cref="Path" />.
+///         If not set, defaults to kebab-case of the type name without the "Projection" suffix.
+///         For example, <c>BankAccountBalanceProjection</c> becomes <c>bank-account-balance</c>.
 ///     </para>
+///     <para>
+///         The path is used for:
+///     </para>
+///     <list type="bullet">
+///         <item>API routes: <c>GET /api/projections/{path}/{entityId}</c>.</item>
+///         <item>SignalR subscriptions: subscribe to <c>{path}</c> with entity ID.</item>
+///         <item>Projection brook registry: mapping <c>{path}</c> to a brook name.</item>
+///     </list>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class GenerateProjectionEndpointsAttribute : Attribute
@@ -51,4 +64,23 @@ public sealed class GenerateProjectionEndpointsAttribute : Attribute
     ///     </para>
     /// </remarks>
     public bool GenerateClientSubscription { get; set; } = true;
+
+    /// <summary>
+    ///     Gets or sets the path for this projection.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Defaults to kebab-case of the projection name without the "Projection" suffix.
+    ///         For example, <c>BankAccountBalanceProjection</c> becomes <c>bank-account-balance</c>.
+    ///     </para>
+    ///     <para>
+    ///         The full route pattern is: <c>api/projections/{Path}/{entityId}</c>.
+    ///     </para>
+    ///     <para>
+    ///         The path is also used for SignalR subscriptions and projection brook registry mappings.
+    ///         Enable <c>RequireExplicitProjectionPaths</c> in your builder options to fail at
+    ///         startup when any projection relies on auto-derived paths.
+    ///     </para>
+    /// </remarks>
+    public string? Path { get; set; }
 }

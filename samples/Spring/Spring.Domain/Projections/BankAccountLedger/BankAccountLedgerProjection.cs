@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 
 using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 
 using Orleans;
@@ -19,10 +18,9 @@ namespace Spring.Domain.Projections.BankAccountLedger;
 ///         for currency-converted deposits.
 ///     </para>
 /// </remarks>
-[ProjectionPath("bank-account-ledger")]
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTLEDGER")]
-[GenerateProjectionEndpoints]
+[GenerateProjectionEndpoints(Path = "bank-account-ledger")]
 [GenerateSerializer]
 [Alias("Spring.Domain.Projections.BankAccountLedger.BankAccountLedgerProjection")]
 public sealed record BankAccountLedgerProjection
