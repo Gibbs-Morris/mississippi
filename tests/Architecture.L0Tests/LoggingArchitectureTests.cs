@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 using ArchUnitNET.Domain;
 using ArchUnitNET.Fluent;
 using ArchUnitNET.xUnit;
@@ -83,18 +87,16 @@ public sealed class LoggingArchitectureTests : ArchitectureTestBase
     [Fact]
     public void LoggerFieldsShouldNotHaveUnderscorePrefix()
     {
-        // Check for underscore-prefixed private fields that might be loggers
-        // Pattern: _logger, _log, etc.
-        IArchRule rule = FieldMembers()
-            .That()
-            .HaveNameStartingWith("_")
-            .And()
-            .HaveNameMatching(@"_[Ll]og.*")
-            .Should()
-            .NotExist()
-            .Because(
-                "ILogger<T> MUST use get-only property pattern, not underscore-prefixed fields per logging-rules.instructions.md")
-            .WithoutRequiringPositiveResults();
-        rule.Check(ArchitectureModel);
+        List<string> violations = ArchitectureModel.Classes.SelectMany(type => type.Members.OfType<FieldMember>())
+            .Where(field => (field.Visibility == Visibility.Private) &&
+                            (field.Name.Length > 1) &&
+                            (field.Name[0] == '_') &&
+                            field.Name[1..].StartsWith("log", StringComparison.OrdinalIgnoreCase))
+            .Select(field => field.FullName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+        Assert.True(
+            violations.Count == 0,
+            $"Found underscore-prefixed logger fields:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
     }
 }

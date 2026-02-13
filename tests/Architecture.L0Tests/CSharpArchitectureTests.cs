@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using ArchUnitNET.Domain;
 using ArchUnitNET.Fluent;
 using ArchUnitNET.xUnit;
 
@@ -32,27 +37,23 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
     [Fact]
     public void PrivateFieldsShouldNotHaveUnderscorePrefix()
     {
-        // Check for underscore-prefixed private fields
-        // This enforces the get-only property pattern for DI and naming conventions
-        // Exclude: OrleansCodeGen, LoggerMessage-generated __*Callback fields
-        IArchRule rule = FieldMembers()
-            .That()
-            .HaveNameStartingWith("_")
-            .And()
-            .DoNotHaveNameMatching(@"^__.*Callback$") // LoggerMessage source generator fields
-            .And()
-            .AreDeclaredIn(
-                Classes()
-                    .That()
-                    .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*")
-                    .And()
-                    .DoNotHaveNameEndingWith("LoggerExtensions")) // Exclude LoggerExtensions classes entirely
-            .Should()
-            .NotExist()
-            .Because(
-                "private fields MUST NOT use underscore prefix; use get-only properties for DI per csharp.instructions.md")
-            .WithoutRequiringPositiveResults();
-        rule.Check(ArchitectureModel);
+        List<string> violations = ArchitectureModel.Classes
+            .Where(type => !type.FullName.StartsWith("OrleansCodeGen.", StringComparison.Ordinal) &&
+                           !type.Name.EndsWith("LoggerExtensions", StringComparison.Ordinal))
+            .SelectMany(type => type.Members.OfType<FieldMember>())
+            .Where(field => (field.Visibility == Visibility.Private) &&
+                            (field.Name.Length > 0) &&
+                            (field.Name[0] == '_') &&
+                            !((field.Name.Length > 1) &&
+                              (field.Name[0] == '_') &&
+                              (field.Name[1] == '_') &&
+                              field.Name.EndsWith("Callback", StringComparison.Ordinal)))
+            .Select(field => field.FullName)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
+        Assert.True(
+            violations.Count == 0,
+            $"Found private fields with underscore prefix:{Environment.NewLine}{string.Join(Environment.NewLine, violations)}");
     }
 
     /// <summary>
