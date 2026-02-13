@@ -45,6 +45,10 @@ public static class NamingConventions
 
     private const string FeaturesSegment = "Features";
 
+    private const string SagaStateSuffix = "SagaState";
+
+    private const string StateSegment = "State";
+
     private static readonly char[] NamespaceDelimiters =
     [
         '.',
@@ -378,7 +382,7 @@ public static class NamingConventions
     public static string GetClientStateNamespace(
         string domainNamespace
     ) =>
-        GetClientFeatureNamespace(domainNamespace, "State");
+        GetClientFeatureNamespace(domainNamespace, StateSegment);
 
     /// <summary>
     ///     Converts a source namespace to a client State namespace using the target project's root namespace.
@@ -390,7 +394,7 @@ public static class NamingConventions
         string sourceNamespace,
         string targetRootNamespace
     ) =>
-        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "State");
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, StateSegment);
 
     /// <summary>
     ///     Gets the command DTO name from a command type name.
@@ -514,14 +518,14 @@ public static class NamingConventions
             throw new ArgumentNullException(nameof(typeName));
         }
 
-        if (typeName.EndsWith("SagaState", StringComparison.Ordinal))
+        if (typeName.EndsWith(SagaStateSuffix, StringComparison.Ordinal))
         {
-            return typeName.Substring(0, typeName.Length - "SagaState".Length);
+            return typeName.Substring(0, typeName.Length - SagaStateSuffix.Length);
         }
 
-        if (typeName.EndsWith("State", StringComparison.Ordinal))
+        if (typeName.EndsWith(StateSegment, StringComparison.Ordinal))
         {
-            return typeName.Substring(0, typeName.Length - "State".Length);
+            return typeName.Substring(0, typeName.Length - StateSegment.Length);
         }
 
         return typeName;
