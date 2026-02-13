@@ -45,6 +45,18 @@ public static class NamingConventions
 
     private const string FeaturesSegment = "Features";
 
+    private const string SagaStateSuffix = "SagaState";
+
+    private const string StateSegment = "State";
+
+    private static readonly char[] NamespaceDelimiters =
+    [
+        '.',
+        '-',
+        '_',
+        ' ',
+    ];
+
     /// <summary>
     ///     Extracts the aggregate name from a domain command namespace.
     /// </summary>
@@ -370,7 +382,7 @@ public static class NamingConventions
     public static string GetClientStateNamespace(
         string domainNamespace
     ) =>
-        GetClientFeatureNamespace(domainNamespace, "State");
+        GetClientFeatureNamespace(domainNamespace, StateSegment);
 
     /// <summary>
     ///     Converts a source namespace to a client State namespace using the target project's root namespace.
@@ -382,7 +394,7 @@ public static class NamingConventions
         string sourceNamespace,
         string targetRootNamespace
     ) =>
-        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, "State");
+        GetClientFeatureNamespace(sourceNamespace, targetRootNamespace, StateSegment);
 
     /// <summary>
     ///     Gets the command DTO name from a command type name.
@@ -403,6 +415,54 @@ public static class NamingConventions
         string commandName
     ) =>
         commandName + "RequestDto";
+
+    /// <summary>
+    ///     Builds a domain registration method name from a source namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace.</param>
+    /// <returns>The method name (for example, "AddSpringDomain").</returns>
+    public static string GetDomainRegistrationMethodName(
+        string sourceNamespace
+    )
+    {
+        string domainRoot = GetDomainRootNamespace(sourceNamespace);
+        string suffix = ToPascalIdentifier(domainRoot);
+        return string.IsNullOrEmpty(suffix) ? "AddDomain" : "Add" + suffix;
+    }
+
+    /// <summary>
+    ///     Derives a domain root namespace from a source namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace.</param>
+    /// <returns>
+    ///     The domain root namespace (for example, "Spring.Domain" from
+    ///     "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </returns>
+    public static string GetDomainRootNamespace(
+        string sourceNamespace
+    )
+    {
+        if (string.IsNullOrWhiteSpace(sourceNamespace))
+        {
+            return sourceNamespace;
+        }
+
+        int aggregatesIndex = sourceNamespace.IndexOf(AggregatesSegment, StringComparison.Ordinal);
+        if (aggregatesIndex > 0)
+        {
+            return sourceNamespace.Substring(0, aggregatesIndex);
+        }
+
+        int projectionsIndex = sourceNamespace.IndexOf(".Projections.", StringComparison.Ordinal);
+        if (projectionsIndex > 0)
+        {
+            return sourceNamespace.Substring(0, projectionsIndex);
+        }
+
+        // Intentional fallback for non-conventional namespaces:
+        // preserve full namespace so generated domain names remain stable and deterministic.
+        return sourceNamespace;
+    }
 
     /// <summary>
     ///     Gets the DTO name from a projection type name.
@@ -442,6 +502,33 @@ public static class NamingConventions
         string baseName = RemoveSuffix(typeName, "Projection");
         baseName = RemoveSuffix(baseName, "Aggregate");
         return ToKebabCase(baseName);
+    }
+
+    /// <summary>
+    ///     Gets a saga name from a saga state type name.
+    /// </summary>
+    /// <param name="typeName">The saga state type name.</param>
+    /// <returns>The saga name with trailing "SagaState" or "State" removed when present.</returns>
+    public static string GetSagaName(
+        string typeName
+    )
+    {
+        if (typeName is null)
+        {
+            throw new ArgumentNullException(nameof(typeName));
+        }
+
+        if (typeName.EndsWith(SagaStateSuffix, StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - SagaStateSuffix.Length);
+        }
+
+        if (typeName.EndsWith(StateSegment, StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - StateSegment.Length);
+        }
+
+        return typeName;
     }
 
     /// <summary>
@@ -746,5 +833,33 @@ public static class NamingConventions
 
         // Fallback to legacy behavior
         return GetClientFeatureNamespace(sourceNamespace, subNamespace);
+    }
+
+    private static string ToPascalIdentifier(
+        string value
+    )
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        string[] parts = value.Split(NamespaceDelimiters, StringSplitOptions.RemoveEmptyEntries);
+        StringBuilder sb = new();
+        foreach (string part in parts)
+        {
+            if (part.Length == 0)
+            {
+                continue;
+            }
+
+            sb.Append(char.ToUpperInvariant(part[0]));
+            if (part.Length > 1)
+            {
+                sb.Append(part.Substring(1));
+            }
+        }
+
+        return sb.ToString();
     }
 }

@@ -10,11 +10,9 @@ using Mississippi.Reservoir.Blazor.BuiltIn;
 
 using Spring.Client;
 using Spring.Client.Features;
-using Spring.Client.Features.BankAccountAggregate;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 using Spring.Client.Features.DemoAccounts;
 using Spring.Client.Features.DualEntitySelection;
-using Spring.Client.Features.MoneyTransferSaga;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -30,9 +28,8 @@ builder.Services.AddScoped(_ => new HttpClient
 #pragma warning restore IDISP014
 
 // Register features (one line per feature - scales cleanly)
-// Write side: aggregate commands
-builder.Services.AddBankAccountAggregateFeature();
-builder.Services.AddMoneyTransferSagaFeature();
+// Write side + projection feature registrations
+builder.Services.AddSpringDomainClient();
 
 // Navigation/UI: entity selection
 builder.Services.AddDualEntitySelectionFeature();
@@ -52,7 +49,6 @@ builder.Services.AddReservoirDevTools(options =>
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
 builder.Services.AddInletClient();
-builder.Services.AddProjectionsFeature();
 builder.Services.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
