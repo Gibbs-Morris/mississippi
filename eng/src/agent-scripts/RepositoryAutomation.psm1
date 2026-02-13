@@ -295,12 +295,24 @@ function Invoke-ReSharperCleanup {
     param(
         [Parameter(Mandatory)][string]$SolutionPath,
         [Parameter(Mandatory)][string]$SettingsPath,
-        [string]$Profile = 'Built-in: Full Cleanup'
+        [string]$Profile = 'Built-in: Full Cleanup',
+        [string[]]$IncludePaths,
+        [string[]]$ExcludePaths
     )
 
     $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
     $resolvedSettings = Resolve-Path -LiteralPath $SettingsPath
-    $args = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)", $resolvedSolution.Path)
+    $args = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)")
+
+    if ($IncludePaths -and $IncludePaths.Count -gt 0) {
+        $args += "--include=$($IncludePaths -join ';')"
+    }
+
+    if ($ExcludePaths -and $ExcludePaths.Count -gt 0) {
+        $args += "--exclude=$($ExcludePaths -join ';')"
+    }
+
+    $args += $resolvedSolution.Path
     Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho
 }
 
@@ -593,7 +605,8 @@ function Invoke-SampleSolutionUnitTests {
 function Invoke-MississippiSolutionCleanup {
     [CmdletBinding()]
     param(
-        [string]$RepoRoot = (Get-RepositoryRoot)
+        [string]$RepoRoot = (Get-RepositoryRoot),
+        [string[]]$IncludePaths
     )
 
     $slnxPath = Join-Path $RepoRoot 'mississippi.slnx'
@@ -617,7 +630,10 @@ function Invoke-MississippiSolutionCleanup {
     Write-Host "Cleanup profile: 'Built-in: Full Cleanup'"
     Write-Host "Settings file: $settingsPath"
     Write-Host "Target solution: $slnPath"
-    Invoke-ReSharperCleanup -SolutionPath $slnPath -SettingsPath $settingsPath
+    if ($IncludePaths -and $IncludePaths.Count -gt 0) {
+        Write-Host "Included paths: $($IncludePaths -join ';')"
+    }
+    Invoke-ReSharperCleanup -SolutionPath $slnPath -SettingsPath $settingsPath -IncludePaths $IncludePaths
     Write-Host 'SUCCESS: ReSharper code cleanup completed' -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== MISSISSIPPI SOLUTION CLEANUP COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
@@ -627,7 +643,8 @@ function Invoke-MississippiSolutionCleanup {
 function Invoke-SampleSolutionCleanup {
     [CmdletBinding()]
     param(
-        [string]$RepoRoot = (Get-RepositoryRoot)
+        [string]$RepoRoot = (Get-RepositoryRoot),
+        [string[]]$IncludePaths
     )
 
     $slnxPath = Join-Path $RepoRoot 'samples.slnx'
@@ -651,7 +668,10 @@ function Invoke-SampleSolutionCleanup {
     Write-Host "Cleanup profile: 'Built-in: Full Cleanup'"
     Write-Host "Settings file: $settingsPath"
     Write-Host "Target solution: $slnPath"
-    Invoke-ReSharperCleanup -SolutionPath $slnPath -SettingsPath $settingsPath
+    if ($IncludePaths -and $IncludePaths.Count -gt 0) {
+        Write-Host "Included paths: $($IncludePaths -join ';')"
+    }
+    Invoke-ReSharperCleanup -SolutionPath $slnPath -SettingsPath $settingsPath -IncludePaths $IncludePaths
     Write-Host 'SUCCESS: ReSharper code cleanup completed' -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== SAMPLE SOLUTION CLEANUP COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
