@@ -37,15 +37,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<INotificationService, StubNotificationService>();
 
 // Register Spring domain aggregates
-builder.Services.AddBankAccountAggregate();
-builder.Services.AddTransactionInvestigationQueueAggregate();
-builder.Services.AddMoneyTransferSaga();
-
-// Register Spring domain projections
-builder.Services.AddBankAccountBalanceProjection();
-builder.Services.AddBankAccountLedgerProjection();
-builder.Services.AddFlaggedTransactionsProjection();
-builder.Services.AddMoneyTransferStatusProjection();
+builder.Services.AddSpringDomainSilo();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()

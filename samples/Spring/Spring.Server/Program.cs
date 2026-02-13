@@ -21,8 +21,7 @@ using Orleans.Hosting;
 using Scalar.AspNetCore;
 
 using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Server.Controllers.Aggregates.Mappers;
-using Spring.Server.Controllers.Projections.Mappers;
+using Spring.Server.Controllers.Mappers;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -85,17 +84,8 @@ builder.Services.AddAqueduct<InletHub>(options =>
 builder.Services.AddInletServer();
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
-// Add aggregate DTO to command mappers
-builder.Services.AddBankAccountAggregateMappers();
-
-// Note: TransactionInvestigationQueue aggregate has no public commands (only server-side effect dispatch)
-// so no mappers are generated or needed.
-
-// Add projection mappers
-builder.Services.AddBankAccountBalanceProjectionMappers();
-builder.Services.AddBankAccountLedgerProjectionMappers();
-builder.Services.AddFlaggedTransactionsProjectionMappers();
-builder.Services.AddMoneyTransferStatusProjectionMappers();
+// Add generated domain mapper registrations
+builder.Services.AddSpringDomainServer();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files
