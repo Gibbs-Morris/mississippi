@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
+using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Naming;
 
 
@@ -25,14 +26,6 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         "Mississippi.Inlet.Generators.Abstractions.GenerateProjectionEndpointsAttribute";
 
     private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
-
-    private static bool ContainsAttribute(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol? attributeSymbol
-    ) =>
-        attributeSymbol is not null &&
-        typeSymbol.GetAttributes()
-            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attributeSymbol));
 
     private static void GatherFromNamespace(
         INamespaceSymbol namespaceSymbol,
@@ -104,7 +97,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         Dictionary<string, HashSet<string>> aggregateNamesByDomain
     )
     {
-        if (!ContainsAttribute(typeSymbol, generateCommandAttribute))
+        if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateCommandAttribute))
         {
             return;
         }
@@ -132,8 +125,8 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         Dictionary<string, HashSet<string>> projectionNamesByDomain
     )
     {
-        if (!ContainsAttribute(typeSymbol, generateProjectionAttribute) ||
-            !ContainsAttribute(typeSymbol, projectionPathAttribute))
+        if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateProjectionAttribute) ||
+            !GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, projectionPathAttribute))
         {
             return;
         }
@@ -229,7 +222,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? projectionPathAttribute = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
         Dictionary<string, HashSet<string>> aggregateNamesByDomain = new(StringComparer.Ordinal);
         Dictionary<string, HashSet<string>> projectionNamesByDomain = new(StringComparer.Ordinal);
-        foreach (IAssemblySymbol assembly in GetReferencedAssemblies(compilation))
+        foreach (IAssemblySymbol assembly in GeneratorSymbolAnalysis.GetReferencedAssemblies(compilation))
         {
             GatherFromNamespace(
                 assembly.GlobalNamespace,
@@ -269,15 +262,6 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             .OrderBy(model => model.DomainMethodName, StringComparer.Ordinal)
             .ToArray();
     }
-
-    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
-        Compilation compilation
-    ) =>
-        Enumerable.Repeat(compilation.Assembly, 1)
-            .Concat(
-                compilation.References
-                    .Select(compilation.GetAssemblyOrModuleSymbol)
-                    .OfType<IAssemblySymbol>());
 
     /// <inheritdoc />
     public void Initialize(

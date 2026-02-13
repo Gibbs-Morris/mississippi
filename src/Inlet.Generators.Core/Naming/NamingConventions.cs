@@ -455,7 +455,36 @@ public static class NamingConventions
             return sourceNamespace.Substring(0, projectionsIndex);
         }
 
+        // Intentional fallback for non-conventional namespaces:
+        // preserve full namespace so generated domain names remain stable and deterministic.
         return sourceNamespace;
+    }
+
+    /// <summary>
+    ///     Gets a saga name from a saga state type name.
+    /// </summary>
+    /// <param name="typeName">The saga state type name.</param>
+    /// <returns>The saga name with trailing "SagaState" or "State" removed when present.</returns>
+    public static string GetSagaName(
+        string typeName
+    )
+    {
+        if (typeName is null)
+        {
+            throw new ArgumentNullException(nameof(typeName));
+        }
+
+        if (typeName.EndsWith("SagaState", StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - "SagaState".Length);
+        }
+
+        if (typeName.EndsWith("State", StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - "State".Length);
+        }
+
+        return typeName;
     }
 
     /// <summary>

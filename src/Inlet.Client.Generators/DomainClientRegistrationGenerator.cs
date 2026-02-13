@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
+using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Naming;
 
 
@@ -31,14 +32,6 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
     private const string FeaturesSuffix = ".Features";
-
-    private static bool ContainsAttribute(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol? attributeSymbol
-    ) =>
-        attributeSymbol is not null &&
-        typeSymbol.GetAttributes()
-            .Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attributeSymbol));
 
     private static void GatherFromNamespace(
         INamespaceSymbol namespaceSymbol,
@@ -119,7 +112,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         Dictionary<string, HashSet<string>> aggregateNamesByDomain
     )
     {
-        if (!ContainsAttribute(typeSymbol, generateCommandAttribute))
+        if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateCommandAttribute))
         {
             return;
         }
@@ -146,7 +139,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         HashSet<string> domainsWithProjections
     )
     {
-        if (ContainsAttribute(typeSymbol, generateProjectionAttribute))
+        if (GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateProjectionAttribute))
         {
             domainsWithProjections.Add(domainRoot);
         }
@@ -160,13 +153,13 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         Dictionary<string, HashSet<string>> sagaNamesByDomain
     )
     {
-        if (!ContainsAttribute(typeSymbol, generateSagaAttribute) &&
-            !ContainsAttribute(typeSymbol, generateSagaGenericAttribute))
+        if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateSagaAttribute) &&
+            !GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateSagaGenericAttribute))
         {
             return;
         }
 
-        string sagaName = GetSagaName(typeSymbol.Name);
+        string sagaName = NamingConventions.GetSagaName(typeSymbol.Name);
         if (!sagaNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? sagaNames))
         {
             sagaNames = [];
@@ -266,7 +259,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         Dictionary<string, HashSet<string>> aggregateNamesByDomain = new(StringComparer.Ordinal);
         Dictionary<string, HashSet<string>> sagaNamesByDomain = new(StringComparer.Ordinal);
         HashSet<string> domainsWithProjections = new(StringComparer.Ordinal);
-        foreach (IAssemblySymbol assembly in GetReferencedAssemblies(compilation))
+        foreach (IAssemblySymbol assembly in GeneratorSymbolAnalysis.GetReferencedAssemblies(compilation))
         {
             GatherFromNamespace(
                 assembly.GlobalNamespace,
@@ -318,32 +311,6 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
                 (model.AggregateNames.Count > 0) || (model.SagaNames.Count > 0) || model.IncludesProjections)
             .OrderBy(model => model.DomainMethodName, StringComparer.Ordinal)
             .ToArray();
-    }
-
-    private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
-        Compilation compilation
-    ) =>
-        Enumerable.Repeat(compilation.Assembly, 1)
-            .Concat(
-                compilation.References
-                    .Select(compilation.GetAssemblyOrModuleSymbol)
-                    .OfType<IAssemblySymbol>());
-
-    private static string GetSagaName(
-        string typeName
-    )
-    {
-        if (typeName.EndsWith("SagaState", StringComparison.Ordinal))
-        {
-            return typeName.Substring(0, typeName.Length - "SagaState".Length);
-        }
-
-        if (typeName.EndsWith("State", StringComparison.Ordinal))
-        {
-            return typeName.Substring(0, typeName.Length - "State".Length);
-        }
-
-        return typeName;
     }
 
     /// <inheritdoc />
