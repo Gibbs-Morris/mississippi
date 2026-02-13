@@ -43,15 +43,22 @@ public sealed class DomainClientRegistrationGeneratorTests
         )
     {
         SyntaxTree[] syntaxTrees = sources.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray();
-        string runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+        string runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location) ??
+                                  throw new InvalidOperationException("Runtime directory is unavailable.");
+        static string RuntimeAssembly(
+            string directory,
+            string fileName
+        ) =>
+            Path.Join(directory, fileName);
+
         List<MetadataReference> references =
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Collections.dll")),
+            MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-        string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
+        string netstandardPath = RuntimeAssembly(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
             references.Add(MetadataReference.CreateFromFile(netstandardPath));
