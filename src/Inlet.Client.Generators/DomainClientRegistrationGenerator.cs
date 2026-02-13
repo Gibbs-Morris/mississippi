@@ -322,17 +322,12 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
 
     private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
         Compilation compilation
-    )
-    {
-        yield return compilation.Assembly;
-        foreach (MetadataReference reference in compilation.References)
-        {
-            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
-            {
-                yield return assemblySymbol;
-            }
-        }
-    }
+    ) =>
+        Enumerable.Repeat(compilation.Assembly, 1)
+            .Concat(
+                compilation.References
+                    .Select(compilation.GetAssemblyOrModuleSymbol)
+                    .OfType<IAssemblySymbol>());
 
     private static string GetSagaName(
         string typeName

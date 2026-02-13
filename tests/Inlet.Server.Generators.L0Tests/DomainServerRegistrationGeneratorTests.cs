@@ -145,4 +145,56 @@ public sealed class DomainServerRegistrationGeneratorTests
         Assert.Contains("AddCoreLogicServer", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregateMappers();", generatedCode, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    ///     Generated server domain registration compiles when only aggregate mapper registrations are included.
+    /// </summary>
+    [Fact]
+    public void GeneratedDomainRegistrationWithOnlyAggregatesCompilesWithoutProjectionMapperUsing()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Aggregates.Order.Commands
+                              {
+                                  [GenerateCommand]
+                                  public sealed record PlaceOrder;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains("Controllers.Aggregates.Mappers;", generatedCode, StringComparison.Ordinal);
+        Assert.DoesNotContain("Controllers.Projections.Mappers;", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated server domain registration compiles when only projection mapper registrations are included.
+    /// </summary>
+    [Fact]
+    public void GeneratedDomainRegistrationWithOnlyProjectionsCompilesWithoutAggregateMapperUsing()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Projections.Balance
+                              {
+                                  [GenerateProjectionEndpoints]
+                                  [ProjectionPath("balances/{id}")]
+                                  public sealed record BalanceProjection;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains("Controllers.Projections.Mappers;", generatedCode, StringComparison.Ordinal);
+        Assert.DoesNotContain("Controllers.Aggregates.Mappers;", generatedCode, StringComparison.Ordinal);
+    }
 }
