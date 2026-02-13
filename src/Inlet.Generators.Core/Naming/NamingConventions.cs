@@ -45,6 +45,14 @@ public static class NamingConventions
 
     private const string FeaturesSegment = "Features";
 
+    private static readonly char[] NamespaceDelimiters =
+    [
+        '.',
+        '-',
+        '_',
+        ' ',
+    ];
+
     /// <summary>
     ///     Extracts the aggregate name from a domain command namespace.
     /// </summary>
@@ -405,6 +413,52 @@ public static class NamingConventions
         commandName + "RequestDto";
 
     /// <summary>
+    ///     Builds a domain registration method name from a source namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace.</param>
+    /// <returns>The method name (for example, "AddSpringDomain").</returns>
+    public static string GetDomainRegistrationMethodName(
+        string sourceNamespace
+    )
+    {
+        string domainRoot = GetDomainRootNamespace(sourceNamespace);
+        string suffix = ToPascalIdentifier(domainRoot);
+        return string.IsNullOrEmpty(suffix) ? "AddDomain" : "Add" + suffix;
+    }
+
+    /// <summary>
+    ///     Derives a domain root namespace from a source namespace.
+    /// </summary>
+    /// <param name="sourceNamespace">The source namespace.</param>
+    /// <returns>
+    ///     The domain root namespace (for example, "Spring.Domain" from
+    ///     "Spring.Domain.Aggregates.BankAccount.Commands").
+    /// </returns>
+    public static string GetDomainRootNamespace(
+        string sourceNamespace
+    )
+    {
+        if (string.IsNullOrWhiteSpace(sourceNamespace))
+        {
+            return sourceNamespace;
+        }
+
+        int aggregatesIndex = sourceNamespace.IndexOf(AggregatesSegment, StringComparison.Ordinal);
+        if (aggregatesIndex > 0)
+        {
+            return sourceNamespace.Substring(0, aggregatesIndex);
+        }
+
+        int projectionsIndex = sourceNamespace.IndexOf(".Projections.", StringComparison.Ordinal);
+        if (projectionsIndex > 0)
+        {
+            return sourceNamespace.Substring(0, projectionsIndex);
+        }
+
+        return sourceNamespace;
+    }
+
+    /// <summary>
     ///     Gets the DTO name from a projection type name.
     /// </summary>
     /// <param name="typeName">The projection type name (e.g., "BankAccountBalanceProjection").</param>
@@ -746,5 +800,33 @@ public static class NamingConventions
 
         // Fallback to legacy behavior
         return GetClientFeatureNamespace(sourceNamespace, subNamespace);
+    }
+
+    private static string ToPascalIdentifier(
+        string value
+    )
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        string[] parts = value.Split(NamespaceDelimiters, StringSplitOptions.RemoveEmptyEntries);
+        StringBuilder sb = new();
+        foreach (string part in parts)
+        {
+            if (part.Length == 0)
+            {
+                continue;
+            }
+
+            sb.Append(char.ToUpperInvariant(part[0]));
+            if (part.Length > 1)
+            {
+                sb.Append(part.Substring(1));
+            }
+        }
+
+        return sb.ToString();
     }
 }
