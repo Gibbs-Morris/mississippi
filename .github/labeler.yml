@@ -26,44 +26,58 @@
 'area:Inlet':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/Inlet*/**/!(*lock.json)'
-          - 'tests/Inlet*/**/!(*lock.json)'
+          - 'src/Inlet*/**'
+          - '!src/Inlet*/**/*lock.json'
+          - 'tests/Inlet*/**'
+          - '!tests/Inlet*/**/*lock.json'
 
 'area:Reservoir':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/Reservoir*/**/!(*lock.json)'
-          - 'tests/Reservoir*/**/!(*lock.json)'
+          - 'src/Reservoir*/**'
+          - '!src/Reservoir*/**/*lock.json'
+          - 'tests/Reservoir*/**'
+          - '!tests/Reservoir*/**/*lock.json'
 
 'area:Aqueduct':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/Aqueduct*/**/!(*lock.json)'
-          - 'tests/Aqueduct*/**/!(*lock.json)'
+          - 'src/Aqueduct*/**'
+          - '!src/Aqueduct*/**/*lock.json'
+          - 'tests/Aqueduct*/**'
+          - '!tests/Aqueduct*/**/*lock.json'
 
 'area:EventSourcing':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/EventSourcing*/**/!(*lock.json)'
-          - 'tests/EventSourcing*/**/!(*lock.json)'
+          - 'src/EventSourcing*/**'
+          - '!src/EventSourcing*/**/*lock.json'
+          - 'tests/EventSourcing*/**'
+          - '!tests/EventSourcing*/**/*lock.json'
 
 'area:Refraction':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/Refraction*/**/!(*lock.json)'
-          - 'tests/Refraction*/**/!(*lock.json)'
+          - 'src/Refraction*/**'
+          - '!src/Refraction*/**/*lock.json'
+          - 'tests/Refraction*/**'
+          - '!tests/Refraction*/**/*lock.json'
 
 'area:Common':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/Common*/**/!(*lock.json)'
-          - 'tests/Common*/**/!(*lock.json)'
+          - 'src/Common*/**'
+          - '!src/Common*/**/*lock.json'
+          - 'tests/Common*/**'
+          - '!tests/Common*/**/*lock.json'
 
 'area:SDK':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/Sdk*/**/!(*lock.json)'
-          - 'tests/Sdk*/**/!(*lock.json)'
+          - 'src/Sdk*/**'
+          - '!src/Sdk*/**/*lock.json'
+          - 'tests/Sdk*/**'
+          - '!tests/Sdk*/**/*lock.json'
 
 # =============================================================================
 # CROSS-CUTTING LABELS
@@ -73,60 +87,82 @@
 generators:
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/Inlet.*.Generators/**/!(*lock.json)'
-          - 'src/Inlet.Generators.*/**/!(*lock.json)'
-          - 'tests/Inlet.*.Generators*/**/!(*lock.json)'
+          - 'src/Inlet.*.Generators/**'
+          - '!src/Inlet.*.Generators/**/*lock.json'
+          - 'src/Inlet.Generators.*/**'
+          - '!src/Inlet.Generators.*/**/*lock.json'
+          - 'tests/Inlet.*.Generators*/**'
+          - '!tests/Inlet.*.Generators*/**/*lock.json'
 
 # Storage provider-specific changes
 'storage:Cosmos':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/**/*.Cosmos/**/!(*lock.json)'
-          - 'tests/**/*.Cosmos*/**/!(*lock.json)'
+          - 'src/**/*.Cosmos/**'
+          - '!src/**/*.Cosmos/**/*lock.json'
+          - 'tests/**/*.Cosmos*/**'
+          - '!tests/**/*.Cosmos*/**/*lock.json'
 
 # Orleans runtime and silo/grain changes
 'runtime:Orleans':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/**/*.Grains/**/!(*lock.json)'
-          - 'src/**/*.Silo/**/!(*lock.json)'
-          - 'tests/**/*.Grains*/**/!(*lock.json)'
-          - 'tests/**/*.Silo*/**/!(*lock.json)'
+          - 'src/**/*.Grains/**'
+          - '!src/**/*.Grains/**/*lock.json'
+          - 'src/**/*.Silo/**'
+          - '!src/**/*.Silo/**/*lock.json'
+          - 'tests/**/*.Grains*/**'
+          - '!tests/**/*.Grains*/**/*lock.json'
+          - 'tests/**/*.Silo*/**'
+          - '!tests/**/*.Silo*/**/*lock.json'
 
 # Blazor UI and pages
 'ui:Blazor':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/**/*.Blazor/**/!(*lock.json)'
-          - 'src/**/*.Pages/**/!(*lock.json)'
-          - 'tests/**/*.Blazor*/**/!(*lock.json)'
-          - 'tests/**/*.Pages*/**/!(*lock.json)'
+          - 'src/**/*.Blazor/**'
+          - '!src/**/*.Blazor/**/*lock.json'
+          - 'src/**/*.Pages/**'
+          - '!src/**/*.Pages/**/*lock.json'
+          - 'tests/**/*.Blazor*/**'
+          - '!tests/**/*.Blazor*/**/*lock.json'
+          - 'tests/**/*.Pages*/**'
+          - '!tests/**/*.Pages*/**/*lock.json'
 
 # Public API surface
 api:
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/**/*.Api/**/!(*lock.json)'
-          - 'tests/**/*.Api*/**/!(*lock.json)'
+          - 'src/**/*.Api/**'
+          - '!src/**/*.Api/**/*lock.json'
+          - 'tests/**/*.Api*/**'
+          - '!tests/**/*.Api*/**/*lock.json'
 
 # Matches GitHub's default 'documentation' label
 documentation:
   - changed-files:
       - any-glob-to-any-file:
-          - 'docs/**/!(*lock.json)'
-          - '.github/instructions/**/!(*lock.json)'
+          - 'docs/**'
+          - '!docs/**/*lock.json'
+          - '.github/instructions/**'
+          - '!.github/instructions/**/*lock.json'
           - '**/*.md'
 
 # CI/CD and automation
 'ci/cd':
   - changed-files:
       - any-glob-to-any-file:
-          - '.github/workflows/**/!(*lock.json)'
-          - '.github/actions/**/!(*lock.json)'
-          - '.github/linters/**/!(*lock.json)'
-          - 'eng/**/!(*lock.json)'
+          - '.github/workflows/**'
+          - '!.github/workflows/**/*lock.json'
+          - '.github/actions/**'
+          - '!.github/actions/**/*lock.json'
+          - '.github/linters/**'
+          - '!.github/linters/**/*lock.json'
+          - 'eng/**'
+          - '!eng/**/*lock.json'
           - '*.ps1'
-          - '.cursor/rules/**/!(*lock.json)'
+          - '.cursor/rules/**'
+          - '!.cursor/rules/**/*lock.json'
 
 # Root build configuration (high-impact, review carefully)
 build-config:
@@ -143,7 +179,9 @@ build-config:
 tests-only:
   - all:
       - changed-files:
-          - any-glob-to-any-file: 'tests/**/!(*lock.json)'
+      - any-glob-to-any-file:
+        - 'tests/**'
+        - '!tests/**/*lock.json'
           - all-globs-to-all-files: '!src/**'
 
 # =============================================================================
@@ -153,9 +191,11 @@ tests-only:
 'sample:Spring':
   - changed-files:
       - any-glob-to-any-file:
-          - 'samples/Spring/**/!(*lock.json)'
+          - 'samples/Spring/**'
+          - '!samples/Spring/**/*lock.json'
 
 'sample:Crescent':
   - changed-files:
       - any-glob-to-any-file:
-          - 'samples/Crescent/**/!(*lock.json)'
+          - 'samples/Crescent/**'
+          - '!samples/Crescent/**/*lock.json'
