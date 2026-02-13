@@ -45,47 +45,13 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     {
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
-            if (string.IsNullOrWhiteSpace(containingNamespace))
-            {
-                continue;
-            }
-
-            string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
-            if (string.IsNullOrWhiteSpace(domainRoot))
-            {
-                continue;
-            }
-
-            if (ContainsAttribute(typeSymbol, generateCommandAttribute))
-            {
-                string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(containingNamespace);
-                if (!string.IsNullOrEmpty(aggregateName))
-                {
-                    if (!aggregateNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? aggregateNames))
-                    {
-                        aggregateNames = [];
-                        aggregateNamesByDomain[domainRoot] = aggregateNames;
-                    }
-
-                    aggregateNames.Add(aggregateName!);
-                }
-            }
-
-            if (ContainsAttribute(typeSymbol, generateProjectionAttribute) &&
-                ContainsAttribute(typeSymbol, projectionPathAttribute))
-            {
-                string projectionName = typeSymbol.Name.EndsWith("Projection", StringComparison.Ordinal)
-                    ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Projection".Length)
-                    : typeSymbol.Name;
-                if (!projectionNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? projectionNames))
-                {
-                    projectionNames = [];
-                    projectionNamesByDomain[domainRoot] = projectionNames;
-                }
-
-                projectionNames.Add(projectionName);
-            }
+            ProcessTypeMember(
+                typeSymbol,
+                generateCommandAttribute,
+                generateProjectionAttribute,
+                projectionPathAttribute,
+                aggregateNamesByDomain,
+                projectionNamesByDomain);
         }
 
         foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
@@ -98,6 +64,90 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 aggregateNamesByDomain,
                 projectionNamesByDomain);
         }
+    }
+
+    private static void ProcessTypeMember(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateCommandAttribute,
+        INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? projectionPathAttribute,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
+        Dictionary<string, HashSet<string>> projectionNamesByDomain
+    )
+    {
+        string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
+        if (string.IsNullOrWhiteSpace(containingNamespace))
+        {
+            return;
+        }
+
+        string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
+        if (string.IsNullOrWhiteSpace(domainRoot))
+        {
+            return;
+        }
+
+        AddAggregateNameIfPresent(typeSymbol, generateCommandAttribute, containingNamespace, domainRoot, aggregateNamesByDomain);
+        AddProjectionNameIfPresent(
+            typeSymbol,
+            generateProjectionAttribute,
+            projectionPathAttribute,
+            domainRoot,
+            projectionNamesByDomain);
+    }
+
+    private static void AddAggregateNameIfPresent(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateCommandAttribute,
+        string containingNamespace,
+        string domainRoot,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain
+    )
+    {
+        if (!ContainsAttribute(typeSymbol, generateCommandAttribute))
+        {
+            return;
+        }
+
+        string? aggregateName = TargetNamespaceResolver.ExtractAggregateName(containingNamespace);
+        if (string.IsNullOrEmpty(aggregateName))
+        {
+            return;
+        }
+
+        if (!aggregateNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? aggregateNames))
+        {
+            aggregateNames = [];
+            aggregateNamesByDomain[domainRoot] = aggregateNames;
+        }
+
+        aggregateNames.Add(aggregateName!);
+    }
+
+    private static void AddProjectionNameIfPresent(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? projectionPathAttribute,
+        string domainRoot,
+        Dictionary<string, HashSet<string>> projectionNamesByDomain
+    )
+    {
+        if (!ContainsAttribute(typeSymbol, generateProjectionAttribute) ||
+            !ContainsAttribute(typeSymbol, projectionPathAttribute))
+        {
+            return;
+        }
+
+        string projectionName = typeSymbol.Name.EndsWith("Projection", StringComparison.Ordinal)
+            ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Projection".Length)
+            : typeSymbol.Name;
+        if (!projectionNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? projectionNames))
+        {
+            projectionNames = [];
+            projectionNamesByDomain[domainRoot] = projectionNames;
+        }
+
+        projectionNames.Add(projectionName);
     }
 
     private static string GenerateRegistrationsSource(

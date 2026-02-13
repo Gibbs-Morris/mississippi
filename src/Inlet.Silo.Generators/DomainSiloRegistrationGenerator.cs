@@ -65,58 +65,15 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     {
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
-            if (string.IsNullOrWhiteSpace(containingNamespace))
-            {
-                continue;
-            }
-
-            string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
-            if (string.IsNullOrWhiteSpace(domainRoot))
-            {
-                continue;
-            }
-
-            if (ContainsAttribute(typeSymbol, generateAggregateAttribute))
-            {
-                string aggregateName = typeSymbol.Name.EndsWith("Aggregate", StringComparison.Ordinal)
-                    ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Aggregate".Length)
-                    : typeSymbol.Name;
-                if (!aggregateNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? aggregateNames))
-                {
-                    aggregateNames = [];
-                    aggregateNamesByDomain[domainRoot] = aggregateNames;
-                }
-
-                aggregateNames.Add(aggregateName);
-            }
-
-            if (ContainsAttribute(typeSymbol, generateProjectionAttribute))
-            {
-                string projectionName = typeSymbol.Name.EndsWith("Projection", StringComparison.Ordinal)
-                    ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Projection".Length)
-                    : typeSymbol.Name;
-                if (!projectionNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? projectionNames))
-                {
-                    projectionNames = [];
-                    projectionNamesByDomain[domainRoot] = projectionNames;
-                }
-
-                projectionNames.Add(projectionName);
-            }
-
-            if (ContainsAttribute(typeSymbol, generateSagaAttribute) ||
-                ContainsAttribute(typeSymbol, generateSagaGenericAttribute))
-            {
-                string sagaName = GetSagaName(typeSymbol.Name);
-                if (!sagaNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? sagaNames))
-                {
-                    sagaNames = [];
-                    sagaNamesByDomain[domainRoot] = sagaNames;
-                }
-
-                sagaNames.Add(sagaName);
-            }
+            ProcessTypeMember(
+                typeSymbol,
+                generateAggregateAttribute,
+                generateProjectionAttribute,
+                generateSagaAttribute,
+                generateSagaGenericAttribute,
+                aggregateNamesByDomain,
+                projectionNamesByDomain,
+                sagaNamesByDomain);
         }
 
         foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
@@ -131,6 +88,106 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 projectionNamesByDomain,
                 sagaNamesByDomain);
         }
+    }
+
+    private static void ProcessTypeMember(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateAggregateAttribute,
+        INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? generateSagaAttribute,
+        INamedTypeSymbol? generateSagaGenericAttribute,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
+        Dictionary<string, HashSet<string>> projectionNamesByDomain,
+        Dictionary<string, HashSet<string>> sagaNamesByDomain
+    )
+    {
+        string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
+        if (string.IsNullOrWhiteSpace(containingNamespace))
+        {
+            return;
+        }
+
+        string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
+        if (string.IsNullOrWhiteSpace(domainRoot))
+        {
+            return;
+        }
+
+        AddAggregateNameIfPresent(typeSymbol, generateAggregateAttribute, domainRoot, aggregateNamesByDomain);
+        AddProjectionNameIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, projectionNamesByDomain);
+        AddSagaNameIfPresent(typeSymbol, generateSagaAttribute, generateSagaGenericAttribute, domainRoot, sagaNamesByDomain);
+    }
+
+    private static void AddAggregateNameIfPresent(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateAggregateAttribute,
+        string domainRoot,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain
+    )
+    {
+        if (!ContainsAttribute(typeSymbol, generateAggregateAttribute))
+        {
+            return;
+        }
+
+        string aggregateName = typeSymbol.Name.EndsWith("Aggregate", StringComparison.Ordinal)
+            ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Aggregate".Length)
+            : typeSymbol.Name;
+        if (!aggregateNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? aggregateNames))
+        {
+            aggregateNames = [];
+            aggregateNamesByDomain[domainRoot] = aggregateNames;
+        }
+
+        aggregateNames.Add(aggregateName);
+    }
+
+    private static void AddProjectionNameIfPresent(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateProjectionAttribute,
+        string domainRoot,
+        Dictionary<string, HashSet<string>> projectionNamesByDomain
+    )
+    {
+        if (!ContainsAttribute(typeSymbol, generateProjectionAttribute))
+        {
+            return;
+        }
+
+        string projectionName = typeSymbol.Name.EndsWith("Projection", StringComparison.Ordinal)
+            ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Projection".Length)
+            : typeSymbol.Name;
+        if (!projectionNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? projectionNames))
+        {
+            projectionNames = [];
+            projectionNamesByDomain[domainRoot] = projectionNames;
+        }
+
+        projectionNames.Add(projectionName);
+    }
+
+    private static void AddSagaNameIfPresent(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateSagaAttribute,
+        INamedTypeSymbol? generateSagaGenericAttribute,
+        string domainRoot,
+        Dictionary<string, HashSet<string>> sagaNamesByDomain
+    )
+    {
+        if (!ContainsAttribute(typeSymbol, generateSagaAttribute) &&
+            !ContainsAttribute(typeSymbol, generateSagaGenericAttribute))
+        {
+            return;
+        }
+
+        string sagaName = GetSagaName(typeSymbol.Name);
+        if (!sagaNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? sagaNames))
+        {
+            sagaNames = [];
+            sagaNamesByDomain[domainRoot] = sagaNames;
+        }
+
+        sagaNames.Add(sagaName);
     }
 
     private static string GenerateRegistrationsSource(
