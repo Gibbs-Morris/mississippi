@@ -89,7 +89,7 @@ public sealed class LoggingArchitectureTests : ArchitectureTestBase
     {
         List<string> violations = ArchitectureModel.Classes.SelectMany(type => type.Members.OfType<FieldMember>())
             .Where(field => (field.Visibility == Visibility.Private) &&
-                            field.Name.StartsWith("_", StringComparison.Ordinal) &&
+                            field.Name.StartsWith('_') &&
                             (field.Name.Length > 1) &&
                             field.Name[1..].StartsWith("log", StringComparison.OrdinalIgnoreCase))
             .Select(field => field.FullName)

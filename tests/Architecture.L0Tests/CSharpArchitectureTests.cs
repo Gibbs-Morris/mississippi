@@ -42,7 +42,7 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
                            !type.Name.EndsWith("LoggerExtensions", StringComparison.Ordinal))
             .SelectMany(type => type.Members.OfType<FieldMember>())
             .Where(field => (field.Visibility == Visibility.Private) &&
-                            field.Name.StartsWith("_", StringComparison.Ordinal) &&
+                                                        field.Name.StartsWith('_') &&
                             !(field.Name.StartsWith("__", StringComparison.Ordinal) &&
                               field.Name.EndsWith("Callback", StringComparison.Ordinal)))
             .Select(field => field.FullName)
