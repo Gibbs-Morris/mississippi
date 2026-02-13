@@ -53,6 +53,7 @@ public sealed class DomainServerRegistrationGeneratorTests
         SyntaxTree[] syntaxTrees = sources.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray();
         string runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location) ??
                                   throw new InvalidOperationException("Runtime directory is unavailable.");
+
         static string RuntimeAssembly(
             string directory,
             string fileName

@@ -19,6 +19,8 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
 {
+    private const string FeaturesSuffix = ".Features";
+
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
 
@@ -30,79 +32,6 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
 
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
-
-    private const string FeaturesSuffix = ".Features";
-
-    private static void GatherFromNamespace(
-        INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol? generateCommandAttribute,
-        INamedTypeSymbol? generateSagaAttribute,
-        INamedTypeSymbol? generateSagaGenericAttribute,
-        INamedTypeSymbol? generateProjectionAttribute,
-        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> sagaNamesByDomain,
-        HashSet<string> domainsWithProjections
-    )
-    {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
-        {
-            ProcessTypeMember(
-                typeSymbol,
-                generateCommandAttribute,
-                generateSagaAttribute,
-                generateSagaGenericAttribute,
-                generateProjectionAttribute,
-                aggregateNamesByDomain,
-                sagaNamesByDomain,
-                domainsWithProjections);
-        }
-
-        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
-        {
-            GatherFromNamespace(
-                child,
-                generateCommandAttribute,
-                generateSagaAttribute,
-                generateSagaGenericAttribute,
-                generateProjectionAttribute,
-                aggregateNamesByDomain,
-                sagaNamesByDomain,
-                domainsWithProjections);
-        }
-    }
-
-    private static void ProcessTypeMember(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol? generateCommandAttribute,
-        INamedTypeSymbol? generateSagaAttribute,
-        INamedTypeSymbol? generateSagaGenericAttribute,
-        INamedTypeSymbol? generateProjectionAttribute,
-        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> sagaNamesByDomain,
-        HashSet<string> domainsWithProjections
-    )
-    {
-        string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
-        if (string.IsNullOrWhiteSpace(containingNamespace))
-        {
-            return;
-        }
-
-        string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
-        if (string.IsNullOrWhiteSpace(domainRoot))
-        {
-            return;
-        }
-
-        AddAggregateNameIfPresent(
-            typeSymbol,
-            generateCommandAttribute,
-            containingNamespace,
-            domainRoot,
-            aggregateNamesByDomain);
-        AddSagaNameIfPresent(typeSymbol, generateSagaAttribute, generateSagaGenericAttribute, domainRoot, sagaNamesByDomain);
-        AddProjectionDomainIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, domainsWithProjections);
-    }
 
     private static void AddAggregateNameIfPresent(
         INamedTypeSymbol typeSymbol,
@@ -167,6 +96,44 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         }
 
         sagaNames.Add(sagaName);
+    }
+
+    private static void GatherFromNamespace(
+        INamespaceSymbol namespaceSymbol,
+        INamedTypeSymbol? generateCommandAttribute,
+        INamedTypeSymbol? generateSagaAttribute,
+        INamedTypeSymbol? generateSagaGenericAttribute,
+        INamedTypeSymbol? generateProjectionAttribute,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
+        Dictionary<string, HashSet<string>> sagaNamesByDomain,
+        HashSet<string> domainsWithProjections
+    )
+    {
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        {
+            ProcessTypeMember(
+                typeSymbol,
+                generateCommandAttribute,
+                generateSagaAttribute,
+                generateSagaGenericAttribute,
+                generateProjectionAttribute,
+                aggregateNamesByDomain,
+                sagaNamesByDomain,
+                domainsWithProjections);
+        }
+
+        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
+        {
+            GatherFromNamespace(
+                child,
+                generateCommandAttribute,
+                generateSagaAttribute,
+                generateSagaGenericAttribute,
+                generateProjectionAttribute,
+                aggregateNamesByDomain,
+                sagaNamesByDomain,
+                domainsWithProjections);
+        }
     }
 
     private static string GenerateRegistrationsSource(
@@ -311,6 +278,44 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
                 (model.AggregateNames.Count > 0) || (model.SagaNames.Count > 0) || model.IncludesProjections)
             .OrderBy(model => model.DomainMethodName, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static void ProcessTypeMember(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateCommandAttribute,
+        INamedTypeSymbol? generateSagaAttribute,
+        INamedTypeSymbol? generateSagaGenericAttribute,
+        INamedTypeSymbol? generateProjectionAttribute,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
+        Dictionary<string, HashSet<string>> sagaNamesByDomain,
+        HashSet<string> domainsWithProjections
+    )
+    {
+        string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
+        if (string.IsNullOrWhiteSpace(containingNamespace))
+        {
+            return;
+        }
+
+        string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
+        if (string.IsNullOrWhiteSpace(domainRoot))
+        {
+            return;
+        }
+
+        AddAggregateNameIfPresent(
+            typeSymbol,
+            generateCommandAttribute,
+            containingNamespace,
+            domainRoot,
+            aggregateNamesByDomain);
+        AddSagaNameIfPresent(
+            typeSymbol,
+            generateSagaAttribute,
+            generateSagaGenericAttribute,
+            domainRoot,
+            sagaNamesByDomain);
+        AddProjectionDomainIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, domainsWithProjections);
     }
 
     /// <inheritdoc />

@@ -45,72 +45,6 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     private const string UxProjectionRegistrationsTypeFullName =
         "Mississippi.EventSourcing.UxProjections.UxProjectionRegistrations";
 
-    private static void GatherFromNamespace(
-        INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol? generateAggregateAttribute,
-        INamedTypeSymbol? generateProjectionAttribute,
-        INamedTypeSymbol? generateSagaAttribute,
-        INamedTypeSymbol? generateSagaGenericAttribute,
-        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain,
-        Dictionary<string, HashSet<string>> sagaNamesByDomain
-    )
-    {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
-        {
-            ProcessTypeMember(
-                typeSymbol,
-                generateAggregateAttribute,
-                generateProjectionAttribute,
-                generateSagaAttribute,
-                generateSagaGenericAttribute,
-                aggregateNamesByDomain,
-                projectionNamesByDomain,
-                sagaNamesByDomain);
-        }
-
-        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
-        {
-            GatherFromNamespace(
-                child,
-                generateAggregateAttribute,
-                generateProjectionAttribute,
-                generateSagaAttribute,
-                generateSagaGenericAttribute,
-                aggregateNamesByDomain,
-                projectionNamesByDomain,
-                sagaNamesByDomain);
-        }
-    }
-
-    private static void ProcessTypeMember(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol? generateAggregateAttribute,
-        INamedTypeSymbol? generateProjectionAttribute,
-        INamedTypeSymbol? generateSagaAttribute,
-        INamedTypeSymbol? generateSagaGenericAttribute,
-        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain,
-        Dictionary<string, HashSet<string>> sagaNamesByDomain
-    )
-    {
-        string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
-        if (string.IsNullOrWhiteSpace(containingNamespace))
-        {
-            return;
-        }
-
-        string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
-        if (string.IsNullOrWhiteSpace(domainRoot))
-        {
-            return;
-        }
-
-        AddAggregateNameIfPresent(typeSymbol, generateAggregateAttribute, domainRoot, aggregateNamesByDomain);
-        AddProjectionNameIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, projectionNamesByDomain);
-        AddSagaNameIfPresent(typeSymbol, generateSagaAttribute, generateSagaGenericAttribute, domainRoot, sagaNamesByDomain);
-    }
-
     private static void AddAggregateNameIfPresent(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? generateAggregateAttribute,
@@ -181,6 +115,44 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         sagaNames.Add(sagaName);
+    }
+
+    private static void GatherFromNamespace(
+        INamespaceSymbol namespaceSymbol,
+        INamedTypeSymbol? generateAggregateAttribute,
+        INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? generateSagaAttribute,
+        INamedTypeSymbol? generateSagaGenericAttribute,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
+        Dictionary<string, HashSet<string>> projectionNamesByDomain,
+        Dictionary<string, HashSet<string>> sagaNamesByDomain
+    )
+    {
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        {
+            ProcessTypeMember(
+                typeSymbol,
+                generateAggregateAttribute,
+                generateProjectionAttribute,
+                generateSagaAttribute,
+                generateSagaGenericAttribute,
+                aggregateNamesByDomain,
+                projectionNamesByDomain,
+                sagaNamesByDomain);
+        }
+
+        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
+        {
+            GatherFromNamespace(
+                child,
+                generateAggregateAttribute,
+                generateProjectionAttribute,
+                generateSagaAttribute,
+                generateSagaGenericAttribute,
+                aggregateNamesByDomain,
+                projectionNamesByDomain,
+                sagaNamesByDomain);
+        }
     }
 
     private static string GenerateRegistrationsSource(
@@ -318,6 +290,39 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null &&
         compilation.GetTypeByMetadataName(UxProjectionRegistrationsTypeFullName) is not null &&
         compilation.GetTypeByMetadataName(SagaRegistrationsTypeFullName) is not null;
+
+    private static void ProcessTypeMember(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateAggregateAttribute,
+        INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? generateSagaAttribute,
+        INamedTypeSymbol? generateSagaGenericAttribute,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
+        Dictionary<string, HashSet<string>> projectionNamesByDomain,
+        Dictionary<string, HashSet<string>> sagaNamesByDomain
+    )
+    {
+        string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
+        if (string.IsNullOrWhiteSpace(containingNamespace))
+        {
+            return;
+        }
+
+        string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
+        if (string.IsNullOrWhiteSpace(domainRoot))
+        {
+            return;
+        }
+
+        AddAggregateNameIfPresent(typeSymbol, generateAggregateAttribute, domainRoot, aggregateNamesByDomain);
+        AddProjectionNameIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, projectionNamesByDomain);
+        AddSagaNameIfPresent(
+            typeSymbol,
+            generateSagaAttribute,
+            generateSagaGenericAttribute,
+            domainRoot,
+            sagaNamesByDomain);
+    }
 
     /// <inheritdoc />
     public void Initialize(

@@ -48,9 +48,6 @@ public static class GeneratorSymbolAnalysis
         }
 
         return Enumerable.Repeat(compilation.Assembly, 1)
-            .Concat(
-                compilation.References
-                    .Select(compilation.GetAssemblyOrModuleSymbol)
-                    .OfType<IAssemblySymbol>());
+            .Concat(compilation.References.Select(compilation.GetAssemblyOrModuleSymbol).OfType<IAssemblySymbol>());
     }
 }

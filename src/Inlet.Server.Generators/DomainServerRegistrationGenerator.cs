@@ -27,68 +27,6 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
 
     private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
-    private static void GatherFromNamespace(
-        INamespaceSymbol namespaceSymbol,
-        INamedTypeSymbol? generateCommandAttribute,
-        INamedTypeSymbol? generateProjectionAttribute,
-        INamedTypeSymbol? projectionPathAttribute,
-        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain
-    )
-    {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
-        {
-            ProcessTypeMember(
-                typeSymbol,
-                generateCommandAttribute,
-                generateProjectionAttribute,
-                projectionPathAttribute,
-                aggregateNamesByDomain,
-                projectionNamesByDomain);
-        }
-
-        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
-        {
-            GatherFromNamespace(
-                child,
-                generateCommandAttribute,
-                generateProjectionAttribute,
-                projectionPathAttribute,
-                aggregateNamesByDomain,
-                projectionNamesByDomain);
-        }
-    }
-
-    private static void ProcessTypeMember(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol? generateCommandAttribute,
-        INamedTypeSymbol? generateProjectionAttribute,
-        INamedTypeSymbol? projectionPathAttribute,
-        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain
-    )
-    {
-        string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
-        if (string.IsNullOrWhiteSpace(containingNamespace))
-        {
-            return;
-        }
-
-        string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
-        if (string.IsNullOrWhiteSpace(domainRoot))
-        {
-            return;
-        }
-
-        AddAggregateNameIfPresent(typeSymbol, generateCommandAttribute, containingNamespace, domainRoot, aggregateNamesByDomain);
-        AddProjectionNameIfPresent(
-            typeSymbol,
-            generateProjectionAttribute,
-            projectionPathAttribute,
-            domainRoot,
-            projectionNamesByDomain);
-    }
-
     private static void AddAggregateNameIfPresent(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? generateCommandAttribute,
@@ -141,6 +79,38 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         }
 
         projectionNames.Add(projectionName);
+    }
+
+    private static void GatherFromNamespace(
+        INamespaceSymbol namespaceSymbol,
+        INamedTypeSymbol? generateCommandAttribute,
+        INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? projectionPathAttribute,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
+        Dictionary<string, HashSet<string>> projectionNamesByDomain
+    )
+    {
+        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
+        {
+            ProcessTypeMember(
+                typeSymbol,
+                generateCommandAttribute,
+                generateProjectionAttribute,
+                projectionPathAttribute,
+                aggregateNamesByDomain,
+                projectionNamesByDomain);
+        }
+
+        foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
+        {
+            GatherFromNamespace(
+                child,
+                generateCommandAttribute,
+                generateProjectionAttribute,
+                projectionPathAttribute,
+                aggregateNamesByDomain,
+                projectionNamesByDomain);
+        }
     }
 
     private static string GenerateRegistrationsSource(
@@ -261,6 +231,41 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             .Where(model => (model.AggregateNames.Count > 0) || (model.ProjectionNames.Count > 0))
             .OrderBy(model => model.DomainMethodName, StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private static void ProcessTypeMember(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? generateCommandAttribute,
+        INamedTypeSymbol? generateProjectionAttribute,
+        INamedTypeSymbol? projectionPathAttribute,
+        Dictionary<string, HashSet<string>> aggregateNamesByDomain,
+        Dictionary<string, HashSet<string>> projectionNamesByDomain
+    )
+    {
+        string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
+        if (string.IsNullOrWhiteSpace(containingNamespace))
+        {
+            return;
+        }
+
+        string domainRoot = NamingConventions.GetDomainRootNamespace(containingNamespace);
+        if (string.IsNullOrWhiteSpace(domainRoot))
+        {
+            return;
+        }
+
+        AddAggregateNameIfPresent(
+            typeSymbol,
+            generateCommandAttribute,
+            containingNamespace,
+            domainRoot,
+            aggregateNamesByDomain);
+        AddProjectionNameIfPresent(
+            typeSymbol,
+            generateProjectionAttribute,
+            projectionPathAttribute,
+            domainRoot,
+            projectionNamesByDomain);
     }
 
     /// <inheritdoc />

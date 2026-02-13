@@ -461,33 +461,6 @@ public static class NamingConventions
     }
 
     /// <summary>
-    ///     Gets a saga name from a saga state type name.
-    /// </summary>
-    /// <param name="typeName">The saga state type name.</param>
-    /// <returns>The saga name with trailing "SagaState" or "State" removed when present.</returns>
-    public static string GetSagaName(
-        string typeName
-    )
-    {
-        if (typeName is null)
-        {
-            throw new ArgumentNullException(nameof(typeName));
-        }
-
-        if (typeName.EndsWith("SagaState", StringComparison.Ordinal))
-        {
-            return typeName.Substring(0, typeName.Length - "SagaState".Length);
-        }
-
-        if (typeName.EndsWith("State", StringComparison.Ordinal))
-        {
-            return typeName.Substring(0, typeName.Length - "State".Length);
-        }
-
-        return typeName;
-    }
-
-    /// <summary>
     ///     Gets the DTO name from a projection type name.
     /// </summary>
     /// <param name="typeName">The projection type name (e.g., "BankAccountBalanceProjection").</param>
@@ -525,6 +498,33 @@ public static class NamingConventions
         string baseName = RemoveSuffix(typeName, "Projection");
         baseName = RemoveSuffix(baseName, "Aggregate");
         return ToKebabCase(baseName);
+    }
+
+    /// <summary>
+    ///     Gets a saga name from a saga state type name.
+    /// </summary>
+    /// <param name="typeName">The saga state type name.</param>
+    /// <returns>The saga name with trailing "SagaState" or "State" removed when present.</returns>
+    public static string GetSagaName(
+        string typeName
+    )
+    {
+        if (typeName is null)
+        {
+            throw new ArgumentNullException(nameof(typeName));
+        }
+
+        if (typeName.EndsWith("SagaState", StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - "SagaState".Length);
+        }
+
+        if (typeName.EndsWith("State", StringComparison.Ordinal))
+        {
+            return typeName.Substring(0, typeName.Length - "State".Length);
+        }
+
+        return typeName;
     }
 
     /// <summary>
