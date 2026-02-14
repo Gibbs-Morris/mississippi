@@ -1,0 +1,15 @@
+<button class="@CssClass"
+        type="@ButtonType"
+        disabled="@Model.IsDisabled"
+        aria-label="@Model.AriaLabel"
+        title="@Model.Title"
+        @onclick="HandleClickAsync"
+        @onmousedown="HandleMouseDownAsync"
+        @onmouseup="HandleMouseUpAsync"
+        @onfocus="HandleFocusAsync"
+        @onblur="HandleBlurAsync"
+        @onkeydown="HandleKeyDownAsync"
+        @onkeyup="HandleKeyUpAsync"
+        @attributes="AdditionalAttributes">
+    @Model.Text
+</button>
