@@ -2,6 +2,8 @@
 @using Mississippi.Refraction.Components.Molecules
 @using Mississippi.Refraction.Components.Molecules.MisButton
 @using Mississippi.Refraction.Components.Molecules.MisButton.Actions
+@using Mississippi.Refraction.Components.Molecules.MisCheckboxActions
+@using Mississippi.Refraction.Components.Molecules.MisSelectActions
 @using Mississippi.Refraction.Components.Molecules.MisTextInputActions
 @inherits StoreComponent
 
@@ -115,6 +117,91 @@ function calculateEventPosition(events) {
 </section>
 
 <section>
+    <h2>MisCheckbox</h2>
+
+    <h3>Control Inputs</h3>
+    <div>
+        <label>
+            Value Attribute
+            <input value="@CheckboxModel.Value" @oninput="HandleCheckboxValueChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            IntentId
+            <input value="@CheckboxModel.IntentId" @oninput="HandleCheckboxIntentIdChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            AriaLabel
+            <input value="@CheckboxModel.AriaLabel" @oninput="HandleCheckboxAriaLabelChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Title
+            <input value="@CheckboxModel.Title" @oninput="HandleCheckboxTitleChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            CssClass
+            <input value="@CheckboxModel.CssClass" @oninput="HandleCheckboxCssClassChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Visual State
+            <select value="@CheckboxModel.State" @onchange="HandleCheckboxStateChanged">
+                @foreach (MisCheckboxState state in Enum.GetValues<MisCheckboxState>())
+                {
+                    <option value="@state">@state</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@CheckboxModel.IsChecked" @onchange="HandleCheckboxIsCheckedChanged" /> Checked
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@CheckboxModel.IsDisabled" @onchange="HandleCheckboxIsDisabledChanged" /> Disabled
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@CheckboxModel.IsRequired" @onchange="HandleCheckboxIsRequiredChanged" /> Required
+        </label>
+    </div>
+
+    <h3>Preview</h3>
+    <label style="display: inline-flex; align-items: center; gap: var(--mis-space-sm);">
+        <MisCheckbox Model="@CheckboxModel"
+                     OnAction="@((IMisCheckboxAction action) => HandleMisCheckboxActionAsync(action))" />
+        Accept terms
+    </label>
+
+    <h3>Events</h3>
+    <button type="button" @onclick="HandleClearCheckboxEvents">Clear Events</button>
+    @if (CheckboxEvents.Count == 0)
+    {
+        <p>No events recorded yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (string checkboxEvent in CheckboxEvents)
+            {
+                <li>@checkboxEvent</li>
+            }
+        </ul>
+    }
+</section>
+
+<section>
     <h2>MisTextInput</h2>
 
     <h3>Control Inputs</h3>
@@ -198,6 +285,95 @@ function calculateEventPosition(events) {
             @foreach (string textInputEvent in TextInputEvents)
             {
                 <li>@textInputEvent</li>
+            }
+        </ul>
+    }
+</section>
+
+<section>
+    <h2>MisSelect</h2>
+
+    <h3>Control Inputs</h3>
+    <div>
+        <label>
+            Value
+            <input value="@SelectModel.Value" @oninput="HandleSelectValueChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            IntentId
+            <input value="@SelectModel.IntentId" @oninput="HandleSelectIntentIdChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            AriaLabel
+            <input value="@SelectModel.AriaLabel" @oninput="HandleSelectAriaLabelChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Placeholder
+            <input value="@SelectModel.Placeholder" @oninput="HandleSelectPlaceholderChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Title
+            <input value="@SelectModel.Title" @oninput="HandleSelectTitleChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            CssClass
+            <input value="@SelectModel.CssClass" @oninput="HandleSelectCssClassChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Visual State
+            <select value="@SelectModel.State" @onchange="HandleSelectStateChanged">
+                @foreach (MisSelectState state in Enum.GetValues<MisSelectState>())
+                {
+                    <option value="@state">@state</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            Options (one per line; format: value|label|disabled)
+            <textarea rows="6" @oninput="HandleSelectOptionsChanged">@FormatSelectOptionsInput(SelectModel.Options)</textarea>
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@SelectModel.IsDisabled" @onchange="HandleSelectIsDisabledChanged" /> Disabled
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@SelectModel.IsRequired" @onchange="HandleSelectIsRequiredChanged" /> Required
+        </label>
+    </div>
+
+    <h3>Preview</h3>
+    <MisSelect Model="@SelectModel"
+               OnAction="@((IMisSelectAction action) => HandleMisSelectActionAsync(action))" />
+
+    <h3>Events</h3>
+    <button type="button" @onclick="HandleClearSelectEvents">Clear Events</button>
+    @if (SelectEvents.Count == 0)
+    {
+        <p>No events recorded yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (string selectEvent in SelectEvents)
+            {
+                <li>@selectEvent</li>
             }
         </ul>
     }

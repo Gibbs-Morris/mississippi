@@ -90,3 +90,105 @@
     background: var(--mis-bg-muted, #f9fafb);
     filter: grayscale(0.2);
 }
+
+/* ── Select ─────────────────────────────────────────────── */
+
+.mis-select {
+    display: block;
+    width: 100%;
+    min-height: var(--mis-size-md, 2.5rem);
+    padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
+    border: 1px solid var(--mis-border-default, #d1d5db);
+    border-radius: var(--mis-radius-sm, 0.25rem);
+    background: var(--mis-bg-input, #ffffff);
+    color: var(--mis-text-default, #111827);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-size);
+    transition:
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-select:hover {
+    border-color: var(--mis-border-focus, #2563eb);
+}
+
+.mis-select:focus {
+    outline: none;
+    border-color: var(--mis-border-focus, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #2563eb) 15%, transparent);
+}
+
+.mis-select.mis-select--success {
+    border-color: var(--mis-bg-success, #15803d);
+}
+
+.mis-select.mis-select--warning {
+    border-color: var(--mis-border-warning, #b45309);
+    background: color-mix(in srgb, var(--mis-bg-warning, #b45309) 8%, var(--mis-bg-input, #ffffff));
+}
+
+.mis-select.mis-select--error {
+    border-color: var(--mis-border-error, #b91c1c);
+    background: color-mix(in srgb, var(--mis-bg-error, #b91c1c) 8%, var(--mis-bg-input, #ffffff));
+}
+
+.mis-select.mis-select--warning:focus {
+    border-color: var(--mis-border-warning, #b45309);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-warning, #b45309) 20%, transparent);
+}
+
+.mis-select.mis-select--error:focus {
+    border-color: var(--mis-border-error, #b91c1c);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-error, #b91c1c) 20%, transparent);
+}
+
+.mis-select:disabled {
+    opacity: 0.5;
+    background: var(--mis-bg-muted, #f9fafb);
+    filter: grayscale(0.2);
+}
+
+/* ── Checkbox ───────────────────────────────────────────── */
+
+.mis-checkbox {
+    inline-size: 1rem;
+    block-size: 1rem;
+    border: 1px solid var(--mis-border-default, #d1d5db);
+    border-radius: var(--mis-radius-sm, 0.25rem);
+    background: var(--mis-bg-input, #ffffff);
+    accent-color: var(--mis-bg-brand, #2563eb);
+    transition:
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-checkbox:hover {
+    border-color: var(--mis-border-focus, #2563eb);
+}
+
+.mis-checkbox:focus-visible {
+    outline: none;
+    border-color: var(--mis-border-focus, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #2563eb) 15%, transparent);
+}
+
+.mis-checkbox.mis-checkbox--success {
+    border-color: var(--mis-bg-success, #15803d);
+    accent-color: var(--mis-bg-success, #15803d);
+}
+
+.mis-checkbox.mis-checkbox--warning {
+    border-color: var(--mis-border-warning, #b45309);
+    accent-color: var(--mis-bg-warning, #b45309);
+}
+
+.mis-checkbox.mis-checkbox--error {
+    border-color: var(--mis-border-error, #b91c1c);
+    accent-color: var(--mis-bg-error, #b91c1c);
+}
+
+.mis-checkbox:disabled {
+    opacity: 0.5;
+    filter: grayscale(0.2);
+}

@@ -1,0 +1,12 @@
+/*
+ * MisCheckbox – headless reset only.
+ * All visual styling is owned by the active Refraction theme.
+ */
+.mis-checkbox {
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.mis-checkbox:disabled {
+    cursor: not-allowed;
+}
