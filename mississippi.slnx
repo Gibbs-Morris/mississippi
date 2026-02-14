@@ -51,6 +51,8 @@
     <Project Path="src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
     <Project Path="src\Refraction\Refraction.csproj" />
     <Project Path="src\Refraction.Pages\Refraction.Pages.csproj" />
+    <Project Path="src\Refraction.Theme.Luminous\Refraction.Theme.Luminous.csproj" />
+    <Project Path="src\Refraction.Theme.Enterprise\Refraction.Theme.Enterprise.csproj" />
   </Folder>
   <Folder Name="/Framework/Reservoir/">
     <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />

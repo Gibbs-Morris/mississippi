@@ -1,0 +1,57 @@
+/*
+ * Mississippi Refraction Theme: Luminous
+ *
+ * Futuristic, ethereal design language.
+ * Glow effects, smooth transitions, generous radii.
+ * Fewer customization points — opinionated and polished out-of-the-box.
+ *
+ * All values reference --mis-* tokens so apps can rebrand
+ * without forking the theme.
+ */
+
+/* ── Button ──────────────────────────────────────────────── */
+
+.mis-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--mis-size-md, 2.5rem);
+    padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
+    border: 1px solid color-mix(in srgb, var(--mis-bg-brand, #2563eb) 40%, transparent);
+    border-radius: var(--mis-radius-lg, 0.5rem);
+    background: var(--mis-bg-brand, #2563eb);
+    color: var(--mis-text-inverse, #fff);
+    font-family: var(--mis-font-family-body, system-ui, sans-serif);
+    font-size: var(--mis-font-size-md, 1rem);
+    font-weight: var(--mis-font-weight-medium, 500);
+    letter-spacing: 0.025em;
+    box-shadow: 0 0 12px -2px var(--mis-bg-brand, #2563eb);
+    transition:
+        filter var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        transform var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-button:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 0 20px -2px var(--mis-bg-brand, #2563eb);
+    transform: translateY(-1px);
+}
+
+.mis-button:active {
+    filter: brightness(0.95);
+    box-shadow: 0 0 6px -2px var(--mis-bg-brand, #2563eb);
+    transform: translateY(0);
+}
+
+.mis-button:focus-visible {
+    outline: var(--mis-focus-ring-width, 2px) solid var(--mis-border-focus, #2563eb);
+    outline-offset: var(--mis-focus-ring-offset, 2px);
+}
+
+.mis-button:disabled {
+    opacity: 0.4;
+    box-shadow: none;
+    transform: none;
+    filter: grayscale(0.3);
+}

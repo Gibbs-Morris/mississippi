@@ -1,0 +1,49 @@
+/*
+ * Mississippi Refraction Theme: Enterprise
+ *
+ * Clean, professional design language optimized for branding.
+ * Solid colors, crisp borders, clear hierarchy.
+ * Full customization surface — every visual detail is token-driven.
+ *
+ * All values reference --mis-* tokens so apps can rebrand
+ * without forking the theme.
+ */
+
+/* ── Button ──────────────────────────────────────────────── */
+
+.mis-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--mis-size-md, 2.5rem);
+    padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
+    border: 1px solid transparent;
+    border-radius: var(--mis-radius-sm, 0.25rem);
+    background: var(--mis-bg-brand, #2563eb);
+    color: var(--mis-text-inverse, #fff);
+    font-family: var(--mis-font-family-body, system-ui, sans-serif);
+    font-size: var(--mis-font-size-md, 1rem);
+    font-weight: var(--mis-font-weight-medium, 500);
+    text-transform: none;
+    box-shadow: var(--mis-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+    transition: background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-button:hover {
+    filter: brightness(0.9);
+}
+
+.mis-button:active {
+    filter: brightness(0.85);
+}
+
+.mis-button:focus-visible {
+    outline: var(--mis-focus-ring-width, 2px) solid var(--mis-border-focus, #2563eb);
+    outline-offset: var(--mis-focus-ring-offset, 2px);
+}
+
+.mis-button:disabled {
+    opacity: 0.5;
+    filter: grayscale(0.3);
+    box-shadow: none;
+}
