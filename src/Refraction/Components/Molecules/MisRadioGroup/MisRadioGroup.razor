@@ -1,0 +1,32 @@
+@namespace Mississippi.Refraction.Components.Molecules
+@using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="@GroupCssClass"
+     id="@Model.Id"
+     role="radiogroup"
+     aria-label="@Model.AriaLabel"
+     title="@Model.Title"
+     @attributes="AdditionalAttributes">
+    @foreach (MisRadioOptionViewModel option in Model.Options)
+    {
+        <label class="mis-radio-option">
+            <input class="mis-radio"
+                   type="radio"
+                   name="@RadioName"
+                   value="@option.Value"
+                   checked="@IsSelected(option.Value)"
+                   disabled="@(Model.IsDisabled || option.IsDisabled)"
+                   required="@Model.IsRequired"
+                   @onfocus="@(() => DispatchActionAsync(new MisRadioGroupFocusedAction(Model.IntentId, option.Value)))"
+                   @onblur="@(() => DispatchActionAsync(new MisRadioGroupBlurredAction(Model.IntentId, option.Value)))"
+                   @onkeydown="@((KeyboardEventArgs args) => DispatchActionAsync(new MisRadioGroupKeyDownAction(Model.IntentId, option.Value, args.Key, args.Code, args.Repeat, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+                   @onkeyup="@((KeyboardEventArgs args) => DispatchActionAsync(new MisRadioGroupKeyUpAction(Model.IntentId, option.Value, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+                   @onmousedown="@((MouseEventArgs args) => DispatchActionAsync(new MisRadioGroupPointerDownAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+                   @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisRadioGroupPointerUpAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+                   @oninput="@((ChangeEventArgs args) => DispatchActionAsync(new MisRadioGroupInputAction(Model.IntentId, args.Value?.ToString() ?? string.Empty)))"
+                   @onchange="@((ChangeEventArgs args) => DispatchActionAsync(new MisRadioGroupChangedAction(Model.IntentId, args.Value?.ToString() ?? string.Empty)))" />
+            <span>@option.Label</span>
+        </label>
+    }
+</div>

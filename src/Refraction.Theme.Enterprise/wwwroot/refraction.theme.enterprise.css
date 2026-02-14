@@ -192,3 +192,55 @@
     opacity: 0.5;
     filter: grayscale(0.2);
 }
+
+/* ── Radio Group ────────────────────────────────────────── */
+
+.mis-radio-group {
+    color: var(--mis-text-default, #111827);
+}
+
+.mis-radio-option {
+    color: inherit;
+}
+
+.mis-radio {
+    inline-size: 1rem;
+    block-size: 1rem;
+    border: 1px solid var(--mis-border-default, #d1d5db);
+    border-radius: 50%;
+    background: var(--mis-bg-input, #ffffff);
+    accent-color: var(--mis-bg-brand, #2563eb);
+    transition:
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-radio:hover {
+    border-color: var(--mis-border-focus, #2563eb);
+}
+
+.mis-radio:focus-visible {
+    outline: none;
+    border-color: var(--mis-border-focus, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #2563eb) 15%, transparent);
+}
+
+.mis-radio-group.mis-radio-group--success .mis-radio {
+    border-color: var(--mis-bg-success, #15803d);
+    accent-color: var(--mis-bg-success, #15803d);
+}
+
+.mis-radio-group.mis-radio-group--warning .mis-radio {
+    border-color: var(--mis-border-warning, #b45309);
+    accent-color: var(--mis-bg-warning, #b45309);
+}
+
+.mis-radio-group.mis-radio-group--error .mis-radio {
+    border-color: var(--mis-border-error, #b91c1c);
+    accent-color: var(--mis-bg-error, #b91c1c);
+}
+
+.mis-radio:disabled {
+    opacity: 0.5;
+    filter: grayscale(0.2);
+}

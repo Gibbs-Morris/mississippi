@@ -210,3 +210,57 @@
     opacity: 0.4;
     filter: grayscale(0.3);
 }
+
+/* ── Radio Group ────────────────────────────────────────── */
+
+.mis-radio-group {
+    color: var(--mis-text-default, #e5e7eb);
+}
+
+.mis-radio-option {
+    color: inherit;
+}
+
+.mis-radio {
+    inline-size: 1rem;
+    block-size: 1rem;
+    border: 1px solid var(--mis-border-default, #374151);
+    border-radius: 50%;
+    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    accent-color: var(--mis-bg-brand, #00a7ff);
+    transition:
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-radio:hover {
+    border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 50%, var(--mis-border-default, #374151));
+    background: var(--mis-bg-input-hover, rgba(255, 255, 255, 0.08));
+}
+
+.mis-radio:focus-visible {
+    outline: none;
+    border-color: var(--mis-border-focus, #3b82f6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 25%, transparent);
+}
+
+.mis-radio-group.mis-radio-group--success .mis-radio {
+    border-color: var(--mis-bg-success, #22c55e);
+    accent-color: var(--mis-bg-success, #22c55e);
+}
+
+.mis-radio-group.mis-radio-group--warning .mis-radio {
+    border-color: var(--mis-border-warning, #ff8a1f);
+    accent-color: var(--mis-bg-warning, #ff8a1f);
+}
+
+.mis-radio-group.mis-radio-group--error .mis-radio {
+    border-color: var(--mis-border-error, #ff4d1a);
+    accent-color: var(--mis-bg-error, #ff4d1a);
+}
+
+.mis-radio:disabled {
+    opacity: 0.4;
+    filter: grayscale(0.3);
+}

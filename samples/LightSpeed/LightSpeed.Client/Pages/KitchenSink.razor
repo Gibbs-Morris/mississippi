@@ -3,6 +3,7 @@
 @using Mississippi.Refraction.Components.Molecules.MisButton
 @using Mississippi.Refraction.Components.Molecules.MisButton.Actions
 @using Mississippi.Refraction.Components.Molecules.MisCheckboxActions
+@using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions
 @using Mississippi.Refraction.Components.Molecules.MisSelectActions
 @using Mississippi.Refraction.Components.Molecules.MisTextInputActions
 @inherits StoreComponent
@@ -196,6 +197,89 @@ function calculateEventPosition(events) {
             @foreach (string checkboxEvent in CheckboxEvents)
             {
                 <li>@checkboxEvent</li>
+            }
+        </ul>
+    }
+</section>
+
+<section>
+    <h2>MisRadioGroup</h2>
+
+    <h3>Control Inputs</h3>
+    <div>
+        <label>
+            Value
+            <input value="@RadioGroupModel.Value" @oninput="HandleRadioGroupValueChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            IntentId
+            <input value="@RadioGroupModel.IntentId" @oninput="HandleRadioGroupIntentIdChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            AriaLabel
+            <input value="@RadioGroupModel.AriaLabel" @oninput="HandleRadioGroupAriaLabelChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Title
+            <input value="@RadioGroupModel.Title" @oninput="HandleRadioGroupTitleChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            CssClass
+            <input value="@RadioGroupModel.CssClass" @oninput="HandleRadioGroupCssClassChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Visual State
+            <select value="@RadioGroupModel.State" @onchange="HandleRadioGroupStateChanged">
+                @foreach (MisRadioGroupState state in Enum.GetValues<MisRadioGroupState>())
+                {
+                    <option value="@state">@state</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            Options (one per line; format: value|label|disabled)
+            <textarea rows="6" @oninput="HandleRadioGroupOptionsChanged">@FormatRadioGroupOptionsInput(RadioGroupModel.Options)</textarea>
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@RadioGroupModel.IsDisabled" @onchange="HandleRadioGroupIsDisabledChanged" /> Disabled
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@RadioGroupModel.IsRequired" @onchange="HandleRadioGroupIsRequiredChanged" /> Required
+        </label>
+    </div>
+
+    <h3>Preview</h3>
+    <MisRadioGroup Model="@RadioGroupModel"
+                   OnAction="@((IMisRadioGroupAction action) => HandleMisRadioGroupActionAsync(action))" />
+
+    <h3>Events</h3>
+    <button type="button" @onclick="HandleClearRadioGroupEvents">Clear Events</button>
+    @if (RadioGroupEvents.Count == 0)
+    {
+        <p>No events recorded yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (string radioGroupEvent in RadioGroupEvents)
+            {
+                <li>@radioGroupEvent</li>
             }
         </ul>
     }

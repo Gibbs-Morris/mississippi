@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisButton;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisCheckbox;
+using LightSpeed.Client.Features.KitchenSinkFeatures.MisRadioGroup;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisSelect;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextInput;
 
@@ -15,6 +16,7 @@ using Mississippi.Refraction.Components.Molecules;
 using Mississippi.Refraction.Components.Molecules.MisButton;
 using Mississippi.Refraction.Components.Molecules.MisButton.Actions;
 using Mississippi.Refraction.Components.Molecules.MisCheckboxActions;
+using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions;
 using Mississippi.Refraction.Components.Molecules.MisSelectActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
@@ -38,6 +40,12 @@ public sealed partial class KitchenSink
 
     private MisCheckboxViewModel CheckboxModel =>
         Select<MisCheckboxKitchenSinkState, MisCheckboxViewModel>(MisCheckboxKitchenSinkSelectors.GetViewModel);
+
+    private IReadOnlyList<string> RadioGroupEvents =>
+        Select<MisRadioGroupKitchenSinkState, IReadOnlyList<string>>(MisRadioGroupKitchenSinkSelectors.GetEventLog);
+
+    private MisRadioGroupViewModel RadioGroupModel =>
+        Select<MisRadioGroupKitchenSinkState, MisRadioGroupViewModel>(MisRadioGroupKitchenSinkSelectors.GetViewModel);
 
     private IReadOnlyList<string> TextInputEvents =>
         Select<MisTextInputKitchenSinkState, IReadOnlyList<string>>(MisTextInputKitchenSinkSelectors.GetEventLog);
@@ -137,6 +145,28 @@ public sealed partial class KitchenSink
             _ => $"intent={action.IntentId}",
         };
 
+    private static string FormatAction(
+        IMisRadioGroupAction action
+    ) =>
+        action switch
+        {
+            MisRadioGroupInputAction input =>
+                $"intent={input.IntentId}, value={input.Value}",
+            MisRadioGroupChangedAction changed =>
+                $"intent={changed.IntentId}, value={changed.Value}",
+            MisRadioGroupKeyDownAction keyDown =>
+                $"intent={keyDown.IntentId}, option={keyDown.OptionValue}, key={keyDown.Key}, code={keyDown.Code}, repeat={keyDown.Repeat}, ctrl={keyDown.CtrlKey}, shift={keyDown.ShiftKey}, alt={keyDown.AltKey}, meta={keyDown.MetaKey}",
+            MisRadioGroupKeyUpAction keyUp =>
+                $"intent={keyUp.IntentId}, option={keyUp.OptionValue}, key={keyUp.Key}, code={keyUp.Code}, ctrl={keyUp.CtrlKey}, shift={keyUp.ShiftKey}, alt={keyUp.AltKey}, meta={keyUp.MetaKey}",
+            MisRadioGroupPointerDownAction pointerDown =>
+                $"intent={pointerDown.IntentId}, option={pointerDown.OptionValue}, button={pointerDown.Button}, ctrl={pointerDown.CtrlKey}, shift={pointerDown.ShiftKey}, alt={pointerDown.AltKey}, meta={pointerDown.MetaKey}",
+            MisRadioGroupPointerUpAction pointerUp =>
+                $"intent={pointerUp.IntentId}, option={pointerUp.OptionValue}, button={pointerUp.Button}, ctrl={pointerUp.CtrlKey}, shift={pointerUp.ShiftKey}, alt={pointerUp.AltKey}, meta={pointerUp.MetaKey}",
+            MisRadioGroupFocusedAction focused => $"intent={focused.IntentId}, option={focused.OptionValue}",
+            MisRadioGroupBlurredAction blurred => $"intent={blurred.IntentId}, option={blurred.OptionValue}",
+            _ => $"intent={action.IntentId}",
+        };
+
     private void HandleAriaLabelChanged(
         ChangeEventArgs args
     ) =>
@@ -220,6 +250,25 @@ public sealed partial class KitchenSink
         }
 
         Dispatch(new RecordMisSelectEventAction(action.GetType().Name, FormatAction(action)));
+        return Task.CompletedTask;
+    }
+
+    private Task HandleMisRadioGroupActionAsync(
+        IMisRadioGroupAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        switch (action)
+        {
+            case MisRadioGroupInputAction inputAction:
+                Dispatch(new SetMisRadioGroupValueAction(inputAction.Value));
+                break;
+            case MisRadioGroupChangedAction changedAction:
+                Dispatch(new SetMisRadioGroupValueAction(changedAction.Value));
+                break;
+        }
+
+        Dispatch(new RecordMisRadioGroupEventAction(action.GetType().Name, FormatAction(action)));
         return Task.CompletedTask;
     }
 
@@ -415,6 +464,59 @@ public sealed partial class KitchenSink
         Dispatch(new ClearMisSelectEventsAction());
     }
 
+    private void HandleRadioGroupAriaLabelChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupAriaLabelAction(GetOptionalValue(args)));
+
+    private void HandleRadioGroupCssClassChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupCssClassAction(GetOptionalValue(args)));
+
+    private void HandleRadioGroupIntentIdChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupIntentIdAction(GetRequiredValue(args, "kitchen-sink.mis-radio-group")));
+
+    private void HandleRadioGroupIsDisabledChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupDisabledAction(ToBool(args)));
+
+    private void HandleRadioGroupIsRequiredChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupRequiredAction(ToBool(args)));
+
+    private void HandleRadioGroupOptionsChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupOptionsAction(ParseRadioGroupOptions(args.Value?.ToString() ?? string.Empty)));
+
+    private void HandleRadioGroupStateChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupStateAction(ToRadioGroupState(args)));
+
+    private void HandleRadioGroupTitleChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupTitleAction(GetOptionalValue(args)));
+
+    private void HandleRadioGroupValueChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisRadioGroupValueAction(args.Value?.ToString() ?? string.Empty));
+
+    private void HandleClearRadioGroupEvents(
+        MouseEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        Dispatch(new ClearMisRadioGroupEventsAction());
+    }
+
     private static string? GetOptionalValue(
         ChangeEventArgs args
     )
@@ -499,6 +601,20 @@ public sealed partial class KitchenSink
         return MisSelectState.Default;
     }
 
+    private static MisRadioGroupState ToRadioGroupState(
+        ChangeEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        string? value = args.Value?.ToString();
+        if (Enum.TryParse(value, true, out MisRadioGroupState state))
+        {
+            return state;
+        }
+
+        return MisRadioGroupState.Default;
+    }
+
     private static List<MisSelectOptionViewModel> ParseSelectOptions(
         string rawText
     )
@@ -541,6 +657,55 @@ public sealed partial class KitchenSink
 
         List<string> lines = [];
         foreach (MisSelectOptionViewModel option in options)
+        {
+            lines.Add($"{option.Value}|{option.Label}|{option.IsDisabled}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static List<MisRadioOptionViewModel> ParseRadioGroupOptions(
+        string rawText
+    )
+    {
+        if (string.IsNullOrWhiteSpace(rawText))
+        {
+            return [new MisRadioOptionViewModel("option-1", "Option 1")];
+        }
+
+        List<MisRadioOptionViewModel> options = [];
+        string[] lines = rawText.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (string line in lines)
+        {
+            string[] parts = line.Split('|', StringSplitOptions.TrimEntries);
+            string value = parts.ElementAtOrDefault(0) ?? string.Empty;
+            string label = parts.ElementAtOrDefault(1) ?? value;
+            bool isDisabled = bool.TryParse(parts.ElementAtOrDefault(2), out bool parsedIsDisabled) && parsedIsDisabled;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            options.Add(new MisRadioOptionViewModel(value, string.IsNullOrWhiteSpace(label) ? value : label, isDisabled));
+        }
+
+        return options.Count == 0
+            ? [new MisRadioOptionViewModel("option-1", "Option 1")]
+            : options;
+    }
+
+    private static string FormatRadioGroupOptionsInput(
+        IReadOnlyList<MisRadioOptionViewModel> options
+    )
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        List<string> lines = [];
+        foreach (MisRadioOptionViewModel option in options)
         {
             lines.Add($"{option.Value}|{option.Label}|{option.IsDisabled}");
         }

@@ -1,0 +1,24 @@
+/*
+ * MisRadioGroup – headless reset only.
+ * All visual styling is owned by the active Refraction theme.
+ */
+.mis-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mis-space-sm, 0.5rem);
+}
+
+.mis-radio-option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mis-space-xs, 0.25rem);
+}
+
+.mis-radio {
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.mis-radio:disabled {
+    cursor: not-allowed;
+}
