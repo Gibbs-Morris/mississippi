@@ -47,3 +47,39 @@
     filter: grayscale(0.3);
     box-shadow: none;
 }
+
+/* ── Text Input ──────────────────────────────────────────── */
+
+.text-input {
+    display: block;
+    width: 100%;
+    min-height: var(--mis-size-md, 2.5rem);
+    padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
+    border: 1px solid var(--mis-border-default, #d1d5db);
+    border-radius: var(--mis-radius-sm, 0.25rem);
+    background: var(--mis-bg-input, #ffffff);
+    color: var(--mis-text-default, #111827);
+    font-family: var(--mis-font-family-body, system-ui, sans-serif);
+    font-size: var(--mis-font-size-md, 1rem);
+    transition: border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.text-input::placeholder {
+    color: var(--mis-text-muted, #6b7280);
+}
+
+.text-input:hover {
+    border-color: var(--mis-border-focus, #2563eb);
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: var(--mis-border-focus, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #2563eb) 15%, transparent);
+}
+
+.text-input:disabled {
+    opacity: 0.5;
+    background: var(--mis-bg-muted, #f9fafb);
+    filter: grayscale(0.2);
+}

@@ -1,0 +1,49 @@
+/*
+ * Enterprise Theme Token Defaults
+ *
+ * Neutral, professional palette — fully brandable through simple overrides.
+ * Load after base refraction.tokens.css to establish enterprise baseline.
+ *
+ * Apps override brand/accent colors to match corporate identity.
+ */
+:root {
+    /* ── Background (clean light surfaces) ──────────────── */
+    --mis-bg-default: #ffffff;
+    --mis-bg-muted: #f9fafb;
+    --mis-bg-elevated: #ffffff;
+    --mis-bg-brand: #2563eb;
+    --mis-bg-accent: #7c3aed;
+    --mis-bg-success: #16a34a;
+    --mis-bg-warning: #ca8a04;
+    --mis-bg-error: #dc2626;
+    --mis-bg-info: #0284c7;
+
+    /* ── Text (dark on light, high contrast) ────────────── */
+    --mis-text-default: #111827;
+    --mis-text-muted: #6b7280;
+    --mis-text-inverse: #ffffff;
+    --mis-text-brand: #2563eb;
+    --mis-text-success: #16a34a;
+    --mis-text-warning: #ca8a04;
+    --mis-text-error: #dc2626;
+    --mis-text-info: #0284c7;
+
+    /* ── Border (crisp, clear) ───────────────────────────── */
+    --mis-border-default: #d1d5db;
+    --mis-border-focus: #2563eb;
+    --mis-border-error: #dc2626;
+    --mis-border-warning: #ca8a04;
+
+    /* ── Input surfaces (solid for clarity) ──────────────── */
+    --mis-bg-input: #ffffff;
+    --mis-bg-input-hover: #f9fafb;
+
+    /* ── Radius (conservative for Enterprise) ────────────── */
+    --mis-radius-sm: 0.25rem;
+    --mis-radius-md: 0.375rem;
+    --mis-radius-lg: 0.5rem;
+
+    /* ── Shadow (subtle, professional) ───────────────────── */
+    --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --mis-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
