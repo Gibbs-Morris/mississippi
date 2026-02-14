@@ -1,0 +1,14 @@
+/*
+ * MisSelect – headless reset only.
+ * All visual styling is owned by the active Refraction theme.
+ */
+.mis-select {
+    appearance: none;
+    box-sizing: border-box;
+    font: inherit;
+    margin: 0;
+}
+
+.mis-select:disabled {
+    cursor: not-allowed;
+}
