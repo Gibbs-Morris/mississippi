@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\..\src\Refraction\Refraction.csproj" />
     <ProjectReference Include="..\..\..\src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Refraction.Pages\Refraction.Pages.csproj" />
+    <ProjectReference Include="..\..\..\src\Refraction.Theme.Luminous\Refraction.Theme.Luminous.csproj" />
   </ItemGroup>
 
 </Project>

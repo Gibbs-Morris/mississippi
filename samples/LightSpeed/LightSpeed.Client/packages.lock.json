@@ -243,6 +243,13 @@
           "Mississippi.Reservoir": "[1.0.0, )"
         }
       },
+      "Mississippi.Refraction.Theme.Luminous": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[10.0.3, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.3, )"
+        }
+      },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {
