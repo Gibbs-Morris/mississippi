@@ -331,3 +331,55 @@
     opacity: 0.4;
     filter: grayscale(0.3);
 }
+
+/* ── Switch ─────────────────────────────────────────────── */
+
+.mis-switch__track {
+    border: 1px solid var(--mis-border-default, #374151);
+    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    transition:
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-switch__thumb {
+    background: var(--mis-bg-input-hover, rgba(255, 255, 255, 0.18));
+    box-shadow: 0 0 8px -2px color-mix(in srgb, var(--mis-bg-brand, #00a7ff) 65%, transparent);
+    transition:
+        transform var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-switch__input:checked + .mis-switch__track {
+    border-color: var(--mis-bg-brand, #00a7ff);
+    background: color-mix(in srgb, var(--mis-bg-brand, #00a7ff) 30%, rgba(255, 255, 255, 0.05));
+    box-shadow: 0 0 10px -2px color-mix(in srgb, var(--mis-bg-brand, #00a7ff) 50%, transparent);
+}
+
+.mis-switch__input:focus-visible + .mis-switch__track {
+    outline: none;
+    border-color: var(--mis-border-focus, #3b82f6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 25%, transparent);
+}
+
+.mis-switch.mis-switch--success .mis-switch__input:checked + .mis-switch__track {
+    border-color: var(--mis-bg-success, #22c55e);
+    background: color-mix(in srgb, var(--mis-bg-success, #22c55e) 30%, rgba(255, 255, 255, 0.05));
+}
+
+.mis-switch.mis-switch--warning .mis-switch__input:checked + .mis-switch__track {
+    border-color: var(--mis-border-warning, #ff8a1f);
+    background: color-mix(in srgb, var(--mis-border-warning, #ff8a1f) 30%, rgba(255, 255, 255, 0.05));
+}
+
+.mis-switch.mis-switch--error .mis-switch__input:checked + .mis-switch__track {
+    border-color: var(--mis-border-error, #ff4d1a);
+    background: color-mix(in srgb, var(--mis-border-error, #ff4d1a) 30%, rgba(255, 255, 255, 0.05));
+}
+
+.mis-switch__input:disabled + .mis-switch__track {
+    opacity: 0.4;
+    filter: grayscale(0.3);
+}

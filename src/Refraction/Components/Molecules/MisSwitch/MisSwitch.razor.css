@@ -1,0 +1,40 @@
+/*
+ * MisSwitch – headless reset only.
+ * All visual styling is owned by the active Refraction theme.
+ */
+.mis-switch {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.mis-switch__input {
+    position: absolute;
+    opacity: 0;
+    inline-size: 0;
+    block-size: 0;
+}
+
+.mis-switch__track {
+    display: inline-flex;
+    align-items: center;
+    inline-size: 2.5rem;
+    block-size: 1.5rem;
+    border-radius: 9999px;
+    position: relative;
+}
+
+.mis-switch__thumb {
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    border-radius: 50%;
+    transform: translateX(0.1875rem);
+}
+
+.mis-switch__input:checked + .mis-switch__track .mis-switch__thumb {
+    transform: translateX(1.1875rem);
+}
+
+.mis-switch__input:disabled + .mis-switch__track {
+    cursor: not-allowed;
+}

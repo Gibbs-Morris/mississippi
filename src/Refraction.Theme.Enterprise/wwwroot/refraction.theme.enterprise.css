@@ -307,3 +307,53 @@
     opacity: 0.5;
     filter: grayscale(0.2);
 }
+
+/* ── Switch ─────────────────────────────────────────────── */
+
+.mis-switch__track {
+    border: 1px solid var(--mis-border-default, #d1d5db);
+    background: var(--mis-bg-muted, #f3f4f6);
+    transition:
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-switch__thumb {
+    background: var(--mis-bg-input, #ffffff);
+    box-shadow: var(--mis-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+    transition:
+        transform var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-switch__input:checked + .mis-switch__track {
+    border-color: var(--mis-bg-brand, #2563eb);
+    background: color-mix(in srgb, var(--mis-bg-brand, #2563eb) 35%, var(--mis-bg-input, #ffffff));
+}
+
+.mis-switch__input:focus-visible + .mis-switch__track {
+    outline: none;
+    border-color: var(--mis-border-focus, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #2563eb) 15%, transparent);
+}
+
+.mis-switch.mis-switch--success .mis-switch__input:checked + .mis-switch__track {
+    border-color: var(--mis-bg-success, #15803d);
+    background: color-mix(in srgb, var(--mis-bg-success, #15803d) 35%, var(--mis-bg-input, #ffffff));
+}
+
+.mis-switch.mis-switch--warning .mis-switch__input:checked + .mis-switch__track {
+    border-color: var(--mis-border-warning, #b45309);
+    background: color-mix(in srgb, var(--mis-bg-warning, #b45309) 35%, var(--mis-bg-input, #ffffff));
+}
+
+.mis-switch.mis-switch--error .mis-switch__input:checked + .mis-switch__track {
+    border-color: var(--mis-border-error, #b91c1c);
+    background: color-mix(in srgb, var(--mis-bg-error, #b91c1c) 35%, var(--mis-bg-input, #ffffff));
+}
+
+.mis-switch__input:disabled + .mis-switch__track {
+    opacity: 0.5;
+    filter: grayscale(0.2);
+}

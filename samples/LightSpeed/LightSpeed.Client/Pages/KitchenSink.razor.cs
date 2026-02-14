@@ -7,6 +7,7 @@ using LightSpeed.Client.Features.KitchenSinkFeatures.MisButton;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisCheckbox;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisRadioGroup;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisSelect;
+using LightSpeed.Client.Features.KitchenSinkFeatures.MisSwitch;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextarea;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextInput;
 
@@ -19,6 +20,7 @@ using Mississippi.Refraction.Components.Molecules.MisButton.Actions;
 using Mississippi.Refraction.Components.Molecules.MisCheckboxActions;
 using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions;
 using Mississippi.Refraction.Components.Molecules.MisSelectActions;
+using Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 using Mississippi.Refraction.Components.Molecules.MisTextareaActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
@@ -54,6 +56,12 @@ public sealed partial class KitchenSink
 
     private MisTextareaViewModel TextareaModel =>
         Select<MisTextareaKitchenSinkState, MisTextareaViewModel>(MisTextareaKitchenSinkSelectors.GetViewModel);
+
+    private IReadOnlyList<string> SwitchEvents =>
+        Select<MisSwitchKitchenSinkState, IReadOnlyList<string>>(MisSwitchKitchenSinkSelectors.GetEventLog);
+
+    private MisSwitchViewModel SwitchModel =>
+        Select<MisSwitchKitchenSinkState, MisSwitchViewModel>(MisSwitchKitchenSinkSelectors.GetViewModel);
 
     private IReadOnlyList<string> TextInputEvents =>
         Select<MisTextInputKitchenSinkState, IReadOnlyList<string>>(MisTextInputKitchenSinkSelectors.GetEventLog);
@@ -197,6 +205,28 @@ public sealed partial class KitchenSink
             _ => $"intent={action.IntentId}",
         };
 
+    private static string FormatAction(
+        IMisSwitchAction action
+    ) =>
+        action switch
+        {
+            MisSwitchInputAction input =>
+                $"intent={input.IntentId}, checked={input.IsChecked}",
+            MisSwitchChangedAction changed =>
+                $"intent={changed.IntentId}, checked={changed.IsChecked}",
+            MisSwitchKeyDownAction keyDown =>
+                $"intent={keyDown.IntentId}, key={keyDown.Key}, code={keyDown.Code}, repeat={keyDown.Repeat}, ctrl={keyDown.CtrlKey}, shift={keyDown.ShiftKey}, alt={keyDown.AltKey}, meta={keyDown.MetaKey}",
+            MisSwitchKeyUpAction keyUp =>
+                $"intent={keyUp.IntentId}, key={keyUp.Key}, code={keyUp.Code}, ctrl={keyUp.CtrlKey}, shift={keyUp.ShiftKey}, alt={keyUp.AltKey}, meta={keyUp.MetaKey}",
+            MisSwitchPointerDownAction pointerDown =>
+                $"intent={pointerDown.IntentId}, button={pointerDown.Button}, ctrl={pointerDown.CtrlKey}, shift={pointerDown.ShiftKey}, alt={pointerDown.AltKey}, meta={pointerDown.MetaKey}",
+            MisSwitchPointerUpAction pointerUp =>
+                $"intent={pointerUp.IntentId}, button={pointerUp.Button}, ctrl={pointerUp.CtrlKey}, shift={pointerUp.ShiftKey}, alt={pointerUp.AltKey}, meta={pointerUp.MetaKey}",
+            MisSwitchFocusedAction focused => $"intent={focused.IntentId}",
+            MisSwitchBlurredAction blurred => $"intent={blurred.IntentId}",
+            _ => $"intent={action.IntentId}",
+        };
+
     private void HandleAriaLabelChanged(
         ChangeEventArgs args
     ) =>
@@ -318,6 +348,25 @@ public sealed partial class KitchenSink
         }
 
         Dispatch(new RecordMisTextareaEventAction(action.GetType().Name, FormatAction(action)));
+        return Task.CompletedTask;
+    }
+
+    private Task HandleMisSwitchActionAsync(
+        IMisSwitchAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        switch (action)
+        {
+            case MisSwitchInputAction inputAction:
+                Dispatch(new SetMisSwitchCheckedAction(inputAction.IsChecked));
+                break;
+            case MisSwitchChangedAction changedAction:
+                Dispatch(new SetMisSwitchCheckedAction(changedAction.IsChecked));
+                break;
+        }
+
+        Dispatch(new RecordMisSwitchEventAction(action.GetType().Name, FormatAction(action)));
         return Task.CompletedTask;
     }
 
@@ -629,6 +678,59 @@ public sealed partial class KitchenSink
         Dispatch(new ClearMisTextareaEventsAction());
     }
 
+    private void HandleSwitchAriaLabelChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchAriaLabelAction(GetOptionalValue(args)));
+
+    private void HandleSwitchCssClassChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchCssClassAction(GetOptionalValue(args)));
+
+    private void HandleSwitchIntentIdChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchIntentIdAction(GetRequiredValue(args, "kitchen-sink.mis-switch")));
+
+    private void HandleSwitchIsCheckedChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchCheckedAction(ToBool(args)));
+
+    private void HandleSwitchIsDisabledChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchDisabledAction(ToBool(args)));
+
+    private void HandleSwitchIsRequiredChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchRequiredAction(ToBool(args)));
+
+    private void HandleSwitchStateChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchStateAction(ToSwitchState(args)));
+
+    private void HandleSwitchTitleChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchTitleAction(GetOptionalValue(args)));
+
+    private void HandleSwitchValueChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisSwitchValueAction(GetRequiredValue(args, "true")));
+
+    private void HandleClearSwitchEvents(
+        MouseEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        Dispatch(new ClearMisSwitchEventsAction());
+    }
+
     private static string? GetOptionalValue(
         ChangeEventArgs args
     )
@@ -753,6 +855,20 @@ public sealed partial class KitchenSink
         }
 
         return 1;
+    }
+
+    private static MisSwitchState ToSwitchState(
+        ChangeEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        string? value = args.Value?.ToString();
+        if (Enum.TryParse(value, true, out MisSwitchState state))
+        {
+            return state;
+        }
+
+        return MisSwitchState.Default;
     }
 
     private static List<MisSelectOptionViewModel> ParseSelectOptions(

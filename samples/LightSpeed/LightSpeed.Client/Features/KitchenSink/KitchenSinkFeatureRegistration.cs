@@ -2,6 +2,7 @@ using LightSpeed.Client.Features.KitchenSinkFeatures.MisButton;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisCheckbox;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisRadioGroup;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisSelect;
+using LightSpeed.Client.Features.KitchenSinkFeatures.MisSwitch;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextarea;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextInput;
 
@@ -28,6 +29,7 @@ public static class KitchenSinkFeatureRegistration
         services.AddMisCheckboxKitchenSinkFeature();
         services.AddMisRadioGroupKitchenSinkFeature();
         services.AddMisTextareaKitchenSinkFeature();
+        services.AddMisSwitchKitchenSinkFeature();
         services.AddMisTextInputKitchenSinkFeature();
         services.AddMisSelectKitchenSinkFeature();
         return services;

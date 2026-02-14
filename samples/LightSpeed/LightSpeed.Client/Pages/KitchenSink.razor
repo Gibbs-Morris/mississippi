@@ -5,6 +5,7 @@
 @using Mississippi.Refraction.Components.Molecules.MisCheckboxActions
 @using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions
 @using Mississippi.Refraction.Components.Molecules.MisSelectActions
+@using Mississippi.Refraction.Components.Molecules.MisSwitchActions
 @using Mississippi.Refraction.Components.Molecules.MisTextareaActions
 @using Mississippi.Refraction.Components.Molecules.MisTextInputActions
 @inherits StoreComponent
@@ -375,6 +376,88 @@ function calculateEventPosition(events) {
             @foreach (string textareaEvent in TextareaEvents)
             {
                 <li>@textareaEvent</li>
+            }
+        </ul>
+    }
+</section>
+
+<section>
+    <h2>MisSwitch</h2>
+
+    <h3>Control Inputs</h3>
+    <div>
+        <label>
+            Value
+            <input value="@SwitchModel.Value" @oninput="HandleSwitchValueChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            IntentId
+            <input value="@SwitchModel.IntentId" @oninput="HandleSwitchIntentIdChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            AriaLabel
+            <input value="@SwitchModel.AriaLabel" @oninput="HandleSwitchAriaLabelChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Title
+            <input value="@SwitchModel.Title" @oninput="HandleSwitchTitleChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            CssClass
+            <input value="@SwitchModel.CssClass" @oninput="HandleSwitchCssClassChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Visual State
+            <select value="@SwitchModel.State" @onchange="HandleSwitchStateChanged">
+                @foreach (MisSwitchState state in Enum.GetValues<MisSwitchState>())
+                {
+                    <option value="@state">@state</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@SwitchModel.IsChecked" @onchange="HandleSwitchIsCheckedChanged" /> Checked
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@SwitchModel.IsDisabled" @onchange="HandleSwitchIsDisabledChanged" /> Disabled
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@SwitchModel.IsRequired" @onchange="HandleSwitchIsRequiredChanged" /> Required
+        </label>
+    </div>
+
+    <h3>Preview</h3>
+    <MisSwitch Model="@SwitchModel"
+               OnAction="@((IMisSwitchAction action) => HandleMisSwitchActionAsync(action))" />
+
+    <h3>Events</h3>
+    <button type="button" @onclick="HandleClearSwitchEvents">Clear Events</button>
+    @if (SwitchEvents.Count == 0)
+    {
+        <p>No events recorded yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (string switchEvent in SwitchEvents)
+            {
+                <li>@switchEvent</li>
             }
         </ul>
     }
