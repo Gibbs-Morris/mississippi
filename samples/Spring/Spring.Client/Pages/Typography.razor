@@ -1,0 +1,64 @@
+@page "/typography"
+
+<main>
+    <h1>Typography</h1>
+    <p class="mis-body-lg">Enterprise theme typography: <strong>Inter Tight</strong> for headings, <strong>Inter</strong> for body, <strong>JetBrains Mono</strong> for code.</p>
+
+    <section>
+        <h2>Type Scale</h2>
+        <div style="display: flex; flex-direction: column; gap: var(--mis-space-md);">
+            <div class="mis-display">Display — 36px / 700 weight (Inter Tight Bold)</div>
+            <div class="mis-h1">Heading 1 — 28px / 700 weight (Inter Tight Bold)</div>
+            <h2>Heading 2 — 22px / 600 weight (Inter Tight Semibold)</h2>
+            <h3>Heading 3 — 18px / 600 weight (Inter Tight Semibold)</h3>
+            <p class="mis-body-lg">Body Large — 16px / 400 weight (Inter Regular)</p>
+            <p>Body — 15px / 400 weight (Inter Regular)</p>
+            <span class="mis-ui">UI Text — 14px / 500 weight (Inter Medium)</span>
+            <span class="mis-caption">Caption — 12px / 500 weight (Inter Medium)</span>
+        </div>
+    </section>
+
+    <section>
+        <h2>Code / Monospace</h2>
+        <p>Inline code example: <code>const accountId = "ACC-7f3d8c1a";</code></p>
+        <pre><code>// JetBrains Mono — 13px / 400 weight
+public record AccountCreated(
+    string AccountId,
+    string Name,
+    decimal InitialBalance
+) : IDomainEvent;</code></pre>
+        <p class="mis-code-sm">Small code (12px): <code class="mis-code-sm">TRANSACTION_ID: TXN-9e2b4f6a</code></p>
+    </section>
+
+    <section>
+        <h2>Font Weights</h2>
+        <p style="font-weight: var(--mis-font-weight-regular);">Regular (400) — Standard reading weight</p>
+        <p style="font-weight: var(--mis-font-weight-medium);">Medium (500) — Subtle emphasis for UI labels</p>
+        <p style="font-weight: var(--mis-font-weight-semibold);">Semibold (600) — Section headings</p>
+        <p style="font-weight: var(--mis-font-weight-bold);">Bold (700) — Primary headings</p>
+    </section>
+
+    <section>
+        <h2>Mixed Content Example</h2>
+        <article>
+            <h3>Event Sourcing with Mississippi</h3>
+            <p class="mis-body-lg">
+                Mississippi provides a robust foundation for building event-sourced applications
+                using <strong>Orleans</strong> as the distributed runtime.
+            </p>
+            <p>
+                Commands flow through aggregate grains, which validate business rules and emit
+                domain events. These events are persisted to the event store and projected to
+                read models for efficient querying.
+            </p>
+            <p class="mis-caption">
+                Example: <code>AccountAggregate</code> handles <code>CreateAccount</code>,
+                <code>Deposit</code>, and <code>Withdraw</code> commands.
+            </p>
+        </article>
+    </section>
+
+    <nav style="margin-top: var(--mis-space-lg);">
+        <NavLink href="/">← Back to Home</NavLink>
+    </nav>
+</main>

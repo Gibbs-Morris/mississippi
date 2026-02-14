@@ -43,17 +43,16 @@ LightSpeed is ideal when you want to explore Refraction framework capabilities w
 
 ## Refraction Theming Sample
 
-LightSpeed includes a concrete token override example at:
-
-- `samples/LightSpeed/LightSpeed.Client/wwwroot/refraction.sample-theme.css`
+LightSpeed uses the standalone **Luminous** theme package assets directly.
 
 The client host loads styles in this order:
 
-1. Refraction default theme (`_content/Mississippi.Refraction/refraction.default-theme.css`)
-2. LightSpeed sample overrides (`refraction.sample-theme.css`)
-3. App scoped styles (`LightSpeed.Client.styles.css`)
+1. Luminous tokens (`_content/Mississippi.Refraction.Theme.Luminous/refraction.tokens.luminous.css`)
+2. Luminous base document styles (`_content/Mississippi.Refraction.Theme.Luminous/refraction.luminous.base.css`)
+3. Luminous component styles (`_content/Mississippi.Refraction.Theme.Luminous/refraction.theme.luminous.css`)
+4. App scoped styles (`LightSpeed.Client.styles.css`)
 
-This order lets consumers override token values without rewriting component CSS.
+This keeps the theme opinionated and self-contained while still allowing app-level overrides.
 
 ### Create your own theme package
 
@@ -63,8 +62,9 @@ For a custom company theme, publish a NuGet package that ships a CSS file defini
 
 Consumer apps then load:
 
-1. Refraction default theme
-2. Your package theme CSS
-3. Optional app-specific overrides
+1. Your package token CSS
+2. Your package base CSS
+3. Your package component CSS
+4. Optional app-specific overrides
 
 Only add tokens when a new component need appears. Keep the shared token contract small and stable.

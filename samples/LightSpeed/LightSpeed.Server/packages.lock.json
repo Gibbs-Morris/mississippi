@@ -56,11 +56,6 @@
         "resolved": "10.0.103",
         "contentHash": "QoiCMcPuxC6eqRQmrmF9zBY96ejIznXtve/lJJbonGD9I5Aygf2AUCOWslGiCEtBbfWRSuUnepBjuuVOdAl5ag=="
       },
-      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
-        "type": "Transitive",
-        "resolved": "10.0.103",
-        "contentHash": "tIq6T4oyBMjxxxllslJu2fOJqEj8SOW29IfWqHYxubreOVlFWnxPN2PjDMuwoHjkrOnPKyuqoNcVYh5YOZcs0Q=="
-      },
       "Microsoft.JSInterop.WebAssembly": {
         "type": "Transitive",
         "resolved": "10.0.3",
@@ -75,10 +70,10 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
           "Mississippi.Refraction": "[1.0.0, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
           "Mississippi.Refraction.Pages": "[1.0.0, )",
+          "Mississippi.Refraction.Theme.Luminous": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Blazor": "[1.0.0, )"
@@ -97,6 +92,9 @@
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir": "[1.0.0, )"
         }
+      },
+      "Mississippi.Refraction.Theme.Luminous": {
+        "type": "Project"
       },
       "Mississippi.Reservoir": {
         "type": "Project",
