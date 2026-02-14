@@ -7,6 +7,7 @@ using LightSpeed.Client.Features.KitchenSinkFeatures.MisButton;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisCheckbox;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisRadioGroup;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisSelect;
+using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextarea;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextInput;
 
 using Microsoft.AspNetCore.Components;
@@ -18,6 +19,7 @@ using Mississippi.Refraction.Components.Molecules.MisButton.Actions;
 using Mississippi.Refraction.Components.Molecules.MisCheckboxActions;
 using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions;
 using Mississippi.Refraction.Components.Molecules.MisSelectActions;
+using Mississippi.Refraction.Components.Molecules.MisTextareaActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
 
@@ -46,6 +48,12 @@ public sealed partial class KitchenSink
 
     private MisRadioGroupViewModel RadioGroupModel =>
         Select<MisRadioGroupKitchenSinkState, MisRadioGroupViewModel>(MisRadioGroupKitchenSinkSelectors.GetViewModel);
+
+    private IReadOnlyList<string> TextareaEvents =>
+        Select<MisTextareaKitchenSinkState, IReadOnlyList<string>>(MisTextareaKitchenSinkSelectors.GetEventLog);
+
+    private MisTextareaViewModel TextareaModel =>
+        Select<MisTextareaKitchenSinkState, MisTextareaViewModel>(MisTextareaKitchenSinkSelectors.GetViewModel);
 
     private IReadOnlyList<string> TextInputEvents =>
         Select<MisTextInputKitchenSinkState, IReadOnlyList<string>>(MisTextInputKitchenSinkSelectors.GetEventLog);
@@ -167,6 +175,28 @@ public sealed partial class KitchenSink
             _ => $"intent={action.IntentId}",
         };
 
+    private static string FormatAction(
+        IMisTextareaAction action
+    ) =>
+        action switch
+        {
+            MisTextareaInputAction input =>
+                $"intent={input.IntentId}, value={input.Value}",
+            MisTextareaChangedAction changed =>
+                $"intent={changed.IntentId}, value={changed.Value}",
+            MisTextareaKeyDownAction keyDown =>
+                $"intent={keyDown.IntentId}, key={keyDown.Key}, code={keyDown.Code}, repeat={keyDown.Repeat}, ctrl={keyDown.CtrlKey}, shift={keyDown.ShiftKey}, alt={keyDown.AltKey}, meta={keyDown.MetaKey}",
+            MisTextareaKeyUpAction keyUp =>
+                $"intent={keyUp.IntentId}, key={keyUp.Key}, code={keyUp.Code}, ctrl={keyUp.CtrlKey}, shift={keyUp.ShiftKey}, alt={keyUp.AltKey}, meta={keyUp.MetaKey}",
+            MisTextareaPointerDownAction pointerDown =>
+                $"intent={pointerDown.IntentId}, button={pointerDown.Button}, ctrl={pointerDown.CtrlKey}, shift={pointerDown.ShiftKey}, alt={pointerDown.AltKey}, meta={pointerDown.MetaKey}",
+            MisTextareaPointerUpAction pointerUp =>
+                $"intent={pointerUp.IntentId}, button={pointerUp.Button}, ctrl={pointerUp.CtrlKey}, shift={pointerUp.ShiftKey}, alt={pointerUp.AltKey}, meta={pointerUp.MetaKey}",
+            MisTextareaFocusedAction focused => $"intent={focused.IntentId}",
+            MisTextareaBlurredAction blurred => $"intent={blurred.IntentId}",
+            _ => $"intent={action.IntentId}",
+        };
+
     private void HandleAriaLabelChanged(
         ChangeEventArgs args
     ) =>
@@ -269,6 +299,25 @@ public sealed partial class KitchenSink
         }
 
         Dispatch(new RecordMisRadioGroupEventAction(action.GetType().Name, FormatAction(action)));
+        return Task.CompletedTask;
+    }
+
+    private Task HandleMisTextareaActionAsync(
+        IMisTextareaAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        switch (action)
+        {
+            case MisTextareaInputAction inputAction:
+                Dispatch(new SetMisTextareaValueAction(inputAction.Value));
+                break;
+            case MisTextareaChangedAction changedAction:
+                Dispatch(new SetMisTextareaValueAction(changedAction.Value));
+                break;
+        }
+
+        Dispatch(new RecordMisTextareaEventAction(action.GetType().Name, FormatAction(action)));
         return Task.CompletedTask;
     }
 
@@ -517,6 +566,69 @@ public sealed partial class KitchenSink
         Dispatch(new ClearMisRadioGroupEventsAction());
     }
 
+    private void HandleTextareaAriaLabelChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaAriaLabelAction(GetOptionalValue(args)));
+
+    private void HandleTextareaCssClassChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaCssClassAction(GetOptionalValue(args)));
+
+    private void HandleTextareaIntentIdChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaIntentIdAction(GetRequiredValue(args, "kitchen-sink.mis-textarea")));
+
+    private void HandleTextareaIsDisabledChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaDisabledAction(ToBool(args)));
+
+    private void HandleTextareaIsReadOnlyChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaReadOnlyAction(ToBool(args)));
+
+    private void HandleTextareaIsRequiredChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaRequiredAction(ToBool(args)));
+
+    private void HandleTextareaPlaceholderChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaPlaceholderAction(GetOptionalValue(args)));
+
+    private void HandleTextareaRowsChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaRowsAction(ToRows(args)));
+
+    private void HandleTextareaStateChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaStateAction(ToTextareaState(args)));
+
+    private void HandleTextareaTitleChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaTitleAction(GetOptionalValue(args)));
+
+    private void HandleTextareaValueChanged(
+        ChangeEventArgs args
+    ) =>
+        Dispatch(new SetMisTextareaValueAction(args.Value?.ToString() ?? string.Empty));
+
+    private void HandleClearTextareaEvents(
+        MouseEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        Dispatch(new ClearMisTextareaEventsAction());
+    }
+
     private static string? GetOptionalValue(
         ChangeEventArgs args
     )
@@ -613,6 +725,34 @@ public sealed partial class KitchenSink
         }
 
         return MisRadioGroupState.Default;
+    }
+
+    private static MisTextareaState ToTextareaState(
+        ChangeEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        string? value = args.Value?.ToString();
+        if (Enum.TryParse(value, true, out MisTextareaState state))
+        {
+            return state;
+        }
+
+        return MisTextareaState.Default;
+    }
+
+    private static int ToRows(
+        ChangeEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        string? value = args.Value?.ToString();
+        if (int.TryParse(value, out int rows) && rows > 0)
+        {
+            return rows;
+        }
+
+        return 1;
     }
 
     private static List<MisSelectOptionViewModel> ParseSelectOptions(

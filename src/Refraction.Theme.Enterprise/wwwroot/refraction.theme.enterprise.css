@@ -91,6 +91,69 @@
     filter: grayscale(0.2);
 }
 
+/* ── Textarea ───────────────────────────────────────────── */
+
+.mis-textarea {
+    display: block;
+    width: 100%;
+    min-height: calc(var(--mis-size-md, 2.5rem) * 1.5);
+    padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
+    border: 1px solid var(--mis-border-default, #d1d5db);
+    border-radius: var(--mis-radius-sm, 0.25rem);
+    background: var(--mis-bg-input, #ffffff);
+    color: var(--mis-text-default, #111827);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-size);
+    line-height: var(--mis-type-body-lh, 1.5);
+    transition:
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-textarea::placeholder {
+    color: var(--mis-text-muted, #6b7280);
+}
+
+.mis-textarea:hover {
+    border-color: var(--mis-border-focus, #2563eb);
+}
+
+.mis-textarea:focus {
+    outline: none;
+    border-color: var(--mis-border-focus, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #2563eb) 15%, transparent);
+}
+
+.mis-textarea.mis-textarea--success {
+    border-color: var(--mis-bg-success, #15803d);
+}
+
+.mis-textarea.mis-textarea--warning {
+    border-color: var(--mis-border-warning, #b45309);
+    background: color-mix(in srgb, var(--mis-bg-warning, #b45309) 8%, var(--mis-bg-input, #ffffff));
+}
+
+.mis-textarea.mis-textarea--error {
+    border-color: var(--mis-border-error, #b91c1c);
+    background: color-mix(in srgb, var(--mis-bg-error, #b91c1c) 8%, var(--mis-bg-input, #ffffff));
+}
+
+.mis-textarea.mis-textarea--warning:focus {
+    border-color: var(--mis-border-warning, #b45309);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-warning, #b45309) 20%, transparent);
+}
+
+.mis-textarea.mis-textarea--error:focus {
+    border-color: var(--mis-border-error, #b91c1c);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-error, #b91c1c) 20%, transparent);
+}
+
+.mis-textarea:disabled {
+    opacity: 0.5;
+    background: var(--mis-bg-muted, #f9fafb);
+    filter: grayscale(0.2);
+}
+
 /* ── Select ─────────────────────────────────────────────── */
 
 .mis-select {

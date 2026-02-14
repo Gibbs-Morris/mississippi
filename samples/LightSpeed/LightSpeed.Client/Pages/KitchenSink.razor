@@ -5,6 +5,7 @@
 @using Mississippi.Refraction.Components.Molecules.MisCheckboxActions
 @using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions
 @using Mississippi.Refraction.Components.Molecules.MisSelectActions
+@using Mississippi.Refraction.Components.Molecules.MisTextareaActions
 @using Mississippi.Refraction.Components.Molecules.MisTextInputActions
 @inherits StoreComponent
 
@@ -280,6 +281,100 @@ function calculateEventPosition(events) {
             @foreach (string radioGroupEvent in RadioGroupEvents)
             {
                 <li>@radioGroupEvent</li>
+            }
+        </ul>
+    }
+</section>
+
+<section>
+    <h2>MisTextarea</h2>
+
+    <h3>Control Inputs</h3>
+    <div>
+        <label>
+            Value
+            <textarea rows="6" @oninput="HandleTextareaValueChanged">@TextareaModel.Value</textarea>
+        </label>
+    </div>
+    <div>
+        <label>
+            IntentId
+            <input value="@TextareaModel.IntentId" @oninput="HandleTextareaIntentIdChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            AriaLabel
+            <input value="@TextareaModel.AriaLabel" @oninput="HandleTextareaAriaLabelChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Title
+            <input value="@TextareaModel.Title" @oninput="HandleTextareaTitleChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Placeholder
+            <input value="@TextareaModel.Placeholder" @oninput="HandleTextareaPlaceholderChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            CssClass
+            <input value="@TextareaModel.CssClass" @oninput="HandleTextareaCssClassChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Rows
+            <input type="number" min="1" value="@TextareaModel.Rows" @oninput="HandleTextareaRowsChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Visual State
+            <select value="@TextareaModel.State" @onchange="HandleTextareaStateChanged">
+                @foreach (MisTextareaState state in Enum.GetValues<MisTextareaState>())
+                {
+                    <option value="@state">@state</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@TextareaModel.IsDisabled" @onchange="HandleTextareaIsDisabledChanged" /> Disabled
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@TextareaModel.IsReadOnly" @onchange="HandleTextareaIsReadOnlyChanged" /> Read-only
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@TextareaModel.IsRequired" @onchange="HandleTextareaIsRequiredChanged" /> Required
+        </label>
+    </div>
+
+    <h3>Preview</h3>
+    <MisTextarea Model="@TextareaModel"
+                 OnAction="@((IMisTextareaAction action) => HandleMisTextareaActionAsync(action))" />
+
+    <h3>Events</h3>
+    <button type="button" @onclick="HandleClearTextareaEvents">Clear Events</button>
+    @if (TextareaEvents.Count == 0)
+    {
+        <p>No events recorded yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (string textareaEvent in TextareaEvents)
+            {
+                <li>@textareaEvent</li>
             }
         </ul>
     }

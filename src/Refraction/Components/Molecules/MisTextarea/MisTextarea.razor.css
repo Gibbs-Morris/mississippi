@@ -1,0 +1,14 @@
+/*
+ * MisTextarea – headless reset only.
+ * All visual styling is owned by the active Refraction theme.
+ */
+.mis-textarea {
+    box-sizing: border-box;
+    font: inherit;
+    margin: 0;
+    resize: vertical;
+}
+
+.mis-textarea:disabled {
+    cursor: not-allowed;
+}

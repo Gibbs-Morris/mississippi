@@ -104,6 +104,73 @@
     filter: grayscale(0.3);
 }
 
+/* ── Textarea ───────────────────────────────────────────── */
+
+.mis-textarea {
+    display: block;
+    width: 100%;
+    min-height: calc(var(--mis-size-md, 2.5rem) * 1.5);
+    padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
+    border: 1px solid var(--mis-border-default, #374151);
+    border-radius: var(--mis-radius-md, 0.5rem);
+    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    color: var(--mis-text-default, #e5e7eb);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-size);
+    line-height: var(--mis-type-body-lh, 1.5);
+    transition:
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+}
+
+.mis-textarea::placeholder {
+    color: var(--mis-text-muted, #9ca3af);
+    opacity: 0.7;
+}
+
+.mis-textarea:hover {
+    background: var(--mis-bg-input-hover, rgba(255, 255, 255, 0.08));
+    border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 50%, var(--mis-border-default, #374151));
+}
+
+.mis-textarea:focus {
+    outline: none;
+    border-color: var(--mis-border-focus, #3b82f6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 25%, transparent);
+}
+
+.mis-textarea.mis-textarea--success {
+    border-color: var(--mis-bg-success, #22c55e);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mis-bg-success, #22c55e) 25%, transparent);
+}
+
+.mis-textarea.mis-textarea--warning {
+    border-color: var(--mis-border-warning, #ff8a1f);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mis-border-warning, #ff8a1f) 30%, transparent);
+}
+
+.mis-textarea.mis-textarea--error {
+    border-color: var(--mis-border-error, #ff4d1a);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mis-border-error, #ff4d1a) 30%, transparent);
+}
+
+.mis-textarea.mis-textarea--warning:focus {
+    border-color: var(--mis-border-warning, #ff8a1f);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-warning, #ff8a1f) 35%, transparent);
+}
+
+.mis-textarea.mis-textarea--error:focus {
+    border-color: var(--mis-border-error, #ff4d1a);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-error, #ff4d1a) 35%, transparent);
+}
+
+.mis-textarea:disabled {
+    opacity: 0.4;
+    background: transparent;
+    filter: grayscale(0.3);
+}
+
 /* ── Select ─────────────────────────────────────────────── */
 
 .mis-select {
