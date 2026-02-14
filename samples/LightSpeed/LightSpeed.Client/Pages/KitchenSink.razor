@@ -1,0 +1,78 @@
+@page "/kitchen-sink"
+@using Mississippi.Refraction.Components.Molecules.MisButton
+@inherits StoreComponent
+
+<h1>Kitchen Sink</h1>
+
+<p>Centralized control diagnostics for Refraction components. Start with <strong>MisButton</strong> and scale this pattern as new controls are added.</p>
+
+<section>
+    <h2>MisButton</h2>
+
+    <h3>Control Inputs</h3>
+    <div>
+        <label>
+            Text
+            <input value="@ButtonModel.Text" @oninput="HandleTextChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            IntentId
+            <input value="@ButtonModel.IntentId" @oninput="HandleIntentIdChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            AriaLabel
+            <input value="@ButtonModel.AriaLabel" @oninput="HandleAriaLabelChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Title
+            <input value="@ButtonModel.Title" @oninput="HandleTitleChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            CssClass
+            <input value="@ButtonModel.CssClass" @oninput="HandleCssClassChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Type
+            <select value="@ButtonModel.Type" @onchange="HandleTypeChanged">
+                @foreach (MisButtonType type in Enum.GetValues<MisButtonType>())
+                {
+                    <option value="@type">@type</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@ButtonModel.IsDisabled" @onchange="HandleIsDisabledChanged" /> Disabled
+        </label>
+    </div>
+
+    <h3>Preview</h3>
+    <MisButton Model="@ButtonModel" OnAction="HandleMisButtonActionAsync" />
+
+    <h3>Events</h3>
+    <button type="button" @onclick="HandleClearEvents">Clear Events</button>
+    @if (ButtonEvents.Count == 0)
+    {
+        <p>No events recorded yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (string buttonEvent in ButtonEvents)
+            {
+                <li>@buttonEvent</li>
+            }
+        </ul>
+    }
+</section>
