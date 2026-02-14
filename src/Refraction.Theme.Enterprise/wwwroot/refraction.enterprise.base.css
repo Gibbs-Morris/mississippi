@@ -1,0 +1,636 @@
+/*
+ * Mississippi Refraction Base: Enterprise
+ *
+ * Baseline document styles for the Enterprise theme.
+ * Covers all native HTML elements with clean, professional styling.
+ * Solid surfaces, crisp borders, clear hierarchy — dense-layout friendly.
+ *
+ * Element selectors use :where() for zero specificity —
+ * component classes always override without fighting.
+ * Utility classes (.mis-*) stay at normal class specificity.
+ *
+ * Load order:
+ *   1. refraction.tokens.enterprise.css  (theme token contract + palette)
+ *   2. refraction.enterprise.base.css    (THIS FILE — document baseline)
+ *   3. refraction.theme.enterprise.css   (component styles)
+ *   4. App overrides
+ */
+
+/* ════════════════════════════════════════════════════════════════════════════
+   BOX MODEL RESET
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(*, *::before, *::after) {
+    box-sizing: border-box;
+}
+
+:where(*) {
+    margin: 0;
+    padding: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DOCUMENT ROOT
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(html) {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -moz-tab-size: 4;
+    tab-size: 4;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--mis-font-body);
+    font-size: clamp(var(--mis-type-ui-size), 0.82rem + 0.26vw, var(--mis-type-body-size));
+    font-weight: var(--mis-type-body-weight);
+    line-height: var(--mis-type-body-lh);
+    color: var(--mis-text-default);
+    background-color: var(--mis-bg-default);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LAYOUT PRIMITIVES
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(main, header, footer, nav, section, article, aside) {
+    display: block;
+}
+
+:where(article) {
+    max-width: clamp(46ch, 70vw, 72ch);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   HEADINGS
+   Inter Tight heading font, zero extra tracking, compact vertical rhythm
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--mis-font-heading);
+    color: var(--mis-text-default);
+    text-wrap: balance;
+}
+
+:where(h1) {
+    font-size: clamp(var(--mis-type-h2-size), 1.1rem + 1.5vw, var(--mis-type-display-size));
+    font-weight: var(--mis-type-h1-weight);
+    line-height: var(--mis-type-h1-lh);
+    letter-spacing: var(--mis-tracking-normal);
+    margin-block-end: var(--mis-space-sm);
+}
+
+:where(h2) {
+    font-size: clamp(var(--mis-type-h3-size), 1rem + 1vw, var(--mis-type-h2-size));
+    font-weight: var(--mis-type-h2-weight);
+    line-height: var(--mis-type-h2-lh);
+    letter-spacing: var(--mis-tracking-normal);
+    margin-block-start: var(--mis-space-xl);
+    margin-block-end: var(--mis-space-xs);
+}
+
+:where(h3) {
+    font-size: clamp(var(--mis-type-body-lg-size), 0.9rem + 0.65vw, var(--mis-type-h3-size));
+    font-weight: var(--mis-type-h3-weight);
+    line-height: var(--mis-type-h3-lh);
+    letter-spacing: var(--mis-tracking-normal);
+    margin-block-start: var(--mis-space-lg);
+    margin-block-end: var(--mis-space-xs);
+}
+
+:where(h4) {
+    font-size: var(--mis-type-body-lg-size);
+    font-weight: var(--mis-font-weight-semibold);
+    line-height: var(--mis-type-body-lg-lh);
+    margin-block-start: var(--mis-space-md);
+    margin-block-end: var(--mis-space-xs);
+}
+
+:where(h5) {
+    font-size: var(--mis-type-body-size);
+    font-weight: var(--mis-font-weight-semibold);
+    line-height: var(--mis-type-body-lh);
+    margin-block-start: var(--mis-space-md);
+    margin-block-end: var(--mis-space-xs);
+}
+
+:where(h6) {
+    font-size: var(--mis-type-ui-size);
+    font-weight: var(--mis-font-weight-semibold);
+    line-height: var(--mis-type-ui-lh);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mis-text-muted);
+    margin-block-start: var(--mis-space-sm);
+    margin-block-end: var(--mis-space-xs);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PARAGRAPHS & INLINE TEXT
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(p) {
+    margin-block-end: var(--mis-space-md);
+    text-wrap: pretty;
+}
+
+:where(strong, b) {
+    font-weight: var(--mis-font-weight-bold);
+}
+
+:where(em, i) {
+    font-style: italic;
+}
+
+:where(small) {
+    font-size: var(--mis-type-caption-size);
+    line-height: var(--mis-type-caption-lh);
+}
+
+:where(mark) {
+    background: color-mix(in srgb, var(--mis-bg-warning) 25%, transparent);
+    color: inherit;
+    padding-inline: 0.125em;
+    border-radius: var(--mis-radius-sm);
+}
+
+:where(abbr[title]) {
+    text-decoration: underline dotted;
+    text-underline-offset: 0.15em;
+    cursor: help;
+}
+
+:where(sub, sup) {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+}
+
+:where(sub) { bottom: -0.25em; }
+:where(sup) { top: -0.5em; }
+
+:where(del) {
+    text-decoration: line-through;
+    color: var(--mis-text-muted);
+}
+
+:where(ins) {
+    text-decoration: underline;
+    text-decoration-color: var(--mis-text-success);
+    text-underline-offset: 0.15em;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LINKS
+   Underline by default (accessibility); clean professional hover
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(a) {
+    color: var(--mis-text-brand);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    text-decoration-color: color-mix(in srgb, var(--mis-text-brand) 50%, transparent);
+    transition:
+        color var(--mis-duration-fast) var(--mis-ease-out),
+        text-decoration-color var(--mis-duration-fast) var(--mis-ease-out);
+}
+
+:where(a:hover) {
+    text-decoration-color: var(--mis-text-brand);
+}
+
+:where(a:visited) {
+    color: color-mix(in srgb, var(--mis-text-brand) 75%, var(--mis-text-muted));
+}
+
+:where(a:active) {
+    opacity: 0.85;
+}
+
+:where(a:focus-visible) {
+    outline: var(--mis-focus-ring-width) solid var(--mis-border-focus);
+    outline-offset: var(--mis-focus-ring-offset);
+    border-radius: var(--mis-radius-sm);
+    text-decoration: none;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   HORIZONTAL RULE
+   Enterprise: clean solid line, no effects
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(hr) {
+    border: none;
+    height: 1px;
+    background: var(--mis-border-decorative);
+    margin-block: var(--mis-space-lg);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   BLOCKQUOTE
+   Enterprise: solid background with accent border
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(blockquote) {
+    margin-block: var(--mis-space-md);
+    margin-inline: 0;
+    padding: var(--mis-space-md) var(--mis-space-lg);
+    border-inline-start: 3px solid var(--mis-border-focus);
+    background: var(--mis-bg-muted);
+    border-radius: 0 var(--mis-radius-sm) var(--mis-radius-sm) 0;
+    color: var(--mis-text-muted);
+    font-style: italic;
+}
+
+:where(blockquote > :last-child) {
+    margin-block-end: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   CODE, KBD, SAMP, PRE
+   JetBrains Mono with solid code surfaces
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(code, kbd, samp) {
+    font-family: var(--mis-font-mono);
+    font-size: var(--mis-type-code-size);
+    font-weight: var(--mis-type-code-weight);
+    line-height: var(--mis-type-code-lh);
+}
+
+:where(code:not(pre code)) {
+    padding: 0.125em 0.375em;
+    background: var(--mis-bg-muted);
+    border-radius: var(--mis-radius-sm);
+    color: var(--mis-text-brand);
+}
+
+:where(kbd) {
+    padding: 0.125em 0.375em;
+    background: var(--mis-bg-elevated);
+    border: 1px solid var(--mis-border-default);
+    border-radius: var(--mis-radius-sm);
+    box-shadow: inset 0 -1px 0 var(--mis-border-decorative);
+    font-size: 0.875em;
+}
+
+:where(pre) {
+    font-family: var(--mis-font-mono);
+    font-size: var(--mis-type-code-size);
+    font-weight: var(--mis-type-code-weight);
+    line-height: var(--mis-type-code-lh);
+    margin-block: var(--mis-space-md);
+    padding: var(--mis-space-md);
+    background: var(--mis-bg-muted);
+    border: 1px solid var(--mis-border-decorative);
+    border-radius: var(--mis-radius-sm);
+    overflow-x: auto;
+    color: var(--mis-text-default);
+    tab-size: 4;
+}
+
+:where(pre code) {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LISTS
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(ul, ol) {
+    margin-block: var(--mis-space-sm);
+    padding-inline-start: var(--mis-space-lg);
+}
+
+:where(li) {
+    margin-block-end: var(--mis-space-xs);
+}
+
+:where(li::marker) {
+    color: var(--mis-text-muted);
+}
+
+:where(ul ul, ul ol, ol ul, ol ol) {
+    margin-block: var(--mis-space-xs);
+}
+
+:where(dl) {
+    margin-block: var(--mis-space-md);
+}
+
+:where(dt) {
+    font-weight: var(--mis-font-weight-semibold);
+    color: var(--mis-text-default);
+    margin-block-start: var(--mis-space-sm);
+}
+
+:where(dd) {
+    margin-inline-start: var(--mis-space-lg);
+    color: var(--mis-text-muted);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TABLES
+   Enterprise: clear structure, solid borders, professional density
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(table) {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin-block: var(--mis-space-md);
+    font-size: var(--mis-type-ui-size);
+    line-height: var(--mis-type-ui-lh);
+}
+
+:where(caption) {
+    padding-block-end: var(--mis-space-sm);
+    font-size: var(--mis-type-caption-size);
+    color: var(--mis-text-muted);
+    text-align: start;
+    caption-side: top;
+}
+
+:where(thead) {
+    border-block-end: 2px solid var(--mis-border-default);
+}
+
+:where(th) {
+    padding: var(--mis-space-xs) var(--mis-space-sm);
+    font-weight: var(--mis-font-weight-semibold);
+    text-align: start;
+    color: var(--mis-text-default);
+    font-size: var(--mis-type-caption-size);
+}
+
+:where(td) {
+    padding: var(--mis-space-xs) var(--mis-space-sm);
+    border-block-end: 1px solid var(--mis-border-decorative);
+    color: var(--mis-text-default);
+}
+
+:where(tbody tr:hover) {
+    background: var(--mis-bg-muted);
+}
+
+:where(tfoot) {
+    border-block-start: 2px solid var(--mis-border-default);
+}
+
+:where(tfoot td) {
+    font-weight: var(--mis-font-weight-semibold);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MEDIA & FIGURES
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(img, picture, video, canvas, svg) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+:where(figure) {
+    margin-block: var(--mis-space-md);
+    margin-inline: 0;
+}
+
+:where(figcaption) {
+    margin-block-start: var(--mis-space-xs);
+    font-size: var(--mis-type-caption-size);
+    line-height: var(--mis-type-caption-lh);
+    color: var(--mis-text-muted);
+    text-align: center;
+}
+
+:where(audio) {
+    display: block;
+    width: 100%;
+    margin-block: var(--mis-space-sm);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DISCLOSURE (DETAILS / SUMMARY)
+   Enterprise: solid container with clean indicator
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(details) {
+    margin-block: var(--mis-space-sm);
+    padding: var(--mis-space-sm) var(--mis-space-md);
+    border: 1px solid var(--mis-border-decorative);
+    border-radius: var(--mis-radius-sm);
+    background: var(--mis-bg-muted);
+}
+
+:where(details[open]) {
+    padding-block-end: var(--mis-space-md);
+}
+
+:where(summary) {
+    cursor: pointer;
+    font-weight: var(--mis-font-weight-medium);
+    color: var(--mis-text-default);
+    padding: var(--mis-space-xs);
+    border-radius: var(--mis-radius-sm);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: var(--mis-space-sm);
+    transition: color var(--mis-duration-fast) var(--mis-ease-out);
+}
+
+:where(summary:hover) {
+    color: var(--mis-text-brand);
+}
+
+:where(summary:focus-visible) {
+    outline: var(--mis-focus-ring-width) solid var(--mis-border-focus);
+    outline-offset: var(--mis-focus-ring-offset);
+}
+
+:where(summary::before) {
+    content: "▸";
+    display: inline-block;
+    transition: transform var(--mis-duration-fast) var(--mis-ease-out);
+    font-size: 0.75em;
+}
+
+:where(details[open] > summary::before) {
+    transform: rotate(90deg);
+}
+
+:where(summary::-webkit-details-marker) {
+    display: none;
+}
+
+:where(details > :not(summary)) {
+    margin-block-start: var(--mis-space-sm);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   FORM ELEMENTS (baseline only — component classes override)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:where(fieldset) {
+    margin-block: var(--mis-space-md);
+    padding: var(--mis-space-md);
+    border: 1px solid var(--mis-border-default);
+    border-radius: var(--mis-radius-sm);
+}
+
+:where(legend) {
+    padding-inline: var(--mis-space-sm);
+    font-weight: var(--mis-font-weight-semibold);
+    font-size: var(--mis-type-ui-size);
+    color: var(--mis-text-default);
+}
+
+:where(label) {
+    display: block;
+    font-size: var(--mis-type-ui-size);
+    font-weight: var(--mis-font-weight-medium);
+    color: var(--mis-text-default);
+    margin-block-end: var(--mis-space-xs);
+}
+
+:where(input, textarea, select) {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+}
+
+:where(button) {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+}
+
+:where(input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible) {
+    outline: var(--mis-focus-ring-width) solid var(--mis-border-focus);
+    outline-offset: var(--mis-focus-ring-offset);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TYPOGRAPHY UTILITY CLASSES
+   Normal class specificity — intentional opt-in overrides
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.mis-display {
+    font-family: var(--mis-font-heading);
+    font-size: var(--mis-type-display-size);
+    font-weight: var(--mis-type-display-weight);
+    line-height: var(--mis-type-display-lh);
+    letter-spacing: var(--mis-tracking-wide);
+    color: var(--mis-text-default);
+}
+
+.mis-h1 {
+    font-family: var(--mis-font-heading);
+    font-size: var(--mis-type-h1-size);
+    font-weight: var(--mis-type-h1-weight);
+    line-height: var(--mis-type-h1-lh);
+    letter-spacing: var(--mis-tracking-normal);
+}
+
+.mis-h2 {
+    font-family: var(--mis-font-heading);
+    font-size: var(--mis-type-h2-size);
+    font-weight: var(--mis-type-h2-weight);
+    line-height: var(--mis-type-h2-lh);
+    letter-spacing: var(--mis-tracking-normal);
+}
+
+.mis-h3 {
+    font-family: var(--mis-font-heading);
+    font-size: var(--mis-type-h3-size);
+    font-weight: var(--mis-type-h3-weight);
+    line-height: var(--mis-type-h3-lh);
+    letter-spacing: var(--mis-tracking-normal);
+}
+
+.mis-body-lg {
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-lg-size);
+    font-weight: var(--mis-type-body-lg-weight);
+    line-height: var(--mis-type-body-lg-lh);
+}
+
+.mis-body {
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-size);
+    font-weight: var(--mis-type-body-weight);
+    line-height: var(--mis-type-body-lh);
+}
+
+.mis-ui {
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-ui-size);
+    font-weight: var(--mis-type-ui-weight);
+    line-height: var(--mis-type-ui-lh);
+}
+
+.mis-caption {
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-caption-size);
+    font-weight: var(--mis-type-caption-weight);
+    line-height: var(--mis-type-caption-lh);
+}
+
+.mis-code {
+    font-family: var(--mis-font-mono);
+    font-size: var(--mis-type-code-size);
+    font-weight: var(--mis-type-code-weight);
+    line-height: var(--mis-type-code-lh);
+}
+
+.mis-code-sm {
+    font-family: var(--mis-font-mono);
+    font-size: var(--mis-type-code-sm-size);
+    font-weight: var(--mis-type-code-sm-weight);
+    line-height: var(--mis-type-code-sm-lh);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY — REDUCED MOTION
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+    :where(*, *::before, *::after) {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY — HIGH CONTRAST ENHANCEMENTS
+   ════════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-contrast: more) {
+    :where(a) {
+        text-decoration-thickness: 2px;
+    }
+
+    :where(hr) {
+        height: 2px;
+    }
+
+    :where(th, td) {
+        border: 1px solid var(--mis-border-default);
+    }
+}

@@ -16,36 +16,129 @@
    Bright, airy futuristic — frosted surfaces, vivid accents
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-    /* ── Background (bright surfaces) ───────────────────── */
-    --mis-bg-default: #f8fafc;
-    --mis-bg-muted: #f1f5f9;
+    /* ── Radius primitives ──────────────────────────────── */
+    --mis-radius-none: 0;
+    --mis-radius-full: 9999px;
+
+    /* ── Spacing primitives ─────────────────────────────── */
+    --mis-space-xs: 0.25rem;
+    --mis-space-sm: 0.5rem;
+    --mis-space-md: 1rem;
+    --mis-space-lg: 1.5rem;
+    --mis-space-xl: 2rem;
+
+    /* ── Size primitives (control heights) ──────────────── */
+    --mis-size-sm: 2rem;
+    --mis-size-md: 2.5rem;
+    --mis-size-lg: 3rem;
+
+    /* ── Font weight primitives ─────────────────────────── */
+    --mis-font-weight-light: 300;
+    --mis-font-weight-regular: 400;
+    --mis-font-weight-medium: 500;
+    --mis-font-weight-semibold: 600;
+    --mis-font-weight-bold: 700;
+
+    /* ══════════════════════════════════════════════════════
+       TYPOGRAPHY (Luminous)
+       Fonts: Rajdhani (headings), Space Grotesk (body), JetBrains Mono (code)
+       Character: Futuristic, geometric, wide tracking for display
+       ══════════════════════════════════════════════════════ */
+
+    /* ── Font families ───────────────────────────────────── */
+    --mis-font-heading: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
+    --mis-font-body: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --mis-font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+
+    /* ── Letter spacing (Luminous uses wide tracking on display) */
+    --mis-tracking-wide: 0.04em;
+    --mis-tracking-normal: 0;
+    --mis-tracking-tight: 0.01em;
+
+    /* ── Type scale: display ─────────────────────────────── */
+    --mis-type-display-size: 2.5rem;        /* 40px */
+    --mis-type-display-lh: 1.1;
+    --mis-type-display-weight: 300;         /* Rajdhani light */
+
+    /* ── Type scale: h1 ──────────────────────────────────── */
+    --mis-type-h1-size: 2rem;               /* 32px */
+    --mis-type-h1-lh: 1.15;
+    --mis-type-h1-weight: 300;              /* Rajdhani light */
+
+    /* ── Type scale: h2 ──────────────────────────────────── */
+    --mis-type-h2-size: 1.5rem;             /* 24px */
+    --mis-type-h2-lh: 1.2;
+    --mis-type-h2-weight: 400;              /* Rajdhani regular */
+
+    /* ── Type scale: h3 ──────────────────────────────────── */
+    --mis-type-h3-size: 1.25rem;            /* 20px */
+    --mis-type-h3-lh: 1.25;
+    --mis-type-h3-weight: 500;              /* Rajdhani medium */
+
+    /* ── Type scale: body-lg ─────────────────────────────── */
+    --mis-type-body-lg-size: 1.0625rem;     /* 17px */
+    --mis-type-body-lg-lh: 1.55;
+    --mis-type-body-lg-weight: 400;         /* Space Grotesk regular */
+
+    /* ── Type scale: body ────────────────────────────────── */
+    --mis-type-body-size: 1rem;             /* 16px */
+    --mis-type-body-lh: 1.55;
+    --mis-type-body-weight: 400;            /* Space Grotesk regular */
+
+    /* ── Type scale: ui ──────────────────────────────────── */
+    --mis-type-ui-size: 0.875rem;           /* 14px */
+    --mis-type-ui-lh: 1.35;
+    --mis-type-ui-weight: 500;              /* Space Grotesk medium */
+
+    /* ── Type scale: caption ─────────────────────────────── */
+    --mis-type-caption-size: 0.75rem;       /* 12px */
+    --mis-type-caption-lh: 1.3;
+    --mis-type-caption-weight: 500;         /* Space Grotesk medium */
+
+    /* ── Type scale: code ────────────────────────────────── */
+    --mis-type-code-size: 0.8125rem;        /* 13px */
+    --mis-type-code-lh: 1.45;
+    --mis-type-code-weight: 400;            /* JetBrains Mono regular */
+
+    /* ── Type scale: code-sm ─────────────────────────────── */
+    --mis-type-code-sm-size: 0.75rem;       /* 12px */
+    --mis-type-code-sm-lh: 1.45;
+    --mis-type-code-sm-weight: 400;         /* JetBrains Mono regular */
+
+    /* ── Background (bright futuristic surfaces) ─────────── */
+    --mis-bg-default: #f4f9ff;
+    --mis-bg-muted: #eaf2ff;
     --mis-bg-elevated: #ffffff;
-    --mis-bg-brand: #3b82f6;
-    --mis-bg-accent: #6366f1;
-    --mis-bg-success: #10b981;
-    --mis-bg-warning: #f59e0b;
-    --mis-bg-error: #ef4444;
-    --mis-bg-info: #06b6d4;
+    --mis-bg-brand: #00a7ff;
+    --mis-bg-accent: #2bd9ff;
+    --mis-bg-success: #22b573;
+    --mis-bg-warning: #ff4d1a;
+    --mis-bg-error: #ff4d1a;
+    --mis-bg-info: #00b7ff;
 
-    /* ── Text (dark on light) ───────────────────────────── */
-    --mis-text-default: #0f172a;
-    --mis-text-muted: #64748b;
-    --mis-text-inverse: #f8fafc;
-    --mis-text-brand: #2563eb;
-    --mis-text-success: #059669;
-    --mis-text-warning: #d97706;
-    --mis-text-error: #dc2626;
-    --mis-text-info: #0891b2;
+    /* ── Text (deep blue-gray on light) ──────────────────── */
+    --mis-text-default: #10243d;
+    --mis-text-muted: #385472;
+    --mis-text-tertiary: #4f6f93;
+    --mis-text-disabled: #587a9f;
+    --mis-text-inverse: #f4f9ff;
+    --mis-text-brand: #0066ff;
+    --mis-text-success: #0f8d58;
+    --mis-text-warning: #c93e15;
+    --mis-text-error: #c93e15;
+    --mis-text-info: #007fbd;
 
-    /* ── Border (subtle on light) ────────────────────────── */
-    --mis-border-default: #cbd5e1;
-    --mis-border-focus: #3b82f6;
-    --mis-border-error: #ef4444;
-    --mis-border-warning: #f59e0b;
+    /* ── Borders and outlines ─────────────────────────────── */
+    --mis-border-default: #8ea8c8;
+    --mis-border-decorative: #bfd2e8;
+    --mis-border-interactive: #4a6f99;
+    --mis-border-focus: #00b7ff;
+    --mis-border-error: #ff4d1a;
+    --mis-border-warning: #ff4d1a;
 
     /* ── Input surfaces (frosted light) ──────────────────── */
-    --mis-bg-input: rgba(255, 255, 255, 0.8);
-    --mis-bg-input-hover: rgba(255, 255, 255, 0.95);
+    --mis-bg-input: rgba(255, 255, 255, 0.88);
+    --mis-bg-input-hover: rgba(255, 255, 255, 0.98);
 
     /* ── Radius (generous for Luminous) ──────────────────── */
     --mis-radius-sm: 0.375rem;
@@ -53,9 +146,24 @@
     --mis-radius-lg: 0.75rem;
 
     /* ── Shadow (subtle glow) ────────────────────────────── */
-    --mis-shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 0 8px -2px rgba(59, 130, 246, 0.15);
-    --mis-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 0 12px -2px rgba(59, 130, 246, 0.2);
-    --mis-shadow-glow: 0 0 16px -4px var(--mis-bg-brand);
+    --mis-shadow-sm: 0 1px 3px 0 rgb(8 32 64 / 0.14), 0 0 8px -2px rgb(0 167 255 / 0.18);
+    --mis-shadow-md: 0 8px 18px -8px rgb(8 32 64 / 0.24), 0 0 14px -4px rgb(0 167 255 / 0.22);
+    --mis-shadow-glow: 0 0 16px -4px rgb(0 167 255 / 0.38);
+
+    /* ── Focus ───────────────────────────────────────────── */
+    --mis-focus-ring-width: 2px;
+    --mis-focus-ring-offset: 2px;
+
+    /* ── Animation ───────────────────────────────────────── */
+    --mis-duration-fast: 150ms;
+    --mis-duration-normal: 250ms;
+    --mis-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+    /* ── Legacy aliases (deprecated) ─────────────────────── */
+    --mis-font-family-body: var(--mis-font-body);
+    --mis-font-size-sm: var(--mis-type-ui-size);
+    --mis-font-size-md: var(--mis-type-body-size);
+    --mis-font-weight-normal: var(--mis-font-weight-regular);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -65,71 +173,79 @@
 
 /* Explicit user preference */
 [data-theme-mode="dark"] {
-    --mis-bg-default: #0a0a0f;
-    --mis-bg-muted: #12121a;
-    --mis-bg-elevated: #1a1a24;
-    --mis-bg-brand: #3b82f6;
-    --mis-bg-accent: #6366f1;
-    --mis-bg-success: #10b981;
-    --mis-bg-warning: #f59e0b;
-    --mis-bg-error: #ef4444;
-    --mis-bg-info: #06b6d4;
+    --mis-bg-default: #05070b;
+    --mis-bg-muted: #0a0f1a;
+    --mis-bg-elevated: #0f1929;
+    --mis-bg-brand: #00a7ff;
+    --mis-bg-accent: #2bd9ff;
+    --mis-bg-success: #22b573;
+    --mis-bg-warning: #ff4d1a;
+    --mis-bg-error: #ff4d1a;
+    --mis-bg-info: #00b7ff;
 
-    --mis-text-default: #e5e7eb;
-    --mis-text-muted: #9ca3af;
-    --mis-text-inverse: #0a0a0f;
-    --mis-text-brand: #60a5fa;
-    --mis-text-success: #34d399;
-    --mis-text-warning: #fbbf24;
-    --mis-text-error: #f87171;
-    --mis-text-info: #22d3ee;
+    --mis-text-default: #eaf2ff;
+    --mis-text-muted: #a8c0e0;
+    --mis-text-tertiary: #728eaf;
+    --mis-text-disabled: #778da9;
+    --mis-text-inverse: #05070b;
+    --mis-text-brand: #00a7ff;
+    --mis-text-success: #46d390;
+    --mis-text-warning: #ff7a50;
+    --mis-text-error: #ff7a50;
+    --mis-text-info: #2bd9ff;
 
-    --mis-border-default: #374151;
-    --mis-border-focus: #3b82f6;
-    --mis-border-error: #ef4444;
-    --mis-border-warning: #f59e0b;
+    --mis-border-default: #576f96;
+    --mis-border-decorative: #223a66;
+    --mis-border-interactive: #576f96;
+    --mis-border-focus: #00b7ff;
+    --mis-border-error: #ff4d1a;
+    --mis-border-warning: #ff4d1a;
 
-    --mis-bg-input: rgba(255, 255, 255, 0.05);
-    --mis-bg-input-hover: rgba(255, 255, 255, 0.08);
+    --mis-bg-input: rgb(15 25 41 / 0.78);
+    --mis-bg-input-hover: rgb(22 37 61 / 0.9);
 
-    --mis-shadow-sm: 0 0 8px -2px rgba(59, 130, 246, 0.3);
-    --mis-shadow-md: 0 0 16px -2px rgba(59, 130, 246, 0.4);
-    --mis-shadow-glow: 0 0 20px -4px var(--mis-bg-brand);
+    --mis-shadow-sm: 0 0 10px -2px rgb(0 167 255 / 0.34);
+    --mis-shadow-md: 0 0 18px -3px rgb(0 167 255 / 0.42);
+    --mis-shadow-glow: 0 0 22px -4px rgb(0 167 255 / 0.5);
 }
 
 /* OS preference fallback (only when no explicit choice) */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme-mode]) {
-        --mis-bg-default: #0a0a0f;
-        --mis-bg-muted: #12121a;
-        --mis-bg-elevated: #1a1a24;
-        --mis-bg-brand: #3b82f6;
-        --mis-bg-accent: #6366f1;
-        --mis-bg-success: #10b981;
-        --mis-bg-warning: #f59e0b;
-        --mis-bg-error: #ef4444;
-        --mis-bg-info: #06b6d4;
+        --mis-bg-default: #05070b;
+        --mis-bg-muted: #0a0f1a;
+        --mis-bg-elevated: #0f1929;
+        --mis-bg-brand: #00a7ff;
+        --mis-bg-accent: #2bd9ff;
+        --mis-bg-success: #22b573;
+        --mis-bg-warning: #ff4d1a;
+        --mis-bg-error: #ff4d1a;
+        --mis-bg-info: #00b7ff;
 
-        --mis-text-default: #e5e7eb;
-        --mis-text-muted: #9ca3af;
-        --mis-text-inverse: #0a0a0f;
-        --mis-text-brand: #60a5fa;
-        --mis-text-success: #34d399;
-        --mis-text-warning: #fbbf24;
-        --mis-text-error: #f87171;
-        --mis-text-info: #22d3ee;
+        --mis-text-default: #eaf2ff;
+        --mis-text-muted: #a8c0e0;
+        --mis-text-tertiary: #728eaf;
+        --mis-text-disabled: #778da9;
+        --mis-text-inverse: #05070b;
+        --mis-text-brand: #00a7ff;
+        --mis-text-success: #46d390;
+        --mis-text-warning: #ff7a50;
+        --mis-text-error: #ff7a50;
+        --mis-text-info: #2bd9ff;
 
-        --mis-border-default: #374151;
-        --mis-border-focus: #3b82f6;
-        --mis-border-error: #ef4444;
-        --mis-border-warning: #f59e0b;
+        --mis-border-default: #576f96;
+        --mis-border-decorative: #223a66;
+        --mis-border-interactive: #576f96;
+        --mis-border-focus: #00b7ff;
+        --mis-border-error: #ff4d1a;
+        --mis-border-warning: #ff4d1a;
 
-        --mis-bg-input: rgba(255, 255, 255, 0.05);
-        --mis-bg-input-hover: rgba(255, 255, 255, 0.08);
+        --mis-bg-input: rgb(15 25 41 / 0.78);
+        --mis-bg-input-hover: rgb(22 37 61 / 0.9);
 
-        --mis-shadow-sm: 0 0 8px -2px rgba(59, 130, 246, 0.3);
-        --mis-shadow-md: 0 0 16px -2px rgba(59, 130, 246, 0.4);
-        --mis-shadow-glow: 0 0 20px -4px var(--mis-bg-brand);
+        --mis-shadow-sm: 0 0 10px -2px rgb(0 167 255 / 0.34);
+        --mis-shadow-md: 0 0 18px -3px rgb(0 167 255 / 0.42);
+        --mis-shadow-glow: 0 0 22px -4px rgb(0 167 255 / 0.5);
     }
 }
 
@@ -143,26 +259,30 @@
     --mis-bg-default: #000000;
     --mis-bg-muted: #1a1a1a;
     --mis-bg-elevated: #2a2a2a;
-    --mis-bg-brand: #4d9fff;
-    --mis-bg-accent: #8b7fff;
-    --mis-bg-success: #00cc66;
-    --mis-bg-warning: #ffcc00;
-    --mis-bg-error: #ff3333;
-    --mis-bg-info: #00ccff;
+    --mis-bg-brand: #00b7ff;
+    --mis-bg-accent: #2bd9ff;
+    --mis-bg-success: #46d390;
+    --mis-bg-warning: #ff4d1a;
+    --mis-bg-error: #ff4d1a;
+    --mis-bg-info: #00b7ff;
 
     --mis-text-default: #ffffff;
-    --mis-text-muted: #cccccc;
+    --mis-text-muted: #d6e6ff;
+    --mis-text-tertiary: #b9d3ff;
+    --mis-text-disabled: #a4c6ff;
     --mis-text-inverse: #000000;
-    --mis-text-brand: #4d9fff;
-    --mis-text-success: #00ff7f;
-    --mis-text-warning: #ffdd00;
-    --mis-text-error: #ff5555;
-    --mis-text-info: #00ddff;
+    --mis-text-brand: #00b7ff;
+    --mis-text-success: #46d390;
+    --mis-text-warning: #ff7a50;
+    --mis-text-error: #ff7a50;
+    --mis-text-info: #2bd9ff;
 
     --mis-border-default: #ffffff;
-    --mis-border-focus: #4d9fff;
-    --mis-border-error: #ff3333;
-    --mis-border-warning: #ffcc00;
+    --mis-border-decorative: #9fc5ff;
+    --mis-border-interactive: #ffffff;
+    --mis-border-focus: #00b7ff;
+    --mis-border-error: #ff4d1a;
+    --mis-border-warning: #ff4d1a;
 
     --mis-bg-input: #1a1a1a;
     --mis-bg-input-hover: #2a2a2a;
@@ -179,26 +299,30 @@
         --mis-bg-default: #000000;
         --mis-bg-muted: #1a1a1a;
         --mis-bg-elevated: #2a2a2a;
-        --mis-bg-brand: #4d9fff;
-        --mis-bg-accent: #8b7fff;
-        --mis-bg-success: #00cc66;
-        --mis-bg-warning: #ffcc00;
-        --mis-bg-error: #ff3333;
-        --mis-bg-info: #00ccff;
+        --mis-bg-brand: #00b7ff;
+        --mis-bg-accent: #2bd9ff;
+        --mis-bg-success: #46d390;
+        --mis-bg-warning: #ff4d1a;
+        --mis-bg-error: #ff4d1a;
+        --mis-bg-info: #00b7ff;
 
         --mis-text-default: #ffffff;
-        --mis-text-muted: #cccccc;
+        --mis-text-muted: #d6e6ff;
+        --mis-text-tertiary: #b9d3ff;
+        --mis-text-disabled: #a4c6ff;
         --mis-text-inverse: #000000;
-        --mis-text-brand: #4d9fff;
-        --mis-text-success: #00ff7f;
-        --mis-text-warning: #ffdd00;
-        --mis-text-error: #ff5555;
-        --mis-text-info: #00ddff;
+        --mis-text-brand: #00b7ff;
+        --mis-text-success: #46d390;
+        --mis-text-warning: #ff7a50;
+        --mis-text-error: #ff7a50;
+        --mis-text-info: #2bd9ff;
 
         --mis-border-default: #ffffff;
-        --mis-border-focus: #4d9fff;
-        --mis-border-error: #ff3333;
-        --mis-border-warning: #ffcc00;
+        --mis-border-decorative: #9fc5ff;
+        --mis-border-interactive: #ffffff;
+        --mis-border-focus: #00b7ff;
+        --mis-border-error: #ff4d1a;
+        --mis-border-warning: #ff4d1a;
 
         --mis-bg-input: #1a1a1a;
         --mis-bg-input-hover: #2a2a2a;

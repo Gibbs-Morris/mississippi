@@ -16,36 +16,149 @@
    Clean, professional — white surfaces, clear hierarchy
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-    /* ── Background (clean light surfaces) ──────────────── */
-    --mis-bg-default: #ffffff;
-    --mis-bg-muted: #f9fafb;
-    --mis-bg-elevated: #ffffff;
-    --mis-bg-brand: #2563eb;
-    --mis-bg-accent: #7c3aed;
-    --mis-bg-success: #16a34a;
-    --mis-bg-warning: #ca8a04;
-    --mis-bg-error: #dc2626;
-    --mis-bg-info: #0284c7;
+    /* ── Radius primitives ──────────────────────────────── */
+    --mis-radius-none: 0;
+    --mis-radius-full: 9999px;
 
-    /* ── Text (dark on light, high contrast) ────────────── */
-    --mis-text-default: #111827;
-    --mis-text-muted: #6b7280;
-    --mis-text-inverse: #ffffff;
-    --mis-text-brand: #2563eb;
-    --mis-text-success: #16a34a;
-    --mis-text-warning: #ca8a04;
-    --mis-text-error: #dc2626;
-    --mis-text-info: #0284c7;
+    /* ── Spacing primitives ─────────────────────────────── */
+    --mis-space-xs: 0.25rem;
+    --mis-space-sm: 0.5rem;
+    --mis-space-md: 1rem;
+    --mis-space-lg: 1.5rem;
+    --mis-space-xl: 2rem;
 
-    /* ── Border (crisp, clear) ───────────────────────────── */
-    --mis-border-default: #d1d5db;
-    --mis-border-focus: #2563eb;
-    --mis-border-error: #dc2626;
-    --mis-border-warning: #ca8a04;
+    /* ── Size primitives (control heights) ──────────────── */
+    --mis-size-sm: 2rem;
+    --mis-size-md: 2.5rem;
+    --mis-size-lg: 3rem;
 
-    /* ── Input surfaces (solid for clarity) ──────────────── */
-    --mis-bg-input: #ffffff;
-    --mis-bg-input-hover: #f9fafb;
+    /* ── Font weight primitives ─────────────────────────── */
+    --mis-font-weight-light: 300;
+    --mis-font-weight-regular: 400;
+    --mis-font-weight-medium: 500;
+    --mis-font-weight-semibold: 600;
+    --mis-font-weight-bold: 700;
+
+    /* ══════════════════════════════════════════════════════
+       TYPOGRAPHY (Enterprise)
+       Fonts: Inter Tight (headings), Inter (body), JetBrains Mono (code)
+       Character: Professional, highly readable, minimal tracking
+       ══════════════════════════════════════════════════════ */
+
+    /* ── Font families ───────────────────────────────────── */
+    --mis-font-heading: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+    --mis-font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --mis-font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+
+    /* ── Letter spacing (Enterprise avoids extra tracking) ── */
+    --mis-tracking-wide: 0;
+    --mis-tracking-normal: 0;
+    --mis-tracking-tight: 0;
+
+    /* ── Type scale: display ─────────────────────────────── */
+    --mis-type-display-size: 2.25rem;       /* 36px */
+    --mis-type-display-lh: 1.1;
+    --mis-type-display-weight: 700;         /* Inter Tight bold */
+
+    /* ── Type scale: h1 ──────────────────────────────────── */
+    --mis-type-h1-size: 1.75rem;            /* 28px */
+    --mis-type-h1-lh: 1.15;
+    --mis-type-h1-weight: 700;              /* Inter Tight bold */
+
+    /* ── Type scale: h2 ──────────────────────────────────── */
+    --mis-type-h2-size: 1.375rem;           /* 22px */
+    --mis-type-h2-lh: 1.2;
+    --mis-type-h2-weight: 600;              /* Inter Tight semibold */
+
+    /* ── Type scale: h3 ──────────────────────────────────── */
+    --mis-type-h3-size: 1.125rem;           /* 18px */
+    --mis-type-h3-lh: 1.25;
+    --mis-type-h3-weight: 600;              /* Inter Tight semibold */
+
+    /* ── Type scale: body-lg ─────────────────────────────── */
+    --mis-type-body-lg-size: 1rem;          /* 16px */
+    --mis-type-body-lg-lh: 1.6;
+    --mis-type-body-lg-weight: 400;         /* Inter regular */
+
+    /* ── Type scale: body ────────────────────────────────── */
+    --mis-type-body-size: 0.9375rem;        /* 15px */
+    --mis-type-body-lh: 1.6;
+    --mis-type-body-weight: 400;            /* Inter regular */
+
+    /* ── Type scale: ui ──────────────────────────────────── */
+    --mis-type-ui-size: 0.875rem;           /* 14px */
+    --mis-type-ui-lh: 1.4;
+    --mis-type-ui-weight: 500;              /* Inter medium */
+
+    /* ── Type scale: caption ─────────────────────────────── */
+    --mis-type-caption-size: 0.75rem;       /* 12px */
+    --mis-type-caption-lh: 1.35;
+    --mis-type-caption-weight: 500;         /* Inter medium */
+
+    /* ── Type scale: code ────────────────────────────────── */
+    --mis-type-code-size: 0.8125rem;        /* 13px */
+    --mis-type-code-lh: 1.5;
+    --mis-type-code-weight: 400;            /* JetBrains Mono regular */
+
+    /* ── Type scale: code-sm ─────────────────────────────── */
+    --mis-type-code-sm-size: 0.75rem;       /* 12px */
+    --mis-type-code-sm-lh: 1.5;
+    --mis-type-code-sm-weight: 400;         /* JetBrains Mono regular */
+
+    /* ── Neutral ramp anchors ────────────────────────────── */
+    --mis-neutral-0: #fdf6e3;
+    --mis-neutral-1: #eee8d5;
+    --mis-neutral-2: #93a1a1;
+    --mis-neutral-3: #839496;
+    --mis-neutral-4: #657b83;
+    --mis-neutral-5: #586e75;
+    --mis-neutral-6: #073642;
+    --mis-neutral-7: #002b36;
+
+    /* ── Accent anchors ──────────────────────────────────── */
+    --mis-accent-primary: #268bd2;
+    --mis-accent-info: #1f857d;
+    --mis-accent-success: #6f8300;
+    --mis-accent-warning: #9c7a00;
+    --mis-accent-warning-alt: #b6491d;
+    --mis-accent-error: #dc322f;
+    --mis-accent-magenta: #d33682;
+    --mis-accent-violet: #6c71c4;
+
+    /* ── Background (light mode uses neutral.0/1) ───────── */
+    --mis-bg-default: var(--mis-neutral-0);
+    --mis-bg-muted: var(--mis-neutral-1);
+    --mis-bg-elevated: #fffaf0;
+    --mis-bg-brand: var(--mis-accent-primary);
+    --mis-bg-accent: var(--mis-accent-violet);
+    --mis-bg-success: var(--mis-accent-success);
+    --mis-bg-warning: var(--mis-accent-warning);
+    --mis-bg-error: var(--mis-accent-error);
+    --mis-bg-info: var(--mis-accent-info);
+
+    /* ── Text (light mode uses neutral.5/4) ─────────────── */
+    --mis-text-default: #43565c;
+    --mis-text-muted: #4f646b;
+    --mis-text-tertiary: var(--mis-neutral-4);
+    --mis-text-disabled: var(--mis-neutral-2);
+    --mis-text-inverse: #fdf6e3;
+    --mis-text-brand: var(--mis-accent-primary);
+    --mis-text-success: #5f7000;
+    --mis-text-warning: #765900;
+    --mis-text-error: #c62b2a;
+    --mis-text-info: #1b746d;
+
+    /* ── Border (light mode uses neutral.2) ─────────────── */
+    --mis-border-default: var(--mis-neutral-2);
+    --mis-border-decorative: #c9c6b8;
+    --mis-border-interactive: var(--mis-neutral-2);
+    --mis-border-focus: var(--mis-accent-primary);
+    --mis-border-error: var(--mis-accent-error);
+    --mis-border-warning: var(--mis-accent-warning);
+
+    /* ── Input surfaces (solid, low glare) ──────────────── */
+    --mis-bg-input: #fffaf0;
+    --mis-bg-input-hover: #f7f0de;
 
     /* ── Radius (conservative for Enterprise) ────────────── */
     --mis-radius-sm: 0.25rem;
@@ -53,8 +166,23 @@
     --mis-radius-lg: 0.5rem;
 
     /* ── Shadow (subtle, professional) ───────────────────── */
-    --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --mis-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --mis-shadow-sm: 0 1px 2px 0 rgb(0 43 54 / 0.08);
+    --mis-shadow-md: 0 4px 10px -2px rgb(0 43 54 / 0.14);
+
+    /* ── Focus ───────────────────────────────────────────── */
+    --mis-focus-ring-width: 2px;
+    --mis-focus-ring-offset: 2px;
+
+    /* ── Animation ───────────────────────────────────────── */
+    --mis-duration-fast: 150ms;
+    --mis-duration-normal: 250ms;
+    --mis-ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+    /* ── Legacy aliases (deprecated) ─────────────────────── */
+    --mis-font-family-body: var(--mis-font-body);
+    --mis-font-size-sm: var(--mis-type-ui-size);
+    --mis-font-size-md: var(--mis-type-body-size);
+    --mis-font-weight-normal: var(--mis-font-weight-regular);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -64,69 +192,77 @@
 
 /* Explicit user preference */
 [data-theme-mode="dark"] {
-    --mis-bg-default: #111827;
-    --mis-bg-muted: #1f2937;
-    --mis-bg-elevated: #374151;
-    --mis-bg-brand: #3b82f6;
-    --mis-bg-accent: #8b5cf6;
-    --mis-bg-success: #22c55e;
-    --mis-bg-warning: #eab308;
-    --mis-bg-error: #ef4444;
-    --mis-bg-info: #0ea5e9;
+    --mis-bg-default: var(--mis-neutral-7);
+    --mis-bg-muted: var(--mis-neutral-6);
+    --mis-bg-elevated: #0f4554;
+    --mis-bg-brand: var(--mis-accent-primary);
+    --mis-bg-accent: var(--mis-accent-violet);
+    --mis-bg-success: var(--mis-accent-success);
+    --mis-bg-warning: var(--mis-accent-warning);
+    --mis-bg-error: var(--mis-accent-error);
+    --mis-bg-info: var(--mis-accent-info);
 
-    --mis-text-default: #f9fafb;
-    --mis-text-muted: #9ca3af;
-    --mis-text-inverse: #111827;
-    --mis-text-brand: #60a5fa;
-    --mis-text-success: #4ade80;
-    --mis-text-warning: #fde047;
-    --mis-text-error: #f87171;
-    --mis-text-info: #38bdf8;
+    --mis-text-default: #9ea9a9;
+    --mis-text-muted: var(--mis-neutral-2);
+    --mis-text-tertiary: var(--mis-neutral-4);
+    --mis-text-disabled: #586e75;
+    --mis-text-inverse: var(--mis-neutral-7);
+    --mis-text-brand: #48a4e2;
+    --mis-text-success: #a8bc3f;
+    --mis-text-warning: #b7922f;
+    --mis-text-error: #e15f5b;
+    --mis-text-info: #5eb8b1;
 
-    --mis-border-default: #4b5563;
-    --mis-border-focus: #3b82f6;
-    --mis-border-error: #ef4444;
-    --mis-border-warning: #eab308;
+    --mis-border-default: var(--mis-neutral-4);
+    --mis-border-decorative: #4f6a72;
+    --mis-border-interactive: var(--mis-neutral-4);
+    --mis-border-focus: var(--mis-accent-primary);
+    --mis-border-error: var(--mis-accent-error);
+    --mis-border-warning: var(--mis-accent-warning);
 
-    --mis-bg-input: #1f2937;
-    --mis-bg-input-hover: #374151;
+    --mis-bg-input: #0f3d4b;
+    --mis-bg-input-hover: #164c5b;
 
-    --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --mis-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+    --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.36);
+    --mis-shadow-md: 0 6px 14px -2px rgb(0 0 0 / 0.46);
 }
 
 /* OS preference fallback (only when no explicit choice) */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme-mode]) {
-        --mis-bg-default: #111827;
-        --mis-bg-muted: #1f2937;
-        --mis-bg-elevated: #374151;
-        --mis-bg-brand: #3b82f6;
-        --mis-bg-accent: #8b5cf6;
-        --mis-bg-success: #22c55e;
-        --mis-bg-warning: #eab308;
-        --mis-bg-error: #ef4444;
-        --mis-bg-info: #0ea5e9;
+        --mis-bg-default: var(--mis-neutral-7);
+        --mis-bg-muted: var(--mis-neutral-6);
+        --mis-bg-elevated: #0f4554;
+        --mis-bg-brand: var(--mis-accent-primary);
+        --mis-bg-accent: var(--mis-accent-violet);
+        --mis-bg-success: var(--mis-accent-success);
+        --mis-bg-warning: var(--mis-accent-warning);
+        --mis-bg-error: var(--mis-accent-error);
+        --mis-bg-info: var(--mis-accent-info);
 
-        --mis-text-default: #f9fafb;
-        --mis-text-muted: #9ca3af;
-        --mis-text-inverse: #111827;
-        --mis-text-brand: #60a5fa;
-        --mis-text-success: #4ade80;
-        --mis-text-warning: #fde047;
-        --mis-text-error: #f87171;
-        --mis-text-info: #38bdf8;
+        --mis-text-default: #9ea9a9;
+        --mis-text-muted: var(--mis-neutral-2);
+        --mis-text-tertiary: var(--mis-neutral-4);
+        --mis-text-disabled: #586e75;
+        --mis-text-inverse: var(--mis-neutral-7);
+        --mis-text-brand: #48a4e2;
+        --mis-text-success: #a8bc3f;
+        --mis-text-warning: #b7922f;
+        --mis-text-error: #e15f5b;
+        --mis-text-info: #5eb8b1;
 
-        --mis-border-default: #4b5563;
-        --mis-border-focus: #3b82f6;
-        --mis-border-error: #ef4444;
-        --mis-border-warning: #eab308;
+        --mis-border-default: var(--mis-neutral-4);
+        --mis-border-decorative: #4f6a72;
+        --mis-border-interactive: var(--mis-neutral-4);
+        --mis-border-focus: var(--mis-accent-primary);
+        --mis-border-error: var(--mis-accent-error);
+        --mis-border-warning: var(--mis-accent-warning);
 
-        --mis-bg-input: #1f2937;
-        --mis-bg-input-hover: #374151;
+        --mis-bg-input: #0f3d4b;
+        --mis-bg-input-hover: #164c5b;
 
-        --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-        --mis-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+        --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.36);
+        --mis-shadow-md: 0 6px 14px -2px rgb(0 0 0 / 0.46);
     }
 }
 
@@ -140,26 +276,30 @@
     --mis-bg-default: #000000;
     --mis-bg-muted: #1a1a1a;
     --mis-bg-elevated: #2a2a2a;
-    --mis-bg-brand: #4d9fff;
-    --mis-bg-accent: #a855f7;
-    --mis-bg-success: #22c55e;
-    --mis-bg-warning: #facc15;
-    --mis-bg-error: #ff4444;
-    --mis-bg-info: #22d3ee;
+    --mis-bg-brand: #268bd2;
+    --mis-bg-accent: #6c71c4;
+    --mis-bg-success: #859900;
+    --mis-bg-warning: #b58900;
+    --mis-bg-error: #dc322f;
+    --mis-bg-info: #2aa198;
 
     --mis-text-default: #ffffff;
-    --mis-text-muted: #cccccc;
+    --mis-text-muted: #d4d4d4;
+    --mis-text-tertiary: #bcbcbc;
+    --mis-text-disabled: #adadad;
     --mis-text-inverse: #000000;
-    --mis-text-brand: #4d9fff;
-    --mis-text-success: #4ade80;
-    --mis-text-warning: #fde047;
-    --mis-text-error: #ff6666;
-    --mis-text-info: #67e8f9;
+    --mis-text-brand: #6fc5ff;
+    --mis-text-success: #bfd548;
+    --mis-text-warning: #d7ac2f;
+    --mis-text-error: #f06a67;
+    --mis-text-info: #62cfc7;
 
     --mis-border-default: #ffffff;
-    --mis-border-focus: #4d9fff;
-    --mis-border-error: #ff4444;
-    --mis-border-warning: #facc15;
+    --mis-border-decorative: #8f8f8f;
+    --mis-border-interactive: #ffffff;
+    --mis-border-focus: #6fc5ff;
+    --mis-border-error: #f06a67;
+    --mis-border-warning: #d7ac2f;
 
     --mis-bg-input: #1a1a1a;
     --mis-bg-input-hover: #2a2a2a;
@@ -175,26 +315,30 @@
         --mis-bg-default: #000000;
         --mis-bg-muted: #1a1a1a;
         --mis-bg-elevated: #2a2a2a;
-        --mis-bg-brand: #4d9fff;
-        --mis-bg-accent: #a855f7;
-        --mis-bg-success: #22c55e;
-        --mis-bg-warning: #facc15;
-        --mis-bg-error: #ff4444;
-        --mis-bg-info: #22d3ee;
+        --mis-bg-brand: #268bd2;
+        --mis-bg-accent: #6c71c4;
+        --mis-bg-success: #859900;
+        --mis-bg-warning: #b58900;
+        --mis-bg-error: #dc322f;
+        --mis-bg-info: #2aa198;
 
         --mis-text-default: #ffffff;
-        --mis-text-muted: #cccccc;
+        --mis-text-muted: #d4d4d4;
+        --mis-text-tertiary: #bcbcbc;
+        --mis-text-disabled: #adadad;
         --mis-text-inverse: #000000;
-        --mis-text-brand: #4d9fff;
-        --mis-text-success: #4ade80;
-        --mis-text-warning: #fde047;
-        --mis-text-error: #ff6666;
-        --mis-text-info: #67e8f9;
+        --mis-text-brand: #6fc5ff;
+        --mis-text-success: #bfd548;
+        --mis-text-warning: #d7ac2f;
+        --mis-text-error: #f06a67;
+        --mis-text-info: #62cfc7;
 
         --mis-border-default: #ffffff;
-        --mis-border-focus: #4d9fff;
-        --mis-border-error: #ff4444;
-        --mis-border-warning: #facc15;
+        --mis-border-decorative: #8f8f8f;
+        --mis-border-interactive: #ffffff;
+        --mis-border-focus: #6fc5ff;
+        --mis-border-error: #f06a67;
+        --mis-border-warning: #d7ac2f;
 
         --mis-bg-input: #1a1a1a;
         --mis-bg-input-hover: #2a2a2a;

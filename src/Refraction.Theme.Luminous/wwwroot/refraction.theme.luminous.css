@@ -7,7 +7,14 @@
  *
  * All values reference --mis-* tokens so apps can rebrand
  * without forking the theme.
+ *
+ * Base document styles (elements, typography, accessibility)
+ * live in refraction.luminous.base.css — this file is components only.
  */
+
+/* ════════════════════════════════════════════════════════════════════════════
+   COMPONENTS
+   ════════════════════════════════════════════════════════════════════════════ */
 
 /* ── Button ──────────────────────────────────────────────── */
 
@@ -21,9 +28,9 @@
     border-radius: var(--mis-radius-lg, 0.5rem);
     background: var(--mis-bg-brand, #2563eb);
     color: var(--mis-text-inverse, #fff);
-    font-family: var(--mis-font-family-body, system-ui, sans-serif);
-    font-size: var(--mis-font-size-md, 1rem);
-    font-weight: var(--mis-font-weight-medium, 500);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-ui-size);
+    font-weight: var(--mis-type-ui-weight);
     letter-spacing: 0.025em;
     box-shadow: 0 0 12px -2px var(--mis-bg-brand, #2563eb);
     transition:
@@ -67,8 +74,8 @@
     border-radius: var(--mis-radius-md, 0.5rem);
     background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
     color: var(--mis-text-default, #e5e7eb);
-    font-family: var(--mis-font-family-body, system-ui, sans-serif);
-    font-size: var(--mis-font-size-md, 1rem);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-size);
     transition:
         border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
         box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),

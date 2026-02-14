@@ -7,7 +7,14 @@
  *
  * All values reference --mis-* tokens so apps can rebrand
  * without forking the theme.
+ *
+ * Base document styles (elements, typography, accessibility)
+ * live in refraction.enterprise.base.css — this file is components only.
  */
+
+/* ════════════════════════════════════════════════════════════════════════════
+   COMPONENTS
+   ════════════════════════════════════════════════════════════════════════════ */
 
 /* ── Button ──────────────────────────────────────────────── */
 
@@ -21,9 +28,9 @@
     border-radius: var(--mis-radius-sm, 0.25rem);
     background: var(--mis-bg-brand, #2563eb);
     color: var(--mis-text-inverse, #fff);
-    font-family: var(--mis-font-family-body, system-ui, sans-serif);
-    font-size: var(--mis-font-size-md, 1rem);
-    font-weight: var(--mis-font-weight-medium, 500);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-ui-size);
+    font-weight: var(--mis-type-ui-weight);
     text-transform: none;
     box-shadow: var(--mis-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
     transition: background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
@@ -59,8 +66,8 @@
     border-radius: var(--mis-radius-sm, 0.25rem);
     background: var(--mis-bg-input, #ffffff);
     color: var(--mis-text-default, #111827);
-    font-family: var(--mis-font-family-body, system-ui, sans-serif);
-    font-size: var(--mis-font-size-md, 1rem);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-size);
     transition: border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
 }
 

@@ -5,10 +5,18 @@
  * Provides light-mode defaults; themes override with their own palettes.
  *
  * Load order:
- *   1. refraction.tokens.css (this file — base contract)
- *   2. refraction.tokens.{theme}.css (theme-specific palettes for light/dark/high-contrast)
- *   3. refraction.theme.{theme}.css (theme's component styles)
- *   4. App overrides (optional)
+ *   Option A (shared contract):
+ *     1. refraction.tokens.css (this file — base contract)
+ *     2. refraction.tokens.{theme}.css (theme-specific token values)
+ *     3. refraction.{theme}.base.css (theme document baseline)
+ *     4. refraction.theme.{theme}.css (theme component styles)
+ *     5. App overrides (optional)
+ *
+ *   Option B (standalone theme package):
+ *     1. refraction.tokens.{theme}.css (self-contained token contract + values)
+ *     2. refraction.{theme}.base.css
+ *     3. refraction.theme.{theme}.css
+ *     4. App overrides (optional)
  *
  * Mode switching:
  *   - data-theme-mode="light|dark|high-contrast" on <html> for explicit user choice
@@ -21,6 +29,7 @@
     /* ── Background ─────────────────────────────────────── */
     --mis-bg-default: #ffffff;
     --mis-bg-muted: #f3f4f6;
+    --mis-bg-elevated: #ffffff;
     --mis-bg-brand: #2563eb;
     --mis-bg-accent: #7c3aed;
     --mis-bg-success: #15803d;
@@ -31,6 +40,8 @@
     /* ── Text ───────────────────────────────────────────── */
     --mis-text-default: #111827;
     --mis-text-muted: #6b7280;
+    --mis-text-tertiary: #4b5563;
+    --mis-text-disabled: #6b7280;
     --mis-text-inverse: #ffffff;
     --mis-text-brand: #2563eb;
     --mis-text-success: #15803d;
@@ -40,6 +51,8 @@
 
     /* ── Border ──────────────────────────────────────────── */
     --mis-border-default: #d1d5db;
+    --mis-border-decorative: #e5e7eb;
+    --mis-border-interactive: #9ca3af;
     --mis-border-focus: #2563eb;
     --mis-border-error: #b91c1c;
     --mis-border-warning: #b45309;
@@ -63,13 +76,83 @@
     --mis-size-md: 2.5rem;
     --mis-size-lg: 3rem;
 
-    /* ── Typography ──────────────────────────────────────── */
-    --mis-font-family-body: system-ui, -apple-system, sans-serif;
-    --mis-font-size-sm: 0.875rem;
-    --mis-font-size-md: 1rem;
-    --mis-font-weight-normal: 400;
+    /* ══════════════════════════════════════════════════════
+       TYPOGRAPHY
+       Semantic font families + type scale tokens
+       ══════════════════════════════════════════════════════ */
+
+    /* ── Font families ───────────────────────────────────── */
+    --mis-font-heading: system-ui, -apple-system, sans-serif;
+    --mis-font-body: system-ui, -apple-system, sans-serif;
+    --mis-font-mono: ui-monospace, "Cascadia Code", "Consolas", monospace;
+
+    /* ── Font weights ────────────────────────────────────── */
+    --mis-font-weight-light: 300;
+    --mis-font-weight-regular: 400;
     --mis-font-weight-medium: 500;
+    --mis-font-weight-semibold: 600;
     --mis-font-weight-bold: 700;
+
+    /* ── Letter spacing ──────────────────────────────────── */
+    --mis-tracking-wide: 0.04em;
+    --mis-tracking-normal: 0;
+    --mis-tracking-tight: 0.01em;
+
+    /* ── Type scale: display ─────────────────────────────── */
+    --mis-type-display-size: 2.25rem;       /* 36px */
+    --mis-type-display-lh: 1.1;
+    --mis-type-display-weight: var(--mis-font-weight-bold);
+
+    /* ── Type scale: h1 ──────────────────────────────────── */
+    --mis-type-h1-size: 1.75rem;            /* 28px */
+    --mis-type-h1-lh: 1.15;
+    --mis-type-h1-weight: var(--mis-font-weight-bold);
+
+    /* ── Type scale: h2 ──────────────────────────────────── */
+    --mis-type-h2-size: 1.375rem;           /* 22px */
+    --mis-type-h2-lh: 1.2;
+    --mis-type-h2-weight: var(--mis-font-weight-semibold);
+
+    /* ── Type scale: h3 ──────────────────────────────────── */
+    --mis-type-h3-size: 1.125rem;           /* 18px */
+    --mis-type-h3-lh: 1.25;
+    --mis-type-h3-weight: var(--mis-font-weight-semibold);
+
+    /* ── Type scale: body-lg ─────────────────────────────── */
+    --mis-type-body-lg-size: 1rem;          /* 16px */
+    --mis-type-body-lg-lh: 1.6;
+    --mis-type-body-lg-weight: var(--mis-font-weight-regular);
+
+    /* ── Type scale: body ────────────────────────────────── */
+    --mis-type-body-size: 0.9375rem;        /* 15px */
+    --mis-type-body-lh: 1.6;
+    --mis-type-body-weight: var(--mis-font-weight-regular);
+
+    /* ── Type scale: ui ──────────────────────────────────── */
+    --mis-type-ui-size: 0.875rem;           /* 14px */
+    --mis-type-ui-lh: 1.4;
+    --mis-type-ui-weight: var(--mis-font-weight-medium);
+
+    /* ── Type scale: caption ─────────────────────────────── */
+    --mis-type-caption-size: 0.75rem;       /* 12px */
+    --mis-type-caption-lh: 1.35;
+    --mis-type-caption-weight: var(--mis-font-weight-medium);
+
+    /* ── Type scale: code ────────────────────────────────── */
+    --mis-type-code-size: 0.8125rem;        /* 13px */
+    --mis-type-code-lh: 1.5;
+    --mis-type-code-weight: var(--mis-font-weight-regular);
+
+    /* ── Type scale: code-sm ─────────────────────────────── */
+    --mis-type-code-sm-size: 0.75rem;       /* 12px */
+    --mis-type-code-sm-lh: 1.5;
+    --mis-type-code-sm-weight: var(--mis-font-weight-regular);
+
+    /* ── Legacy aliases (deprecated) ─────────────────────── */
+    --mis-font-family-body: var(--mis-font-body);
+    --mis-font-size-sm: var(--mis-type-ui-size);
+    --mis-font-size-md: var(--mis-type-body-size);
+    --mis-font-weight-normal: var(--mis-font-weight-regular);
 
     /* ── Focus ────────────────────────────────────────────── */
     --mis-focus-ring-width: 2px;
