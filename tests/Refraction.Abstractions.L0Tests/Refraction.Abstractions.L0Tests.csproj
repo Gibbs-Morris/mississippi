@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
-    </ItemGroup>
-
-</Project>
