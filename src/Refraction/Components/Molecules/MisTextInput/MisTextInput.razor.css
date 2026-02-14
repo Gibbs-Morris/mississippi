@@ -1,0 +1,13 @@
+.text-input {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid currentColor;
+    background-color: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.text-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
