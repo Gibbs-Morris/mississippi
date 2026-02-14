@@ -2,10 +2,19 @@
  * Enterprise Theme Token Defaults
  *
  * Neutral, professional palette — fully brandable through simple overrides.
- * Load after base refraction.tokens.css to establish enterprise baseline.
+ * Supports light, dark, and high-contrast modes for accessibility.
+ *
+ * Mode switching:
+ *   - data-theme-mode="light|dark|high-contrast" on <html> for explicit user choice
+ *   - Falls back to OS preference (prefers-color-scheme, prefers-contrast)
  *
  * Apps override brand/accent colors to match corporate identity.
  */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIGHT MODE (default)
+   Clean, professional — white surfaces, clear hierarchy
+   ═══════════════════════════════════════════════════════════════════════════ */
 :root {
     /* ── Background (clean light surfaces) ──────────────── */
     --mis-bg-default: #ffffff;
@@ -46,4 +55,151 @@
     /* ── Shadow (subtle, professional) ───────────────────── */
     --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --mis-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE
+   Professional dark — neutral grays, clear structure
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Explicit user preference */
+[data-theme-mode="dark"] {
+    --mis-bg-default: #111827;
+    --mis-bg-muted: #1f2937;
+    --mis-bg-elevated: #374151;
+    --mis-bg-brand: #3b82f6;
+    --mis-bg-accent: #8b5cf6;
+    --mis-bg-success: #22c55e;
+    --mis-bg-warning: #eab308;
+    --mis-bg-error: #ef4444;
+    --mis-bg-info: #0ea5e9;
+
+    --mis-text-default: #f9fafb;
+    --mis-text-muted: #9ca3af;
+    --mis-text-inverse: #111827;
+    --mis-text-brand: #60a5fa;
+    --mis-text-success: #4ade80;
+    --mis-text-warning: #fde047;
+    --mis-text-error: #f87171;
+    --mis-text-info: #38bdf8;
+
+    --mis-border-default: #4b5563;
+    --mis-border-focus: #3b82f6;
+    --mis-border-error: #ef4444;
+    --mis-border-warning: #eab308;
+
+    --mis-bg-input: #1f2937;
+    --mis-bg-input-hover: #374151;
+
+    --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --mis-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+}
+
+/* OS preference fallback (only when no explicit choice) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme-mode]) {
+        --mis-bg-default: #111827;
+        --mis-bg-muted: #1f2937;
+        --mis-bg-elevated: #374151;
+        --mis-bg-brand: #3b82f6;
+        --mis-bg-accent: #8b5cf6;
+        --mis-bg-success: #22c55e;
+        --mis-bg-warning: #eab308;
+        --mis-bg-error: #ef4444;
+        --mis-bg-info: #0ea5e9;
+
+        --mis-text-default: #f9fafb;
+        --mis-text-muted: #9ca3af;
+        --mis-text-inverse: #111827;
+        --mis-text-brand: #60a5fa;
+        --mis-text-success: #4ade80;
+        --mis-text-warning: #fde047;
+        --mis-text-error: #f87171;
+        --mis-text-info: #38bdf8;
+
+        --mis-border-default: #4b5563;
+        --mis-border-focus: #3b82f6;
+        --mis-border-error: #ef4444;
+        --mis-border-warning: #eab308;
+
+        --mis-bg-input: #1f2937;
+        --mis-bg-input-hover: #374151;
+
+        --mis-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+        --mis-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HIGH CONTRAST MODE  
+   Maximum contrast for accessibility — pure black/white, bold boundaries
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Explicit user preference */
+[data-theme-mode="high-contrast"] {
+    --mis-bg-default: #000000;
+    --mis-bg-muted: #1a1a1a;
+    --mis-bg-elevated: #2a2a2a;
+    --mis-bg-brand: #4d9fff;
+    --mis-bg-accent: #a855f7;
+    --mis-bg-success: #22c55e;
+    --mis-bg-warning: #facc15;
+    --mis-bg-error: #ff4444;
+    --mis-bg-info: #22d3ee;
+
+    --mis-text-default: #ffffff;
+    --mis-text-muted: #cccccc;
+    --mis-text-inverse: #000000;
+    --mis-text-brand: #4d9fff;
+    --mis-text-success: #4ade80;
+    --mis-text-warning: #fde047;
+    --mis-text-error: #ff6666;
+    --mis-text-info: #67e8f9;
+
+    --mis-border-default: #ffffff;
+    --mis-border-focus: #4d9fff;
+    --mis-border-error: #ff4444;
+    --mis-border-warning: #facc15;
+
+    --mis-bg-input: #1a1a1a;
+    --mis-bg-input-hover: #2a2a2a;
+
+    /* No soft shadows in high contrast — clear boundaries */
+    --mis-shadow-sm: none;
+    --mis-shadow-md: none;
+}
+
+/* OS preference fallback */
+@media (prefers-contrast: more) {
+    :root:not([data-theme-mode]) {
+        --mis-bg-default: #000000;
+        --mis-bg-muted: #1a1a1a;
+        --mis-bg-elevated: #2a2a2a;
+        --mis-bg-brand: #4d9fff;
+        --mis-bg-accent: #a855f7;
+        --mis-bg-success: #22c55e;
+        --mis-bg-warning: #facc15;
+        --mis-bg-error: #ff4444;
+        --mis-bg-info: #22d3ee;
+
+        --mis-text-default: #ffffff;
+        --mis-text-muted: #cccccc;
+        --mis-text-inverse: #000000;
+        --mis-text-brand: #4d9fff;
+        --mis-text-success: #4ade80;
+        --mis-text-warning: #fde047;
+        --mis-text-error: #ff6666;
+        --mis-text-info: #67e8f9;
+
+        --mis-border-default: #ffffff;
+        --mis-border-focus: #4d9fff;
+        --mis-border-error: #ff4444;
+        --mis-border-warning: #facc15;
+
+        --mis-bg-input: #1a1a1a;
+        --mis-bg-input-hover: #2a2a2a;
+
+        --mis-shadow-sm: none;
+        --mis-shadow-md: none;
+    }
 }

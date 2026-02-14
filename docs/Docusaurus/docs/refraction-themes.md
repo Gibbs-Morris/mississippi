@@ -4,6 +4,46 @@ Two visual themes shipped with the Refraction UX framework. Both themes share th
 
 ---
 
+## Mode Support (Accessibility)
+
+Every Refraction theme supports three modes for accessibility:
+
+| Mode | Description |
+|------|-------------|
+| **Light** | Default mode with bright backgrounds |
+| **Dark** | Dark backgrounds for low-light environments and user preference |
+| **High Contrast** | Maximum contrast ratios, no decorative effects, bold boundaries |
+
+### How Mode Switching Works
+
+Modes are controlled via the `data-theme-mode` attribute on the `<html>` element:
+
+```html
+<!-- Explicit user choice -->
+<html data-theme-mode="dark">
+
+<!-- No attribute = respect OS preference -->
+<html>
+```
+
+When no explicit mode is set, themes fall back to OS preferences via CSS media queries:
+- `prefers-color-scheme: dark` → dark mode
+- `prefers-contrast: more` → high contrast mode
+
+### Third-Party Theme Authors
+
+If you're creating a custom theme (e.g., `MyCompany.Refraction.Theme.MaterialDesign`), your token file **must** provide all three mode palettes following the same CSS structure:
+
+1. `:root { }` — light mode defaults
+2. `[data-theme-mode="dark"] { }` — dark palette
+3. `@media (prefers-color-scheme: dark) { :root:not([data-theme-mode]) { } }` — dark fallback
+4. `[data-theme-mode="high-contrast"] { }` — high contrast palette
+5. `@media (prefers-contrast: more) { :root:not([data-theme-mode]) { } }` — high contrast fallback
+
+See `.github/instructions/refraction-theming.instructions.md` for complete CSS structure.
+
+---
+
 ## Refraction Luminous (2300)
 
 ### Theme statement

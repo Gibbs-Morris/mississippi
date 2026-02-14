@@ -1,11 +1,21 @@
 /*
- * Refraction Token Defaults
+ * Refraction Token Contract
  *
- * Primitive palette — semantic values with no design opinion.
- * Apps override these to rebrand any theme without forking it.
+ * Base semantic tokens — defines the shape of the token system.
+ * Provides light-mode defaults; themes override with their own palettes.
+ *
+ * Load order:
+ *   1. refraction.tokens.css (this file — base contract)
+ *   2. refraction.tokens.{theme}.css (theme-specific palettes for light/dark/high-contrast)
+ *   3. refraction.theme.{theme}.css (theme's component styles)
+ *   4. App overrides (optional)
+ *
+ * Mode switching:
+ *   - data-theme-mode="light|dark|high-contrast" on <html> for explicit user choice
+ *   - Falls back to prefers-color-scheme / prefers-contrast OS preferences
+ *   - See .github/instructions/refraction-theming.instructions.md for details
  *
  * Naming: --mis-{category}-{semantic}[-{variant}]
- * Docs:   .github/instructions/refraction-theming.instructions.md
  */
 :root {
     /* ── Background ─────────────────────────────────────── */

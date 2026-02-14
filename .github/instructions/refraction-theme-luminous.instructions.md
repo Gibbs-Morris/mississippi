@@ -4,13 +4,22 @@ applyTo: 'src/Refraction.Theme.Luminous/**'
 
 # Refraction Theme: Luminous
 
-Governing thought: Luminous is a cinematic, opinionated dark theme — blue light defines identity and focus; darkness is depth; warm accent is reserved for warnings only.
+Governing thought: Luminous is a cinematic, opinionated theme — blue light defines identity and focus; depth through layering; warm accent reserved for warnings only. Supports light, dark, and high-contrast modes.
 
 ## Theme Statement
 
-A luminous, spatial interface built from translucent "window" surfaces and controlled light—designed to feel like operating a high-precision system in a dark environment.
+A luminous, spatial interface built from translucent "window" surfaces and controlled light—designed to feel like operating a high-precision system, with full accessibility support across all modes.
 
 ## Rules (RFC 2119)
+
+### Mode Support
+
+- Luminous **MUST** provide light, dark, and high-contrast mode palettes. Why: Accessibility is non-negotiable.
+- Light mode **SHOULD** feel bright and airy while maintaining the futuristic aesthetic. Why: Same design language, different palette.
+- Dark mode **SHOULD** be the signature Luminous experience (deep, immersive). Why: Original design intent.
+- High-contrast mode **MUST** use maximum contrast ratios and **MUST NOT** use glow effects or translucency. Why: Accessibility.
+
+### Visual Language
 
 - Visual effects **MUST** increase clarity; dramatic aesthetics **MUST NOT** reduce legibility. Why: Instrument first, spectacle second.
 - Text **MUST** land on surfaces that protect contrast (blur/scrim, simplified backdrops, solidification). Why: Legibility over atmosphere.

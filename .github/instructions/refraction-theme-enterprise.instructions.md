@@ -4,13 +4,22 @@ applyTo: 'src/Refraction.Theme.Enterprise/**'
 
 # Refraction Theme: Enterprise
 
-Governing thought: Enterprise is a neutral, trustworthy foundation — predictable patterns, clear signifiers, strong accessibility, and safe customization points that preserve coherence.
+Governing thought: Enterprise is a neutral, trustworthy foundation — predictable patterns, clear signifiers, strong accessibility, and safe customization points that preserve coherence. Supports light, dark, and high-contrast modes.
 
 ## Theme Statement
 
-A neutral, trustworthy foundation theme optimized for predictable enterprise workflows—clean, conventional, and highly adaptable to brand guidelines without fragmenting the product.
+A neutral, trustworthy foundation theme optimized for predictable enterprise workflows—clean, conventional, and highly adaptable to brand guidelines without fragmenting the product, with full accessibility support across all modes.
 
 ## Rules (RFC 2119)
+
+### Mode Support
+
+- Enterprise **MUST** provide light, dark, and high-contrast mode palettes. Why: Accessibility is non-negotiable.
+- Light mode **SHOULD** be the signature Enterprise experience (clean, professional). Why: Original design intent.
+- Dark mode **SHOULD** use neutral grays (not futuristic) for professional dark preference. Why: Same design language, different palette.
+- High-contrast mode **MUST** use maximum contrast ratios and solid boundaries. Why: Accessibility.
+
+### Visual Language
 
 - Interaction patterns **MUST** prioritize convention and consistency. Why: Conformity with user expectations.
 - Controls **MUST** communicate what they are and what will happen — no hidden affordances. Why: Self-descriptive interfaces.
