@@ -1,13 +1,20 @@
 .text-input {
-    min-height: 2.5rem;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid currentColor;
-    background-color: transparent;
-    color: inherit;
+    min-height: var(--mis-control-height-md, 2.5rem);
+    padding: var(--mis-space-2, 0.5rem) var(--mis-space-3, 0.75rem);
+    border: 1px solid var(--mis-color-border-default, currentColor);
+    border-radius: var(--mis-radius-md, 0.375rem);
+    background-color: var(--mis-color-surface-control, transparent);
+    color: var(--mis-color-text-primary, inherit);
     font: inherit;
+}
+
+.text-input:focus-visible {
+    outline: var(--mis-focus-ring-width, 2px) solid var(--mis-color-border-focus, currentColor);
+    outline-offset: 1px;
 }
 
 .text-input:disabled {
     opacity: 0.6;
+    color: var(--mis-color-text-muted, inherit);
     cursor: not-allowed;
 }
