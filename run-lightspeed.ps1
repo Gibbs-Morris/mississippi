@@ -14,6 +14,7 @@
 param()
 
 $ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
 $solutionFile = Join-Path $PSScriptRoot 'samples.slnx'
 $appHostProject = Join-Path $PSScriptRoot 'samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj'
@@ -48,3 +49,10 @@ $env:Logging__LogLevel__Orleans = 'Warning'
 $env:Logging__LogLevel__Mississippi = 'Debug'
 
 dotnet run --project $appHostProject # -c Debug --no-build --launch-profile https
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "LightSpeed AppHost exited with code $LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+
+exit 0

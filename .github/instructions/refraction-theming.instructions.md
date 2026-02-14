@@ -10,7 +10,7 @@ Governing thought: Tokens are semantic attributes (colors, spacing, radii), neve
 
 ### Token Usage
 
-- Components **MUST** use existing tokens from `refraction.tokens.css` before considering new ones. Why: Keeps token set minimal and coherent.
+- Components **MUST** use existing tokens from the active theme token contract file (for example `refraction.tokens.luminous.css` or `refraction.tokens.enterprise.css`) before considering new ones. Why: Keeps token set minimal and coherent.
 - New tokens **MUST** represent semantic attributes (`--mis-bg-brand`, `--mis-radius-md`), **MUST NOT** be control-specific (`--mis-button-bg`). Why: Tokens enable theming across all components; control-specific values belong in component CSS.
 - Token additions **MUST** be justified by reuse across 2+ components or clear semantic meaning (error, warning, success states). Why: Prevents token bloat.
 - All `var()` calls **MUST** include a fallback value: `var(--mis-bg-brand, #0066cc)`. Why: Components work even without a theme loaded.
@@ -108,6 +108,7 @@ Theme style files may include mode-specific overrides when effects differ per mo
     outline: 3px solid var(--mis-border-focus, #4d9fff);
     outline-offset: 2px;
 }
+```
 
 ## Token Naming Convention
 
@@ -218,11 +219,13 @@ Theme style files may include mode-specific overrides when effects differ per mo
 ## When to Add a Token
 
 **Add when:**
+
 - Value represents a **semantic concept** (warning, error, success, disabled)
 - Value will be **reused across 2+ components**
 - Value should be **theme-overridable** by third parties
 
 **Do NOT add when:**
+
 - Value is specific to one component's internal layout
 - Value is a one-off adjustment
 - An existing token already serves the purpose
