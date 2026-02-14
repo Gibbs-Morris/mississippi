@@ -1,10 +1,15 @@
 @page "/kitchen-sink"
+@using Mississippi.Refraction.Components.Molecules
 @using Mississippi.Refraction.Components.Molecules.MisButton
+@using Mississippi.Refraction.Components.Molecules.MisButton.Actions
+@using Mississippi.Refraction.Components.Molecules.MisTextInputActions
 @inherits StoreComponent
 
 <h1>Kitchen Sink</h1>
 
 <p>Centralized control diagnostics for Refraction components. Start with <strong>MisButton</strong> and scale this pattern as new controls are added.</p>
+<p>Theme sample: edit <strong>wwwroot/refraction.sample-theme.css</strong> to see token-based overrides in action.</p>
+<p>Theme packaging guide: see <strong>samples/LightSpeed/README.md</strong> under <strong>Refraction Theming Sample</strong>.</p>
 
 <section>
     <h2>MisButton</h2>
@@ -58,7 +63,8 @@
     </div>
 
     <h3>Preview</h3>
-    <MisButton Model="@ButtonModel" OnAction="HandleMisButtonActionAsync" />
+    <MisButton Model="@ButtonModel"
+               OnAction="@((IMisButtonAction action) => HandleMisButtonActionAsync(action))" />
 
     <h3>Events</h3>
     <button type="button" @onclick="HandleClearEvents">Clear Events</button>
@@ -72,6 +78,95 @@
             @foreach (string buttonEvent in ButtonEvents)
             {
                 <li>@buttonEvent</li>
+            }
+        </ul>
+    }
+</section>
+
+<section>
+    <h2>MisTextInput</h2>
+
+    <h3>Control Inputs</h3>
+    <div>
+        <label>
+            Value
+            <input value="@TextInputModel.Value" @oninput="HandleInputValueChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            IntentId
+            <input value="@TextInputModel.IntentId" @oninput="HandleInputIntentIdChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            AriaLabel
+            <input value="@TextInputModel.AriaLabel" @oninput="HandleInputAriaLabelChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Placeholder
+            <input value="@TextInputModel.Placeholder" @oninput="HandleInputPlaceholderChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Title
+            <input value="@TextInputModel.Title" @oninput="HandleInputTitleChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            CssClass
+            <input value="@TextInputModel.CssClass" @oninput="HandleInputCssClassChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            AutoComplete
+            <input value="@TextInputModel.AutoComplete" @oninput="HandleInputAutoCompleteChanged" />
+        </label>
+    </div>
+    <div>
+        <label>
+            Type
+            <select value="@TextInputModel.Type" @onchange="HandleInputTypeChanged">
+                @foreach (MisTextInputType type in Enum.GetValues<MisTextInputType>())
+                {
+                    <option value="@type">@type</option>
+                }
+            </select>
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@TextInputModel.IsDisabled" @onchange="HandleInputIsDisabledChanged" /> Disabled
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" checked="@TextInputModel.IsReadOnly" @onchange="HandleInputIsReadOnlyChanged" /> Read-only
+        </label>
+    </div>
+
+    <h3>Preview</h3>
+    <MisTextInput Model="@TextInputModel"
+                  OnAction="@((IMisTextInputAction action) => HandleMisTextInputActionAsync(action))" />
+
+    <h3>Events</h3>
+    <button type="button" @onclick="HandleClearTextInputEvents">Clear Events</button>
+    @if (TextInputEvents.Count == 0)
+    {
+        <p>No events recorded yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (string textInputEvent in TextInputEvents)
+            {
+                <li>@textInputEvent</li>
             }
         </ul>
     }

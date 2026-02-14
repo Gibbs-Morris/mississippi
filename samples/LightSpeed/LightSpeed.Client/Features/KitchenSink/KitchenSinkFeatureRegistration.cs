@@ -1,4 +1,5 @@
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisButton;
+using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextInput;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,6 +21,7 @@ public static class KitchenSinkFeatureRegistration
     )
     {
         services.AddMisButtonKitchenSinkFeature();
+        services.AddMisTextInputKitchenSinkFeature();
         return services;
     }
 }
