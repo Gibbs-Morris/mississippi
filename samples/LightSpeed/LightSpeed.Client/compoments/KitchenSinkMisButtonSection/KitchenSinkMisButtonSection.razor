@@ -1,0 +1,71 @@
+@namespace LightSpeed.Client.Compoments
+@inherits StoreComponent
+@using Mississippi.Refraction.Components.Molecules
+@using Mississippi.Refraction.Components.Molecules.MisButtonActions
+@using Mississippi.Refraction.Components.Molecules.MisTextInputActions
+@using Mississippi.Refraction.Components.Molecules.MisSwitchActions
+@using Mississippi.Refraction.Components.Molecules.MisSelectActions
+
+<KitchenSinkDemoSection Title="MisButton"
+                        ComponentTag="MisButton"
+                        Description="Interactive button control with click, pointer, keyboard, and focus events."
+                        IsEventsOpen="@IsEventsOpen"
+                        OnToggleEvents="HandleToggleEvents"
+                        EventCount="@ButtonEvents.Count"
+                        OnClearEvents="HandleClearEvents">
+    <ChildContent>
+        <MisButton Model="@ButtonModel"
+                   OnAction="HandleMisButtonActionAsync">
+            Click me
+        </MisButton>
+    </ChildContent>
+
+    <Properties>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">IntentId</span>
+            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-intentid", Value = ButtonModel.IntentId, Placeholder = "Intent identifier" })"
+                          OnAction="HandlePropertyTextInputAction" />
+        </div>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">AriaLabel</span>
+            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-arialabel", Value = ButtonModel.AriaLabel ?? string.Empty, Placeholder = "Accessibility label" })"
+                          OnAction="HandlePropertyTextInputAction" />
+        </div>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">Title</span>
+            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-title", Value = ButtonModel.Title ?? string.Empty, Placeholder = "Tooltip text" })"
+                          OnAction="HandlePropertyTextInputAction" />
+        </div>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">CssClass</span>
+            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-cssclass", Value = ButtonModel.CssClass ?? string.Empty, Placeholder = "Additional CSS class" })"
+                          OnAction="HandlePropertyTextInputAction" />
+        </div>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">Type</span>
+            <MisSelect Model="@(new MisSelectViewModel { IntentId = "prop-type", Value = ButtonModel.Type.ToString(), Options = ButtonTypeOptions })"
+                       OnAction="HandlePropertySelectAction" />
+        </div>
+        <div class="ks-prop-row ks-prop-row--toggle">
+            <span class="ks-prop-label">Disabled</span>
+            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-disabled", IsChecked = ButtonModel.IsDisabled })"
+                       OnAction="HandlePropertySwitchAction" />
+        </div>
+    </Properties>
+
+    <Events>
+        @if (ButtonEvents.Count == 0)
+        {
+            <p>No events recorded yet.</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (string buttonEvent in ButtonEvents)
+                {
+                    <li>@buttonEvent</li>
+                }
+            </ul>
+        }
+    </Events>
+</KitchenSinkDemoSection>
