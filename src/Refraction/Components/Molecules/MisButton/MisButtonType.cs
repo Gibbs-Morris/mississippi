@@ -1,4 +1,4 @@
-namespace Mississippi.Refraction.Components.Molecules.MisButton;
+namespace Mississippi.Refraction.Components.Molecules;
 
 /// <summary>
 ///     Defines the supported HTML button types for <see cref="MisButton" />.

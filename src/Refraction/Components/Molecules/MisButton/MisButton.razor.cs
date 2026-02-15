@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 
-using Mississippi.Refraction.Components.Molecules.MisButton.Actions;
+using Mississippi.Refraction.Components.Molecules.MisButtonActions;
 
 
-namespace Mississippi.Refraction.Components.Molecules.MisButton;
+namespace Mississippi.Refraction.Components.Molecules;
 
 /// <summary>
 ///     Represents a basic reusable button atom for the Mississippi UI library.
@@ -23,6 +22,15 @@ public sealed partial class MisButton : ComponentBase
     /// </summary>
     [Parameter(CaptureUnmatchedValues = true)]
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    /// <summary>
+    ///     Gets or sets optional child content to render inside the button.
+    /// </summary>
+    /// <remarks>
+    ///     Use this for text, icons, badges, counters, or other rich button layouts.
+    /// </remarks>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
 
     /// <summary>
     ///     Gets or sets the interaction callback for all button user actions.
@@ -47,79 +55,13 @@ public sealed partial class MisButton : ComponentBase
             MisButtonType.Button => "button",
             MisButtonType.Submit => "submit",
             MisButtonType.Reset => "reset",
-            _ => throw new ArgumentOutOfRangeException(nameof(Model.Type), Model.Type, "Unsupported button type."),
+            _ => throw new InvalidOperationException($"Unsupported button type: {Model.Type}"),
         };
 
     private Task DispatchActionAsync(
         IMisButtonAction action
     ) =>
-        OnAction.InvokeAsync(action);
-
-    private Task HandleBlurAsync(
-        FocusEventArgs args
-    ) =>
-        DispatchActionAsync(new MisButtonBlurredAction(Model.IntentId));
-
-    private Task HandleClickAsync(
-        MouseEventArgs args
-    ) =>
-        DispatchActionAsync(new MisButtonClickedAction(
-            Model.IntentId,
-            args.Button,
-            args.CtrlKey,
-            args.ShiftKey,
-            args.AltKey,
-            args.MetaKey));
-
-    private Task HandleMouseDownAsync(
-        MouseEventArgs args
-    ) =>
-        DispatchActionAsync(new MisButtonPointerDownAction(
-            Model.IntentId,
-            args.Button,
-            args.CtrlKey,
-            args.ShiftKey,
-            args.AltKey,
-            args.MetaKey));
-
-    private Task HandleMouseUpAsync(
-        MouseEventArgs args
-    ) =>
-        DispatchActionAsync(new MisButtonPointerUpAction(
-            Model.IntentId,
-            args.Button,
-            args.CtrlKey,
-            args.ShiftKey,
-            args.AltKey,
-            args.MetaKey));
-
-    private Task HandleFocusAsync(
-        FocusEventArgs args
-    ) =>
-        DispatchActionAsync(new MisButtonFocusedAction(Model.IntentId));
-
-    private Task HandleKeyDownAsync(
-        KeyboardEventArgs args
-    ) =>
-        DispatchActionAsync(new MisButtonKeyDownAction(
-            Model.IntentId,
-            args.Key,
-            args.Code,
-            args.Repeat,
-            args.CtrlKey,
-            args.ShiftKey,
-            args.AltKey,
-            args.MetaKey));
-
-    private Task HandleKeyUpAsync(
-        KeyboardEventArgs args
-    ) =>
-        DispatchActionAsync(new MisButtonKeyUpAction(
-            Model.IntentId,
-            args.Key,
-            args.Code,
-            args.CtrlKey,
-            args.ShiftKey,
-            args.AltKey,
-            args.MetaKey));
+        OnAction.HasDelegate
+            ? OnAction.InvokeAsync(action)
+            : Task.CompletedTask;
 }

@@ -1,8 +1,8 @@
-namespace Mississippi.Refraction.Components.Molecules.MisButton.Actions;
+namespace Mississippi.Refraction.Components.Molecules.MisButtonActions;
 
 /// <summary>
 ///     Represents a click interaction action emitted by
-///     <see cref="global::Mississippi.Refraction.Components.Molecules.MisButton.MisButton" />.
+///     <see cref="MisButton" />.
 /// </summary>
 /// <param name="IntentId">The intent identifier from the button view model.</param>
 /// <param name="Button">The numeric mouse button code from the click event.</param>

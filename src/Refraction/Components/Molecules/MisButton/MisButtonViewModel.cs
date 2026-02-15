@@ -1,4 +1,4 @@
-namespace Mississippi.Refraction.Components.Molecules.MisButton;
+namespace Mississippi.Refraction.Components.Molecules;
 
 /// <summary>
 ///     Represents a serializable view model for rendering a <see cref="MisButton" />.
@@ -33,11 +33,6 @@ public sealed record MisButtonViewModel
     ///     Gets a value indicating whether the button is disabled.
     /// </summary>
     public bool IsDisabled { get; init; }
-
-    /// <summary>
-    ///     Gets the display text for the button.
-    /// </summary>
-    public string Text { get; init; } = "Button";
 
     /// <summary>
     ///     Gets the title attribute shown as a browser tooltip.

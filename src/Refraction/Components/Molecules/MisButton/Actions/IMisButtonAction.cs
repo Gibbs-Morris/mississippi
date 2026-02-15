@@ -1,8 +1,8 @@
-namespace Mississippi.Refraction.Components.Molecules.MisButton.Actions;
+namespace Mississippi.Refraction.Components.Molecules.MisButtonActions;
 
 /// <summary>
 ///     Defines the common contract for button interaction actions emitted by
-///     <see cref="global::Mississippi.Refraction.Components.Molecules.MisButton.MisButton" />.
+///     <see cref="MisButton" />.
 /// </summary>
 public interface IMisButtonAction
 {
