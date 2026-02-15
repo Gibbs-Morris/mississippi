@@ -15,14 +15,14 @@ public sealed record MisTextInputViewModel
     public static MisTextInputViewModel Default { get; } = new();
 
     /// <summary>
-    ///     Gets the autocomplete attribute value.
-    /// </summary>
-    public string? AutoComplete { get; init; }
-
-    /// <summary>
     ///     Gets the accessible label of the text input.
     /// </summary>
     public string? AriaLabel { get; init; }
+
+    /// <summary>
+    ///     Gets the autocomplete attribute value.
+    /// </summary>
+    public string? AutoComplete { get; init; }
 
     /// <summary>
     ///     Gets an optional additional CSS class for the text input.

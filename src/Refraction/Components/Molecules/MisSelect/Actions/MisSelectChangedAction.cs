@@ -6,7 +6,4 @@ namespace Mississippi.Refraction.Components.Molecules.MisSelectActions;
 /// </summary>
 /// <param name="IntentId">The intent identifier from the select view model.</param>
 /// <param name="Value">The committed selected value.</param>
-public sealed record MisSelectChangedAction(
-    string IntentId,
-    string Value
-) : IMisSelectAction;
+public sealed record MisSelectChangedAction(string IntentId, string Value) : IMisSelectAction;

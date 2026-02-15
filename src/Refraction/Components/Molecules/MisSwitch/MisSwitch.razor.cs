@@ -23,16 +23,16 @@ public sealed partial class MisSwitch : ComponentBase
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
     /// <summary>
-    ///     Gets or sets the interaction callback for all switch user actions.
-    /// </summary>
-    [Parameter]
-    public EventCallback<IMisSwitchAction> OnAction { get; set; }
-
-    /// <summary>
     ///     Gets or sets the switch view model.
     /// </summary>
     [Parameter]
     public MisSwitchViewModel Model { get; set; } = MisSwitchViewModel.Default;
+
+    /// <summary>
+    ///     Gets or sets the interaction callback for all switch user actions.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IMisSwitchAction> OnAction { get; set; }
 
     private string CssClass
     {
@@ -44,9 +44,8 @@ public sealed partial class MisSwitch : ComponentBase
                 MisSwitchState.Success => "mis-switch--success",
                 MisSwitchState.Warning => "mis-switch--warning",
                 MisSwitchState.Error => "mis-switch--error",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             string className = "mis-switch";
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
@@ -62,6 +61,11 @@ public sealed partial class MisSwitch : ComponentBase
         }
     }
 
+    private Task DispatchActionAsync(
+        IMisSwitchAction action
+    ) =>
+        OnAction.InvokeAsync(action);
+
     private async Task OnCheckedChangedAsync(
         bool isChecked
     )
@@ -71,9 +75,4 @@ public sealed partial class MisSwitch : ComponentBase
         await DispatchActionAsync(new MisSwitchInputAction(Model.IntentId, isChecked));
         await DispatchActionAsync(new MisSwitchChangedAction(Model.IntentId, isChecked));
     }
-
-    private Task DispatchActionAsync(
-        IMisSwitchAction action
-    ) =>
-        OnAction.InvokeAsync(action);
 }

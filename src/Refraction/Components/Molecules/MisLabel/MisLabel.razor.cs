@@ -36,15 +36,13 @@ public sealed partial class MisLabel : ComponentBase
         get
         {
             List<string> classes = ["mis-label"];
-
             string stateClass = Model.State switch
             {
                 MisLabelState.Error => "mis-label--error",
                 MisLabelState.Warning => "mis-label--warning",
                 MisLabelState.Disabled => "mis-label--disabled",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
                 classes.Add(stateClass);

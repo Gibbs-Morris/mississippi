@@ -1,6 +1,5 @@
-@namespace Mississippi.Refraction.Components.Molecules
 @using Mississippi.Refraction.Components.Molecules.MisSearchInputActions
-@using Microsoft.AspNetCore.Components.Web
+@namespace Mississippi.Refraction.Components.Molecules
 
 <div class="@ContainerCssClass">
     <svg class="mis-search-input__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -12,17 +11,17 @@
            id="@Model.Id"
            name="@Model.Name"
            type="search"
-            @bind:get="Model.Value"
-            @bind:set="OnValueInputAsync"
-            @bind:event="oninput"
+           @bind:get="Model.Value"
+           @bind:set="OnValueInputAsync"
+           @bind:event="oninput"
            placeholder="@Model.Placeholder"
            aria-label="@Model.AriaLabel"
            title="@Model.Title"
            disabled="@Model.IsDisabled"
            @onfocus="@(() => DispatchActionAsync(new MisSearchInputFocusedAction(Model.IntentId)))"
-            @onblur="@OnBlurAsync"
+           @onblur="@OnBlurAsync"
            @onkeydown="@HandleKeyDownAsync"
-           @attributes="AdditionalAttributes" />
+           @attributes="AdditionalAttributes"/>
 
     @if (!string.IsNullOrEmpty(Model.Value))
     {

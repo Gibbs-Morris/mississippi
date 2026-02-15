@@ -5,7 +5,5 @@ namespace Mississippi.Refraction.Components.Molecules.MisPasswordInputActions;
 /// </summary>
 /// <param name="IntentId">The intent identifier.</param>
 /// <param name="IsPasswordVisible">The new visibility state.</param>
-public sealed record MisPasswordInputToggleVisibilityAction(
-    string IntentId,
-    bool IsPasswordVisible
-) : IMisPasswordInputAction;
+public sealed record MisPasswordInputToggleVisibilityAction(string IntentId, bool IsPasswordVisible)
+    : IMisPasswordInputAction;

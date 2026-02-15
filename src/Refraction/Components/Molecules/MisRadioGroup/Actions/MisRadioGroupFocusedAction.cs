@@ -6,7 +6,4 @@ namespace Mississippi.Refraction.Components.Molecules.MisRadioGroupActions;
 /// </summary>
 /// <param name="IntentId">The intent identifier from the radio group view model.</param>
 /// <param name="OptionValue">The focused option value.</param>
-public sealed record MisRadioGroupFocusedAction(
-    string IntentId,
-    string OptionValue
-) : IMisRadioGroupAction;
+public sealed record MisRadioGroupFocusedAction(string IntentId, string OptionValue) : IMisRadioGroupAction;

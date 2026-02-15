@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
+
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 
 
@@ -24,21 +26,19 @@ public sealed partial class MisTextInput : ComponentBase
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
     /// <summary>
-    ///     Gets or sets the interaction callback for all text input user actions.
-    /// </summary>
-    [Parameter]
-    public EventCallback<IMisTextInputAction> OnAction { get; set; }
-
-    /// <summary>
     ///     Gets or sets the text input view model.
     /// </summary>
     [Parameter]
     public MisTextInputViewModel Model { get; set; } = MisTextInputViewModel.Default;
 
+    /// <summary>
+    ///     Gets or sets the interaction callback for all text input user actions.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IMisTextInputAction> OnAction { get; set; }
+
     private string CssClass =>
-        string.IsNullOrWhiteSpace(Model.CssClass)
-            ? "text-input"
-            : $"text-input {Model.CssClass}";
+        string.IsNullOrWhiteSpace(Model.CssClass) ? "text-input" : $"text-input {Model.CssClass}";
 
     private string InputType =>
         Model.Type switch
@@ -49,7 +49,7 @@ public sealed partial class MisTextInput : ComponentBase
             MisTextInputType.Search => "search",
             MisTextInputType.Tel => "tel",
             MisTextInputType.Url => "url",
-            _ => "text",
+            var _ => "text",
         };
 
     /// <inheritdoc />
@@ -59,17 +59,17 @@ public sealed partial class MisTextInput : ComponentBase
         lastCommittedValue = Model.Value ?? string.Empty;
     }
 
-    private Task OnValueInputAsync(
-        string? value
+    private Task DispatchActionAsync(
+        IMisTextInputAction action
     ) =>
-        DispatchActionAsync(new MisTextInputInputAction(Model.IntentId, value ?? string.Empty));
+        OnAction.InvokeAsync(action);
 
     private async Task OnBlurAsync()
     {
         string currentValue = Model.Value ?? string.Empty;
 
         // Fire changed action if value changed since last focus/commit
-        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        if (!string.Equals(currentValue, lastCommittedValue, StringComparison.Ordinal))
         {
             await DispatchActionAsync(new MisTextInputChangedAction(Model.IntentId, currentValue));
             lastCommittedValue = currentValue;
@@ -79,8 +79,8 @@ public sealed partial class MisTextInput : ComponentBase
         await DispatchActionAsync(new MisTextInputBlurredAction(Model.IntentId));
     }
 
-    private Task DispatchActionAsync(
-        IMisTextInputAction action
+    private Task OnValueInputAsync(
+        string? value
     ) =>
-        OnAction.InvokeAsync(action);
+        DispatchActionAsync(new MisTextInputInputAction(Model.IntentId, value ?? string.Empty));
 }

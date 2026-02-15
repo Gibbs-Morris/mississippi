@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -25,26 +26,16 @@ public sealed partial class MisTextarea : ComponentBase
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
     /// <summary>
-    ///     Gets or sets the interaction callback for all textarea user actions.
-    /// </summary>
-    [Parameter]
-    public EventCallback<IMisTextareaAction> OnAction { get; set; }
-
-    /// <summary>
     ///     Gets or sets the textarea view model.
     /// </summary>
     [Parameter]
     public MisTextareaViewModel Model { get; set; } = MisTextareaViewModel.Default;
 
-    /// <inheritdoc />
-    protected override void OnParametersSet()
-    {
-        base.OnParametersSet();
-        lastCommittedValue = Model.Value ?? string.Empty;
-    }
-
-    private int SafeRows =>
-        Model.Rows <= 0 ? 1 : Model.Rows;
+    /// <summary>
+    ///     Gets or sets the interaction callback for all textarea user actions.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IMisTextareaAction> OnAction { get; set; }
 
     private string CssClass
     {
@@ -56,9 +47,8 @@ public sealed partial class MisTextarea : ComponentBase
                 MisTextareaState.Success => "mis-textarea--success",
                 MisTextareaState.Warning => "mis-textarea--warning",
                 MisTextareaState.Error => "mis-textarea--error",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             string className = "mis-textarea";
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
@@ -74,16 +64,24 @@ public sealed partial class MisTextarea : ComponentBase
         }
     }
 
-    private Task OnValueInputAsync(
-        string? value
+    private int SafeRows => Model.Rows <= 0 ? 1 : Model.Rows;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
+
+    private Task DispatchActionAsync(
+        IMisTextareaAction action
     ) =>
-        DispatchActionAsync(new MisTextareaInputAction(Model.IntentId, value ?? string.Empty));
+        OnAction.InvokeAsync(action);
 
     private async Task OnBlurAsync()
     {
         string currentValue = Model.Value ?? string.Empty;
-
-        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        if (!string.Equals(currentValue, lastCommittedValue, StringComparison.Ordinal))
         {
             await DispatchActionAsync(new MisTextareaChangedAction(Model.IntentId, currentValue));
             lastCommittedValue = currentValue;
@@ -92,8 +90,8 @@ public sealed partial class MisTextarea : ComponentBase
         await DispatchActionAsync(new MisTextareaBlurredAction(Model.IntentId));
     }
 
-    private Task DispatchActionAsync(
-        IMisTextareaAction action
+    private Task OnValueInputAsync(
+        string? value
     ) =>
-        OnAction.InvokeAsync(action);
+        DispatchActionAsync(new MisTextareaInputAction(Model.IntentId, value ?? string.Empty));
 }

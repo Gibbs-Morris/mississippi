@@ -8,10 +8,15 @@ namespace Mississippi.Reservoir.Blazor;
 /// <summary>
 ///     Initializes and shuts down Redux devtools integration for the current Blazor session.
 /// </summary>
-public sealed partial class ReservoirDevToolsInitializerComponent : ComponentBase, IDisposable
+public sealed partial class ReservoirDevToolsInitializerComponent
+    : ComponentBase,
+      IDisposable
 {
     [Inject]
     private ReduxDevToolsService DevToolsService { get; set; } = default!;
+
+    /// <inheritdoc />
+    public void Dispose() => DevToolsService.Stop();
 
     /// <inheritdoc />
     protected override void OnAfterRender(
@@ -23,7 +28,4 @@ public sealed partial class ReservoirDevToolsInitializerComponent : ComponentBas
             DevToolsService.Initialize();
         }
     }
-
-    /// <inheritdoc />
-    public void Dispose() => DevToolsService.Stop();
 }

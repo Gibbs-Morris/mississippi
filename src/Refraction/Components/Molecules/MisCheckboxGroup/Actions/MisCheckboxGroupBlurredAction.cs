@@ -5,7 +5,4 @@ namespace Mississippi.Refraction.Components.Molecules.MisCheckboxGroupActions;
 /// </summary>
 /// <param name="IntentId">The intent identifier.</param>
 /// <param name="OptionValue">The value of the blurred option.</param>
-public sealed record MisCheckboxGroupBlurredAction(
-    string IntentId,
-    string OptionValue
-) : IMisCheckboxGroupAction;
+public sealed record MisCheckboxGroupBlurredAction(string IntentId, string OptionValue) : IMisCheckboxGroupAction;

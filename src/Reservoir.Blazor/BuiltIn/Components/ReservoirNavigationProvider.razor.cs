@@ -12,7 +12,9 @@ namespace Mississippi.Reservoir.Blazor.BuiltIn.Components;
 /// <summary>
 ///     Dispatches navigation location updates to the Reservoir store.
 /// </summary>
-public sealed partial class ReservoirNavigationProvider : ComponentBase, IDisposable
+public sealed partial class ReservoirNavigationProvider
+    : ComponentBase,
+      IDisposable
 {
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
@@ -30,7 +32,6 @@ public sealed partial class ReservoirNavigationProvider : ComponentBase, IDispos
     protected override void OnInitialized()
     {
         base.OnInitialized();
-
         NavigationManager.LocationChanged += OnLocationChanged;
         Store.Dispatch(new LocationChangedAction(NavigationManager.Uri, false));
     }

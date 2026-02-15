@@ -5,7 +5,4 @@ namespace Mississippi.Refraction.Components.Molecules.MisPasswordInputActions;
 /// </summary>
 /// <param name="IntentId">The intent identifier.</param>
 /// <param name="Value">The current password value.</param>
-public sealed record MisPasswordInputInputAction(
-    string IntentId,
-    string Value
-) : IMisPasswordInputAction;
+public sealed record MisPasswordInputInputAction(string IntentId, string Value) : IMisPasswordInputAction;

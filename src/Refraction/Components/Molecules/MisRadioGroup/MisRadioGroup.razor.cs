@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -23,16 +24,16 @@ public sealed partial class MisRadioGroup : ComponentBase
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
     /// <summary>
-    ///     Gets or sets the interaction callback for all radio group user actions.
-    /// </summary>
-    [Parameter]
-    public EventCallback<IMisRadioGroupAction> OnAction { get; set; }
-
-    /// <summary>
     ///     Gets or sets the radio group view model.
     /// </summary>
     [Parameter]
     public MisRadioGroupViewModel Model { get; set; } = MisRadioGroupViewModel.Default;
+
+    /// <summary>
+    ///     Gets or sets the interaction callback for all radio group user actions.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IMisRadioGroupAction> OnAction { get; set; }
 
     private string GroupCssClass
     {
@@ -44,9 +45,8 @@ public sealed partial class MisRadioGroup : ComponentBase
                 MisRadioGroupState.Success => "mis-radio-group--success",
                 MisRadioGroupState.Warning => "mis-radio-group--warning",
                 MisRadioGroupState.Error => "mis-radio-group--error",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             string className = "mis-radio-group";
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
@@ -63,14 +63,17 @@ public sealed partial class MisRadioGroup : ComponentBase
     }
 
     private string RadioName =>
-        string.IsNullOrWhiteSpace(Model.Name)
-            ? $"mis-radio-group-{Model.IntentId}"
-            : Model.Name;
+        string.IsNullOrWhiteSpace(Model.Name) ? $"mis-radio-group-{Model.IntentId}" : Model.Name;
+
+    private Task DispatchActionAsync(
+        IMisRadioGroupAction action
+    ) =>
+        OnAction.InvokeAsync(action);
 
     private bool IsSelected(
         string optionValue
     ) =>
-        string.Equals(Model.Value, optionValue, System.StringComparison.Ordinal);
+        string.Equals(Model.Value, optionValue, StringComparison.Ordinal);
 
     private async Task OnOptionCheckedChangedAsync(
         string optionValue,
@@ -86,9 +89,4 @@ public sealed partial class MisRadioGroup : ComponentBase
         await DispatchActionAsync(new MisRadioGroupInputAction(Model.IntentId, nextValue));
         await DispatchActionAsync(new MisRadioGroupChangedAction(Model.IntentId, nextValue));
     }
-
-    private Task DispatchActionAsync(
-        IMisRadioGroupAction action
-    ) =>
-        OnAction.InvokeAsync(action);
 }

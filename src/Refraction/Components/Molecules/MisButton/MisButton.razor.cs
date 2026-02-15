@@ -33,21 +33,16 @@ public sealed partial class MisButton : ComponentBase
     public RenderFragment? ChildContent { get; set; }
 
     /// <summary>
-    ///     Gets or sets the interaction callback for all button user actions.
-    /// </summary>
-    [Parameter]
-    public EventCallback<IMisButtonAction> OnAction { get; set; }
-
-    /// <summary>
     ///     Gets or sets the button view model.
     /// </summary>
     [Parameter]
     public MisButtonViewModel Model { get; set; } = MisButtonViewModel.Default;
 
-    private string CssClass =>
-        string.IsNullOrWhiteSpace(Model.CssClass)
-            ? "mis-button"
-            : $"mis-button {Model.CssClass}";
+    /// <summary>
+    ///     Gets or sets the interaction callback for all button user actions.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IMisButtonAction> OnAction { get; set; }
 
     private string ButtonType =>
         Model.Type switch
@@ -55,13 +50,14 @@ public sealed partial class MisButton : ComponentBase
             MisButtonType.Button => "button",
             MisButtonType.Submit => "submit",
             MisButtonType.Reset => "reset",
-            _ => throw new InvalidOperationException($"Unsupported button type: {Model.Type}"),
+            var _ => throw new InvalidOperationException($"Unsupported button type: {Model.Type}"),
         };
+
+    private string CssClass =>
+        string.IsNullOrWhiteSpace(Model.CssClass) ? "mis-button" : $"mis-button {Model.CssClass}";
 
     private Task DispatchActionAsync(
         IMisButtonAction action
     ) =>
-        OnAction.HasDelegate
-            ? OnAction.InvokeAsync(action)
-            : Task.CompletedTask;
+        OnAction.HasDelegate ? OnAction.InvokeAsync(action) : Task.CompletedTask;
 }

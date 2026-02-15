@@ -54,15 +54,13 @@ public sealed partial class MisFormField : ComponentBase
         get
         {
             List<string> classes = ["mis-form-field"];
-
             string stateClass = Model.State switch
             {
                 MisFormFieldState.Error => "mis-form-field--error",
                 MisFormFieldState.Warning => "mis-form-field--warning",
                 MisFormFieldState.Success => "mis-form-field--success",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
                 classes.Add(stateClass);

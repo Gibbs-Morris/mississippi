@@ -23,16 +23,16 @@ public sealed partial class MisCheckbox : ComponentBase
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
     /// <summary>
-    ///     Gets or sets the interaction callback for all checkbox user actions.
-    /// </summary>
-    [Parameter]
-    public EventCallback<IMisCheckboxAction> OnAction { get; set; }
-
-    /// <summary>
     ///     Gets or sets the checkbox view model.
     /// </summary>
     [Parameter]
     public MisCheckboxViewModel Model { get; set; } = MisCheckboxViewModel.Default;
+
+    /// <summary>
+    ///     Gets or sets the interaction callback for all checkbox user actions.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IMisCheckboxAction> OnAction { get; set; }
 
     private string CssClass
     {
@@ -44,9 +44,8 @@ public sealed partial class MisCheckbox : ComponentBase
                 MisCheckboxState.Success => "mis-checkbox--success",
                 MisCheckboxState.Warning => "mis-checkbox--warning",
                 MisCheckboxState.Error => "mis-checkbox--error",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             string className = "mis-checkbox";
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
@@ -62,6 +61,11 @@ public sealed partial class MisCheckbox : ComponentBase
         }
     }
 
+    private Task DispatchActionAsync(
+        IMisCheckboxAction action
+    ) =>
+        OnAction.InvokeAsync(action);
+
     private async Task OnCheckedChangedAsync(
         bool isChecked
     )
@@ -71,9 +75,4 @@ public sealed partial class MisCheckbox : ComponentBase
         await DispatchActionAsync(new MisCheckboxInputAction(Model.IntentId, isChecked));
         await DispatchActionAsync(new MisCheckboxChangedAction(Model.IntentId, isChecked));
     }
-
-    private Task DispatchActionAsync(
-        IMisCheckboxAction action
-    ) =>
-        OnAction.InvokeAsync(action);
 }

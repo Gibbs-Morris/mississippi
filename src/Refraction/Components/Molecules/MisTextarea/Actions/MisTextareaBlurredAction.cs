@@ -5,6 +5,4 @@ namespace Mississippi.Refraction.Components.Molecules.MisTextareaActions;
 ///     <see cref="global::Mississippi.Refraction.Components.Molecules.MisTextarea" />.
 /// </summary>
 /// <param name="IntentId">The intent identifier from the textarea view model.</param>
-public sealed record MisTextareaBlurredAction(
-    string IntentId
-) : IMisTextareaAction;
+public sealed record MisTextareaBlurredAction(string IntentId) : IMisTextareaAction;

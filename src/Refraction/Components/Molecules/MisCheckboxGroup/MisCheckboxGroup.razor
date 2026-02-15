@@ -1,5 +1,5 @@
-@namespace Mississippi.Refraction.Components.Molecules
 @using Mississippi.Refraction.Components.Molecules.MisCheckboxGroupActions
+@namespace Mississippi.Refraction.Components.Molecules
 
 <div class="@GroupCssClass"
      id="@Model.Id"
@@ -15,12 +15,13 @@
                    name="@CheckboxName"
                    value="@option.Value"
                    @bind:get="Model.Values.Contains(option.Value)"
-                   @bind:set="@((bool isChecked) => OnOptionCheckedChangedAsync(option.Value, isChecked))"
+                   @bind:set="@((
+                                  bool isChecked
+                              ) => OnOptionCheckedChangedAsync(option.Value, isChecked))"
                    @bind:event="onchange"
                    disabled="@(Model.IsDisabled || option.IsDisabled)"
                    @onfocus="@(() => DispatchActionAsync(new MisCheckboxGroupFocusedAction(Model.IntentId, option.Value)))"
-                   @onblur="@(() => DispatchActionAsync(new MisCheckboxGroupBlurredAction(Model.IntentId, option.Value)))"
-                    />
+                   @onblur="@(() => DispatchActionAsync(new MisCheckboxGroupBlurredAction(Model.IntentId, option.Value)))"/>
             <span class="mis-checkbox-option__checkmark"></span>
             <span class="mis-checkbox-option__label">@option.Label</span>
         </label>

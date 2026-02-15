@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -25,26 +26,16 @@ public sealed partial class MisSelect : ComponentBase
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
     /// <summary>
-    ///     Gets or sets the interaction callback for all select user actions.
-    /// </summary>
-    [Parameter]
-    public EventCallback<IMisSelectAction> OnAction { get; set; }
-
-    /// <summary>
     ///     Gets or sets the select view model.
     /// </summary>
     [Parameter]
     public MisSelectViewModel Model { get; set; } = MisSelectViewModel.Default;
 
-    /// <inheritdoc />
-    protected override void OnParametersSet()
-    {
-        base.OnParametersSet();
-        lastCommittedValue = Model.Value ?? string.Empty;
-    }
-
-    private bool HasPlaceholder =>
-        !string.IsNullOrWhiteSpace(Model.Placeholder);
+    /// <summary>
+    ///     Gets or sets the interaction callback for all select user actions.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IMisSelectAction> OnAction { get; set; }
 
     private string CssClass
     {
@@ -56,9 +47,8 @@ public sealed partial class MisSelect : ComponentBase
                 MisSelectState.Success => "mis-select--success",
                 MisSelectState.Warning => "mis-select--warning",
                 MisSelectState.Error => "mis-select--error",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             string className = "mis-select";
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
@@ -74,16 +64,24 @@ public sealed partial class MisSelect : ComponentBase
         }
     }
 
-    private Task OnValueInputAsync(
-        string? value
+    private bool HasPlaceholder => !string.IsNullOrWhiteSpace(Model.Placeholder);
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
+
+    private Task DispatchActionAsync(
+        IMisSelectAction action
     ) =>
-        DispatchActionAsync(new MisSelectInputAction(Model.IntentId, value ?? string.Empty));
+        OnAction.InvokeAsync(action);
 
     private async Task OnBlurAsync()
     {
         string currentValue = Model.Value ?? string.Empty;
-
-        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        if (!string.Equals(currentValue, lastCommittedValue, StringComparison.Ordinal))
         {
             await DispatchActionAsync(new MisSelectChangedAction(Model.IntentId, currentValue));
             lastCommittedValue = currentValue;
@@ -92,8 +90,8 @@ public sealed partial class MisSelect : ComponentBase
         await DispatchActionAsync(new MisSelectBlurredAction(Model.IntentId));
     }
 
-    private Task DispatchActionAsync(
-        IMisSelectAction action
+    private Task OnValueInputAsync(
+        string? value
     ) =>
-        OnAction.InvokeAsync(action);
+        DispatchActionAsync(new MisSelectInputAction(Model.IntentId, value ?? string.Empty));
 }

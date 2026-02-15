@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -37,19 +38,11 @@ public sealed partial class MisSearchInput : ComponentBase
     [Parameter]
     public EventCallback<IMisSearchInputAction> OnAction { get; set; }
 
-    /// <inheritdoc />
-    protected override void OnParametersSet()
-    {
-        base.OnParametersSet();
-        lastCommittedValue = Model.Value ?? string.Empty;
-    }
-
     private string ContainerCssClass
     {
         get
         {
             List<string> classes = ["mis-search-input"];
-
             if (Model.IsDisabled)
             {
                 classes.Add("mis-search-input--disabled");
@@ -64,6 +57,18 @@ public sealed partial class MisSearchInput : ComponentBase
         }
     }
 
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
+
+    private Task DispatchActionAsync(
+        IMisSearchInputAction action
+    ) =>
+        OnAction.InvokeAsync(action);
+
     private Task HandleKeyDownAsync(
         KeyboardEventArgs args
     )
@@ -76,16 +81,10 @@ public sealed partial class MisSearchInput : ComponentBase
         return Task.CompletedTask;
     }
 
-    private Task OnValueInputAsync(
-        string? value
-    ) =>
-        DispatchActionAsync(new MisSearchInputInputAction(Model.IntentId, value ?? string.Empty));
-
     private async Task OnBlurAsync()
     {
         string currentValue = Model.Value ?? string.Empty;
-
-        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        if (!string.Equals(currentValue, lastCommittedValue, StringComparison.Ordinal))
         {
             await DispatchActionAsync(new MisSearchInputChangedAction(Model.IntentId, currentValue));
             lastCommittedValue = currentValue;
@@ -94,8 +93,8 @@ public sealed partial class MisSearchInput : ComponentBase
         await DispatchActionAsync(new MisSearchInputBlurredAction(Model.IntentId));
     }
 
-    private Task DispatchActionAsync(
-        IMisSearchInputAction action
+    private Task OnValueInputAsync(
+        string? value
     ) =>
-        OnAction.InvokeAsync(action);
+        DispatchActionAsync(new MisSearchInputInputAction(Model.IntentId, value ?? string.Empty));
 }

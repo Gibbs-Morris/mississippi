@@ -6,7 +6,4 @@ namespace Mississippi.Refraction.Components.Molecules.MisTextareaActions;
 /// </summary>
 /// <param name="IntentId">The intent identifier from the textarea view model.</param>
 /// <param name="Value">The current textarea value.</param>
-public sealed record MisTextareaInputAction(
-    string IntentId,
-    string Value
-) : IMisTextareaAction;
+public sealed record MisTextareaInputAction(string IntentId, string Value) : IMisTextareaAction;

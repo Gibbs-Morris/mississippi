@@ -41,15 +41,13 @@ public sealed partial class MisCheckboxGroup : ComponentBase
         get
         {
             List<string> classes = ["mis-checkbox-group"];
-
             string stateClass = Model.State switch
             {
                 MisCheckboxGroupState.Error => "mis-checkbox-group--error",
                 MisCheckboxGroupState.Warning => "mis-checkbox-group--warning",
                 MisCheckboxGroupState.Success => "mis-checkbox-group--success",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
                 classes.Add(stateClass);
@@ -69,13 +67,17 @@ public sealed partial class MisCheckboxGroup : ComponentBase
         }
     }
 
+    private Task DispatchActionAsync(
+        IMisCheckboxGroupAction action
+    ) =>
+        OnAction.InvokeAsync(action);
+
     private Task OnOptionCheckedChangedAsync(
         string value,
         bool isChecked
     )
     {
-        HashSet<string> newValues = new HashSet<string>(Model.Values);
-
+        HashSet<string> newValues = new(Model.Values);
         if (isChecked)
         {
             newValues.Add(value);
@@ -87,9 +89,4 @@ public sealed partial class MisCheckboxGroup : ComponentBase
 
         return DispatchActionAsync(new MisCheckboxGroupChangedAction(Model.IntentId, value, isChecked, newValues));
     }
-
-    private Task DispatchActionAsync(
-        IMisCheckboxGroupAction action
-    ) =>
-        OnAction.InvokeAsync(action);
 }

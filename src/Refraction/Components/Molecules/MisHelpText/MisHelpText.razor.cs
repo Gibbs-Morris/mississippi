@@ -32,7 +32,5 @@ public sealed partial class MisHelpText : ComponentBase
     public MisHelpTextViewModel Model { get; set; } = MisHelpTextViewModel.Default;
 
     private string CssClass =>
-        string.IsNullOrWhiteSpace(Model.CssClass)
-            ? "mis-help-text"
-            : $"mis-help-text {Model.CssClass}";
+        string.IsNullOrWhiteSpace(Model.CssClass) ? "mis-help-text" : $"mis-help-text {Model.CssClass}";
 }

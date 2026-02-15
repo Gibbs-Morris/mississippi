@@ -43,9 +43,8 @@ public sealed partial class MisValidationMessage : ComponentBase
                 MisValidationMessageSeverity.Warning => "mis-validation-message--warning",
                 MisValidationMessageSeverity.Info => "mis-validation-message--info",
                 MisValidationMessageSeverity.Success => "mis-validation-message--success",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             return string.IsNullOrWhiteSpace(Model.CssClass)
                 ? $"mis-validation-message {severityClass}"
                 : $"mis-validation-message {severityClass} {Model.CssClass}";

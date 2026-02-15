@@ -5,7 +5,4 @@ namespace Mississippi.Refraction.Components.Molecules.MisSearchInputActions;
 /// </summary>
 /// <param name="IntentId">The intent identifier.</param>
 /// <param name="Value">The current search value.</param>
-public sealed record MisSearchInputSubmittedAction(
-    string IntentId,
-    string Value
-) : IMisSearchInputAction;
+public sealed record MisSearchInputSubmittedAction(string IntentId, string Value) : IMisSearchInputAction;

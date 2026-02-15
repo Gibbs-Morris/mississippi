@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -18,6 +19,8 @@ public sealed partial class MisPasswordInput : ComponentBase
 {
     private string lastCommittedValue = string.Empty;
 
+    private static string InputCssClass => "mis-password-input__input";
+
     /// <summary>
     ///     Gets or sets additional HTML attributes applied to the input element.
     /// </summary>
@@ -36,27 +39,18 @@ public sealed partial class MisPasswordInput : ComponentBase
     [Parameter]
     public EventCallback<IMisPasswordInputAction> OnAction { get; set; }
 
-    /// <inheritdoc />
-    protected override void OnParametersSet()
-    {
-        base.OnParametersSet();
-        lastCommittedValue = Model.Value ?? string.Empty;
-    }
-
     private string ContainerCssClass
     {
         get
         {
             List<string> classes = ["mis-password-input"];
-
             string stateClass = Model.State switch
             {
                 MisPasswordInputState.Error => "mis-password-input--error",
                 MisPasswordInputState.Warning => "mis-password-input--warning",
                 MisPasswordInputState.Success => "mis-password-input--success",
-                _ => string.Empty,
+                var _ => string.Empty,
             };
-
             if (!string.IsNullOrWhiteSpace(stateClass))
             {
                 classes.Add(stateClass);
@@ -76,17 +70,26 @@ public sealed partial class MisPasswordInput : ComponentBase
         }
     }
 
-    private static string InputCssClass => "mis-password-input__input";
-
     private string InputType => Model.IsPasswordVisible ? "text" : "password";
 
     private string ToggleAriaLabel => Model.IsPasswordVisible ? "Hide password" : "Show password";
 
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
+
+    private Task DispatchActionAsync(
+        IMisPasswordInputAction action
+    ) =>
+        OnAction.InvokeAsync(action);
+
     private async Task OnBlurAsync()
     {
         string currentValue = Model.Value ?? string.Empty;
-
-        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        if (!string.Equals(currentValue, lastCommittedValue, StringComparison.Ordinal))
         {
             await DispatchActionAsync(new MisPasswordInputChangedAction(Model.IntentId, currentValue));
             lastCommittedValue = currentValue;
@@ -94,9 +97,4 @@ public sealed partial class MisPasswordInput : ComponentBase
 
         await DispatchActionAsync(new MisPasswordInputBlurredAction(Model.IntentId));
     }
-
-    private Task DispatchActionAsync(
-        IMisPasswordInputAction action
-    ) =>
-        OnAction.InvokeAsync(action);
 }

@@ -6,7 +6,4 @@ namespace Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 /// </summary>
 /// <param name="IntentId">The intent identifier from the switch view model.</param>
 /// <param name="IsChecked">A value indicating whether the switch is checked.</param>
-public sealed record MisSwitchInputAction(
-    string IntentId,
-    bool IsChecked
-) : IMisSwitchAction;
+public sealed record MisSwitchInputAction(string IntentId, bool IsChecked) : IMisSwitchAction;
