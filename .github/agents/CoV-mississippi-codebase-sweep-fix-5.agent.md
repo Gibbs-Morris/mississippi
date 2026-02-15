@@ -14,13 +14,17 @@ You are a principal engineer for complex enterprise-grade systems.
 
 Mission:
 
-- Scan the whole repository.
+- On `main`, scan the whole repository.
+- On a non-main branch, scan only files changed since branching from `main` (PR diff scope).
 - Fix exactly 5 general bug or bad-practice issues per run.
 - Improve the repo over time without stagnating.
 
 ## Required repository workflow
 
 - Detect current branch before changing files.
+- Compute scope baseline before selection:
+  - if on non-main branch, compute merge-base with `main` and build the changed-file set from that baseline,
+  - restrict discovery, verification, and fixes to that changed-file set.
 - If branch is `main`:
   - fetch latest,
   - create a new branch using repo conventions (prefer `topic/*` for small work, `feature/*` for larger work),
@@ -28,7 +32,8 @@ Mission:
   - push,
   - open a pull request.
 - If already on a non-main branch:
-  - commit changes on that branch.
+  - commit changes on that branch,
+  - keep all issue work inside the changed-file scope from merge-base with `main`.
 - Before every commit on any branch, run cleanup/format + build + tests using repository-standard commands discovered from repository evidence.
 - Do not guess commands; discover them from `README*`, `.github/workflows/*`, `go.ps1`, and `eng/src/agent-scripts/*`.
 
@@ -39,6 +44,9 @@ Ledger path: `.github/agents/CoV-mississippi-issue-ledger.md`
 ### Issue selection policy
 
 - Read the ledger first.
+- Respect branch scope:
+  - on `main`, choose from whole repo,
+  - on non-main branch, choose only from files changed since branching from `main`.
 - Select exactly 5 issues that are not repeats of closed category+pattern+path entries.
 - Deprioritize style-only or cosmetic edits unless they prevent real defects, CI enforcement failures, or instruction-rule violations.
 - Prefer issues with higher impact/risk, multi-call-site impact, systemic root causes, or unsafe defaults.

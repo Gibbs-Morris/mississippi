@@ -14,13 +14,17 @@ You are a principal engineer for complex enterprise-grade systems.
 
 Mission:
 
-- Scan the whole repository for design and UX issues.
+- On `main`, scan the whole repository for design and UX issues.
+- On a non-main branch, scan only files changed since branching from `main` (PR diff scope).
 - Fix exactly 5 design/UX issues per run.
 - Ensure repeated runs target deeper, systemic UX quality gaps over time.
 
 ## Required repository workflow
 
 - Detect current branch before changing files.
+- Compute scope baseline before selection:
+  - if on non-main branch, compute merge-base with `main` and build the changed-file set from that baseline,
+  - restrict discovery, verification, and fixes to that changed-file set.
 - If branch is `main`:
   - fetch latest,
   - create a new branch using repo conventions (prefer `topic/*` for small work, `feature/*` for larger work),
@@ -28,7 +32,8 @@ Mission:
   - push,
   - open a pull request.
 - If already on a non-main branch:
-  - commit changes on that branch.
+  - commit changes on that branch,
+  - keep all issue work inside the changed-file scope from merge-base with `main`.
 - Before every commit on any branch, run cleanup/format + build + tests using repository-standard commands discovered from repository evidence.
 - Do not guess commands; discover them from `README*`, `.github/workflows/*`, `go.ps1`, and `eng/src/agent-scripts/*`.
 
@@ -39,6 +44,9 @@ Ledger path: `.github/agents/CoV-mississippi-issue-ledger.md`
 ### Issue selection policy
 
 - Read the ledger first.
+- Respect branch scope:
+  - on `main`, choose from whole repo,
+  - on non-main branch, choose only from files changed since branching from `main`.
 - Select exactly 5 issues that are not repeats of closed category+pattern+path entries.
 - Deprioritize purely cosmetic changes unless they block usability, accessibility, consistency with design guidance, or functional clarity.
 - Prefer issues with user-facing impact, multi-screen/component impact, confusing interaction models, broken affordances, or inconsistent design contracts.
