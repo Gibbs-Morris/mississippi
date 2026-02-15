@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-using Mississippi.Refraction.Components.Molecules.MisButton;
+using Mississippi.Refraction.Components.Molecules;
 using Mississippi.Reservoir.Abstractions.State;
 
 
@@ -19,7 +19,6 @@ internal sealed record MisButtonKitchenSinkState : IFeatureState
     /// </summary>
     public MisButtonViewModel ViewModel { get; init; } = MisButtonViewModel.Default with
     {
-        Text = "Click me",
         IntentId = "kitchen-sink.mis-button",
         AriaLabel = "Kitchen Sink button",
         Title = "Kitchen Sink button",

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using Mississippi.Refraction.Components.Molecules.MisButton;
+using Mississippi.Refraction.Components.Molecules;
 
 
 namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisButton;

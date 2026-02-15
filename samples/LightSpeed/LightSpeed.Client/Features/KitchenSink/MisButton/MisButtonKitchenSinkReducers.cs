@@ -9,29 +9,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisButton;
 internal static class MisButtonKitchenSinkReducers
 {
     /// <summary>
-    ///     Sets the button text.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisButtonKitchenSinkState SetText(
-        MisButtonKitchenSinkState state,
-        SetMisButtonTextAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Text = NormalizeRequired(action.Text, "Button"),
-            },
-        };
-    }
-
-    /// <summary>
     ///     Sets the button intent identifier.
     /// </summary>
     /// <param name="state">The current state.</param>

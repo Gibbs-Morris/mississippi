@@ -19,7 +19,6 @@ internal static class MisButtonKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisButtonTextAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetText);
         services.AddReducer<SetMisButtonIntentIdAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetIntentId);
         services.AddReducer<SetMisButtonAriaLabelAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetAriaLabel);
         services.AddReducer<SetMisButtonTitleAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetTitle);
