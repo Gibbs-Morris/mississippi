@@ -112,7 +112,7 @@
     --mis-bg-brand: #00a7ff;
     --mis-bg-accent: #2bd9ff;
     --mis-bg-success: #22b573;
-    --mis-bg-warning: #ff4d1a;
+    --mis-bg-warning: #ff8a1f;
     --mis-bg-error: #ff4d1a;
     --mis-bg-info: #00b7ff;
 
@@ -124,7 +124,7 @@
     --mis-text-inverse: #f4f9ff;
     --mis-text-brand: #0066ff;
     --mis-text-success: #0f8d58;
-    --mis-text-warning: #c93e15;
+    --mis-text-warning: #b86100;
     --mis-text-error: #c93e15;
     --mis-text-info: #007fbd;
 
@@ -134,7 +134,7 @@
     --mis-border-interactive: #4a6f99;
     --mis-border-focus: #00b7ff;
     --mis-border-error: #ff4d1a;
-    --mis-border-warning: #ff4d1a;
+    --mis-border-warning: #ff8a1f;
 
     /* ── Input surfaces (frosted light) ──────────────────── */
     --mis-bg-input: rgba(255, 255, 255, 0.88);
@@ -159,6 +159,12 @@
     --mis-duration-normal: 250ms;
     --mis-ease-out: cubic-bezier(0, 0, 0.2, 1);
 
+    /* ── Scrollbar ───────────────────────────────────────── */
+    --mis-scrollbar-width: 10px;
+    --mis-scrollbar-track: var(--mis-bg-muted);
+    --mis-scrollbar-thumb: var(--mis-border-decorative);
+    --mis-scrollbar-thumb-hover: var(--mis-border-interactive);
+
     /* ── Legacy aliases (deprecated) ─────────────────────── */
     --mis-font-family-body: var(--mis-font-body);
     --mis-font-size-sm: var(--mis-type-ui-size);
@@ -179,7 +185,7 @@
     --mis-bg-brand: #00a7ff;
     --mis-bg-accent: #2bd9ff;
     --mis-bg-success: #22b573;
-    --mis-bg-warning: #ff4d1a;
+    --mis-bg-warning: #ff9a2f;
     --mis-bg-error: #ff4d1a;
     --mis-bg-info: #00b7ff;
 
@@ -190,7 +196,7 @@
     --mis-text-inverse: #05070b;
     --mis-text-brand: #00a7ff;
     --mis-text-success: #46d390;
-    --mis-text-warning: #ff7a50;
+    --mis-text-warning: #ffb066;
     --mis-text-error: #ff7a50;
     --mis-text-info: #2bd9ff;
 
@@ -199,7 +205,7 @@
     --mis-border-interactive: #576f96;
     --mis-border-focus: #00b7ff;
     --mis-border-error: #ff4d1a;
-    --mis-border-warning: #ff4d1a;
+    --mis-border-warning: #ff9a2f;
 
     --mis-bg-input: rgb(15 25 41 / 0.78);
     --mis-bg-input-hover: rgb(22 37 61 / 0.9);
@@ -218,7 +224,7 @@
         --mis-bg-brand: #00a7ff;
         --mis-bg-accent: #2bd9ff;
         --mis-bg-success: #22b573;
-        --mis-bg-warning: #ff4d1a;
+        --mis-bg-warning: #ff9a2f;
         --mis-bg-error: #ff4d1a;
         --mis-bg-info: #00b7ff;
 
@@ -229,7 +235,7 @@
         --mis-text-inverse: #05070b;
         --mis-text-brand: #00a7ff;
         --mis-text-success: #46d390;
-        --mis-text-warning: #ff7a50;
+        --mis-text-warning: #ffb066;
         --mis-text-error: #ff7a50;
         --mis-text-info: #2bd9ff;
 
@@ -238,7 +244,7 @@
         --mis-border-interactive: #576f96;
         --mis-border-focus: #00b7ff;
         --mis-border-error: #ff4d1a;
-        --mis-border-warning: #ff4d1a;
+        --mis-border-warning: #ff9a2f;
 
         --mis-bg-input: rgb(15 25 41 / 0.78);
         --mis-bg-input-hover: rgb(22 37 61 / 0.9);
@@ -262,7 +268,7 @@
     --mis-bg-brand: #00b7ff;
     --mis-bg-accent: #2bd9ff;
     --mis-bg-success: #46d390;
-    --mis-bg-warning: #ff4d1a;
+    --mis-bg-warning: #ffb347;
     --mis-bg-error: #ff4d1a;
     --mis-bg-info: #00b7ff;
 
@@ -273,7 +279,7 @@
     --mis-text-inverse: #000000;
     --mis-text-brand: #00b7ff;
     --mis-text-success: #46d390;
-    --mis-text-warning: #ff7a50;
+    --mis-text-warning: #ffc266;
     --mis-text-error: #ff7a50;
     --mis-text-info: #2bd9ff;
 
@@ -282,7 +288,7 @@
     --mis-border-interactive: #ffffff;
     --mis-border-focus: #00b7ff;
     --mis-border-error: #ff4d1a;
-    --mis-border-warning: #ff4d1a;
+    --mis-border-warning: #ffb347;
 
     --mis-bg-input: #1a1a1a;
     --mis-bg-input-hover: #2a2a2a;
@@ -302,7 +308,7 @@
         --mis-bg-brand: #00b7ff;
         --mis-bg-accent: #2bd9ff;
         --mis-bg-success: #46d390;
-        --mis-bg-warning: #ff4d1a;
+        --mis-bg-warning: #ffb347;
         --mis-bg-error: #ff4d1a;
         --mis-bg-info: #00b7ff;
 
@@ -313,7 +319,7 @@
         --mis-text-inverse: #000000;
         --mis-text-brand: #00b7ff;
         --mis-text-success: #46d390;
-        --mis-text-warning: #ff7a50;
+        --mis-text-warning: #ffc266;
         --mis-text-error: #ff7a50;
         --mis-text-info: #2bd9ff;
 
@@ -322,7 +328,7 @@
         --mis-border-interactive: #ffffff;
         --mis-border-focus: #00b7ff;
         --mis-border-error: #ff4d1a;
-        --mis-border-warning: #ff4d1a;
+        --mis-border-warning: #ffb347;
 
         --mis-bg-input: #1a1a1a;
         --mis-bg-input-hover: #2a2a2a;

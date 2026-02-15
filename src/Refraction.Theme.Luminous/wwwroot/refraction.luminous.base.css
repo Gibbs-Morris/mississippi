@@ -53,6 +53,45 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
+   SCROLLBARS
+   Custom styled scrollbars matching futuristic aesthetic — subtle glow on hover
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Firefox */
+:where(*) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--mis-scrollbar-thumb) var(--mis-scrollbar-track);
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+:where(::-webkit-scrollbar) {
+    width: var(--mis-scrollbar-width);
+    height: var(--mis-scrollbar-width);
+}
+
+:where(::-webkit-scrollbar-track) {
+    background: var(--mis-scrollbar-track);
+    border-radius: var(--mis-radius-sm);
+}
+
+:where(::-webkit-scrollbar-thumb) {
+    background: var(--mis-scrollbar-thumb);
+    border-radius: var(--mis-radius-sm);
+    border: 2px solid var(--mis-scrollbar-track);
+    transition: background var(--mis-duration-fast) var(--mis-ease-out),
+                box-shadow var(--mis-duration-fast) var(--mis-ease-out);
+}
+
+:where(::-webkit-scrollbar-thumb:hover) {
+    background: var(--mis-scrollbar-thumb-hover);
+    box-shadow: 0 0 8px -2px var(--mis-bg-brand);
+}
+
+:where(::-webkit-scrollbar-corner) {
+    background: var(--mis-scrollbar-track);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
    LAYOUT PRIMITIVES
    ════════════════════════════════════════════════════════════════════════════ */
 

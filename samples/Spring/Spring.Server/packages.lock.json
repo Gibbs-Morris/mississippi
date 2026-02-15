@@ -645,6 +645,15 @@
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Refraction": {
+        "type": "Project"
+      },
+      "Mississippi.Refraction.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Refraction.Theme.Enterprise": {
+        "type": "Project"
+      },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {
@@ -691,6 +700,9 @@
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.3, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
+          "Mississippi.Refraction": "[1.0.0, )",
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )",
+          "Mississippi.Refraction.Theme.Enterprise": "[1.0.0, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
           "Spring.Domain": "[1.0.0, )"
         }

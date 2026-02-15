@@ -805,6 +805,26 @@
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )"
         }
       },
+      "Mississippi.Refraction": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[10.0.3, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.3, )"
+        }
+      },
+      "Mississippi.Refraction.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )"
+        }
+      },
+      "Mississippi.Refraction.Theme.Enterprise": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[10.0.3, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.3, )"
+        }
+      },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {
@@ -841,6 +861,9 @@
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.3, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
+          "Mississippi.Refraction": "[1.0.0, )",
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )",
+          "Mississippi.Refraction.Theme.Enterprise": "[1.0.0, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
           "Spring.Domain": "[1.0.0, )"
         }
