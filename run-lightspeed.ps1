@@ -19,6 +19,14 @@ Set-StrictMode -Version Latest
 $solutionFile = Join-Path $PSScriptRoot 'samples.slnx'
 $appHostProject = Join-Path $PSScriptRoot 'samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj'
 
+$originalAspNetCoreEnvironment = $env:ASPNETCORE_ENVIRONMENT
+$originalDotnetEnvironment = $env:DOTNET_ENVIRONMENT
+$originalLoggingDefault = $env:Logging__LogLevel__Default
+$originalLoggingMicrosoft = $env:Logging__LogLevel__Microsoft
+$originalLoggingMicrosoftAspNetCore = $env:Logging__LogLevel__Microsoft__AspNetCore
+$originalLoggingOrleans = $env:Logging__LogLevel__Orleans
+$originalLoggingMississippi = $env:Logging__LogLevel__Mississippi
+
 if (-not (Test-Path $solutionFile)) {
     Write-Error "Solution file not found at: $solutionFile"
     exit 1
@@ -61,33 +69,68 @@ function Stop-LightSpeedProcess {
     exit 1
 }
 
-Stop-LightSpeedProcess -ProcessName 'LightSpeed.AppHost'
-Stop-LightSpeedProcess -ProcessName 'LightSpeed.Server'
+function Stop-LightSpeedDotnetProcessByProjectPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectPath
+    )
 
-Write-Host "Building Samples solution..." -ForegroundColor Cyan
-# Build the full solution to ensure source generators and all dependencies are built in correct order
-dotnet build $solutionFile -c Debug --no-incremental
+    $normalizedProjectPath = [System.IO.Path]::GetFullPath($ProjectPath)
+    $processes = Get-CimInstance Win32_Process -Filter "Name = 'dotnet.exe'" |
+        Where-Object {
+            $_.CommandLine -and $_.CommandLine.Contains($normalizedProjectPath, [System.StringComparison]::OrdinalIgnoreCase)
+        }
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Build failed with exit code $LASTEXITCODE"
-    exit $LASTEXITCODE
+    if ($null -eq $processes) {
+        return
+    }
+
+    foreach ($process in $processes) {
+        Write-Host "Stopping stale process: dotnet ($($process.ProcessId)) for project $normalizedProjectPath" -ForegroundColor Yellow
+        Stop-Process -Id $process.ProcessId -Force
+    }
 }
 
-Write-Host "`nStarting LightSpeed Aspire AppHost (Debug mode)..." -ForegroundColor Green
+try {
+    Stop-LightSpeedProcess -ProcessName 'LightSpeed.AppHost'
+    Stop-LightSpeedProcess -ProcessName 'LightSpeed.Server'
+    Stop-LightSpeedDotnetProcessByProjectPath -ProjectPath $appHostProject
+    Stop-LightSpeedDotnetProcessByProjectPath -ProjectPath (Join-Path $PSScriptRoot 'samples/LightSpeed/LightSpeed.Server/LightSpeed.Server.csproj')
 
-$env:ASPNETCORE_ENVIRONMENT = 'Development'
-$env:DOTNET_ENVIRONMENT = 'Development'
-$env:Logging__LogLevel__Default = 'Warning'
-$env:Logging__LogLevel__Microsoft = 'Information'
-$env:Logging__LogLevel__Microsoft__AspNetCore = 'Warning'
-$env:Logging__LogLevel__Orleans = 'Warning'
-$env:Logging__LogLevel__Mississippi = 'Debug'
+    Write-Host "Building Samples solution..." -ForegroundColor Cyan
+    # Build the full solution to ensure source generators and all dependencies are built in correct order
+    dotnet build $solutionFile -c Debug --no-incremental
 
-dotnet run --project $appHostProject # -c Debug --no-build --launch-profile https
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Build failed with exit code $LASTEXITCODE"
+        exit $LASTEXITCODE
+    }
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "LightSpeed AppHost exited with code $LASTEXITCODE"
-    exit $LASTEXITCODE
+    Write-Host "`nStarting LightSpeed Aspire AppHost (Debug mode)..." -ForegroundColor Green
+
+    $env:ASPNETCORE_ENVIRONMENT = 'Development'
+    $env:DOTNET_ENVIRONMENT = 'Development'
+    $env:Logging__LogLevel__Default = 'Warning'
+    $env:Logging__LogLevel__Microsoft = 'Information'
+    $env:Logging__LogLevel__Microsoft__AspNetCore = 'Warning'
+    $env:Logging__LogLevel__Orleans = 'Warning'
+    $env:Logging__LogLevel__Mississippi = 'Debug'
+
+    dotnet run --project $appHostProject -c Debug --no-build
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "LightSpeed AppHost exited with code $LASTEXITCODE"
+        exit $LASTEXITCODE
+    }
+
+    exit 0
 }
-
-exit 0
+finally {
+    $env:ASPNETCORE_ENVIRONMENT = $originalAspNetCoreEnvironment
+    $env:DOTNET_ENVIRONMENT = $originalDotnetEnvironment
+    $env:Logging__LogLevel__Default = $originalLoggingDefault
+    $env:Logging__LogLevel__Microsoft = $originalLoggingMicrosoft
+    $env:Logging__LogLevel__Microsoft__AspNetCore = $originalLoggingMicrosoftAspNetCore
+    $env:Logging__LogLevel__Orleans = $originalLoggingOrleans
+    $env:Logging__LogLevel__Mississippi = $originalLoggingMississippi
+}
