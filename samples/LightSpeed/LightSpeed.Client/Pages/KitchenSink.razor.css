@@ -7,14 +7,17 @@
     max-width: 1440px;
     margin: 0 auto;
     padding: var(--mis-space-xl) var(--mis-space-xl) 4rem;
-    background: var(--mis-bg-default);
+    background:
+        radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--mis-bg-brand, #2563eb) 6%, transparent) 0%, transparent 46%),
+        radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--mis-bg-accent, #9333ea) 7%, transparent) 0%, transparent 48%),
+        var(--mis-bg-default);
     min-height: 100vh;
 }
 
 .ks-page-header {
     margin-bottom: var(--mis-space-xl);
     padding-bottom: var(--mis-space-lg);
-    border-bottom: 2px solid var(--mis-border-decorative);
+    border-bottom: 1px solid var(--mis-border-decorative);
 }
 
 .ks-page-title {
@@ -39,5 +42,5 @@
 .ks-page-sections {
     display: flex;
     flex-direction: column;
-    gap: var(--mis-space-xl);
+    gap: var(--mis-space-lg);
 }

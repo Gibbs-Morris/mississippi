@@ -6,23 +6,26 @@
 
 /* ── Section Card ──────────────────────────────────────────────────── */
 .ks-demo-section {
-    background: var(--mis-bg-elevated);
+    background: color-mix(in srgb, var(--mis-bg-elevated) 94%, var(--mis-bg-default));
     border: 1px solid var(--mis-border-decorative);
     border-radius: var(--mis-radius-lg);
-    box-shadow: var(--mis-shadow-sm);
+    box-shadow: none;
     overflow: hidden;
-    transition: box-shadow var(--mis-duration-normal) var(--mis-ease-out);
+    transition:
+        border-color var(--mis-duration-normal) var(--mis-ease-out),
+        box-shadow var(--mis-duration-normal) var(--mis-ease-out);
 }
 
 .ks-demo-section:hover {
-    box-shadow: var(--mis-shadow-md);
+    border-color: color-mix(in srgb, var(--mis-border-focus) 35%, var(--mis-border-decorative));
+    box-shadow: var(--mis-shadow-sm);
 }
 
 /* ── Header ────────────────────────────────────────────────────────── */
 .ks-demo-header {
     padding: var(--mis-space-lg) var(--mis-space-xl);
     border-bottom: 1px solid var(--mis-border-decorative);
-    background: linear-gradient(135deg, var(--mis-bg-elevated) 0%, var(--mis-bg-muted) 100%);
+    background: linear-gradient(160deg, var(--mis-bg-elevated) 0%, color-mix(in srgb, var(--mis-bg-muted) 88%, var(--mis-bg-default)) 100%);
 }
 
 .ks-demo-title-row {
@@ -50,9 +53,9 @@
     font-size: var(--mis-type-code-sm-size);
     font-weight: var(--mis-type-code-sm-weight);
     line-height: var(--mis-type-code-sm-lh);
-    color: var(--mis-text-brand);
-    background: rgba(0, 102, 255, 0.08);
-    border: 1px solid rgba(0, 102, 255, 0.18);
+    color: var(--mis-text-secondary);
+    background: color-mix(in srgb, var(--mis-bg-brand) 10%, var(--mis-bg-elevated));
+    border: 1px solid color-mix(in srgb, var(--mis-bg-brand) 24%, var(--mis-border-decorative));
     border-radius: var(--mis-radius-sm);
     letter-spacing: var(--mis-tracking-tight);
     white-space: nowrap;
@@ -83,7 +86,7 @@
     justify-content: center;
     padding: var(--mis-space-xl);
     background:
-        radial-gradient(circle at 50% 50%, rgba(0, 167, 255, 0.03) 0%, transparent 70%),
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--mis-bg-brand) 9%, transparent) 0%, transparent 70%),
         var(--mis-bg-elevated);
 }
 
@@ -107,21 +110,24 @@
     min-height: 80px;
     min-width: 200px;
     padding: var(--mis-space-lg);
-    border: 2px dashed var(--mis-border-decorative);
+    border: 1px dashed var(--mis-border-decorative);
     border-radius: var(--mis-radius-md);
-    background: var(--mis-bg-default);
-    transition: border-color var(--mis-duration-fast) var(--mis-ease-out);
+    background: color-mix(in srgb, var(--mis-bg-default) 92%, var(--mis-bg-active));
+    transition:
+        border-color var(--mis-duration-fast) var(--mis-ease-out),
+        background var(--mis-duration-fast) var(--mis-ease-out);
 }
 
 .ks-demo-stage:hover {
     border-color: var(--mis-border-interactive);
+    background: color-mix(in srgb, var(--mis-bg-default) 80%, var(--mis-bg-active));
 }
 
 /* ── Properties panel (right) ──────────────────────────────────────── */
 .ks-demo-properties {
     padding: var(--mis-space-lg) var(--mis-space-xl);
     border-left: 1px solid var(--mis-border-decorative);
-    background: var(--mis-bg-muted);
+    background: color-mix(in srgb, var(--mis-bg-muted) 92%, var(--mis-bg-default));
     overflow-y: auto;
     max-height: 480px;
 }
@@ -169,8 +175,8 @@
     font-family: var(--mis-font-body);
     font-size: var(--mis-type-ui-size);
     color: var(--mis-text-default);
-    background: var(--mis-bg-input);
-    border: 1px solid var(--mis-border-default);
+    background: color-mix(in srgb, var(--mis-bg-input) 92%, transparent);
+    border: 1px solid color-mix(in srgb, var(--mis-border-default) 82%, var(--mis-border-decorative));
     border-radius: var(--mis-radius-sm);
     outline: none;
     transition:
@@ -182,7 +188,9 @@
 .ks-demo-properties-grid select:focus,
 .ks-demo-properties-grid textarea:focus {
     border-color: var(--mis-border-focus);
-    box-shadow: 0 0 0 var(--mis-focus-ring-width) rgba(0, 183, 255, 0.25);
+    box-shadow:
+        0 0 0 var(--mis-focus-ring-width) color-mix(in srgb, var(--mis-border-focus) 26%, transparent),
+        0 0 12px -5px color-mix(in srgb, var(--mis-border-focus) 45%, transparent);
 }
 
 /* Checkbox/toggle rows: horizontal */
@@ -238,7 +246,7 @@
 .ks-demo-footer {
     position: relative;
     border-top: 1px solid var(--mis-border-decorative);
-    background: var(--mis-bg-muted);
+    background: color-mix(in srgb, var(--mis-bg-muted) 90%, var(--mis-bg-default));
 }
 
 .ks-demo-events-toggle {
@@ -259,7 +267,7 @@
 }
 
 .ks-demo-events-toggle:hover {
-    background: rgba(0, 167, 255, 0.05);
+    background: color-mix(in srgb, var(--mis-bg-brand) 8%, transparent);
 }
 
 .ks-demo-events-label {
@@ -279,8 +287,8 @@
     font-family: var(--mis-font-mono);
     font-size: 0.6875rem;
     font-weight: var(--mis-font-weight-semibold);
-    color: var(--mis-text-inverse);
-    background: var(--mis-bg-brand);
+    color: var(--mis-text-default);
+    background: color-mix(in srgb, var(--mis-bg-brand) 45%, var(--mis-bg-active));
     border-radius: var(--mis-radius-full);
     line-height: 1;
 }
@@ -304,7 +312,7 @@
     padding: 0.25rem 0.75rem;
     border: 1px solid var(--mis-border-decorative);
     border-radius: var(--mis-radius-sm);
-    background: var(--mis-bg-elevated);
+    background: color-mix(in srgb, var(--mis-bg-elevated) 92%, var(--mis-bg-default));
     font-family: var(--mis-font-body);
     font-size: var(--mis-type-caption-size);
     font-weight: var(--mis-font-weight-medium);
@@ -343,14 +351,14 @@
     font-weight: var(--mis-type-code-sm-weight);
     line-height: var(--mis-type-code-sm-lh);
     color: var(--mis-text-default);
-    background: var(--mis-bg-elevated);
+    background: color-mix(in srgb, var(--mis-bg-elevated) 95%, var(--mis-bg-default));
     border-radius: var(--mis-radius-sm);
-    border-left: 3px solid var(--mis-bg-brand);
+    border-left: 2px solid color-mix(in srgb, var(--mis-bg-brand) 66%, var(--mis-bg-active));
     word-break: break-all;
 }
 
 .ks-demo-events-panel li:nth-child(even) {
-    background: var(--mis-bg-default);
+    background: color-mix(in srgb, var(--mis-bg-default) 92%, var(--mis-bg-active));
 }
 
 .ks-demo-events-panel p {
