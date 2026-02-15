@@ -1,0 +1,26 @@
+@namespace Mississippi.Refraction.Components.Molecules
+@using Mississippi.Refraction.Components.Molecules.MisCheckboxGroupActions
+
+<div class="@GroupCssClass"
+     id="@Model.Id"
+     role="group"
+     aria-label="@Model.AriaLabel"
+     title="@Model.Title"
+     @attributes="AdditionalAttributes">
+    @foreach (MisCheckboxOptionViewModel option in Model.Options)
+    {
+        <label class="mis-checkbox-option">
+            <input class="mis-checkbox-input"
+                   type="checkbox"
+                   name="@CheckboxName"
+                   value="@option.Value"
+                   checked="@IsSelected(option.Value)"
+                   disabled="@(Model.IsDisabled || option.IsDisabled)"
+                   @onfocus="@(() => DispatchActionAsync(new MisCheckboxGroupFocusedAction(Model.IntentId, option.Value)))"
+                   @onblur="@(() => DispatchActionAsync(new MisCheckboxGroupBlurredAction(Model.IntentId, option.Value)))"
+                   @onchange="@(() => HandleCheckboxChangeAsync(option.Value))" />
+            <span class="mis-checkbox-option__checkmark"></span>
+            <span class="mis-checkbox-option__label">@option.Label</span>
+        </label>
+    }
+</div>

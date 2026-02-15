@@ -1,0 +1,99 @@
+.mis-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mis-spacing-sm, 0.5rem);
+}
+
+.mis-checkbox-option {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mis-spacing-sm, 0.5rem);
+    cursor: pointer;
+    font-family: var(--mis-font-family, inherit);
+    font-size: var(--mis-font-size-base, 1rem);
+    color: var(--mis-color-text, #1f2937);
+}
+
+.mis-checkbox-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.mis-checkbox-option__checkmark {
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--mis-color-border, #d1d5db);
+    border-radius: var(--mis-border-radius-sm, 0.25rem);
+    background-color: var(--mis-color-surface, #ffffff);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.mis-checkbox-option__checkmark::after {
+    content: '';
+    position: absolute;
+    display: none;
+    left: 5px;
+    top: 1px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.mis-checkbox-input:checked ~ .mis-checkbox-option__checkmark {
+    background-color: var(--mis-color-primary, #3b82f6);
+    border-color: var(--mis-color-primary, #3b82f6);
+}
+
+.mis-checkbox-input:checked ~ .mis-checkbox-option__checkmark::after {
+    display: block;
+}
+
+.mis-checkbox-input:focus ~ .mis-checkbox-option__checkmark {
+    box-shadow: 0 0 0 3px var(--mis-color-primary-alpha, rgba(59, 130, 246, 0.25));
+}
+
+.mis-checkbox-input:disabled ~ .mis-checkbox-option__checkmark {
+    background-color: var(--mis-color-surface-disabled, #f3f4f6);
+    border-color: var(--mis-color-border-disabled, #e5e7eb);
+}
+
+.mis-checkbox-input:disabled ~ .mis-checkbox-option__label {
+    color: var(--mis-color-text-disabled, #9ca3af);
+}
+
+.mis-checkbox-option:has(.mis-checkbox-input:disabled) {
+    cursor: not-allowed;
+}
+
+.mis-checkbox-group--disabled {
+    opacity: 0.6;
+}
+
+.mis-checkbox-group--error .mis-checkbox-option__checkmark {
+    border-color: var(--mis-color-error, #dc2626);
+}
+
+.mis-checkbox-group--error .mis-checkbox-input:checked ~ .mis-checkbox-option__checkmark {
+    background-color: var(--mis-color-error, #dc2626);
+}
+
+.mis-checkbox-group--warning .mis-checkbox-option__checkmark {
+    border-color: var(--mis-color-warning, #d97706);
+}
+
+.mis-checkbox-group--warning .mis-checkbox-input:checked ~ .mis-checkbox-option__checkmark {
+    background-color: var(--mis-color-warning, #d97706);
+}
+
+.mis-checkbox-group--success .mis-checkbox-option__checkmark {
+    border-color: var(--mis-color-success, #16a34a);
+}
+
+.mis-checkbox-group--success .mis-checkbox-input:checked ~ .mis-checkbox-option__checkmark {
+    background-color: var(--mis-color-success, #16a34a);
+}
