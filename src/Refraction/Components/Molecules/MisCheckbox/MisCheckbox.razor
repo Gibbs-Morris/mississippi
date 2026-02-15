@@ -7,7 +7,8 @@
        name="@Model.Name"
        type="checkbox"
        value="@Model.Value"
-       checked="@Model.IsChecked"
+       @bind:get="Model.IsChecked"
+       @bind:set="OnCheckedChangedAsync"
        aria-label="@Model.AriaLabel"
        title="@Model.Title"
        disabled="@Model.IsDisabled"
@@ -18,6 +19,4 @@
        @onkeyup="@((KeyboardEventArgs args) => DispatchActionAsync(new MisCheckboxKeyUpAction(Model.IntentId, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
        @onmousedown="@((MouseEventArgs args) => DispatchActionAsync(new MisCheckboxPointerDownAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
        @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisCheckboxPointerUpAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-       @oninput="@((ChangeEventArgs args) => DispatchActionAsync(new MisCheckboxInputAction(Model.IntentId, ToBool(args.Value))))"
-       @onchange="@((ChangeEventArgs args) => DispatchActionAsync(new MisCheckboxChangedAction(Model.IntentId, ToBool(args.Value))))"
        @attributes="AdditionalAttributes" />

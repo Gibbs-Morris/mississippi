@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -63,17 +62,14 @@ public sealed partial class MisSwitch : ComponentBase
         }
     }
 
-    private static bool ToChecked(
-        ChangeEventArgs args
+    private async Task OnCheckedChangedAsync(
+        bool isChecked
     )
     {
-        ArgumentNullException.ThrowIfNull(args);
-        if (args.Value is bool boolValue)
-        {
-            return boolValue;
-        }
-
-        return bool.TryParse(args.Value?.ToString(), out bool parsedValue) && parsedValue;
+        // Dispatch both input and changed actions for switch toggle
+        // (switches don't have the same input/change distinction as text inputs)
+        await DispatchActionAsync(new MisSwitchInputAction(Model.IntentId, isChecked));
+        await DispatchActionAsync(new MisSwitchChangedAction(Model.IntentId, isChecked));
     }
 
     private Task DispatchActionAsync(

@@ -62,20 +62,18 @@ public sealed partial class MisCheckbox : ComponentBase
         }
     }
 
+    private async Task OnCheckedChangedAsync(
+        bool isChecked
+    )
+    {
+        // Dispatch both input and changed actions for checkbox toggle
+        // (checkboxes don't have the same input/change distinction as text inputs)
+        await DispatchActionAsync(new MisCheckboxInputAction(Model.IntentId, isChecked));
+        await DispatchActionAsync(new MisCheckboxChangedAction(Model.IntentId, isChecked));
+    }
+
     private Task DispatchActionAsync(
         IMisCheckboxAction action
     ) =>
         OnAction.InvokeAsync(action);
-
-    private static bool ToBool(
-        object? value
-    )
-    {
-        if (value is bool boolValue)
-        {
-            return boolValue;
-        }
-
-        return bool.TryParse(value?.ToString(), out bool parsedValue) && parsedValue;
-    }
 }

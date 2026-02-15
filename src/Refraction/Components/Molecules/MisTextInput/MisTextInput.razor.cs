@@ -15,6 +15,8 @@ namespace Mississippi.Refraction.Components.Molecules;
 /// </remarks>
 public sealed partial class MisTextInput : ComponentBase
 {
+    private string lastCommittedValue = string.Empty;
+
     /// <summary>
     ///     Gets or sets additional HTML attributes applied to the root input element.
     /// </summary>
@@ -49,6 +51,33 @@ public sealed partial class MisTextInput : ComponentBase
             MisTextInputType.Url => "url",
             _ => "text",
         };
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
+
+    private Task OnValueInputAsync(
+        string? value
+    ) =>
+        DispatchActionAsync(new MisTextInputInputAction(Model.IntentId, value ?? string.Empty));
+
+    private async Task OnBlurAsync()
+    {
+        string currentValue = Model.Value ?? string.Empty;
+
+        // Fire changed action if value changed since last focus/commit
+        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        {
+            await DispatchActionAsync(new MisTextInputChangedAction(Model.IntentId, currentValue));
+            lastCommittedValue = currentValue;
+        }
+
+        // Always fire the blurred action
+        await DispatchActionAsync(new MisTextInputBlurredAction(Model.IntentId));
+    }
 
     private Task DispatchActionAsync(
         IMisTextInputAction action

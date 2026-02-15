@@ -9,7 +9,8 @@
            name="@Model.Name"
            role="switch"
            value="@Model.Value"
-           checked="@Model.IsChecked"
+           @bind:get="Model.IsChecked"
+           @bind:set="OnCheckedChangedAsync"
            aria-label="@Model.AriaLabel"
            title="@Model.Title"
            disabled="@Model.IsDisabled"
@@ -19,9 +20,7 @@
            @onkeydown="@((KeyboardEventArgs args) => DispatchActionAsync(new MisSwitchKeyDownAction(Model.IntentId, args.Key, args.Code, args.Repeat, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
            @onkeyup="@((KeyboardEventArgs args) => DispatchActionAsync(new MisSwitchKeyUpAction(Model.IntentId, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
            @onmousedown="@((MouseEventArgs args) => DispatchActionAsync(new MisSwitchPointerDownAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-           @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisSwitchPointerUpAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-           @oninput="@((ChangeEventArgs args) => DispatchActionAsync(new MisSwitchInputAction(Model.IntentId, ToChecked(args))))"
-           @onchange="@((ChangeEventArgs args) => DispatchActionAsync(new MisSwitchChangedAction(Model.IntentId, ToChecked(args))))" />
+           @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisSwitchPointerUpAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))" />
     <span class="mis-switch__track" aria-hidden="true">
         <span class="mis-switch__thumb"></span>
     </span>
