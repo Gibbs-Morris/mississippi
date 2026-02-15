@@ -32,6 +32,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 ## Design Principles
 
 - Blazor controlled inputs use `@bind:get`/`@bind:set` (plus `@bind:event` when needed), not `value`/`checked` + manual `@oninput`/`@onchange` sync.
+- Never commit directly to `main`; use pull requests, follow `GitVersion.yml` branch patterns (`topic/*` for small single-user work, `feature/*` for larger work, `hotfix/*` for urgent fixes), and prefer small logical commits (guide: ~5-10 files, flexible for coherent large refactors/renames).
 
 ## Technology Stack
 
