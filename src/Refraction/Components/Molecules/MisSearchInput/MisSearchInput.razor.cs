@@ -92,9 +92,4 @@ public sealed partial class MisSearchInput : ComponentBase
 
         await DispatchActionAsync(new MisSearchInputBlurredAction(Model.IntentId));
     }
-
-    private Task OnValueInputAsync(
-        string? value
-    ) =>
-        DispatchActionAsync(new MisSearchInputInputAction(Model.IntentId, value ?? string.Empty));
 }
