@@ -1,0 +1,12 @@
+@namespace Mississippi.Refraction.Components.Molecules
+
+<label class="@CssClass"
+       id="@Model.Id"
+       for="@Model.For"
+       @attributes="AdditionalAttributes">
+    @ChildContent
+    @if (Model.IsRequired)
+    {
+        <span class="mis-label__required" aria-hidden="true">*</span>
+    }
+</label>

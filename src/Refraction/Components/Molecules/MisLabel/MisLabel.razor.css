@@ -1,0 +1,28 @@
+.mis-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mis-spacing-xs, 0.25rem);
+    font-family: var(--mis-font-family, inherit);
+    font-size: var(--mis-font-size-sm, 0.875rem);
+    font-weight: var(--mis-font-weight-medium, 500);
+    color: var(--mis-color-text, #1f2937);
+    cursor: pointer;
+}
+
+.mis-label--error {
+    color: var(--mis-color-error, #dc2626);
+}
+
+.mis-label--warning {
+    color: var(--mis-color-warning, #d97706);
+}
+
+.mis-label--disabled {
+    color: var(--mis-color-text-disabled, #9ca3af);
+    cursor: not-allowed;
+}
+
+.mis-label__required {
+    color: var(--mis-color-error, #dc2626);
+    font-weight: var(--mis-font-weight-bold, 700);
+}
