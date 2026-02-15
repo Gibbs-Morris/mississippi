@@ -1,0 +1,30 @@
+@namespace Mississippi.Refraction.Components.Molecules
+
+<div class="@CssClass"
+     id="@Model.Id"
+     @attributes="AdditionalAttributes">
+    @if (Label is not null)
+    {
+        <div class="mis-form-field__label">
+            @Label
+        </div>
+    }
+
+    <div class="mis-form-field__control">
+        @ChildContent
+    </div>
+
+    @if (HelpText is not null || Validation is not null)
+    {
+        <div class="mis-form-field__footer">
+            @if (Validation is not null)
+            {
+                @Validation
+            }
+            @if (HelpText is not null)
+            {
+                @HelpText
+            }
+        </div>
+    }
+</div>

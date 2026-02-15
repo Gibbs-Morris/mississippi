@@ -1,0 +1,26 @@
+.mis-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mis-spacing-xs, 0.25rem);
+}
+
+.mis-form-field__label {
+    display: flex;
+    align-items: center;
+}
+
+.mis-form-field__control {
+    display: flex;
+    flex-direction: column;
+}
+
+.mis-form-field__footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mis-spacing-xs, 0.25rem);
+}
+
+.mis-form-field--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
