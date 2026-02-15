@@ -24,36 +24,38 @@
     justify-content: center;
     min-height: var(--mis-size-md, 2.5rem);
     padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
-    border: 1px solid color-mix(in srgb, var(--mis-bg-brand, #2563eb) 40%, transparent);
+    border: 1px solid var(--mis-border-decorative, #374151);
     border-radius: var(--mis-radius-lg, 0.5rem);
-    background: var(--mis-bg-brand, #2563eb);
-    color: var(--mis-text-inverse, #fff);
+    background: color-mix(in srgb, var(--mis-bg-elevated, #0f1929) 82%, var(--mis-bg-brand, #2563eb));
+    color: var(--mis-text-default, #e5e7eb);
     font-family: var(--mis-font-body);
     font-size: var(--mis-type-ui-size);
     font-weight: var(--mis-type-ui-weight);
     letter-spacing: 0.025em;
-    box-shadow: 0 0 12px -2px var(--mis-bg-brand, #2563eb);
+    box-shadow: none;
     transition:
         filter var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
         box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
-        transform var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
+        border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
+        background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out);
 }
 
 .mis-button:hover {
-    filter: brightness(1.15);
-    box-shadow: 0 0 20px -2px var(--mis-bg-brand, #2563eb);
-    transform: translateY(-1px);
+        filter: brightness(1.05);
+        border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 55%, var(--mis-border-default, #374151));
+        box-shadow: 0 0 10px -4px color-mix(in srgb, var(--mis-bg-brand, #2563eb) 55%, transparent);
 }
 
 .mis-button:active {
-    filter: brightness(0.95);
-    box-shadow: 0 0 6px -2px var(--mis-bg-brand, #2563eb);
-    transform: translateY(0);
+        filter: brightness(1);
+        background: var(--mis-bg-active, #13243a);
+        box-shadow: 0 0 8px -4px color-mix(in srgb, var(--mis-bg-brand, #2563eb) 45%, transparent);
 }
 
 .mis-button:focus-visible {
-    outline: var(--mis-focus-ring-width, 2px) solid var(--mis-border-focus, #2563eb);
+        outline: var(--mis-focus-ring-width, 2px) solid var(--mis-border-focus, #2563eb);
     outline-offset: var(--mis-focus-ring-offset, 2px);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--mis-border-focus, #2563eb) 18%, transparent);
 }
 
 .mis-button:disabled {
@@ -70,9 +72,9 @@
     width: 100%;
     min-height: var(--mis-size-md, 2.5rem);
     padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
-    border: 1px solid var(--mis-border-default, #374151);
+    border: 1px solid color-mix(in srgb, var(--mis-border-default, #374151) 80%, var(--mis-border-decorative, #223a66));
     border-radius: var(--mis-radius-md, 0.5rem);
-    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    background: color-mix(in srgb, var(--mis-bg-input, rgba(255, 255, 255, 0.05)) 92%, transparent);
     color: var(--mis-text-default, #e5e7eb);
     font-family: var(--mis-font-body);
     font-size: var(--mis-type-body-size);
@@ -89,13 +91,15 @@
 
 .text-input:hover {
     background: var(--mis-bg-input-hover, rgba(255, 255, 255, 0.08));
-    border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 50%, var(--mis-border-default, #374151));
+    border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 45%, var(--mis-border-default, #374151));
 }
 
 .text-input:focus {
     outline: none;
     border-color: var(--mis-border-focus, #3b82f6);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 25%, transparent);
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 28%, transparent),
+        0 0 12px -5px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 48%, transparent);
 }
 
 .text-input:disabled {
@@ -111,9 +115,9 @@
     width: 100%;
     min-height: calc(var(--mis-size-md, 2.5rem) * 1.5);
     padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
-    border: 1px solid var(--mis-border-default, #374151);
+    border: 1px solid color-mix(in srgb, var(--mis-border-default, #374151) 80%, var(--mis-border-decorative, #223a66));
     border-radius: var(--mis-radius-md, 0.5rem);
-    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    background: color-mix(in srgb, var(--mis-bg-input, rgba(255, 255, 255, 0.05)) 92%, transparent);
     color: var(--mis-text-default, #e5e7eb);
     font-family: var(--mis-font-body);
     font-size: var(--mis-type-body-size);
@@ -131,13 +135,15 @@
 
 .mis-textarea:hover {
     background: var(--mis-bg-input-hover, rgba(255, 255, 255, 0.08));
-    border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 50%, var(--mis-border-default, #374151));
+    border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 45%, var(--mis-border-default, #374151));
 }
 
 .mis-textarea:focus {
     outline: none;
     border-color: var(--mis-border-focus, #3b82f6);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 25%, transparent);
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 28%, transparent),
+        0 0 12px -5px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 48%, transparent);
 }
 
 .mis-textarea.mis-textarea--success {
@@ -178,9 +184,9 @@
     width: 100%;
     min-height: var(--mis-size-md, 2.5rem);
     padding: var(--mis-space-sm, 0.5rem) var(--mis-space-md, 1rem);
-    border: 1px solid var(--mis-border-default, #374151);
+    border: 1px solid color-mix(in srgb, var(--mis-border-default, #374151) 80%, var(--mis-border-decorative, #223a66));
     border-radius: var(--mis-radius-md, 0.5rem);
-    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    background: color-mix(in srgb, var(--mis-bg-input, rgba(255, 255, 255, 0.05)) 92%, transparent);
     color: var(--mis-text-default, #e5e7eb);
     font-family: var(--mis-font-body);
     font-size: var(--mis-type-body-size);
@@ -192,13 +198,15 @@
 
 .mis-select:hover {
     background: var(--mis-bg-input-hover, rgba(255, 255, 255, 0.08));
-    border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 50%, var(--mis-border-default, #374151));
+    border-color: color-mix(in srgb, var(--mis-border-focus, #3b82f6) 45%, var(--mis-border-default, #374151));
 }
 
 .mis-select:focus {
     outline: none;
     border-color: var(--mis-border-focus, #3b82f6);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 25%, transparent);
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 28%, transparent),
+        0 0 12px -5px color-mix(in srgb, var(--mis-border-focus, #3b82f6) 48%, transparent);
 }
 
 .mis-select.mis-select--success {
@@ -237,9 +245,9 @@
 .mis-checkbox {
     inline-size: 1rem;
     block-size: 1rem;
-    border: 1px solid var(--mis-border-default, #374151);
+    border: 1px solid color-mix(in srgb, var(--mis-border-default, #374151) 85%, var(--mis-border-decorative, #223a66));
     border-radius: var(--mis-radius-sm, 0.375rem);
-    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    background: color-mix(in srgb, var(--mis-bg-input, rgba(255, 255, 255, 0.05)) 90%, transparent);
     accent-color: var(--mis-bg-brand, #00a7ff);
     transition:
         border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
@@ -291,9 +299,9 @@
 .mis-radio {
     inline-size: 1rem;
     block-size: 1rem;
-    border: 1px solid var(--mis-border-default, #374151);
+    border: 1px solid color-mix(in srgb, var(--mis-border-default, #374151) 85%, var(--mis-border-decorative, #223a66));
     border-radius: 50%;
-    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    background: color-mix(in srgb, var(--mis-bg-input, rgba(255, 255, 255, 0.05)) 90%, transparent);
     accent-color: var(--mis-bg-brand, #00a7ff);
     transition:
         border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
@@ -335,8 +343,8 @@
 /* ── Switch ─────────────────────────────────────────────── */
 
 .mis-switch__track {
-    border: 1px solid var(--mis-border-default, #374151);
-    background: var(--mis-bg-input, rgba(255, 255, 255, 0.05));
+    border: 1px solid color-mix(in srgb, var(--mis-border-default, #374151) 85%, var(--mis-border-decorative, #223a66));
+    background: color-mix(in srgb, var(--mis-bg-input, rgba(255, 255, 255, 0.05)) 90%, transparent);
     transition:
         border-color var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
         box-shadow var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
@@ -345,7 +353,7 @@
 
 .mis-switch__thumb {
     background: var(--mis-bg-input-hover, rgba(255, 255, 255, 0.18));
-    box-shadow: 0 0 8px -2px color-mix(in srgb, var(--mis-bg-brand, #00a7ff) 65%, transparent);
+    box-shadow: none;
     transition:
         transform var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
         background var(--mis-duration-fast, 150ms) var(--mis-ease-out, ease-out),
@@ -354,8 +362,8 @@
 
 .mis-switch__input:checked + .mis-switch__track {
     border-color: var(--mis-bg-brand, #00a7ff);
-    background: color-mix(in srgb, var(--mis-bg-brand, #00a7ff) 30%, rgba(255, 255, 255, 0.05));
-    box-shadow: 0 0 10px -2px color-mix(in srgb, var(--mis-bg-brand, #00a7ff) 50%, transparent);
+    background: color-mix(in srgb, var(--mis-bg-brand, #00a7ff) 24%, var(--mis-bg-active, #13243a));
+    box-shadow: 0 0 8px -3px color-mix(in srgb, var(--mis-bg-brand, #00a7ff) 40%, transparent);
 }
 
 .mis-switch__input:focus-visible + .mis-switch__track {

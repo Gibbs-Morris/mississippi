@@ -109,6 +109,7 @@
     --mis-bg-default: #f4f9ff;
     --mis-bg-muted: #eaf2ff;
     --mis-bg-elevated: #ffffff;
+    --mis-bg-active: #eef6ff;
     --mis-bg-brand: #00a7ff;
     --mis-bg-accent: #2bd9ff;
     --mis-bg-success: #22b573;
@@ -138,7 +139,7 @@
 
     /* ── Input surfaces (frosted light) ──────────────────── */
     --mis-bg-input: rgba(255, 255, 255, 0.88);
-    --mis-bg-input-hover: rgba(255, 255, 255, 0.98);
+    --mis-bg-input-hover: rgba(255, 255, 255, 0.96);
 
     /* ── Radius (generous for Luminous) ──────────────────── */
     --mis-radius-sm: 0.375rem;
@@ -146,9 +147,9 @@
     --mis-radius-lg: 0.75rem;
 
     /* ── Shadow (subtle glow) ────────────────────────────── */
-    --mis-shadow-sm: 0 1px 3px 0 rgb(8 32 64 / 0.14), 0 0 8px -2px rgb(0 167 255 / 0.18);
-    --mis-shadow-md: 0 8px 18px -8px rgb(8 32 64 / 0.24), 0 0 14px -4px rgb(0 167 255 / 0.22);
-    --mis-shadow-glow: 0 0 16px -4px rgb(0 167 255 / 0.38);
+    --mis-shadow-sm: 0 1px 3px 0 rgb(8 32 64 / 0.12), 0 0 6px -2px rgb(0 167 255 / 0.14);
+    --mis-shadow-md: 0 8px 18px -8px rgb(8 32 64 / 0.2), 0 0 10px -4px rgb(0 167 255 / 0.18);
+    --mis-shadow-glow: 0 0 12px -4px rgb(0 167 255 / 0.3);
 
     /* ── Focus ───────────────────────────────────────────── */
     --mis-focus-ring-width: 2px;
@@ -179,9 +180,10 @@
 
 /* Explicit user preference */
 [data-theme-mode="dark"] {
-    --mis-bg-default: #05070b;
-    --mis-bg-muted: #0a0f1a;
-    --mis-bg-elevated: #0f1929;
+    --mis-bg-default: #030406;
+    --mis-bg-muted: #070b12;
+    --mis-bg-elevated: #0c1422;
+    --mis-bg-active: #13243a;
     --mis-bg-brand: #00a7ff;
     --mis-bg-accent: #2bd9ff;
     --mis-bg-success: #22b573;
@@ -190,9 +192,9 @@
     --mis-bg-info: #00b7ff;
 
     --mis-text-default: #eaf2ff;
-    --mis-text-muted: #a8c0e0;
-    --mis-text-tertiary: #728eaf;
-    --mis-text-disabled: #778da9;
+    --mis-text-muted: #9eb6d6;
+    --mis-text-tertiary: #6884a6;
+    --mis-text-disabled: #6f86a3;
     --mis-text-inverse: #05070b;
     --mis-text-brand: #00a7ff;
     --mis-text-success: #46d390;
@@ -200,27 +202,28 @@
     --mis-text-error: #ff7a50;
     --mis-text-info: #2bd9ff;
 
-    --mis-border-default: #576f96;
-    --mis-border-decorative: #223a66;
-    --mis-border-interactive: #576f96;
+    --mis-border-default: #4b6288;
+    --mis-border-decorative: #1a2e50;
+    --mis-border-interactive: #6683b0;
     --mis-border-focus: #00b7ff;
     --mis-border-error: #ff4d1a;
     --mis-border-warning: #ff9a2f;
 
-    --mis-bg-input: rgb(15 25 41 / 0.78);
-    --mis-bg-input-hover: rgb(22 37 61 / 0.9);
+    --mis-bg-input: rgb(12 20 34 / 0.76);
+    --mis-bg-input-hover: rgb(20 34 56 / 0.88);
 
-    --mis-shadow-sm: 0 0 10px -2px rgb(0 167 255 / 0.34);
-    --mis-shadow-md: 0 0 18px -3px rgb(0 167 255 / 0.42);
-    --mis-shadow-glow: 0 0 22px -4px rgb(0 167 255 / 0.5);
+    --mis-shadow-sm: 0 0 8px -2px rgb(0 167 255 / 0.24);
+    --mis-shadow-md: 0 0 14px -3px rgb(0 167 255 / 0.3);
+    --mis-shadow-glow: 0 0 18px -4px rgb(0 167 255 / 0.38);
 }
 
 /* OS preference fallback (only when no explicit choice) */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme-mode]) {
-        --mis-bg-default: #05070b;
-        --mis-bg-muted: #0a0f1a;
-        --mis-bg-elevated: #0f1929;
+        --mis-bg-default: #030406;
+        --mis-bg-muted: #070b12;
+        --mis-bg-elevated: #0c1422;
+        --mis-bg-active: #13243a;
         --mis-bg-brand: #00a7ff;
         --mis-bg-accent: #2bd9ff;
         --mis-bg-success: #22b573;
@@ -229,9 +232,9 @@
         --mis-bg-info: #00b7ff;
 
         --mis-text-default: #eaf2ff;
-        --mis-text-muted: #a8c0e0;
-        --mis-text-tertiary: #728eaf;
-        --mis-text-disabled: #778da9;
+        --mis-text-muted: #9eb6d6;
+        --mis-text-tertiary: #6884a6;
+        --mis-text-disabled: #6f86a3;
         --mis-text-inverse: #05070b;
         --mis-text-brand: #00a7ff;
         --mis-text-success: #46d390;
@@ -239,19 +242,19 @@
         --mis-text-error: #ff7a50;
         --mis-text-info: #2bd9ff;
 
-        --mis-border-default: #576f96;
-        --mis-border-decorative: #223a66;
-        --mis-border-interactive: #576f96;
+        --mis-border-default: #4b6288;
+        --mis-border-decorative: #1a2e50;
+        --mis-border-interactive: #6683b0;
         --mis-border-focus: #00b7ff;
         --mis-border-error: #ff4d1a;
         --mis-border-warning: #ff9a2f;
 
-        --mis-bg-input: rgb(15 25 41 / 0.78);
-        --mis-bg-input-hover: rgb(22 37 61 / 0.9);
+        --mis-bg-input: rgb(12 20 34 / 0.76);
+        --mis-bg-input-hover: rgb(20 34 56 / 0.88);
 
-        --mis-shadow-sm: 0 0 10px -2px rgb(0 167 255 / 0.34);
-        --mis-shadow-md: 0 0 18px -3px rgb(0 167 255 / 0.42);
-        --mis-shadow-glow: 0 0 22px -4px rgb(0 167 255 / 0.5);
+        --mis-shadow-sm: 0 0 8px -2px rgb(0 167 255 / 0.24);
+        --mis-shadow-md: 0 0 14px -3px rgb(0 167 255 / 0.3);
+        --mis-shadow-glow: 0 0 18px -4px rgb(0 167 255 / 0.38);
     }
 }
 
@@ -265,6 +268,7 @@
     --mis-bg-default: #000000;
     --mis-bg-muted: #1a1a1a;
     --mis-bg-elevated: #2a2a2a;
+    --mis-bg-active: #0f1b2a;
     --mis-bg-brand: #00b7ff;
     --mis-bg-accent: #2bd9ff;
     --mis-bg-success: #46d390;
@@ -305,6 +309,7 @@
         --mis-bg-default: #000000;
         --mis-bg-muted: #1a1a1a;
         --mis-bg-elevated: #2a2a2a;
+        --mis-bg-active: #0f1b2a;
         --mis-bg-brand: #00b7ff;
         --mis-bg-accent: #2bd9ff;
         --mis-bg-success: #46d390;

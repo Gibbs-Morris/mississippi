@@ -48,6 +48,9 @@ body {
     line-height: var(--mis-type-body-lh);
     color: var(--mis-text-default);
     background-color: var(--mis-bg-default);
+    background-image:
+        radial-gradient(120rem 80rem at 50% -20%, color-mix(in srgb, var(--mis-bg-brand) 12%, transparent), transparent 58%),
+        radial-gradient(90rem 70rem at 120% 120%, color-mix(in srgb, var(--mis-bg-accent) 10%, transparent), transparent 60%);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -242,7 +245,7 @@ body {
 
 :where(a:hover) {
     text-decoration-color: var(--mis-text-brand);
-    text-shadow: 0 0 8px color-mix(in srgb, var(--mis-text-brand) 30%, transparent);
+    text-shadow: 0 0 5px color-mix(in srgb, var(--mis-text-brand) 22%, transparent);
 }
 
 :where(a:visited) {
@@ -270,7 +273,7 @@ body {
     height: 1px;
     background: var(--mis-border-decorative);
     margin-block: var(--mis-space-xl);
-    box-shadow: var(--mis-shadow-glow);
+    box-shadow: none;
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -283,11 +286,11 @@ body {
     margin-inline: 0;
     padding: var(--mis-space-md) var(--mis-space-lg);
     border-inline-start: 3px solid var(--mis-border-focus);
-    background: color-mix(in srgb, var(--mis-bg-elevated) 60%, transparent);
+    background: color-mix(in srgb, var(--mis-bg-elevated) 78%, transparent);
     border-radius: 0 var(--mis-radius-md) var(--mis-radius-md) 0;
     color: var(--mis-text-muted);
     font-style: italic;
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(8px);
 }
 
 :where(blockquote > :last-child) {
@@ -329,13 +332,13 @@ body {
     line-height: var(--mis-type-code-lh);
     margin-block: var(--mis-space-md);
     padding: var(--mis-space-md);
-    background: var(--mis-bg-muted);
+    background: color-mix(in srgb, var(--mis-bg-elevated) 88%, var(--mis-bg-muted));
     border: 1px solid color-mix(in srgb, var(--mis-border-decorative) 40%, transparent);
     border-radius: var(--mis-radius-md);
     overflow-x: auto;
     color: var(--mis-text-default);
     tab-size: 4;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(4px);
 }
 
 :where(pre code) {
@@ -475,8 +478,8 @@ body {
     padding: var(--mis-space-sm) var(--mis-space-md);
     border: 1px solid var(--mis-border-decorative);
     border-radius: var(--mis-radius-md);
-    background: color-mix(in srgb, var(--mis-bg-elevated) 40%, transparent);
-    backdrop-filter: blur(6px);
+    background: color-mix(in srgb, var(--mis-bg-elevated) 72%, transparent);
+    backdrop-filter: blur(4px);
 }
 
 :where(details[open]) {
