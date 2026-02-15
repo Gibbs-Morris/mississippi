@@ -1,0 +1,41 @@
+@namespace Mississippi.Refraction.Components.Molecules
+@using Mississippi.Refraction.Components.Molecules.MisSearchInputActions
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="@ContainerCssClass">
+    <svg class="mis-search-input__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+
+    <input class="mis-search-input__input"
+           id="@Model.Id"
+           name="@Model.Name"
+           type="search"
+           value="@Model.Value"
+           placeholder="@Model.Placeholder"
+           aria-label="@Model.AriaLabel"
+           title="@Model.Title"
+           disabled="@Model.IsDisabled"
+           @onfocus="@(() => DispatchActionAsync(new MisSearchInputFocusedAction(Model.IntentId)))"
+           @onblur="@(() => DispatchActionAsync(new MisSearchInputBlurredAction(Model.IntentId)))"
+           @oninput="@((ChangeEventArgs args) => DispatchActionAsync(new MisSearchInputInputAction(Model.IntentId, args.Value?.ToString() ?? string.Empty)))"
+           @onchange="@((ChangeEventArgs args) => DispatchActionAsync(new MisSearchInputChangedAction(Model.IntentId, args.Value?.ToString() ?? string.Empty)))"
+           @onkeydown="@HandleKeyDownAsync"
+           @attributes="AdditionalAttributes" />
+
+    @if (!string.IsNullOrEmpty(Model.Value))
+    {
+        <button type="button"
+                class="mis-search-input__clear"
+                tabindex="-1"
+                disabled="@Model.IsDisabled"
+                aria-label="Clear search"
+                @onclick="@(() => DispatchActionAsync(new MisSearchInputClearedAction(Model.IntentId)))">
+            <svg class="mis-search-input__clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    }
+</div>
