@@ -12,7 +12,9 @@
            name="@Model.Name"
            type="search"
            @bind:get="Model.Value"
-               @bind:set="@((string? value) => DispatchActionAsync(new MisSearchInputInputAction(Model.IntentId, value ?? string.Empty)))"
+           @bind:set="@((
+                          string? value
+                      ) => DispatchActionAsync(new MisSearchInputInputAction(Model.IntentId, value ?? string.Empty)))"
            @bind:event="oninput"
            placeholder="@Model.Placeholder"
            aria-label="@Model.AriaLabel"
