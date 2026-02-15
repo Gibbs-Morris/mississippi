@@ -69,11 +69,11 @@ public sealed partial class MisCheckboxGroup : ComponentBase
         }
     }
 
-    private Task HandleCheckboxChangeAsync(
-        string value
+    private Task OnOptionCheckedChangedAsync(
+        string value,
+        bool isChecked
     )
     {
-        bool isChecked = !Model.Values.Contains(value);
         HashSet<string> newValues = new HashSet<string>(Model.Values);
 
         if (isChecked)
@@ -87,11 +87,6 @@ public sealed partial class MisCheckboxGroup : ComponentBase
 
         return DispatchActionAsync(new MisCheckboxGroupChangedAction(Model.IntentId, value, isChecked, newValues));
     }
-
-    private bool IsSelected(
-        string value
-    ) =>
-        Model.Values.Contains(value);
 
     private Task DispatchActionAsync(
         IMisCheckboxGroupAction action

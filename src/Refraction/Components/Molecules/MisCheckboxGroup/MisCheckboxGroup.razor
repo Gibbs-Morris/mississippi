@@ -14,11 +14,13 @@
                    type="checkbox"
                    name="@CheckboxName"
                    value="@option.Value"
-                   checked="@IsSelected(option.Value)"
+                   @bind:get="Model.Values.Contains(option.Value)"
+                   @bind:set="@((bool isChecked) => OnOptionCheckedChangedAsync(option.Value, isChecked))"
+                   @bind:event="onchange"
                    disabled="@(Model.IsDisabled || option.IsDisabled)"
                    @onfocus="@(() => DispatchActionAsync(new MisCheckboxGroupFocusedAction(Model.IntentId, option.Value)))"
                    @onblur="@(() => DispatchActionAsync(new MisCheckboxGroupBlurredAction(Model.IntentId, option.Value)))"
-                   @onchange="@(() => HandleCheckboxChangeAsync(option.Value))" />
+                    />
             <span class="mis-checkbox-option__checkmark"></span>
             <span class="mis-checkbox-option__label">@option.Label</span>
         </label>

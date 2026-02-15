@@ -14,8 +14,9 @@
             <input class="mis-radio"
                    type="radio"
                    name="@RadioName"
-                   value="@option.Value"
-                   checked="@IsSelected(option.Value)"
+                   @bind:get="IsSelected(option.Value)"
+                   @bind:set="@((bool isChecked) => OnOptionCheckedChangedAsync(option.Value, isChecked))"
+                     @bind:event="onchange"
                    disabled="@(Model.IsDisabled || option.IsDisabled)"
                    required="@Model.IsRequired"
                    @onfocus="@(() => DispatchActionAsync(new MisRadioGroupFocusedAction(Model.IntentId, option.Value)))"
@@ -23,9 +24,7 @@
                    @onkeydown="@((KeyboardEventArgs args) => DispatchActionAsync(new MisRadioGroupKeyDownAction(Model.IntentId, option.Value, args.Key, args.Code, args.Repeat, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
                    @onkeyup="@((KeyboardEventArgs args) => DispatchActionAsync(new MisRadioGroupKeyUpAction(Model.IntentId, option.Value, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
                    @onmousedown="@((MouseEventArgs args) => DispatchActionAsync(new MisRadioGroupPointerDownAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-                   @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisRadioGroupPointerUpAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-                   @oninput="@((ChangeEventArgs args) => DispatchActionAsync(new MisRadioGroupInputAction(Model.IntentId, args.Value?.ToString() ?? string.Empty)))"
-                   @onchange="@((ChangeEventArgs args) => DispatchActionAsync(new MisRadioGroupChangedAction(Model.IntentId, args.Value?.ToString() ?? string.Empty)))" />
+                     @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisRadioGroupPointerUpAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))" />
             <span>@option.Label</span>
         </label>
     }

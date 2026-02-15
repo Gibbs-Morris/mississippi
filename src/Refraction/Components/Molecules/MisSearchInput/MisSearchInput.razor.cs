@@ -17,6 +17,8 @@ namespace Mississippi.Refraction.Components.Molecules;
 /// </remarks>
 public sealed partial class MisSearchInput : ComponentBase
 {
+    private string lastCommittedValue = string.Empty;
+
     /// <summary>
     ///     Gets or sets additional HTML attributes applied to the input element.
     /// </summary>
@@ -34,6 +36,13 @@ public sealed partial class MisSearchInput : ComponentBase
     /// </summary>
     [Parameter]
     public EventCallback<IMisSearchInputAction> OnAction { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
 
     private string ContainerCssClass
     {
@@ -65,6 +74,24 @@ public sealed partial class MisSearchInput : ComponentBase
         }
 
         return Task.CompletedTask;
+    }
+
+    private Task OnValueInputAsync(
+        string? value
+    ) =>
+        DispatchActionAsync(new MisSearchInputInputAction(Model.IntentId, value ?? string.Empty));
+
+    private async Task OnBlurAsync()
+    {
+        string currentValue = Model.Value ?? string.Empty;
+
+        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        {
+            await DispatchActionAsync(new MisSearchInputChangedAction(Model.IntentId, currentValue));
+            lastCommittedValue = currentValue;
+        }
+
+        await DispatchActionAsync(new MisSearchInputBlurredAction(Model.IntentId));
     }
 
     private Task DispatchActionAsync(

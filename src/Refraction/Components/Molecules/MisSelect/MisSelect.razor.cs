@@ -16,6 +16,8 @@ namespace Mississippi.Refraction.Components.Molecules;
 /// </remarks>
 public sealed partial class MisSelect : ComponentBase
 {
+    private string lastCommittedValue = string.Empty;
+
     /// <summary>
     ///     Gets or sets additional HTML attributes applied to the root select element.
     /// </summary>
@@ -33,6 +35,13 @@ public sealed partial class MisSelect : ComponentBase
     /// </summary>
     [Parameter]
     public MisSelectViewModel Model { get; set; } = MisSelectViewModel.Default;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
 
     private bool HasPlaceholder =>
         !string.IsNullOrWhiteSpace(Model.Placeholder);
@@ -63,6 +72,24 @@ public sealed partial class MisSelect : ComponentBase
 
             return className;
         }
+    }
+
+    private Task OnValueInputAsync(
+        string? value
+    ) =>
+        DispatchActionAsync(new MisSelectInputAction(Model.IntentId, value ?? string.Empty));
+
+    private async Task OnBlurAsync()
+    {
+        string currentValue = Model.Value ?? string.Empty;
+
+        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        {
+            await DispatchActionAsync(new MisSelectChangedAction(Model.IntentId, currentValue));
+            lastCommittedValue = currentValue;
+        }
+
+        await DispatchActionAsync(new MisSelectBlurredAction(Model.IntentId));
     }
 
     private Task DispatchActionAsync(

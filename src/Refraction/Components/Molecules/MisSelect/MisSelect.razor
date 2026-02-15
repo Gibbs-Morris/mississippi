@@ -5,19 +5,19 @@
 <select class="@CssClass"
         id="@Model.Id"
         name="@Model.Name"
-        value="@Model.Value"
+    @bind:get="Model.Value"
+    @bind:set="OnValueInputAsync"
+    @bind:event="oninput"
         aria-label="@Model.AriaLabel"
         title="@Model.Title"
         disabled="@Model.IsDisabled"
         required="@Model.IsRequired"
         @onfocus="@(() => DispatchActionAsync(new MisSelectFocusedAction(Model.IntentId)))"
-        @onblur="@(() => DispatchActionAsync(new MisSelectBlurredAction(Model.IntentId)))"
+    @onblur="@OnBlurAsync"
         @onkeydown="@((KeyboardEventArgs args) => DispatchActionAsync(new MisSelectKeyDownAction(Model.IntentId, args.Key, args.Code, args.Repeat, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
         @onkeyup="@((KeyboardEventArgs args) => DispatchActionAsync(new MisSelectKeyUpAction(Model.IntentId, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
         @onmousedown="@((MouseEventArgs args) => DispatchActionAsync(new MisSelectPointerDownAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
         @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisSelectPointerUpAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-        @oninput="@((ChangeEventArgs args) => DispatchActionAsync(new MisSelectInputAction(Model.IntentId, args.Value?.ToString() ?? string.Empty)))"
-        @onchange="@((ChangeEventArgs args) => DispatchActionAsync(new MisSelectChangedAction(Model.IntentId, args.Value?.ToString() ?? string.Empty)))"
         @attributes="AdditionalAttributes">
     @if (HasPlaceholder)
     {

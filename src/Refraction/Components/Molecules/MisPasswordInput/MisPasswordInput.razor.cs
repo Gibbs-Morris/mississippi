@@ -16,6 +16,8 @@ namespace Mississippi.Refraction.Components.Molecules;
 /// </remarks>
 public sealed partial class MisPasswordInput : ComponentBase
 {
+    private string lastCommittedValue = string.Empty;
+
     /// <summary>
     ///     Gets or sets additional HTML attributes applied to the input element.
     /// </summary>
@@ -33,6 +35,13 @@ public sealed partial class MisPasswordInput : ComponentBase
     /// </summary>
     [Parameter]
     public EventCallback<IMisPasswordInputAction> OnAction { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
 
     private string ContainerCssClass
     {
@@ -72,6 +81,19 @@ public sealed partial class MisPasswordInput : ComponentBase
     private string InputType => Model.IsPasswordVisible ? "text" : "password";
 
     private string ToggleAriaLabel => Model.IsPasswordVisible ? "Hide password" : "Show password";
+
+    private async Task OnBlurAsync()
+    {
+        string currentValue = Model.Value ?? string.Empty;
+
+        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        {
+            await DispatchActionAsync(new MisPasswordInputChangedAction(Model.IntentId, currentValue));
+            lastCommittedValue = currentValue;
+        }
+
+        await DispatchActionAsync(new MisPasswordInputBlurredAction(Model.IntentId));
+    }
 
     private Task DispatchActionAsync(
         IMisPasswordInputAction action

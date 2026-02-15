@@ -16,6 +16,8 @@ namespace Mississippi.Refraction.Components.Molecules;
 /// </remarks>
 public sealed partial class MisTextarea : ComponentBase
 {
+    private string lastCommittedValue = string.Empty;
+
     /// <summary>
     ///     Gets or sets additional HTML attributes applied to the root textarea element.
     /// </summary>
@@ -33,6 +35,13 @@ public sealed partial class MisTextarea : ComponentBase
     /// </summary>
     [Parameter]
     public MisTextareaViewModel Model { get; set; } = MisTextareaViewModel.Default;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        lastCommittedValue = Model.Value ?? string.Empty;
+    }
 
     private int SafeRows =>
         Model.Rows <= 0 ? 1 : Model.Rows;
@@ -63,6 +72,24 @@ public sealed partial class MisTextarea : ComponentBase
 
             return className;
         }
+    }
+
+    private Task OnValueInputAsync(
+        string? value
+    ) =>
+        DispatchActionAsync(new MisTextareaInputAction(Model.IntentId, value ?? string.Empty));
+
+    private async Task OnBlurAsync()
+    {
+        string currentValue = Model.Value ?? string.Empty;
+
+        if (!string.Equals(currentValue, lastCommittedValue, System.StringComparison.Ordinal))
+        {
+            await DispatchActionAsync(new MisTextareaChangedAction(Model.IntentId, currentValue));
+            lastCommittedValue = currentValue;
+        }
+
+        await DispatchActionAsync(new MisTextareaBlurredAction(Model.IntentId));
     }
 
     private Task DispatchActionAsync(

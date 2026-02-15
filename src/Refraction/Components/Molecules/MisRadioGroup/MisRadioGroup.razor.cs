@@ -72,6 +72,21 @@ public sealed partial class MisRadioGroup : ComponentBase
     ) =>
         string.Equals(Model.Value, optionValue, System.StringComparison.Ordinal);
 
+    private async Task OnOptionCheckedChangedAsync(
+        string optionValue,
+        bool isChecked
+    )
+    {
+        if (!isChecked)
+        {
+            return;
+        }
+
+        string nextValue = optionValue;
+        await DispatchActionAsync(new MisRadioGroupInputAction(Model.IntentId, nextValue));
+        await DispatchActionAsync(new MisRadioGroupChangedAction(Model.IntentId, nextValue));
+    }
+
     private Task DispatchActionAsync(
         IMisRadioGroupAction action
     ) =>
