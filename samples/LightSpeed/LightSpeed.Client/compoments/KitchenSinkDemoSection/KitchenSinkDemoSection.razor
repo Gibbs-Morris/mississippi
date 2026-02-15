@@ -1,0 +1,65 @@
+@namespace LightSpeed.Client.Compoments
+
+<section class="ks-demo-section">
+    @* ── Header ──────────────────────────────────────────────── *@
+    <header class="ks-demo-header">
+        <div class="ks-demo-title-row">
+            <h2 class="ks-demo-title">@Title</h2>
+            @if (!string.IsNullOrWhiteSpace(ComponentTag))
+            {
+                <code class="ks-demo-tag">&lt;@ComponentTag /&gt;</code>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <p class="ks-demo-description">@Description</p>
+        }
+    </header>
+
+    @* ── Body: Preview + Properties ──────────────────────────── *@
+    <div class="ks-demo-body">
+        <div class="ks-demo-preview">
+            <span class="ks-demo-preview-label">Preview</span>
+            <div class="ks-demo-stage">
+                @ChildContent
+            </div>
+        </div>
+
+        @if (Properties is not null)
+        {
+            <aside class="ks-demo-properties">
+                <h3 class="ks-demo-properties-heading">Properties</h3>
+                <div class="ks-demo-properties-grid">
+                    @Properties
+                </div>
+            </aside>
+        }
+    </div>
+
+    @* ── Footer: Collapsible Events ──────────────────────────── *@
+    @if (Events is not null)
+    {
+        <footer class="ks-demo-footer">
+            <button type="button" class="ks-demo-events-toggle" @onclick="OnToggleEvents">
+                <span class="ks-demo-events-label">Events</span>
+                @if (EventCount > 0)
+                {
+                    <span class="ks-demo-events-badge">@EventCount</span>
+                }
+                <span class="ks-demo-events-chevron @(IsEventsOpen ? "ks-demo-events-chevron--open" : "")">&#9654;</span>
+            </button>
+
+            @if (OnClearEvents.HasDelegate)
+            {
+                <button type="button" class="ks-demo-events-clear" @onclick="OnClearEvents">Clear</button>
+            }
+
+            @if (IsEventsOpen)
+            {
+                <div class="ks-demo-events-panel">
+                    @Events
+                </div>
+            }
+        </footer>
+    }
+</section>

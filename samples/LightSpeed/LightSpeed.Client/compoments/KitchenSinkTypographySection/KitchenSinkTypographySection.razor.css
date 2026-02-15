@@ -1,0 +1,31 @@
+.ks-typography-showcase {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mis-space-lg);
+    width: 100%;
+}
+
+.ks-typography-group {
+    display: flex;
+    align-items: baseline;
+    gap: var(--mis-space-lg);
+    padding: var(--mis-space-sm) 0;
+    border-bottom: 1px solid var(--mis-border-subtle);
+}
+
+.ks-typography-group:last-child {
+    border-bottom: none;
+}
+
+.ks-typography-label {
+    flex: 0 0 100px;
+    font-family: var(--mis-font-mono);
+    font-size: var(--mis-type-code-sm);
+    color: var(--mis-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ks-typography-group > :not(.ks-typography-label) {
+    flex: 1;
+}

@@ -1,0 +1,363 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   KitchenSinkDemoSection — Scoped Styles
+   Uses Luminous theme tokens for a cohesive futuristic look.
+   Optimized for 1920×1080 desktop viewport.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Section Card ──────────────────────────────────────────────────── */
+.ks-demo-section {
+    background: var(--mis-bg-elevated);
+    border: 1px solid var(--mis-border-decorative);
+    border-radius: var(--mis-radius-lg);
+    box-shadow: var(--mis-shadow-sm);
+    overflow: hidden;
+    transition: box-shadow var(--mis-duration-normal) var(--mis-ease-out);
+}
+
+.ks-demo-section:hover {
+    box-shadow: var(--mis-shadow-md);
+}
+
+/* ── Header ────────────────────────────────────────────────────────── */
+.ks-demo-header {
+    padding: var(--mis-space-lg) var(--mis-space-xl);
+    border-bottom: 1px solid var(--mis-border-decorative);
+    background: linear-gradient(135deg, var(--mis-bg-elevated) 0%, var(--mis-bg-muted) 100%);
+}
+
+.ks-demo-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--mis-space-md);
+    flex-wrap: wrap;
+}
+
+.ks-demo-title {
+    margin: 0;
+    font-family: var(--mis-font-heading);
+    font-size: var(--mis-type-h2-size);
+    font-weight: var(--mis-type-h2-weight);
+    line-height: var(--mis-type-h2-lh);
+    color: var(--mis-text-default);
+    letter-spacing: var(--mis-tracking-wide);
+}
+
+.ks-demo-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    font-family: var(--mis-font-mono);
+    font-size: var(--mis-type-code-sm-size);
+    font-weight: var(--mis-type-code-sm-weight);
+    line-height: var(--mis-type-code-sm-lh);
+    color: var(--mis-text-brand);
+    background: rgba(0, 102, 255, 0.08);
+    border: 1px solid rgba(0, 102, 255, 0.18);
+    border-radius: var(--mis-radius-sm);
+    letter-spacing: var(--mis-tracking-tight);
+    white-space: nowrap;
+}
+
+.ks-demo-description {
+    margin: var(--mis-space-xs) 0 0;
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-size);
+    font-weight: var(--mis-type-body-weight);
+    line-height: var(--mis-type-body-lh);
+    color: var(--mis-text-muted);
+}
+
+/* ── Body: Two-column layout ───────────────────────────────────────── */
+.ks-demo-body {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    min-height: 240px;
+}
+
+/* ── Preview stage (left) ──────────────────────────────────────────── */
+.ks-demo-preview {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--mis-space-xl);
+    background:
+        radial-gradient(circle at 50% 50%, rgba(0, 167, 255, 0.03) 0%, transparent 70%),
+        var(--mis-bg-elevated);
+}
+
+.ks-demo-preview-label {
+    position: absolute;
+    top: var(--mis-space-sm);
+    left: var(--mis-space-md);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-caption-size);
+    font-weight: var(--mis-type-caption-weight);
+    color: var(--mis-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    user-select: none;
+}
+
+.ks-demo-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    min-width: 200px;
+    padding: var(--mis-space-lg);
+    border: 2px dashed var(--mis-border-decorative);
+    border-radius: var(--mis-radius-md);
+    background: var(--mis-bg-default);
+    transition: border-color var(--mis-duration-fast) var(--mis-ease-out);
+}
+
+.ks-demo-stage:hover {
+    border-color: var(--mis-border-interactive);
+}
+
+/* ── Properties panel (right) ──────────────────────────────────────── */
+.ks-demo-properties {
+    padding: var(--mis-space-lg) var(--mis-space-xl);
+    border-left: 1px solid var(--mis-border-decorative);
+    background: var(--mis-bg-muted);
+    overflow-y: auto;
+    max-height: 480px;
+}
+
+.ks-demo-properties-heading {
+    margin: 0 0 var(--mis-space-md);
+    font-family: var(--mis-font-heading);
+    font-size: var(--mis-type-h3-size);
+    font-weight: var(--mis-type-h3-weight);
+    line-height: var(--mis-type-h3-lh);
+    color: var(--mis-text-default);
+    letter-spacing: var(--mis-tracking-wide);
+}
+
+.ks-demo-properties-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mis-space-sm);
+}
+
+/* ── Property row styling ──────────────────────────────────────────── */
+.ks-demo-properties-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.ks-demo-properties-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-ui-size);
+    font-weight: var(--mis-type-ui-weight);
+    color: var(--mis-text-default);
+    line-height: var(--mis-type-ui-lh);
+}
+
+.ks-demo-properties-grid input[type="text"],
+.ks-demo-properties-grid input[type="number"],
+.ks-demo-properties-grid input:not([type]),
+.ks-demo-properties-grid select,
+.ks-demo-properties-grid textarea {
+    padding: 0.375rem 0.625rem;
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-ui-size);
+    color: var(--mis-text-default);
+    background: var(--mis-bg-input);
+    border: 1px solid var(--mis-border-default);
+    border-radius: var(--mis-radius-sm);
+    outline: none;
+    transition:
+        border-color var(--mis-duration-fast) var(--mis-ease-out),
+        box-shadow var(--mis-duration-fast) var(--mis-ease-out);
+}
+
+.ks-demo-properties-grid input:focus,
+.ks-demo-properties-grid select:focus,
+.ks-demo-properties-grid textarea:focus {
+    border-color: var(--mis-border-focus);
+    box-shadow: 0 0 0 var(--mis-focus-ring-width) rgba(0, 183, 255, 0.25);
+}
+
+/* Checkbox/toggle rows: horizontal */
+.ks-demo-properties-grid label:has(> input[type="checkbox"]) {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--mis-space-sm);
+    cursor: pointer;
+    padding: 0.25rem 0;
+}
+
+.ks-demo-properties-grid input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--mis-bg-brand);
+    cursor: pointer;
+}
+
+/* ── Property rows using Refraction components ─────────────────────── */
+.ks-prop-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ks-prop-label {
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-caption-size);
+    font-weight: var(--mis-font-weight-medium);
+    color: var(--mis-text-secondary);
+    letter-spacing: var(--mis-tracking-wide);
+}
+
+/* Toggle rows: horizontal layout with switch on right */
+.ks-prop-row--toggle {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+}
+
+/* Override Refraction component sizing for property panel context */
+.ks-demo-properties-grid ::deep .mis-text-input,
+.ks-demo-properties-grid ::deep .mis-select {
+    width: 100%;
+}
+
+.ks-demo-properties-grid ::deep .mis-switch {
+    flex-shrink: 0;
+}
+
+/* ── Events footer ─────────────────────────────────────────────────── */
+.ks-demo-footer {
+    position: relative;
+    border-top: 1px solid var(--mis-border-decorative);
+    background: var(--mis-bg-muted);
+}
+
+.ks-demo-events-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--mis-space-sm);
+    width: 100%;
+    padding: var(--mis-space-sm) var(--mis-space-xl);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-ui-size);
+    font-weight: var(--mis-type-ui-weight);
+    color: var(--mis-text-default);
+    text-align: left;
+    transition: background var(--mis-duration-fast) var(--mis-ease-out);
+}
+
+.ks-demo-events-toggle:hover {
+    background: rgba(0, 167, 255, 0.05);
+}
+
+.ks-demo-events-label {
+    font-weight: var(--mis-font-weight-medium);
+    letter-spacing: var(--mis-tracking-wide);
+    text-transform: uppercase;
+    font-size: var(--mis-type-caption-size);
+}
+
+.ks-demo-events-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.375rem;
+    height: 1.375rem;
+    padding: 0 0.375rem;
+    font-family: var(--mis-font-mono);
+    font-size: 0.6875rem;
+    font-weight: var(--mis-font-weight-semibold);
+    color: var(--mis-text-inverse);
+    background: var(--mis-bg-brand);
+    border-radius: var(--mis-radius-full);
+    line-height: 1;
+}
+
+.ks-demo-events-chevron {
+    display: inline-flex;
+    font-size: 0.625rem;
+    color: var(--mis-text-tertiary);
+    transition: transform var(--mis-duration-fast) var(--mis-ease-out);
+    margin-left: auto;
+}
+
+.ks-demo-events-chevron--open {
+    transform: rotate(90deg);
+}
+
+.ks-demo-events-clear {
+    position: absolute;
+    top: var(--mis-space-sm);
+    right: var(--mis-space-xl);
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--mis-border-decorative);
+    border-radius: var(--mis-radius-sm);
+    background: var(--mis-bg-elevated);
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-caption-size);
+    font-weight: var(--mis-font-weight-medium);
+    color: var(--mis-text-muted);
+    cursor: pointer;
+    transition:
+        border-color var(--mis-duration-fast) var(--mis-ease-out),
+        color var(--mis-duration-fast) var(--mis-ease-out);
+}
+
+.ks-demo-events-clear:hover {
+    border-color: var(--mis-border-interactive);
+    color: var(--mis-text-default);
+}
+
+/* ── Events panel ──────────────────────────────────────────────────── */
+.ks-demo-events-panel {
+    padding: 0 var(--mis-space-xl) var(--mis-space-md);
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.ks-demo-events-panel ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.ks-demo-events-panel li {
+    padding: 0.375rem 0.75rem;
+    font-family: var(--mis-font-mono);
+    font-size: var(--mis-type-code-sm-size);
+    font-weight: var(--mis-type-code-sm-weight);
+    line-height: var(--mis-type-code-sm-lh);
+    color: var(--mis-text-default);
+    background: var(--mis-bg-elevated);
+    border-radius: var(--mis-radius-sm);
+    border-left: 3px solid var(--mis-bg-brand);
+    word-break: break-all;
+}
+
+.ks-demo-events-panel li:nth-child(even) {
+    background: var(--mis-bg-default);
+}
+
+.ks-demo-events-panel p {
+    margin: 0;
+    padding: 0.375rem 0;
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-ui-size);
+    color: var(--mis-text-tertiary);
+    font-style: italic;
+}
