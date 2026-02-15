@@ -1,5 +1,5 @@
-@using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions
 @using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Refraction.Components.Molecules.MisRadioGroupActions
 @namespace Mississippi.Refraction.Components.Molecules
 
 <div class="@GroupCssClass"
@@ -23,10 +23,18 @@
                    required="@Model.IsRequired"
                    @onfocus="@(() => DispatchActionAsync(new MisRadioGroupFocusedAction(Model.IntentId, option.Value)))"
                    @onblur="@(() => DispatchActionAsync(new MisRadioGroupBlurredAction(Model.IntentId, option.Value)))"
-                   @onkeydown="@((KeyboardEventArgs args) => DispatchActionAsync(new MisRadioGroupKeyDownAction(Model.IntentId, option.Value, args.Key, args.Code, args.Repeat, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-                   @onkeyup="@((KeyboardEventArgs args) => DispatchActionAsync(new MisRadioGroupKeyUpAction(Model.IntentId, option.Value, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-                   @onmousedown="@((MouseEventArgs args) => DispatchActionAsync(new MisRadioGroupPointerDownAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-                   @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisRadioGroupPointerUpAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"/>
+                   @onkeydown="@((
+                                   KeyboardEventArgs args
+                               ) => DispatchActionAsync(new MisRadioGroupKeyDownAction(Model.IntentId, option.Value, args.Key, args.Code, args.Repeat, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+                   @onkeyup="@((
+                                 KeyboardEventArgs args
+                             ) => DispatchActionAsync(new MisRadioGroupKeyUpAction(Model.IntentId, option.Value, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+                   @onmousedown="@((
+                                     MouseEventArgs args
+                                 ) => DispatchActionAsync(new MisRadioGroupPointerDownAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+                   @onmouseup="@((
+                                   MouseEventArgs args
+                               ) => DispatchActionAsync(new MisRadioGroupPointerUpAction(Model.IntentId, option.Value, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"/>
             <span>@option.Label</span>
         </label>
     }

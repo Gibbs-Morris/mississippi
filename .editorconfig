@@ -1,2 +1,5 @@
 [*.cs]
 dotnet_analyzer_diagnostic.severity = warning
+
+[*.razor]
+resharper_redundant_lambda_parameter_type_highlighting = none

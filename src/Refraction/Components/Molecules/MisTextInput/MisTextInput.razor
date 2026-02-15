@@ -1,5 +1,5 @@
-@using Mississippi.Refraction.Components.Molecules.MisTextInputActions
 @using Microsoft.AspNetCore.Components.Web
+@using Mississippi.Refraction.Components.Molecules.MisTextInputActions
 @namespace Mississippi.Refraction.Components.Molecules
 
 <input class="@CssClass"
@@ -17,8 +17,16 @@
        readonly="@Model.IsReadOnly"
        @onfocus="@(() => DispatchActionAsync(new MisTextInputFocusedAction(Model.IntentId)))"
        @onblur="@OnBlurAsync"
-       @onkeydown="@((KeyboardEventArgs args) => DispatchActionAsync(new MisTextInputKeyDownAction(Model.IntentId, args.Key, args.Code, args.Repeat, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-       @onkeyup="@((KeyboardEventArgs args) => DispatchActionAsync(new MisTextInputKeyUpAction(Model.IntentId, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-       @onmousedown="@((MouseEventArgs args) => DispatchActionAsync(new MisTextInputPointerDownAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
-       @onmouseup="@((MouseEventArgs args) => DispatchActionAsync(new MisTextInputPointerUpAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+       @onkeydown="@((
+                       KeyboardEventArgs args
+                   ) => DispatchActionAsync(new MisTextInputKeyDownAction(Model.IntentId, args.Key, args.Code, args.Repeat, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+       @onkeyup="@((
+                     KeyboardEventArgs args
+                 ) => DispatchActionAsync(new MisTextInputKeyUpAction(Model.IntentId, args.Key, args.Code, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+       @onmousedown="@((
+                         MouseEventArgs args
+                     ) => DispatchActionAsync(new MisTextInputPointerDownAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
+       @onmouseup="@((
+                       MouseEventArgs args
+                   ) => DispatchActionAsync(new MisTextInputPointerUpAction(Model.IntentId, args.Button, args.CtrlKey, args.ShiftKey, args.AltKey, args.MetaKey)))"
        @attributes="AdditionalAttributes"/>
