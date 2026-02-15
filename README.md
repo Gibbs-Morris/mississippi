@@ -29,6 +29,10 @@ Take a look at [`samples/Spring/Spring.Domain`](samples/Spring/Spring.Domain) to
 
 Mississippi is a sophisticated .NET framework designed to streamline distributed application development. It provides a robust foundation for building scalable, maintainable .NET applications with built-in support for event sourcing, CQRS, distributed computing via Orleans, cloud storage integration, and real-time UI updates.
 
+## Design Principles
+
+- Blazor controlled inputs use `@bind:get`/`@bind:set` (plus `@bind:event` when needed), not `value`/`checked` + manual `@oninput`/`@onchange` sync.
+
 ## Technology Stack
 
 - **.NET 10.0** - Latest .NET runtime with C# 14.0
