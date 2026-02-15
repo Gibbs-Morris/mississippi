@@ -1,1 +1,6 @@
+.ks-mis-checkbox-preview-label {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--mis-space-sm);
+}
 

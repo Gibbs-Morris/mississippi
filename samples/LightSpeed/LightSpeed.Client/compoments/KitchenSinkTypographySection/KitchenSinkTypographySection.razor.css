@@ -29,3 +29,7 @@
 .ks-typography-group > :not(.ks-typography-label) {
     flex: 1;
 }
+
+.ks-typography-sample {
+    margin: 0;
+}
