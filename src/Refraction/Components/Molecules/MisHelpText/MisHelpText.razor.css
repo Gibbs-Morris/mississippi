@@ -1,0 +1,7 @@
+.mis-help-text {
+    display: block;
+    font-family: var(--mis-font-family, inherit);
+    font-size: var(--mis-font-size-xs, 0.75rem);
+    line-height: var(--mis-line-height-relaxed, 1.625);
+    color: var(--mis-color-text-muted, #6b7280);
+}
