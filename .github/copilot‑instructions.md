@@ -20,6 +20,9 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 - Before answering usage/run questions, Copilot **MUST** consult `README.md` and treat it as authoritative for public APIs/env vars/examples. Why: Avoids drift.
 - Copilot **SHOULD** prioritize public APIs from README when suggesting symbols and **SHOULD** respond concisely with file paths/lines when referencing code. Why: Improves traceability.
 - When work spans many small fixes, Copilot **SHOULD** stage via `.scratchpad/tasks` per scratchpad rules and **MUST NOT** reference `.scratchpad/` from source/tests. Why: Enables safe coordination.
+- Agents **MUST NOT** commit directly to `main`; changes **MUST** flow through a pull request. Why: Preserves review/audit quality.
+- Branch naming **MUST** follow `GitVersion.yml` patterns; agents **SHOULD** prefer `topic/<name>` for small single-user changes and `feature/<name>` for larger work. Why: Keeps versioning and branch intent consistent.
+- On `topic/*`, `feature/*`, and `hotfix/*`, agents **SHOULD** commit in small logical increments (about 5-10 changed files as a guide, not a hard cap); large mechanical changes (for example, global renames) **MAY** exceed this when they are one coherent change. Why: Improves decision traceability during development.
 
 ## Scope and Audience
 
@@ -33,6 +36,8 @@ These rules apply to Copilot chat/search responses for this repository.
 - Manage packages with `dotnet add/remove package`; never add `Version` attributes.
 - Verify SOLID after each C# change; fix violations before proceeding.
 - Use README as the source of truth for usage guidance.
+- Never commit directly to `main`; use PR flow and GitVersion branch naming.
+- Prefer small logical commits on `topic/*`, `feature/*`, and `hotfix/*` (guide: ~5-10 files; flexible for coherent large renames).
 
 ## Core Principles
 
