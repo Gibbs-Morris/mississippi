@@ -12,51 +12,44 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisCheckboxGroup;
 internal static class MisCheckboxGroupKitchenSinkReducers
 {
     /// <summary>
-    ///     Updates the selected checkbox values.
+    ///     Clears all recorded events.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The clear action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxGroupKitchenSinkState SetValues(
+    public static MisCheckboxGroupKitchenSinkState ClearEvents(
         MisCheckboxGroupKitchenSinkState state,
-        SetMisCheckboxGroupValuesAction action
+        ClearMisCheckboxGroupEventsAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-        return state with { ViewModel = state.ViewModel with { Values = new HashSet<string>(action.Values ?? []) } };
+        return state with
+        {
+            EventLog = [],
+            EventCount = 0,
+        };
     }
 
     /// <summary>
-    ///     Updates the disabled state.
+    ///     Records a component event in the log.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The record event action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxGroupKitchenSinkState SetDisabled(
+    public static MisCheckboxGroupKitchenSinkState RecordEvent(
         MisCheckboxGroupKitchenSinkState state,
-        SetMisCheckboxGroupDisabledAction action
+        RecordMisCheckboxGroupEventAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-        return state with { ViewModel = state.ViewModel with { IsDisabled = action.IsDisabled } };
-    }
-
-    /// <summary>
-    ///     Updates the required state.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisCheckboxGroupKitchenSinkState SetRequired(
-        MisCheckboxGroupKitchenSinkState state,
-        SetMisCheckboxGroupRequiredAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-        return state with { ViewModel = state.ViewModel with { IsRequired = action.IsRequired } };
+        string[] newLog = [.. state.EventLog, $"{action.EventName}: {action.Details}"];
+        return state with
+        {
+            EventLog = newLog,
+            EventCount = newLog.Length,
+        };
     }
 
     /// <summary>
@@ -104,6 +97,28 @@ internal static class MisCheckboxGroupKitchenSinkReducers
     }
 
     /// <summary>
+    ///     Updates the disabled state.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisCheckboxGroupKitchenSinkState SetDisabled(
+        MisCheckboxGroupKitchenSinkState state,
+        SetMisCheckboxGroupDisabledAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                IsDisabled = action.IsDisabled,
+            },
+        };
+    }
+
+    /// <summary>
     ///     Updates the available checkbox options.
     /// </summary>
     /// <param name="state">The current state.</param>
@@ -118,40 +133,57 @@ internal static class MisCheckboxGroupKitchenSinkReducers
         ArgumentNullException.ThrowIfNull(action);
         IReadOnlyList<MisCheckboxOptionViewModel> options = action.Options.Count > 0
             ? action.Options
-            : [new MisCheckboxOptionViewModel("option-1", "Option 1")];
-        return state with { ViewModel = state.ViewModel with { Options = options } };
+            : [new("option-1", "Option 1")];
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Options = options,
+            },
+        };
     }
 
     /// <summary>
-    ///     Records a component event in the log.
+    ///     Updates the required state.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The record event action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxGroupKitchenSinkState RecordEvent(
+    public static MisCheckboxGroupKitchenSinkState SetRequired(
         MisCheckboxGroupKitchenSinkState state,
-        RecordMisCheckboxGroupEventAction action
+        SetMisCheckboxGroupRequiredAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-        string[] newLog = [.. state.EventLog, $"{action.EventName}: {action.Details}"];
-        return state with { EventLog = newLog, EventCount = newLog.Length };
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                IsRequired = action.IsRequired,
+            },
+        };
     }
 
     /// <summary>
-    ///     Clears all recorded events.
+    ///     Updates the selected checkbox values.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The clear action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxGroupKitchenSinkState ClearEvents(
+    public static MisCheckboxGroupKitchenSinkState SetValues(
         MisCheckboxGroupKitchenSinkState state,
-        ClearMisCheckboxGroupEventsAction action
+        SetMisCheckboxGroupValuesAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-        return state with { EventLog = [], EventCount = 0 };
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Values = new HashSet<string>(action.Values ?? []),
+            },
+        };
     }
 }

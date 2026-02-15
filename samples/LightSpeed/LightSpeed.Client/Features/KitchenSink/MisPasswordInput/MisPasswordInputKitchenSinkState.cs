@@ -15,6 +15,16 @@ internal sealed record MisPasswordInputKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misPasswordInput";
 
     /// <summary>
+    ///     Gets the number of events recorded since the last clear.
+    /// </summary>
+    public int EventCount { get; init; }
+
+    /// <summary>
+    ///     Gets the list of emitted interaction event entries.
+    /// </summary>
+    public IReadOnlyList<string> EventLog { get; init; } = [];
+
+    /// <summary>
     ///     Gets the current password input view model used by the demo component.
     /// </summary>
     public MisPasswordInputViewModel ViewModel { get; init; } = MisPasswordInputViewModel.Default with
@@ -23,14 +33,4 @@ internal sealed record MisPasswordInputKitchenSinkState : IFeatureState
         Placeholder = "Enter password",
         AriaLabel = "Password input",
     };
-
-    /// <summary>
-    ///     Gets the list of emitted interaction event entries.
-    /// </summary>
-    public IReadOnlyList<string> EventLog { get; init; } = [];
-
-    /// <summary>
-    ///     Gets the number of events recorded since the last clear.
-    /// </summary>
-    public int EventCount { get; init; }
 }

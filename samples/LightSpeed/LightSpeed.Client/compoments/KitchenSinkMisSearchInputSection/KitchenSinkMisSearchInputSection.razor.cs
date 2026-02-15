@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -21,35 +20,35 @@ public sealed partial class KitchenSinkMisSearchInputSection : StoreComponent
 {
     private const string EventsSectionKey = "misSearchInput";
 
+    private bool IsEventsOpen =>
+        Select<KitchenSinkSectionUiState, bool>(state =>
+            KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
+
     private IReadOnlyList<string> SearchEvents =>
         Select<MisSearchInputKitchenSinkState, IReadOnlyList<string>>(MisSearchInputKitchenSinkSelectors.GetEventLog);
 
     private MisSearchInputViewModel SearchModel =>
-        Select<MisSearchInputKitchenSinkState, MisSearchInputViewModel>(MisSearchInputKitchenSinkSelectors.GetViewModel);
-
-    private bool IsEventsOpen =>
-        Select<KitchenSinkSectionUiState, bool>(
-            state => KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
+        Select<MisSearchInputKitchenSinkState, MisSearchInputViewModel>(
+            MisSearchInputKitchenSinkSelectors.GetViewModel);
 
     private static string FormatAction(
         IMisSearchInputAction action
     ) =>
         action switch
         {
-            MisSearchInputInputAction input =>
-                $"intent={input.IntentId}, value={input.Value}",
-            MisSearchInputChangedAction changed =>
-                $"intent={changed.IntentId}, value={changed.Value}",
-            MisSearchInputClearedAction cleared =>
-                $"intent={cleared.IntentId}",
-            MisSearchInputFocusedAction focused =>
-                $"intent={focused.IntentId}",
-            MisSearchInputBlurredAction blurred =>
-                $"intent={blurred.IntentId}",
-            MisSearchInputSubmittedAction submitted =>
-                $"intent={submitted.IntentId}, value={submitted.Value}",
-            _ => action.ToString() ?? string.Empty,
+            MisSearchInputInputAction input => $"intent={input.IntentId}, value={input.Value}",
+            MisSearchInputChangedAction changed => $"intent={changed.IntentId}, value={changed.Value}",
+            MisSearchInputClearedAction cleared => $"intent={cleared.IntentId}",
+            MisSearchInputFocusedAction focused => $"intent={focused.IntentId}",
+            MisSearchInputBlurredAction blurred => $"intent={blurred.IntentId}",
+            MisSearchInputSubmittedAction submitted => $"intent={submitted.IntentId}, value={submitted.Value}",
+            var _ => action.ToString() ?? string.Empty,
         };
+
+    private void HandleClearEvents()
+    {
+        Dispatch(new ClearMisSearchInputEventsAction());
+    }
 
     private Task HandleMisSearchInputActionAsync(
         IMisSearchInputAction action
@@ -74,6 +73,29 @@ public sealed partial class KitchenSinkMisSearchInputSection : StoreComponent
         return Task.CompletedTask;
     }
 
+    private void HandlePropertySwitchAction(
+        IMisSwitchAction action
+    )
+    {
+        bool? isChecked = action switch
+        {
+            MisSwitchInputAction inputAction => inputAction.IsChecked,
+            MisSwitchChangedAction changedAction => changedAction.IsChecked,
+            var _ => null,
+        };
+        if (isChecked is not bool checkedValue)
+        {
+            return;
+        }
+
+        switch (action.IntentId)
+        {
+            case "prop-isdisabled":
+                Dispatch(new SetMisSearchInputDisabledAction(checkedValue));
+                break;
+        }
+    }
+
     private void HandlePropertyTextInputAction(
         IMisTextInputAction action
     )
@@ -96,37 +118,8 @@ public sealed partial class KitchenSinkMisSearchInputSection : StoreComponent
         }
     }
 
-    private void HandlePropertySwitchAction(
-        IMisSwitchAction action
-    )
-    {
-        bool? isChecked = action switch
-        {
-            MisSwitchInputAction inputAction => inputAction.IsChecked,
-            MisSwitchChangedAction changedAction => changedAction.IsChecked,
-            _ => null,
-        };
-
-        if (isChecked is not bool checkedValue)
-        {
-            return;
-        }
-
-        switch (action.IntentId)
-        {
-            case "prop-isdisabled":
-                Dispatch(new SetMisSearchInputDisabledAction(checkedValue));
-                break;
-        }
-    }
-
     private void HandleToggleEvents()
     {
         Dispatch(new ToggleKitchenSinkSectionEventsAction(EventsSectionKey));
-    }
-
-    private void HandleClearEvents()
-    {
-        Dispatch(new ClearMisSearchInputEventsAction());
     }
 }

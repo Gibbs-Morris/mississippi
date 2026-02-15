@@ -13,48 +13,44 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisSelect;
 internal static class MisSelectKitchenSinkReducers
 {
     /// <summary>
-    ///     Sets the currently selected value.
+    ///     Clears all recorded interaction events.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The clear action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSelectKitchenSinkState SetValue(
+    public static MisSelectKitchenSinkState ClearEvents(
         MisSelectKitchenSinkState state,
-        SetMisSelectValueAction action
+        ClearMisSelectEventsAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                Value = action.Value ?? string.Empty,
-            },
+            EventCount = 0,
+            EventLog = [],
         };
     }
 
     /// <summary>
-    ///     Sets the intent identifier.
+    ///     Appends a new interaction event entry to the log.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The event recording action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSelectKitchenSinkState SetIntentId(
+    public static MisSelectKitchenSinkState RecordEvent(
         MisSelectKitchenSinkState state,
-        SetMisSelectIntentIdAction action
+        RecordMisSelectEventAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
+        int nextEventNumber = state.EventCount + 1;
+        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-select"),
-            },
+            EventCount = nextEventNumber,
+            EventLog = [.. state.EventLog, entry],
         };
     }
 
@@ -71,35 +67,11 @@ internal static class MisSelectKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 AriaLabel = NormalizeOptional(action.AriaLabel),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the optional title value.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisSelectKitchenSinkState SetTitle(
-        MisSelectKitchenSinkState state,
-        SetMisSelectTitleAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Title = NormalizeOptional(action.Title),
             },
         };
     }
@@ -117,35 +89,11 @@ internal static class MisSelectKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 CssClass = NormalizeOptional(action.CssClass),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the optional placeholder value.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisSelectKitchenSinkState SetPlaceholder(
-        MisSelectKitchenSinkState state,
-        SetMisSelectPlaceholderAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Placeholder = NormalizeOptional(action.Placeholder),
             },
         };
     }
@@ -163,12 +111,85 @@ internal static class MisSelectKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 IsDisabled = action.IsDisabled,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the intent identifier.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisSelectKitchenSinkState SetIntentId(
+        MisSelectKitchenSinkState state,
+        SetMisSelectIntentIdAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-select"),
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets select options.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisSelectKitchenSinkState SetOptions(
+        MisSelectKitchenSinkState state,
+        SetMisSelectOptionsAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        IReadOnlyList<MisSelectOptionViewModel> normalizedOptions = NormalizeOptions(action.Options);
+        string normalizedValue = state.ViewModel.Value;
+        if (!string.IsNullOrEmpty(normalizedValue) && !ContainsValue(normalizedOptions, normalizedValue))
+        {
+            normalizedValue = string.Empty;
+        }
+
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Options = normalizedOptions,
+                Value = normalizedValue,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the optional placeholder value.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisSelectKitchenSinkState SetPlaceholder(
+        MisSelectKitchenSinkState state,
+        SetMisSelectPlaceholderAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Placeholder = NormalizeOptional(action.Placeholder),
             },
         };
     }
@@ -186,7 +207,6 @@ internal static class MisSelectKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -209,7 +229,6 @@ internal static class MisSelectKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -220,77 +239,46 @@ internal static class MisSelectKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Sets select options.
+    ///     Sets the optional title value.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSelectKitchenSinkState SetOptions(
+    public static MisSelectKitchenSinkState SetTitle(
         MisSelectKitchenSinkState state,
-        SetMisSelectOptionsAction action
+        SetMisSelectTitleAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
-        IReadOnlyList<MisSelectOptionViewModel> normalizedOptions = NormalizeOptions(action.Options);
-        string normalizedValue = state.ViewModel.Value;
-        if (!string.IsNullOrEmpty(normalizedValue) && !ContainsValue(normalizedOptions, normalizedValue))
-        {
-            normalizedValue = string.Empty;
-        }
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
-                Options = normalizedOptions,
-                Value = normalizedValue,
+                Title = NormalizeOptional(action.Title),
             },
         };
     }
 
     /// <summary>
-    ///     Appends a new interaction event entry to the log.
+    ///     Sets the currently selected value.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The event recording action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSelectKitchenSinkState RecordEvent(
+    public static MisSelectKitchenSinkState SetValue(
         MisSelectKitchenSinkState state,
-        RecordMisSelectEventAction action
+        SetMisSelectValueAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
-        int nextEventNumber = state.EventCount + 1;
-        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            EventCount = nextEventNumber,
-            EventLog = [.. state.EventLog, entry],
-        };
-    }
-
-    /// <summary>
-    ///     Clears all recorded interaction events.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The clear action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisSelectKitchenSinkState ClearEvents(
-        MisSelectKitchenSinkState state,
-        ClearMisSelectEventsAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            EventCount = 0,
-            EventLog = [],
+            ViewModel = state.ViewModel with
+            {
+                Value = action.Value ?? string.Empty,
+            },
         };
     }
 
@@ -299,12 +287,6 @@ internal static class MisSelectKitchenSinkReducers
         string value
     ) =>
         options.Any(option => string.Equals(option.Value, value, StringComparison.Ordinal));
-
-    private static string NormalizeRequired(
-        string? value,
-        string fallback
-    ) =>
-        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
     private static string? NormalizeOptional(
         string? value
@@ -315,11 +297,11 @@ internal static class MisSelectKitchenSinkReducers
         IReadOnlyList<MisSelectOptionViewModel>? options
     )
     {
-        if (options is null || options.Count == 0)
+        if (options is null || (options.Count == 0))
         {
             return
             [
-                new MisSelectOptionViewModel("option-1", "Option 1"),
+                new("option-1", "Option 1"),
             ];
         }
 
@@ -328,17 +310,20 @@ internal static class MisSelectKitchenSinkReducers
         {
             string normalizedValue = NormalizeRequired(option.Value, string.Empty);
             string normalizedLabel = NormalizeRequired(option.Label, normalizedValue);
-
             if (string.IsNullOrWhiteSpace(normalizedValue))
             {
                 continue;
             }
 
-            normalizedOptions.Add(new MisSelectOptionViewModel(normalizedValue, normalizedLabel, option.IsDisabled));
+            normalizedOptions.Add(new(normalizedValue, normalizedLabel, option.IsDisabled));
         }
 
-        return normalizedOptions.Count == 0
-            ? [new MisSelectOptionViewModel("option-1", "Option 1")]
-            : normalizedOptions;
+        return normalizedOptions.Count == 0 ? [new("option-1", "Option 1")] : normalizedOptions;
     }
+
+    private static string NormalizeRequired(
+        string? value,
+        string fallback
+    ) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 }

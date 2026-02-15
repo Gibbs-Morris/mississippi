@@ -9,48 +9,44 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisTextarea;
 internal static class MisTextareaKitchenSinkReducers
 {
     /// <summary>
-    ///     Sets the textarea value.
+    ///     Clears all recorded interaction events.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The clear action.</param>
     /// <returns>The updated state.</returns>
-    public static MisTextareaKitchenSinkState SetValue(
+    public static MisTextareaKitchenSinkState ClearEvents(
         MisTextareaKitchenSinkState state,
-        SetMisTextareaValueAction action
+        ClearMisTextareaEventsAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                Value = action.Value ?? string.Empty,
-            },
+            EventCount = 0,
+            EventLog = [],
         };
     }
 
     /// <summary>
-    ///     Sets the intent identifier.
+    ///     Appends a new interaction event entry to the log.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The event recording action.</param>
     /// <returns>The updated state.</returns>
-    public static MisTextareaKitchenSinkState SetIntentId(
+    public static MisTextareaKitchenSinkState RecordEvent(
         MisTextareaKitchenSinkState state,
-        SetMisTextareaIntentIdAction action
+        RecordMisTextareaEventAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
+        int nextEventNumber = state.EventCount + 1;
+        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-textarea"),
-            },
+            EventCount = nextEventNumber,
+            EventLog = [.. state.EventLog, entry],
         };
     }
 
@@ -67,35 +63,11 @@ internal static class MisTextareaKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 AriaLabel = NormalizeOptional(action.AriaLabel),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the optional title value.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisTextareaKitchenSinkState SetTitle(
-        MisTextareaKitchenSinkState state,
-        SetMisTextareaTitleAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Title = NormalizeOptional(action.Title),
             },
         };
     }
@@ -113,59 +85,11 @@ internal static class MisTextareaKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 CssClass = NormalizeOptional(action.CssClass),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the optional placeholder value.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisTextareaKitchenSinkState SetPlaceholder(
-        MisTextareaKitchenSinkState state,
-        SetMisTextareaPlaceholderAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Placeholder = NormalizeOptional(action.Placeholder),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the textarea row count.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisTextareaKitchenSinkState SetRows(
-        MisTextareaKitchenSinkState state,
-        SetMisTextareaRowsAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        int normalizedRows = action.Rows <= 0 ? 1 : action.Rows;
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Rows = normalizedRows,
             },
         };
     }
@@ -183,12 +107,55 @@ internal static class MisTextareaKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 IsDisabled = action.IsDisabled,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the intent identifier.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisTextareaKitchenSinkState SetIntentId(
+        MisTextareaKitchenSinkState state,
+        SetMisTextareaIntentIdAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-textarea"),
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the optional placeholder value.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisTextareaKitchenSinkState SetPlaceholder(
+        MisTextareaKitchenSinkState state,
+        SetMisTextareaPlaceholderAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Placeholder = NormalizeOptional(action.Placeholder),
             },
         };
     }
@@ -206,7 +173,6 @@ internal static class MisTextareaKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -229,12 +195,34 @@ internal static class MisTextareaKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 IsRequired = action.IsRequired,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the textarea row count.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisTextareaKitchenSinkState SetRows(
+        MisTextareaKitchenSinkState state,
+        SetMisTextareaRowsAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        int normalizedRows = action.Rows <= 0 ? 1 : action.Rows;
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Rows = normalizedRows,
             },
         };
     }
@@ -252,7 +240,6 @@ internal static class MisTextareaKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -263,57 +250,57 @@ internal static class MisTextareaKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Appends a new interaction event entry to the log.
+    ///     Sets the optional title value.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The event recording action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisTextareaKitchenSinkState RecordEvent(
+    public static MisTextareaKitchenSinkState SetTitle(
         MisTextareaKitchenSinkState state,
-        RecordMisTextareaEventAction action
+        SetMisTextareaTitleAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
-        int nextEventNumber = state.EventCount + 1;
-        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            EventCount = nextEventNumber,
-            EventLog = [.. state.EventLog, entry],
+            ViewModel = state.ViewModel with
+            {
+                Title = NormalizeOptional(action.Title),
+            },
         };
     }
 
     /// <summary>
-    ///     Clears all recorded interaction events.
+    ///     Sets the textarea value.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The clear action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisTextareaKitchenSinkState ClearEvents(
+    public static MisTextareaKitchenSinkState SetValue(
         MisTextareaKitchenSinkState state,
-        ClearMisTextareaEventsAction action
+        SetMisTextareaValueAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            EventCount = 0,
-            EventLog = [],
+            ViewModel = state.ViewModel with
+            {
+                Value = action.Value ?? string.Empty,
+            },
         };
     }
+
+    private static string? NormalizeOptional(
+        string? value
+    ) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static string NormalizeRequired(
         string? value,
         string fallback
     ) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-
-    private static string? NormalizeOptional(
-        string? value
-    ) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

@@ -19,18 +19,30 @@ internal static class MisTextInputKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisTextInputValueAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetValue);
-        services.AddReducer<SetMisTextInputIntentIdAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetIntentId);
-        services.AddReducer<SetMisTextInputAriaLabelAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetAriaLabel);
-        services.AddReducer<SetMisTextInputPlaceholderAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetPlaceholder);
-        services.AddReducer<SetMisTextInputTitleAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetTitle);
-        services.AddReducer<SetMisTextInputCssClassAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetCssClass);
-        services.AddReducer<SetMisTextInputAutoCompleteAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetAutoComplete);
-        services.AddReducer<SetMisTextInputDisabledAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetDisabled);
-        services.AddReducer<SetMisTextInputReadOnlyAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetReadOnly);
-        services.AddReducer<SetMisTextInputTypeAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.SetType);
-        services.AddReducer<RecordMisTextInputEventAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.RecordEvent);
-        services.AddReducer<ClearMisTextInputEventsAction, MisTextInputKitchenSinkState>(MisTextInputKitchenSinkReducers.ClearEvents);
+        services.AddReducer<SetMisTextInputValueAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetValue);
+        services.AddReducer<SetMisTextInputIntentIdAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetIntentId);
+        services.AddReducer<SetMisTextInputAriaLabelAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetAriaLabel);
+        services.AddReducer<SetMisTextInputPlaceholderAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetPlaceholder);
+        services.AddReducer<SetMisTextInputTitleAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetTitle);
+        services.AddReducer<SetMisTextInputCssClassAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisTextInputAutoCompleteAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetAutoComplete);
+        services.AddReducer<SetMisTextInputDisabledAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetDisabled);
+        services.AddReducer<SetMisTextInputReadOnlyAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetReadOnly);
+        services.AddReducer<SetMisTextInputTypeAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.SetType);
+        services.AddReducer<RecordMisTextInputEventAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.RecordEvent);
+        services.AddReducer<ClearMisTextInputEventsAction, MisTextInputKitchenSinkState>(
+            MisTextInputKitchenSinkReducers.ClearEvents);
         return services;
     }
 }

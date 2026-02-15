@@ -10,6 +10,7 @@ using Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
 
+
 namespace LightSpeed.Client.Compoments;
 
 /// <summary>
@@ -25,20 +26,20 @@ public sealed partial class KitchenSinkMisFormFieldSection : StoreComponent
     private MisFormFieldViewModel FormFieldModel =>
         Select<MisFormFieldKitchenSinkState, MisFormFieldViewModel>(MisFormFieldKitchenSinkSelectors.GetViewModel);
 
-    private string LabelText =>
-        Select<MisFormFieldKitchenSinkState, string>(MisFormFieldKitchenSinkSelectors.GetLabelText);
-
     private string HelpText =>
         Select<MisFormFieldKitchenSinkState, string>(MisFormFieldKitchenSinkSelectors.GetHelpText);
-
-    private string ValidationMessage =>
-        Select<MisFormFieldKitchenSinkState, string>(MisFormFieldKitchenSinkSelectors.GetValidationMessage);
 
     private string InputValue =>
         Select<MisFormFieldKitchenSinkState, string>(MisFormFieldKitchenSinkSelectors.GetInputValue);
 
+    private string LabelText =>
+        Select<MisFormFieldKitchenSinkState, string>(MisFormFieldKitchenSinkSelectors.GetLabelText);
+
     private bool ShowValidation =>
         Select<MisFormFieldKitchenSinkState, bool>(MisFormFieldKitchenSinkSelectors.GetShowValidation);
+
+    private string ValidationMessage =>
+        Select<MisFormFieldKitchenSinkState, string>(MisFormFieldKitchenSinkSelectors.GetValidationMessage);
 
     private void HandleInputAction(
         IMisTextInputAction action
@@ -47,6 +48,51 @@ public sealed partial class KitchenSinkMisFormFieldSection : StoreComponent
         if (action is MisTextInputInputAction inputAction)
         {
             Dispatch(new SetMisFormFieldInputValueAction(inputAction.Value));
+        }
+    }
+
+    private void HandlePropertySelectAction(
+        IMisSelectAction action
+    )
+    {
+        if (action is MisSelectChangedAction selectAction)
+        {
+            switch (selectAction.IntentId)
+            {
+                case "prop-state":
+                    if (Enum.TryParse(selectAction.Value, out MisFormFieldState state))
+                    {
+                        Dispatch(new SetMisFormFieldStateAction(state));
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    private void HandlePropertySwitchAction(
+        IMisSwitchAction action
+    )
+    {
+        bool? isChecked = action switch
+        {
+            MisSwitchInputAction inputAction => inputAction.IsChecked,
+            MisSwitchChangedAction changedAction => changedAction.IsChecked,
+            var _ => null,
+        };
+        if (isChecked is not bool checkedValue)
+        {
+            return;
+        }
+
+        switch (action.IntentId)
+        {
+            case "prop-showvalidation":
+                Dispatch(new SetMisFormFieldShowValidationAction(checkedValue));
+                break;
+            case "prop-disabled":
+                Dispatch(new SetMisFormFieldDisabledAction(checkedValue));
+                break;
         }
     }
 
@@ -67,52 +113,6 @@ public sealed partial class KitchenSinkMisFormFieldSection : StoreComponent
                     break;
                 case "prop-validationmsg":
                     Dispatch(new SetMisFormFieldValidationMessageAction(value));
-                    break;
-            }
-        }
-    }
-
-    private void HandlePropertySwitchAction(
-        IMisSwitchAction action
-    )
-    {
-        bool? isChecked = action switch
-        {
-            MisSwitchInputAction inputAction => inputAction.IsChecked,
-            MisSwitchChangedAction changedAction => changedAction.IsChecked,
-            _ => null,
-        };
-
-        if (isChecked is not bool checkedValue)
-        {
-            return;
-        }
-
-        switch (action.IntentId)
-        {
-            case "prop-showvalidation":
-                Dispatch(new SetMisFormFieldShowValidationAction(checkedValue));
-                break;
-            case "prop-disabled":
-                Dispatch(new SetMisFormFieldDisabledAction(checkedValue));
-                break;
-        }
-    }
-
-    private void HandlePropertySelectAction(
-        IMisSelectAction action
-    )
-    {
-        if (action is MisSelectChangedAction selectAction)
-        {
-            switch (selectAction.IntentId)
-            {
-                case "prop-state":
-                    if (Enum.TryParse<MisFormFieldState>(selectAction.Value, out MisFormFieldState state))
-                    {
-                        Dispatch(new SetMisFormFieldStateAction(state));
-                    }
-
                     break;
             }
         }

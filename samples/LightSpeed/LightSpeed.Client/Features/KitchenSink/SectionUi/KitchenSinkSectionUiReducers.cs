@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+
 namespace LightSpeed.Client.Features.KitchenSinkFeatures.SectionUi;
 
 /// <summary>
@@ -22,11 +23,9 @@ internal static class KitchenSinkSectionUiReducers
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
         ArgumentException.ThrowIfNullOrWhiteSpace(action.SectionKey);
-
         Dictionary<string, bool> nextStates = new(state.EventsPanelOpenStates, StringComparer.Ordinal);
         bool isOpen = KitchenSinkSectionUiSelectors.IsEventsOpen(state, action.SectionKey);
         nextStates[action.SectionKey] = !isOpen;
-
         return state with
         {
             EventsPanelOpenStates = nextStates,

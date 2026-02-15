@@ -10,6 +10,7 @@ using Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
 
+
 namespace LightSpeed.Client.Compoments;
 
 /// <summary>
@@ -17,16 +18,56 @@ namespace LightSpeed.Client.Compoments;
 /// </summary>
 public sealed partial class KitchenSinkMisLabelSection : StoreComponent
 {
-    private static readonly IReadOnlyList<MisSelectOptionViewModel> LabelStateOptions =
-        Enum.GetValues<MisLabelState>()
-            .Select(s => new MisSelectOptionViewModel(s.ToString(), s.ToString()))
-            .ToList();
+    private static readonly IReadOnlyList<MisSelectOptionViewModel> LabelStateOptions = Enum.GetValues<MisLabelState>()
+        .Select(s => new MisSelectOptionViewModel(s.ToString(), s.ToString()))
+        .ToList();
 
     private MisLabelViewModel LabelModel =>
         Select<MisLabelKitchenSinkState, MisLabelViewModel>(MisLabelKitchenSinkSelectors.GetViewModel);
 
-    private string LabelText =>
-        Select<MisLabelKitchenSinkState, string>(MisLabelKitchenSinkSelectors.GetLabelText);
+    private string LabelText => Select<MisLabelKitchenSinkState, string>(MisLabelKitchenSinkSelectors.GetLabelText);
+
+    private void HandlePropertySelectAction(
+        IMisSelectAction action
+    )
+    {
+        if (action is MisSelectChangedAction selectAction)
+        {
+            switch (selectAction.IntentId)
+            {
+                case "prop-state":
+                    if (Enum.TryParse(selectAction.Value, out MisLabelState state))
+                    {
+                        Dispatch(new SetMisLabelStateAction(state));
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    private void HandlePropertySwitchAction(
+        IMisSwitchAction action
+    )
+    {
+        bool? isChecked = action switch
+        {
+            MisSwitchInputAction inputAction => inputAction.IsChecked,
+            MisSwitchChangedAction changedAction => changedAction.IsChecked,
+            var _ => null,
+        };
+        if (isChecked is not bool checkedValue)
+        {
+            return;
+        }
+
+        switch (action.IntentId)
+        {
+            case "prop-isrequired":
+                Dispatch(new SetMisLabelIsRequiredAction(checkedValue));
+                break;
+        }
+    }
 
     private void HandlePropertyTextInputAction(
         IMisTextInputAction action
@@ -45,49 +86,6 @@ public sealed partial class KitchenSinkMisLabelSection : StoreComponent
                     break;
                 case "prop-cssclass":
                     Dispatch(new SetMisLabelCssClassAction(value));
-                    break;
-            }
-        }
-    }
-
-    private void HandlePropertySwitchAction(
-        IMisSwitchAction action
-    )
-    {
-        bool? isChecked = action switch
-        {
-            MisSwitchInputAction inputAction => inputAction.IsChecked,
-            MisSwitchChangedAction changedAction => changedAction.IsChecked,
-            _ => null,
-        };
-
-        if (isChecked is not bool checkedValue)
-        {
-            return;
-        }
-
-        switch (action.IntentId)
-        {
-            case "prop-isrequired":
-                Dispatch(new SetMisLabelIsRequiredAction(checkedValue));
-                break;
-        }
-    }
-
-    private void HandlePropertySelectAction(
-        IMisSelectAction action
-    )
-    {
-        if (action is MisSelectChangedAction selectAction)
-        {
-            switch (selectAction.IntentId)
-            {
-                case "prop-state":
-                    if (Enum.TryParse<MisLabelState>(selectAction.Value, out MisLabelState state))
-                    {
-                        Dispatch(new SetMisLabelStateAction(state));
-                    }
-
                     break;
             }
         }

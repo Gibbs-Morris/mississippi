@@ -9,48 +9,44 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisTextInput;
 internal static class MisTextInputKitchenSinkReducers
 {
     /// <summary>
-    ///     Sets the current text input value.
+    ///     Clears all logged events.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The clear action.</param>
     /// <returns>The updated state.</returns>
-    public static MisTextInputKitchenSinkState SetValue(
+    public static MisTextInputKitchenSinkState ClearEvents(
         MisTextInputKitchenSinkState state,
-        SetMisTextInputValueAction action
+        ClearMisTextInputEventsAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                Value = action.Value ?? string.Empty,
-            },
+            EventCount = 0,
+            EventLog = [],
         };
     }
 
     /// <summary>
-    ///     Sets the intent identifier.
+    ///     Appends an interaction event entry to the event log.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The event recording action.</param>
     /// <returns>The updated state.</returns>
-    public static MisTextInputKitchenSinkState SetIntentId(
+    public static MisTextInputKitchenSinkState RecordEvent(
         MisTextInputKitchenSinkState state,
-        SetMisTextInputIntentIdAction action
+        RecordMisTextInputEventAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
+        int nextEventNumber = state.EventCount + 1;
+        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-text-input"),
-            },
+            EventCount = nextEventNumber,
+            EventLog = [.. state.EventLog, entry],
         };
     }
 
@@ -67,81 +63,11 @@ internal static class MisTextInputKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 AriaLabel = NormalizeOptional(action.AriaLabel),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the optional placeholder.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisTextInputKitchenSinkState SetPlaceholder(
-        MisTextInputKitchenSinkState state,
-        SetMisTextInputPlaceholderAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Placeholder = NormalizeOptional(action.Placeholder),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the optional title.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisTextInputKitchenSinkState SetTitle(
-        MisTextInputKitchenSinkState state,
-        SetMisTextInputTitleAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Title = NormalizeOptional(action.Title),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the optional CSS class.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisTextInputKitchenSinkState SetCssClass(
-        MisTextInputKitchenSinkState state,
-        SetMisTextInputCssClassAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                CssClass = NormalizeOptional(action.CssClass),
             },
         };
     }
@@ -159,12 +85,33 @@ internal static class MisTextInputKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 AutoComplete = NormalizeOptional(action.AutoComplete),
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the optional CSS class.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisTextInputKitchenSinkState SetCssClass(
+        MisTextInputKitchenSinkState state,
+        SetMisTextInputCssClassAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                CssClass = NormalizeOptional(action.CssClass),
             },
         };
     }
@@ -182,12 +129,55 @@ internal static class MisTextInputKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 IsDisabled = action.IsDisabled,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the intent identifier.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisTextInputKitchenSinkState SetIntentId(
+        MisTextInputKitchenSinkState state,
+        SetMisTextInputIntentIdAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-text-input"),
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the optional placeholder.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisTextInputKitchenSinkState SetPlaceholder(
+        MisTextInputKitchenSinkState state,
+        SetMisTextInputPlaceholderAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Placeholder = NormalizeOptional(action.Placeholder),
             },
         };
     }
@@ -205,12 +195,33 @@ internal static class MisTextInputKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 IsReadOnly = action.IsReadOnly,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the optional title.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisTextInputKitchenSinkState SetTitle(
+        MisTextInputKitchenSinkState state,
+        SetMisTextInputTitleAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Title = NormalizeOptional(action.Title),
             },
         };
     }
@@ -228,7 +239,6 @@ internal static class MisTextInputKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -239,57 +249,35 @@ internal static class MisTextInputKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Appends an interaction event entry to the event log.
+    ///     Sets the current text input value.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The event recording action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisTextInputKitchenSinkState RecordEvent(
+    public static MisTextInputKitchenSinkState SetValue(
         MisTextInputKitchenSinkState state,
-        RecordMisTextInputEventAction action
+        SetMisTextInputValueAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
-        int nextEventNumber = state.EventCount + 1;
-        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            EventCount = nextEventNumber,
-            EventLog = [.. state.EventLog, entry],
+            ViewModel = state.ViewModel with
+            {
+                Value = action.Value ?? string.Empty,
+            },
         };
     }
 
-    /// <summary>
-    ///     Clears all logged events.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The clear action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisTextInputKitchenSinkState ClearEvents(
-        MisTextInputKitchenSinkState state,
-        ClearMisTextInputEventsAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            EventCount = 0,
-            EventLog = [],
-        };
-    }
+    private static string? NormalizeOptional(
+        string? value
+    ) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static string NormalizeRequired(
         string? value,
         string fallback
     ) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-
-    private static string? NormalizeOptional(
-        string? value
-    ) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

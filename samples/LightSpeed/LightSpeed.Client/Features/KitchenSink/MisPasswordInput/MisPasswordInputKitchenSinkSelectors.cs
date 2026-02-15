@@ -12,24 +12,28 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisPasswordInput;
 internal static class MisPasswordInputKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current password input view model.
-    /// </summary>
-    /// <param name="state">The feature state.</param>
-    /// <returns>The current view model.</returns>
-    public static MisPasswordInputViewModel GetViewModel(MisPasswordInputKitchenSinkState state)
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
     ///     Gets the current event log.
     /// </summary>
     /// <param name="state">The feature state.</param>
     /// <returns>The list of logged events.</returns>
-    public static IReadOnlyList<string> GetEventLog(MisPasswordInputKitchenSinkState state)
+    public static IReadOnlyList<string> GetEventLog(
+        MisPasswordInputKitchenSinkState state
+    )
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.EventLog;
+    }
+
+    /// <summary>
+    ///     Gets the current password input view model.
+    /// </summary>
+    /// <param name="state">The feature state.</param>
+    /// <returns>The current view model.</returns>
+    public static MisPasswordInputViewModel GetViewModel(
+        MisPasswordInputKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

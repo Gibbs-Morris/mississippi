@@ -1,5 +1,6 @@
 using System;
 
+
 namespace LightSpeed.Client.Features.KitchenSinkFeatures.SectionUi;
 
 /// <summary>
@@ -12,7 +13,7 @@ internal static class KitchenSinkSectionUiSelectors
     /// </summary>
     /// <param name="state">The current section UI state.</param>
     /// <param name="sectionKey">The section key.</param>
-    /// <returns><see langword="true"/> when open; otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true" /> when open; otherwise <see langword="false" />.</returns>
     public static bool IsEventsOpen(
         KitchenSinkSectionUiState state,
         string sectionKey
@@ -20,7 +21,6 @@ internal static class KitchenSinkSectionUiSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentException.ThrowIfNullOrWhiteSpace(sectionKey);
-
         return state.EventsPanelOpenStates.TryGetValue(sectionKey, out bool isOpen) && isOpen;
     }
 }

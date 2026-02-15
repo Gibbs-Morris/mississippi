@@ -11,32 +11,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisFormField;
 internal static class MisFormFieldKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current MisFormField view model.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The current form field view model.</returns>
-    public static MisFormFieldViewModel GetViewModel(
-        MisFormFieldKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
-    ///     Gets the label text.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The label text.</returns>
-    public static string GetLabelText(
-        MisFormFieldKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.LabelText;
-    }
-
-    /// <summary>
     ///     Gets the help text.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -47,19 +21,6 @@ internal static class MisFormFieldKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.HelpText;
-    }
-
-    /// <summary>
-    ///     Gets the validation message.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The validation message.</returns>
-    public static string GetValidationMessage(
-        MisFormFieldKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ValidationMessage;
     }
 
     /// <summary>
@@ -76,6 +37,19 @@ internal static class MisFormFieldKitchenSinkSelectors
     }
 
     /// <summary>
+    ///     Gets the label text.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The label text.</returns>
+    public static string GetLabelText(
+        MisFormFieldKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.LabelText;
+    }
+
+    /// <summary>
     ///     Gets whether to show validation.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -86,5 +60,31 @@ internal static class MisFormFieldKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.ShowValidation;
+    }
+
+    /// <summary>
+    ///     Gets the validation message.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The validation message.</returns>
+    public static string GetValidationMessage(
+        MisFormFieldKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ValidationMessage;
+    }
+
+    /// <summary>
+    ///     Gets the current MisFormField view model.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The current form field view model.</returns>
+    public static MisFormFieldViewModel GetViewModel(
+        MisFormFieldKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

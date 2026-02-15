@@ -9,56 +9,22 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisSearchInput;
 internal static class MisSearchInputKitchenSinkReducers
 {
     /// <summary>
-    ///     Updates the search input value.
+    ///     Clears all recorded events.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The clear action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSearchInputKitchenSinkState SetValue(
+    public static MisSearchInputKitchenSinkState ClearEvents(
         MisSearchInputKitchenSinkState state,
-        SetMisSearchInputValueAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-        return state with { ViewModel = state.ViewModel with { Value = action.Value ?? string.Empty } };
-    }
-
-    /// <summary>
-    ///     Updates the disabled state.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisSearchInputKitchenSinkState SetDisabled(
-        MisSearchInputKitchenSinkState state,
-        SetMisSearchInputDisabledAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-        return state with { ViewModel = state.ViewModel with { IsDisabled = action.IsDisabled } };
-    }
-
-    /// <summary>
-    ///     Updates the placeholder text.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisSearchInputKitchenSinkState SetPlaceholder(
-        MisSearchInputKitchenSinkState state,
-        SetMisSearchInputPlaceholderAction action
+        ClearMisSearchInputEventsAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                Placeholder = string.IsNullOrWhiteSpace(action.Placeholder) ? "Search..." : action.Placeholder.Trim(),
-            },
+            EventLog = [],
+            EventCount = 0,
         };
     }
 
@@ -76,23 +42,11 @@ internal static class MisSearchInputKitchenSinkReducers
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
         string[] newLog = [.. state.EventLog, $"{action.EventName}: {action.Details}"];
-        return state with { EventLog = newLog, EventCount = newLog.Length };
-    }
-
-    /// <summary>
-    ///     Clears all recorded events.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The clear action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisSearchInputKitchenSinkState ClearEvents(
-        MisSearchInputKitchenSinkState state,
-        ClearMisSearchInputEventsAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-        return state with { EventLog = [], EventCount = 0 };
+        return state with
+        {
+            EventLog = newLog,
+            EventCount = newLog.Length,
+        };
     }
 
     /// <summary>
@@ -135,6 +89,72 @@ internal static class MisSearchInputKitchenSinkReducers
             ViewModel = state.ViewModel with
             {
                 CssClass = string.IsNullOrWhiteSpace(action.CssClass) ? null : action.CssClass.Trim(),
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Updates the disabled state.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisSearchInputKitchenSinkState SetDisabled(
+        MisSearchInputKitchenSinkState state,
+        SetMisSearchInputDisabledAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                IsDisabled = action.IsDisabled,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Updates the placeholder text.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisSearchInputKitchenSinkState SetPlaceholder(
+        MisSearchInputKitchenSinkState state,
+        SetMisSearchInputPlaceholderAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Placeholder = string.IsNullOrWhiteSpace(action.Placeholder) ? "Search..." : action.Placeholder.Trim(),
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Updates the search input value.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisSearchInputKitchenSinkState SetValue(
+        MisSearchInputKitchenSinkState state,
+        SetMisSearchInputValueAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                Value = action.Value ?? string.Empty,
             },
         };
     }

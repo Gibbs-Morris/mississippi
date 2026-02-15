@@ -9,48 +9,44 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisCheckbox;
 internal static class MisCheckboxKitchenSinkReducers
 {
     /// <summary>
-    ///     Sets whether the checkbox is checked.
+    ///     Clears all logged events.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The clear action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxKitchenSinkState SetChecked(
+    public static MisCheckboxKitchenSinkState ClearEvents(
         MisCheckboxKitchenSinkState state,
-        SetMisCheckboxCheckedAction action
+        ClearMisCheckboxEventsAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                IsChecked = action.IsChecked,
-            },
+            EventCount = 0,
+            EventLog = [],
         };
     }
 
     /// <summary>
-    ///     Sets the intent identifier.
+    ///     Appends an interaction event entry to the event log.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The event recording action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxKitchenSinkState SetIntentId(
+    public static MisCheckboxKitchenSinkState RecordEvent(
         MisCheckboxKitchenSinkState state,
-        SetMisCheckboxIntentIdAction action
+        RecordMisCheckboxEventAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
+        int nextEventNumber = state.EventCount + 1;
+        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-checkbox"),
-            },
+            EventCount = nextEventNumber,
+            EventLog = [.. state.EventLog, entry],
         };
     }
 
@@ -67,7 +63,6 @@ internal static class MisCheckboxKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -78,24 +73,23 @@ internal static class MisCheckboxKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Sets the optional title value.
+    ///     Sets whether the checkbox is checked.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxKitchenSinkState SetTitle(
+    public static MisCheckboxKitchenSinkState SetChecked(
         MisCheckboxKitchenSinkState state,
-        SetMisCheckboxTitleAction action
+        SetMisCheckboxCheckedAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
-                Title = NormalizeOptional(action.Title),
+                IsChecked = action.IsChecked,
             },
         };
     }
@@ -113,7 +107,6 @@ internal static class MisCheckboxKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -136,12 +129,33 @@ internal static class MisCheckboxKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 IsDisabled = action.IsDisabled,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the intent identifier.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisCheckboxKitchenSinkState SetIntentId(
+        MisCheckboxKitchenSinkState state,
+        SetMisCheckboxIntentIdAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-checkbox"),
             },
         };
     }
@@ -159,35 +173,11 @@ internal static class MisCheckboxKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 IsRequired = action.IsRequired,
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the submitted value attribute.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisCheckboxKitchenSinkState SetValue(
-        MisCheckboxKitchenSinkState state,
-        SetMisCheckboxValueAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                Value = NormalizeRequired(action.Value, "true"),
             },
         };
     }
@@ -205,7 +195,6 @@ internal static class MisCheckboxKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -216,57 +205,57 @@ internal static class MisCheckboxKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Appends an interaction event entry to the event log.
+    ///     Sets the optional title value.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The event recording action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxKitchenSinkState RecordEvent(
+    public static MisCheckboxKitchenSinkState SetTitle(
         MisCheckboxKitchenSinkState state,
-        RecordMisCheckboxEventAction action
+        SetMisCheckboxTitleAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
-        int nextEventNumber = state.EventCount + 1;
-        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            EventCount = nextEventNumber,
-            EventLog = [.. state.EventLog, entry],
+            ViewModel = state.ViewModel with
+            {
+                Title = NormalizeOptional(action.Title),
+            },
         };
     }
 
     /// <summary>
-    ///     Clears all logged events.
+    ///     Sets the submitted value attribute.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The clear action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisCheckboxKitchenSinkState ClearEvents(
+    public static MisCheckboxKitchenSinkState SetValue(
         MisCheckboxKitchenSinkState state,
-        ClearMisCheckboxEventsAction action
+        SetMisCheckboxValueAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            EventCount = 0,
-            EventLog = [],
+            ViewModel = state.ViewModel with
+            {
+                Value = NormalizeRequired(action.Value, "true"),
+            },
         };
     }
+
+    private static string? NormalizeOptional(
+        string? value
+    ) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static string NormalizeRequired(
         string? value,
         string fallback
     ) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-
-    private static string? NormalizeOptional(
-        string? value
-    ) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

@@ -12,19 +12,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisTextarea;
 internal static class MisTextareaKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current MisTextarea view model.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The current textarea view model.</returns>
-    public static MisTextareaViewModel GetViewModel(
-        MisTextareaKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
     ///     Gets the current list of logged textarea events.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -35,5 +22,18 @@ internal static class MisTextareaKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.EventLog;
+    }
+
+    /// <summary>
+    ///     Gets the current MisTextarea view model.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The current textarea view model.</returns>
+    public static MisTextareaViewModel GetViewModel(
+        MisTextareaKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

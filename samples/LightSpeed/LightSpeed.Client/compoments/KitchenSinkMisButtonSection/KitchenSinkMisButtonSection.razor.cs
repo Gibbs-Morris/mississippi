@@ -15,6 +15,7 @@ using Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
 
+
 namespace LightSpeed.Client.Compoments;
 
 /// <summary>
@@ -24,10 +25,9 @@ public sealed partial class KitchenSinkMisButtonSection : StoreComponent
 {
     private const string EventsSectionKey = "misButton";
 
-    private static readonly IReadOnlyList<MisSelectOptionViewModel> ButtonTypeOptions =
-        Enum.GetValues<MisButtonType>()
-            .Select(t => new MisSelectOptionViewModel(t.ToString(), t.ToString()))
-            .ToList();
+    private static readonly IReadOnlyList<MisSelectOptionViewModel> ButtonTypeOptions = Enum.GetValues<MisButtonType>()
+        .Select(t => new MisSelectOptionViewModel(t.ToString(), t.ToString()))
+        .ToList();
 
     private IReadOnlyList<string> ButtonEvents =>
         Select<MisButtonKitchenSinkState, IReadOnlyList<string>>(MisButtonKitchenSinkSelectors.GetEventLog);
@@ -36,7 +36,8 @@ public sealed partial class KitchenSinkMisButtonSection : StoreComponent
         Select<MisButtonKitchenSinkState, MisButtonViewModel>(MisButtonKitchenSinkSelectors.GetViewModel);
 
     private bool IsEventsOpen =>
-        Select<KitchenSinkSectionUiState, bool>(state => KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
+        Select<KitchenSinkSectionUiState, bool>(state =>
+            KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
 
     private static string FormatAction(
         IMisButtonAction action
@@ -55,8 +56,16 @@ public sealed partial class KitchenSinkMisButtonSection : StoreComponent
                 $"intent={keyUp.IntentId}, key={keyUp.Key}, code={keyUp.Code}, ctrl={keyUp.CtrlKey}, shift={keyUp.ShiftKey}, alt={keyUp.AltKey}, meta={keyUp.MetaKey}",
             MisButtonFocusedAction focused => $"intent={focused.IntentId}",
             MisButtonBlurredAction blurred => $"intent={blurred.IntentId}",
-            _ => $"intent={action.IntentId}",
+            var _ => $"intent={action.IntentId}",
         };
+
+    private void HandleClearEvents(
+        MouseEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        Dispatch(new ClearMisButtonEventsAction());
+    }
 
     private Task HandleMisButtonActionAsync(
         IMisButtonAction action
@@ -67,17 +76,26 @@ public sealed partial class KitchenSinkMisButtonSection : StoreComponent
         return Task.CompletedTask;
     }
 
-    private void HandleClearEvents(
-        MouseEventArgs args
+    private void HandlePropertySelectAction(
+        IMisSelectAction action
     )
     {
-        ArgumentNullException.ThrowIfNull(args);
-        Dispatch(new ClearMisButtonEventsAction());
+        if (action is MisSelectChangedAction changedAction &&
+            (changedAction.IntentId == "prop-type") &&
+            Enum.TryParse(changedAction.Value, true, out MisButtonType buttonType))
+        {
+            Dispatch(new SetMisButtonTypeAction(buttonType));
+        }
     }
 
-    private void HandleToggleEvents()
+    private void HandlePropertySwitchAction(
+        IMisSwitchAction action
+    )
     {
-        Dispatch(new ToggleKitchenSinkSectionEventsAction(EventsSectionKey));
+        if (action is MisSwitchChangedAction changedAction && (changedAction.IntentId == "prop-disabled"))
+        {
+            Dispatch(new SetMisButtonDisabledAction(changedAction.IsChecked));
+        }
     }
 
     private void HandlePropertyTextInputAction(
@@ -105,25 +123,8 @@ public sealed partial class KitchenSinkMisButtonSection : StoreComponent
         }
     }
 
-    private void HandlePropertySwitchAction(
-        IMisSwitchAction action
-    )
+    private void HandleToggleEvents()
     {
-        if (action is MisSwitchChangedAction changedAction && changedAction.IntentId == "prop-disabled")
-        {
-            Dispatch(new SetMisButtonDisabledAction(changedAction.IsChecked));
-        }
-    }
-
-    private void HandlePropertySelectAction(
-        IMisSelectAction action
-    )
-    {
-        if (action is MisSelectChangedAction changedAction
-            && changedAction.IntentId == "prop-type"
-            && Enum.TryParse(changedAction.Value, true, out MisButtonType buttonType))
-        {
-            Dispatch(new SetMisButtonTypeAction(buttonType));
-        }
+        Dispatch(new ToggleKitchenSinkSectionEventsAction(EventsSectionKey));
     }
 }

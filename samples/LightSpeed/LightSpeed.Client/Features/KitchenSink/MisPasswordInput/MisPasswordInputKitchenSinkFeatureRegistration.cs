@@ -19,16 +19,26 @@ internal static class MisPasswordInputKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisPasswordInputValueAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.SetValue);
-        services.AddReducer<SetMisPasswordInputVisibilityAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.SetIsPasswordVisible);
-        services.AddReducer<SetMisPasswordInputDisabledAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.SetDisabled);
-        services.AddReducer<SetMisPasswordInputPlaceholderAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.SetPlaceholder);
-        services.AddReducer<SetMisPasswordInputAriaLabelAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.SetAriaLabel);
-        services.AddReducer<SetMisPasswordInputCssClassAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.SetCssClass);
-        services.AddReducer<SetMisPasswordInputReadOnlyAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.SetReadOnly);
-        services.AddReducer<SetMisPasswordInputStateAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.SetState);
-        services.AddReducer<RecordMisPasswordInputEventAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.RecordEvent);
-        services.AddReducer<ClearMisPasswordInputEventsAction, MisPasswordInputKitchenSinkState>(MisPasswordInputKitchenSinkReducers.ClearEvents);
+        services.AddReducer<SetMisPasswordInputValueAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.SetValue);
+        services.AddReducer<SetMisPasswordInputVisibilityAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.SetIsPasswordVisible);
+        services.AddReducer<SetMisPasswordInputDisabledAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.SetDisabled);
+        services.AddReducer<SetMisPasswordInputPlaceholderAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.SetPlaceholder);
+        services.AddReducer<SetMisPasswordInputAriaLabelAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.SetAriaLabel);
+        services.AddReducer<SetMisPasswordInputCssClassAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisPasswordInputReadOnlyAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.SetReadOnly);
+        services.AddReducer<SetMisPasswordInputStateAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.SetState);
+        services.AddReducer<RecordMisPasswordInputEventAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.RecordEvent);
+        services.AddReducer<ClearMisPasswordInputEventsAction, MisPasswordInputKitchenSinkState>(
+            MisPasswordInputKitchenSinkReducers.ClearEvents);
         return services;
     }
 }

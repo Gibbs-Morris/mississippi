@@ -19,8 +19,10 @@ internal static class MisHelpTextKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisHelpTextContentAction, MisHelpTextKitchenSinkState>(MisHelpTextKitchenSinkReducers.SetContent);
-        services.AddReducer<SetMisHelpTextCssClassAction, MisHelpTextKitchenSinkState>(MisHelpTextKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisHelpTextContentAction, MisHelpTextKitchenSinkState>(
+            MisHelpTextKitchenSinkReducers.SetContent);
+        services.AddReducer<SetMisHelpTextCssClassAction, MisHelpTextKitchenSinkState>(
+            MisHelpTextKitchenSinkReducers.SetCssClass);
         services.AddReducer<SetMisHelpTextIdAction, MisHelpTextKitchenSinkState>(MisHelpTextKitchenSinkReducers.SetId);
         return services;
     }

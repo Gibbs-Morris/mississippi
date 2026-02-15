@@ -15,6 +15,7 @@ using Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
 
+
 namespace LightSpeed.Client.Compoments;
 
 /// <summary>
@@ -36,17 +37,16 @@ public sealed partial class KitchenSinkMisCheckboxSection : StoreComponent
         Select<MisCheckboxKitchenSinkState, MisCheckboxViewModel>(MisCheckboxKitchenSinkSelectors.GetViewModel);
 
     private bool IsEventsOpen =>
-        Select<KitchenSinkSectionUiState, bool>(state => KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
+        Select<KitchenSinkSectionUiState, bool>(state =>
+            KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
 
     private static string FormatAction(
         IMisCheckboxAction action
     ) =>
         action switch
         {
-            MisCheckboxInputAction input =>
-                $"intent={input.IntentId}, checked={input.IsChecked}",
-            MisCheckboxChangedAction changed =>
-                $"intent={changed.IntentId}, checked={changed.IsChecked}",
+            MisCheckboxInputAction input => $"intent={input.IntentId}, checked={input.IsChecked}",
+            MisCheckboxChangedAction changed => $"intent={changed.IntentId}, checked={changed.IsChecked}",
             MisCheckboxKeyDownAction keyDown =>
                 $"intent={keyDown.IntentId}, key={keyDown.Key}, code={keyDown.Code}, repeat={keyDown.Repeat}, ctrl={keyDown.CtrlKey}, shift={keyDown.ShiftKey}, alt={keyDown.AltKey}, meta={keyDown.MetaKey}",
             MisCheckboxKeyUpAction keyUp =>
@@ -57,8 +57,16 @@ public sealed partial class KitchenSinkMisCheckboxSection : StoreComponent
                 $"intent={pointerUp.IntentId}, button={pointerUp.Button}, ctrl={pointerUp.CtrlKey}, shift={pointerUp.ShiftKey}, alt={pointerUp.AltKey}, meta={pointerUp.MetaKey}",
             MisCheckboxFocusedAction focused => $"intent={focused.IntentId}",
             MisCheckboxBlurredAction blurred => $"intent={blurred.IntentId}",
-            _ => $"intent={action.IntentId}",
+            var _ => $"intent={action.IntentId}",
         };
+
+    private void HandleClearCheckboxEvents(
+        MouseEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        Dispatch(new ClearMisCheckboxEventsAction());
+    }
 
     private Task HandleMisCheckboxActionAsync(
         IMisCheckboxAction action
@@ -79,17 +87,45 @@ public sealed partial class KitchenSinkMisCheckboxSection : StoreComponent
         return Task.CompletedTask;
     }
 
-    private void HandleClearCheckboxEvents(
-        MouseEventArgs args
+    private void HandlePropertySelectAction(
+        IMisSelectAction action
     )
     {
-        ArgumentNullException.ThrowIfNull(args);
-        Dispatch(new ClearMisCheckboxEventsAction());
+        if (action is MisSelectChangedAction changedAction &&
+            (changedAction.IntentId == "prop-state") &&
+            Enum.TryParse(changedAction.Value, true, out MisCheckboxState state))
+        {
+            Dispatch(new SetMisCheckboxStateAction(state));
+        }
     }
 
-    private void HandleToggleEvents()
+    private void HandlePropertySwitchAction(
+        IMisSwitchAction action
+    )
     {
-        Dispatch(new ToggleKitchenSinkSectionEventsAction(EventsSectionKey));
+        bool? isChecked = action switch
+        {
+            MisSwitchInputAction inputAction => inputAction.IsChecked,
+            MisSwitchChangedAction changedAction => changedAction.IsChecked,
+            var _ => null,
+        };
+        if (isChecked is not bool checkedValue)
+        {
+            return;
+        }
+
+        switch (action.IntentId)
+        {
+            case "prop-checked":
+                Dispatch(new SetMisCheckboxCheckedAction(checkedValue));
+                break;
+            case "prop-disabled":
+                Dispatch(new SetMisCheckboxDisabledAction(checkedValue));
+                break;
+            case "prop-required":
+                Dispatch(new SetMisCheckboxRequiredAction(checkedValue));
+                break;
+        }
     }
 
     private void HandlePropertyTextInputAction(
@@ -120,45 +156,8 @@ public sealed partial class KitchenSinkMisCheckboxSection : StoreComponent
         }
     }
 
-    private void HandlePropertySwitchAction(
-        IMisSwitchAction action
-    )
+    private void HandleToggleEvents()
     {
-        bool? isChecked = action switch
-        {
-            MisSwitchInputAction inputAction => inputAction.IsChecked,
-            MisSwitchChangedAction changedAction => changedAction.IsChecked,
-            _ => null,
-        };
-
-        if (isChecked is not bool checkedValue)
-        {
-            return;
-        }
-
-        switch (action.IntentId)
-        {
-            case "prop-checked":
-                Dispatch(new SetMisCheckboxCheckedAction(checkedValue));
-                break;
-            case "prop-disabled":
-                Dispatch(new SetMisCheckboxDisabledAction(checkedValue));
-                break;
-            case "prop-required":
-                Dispatch(new SetMisCheckboxRequiredAction(checkedValue));
-                break;
-        }
-    }
-
-    private void HandlePropertySelectAction(
-        IMisSelectAction action
-    )
-    {
-        if (action is MisSelectChangedAction changedAction
-            && changedAction.IntentId == "prop-state"
-            && Enum.TryParse(changedAction.Value, true, out MisCheckboxState state))
-        {
-            Dispatch(new SetMisCheckboxStateAction(state));
-        }
+        Dispatch(new ToggleKitchenSinkSectionEventsAction(EventsSectionKey));
     }
 }

@@ -11,19 +11,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisValidationMessage;
 internal static class MisValidationMessageKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current MisValidationMessage view model.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The current validation message view model.</returns>
-    public static MisValidationMessageViewModel GetViewModel(
-        MisValidationMessageKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
     ///     Gets the message text content.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -34,5 +21,18 @@ internal static class MisValidationMessageKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.MessageText;
+    }
+
+    /// <summary>
+    ///     Gets the current MisValidationMessage view model.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The current validation message view model.</returns>
+    public static MisValidationMessageViewModel GetViewModel(
+        MisValidationMessageKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

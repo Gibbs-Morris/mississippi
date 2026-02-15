@@ -15,6 +15,16 @@ internal sealed record MisCheckboxKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misCheckbox";
 
     /// <summary>
+    ///     Gets the number of events recorded since the last clear.
+    /// </summary>
+    public int EventCount { get; init; }
+
+    /// <summary>
+    ///     Gets the list of emitted interaction event entries.
+    /// </summary>
+    public IReadOnlyList<string> EventLog { get; init; } = [];
+
+    /// <summary>
     ///     Gets the current checkbox view model used by the demo component.
     /// </summary>
     public MisCheckboxViewModel ViewModel { get; init; } = MisCheckboxViewModel.Default with
@@ -24,14 +34,4 @@ internal sealed record MisCheckboxKitchenSinkState : IFeatureState
         AriaLabel = "Kitchen Sink checkbox",
         Title = "Kitchen Sink checkbox",
     };
-
-    /// <summary>
-    ///     Gets the list of emitted interaction event entries.
-    /// </summary>
-    public IReadOnlyList<string> EventLog { get; init; } = [];
-
-    /// <summary>
-    ///     Gets the number of events recorded since the last clear.
-    /// </summary>
-    public int EventCount { get; init; }
 }

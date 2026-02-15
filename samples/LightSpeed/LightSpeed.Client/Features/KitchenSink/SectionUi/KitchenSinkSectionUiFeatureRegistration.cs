@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir;
 
+
 namespace LightSpeed.Client.Features.KitchenSinkFeatures.SectionUi;
 
 /// <summary>
@@ -18,7 +19,8 @@ internal static class KitchenSinkSectionUiFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<ToggleKitchenSinkSectionEventsAction, KitchenSinkSectionUiState>(KitchenSinkSectionUiReducers.ToggleEventsPanel);
+        services.AddReducer<ToggleKitchenSinkSectionEventsAction, KitchenSinkSectionUiState>(
+            KitchenSinkSectionUiReducers.ToggleEventsPanel);
         return services;
     }
 }

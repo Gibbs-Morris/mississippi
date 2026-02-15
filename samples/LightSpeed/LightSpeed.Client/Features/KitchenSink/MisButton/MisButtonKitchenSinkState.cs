@@ -15,6 +15,16 @@ internal sealed record MisButtonKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misButton";
 
     /// <summary>
+    ///     Gets the number of events recorded since the last clear.
+    /// </summary>
+    public int EventCount { get; init; }
+
+    /// <summary>
+    ///     Gets the list of emitted interaction event entries.
+    /// </summary>
+    public IReadOnlyList<string> EventLog { get; init; } = [];
+
+    /// <summary>
     ///     Gets the current button view model used by the demo component.
     /// </summary>
     public MisButtonViewModel ViewModel { get; init; } = MisButtonViewModel.Default with
@@ -23,14 +33,4 @@ internal sealed record MisButtonKitchenSinkState : IFeatureState
         AriaLabel = "Kitchen Sink button",
         Title = "Kitchen Sink button",
     };
-
-    /// <summary>
-    ///     Gets the list of emitted interaction event entries.
-    /// </summary>
-    public IReadOnlyList<string> EventLog { get; init; } = [];
-
-    /// <summary>
-    ///     Gets the number of events recorded since the last clear.
-    /// </summary>
-    public int EventCount { get; init; }
 }

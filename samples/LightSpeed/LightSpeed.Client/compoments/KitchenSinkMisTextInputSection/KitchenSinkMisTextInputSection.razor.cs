@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisTextInput;
 using LightSpeed.Client.Features.KitchenSinkFeatures.SectionUi;
 
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
 using Mississippi.Refraction.Components.Molecules;
@@ -14,6 +13,7 @@ using Mississippi.Refraction.Components.Molecules.MisSelectActions;
 using Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
+
 
 namespace LightSpeed.Client.Compoments;
 
@@ -24,8 +24,14 @@ public sealed partial class KitchenSinkMisTextInputSection : StoreComponent
 {
     private const string EventsSectionKey = "misTextInput";
 
-    private static IReadOnlyList<MisSelectOptionViewModel> TextInputTypeOptions { get; } =
-        Enum.GetValues<MisTextInputType>().Select(t => new MisSelectOptionViewModel(t.ToString(), t.ToString())).ToList();
+    private static IReadOnlyList<MisSelectOptionViewModel> TextInputTypeOptions { get; } = Enum
+        .GetValues<MisTextInputType>()
+        .Select(t => new MisSelectOptionViewModel(t.ToString(), t.ToString()))
+        .ToList();
+
+    private bool IsEventsOpen =>
+        Select<KitchenSinkSectionUiState, bool>(state =>
+            KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
 
     private IReadOnlyList<string> TextInputEvents =>
         Select<MisTextInputKitchenSinkState, IReadOnlyList<string>>(MisTextInputKitchenSinkSelectors.GetEventLog);
@@ -33,18 +39,13 @@ public sealed partial class KitchenSinkMisTextInputSection : StoreComponent
     private MisTextInputViewModel TextInputModel =>
         Select<MisTextInputKitchenSinkState, MisTextInputViewModel>(MisTextInputKitchenSinkSelectors.GetViewModel);
 
-    private bool IsEventsOpen =>
-        Select<KitchenSinkSectionUiState, bool>(state => KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
-
     private static string FormatAction(
         IMisTextInputAction action
     ) =>
         action switch
         {
-            MisTextInputInputAction input =>
-                $"intent={input.IntentId}, value={input.Value}",
-            MisTextInputChangedAction changed =>
-                $"intent={changed.IntentId}, value={changed.Value}",
+            MisTextInputInputAction input => $"intent={input.IntentId}, value={input.Value}",
+            MisTextInputChangedAction changed => $"intent={changed.IntentId}, value={changed.Value}",
             MisTextInputKeyDownAction keyDown =>
                 $"intent={keyDown.IntentId}, key={keyDown.Key}, code={keyDown.Code}, repeat={keyDown.Repeat}, ctrl={keyDown.CtrlKey}, shift={keyDown.ShiftKey}, alt={keyDown.AltKey}, meta={keyDown.MetaKey}",
             MisTextInputKeyUpAction keyUp =>
@@ -55,8 +56,16 @@ public sealed partial class KitchenSinkMisTextInputSection : StoreComponent
                 $"intent={pointerUp.IntentId}, button={pointerUp.Button}, ctrl={pointerUp.CtrlKey}, shift={pointerUp.ShiftKey}, alt={pointerUp.AltKey}, meta={pointerUp.MetaKey}",
             MisTextInputFocusedAction focused => $"intent={focused.IntentId}",
             MisTextInputBlurredAction blurred => $"intent={blurred.IntentId}",
-            _ => $"intent={action.IntentId}",
+            var _ => $"intent={action.IntentId}",
         };
+
+    private void HandleClearTextInputEvents(
+        MouseEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        Dispatch(new ClearMisTextInputEventsAction());
+    }
 
     private Task HandleMisTextInputActionAsync(
         IMisTextInputAction action
@@ -77,37 +86,16 @@ public sealed partial class KitchenSinkMisTextInputSection : StoreComponent
         return Task.CompletedTask;
     }
 
-    private void HandlePropertyTextInputAction(
-        IMisTextInputAction action
+    private void HandlePropertySelectAction(
+        IMisSelectAction action
     )
     {
         ArgumentNullException.ThrowIfNull(action);
-        if (action is MisTextInputInputAction inputAction)
+        if (action is MisSelectChangedAction changedAction &&
+            (changedAction.IntentId == "prop-type") &&
+            Enum.TryParse(changedAction.Value, true, out MisTextInputType inputType))
         {
-            switch (inputAction.IntentId)
-            {
-                case "prop-value":
-                    Dispatch(new SetMisTextInputValueAction(inputAction.Value ?? string.Empty));
-                    break;
-                case "prop-intentid":
-                    Dispatch(new SetMisTextInputIntentIdAction(!string.IsNullOrWhiteSpace(inputAction.Value) ? inputAction.Value : "kitchen-sink.mis-text-input"));
-                    break;
-                case "prop-arialabel":
-                    Dispatch(new SetMisTextInputAriaLabelAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-                case "prop-placeholder":
-                    Dispatch(new SetMisTextInputPlaceholderAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-                case "prop-title":
-                    Dispatch(new SetMisTextInputTitleAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-                case "prop-cssclass":
-                    Dispatch(new SetMisTextInputCssClassAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-                case "prop-autocomplete":
-                    Dispatch(new SetMisTextInputAutoCompleteAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-            }
+            Dispatch(new SetMisTextInputTypeAction(inputType));
         }
     }
 
@@ -120,9 +108,8 @@ public sealed partial class KitchenSinkMisTextInputSection : StoreComponent
         {
             MisSwitchInputAction inputAction => inputAction.IsChecked,
             MisSwitchChangedAction changedAction => changedAction.IsChecked,
-            _ => null,
+            var _ => null,
         };
-
         if (isChecked is not bool checkedValue)
         {
             return;
@@ -139,25 +126,52 @@ public sealed partial class KitchenSinkMisTextInputSection : StoreComponent
         }
     }
 
-    private void HandlePropertySelectAction(
-        IMisSelectAction action
+    private void HandlePropertyTextInputAction(
+        IMisTextInputAction action
     )
     {
         ArgumentNullException.ThrowIfNull(action);
-        if (action is MisSelectChangedAction changedAction
-            && changedAction.IntentId == "prop-type"
-            && Enum.TryParse(changedAction.Value, true, out MisTextInputType inputType))
+        if (action is MisTextInputInputAction inputAction)
         {
-            Dispatch(new SetMisTextInputTypeAction(inputType));
+            switch (inputAction.IntentId)
+            {
+                case "prop-value":
+                    Dispatch(new SetMisTextInputValueAction(inputAction.Value ?? string.Empty));
+                    break;
+                case "prop-intentid":
+                    Dispatch(
+                        new SetMisTextInputIntentIdAction(
+                            !string.IsNullOrWhiteSpace(inputAction.Value)
+                                ? inputAction.Value
+                                : "kitchen-sink.mis-text-input"));
+                    break;
+                case "prop-arialabel":
+                    Dispatch(
+                        new SetMisTextInputAriaLabelAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+                case "prop-placeholder":
+                    Dispatch(
+                        new SetMisTextInputPlaceholderAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+                case "prop-title":
+                    Dispatch(
+                        new SetMisTextInputTitleAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+                case "prop-cssclass":
+                    Dispatch(
+                        new SetMisTextInputCssClassAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+                case "prop-autocomplete":
+                    Dispatch(
+                        new SetMisTextInputAutoCompleteAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+            }
         }
-    }
-
-    private void HandleClearTextInputEvents(
-        MouseEventArgs args
-    )
-    {
-        ArgumentNullException.ThrowIfNull(args);
-        Dispatch(new ClearMisTextInputEventsAction());
     }
 
     private void HandleToggleEvents()

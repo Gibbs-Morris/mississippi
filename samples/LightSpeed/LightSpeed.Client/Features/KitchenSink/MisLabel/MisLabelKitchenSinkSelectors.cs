@@ -11,19 +11,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisLabel;
 internal static class MisLabelKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current MisLabel view model.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The current label view model.</returns>
-    public static MisLabelViewModel GetViewModel(
-        MisLabelKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
     ///     Gets the label text content.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -34,5 +21,18 @@ internal static class MisLabelKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.LabelText;
+    }
+
+    /// <summary>
+    ///     Gets the current MisLabel view model.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The current label view model.</returns>
+    public static MisLabelViewModel GetViewModel(
+        MisLabelKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

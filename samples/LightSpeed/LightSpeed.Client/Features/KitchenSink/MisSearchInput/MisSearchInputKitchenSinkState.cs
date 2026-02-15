@@ -15,13 +15,9 @@ internal sealed record MisSearchInputKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misSearchInput";
 
     /// <summary>
-    ///     Gets the current search input view model used by the demo component.
+    ///     Gets the number of events recorded since the last clear.
     /// </summary>
-    public MisSearchInputViewModel ViewModel { get; init; } = MisSearchInputViewModel.Default with
-    {
-        IntentId = "kitchen-sink.mis-search-input",
-        Placeholder = "Search...",
-    };
+    public int EventCount { get; init; }
 
     /// <summary>
     ///     Gets the list of emitted interaction event entries.
@@ -29,7 +25,11 @@ internal sealed record MisSearchInputKitchenSinkState : IFeatureState
     public IReadOnlyList<string> EventLog { get; init; } = [];
 
     /// <summary>
-    ///     Gets the number of events recorded since the last clear.
+    ///     Gets the current search input view model used by the demo component.
     /// </summary>
-    public int EventCount { get; init; }
+    public MisSearchInputViewModel ViewModel { get; init; } = MisSearchInputViewModel.Default with
+    {
+        IntentId = "kitchen-sink.mis-search-input",
+        Placeholder = "Search...",
+    };
 }

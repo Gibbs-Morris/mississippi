@@ -13,6 +13,11 @@ internal sealed record MisLabelKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misLabel";
 
     /// <summary>
+    ///     Gets the content text displayed within the label.
+    /// </summary>
+    public string LabelText { get; init; } = "Demo Label";
+
+    /// <summary>
     ///     Gets the current label view model used by the demo component.
     /// </summary>
     public MisLabelViewModel ViewModel { get; init; } = MisLabelViewModel.Default with
@@ -21,9 +26,4 @@ internal sealed record MisLabelKitchenSinkState : IFeatureState
         IsRequired = false,
         State = MisLabelState.Default,
     };
-
-    /// <summary>
-    ///     Gets the content text displayed within the label.
-    /// </summary>
-    public string LabelText { get; init; } = "Demo Label";
 }

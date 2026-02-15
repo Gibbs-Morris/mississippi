@@ -19,14 +19,22 @@ internal static class MisCheckboxGroupKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisCheckboxGroupValuesAction, MisCheckboxGroupKitchenSinkState>(MisCheckboxGroupKitchenSinkReducers.SetValues);
-        services.AddReducer<SetMisCheckboxGroupDisabledAction, MisCheckboxGroupKitchenSinkState>(MisCheckboxGroupKitchenSinkReducers.SetDisabled);
-        services.AddReducer<SetMisCheckboxGroupRequiredAction, MisCheckboxGroupKitchenSinkState>(MisCheckboxGroupKitchenSinkReducers.SetRequired);
-        services.AddReducer<SetMisCheckboxGroupAriaLabelAction, MisCheckboxGroupKitchenSinkState>(MisCheckboxGroupKitchenSinkReducers.SetAriaLabel);
-        services.AddReducer<SetMisCheckboxGroupCssClassAction, MisCheckboxGroupKitchenSinkState>(MisCheckboxGroupKitchenSinkReducers.SetCssClass);
-        services.AddReducer<SetMisCheckboxGroupOptionsAction, MisCheckboxGroupKitchenSinkState>(MisCheckboxGroupKitchenSinkReducers.SetOptions);
-        services.AddReducer<RecordMisCheckboxGroupEventAction, MisCheckboxGroupKitchenSinkState>(MisCheckboxGroupKitchenSinkReducers.RecordEvent);
-        services.AddReducer<ClearMisCheckboxGroupEventsAction, MisCheckboxGroupKitchenSinkState>(MisCheckboxGroupKitchenSinkReducers.ClearEvents);
+        services.AddReducer<SetMisCheckboxGroupValuesAction, MisCheckboxGroupKitchenSinkState>(
+            MisCheckboxGroupKitchenSinkReducers.SetValues);
+        services.AddReducer<SetMisCheckboxGroupDisabledAction, MisCheckboxGroupKitchenSinkState>(
+            MisCheckboxGroupKitchenSinkReducers.SetDisabled);
+        services.AddReducer<SetMisCheckboxGroupRequiredAction, MisCheckboxGroupKitchenSinkState>(
+            MisCheckboxGroupKitchenSinkReducers.SetRequired);
+        services.AddReducer<SetMisCheckboxGroupAriaLabelAction, MisCheckboxGroupKitchenSinkState>(
+            MisCheckboxGroupKitchenSinkReducers.SetAriaLabel);
+        services.AddReducer<SetMisCheckboxGroupCssClassAction, MisCheckboxGroupKitchenSinkState>(
+            MisCheckboxGroupKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisCheckboxGroupOptionsAction, MisCheckboxGroupKitchenSinkState>(
+            MisCheckboxGroupKitchenSinkReducers.SetOptions);
+        services.AddReducer<RecordMisCheckboxGroupEventAction, MisCheckboxGroupKitchenSinkState>(
+            MisCheckboxGroupKitchenSinkReducers.RecordEvent);
+        services.AddReducer<ClearMisCheckboxGroupEventsAction, MisCheckboxGroupKitchenSinkState>(
+            MisCheckboxGroupKitchenSinkReducers.ClearEvents);
         return services;
     }
 }

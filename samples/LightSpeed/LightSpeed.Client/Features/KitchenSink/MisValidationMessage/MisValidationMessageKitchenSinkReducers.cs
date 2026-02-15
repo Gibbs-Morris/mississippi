@@ -9,22 +9,24 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisValidationMessage;
 internal static class MisValidationMessageKitchenSinkReducers
 {
     /// <summary>
-    ///     Sets the message text content.
+    ///     Sets the optional CSS class.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisValidationMessageKitchenSinkState SetText(
+    public static MisValidationMessageKitchenSinkState SetCssClass(
         MisValidationMessageKitchenSinkState state,
-        SetMisValidationMessageTextAction action
+        SetMisValidationMessageCssClassAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            MessageText = action.Text ?? "This field is required.",
+            ViewModel = state.ViewModel with
+            {
+                CssClass = NormalizeOptional(action.CssClass),
+            },
         };
     }
 
@@ -41,7 +43,6 @@ internal static class MisValidationMessageKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -64,7 +65,6 @@ internal static class MisValidationMessageKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -75,25 +75,21 @@ internal static class MisValidationMessageKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Sets the optional CSS class.
+    ///     Sets the message text content.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisValidationMessageKitchenSinkState SetCssClass(
+    public static MisValidationMessageKitchenSinkState SetText(
         MisValidationMessageKitchenSinkState state,
-        SetMisValidationMessageCssClassAction action
+        SetMisValidationMessageTextAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                CssClass = NormalizeOptional(action.CssClass),
-            },
+            MessageText = action.Text ?? "This field is required.",
         };
     }
 

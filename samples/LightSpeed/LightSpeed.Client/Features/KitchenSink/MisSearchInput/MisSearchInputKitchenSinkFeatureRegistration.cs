@@ -19,13 +19,20 @@ internal static class MisSearchInputKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisSearchInputValueAction, MisSearchInputKitchenSinkState>(MisSearchInputKitchenSinkReducers.SetValue);
-        services.AddReducer<SetMisSearchInputDisabledAction, MisSearchInputKitchenSinkState>(MisSearchInputKitchenSinkReducers.SetDisabled);
-        services.AddReducer<SetMisSearchInputPlaceholderAction, MisSearchInputKitchenSinkState>(MisSearchInputKitchenSinkReducers.SetPlaceholder);
-        services.AddReducer<SetMisSearchInputAriaLabelAction, MisSearchInputKitchenSinkState>(MisSearchInputKitchenSinkReducers.SetAriaLabel);
-        services.AddReducer<SetMisSearchInputCssClassAction, MisSearchInputKitchenSinkState>(MisSearchInputKitchenSinkReducers.SetCssClass);
-        services.AddReducer<RecordMisSearchInputEventAction, MisSearchInputKitchenSinkState>(MisSearchInputKitchenSinkReducers.RecordEvent);
-        services.AddReducer<ClearMisSearchInputEventsAction, MisSearchInputKitchenSinkState>(MisSearchInputKitchenSinkReducers.ClearEvents);
+        services.AddReducer<SetMisSearchInputValueAction, MisSearchInputKitchenSinkState>(
+            MisSearchInputKitchenSinkReducers.SetValue);
+        services.AddReducer<SetMisSearchInputDisabledAction, MisSearchInputKitchenSinkState>(
+            MisSearchInputKitchenSinkReducers.SetDisabled);
+        services.AddReducer<SetMisSearchInputPlaceholderAction, MisSearchInputKitchenSinkState>(
+            MisSearchInputKitchenSinkReducers.SetPlaceholder);
+        services.AddReducer<SetMisSearchInputAriaLabelAction, MisSearchInputKitchenSinkState>(
+            MisSearchInputKitchenSinkReducers.SetAriaLabel);
+        services.AddReducer<SetMisSearchInputCssClassAction, MisSearchInputKitchenSinkState>(
+            MisSearchInputKitchenSinkReducers.SetCssClass);
+        services.AddReducer<RecordMisSearchInputEventAction, MisSearchInputKitchenSinkState>(
+            MisSearchInputKitchenSinkReducers.RecordEvent);
+        services.AddReducer<ClearMisSearchInputEventsAction, MisSearchInputKitchenSinkState>(
+            MisSearchInputKitchenSinkReducers.ClearEvents);
         return services;
     }
 }

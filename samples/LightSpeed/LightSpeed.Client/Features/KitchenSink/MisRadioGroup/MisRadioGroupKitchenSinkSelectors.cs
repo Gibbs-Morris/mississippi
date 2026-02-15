@@ -12,19 +12,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisRadioGroup;
 internal static class MisRadioGroupKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current MisRadioGroup view model.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The current radio group view model.</returns>
-    public static MisRadioGroupViewModel GetViewModel(
-        MisRadioGroupKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
     ///     Gets the current list of logged radio group events.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -35,5 +22,18 @@ internal static class MisRadioGroupKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.EventLog;
+    }
+
+    /// <summary>
+    ///     Gets the current MisRadioGroup view model.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The current radio group view model.</returns>
+    public static MisRadioGroupViewModel GetViewModel(
+        MisRadioGroupKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

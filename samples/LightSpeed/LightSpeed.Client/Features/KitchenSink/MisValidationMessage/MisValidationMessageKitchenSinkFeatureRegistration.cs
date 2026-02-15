@@ -19,10 +19,14 @@ internal static class MisValidationMessageKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisValidationMessageTextAction, MisValidationMessageKitchenSinkState>(MisValidationMessageKitchenSinkReducers.SetText);
-        services.AddReducer<SetMisValidationMessageForAction, MisValidationMessageKitchenSinkState>(MisValidationMessageKitchenSinkReducers.SetFor);
-        services.AddReducer<SetMisValidationMessageSeverityAction, MisValidationMessageKitchenSinkState>(MisValidationMessageKitchenSinkReducers.SetSeverity);
-        services.AddReducer<SetMisValidationMessageCssClassAction, MisValidationMessageKitchenSinkState>(MisValidationMessageKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisValidationMessageTextAction, MisValidationMessageKitchenSinkState>(
+            MisValidationMessageKitchenSinkReducers.SetText);
+        services.AddReducer<SetMisValidationMessageForAction, MisValidationMessageKitchenSinkState>(
+            MisValidationMessageKitchenSinkReducers.SetFor);
+        services.AddReducer<SetMisValidationMessageSeverityAction, MisValidationMessageKitchenSinkState>(
+            MisValidationMessageKitchenSinkReducers.SetSeverity);
+        services.AddReducer<SetMisValidationMessageCssClassAction, MisValidationMessageKitchenSinkState>(
+            MisValidationMessageKitchenSinkReducers.SetCssClass);
         return services;
     }
 }

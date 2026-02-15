@@ -19,17 +19,25 @@ internal static class MisSwitchKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisSwitchCheckedAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetChecked);
+        services.AddReducer<SetMisSwitchCheckedAction, MisSwitchKitchenSinkState>(
+            MisSwitchKitchenSinkReducers.SetChecked);
         services.AddReducer<SetMisSwitchValueAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetValue);
-        services.AddReducer<SetMisSwitchIntentIdAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetIntentId);
-        services.AddReducer<SetMisSwitchAriaLabelAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetAriaLabel);
+        services.AddReducer<SetMisSwitchIntentIdAction, MisSwitchKitchenSinkState>(
+            MisSwitchKitchenSinkReducers.SetIntentId);
+        services.AddReducer<SetMisSwitchAriaLabelAction, MisSwitchKitchenSinkState>(
+            MisSwitchKitchenSinkReducers.SetAriaLabel);
         services.AddReducer<SetMisSwitchTitleAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetTitle);
-        services.AddReducer<SetMisSwitchCssClassAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetCssClass);
-        services.AddReducer<SetMisSwitchDisabledAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetDisabled);
-        services.AddReducer<SetMisSwitchRequiredAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetRequired);
+        services.AddReducer<SetMisSwitchCssClassAction, MisSwitchKitchenSinkState>(
+            MisSwitchKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisSwitchDisabledAction, MisSwitchKitchenSinkState>(
+            MisSwitchKitchenSinkReducers.SetDisabled);
+        services.AddReducer<SetMisSwitchRequiredAction, MisSwitchKitchenSinkState>(
+            MisSwitchKitchenSinkReducers.SetRequired);
         services.AddReducer<SetMisSwitchStateAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.SetState);
-        services.AddReducer<RecordMisSwitchEventAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.RecordEvent);
-        services.AddReducer<ClearMisSwitchEventsAction, MisSwitchKitchenSinkState>(MisSwitchKitchenSinkReducers.ClearEvents);
+        services.AddReducer<RecordMisSwitchEventAction, MisSwitchKitchenSinkState>(
+            MisSwitchKitchenSinkReducers.RecordEvent);
+        services.AddReducer<ClearMisSwitchEventsAction, MisSwitchKitchenSinkState>(
+            MisSwitchKitchenSinkReducers.ClearEvents);
         return services;
     }
 }

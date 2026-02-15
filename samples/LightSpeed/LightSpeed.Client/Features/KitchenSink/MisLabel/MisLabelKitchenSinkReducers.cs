@@ -9,22 +9,24 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisLabel;
 internal static class MisLabelKitchenSinkReducers
 {
     /// <summary>
-    ///     Sets the label text content.
+    ///     Sets the optional CSS class.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisLabelKitchenSinkState SetText(
+    public static MisLabelKitchenSinkState SetCssClass(
         MisLabelKitchenSinkState state,
-        SetMisLabelTextAction action
+        SetMisLabelCssClassAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            LabelText = action.Text ?? "Demo Label",
+            ViewModel = state.ViewModel with
+            {
+                CssClass = NormalizeOptional(action.CssClass),
+            },
         };
     }
 
@@ -41,7 +43,6 @@ internal static class MisLabelKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -64,7 +65,6 @@ internal static class MisLabelKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -87,7 +87,6 @@ internal static class MisLabelKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -98,25 +97,21 @@ internal static class MisLabelKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Sets the optional CSS class.
+    ///     Sets the label text content.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisLabelKitchenSinkState SetCssClass(
+    public static MisLabelKitchenSinkState SetText(
         MisLabelKitchenSinkState state,
-        SetMisLabelCssClassAction action
+        SetMisLabelTextAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                CssClass = NormalizeOptional(action.CssClass),
-            },
+            LabelText = action.Text ?? "Demo Label",
         };
     }
 

@@ -1,10 +1,7 @@
 @namespace LightSpeed.Client.Compoments
-@inherits StoreComponent
 @using Mississippi.Refraction.Components.Molecules
 @using Mississippi.Refraction.Components.Molecules.MisTextareaActions
-@using Mississippi.Refraction.Components.Molecules.MisTextInputActions
-@using Mississippi.Refraction.Components.Molecules.MisSwitchActions
-@using Mississippi.Refraction.Components.Molecules.MisSelectActions
+@inherits StoreComponent
 
 <KitchenSinkDemoSection Title="MisTextarea"
                         ComponentTag="MisTextarea"
@@ -15,64 +12,118 @@
                         OnClearEvents="HandleClearTextareaEvents">
     <ChildContent>
         <MisTextarea Model="@TextareaModel"
-                     OnAction="@((IMisTextareaAction action) => HandleMisTextareaActionAsync(action))" />
+                     OnAction="@((
+                                   IMisTextareaAction action
+                               ) => HandleMisTextareaActionAsync(action))"/>
     </ChildContent>
 
     <Properties>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Value</span>
-            <MisTextarea Model="@(new MisTextareaViewModel { IntentId = "prop-value", Value = TextareaModel.Value ?? string.Empty, Placeholder = "Content..." })"
-                         OnAction="HandlePropertyTextareaAction" />
+            <MisTextarea Model="@(new MisTextareaViewModel
+                                {
+                                    IntentId = "prop-value",
+                                    Value = TextareaModel.Value ?? string.Empty,
+                                    Placeholder = "Content...",
+                                })"
+                         OnAction="HandlePropertyTextareaAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">IntentId</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-intentid", Value = TextareaModel.IntentId, Placeholder = "Intent identifier" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-intentid",
+                                     Value = TextareaModel.IntentId,
+                                     Placeholder = "Intent identifier",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">AriaLabel</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-arialabel", Value = TextareaModel.AriaLabel ?? string.Empty, Placeholder = "Accessibility label" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-arialabel",
+                                     Value = TextareaModel.AriaLabel ?? string.Empty,
+                                     Placeholder = "Accessibility label",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Placeholder</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-placeholder", Value = TextareaModel.Placeholder ?? string.Empty, Placeholder = "Placeholder text" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-placeholder",
+                                     Value = TextareaModel.Placeholder ?? string.Empty,
+                                     Placeholder = "Placeholder text",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Title</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-title", Value = TextareaModel.Title ?? string.Empty, Placeholder = "Tooltip text" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-title",
+                                     Value = TextareaModel.Title ?? string.Empty,
+                                     Placeholder = "Tooltip text",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">CssClass</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-cssclass", Value = TextareaModel.CssClass ?? string.Empty, Placeholder = "Additional CSS class" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-cssclass",
+                                     Value = TextareaModel.CssClass ?? string.Empty,
+                                     Placeholder = "Additional CSS class",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Rows</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-rows", Value = TextareaModel.Rows.ToString(), Placeholder = "Row count" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-rows",
+                                     Value = TextareaModel.Rows.ToString(),
+                                     Placeholder = "Row count",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Visual State</span>
-            <MisSelect Model="@(new MisSelectViewModel { IntentId = "prop-state", Value = TextareaModel.State.ToString(), Options = TextareaStateOptions })"
-                       OnAction="HandlePropertySelectAction" />
+            <MisSelect Model="@(new MisSelectViewModel
+                              {
+                                  IntentId = "prop-state",
+                                  Value = TextareaModel.State.ToString(),
+                                  Options = TextareaStateOptions,
+                              })"
+                       OnAction="HandlePropertySelectAction"/>
         </div>
         <div class="ks-prop-row ks-prop-row--toggle">
             <span class="ks-prop-label">Disabled</span>
-            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-disabled", IsChecked = TextareaModel.IsDisabled })"
-                       OnAction="HandlePropertySwitchAction" />
+            <MisSwitch Model="@(new MisSwitchViewModel
+                              {
+                                  IntentId = "prop-disabled",
+                                  IsChecked = TextareaModel.IsDisabled,
+                              })"
+                       OnAction="HandlePropertySwitchAction"/>
         </div>
         <div class="ks-prop-row ks-prop-row--toggle">
             <span class="ks-prop-label">Read-only</span>
-            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-readonly", IsChecked = TextareaModel.IsReadOnly })"
-                       OnAction="HandlePropertySwitchAction" />
+            <MisSwitch Model="@(new MisSwitchViewModel
+                              {
+                                  IntentId = "prop-readonly",
+                                  IsChecked = TextareaModel.IsReadOnly,
+                              })"
+                       OnAction="HandlePropertySwitchAction"/>
         </div>
         <div class="ks-prop-row ks-prop-row--toggle">
             <span class="ks-prop-label">Required</span>
-            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-required", IsChecked = TextareaModel.IsRequired })"
-                       OnAction="HandlePropertySwitchAction" />
+            <MisSwitch Model="@(new MisSwitchViewModel
+                              {
+                                  IntentId = "prop-required",
+                                  IsChecked = TextareaModel.IsRequired,
+                              })"
+                       OnAction="HandlePropertySwitchAction"/>
         </div>
     </Properties>
 

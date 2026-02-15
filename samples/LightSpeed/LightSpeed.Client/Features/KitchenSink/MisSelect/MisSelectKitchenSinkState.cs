@@ -15,6 +15,16 @@ internal sealed record MisSelectKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misSelect";
 
     /// <summary>
+    ///     Gets the number of events recorded since the last clear.
+    /// </summary>
+    public int EventCount { get; init; }
+
+    /// <summary>
+    ///     Gets the list of emitted interaction event entries.
+    /// </summary>
+    public IReadOnlyList<string> EventLog { get; init; } = [];
+
+    /// <summary>
     ///     Gets the current select view model used by the demo component.
     /// </summary>
     public MisSelectViewModel ViewModel { get; init; } = MisSelectViewModel.Default with
@@ -26,20 +36,10 @@ internal sealed record MisSelectKitchenSinkState : IFeatureState
         Title = "Kitchen Sink select",
         Options =
         [
-            new MisSelectOptionViewModel("pending", "Pending"),
-            new MisSelectOptionViewModel("approved", "Approved"),
-            new MisSelectOptionViewModel("rejected", "Rejected"),
-            new MisSelectOptionViewModel("archived", "Archived", true),
+            new("pending", "Pending"),
+            new("approved", "Approved"),
+            new("rejected", "Rejected"),
+            new("archived", "Archived", true),
         ],
     };
-
-    /// <summary>
-    ///     Gets the list of emitted interaction event entries.
-    /// </summary>
-    public IReadOnlyList<string> EventLog { get; init; } = [];
-
-    /// <summary>
-    ///     Gets the number of events recorded since the last clear.
-    /// </summary>
-    public int EventCount { get; init; }
 }

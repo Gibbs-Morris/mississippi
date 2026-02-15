@@ -15,6 +15,16 @@ internal sealed record MisTextareaKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misTextarea";
 
     /// <summary>
+    ///     Gets the number of events recorded since the last clear.
+    /// </summary>
+    public int EventCount { get; init; }
+
+    /// <summary>
+    ///     Gets the list of emitted interaction event entries.
+    /// </summary>
+    public IReadOnlyList<string> EventLog { get; init; } = [];
+
+    /// <summary>
     ///     Gets the current textarea view model used by the demo component.
     /// </summary>
     public MisTextareaViewModel ViewModel { get; init; } = MisTextareaViewModel.Default with
@@ -26,14 +36,4 @@ internal sealed record MisTextareaKitchenSinkState : IFeatureState
         Title = "Kitchen Sink textarea",
         Rows = 4,
     };
-
-    /// <summary>
-    ///     Gets the list of emitted interaction event entries.
-    /// </summary>
-    public IReadOnlyList<string> EventLog { get; init; } = [];
-
-    /// <summary>
-    ///     Gets the number of events recorded since the last clear.
-    /// </summary>
-    public int EventCount { get; init; }
 }

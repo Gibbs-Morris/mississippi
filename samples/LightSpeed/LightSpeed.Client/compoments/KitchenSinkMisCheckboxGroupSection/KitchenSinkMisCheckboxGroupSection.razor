@@ -1,12 +1,7 @@
 @namespace LightSpeed.Client.Compoments
-@inherits StoreComponent
 @using Mississippi.Refraction.Components.Molecules
 @using Mississippi.Refraction.Components.Molecules.MisCheckboxGroupActions
-@using Mississippi.Refraction.Components.Molecules.MisTextInputActions
-@using Mississippi.Refraction.Components.Molecules.MisSwitchActions
-@using Mississippi.Refraction.Components.Molecules.MisTextareaActions
-@using LightSpeed.Client.Features.KitchenSinkFeatures.MisCheckboxGroup
-@using LightSpeed.Client.Features.KitchenSinkFeatures.SectionUi
+@inherits StoreComponent
 
 <KitchenSinkDemoSection Title="MisCheckboxGroup"
                         ComponentTag="MisCheckboxGroup"
@@ -17,39 +12,70 @@
                         OnClearEvents="HandleClearEvents">
     <ChildContent>
         <MisCheckboxGroup Model="@CheckboxGroupModel"
-                          OnAction="@((IMisCheckboxGroupAction action) => HandleMisCheckboxGroupActionAsync(action))" />
+                          OnAction="@((
+                                        IMisCheckboxGroupAction action
+                                    ) => HandleMisCheckboxGroupActionAsync(action))"/>
     </ChildContent>
 
     <Properties>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Values</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-values", Value = string.Join(", ", CheckboxGroupModel.Values), Placeholder = "Comma-separated values", IsReadOnly = true })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-values",
+                                     Value = string.Join(", ", CheckboxGroupModel.Values),
+                                     Placeholder = "Comma-separated values",
+                                     IsReadOnly = true,
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">AriaLabel</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-arialabel", Value = CheckboxGroupModel.AriaLabel ?? string.Empty, Placeholder = "Accessibility label" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-arialabel",
+                                     Value = CheckboxGroupModel.AriaLabel ?? string.Empty,
+                                     Placeholder = "Accessibility label",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">CssClass</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-cssclass", Value = CheckboxGroupModel.CssClass ?? string.Empty, Placeholder = "Additional CSS class" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-cssclass",
+                                     Value = CheckboxGroupModel.CssClass ?? string.Empty,
+                                     Placeholder = "Additional CSS class",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Options</span>
-            <MisTextarea Model="@(new MisTextareaViewModel { IntentId = "prop-options", Value = FormatOptionsInput(CheckboxGroupModel.Options), Placeholder = "value|label|disabled" })"
-                         OnAction="HandlePropertyTextareaAction" />
+            <MisTextarea Model="@(new MisTextareaViewModel
+                                {
+                                    IntentId = "prop-options",
+                                    Value = FormatOptionsInput(CheckboxGroupModel.Options),
+                                    Placeholder = "value|label|disabled",
+                                })"
+                         OnAction="HandlePropertyTextareaAction"/>
         </div>
         <div class="ks-prop-row ks-prop-row--toggle">
             <span class="ks-prop-label">Disabled</span>
-            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-disabled", IsChecked = CheckboxGroupModel.IsDisabled })"
-                       OnAction="HandlePropertySwitchAction" />
+            <MisSwitch Model="@(new MisSwitchViewModel
+                              {
+                                  IntentId = "prop-disabled",
+                                  IsChecked = CheckboxGroupModel.IsDisabled,
+                              })"
+                       OnAction="HandlePropertySwitchAction"/>
         </div>
         <div class="ks-prop-row ks-prop-row--toggle">
             <span class="ks-prop-label">Required</span>
-            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-required", IsChecked = CheckboxGroupModel.IsRequired })"
-                       OnAction="HandlePropertySwitchAction" />
+            <MisSwitch Model="@(new MisSwitchViewModel
+                              {
+                                  IntentId = "prop-required",
+                                  IsChecked = CheckboxGroupModel.IsRequired,
+                              })"
+                       OnAction="HandlePropertySwitchAction"/>
         </div>
     </Properties>
 </KitchenSinkDemoSection>

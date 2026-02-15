@@ -9,6 +9,7 @@ using Mississippi.Refraction.Components.Molecules.MisSelectActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
 
+
 namespace LightSpeed.Client.Compoments;
 
 /// <summary>
@@ -21,11 +22,31 @@ public sealed partial class KitchenSinkMisValidationMessageSection : StoreCompon
             .Select(s => new MisSelectOptionViewModel(s.ToString(), s.ToString()))
             .ToList();
 
-    private MisValidationMessageViewModel ValidationModel =>
-        Select<MisValidationMessageKitchenSinkState, MisValidationMessageViewModel>(MisValidationMessageKitchenSinkSelectors.GetViewModel);
-
     private string MessageText =>
         Select<MisValidationMessageKitchenSinkState, string>(MisValidationMessageKitchenSinkSelectors.GetMessageText);
+
+    private MisValidationMessageViewModel ValidationModel =>
+        Select<MisValidationMessageKitchenSinkState, MisValidationMessageViewModel>(
+            MisValidationMessageKitchenSinkSelectors.GetViewModel);
+
+    private void HandlePropertySelectAction(
+        IMisSelectAction action
+    )
+    {
+        if (action is MisSelectChangedAction selectAction)
+        {
+            switch (selectAction.IntentId)
+            {
+                case "prop-severity":
+                    if (Enum.TryParse(selectAction.Value, out MisValidationMessageSeverity severity))
+                    {
+                        Dispatch(new SetMisValidationMessageSeverityAction(severity));
+                    }
+
+                    break;
+            }
+        }
+    }
 
     private void HandlePropertyTextInputAction(
         IMisTextInputAction action
@@ -44,25 +65,6 @@ public sealed partial class KitchenSinkMisValidationMessageSection : StoreCompon
                     break;
                 case "prop-cssclass":
                     Dispatch(new SetMisValidationMessageCssClassAction(value));
-                    break;
-            }
-        }
-    }
-
-    private void HandlePropertySelectAction(
-        IMisSelectAction action
-    )
-    {
-        if (action is MisSelectChangedAction selectAction)
-        {
-            switch (selectAction.IntentId)
-            {
-                case "prop-severity":
-                    if (Enum.TryParse<MisValidationMessageSeverity>(selectAction.Value, out MisValidationMessageSeverity severity))
-                    {
-                        Dispatch(new SetMisValidationMessageSeverityAction(severity));
-                    }
-
                     break;
             }
         }

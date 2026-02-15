@@ -21,7 +21,6 @@ internal static class MisHelpTextKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             HelpTextContent = action.Content ?? "This is helpful instructional text for the form field.",
@@ -41,7 +40,6 @@ internal static class MisHelpTextKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -64,7 +62,6 @@ internal static class MisHelpTextKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with

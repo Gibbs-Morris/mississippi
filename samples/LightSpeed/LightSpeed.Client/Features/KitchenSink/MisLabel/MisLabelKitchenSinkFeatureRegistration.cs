@@ -21,9 +21,11 @@ internal static class MisLabelKitchenSinkFeatureRegistration
     {
         services.AddReducer<SetMisLabelTextAction, MisLabelKitchenSinkState>(MisLabelKitchenSinkReducers.SetText);
         services.AddReducer<SetMisLabelForAction, MisLabelKitchenSinkState>(MisLabelKitchenSinkReducers.SetFor);
-        services.AddReducer<SetMisLabelIsRequiredAction, MisLabelKitchenSinkState>(MisLabelKitchenSinkReducers.SetIsRequired);
+        services.AddReducer<SetMisLabelIsRequiredAction, MisLabelKitchenSinkState>(
+            MisLabelKitchenSinkReducers.SetIsRequired);
         services.AddReducer<SetMisLabelStateAction, MisLabelKitchenSinkState>(MisLabelKitchenSinkReducers.SetState);
-        services.AddReducer<SetMisLabelCssClassAction, MisLabelKitchenSinkState>(MisLabelKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisLabelCssClassAction, MisLabelKitchenSinkState>(
+            MisLabelKitchenSinkReducers.SetCssClass);
         return services;
     }
 }

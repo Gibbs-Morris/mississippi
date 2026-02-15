@@ -11,19 +11,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisHelpText;
 internal static class MisHelpTextKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current MisHelpText view model.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The current help text view model.</returns>
-    public static MisHelpTextViewModel GetViewModel(
-        MisHelpTextKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
     ///     Gets the help text content.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -34,5 +21,18 @@ internal static class MisHelpTextKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.HelpTextContent;
+    }
+
+    /// <summary>
+    ///     Gets the current MisHelpText view model.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The current help text view model.</returns>
+    public static MisHelpTextViewModel GetViewModel(
+        MisHelpTextKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

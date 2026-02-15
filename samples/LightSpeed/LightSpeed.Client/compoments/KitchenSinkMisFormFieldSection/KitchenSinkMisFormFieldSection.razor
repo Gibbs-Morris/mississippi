@@ -1,9 +1,6 @@
 @namespace LightSpeed.Client.Compoments
-@inherits StoreComponent
 @using Mississippi.Refraction.Components.Molecules
-@using Mississippi.Refraction.Components.Molecules.MisTextInputActions
-@using Mississippi.Refraction.Components.Molecules.MisSwitchActions
-@using Mississippi.Refraction.Components.Molecules.MisSelectActions
+@inherits StoreComponent
 
 <KitchenSinkDemoSection Title="MisFormField"
                         ComponentTag="MisFormField"
@@ -11,11 +8,22 @@
     <ChildContent>
         <MisFormField Model="@FormFieldModel">
             <Label>
-                <MisLabel Model="@(new MisLabelViewModel { For = "demo-field-input", IsRequired = true })">@LabelText</MisLabel>
+                <MisLabel Model="@(new MisLabelViewModel
+                                 {
+                                     For = "demo-field-input",
+                                     IsRequired = true,
+                                 })">
+                    @LabelText
+                </MisLabel>
             </Label>
             <ChildContent>
-                <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "demo-field-input", Value = InputValue, Placeholder = "Enter value..." })"
-                              OnAction="HandleInputAction" />
+                <MisTextInput Model="@(new MisTextInputViewModel
+                                     {
+                                         IntentId = "demo-field-input",
+                                         Value = InputValue,
+                                         Placeholder = "Enter value...",
+                                     })"
+                              OnAction="HandleInputAction"/>
             </ChildContent>
             <HelpText>
                 <MisHelpText>@HelpText</MisHelpText>
@@ -23,7 +31,12 @@
             <Validation>
                 @if (ShowValidation && !string.IsNullOrWhiteSpace(ValidationMessage))
                 {
-                    <MisValidationMessage Model="@(new MisValidationMessageViewModel { Severity = MisValidationMessageSeverity.Error })">@ValidationMessage</MisValidationMessage>
+                    <MisValidationMessage Model="@(new MisValidationMessageViewModel
+                                                 {
+                                                     Severity = MisValidationMessageSeverity.Error,
+                                                 })">
+                        @ValidationMessage
+                    </MisValidationMessage>
                 }
             </Validation>
         </MisFormField>
@@ -32,33 +45,61 @@
     <Properties>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Label Text</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-labeltext", Value = LabelText, Placeholder = "Label text" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-labeltext",
+                                     Value = LabelText,
+                                     Placeholder = "Label text",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Help Text</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-helptext", Value = HelpText, Placeholder = "Help text" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-helptext",
+                                     Value = HelpText,
+                                     Placeholder = "Help text",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Validation Msg</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-validationmsg", Value = ValidationMessage, Placeholder = "Validation message" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-validationmsg",
+                                     Value = ValidationMessage,
+                                     Placeholder = "Validation message",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">State</span>
-            <MisSelect Model="@(new MisSelectViewModel { IntentId = "prop-state", Value = FormFieldModel.State.ToString(), Options = FormFieldStateOptions })"
-                       OnAction="HandlePropertySelectAction" />
+            <MisSelect Model="@(new MisSelectViewModel
+                              {
+                                  IntentId = "prop-state",
+                                  Value = FormFieldModel.State.ToString(),
+                                  Options = FormFieldStateOptions,
+                              })"
+                       OnAction="HandlePropertySelectAction"/>
         </div>
         <div class="ks-prop-row ks-prop-row--toggle">
             <span class="ks-prop-label">Show Validation</span>
-            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-showvalidation", IsChecked = ShowValidation })"
-                       OnAction="HandlePropertySwitchAction" />
+            <MisSwitch Model="@(new MisSwitchViewModel
+                              {
+                                  IntentId = "prop-showvalidation",
+                                  IsChecked = ShowValidation,
+                              })"
+                       OnAction="HandlePropertySwitchAction"/>
         </div>
         <div class="ks-prop-row ks-prop-row--toggle">
             <span class="ks-prop-label">Disabled</span>
-            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-disabled", IsChecked = FormFieldModel.IsDisabled })"
-                       OnAction="HandlePropertySwitchAction" />
+            <MisSwitch Model="@(new MisSwitchViewModel
+                              {
+                                  IntentId = "prop-disabled",
+                                  IsChecked = FormFieldModel.IsDisabled,
+                              })"
+                       OnAction="HandlePropertySwitchAction"/>
         </div>
     </Properties>
 </KitchenSinkDemoSection>

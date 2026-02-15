@@ -4,6 +4,7 @@ using Mississippi.Refraction.Components.Molecules;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
 
+
 namespace LightSpeed.Client.Compoments;
 
 /// <summary>
@@ -11,11 +12,11 @@ namespace LightSpeed.Client.Compoments;
 /// </summary>
 public sealed partial class KitchenSinkMisHelpTextSection : StoreComponent
 {
-    private MisHelpTextViewModel HelpTextModel =>
-        Select<MisHelpTextKitchenSinkState, MisHelpTextViewModel>(MisHelpTextKitchenSinkSelectors.GetViewModel);
-
     private string HelpTextContent =>
         Select<MisHelpTextKitchenSinkState, string>(MisHelpTextKitchenSinkSelectors.GetHelpTextContent);
+
+    private MisHelpTextViewModel HelpTextModel =>
+        Select<MisHelpTextKitchenSinkState, MisHelpTextViewModel>(MisHelpTextKitchenSinkSelectors.GetViewModel);
 
     private void HandlePropertyTextInputAction(
         IMisTextInputAction action

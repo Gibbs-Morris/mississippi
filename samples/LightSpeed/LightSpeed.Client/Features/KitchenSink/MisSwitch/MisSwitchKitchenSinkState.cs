@@ -15,6 +15,16 @@ internal sealed record MisSwitchKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misSwitch";
 
     /// <summary>
+    ///     Gets the number of events recorded since the last clear.
+    /// </summary>
+    public int EventCount { get; init; }
+
+    /// <summary>
+    ///     Gets the list of emitted interaction event entries.
+    /// </summary>
+    public IReadOnlyList<string> EventLog { get; init; } = [];
+
+    /// <summary>
     ///     Gets the current switch view model used by the demo component.
     /// </summary>
     public MisSwitchViewModel ViewModel { get; init; } = MisSwitchViewModel.Default with
@@ -25,14 +35,4 @@ internal sealed record MisSwitchKitchenSinkState : IFeatureState
         AriaLabel = "Kitchen Sink switch",
         Title = "Kitchen Sink switch",
     };
-
-    /// <summary>
-    ///     Gets the list of emitted interaction event entries.
-    /// </summary>
-    public IReadOnlyList<string> EventLog { get; init; } = [];
-
-    /// <summary>
-    ///     Gets the number of events recorded since the last clear.
-    /// </summary>
-    public int EventCount { get; init; }
 }

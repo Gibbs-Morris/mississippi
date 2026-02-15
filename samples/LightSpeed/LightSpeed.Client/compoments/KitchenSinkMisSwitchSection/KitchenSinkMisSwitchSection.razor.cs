@@ -14,6 +14,7 @@ using Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
 
+
 namespace LightSpeed.Client.Compoments;
 
 /// <summary>
@@ -24,9 +25,11 @@ public sealed partial class KitchenSinkMisSwitchSection : StoreComponent
     private const string EventsSectionKey = "misSwitch";
 
     private static readonly IReadOnlyList<MisSelectOptionViewModel> SwitchStateOptions =
-        Enum.GetValues<MisSwitchState>()
-            .Select(s => new MisSelectOptionViewModel(s.ToString(), s.ToString()))
-            .ToList();
+        Enum.GetValues<MisSwitchState>().Select(s => new MisSelectOptionViewModel(s.ToString(), s.ToString())).ToList();
+
+    private bool IsEventsOpen =>
+        Select<KitchenSinkSectionUiState, bool>(state =>
+            KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
 
     private IReadOnlyList<string> SwitchEvents =>
         Select<MisSwitchKitchenSinkState, IReadOnlyList<string>>(MisSwitchKitchenSinkSelectors.GetEventLog);
@@ -34,18 +37,16 @@ public sealed partial class KitchenSinkMisSwitchSection : StoreComponent
     private MisSwitchViewModel SwitchModel =>
         Select<MisSwitchKitchenSinkState, MisSwitchViewModel>(MisSwitchKitchenSinkSelectors.GetViewModel);
 
-    private bool IsEventsOpen =>
-        Select<KitchenSinkSectionUiState, bool>(state => KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
+    private bool IsValueToggleChecked =>
+        !bool.TryParse(SwitchModel.Value, out bool parsedValue) || parsedValue;
 
     private static string FormatAction(
         IMisSwitchAction action
     ) =>
         action switch
         {
-            MisSwitchInputAction input =>
-                $"intent={input.IntentId}, checked={input.IsChecked}",
-            MisSwitchChangedAction changed =>
-                $"intent={changed.IntentId}, checked={changed.IsChecked}",
+            MisSwitchInputAction input => $"intent={input.IntentId}, checked={input.IsChecked}",
+            MisSwitchChangedAction changed => $"intent={changed.IntentId}, checked={changed.IsChecked}",
             MisSwitchKeyDownAction keyDown =>
                 $"intent={keyDown.IntentId}, key={keyDown.Key}, code={keyDown.Code}, repeat={keyDown.Repeat}, ctrl={keyDown.CtrlKey}, shift={keyDown.ShiftKey}, alt={keyDown.AltKey}, meta={keyDown.MetaKey}",
             MisSwitchKeyUpAction keyUp =>
@@ -56,8 +57,16 @@ public sealed partial class KitchenSinkMisSwitchSection : StoreComponent
                 $"intent={pointerUp.IntentId}, button={pointerUp.Button}, ctrl={pointerUp.CtrlKey}, shift={pointerUp.ShiftKey}, alt={pointerUp.AltKey}, meta={pointerUp.MetaKey}",
             MisSwitchFocusedAction focused => $"intent={focused.IntentId}",
             MisSwitchBlurredAction blurred => $"intent={blurred.IntentId}",
-            _ => $"intent={action.IntentId}",
+            var _ => $"intent={action.IntentId}",
         };
+
+    private void HandleClearSwitchEvents(
+        MouseEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        Dispatch(new ClearMisSwitchEventsAction());
+    }
 
     private Task HandleMisSwitchActionAsync(
         IMisSwitchAction action
@@ -78,17 +87,48 @@ public sealed partial class KitchenSinkMisSwitchSection : StoreComponent
         return Task.CompletedTask;
     }
 
-    private void HandleClearSwitchEvents(
-        MouseEventArgs args
+    private void HandlePropertySelectAction(
+        IMisSelectAction action
     )
     {
-        ArgumentNullException.ThrowIfNull(args);
-        Dispatch(new ClearMisSwitchEventsAction());
+        if (action is MisSelectChangedAction changedAction &&
+            (changedAction.IntentId == "prop-state") &&
+            Enum.TryParse(changedAction.Value, true, out MisSwitchState state))
+        {
+            Dispatch(new SetMisSwitchStateAction(state));
+        }
     }
 
-    private void HandleToggleEvents()
+    private void HandlePropertySwitchAction(
+        IMisSwitchAction action
+    )
     {
-        Dispatch(new ToggleKitchenSinkSectionEventsAction(EventsSectionKey));
+        bool? isChecked = action switch
+        {
+            MisSwitchInputAction inputAction => inputAction.IsChecked,
+            MisSwitchChangedAction changedAction => changedAction.IsChecked,
+            var _ => null,
+        };
+        if (isChecked is not bool checkedValue)
+        {
+            return;
+        }
+
+        switch (action.IntentId)
+        {
+            case "prop-value":
+                Dispatch(new SetMisSwitchValueAction(checkedValue ? "true" : "false"));
+                break;
+            case "prop-checked":
+                Dispatch(new SetMisSwitchCheckedAction(checkedValue));
+                break;
+            case "prop-disabled":
+                Dispatch(new SetMisSwitchDisabledAction(checkedValue));
+                break;
+            case "prop-required":
+                Dispatch(new SetMisSwitchRequiredAction(checkedValue));
+                break;
+        }
     }
 
     private void HandlePropertyTextInputAction(
@@ -100,9 +140,6 @@ public sealed partial class KitchenSinkMisSwitchSection : StoreComponent
             string? value = string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value.Trim();
             switch (inputAction.IntentId)
             {
-                case "prop-value":
-                    Dispatch(new SetMisSwitchValueAction(value ?? "true"));
-                    break;
                 case "prop-intentid":
                     Dispatch(new SetMisSwitchIntentIdAction(value ?? "kitchen-sink.mis-switch"));
                     break;
@@ -119,45 +156,8 @@ public sealed partial class KitchenSinkMisSwitchSection : StoreComponent
         }
     }
 
-    private void HandlePropertySwitchAction(
-        IMisSwitchAction action
-    )
+    private void HandleToggleEvents()
     {
-        bool? isChecked = action switch
-        {
-            MisSwitchInputAction inputAction => inputAction.IsChecked,
-            MisSwitchChangedAction changedAction => changedAction.IsChecked,
-            _ => null,
-        };
-
-        if (isChecked is not bool checkedValue)
-        {
-            return;
-        }
-
-        switch (action.IntentId)
-        {
-            case "prop-checked":
-                Dispatch(new SetMisSwitchCheckedAction(checkedValue));
-                break;
-            case "prop-disabled":
-                Dispatch(new SetMisSwitchDisabledAction(checkedValue));
-                break;
-            case "prop-required":
-                Dispatch(new SetMisSwitchRequiredAction(checkedValue));
-                break;
-        }
-    }
-
-    private void HandlePropertySelectAction(
-        IMisSelectAction action
-    )
-    {
-        if (action is MisSelectChangedAction changedAction
-            && changedAction.IntentId == "prop-state"
-            && Enum.TryParse(changedAction.Value, true, out MisSwitchState state))
-        {
-            Dispatch(new SetMisSwitchStateAction(state));
-        }
+        Dispatch(new ToggleKitchenSinkSectionEventsAction(EventsSectionKey));
     }
 }

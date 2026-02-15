@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using LightSpeed.Client.Features.KitchenSinkFeatures.MisSelect;
 using LightSpeed.Client.Features.KitchenSinkFeatures.SectionUi;
 
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
 using Mississippi.Refraction.Components.Molecules;
@@ -15,6 +14,7 @@ using Mississippi.Refraction.Components.Molecules.MisSwitchActions;
 using Mississippi.Refraction.Components.Molecules.MisTextareaActions;
 using Mississippi.Refraction.Components.Molecules.MisTextInputActions;
 using Mississippi.Reservoir.Blazor;
+
 
 namespace LightSpeed.Client.Compoments;
 
@@ -25,8 +25,14 @@ public sealed partial class KitchenSinkMisSelectSection : StoreComponent
 {
     private const string EventsSectionKey = "misSelect";
 
-    private static IReadOnlyList<MisSelectOptionViewModel> SelectStateOptions { get; } =
-        Enum.GetValues<MisSelectState>().Select(s => new MisSelectOptionViewModel(s.ToString(), s.ToString())).ToList();
+    private static IReadOnlyList<MisSelectOptionViewModel> SelectStateOptions { get; } = Enum
+        .GetValues<MisSelectState>()
+        .Select(s => new MisSelectOptionViewModel(s.ToString(), s.ToString()))
+        .ToList();
+
+    private bool IsEventsOpen =>
+        Select<KitchenSinkSectionUiState, bool>(state =>
+            KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
 
     private IReadOnlyList<string> SelectEvents =>
         Select<MisSelectKitchenSinkState, IReadOnlyList<string>>(MisSelectKitchenSinkSelectors.GetEventLog);
@@ -34,18 +40,16 @@ public sealed partial class KitchenSinkMisSelectSection : StoreComponent
     private MisSelectViewModel SelectModel =>
         Select<MisSelectKitchenSinkState, MisSelectViewModel>(MisSelectKitchenSinkSelectors.GetViewModel);
 
-    private bool IsEventsOpen =>
-        Select<KitchenSinkSectionUiState, bool>(state => KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
+    private IReadOnlyList<MisSelectOptionViewModel> SelectValueOptions =>
+        [.. SelectModel.Options];
 
     private static string FormatAction(
         IMisSelectAction action
     ) =>
         action switch
         {
-            MisSelectInputAction input =>
-                $"intent={input.IntentId}, value={input.Value}",
-            MisSelectChangedAction changed =>
-                $"intent={changed.IntentId}, value={changed.Value}",
+            MisSelectInputAction input => $"intent={input.IntentId}, value={input.Value}",
+            MisSelectChangedAction changed => $"intent={changed.IntentId}, value={changed.Value}",
             MisSelectKeyDownAction keyDown =>
                 $"intent={keyDown.IntentId}, key={keyDown.Key}, code={keyDown.Code}, repeat={keyDown.Repeat}, ctrl={keyDown.CtrlKey}, shift={keyDown.ShiftKey}, alt={keyDown.AltKey}, meta={keyDown.MetaKey}",
             MisSelectKeyUpAction keyUp =>
@@ -56,8 +60,65 @@ public sealed partial class KitchenSinkMisSelectSection : StoreComponent
                 $"intent={pointerUp.IntentId}, button={pointerUp.Button}, ctrl={pointerUp.CtrlKey}, shift={pointerUp.ShiftKey}, alt={pointerUp.AltKey}, meta={pointerUp.MetaKey}",
             MisSelectFocusedAction focused => $"intent={focused.IntentId}",
             MisSelectBlurredAction blurred => $"intent={blurred.IntentId}",
-            _ => $"intent={action.IntentId}",
+            var _ => $"intent={action.IntentId}",
         };
+
+    private static string FormatSelectOptionsInput(
+        IReadOnlyList<MisSelectOptionViewModel> options
+    )
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        List<string> lines = [];
+        foreach (MisSelectOptionViewModel option in options)
+        {
+            lines.Add($"{option.Value}|{option.Label}|{option.IsDisabled}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static List<MisSelectOptionViewModel> ParseSelectOptions(
+        string rawText
+    )
+    {
+        if (string.IsNullOrWhiteSpace(rawText))
+        {
+            return [new("option-1", "Option 1")];
+        }
+
+        List<MisSelectOptionViewModel> options = [];
+        string[] lines = rawText.Split(
+            ['\r', '\n'],
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (string line in lines)
+        {
+            string[] parts = line.Split('|', StringSplitOptions.TrimEntries);
+            string value = parts.ElementAtOrDefault(0) ?? string.Empty;
+            string label = parts.ElementAtOrDefault(1) ?? value;
+            bool isDisabled = bool.TryParse(parts.ElementAtOrDefault(2), out bool parsedIsDisabled) && parsedIsDisabled;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            options.Add(new(value, string.IsNullOrWhiteSpace(label) ? value : label, isDisabled));
+        }
+
+        return options.Count == 0 ? [new("option-1", "Option 1")] : options;
+    }
+
+    private void HandleClearSelectEvents(
+        MouseEventArgs args
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        Dispatch(new ClearMisSelectEventsAction());
+    }
 
     private Task HandleMisSelectActionAsync(
         IMisSelectAction action
@@ -78,34 +139,24 @@ public sealed partial class KitchenSinkMisSelectSection : StoreComponent
         return Task.CompletedTask;
     }
 
-    private void HandlePropertyTextInputAction(
-        IMisTextInputAction action
+    private void HandlePropertySelectAction(
+        IMisSelectAction action
     )
     {
         ArgumentNullException.ThrowIfNull(action);
-        if (action is MisTextInputInputAction inputAction)
+        if (action is not MisSelectChangedAction changedAction)
         {
-            switch (inputAction.IntentId)
-            {
-                case "prop-value":
-                    Dispatch(new SetMisSelectValueAction(inputAction.Value ?? string.Empty));
-                    break;
-                case "prop-intentid":
-                    Dispatch(new SetMisSelectIntentIdAction(!string.IsNullOrWhiteSpace(inputAction.Value) ? inputAction.Value : "kitchen-sink.mis-select"));
-                    break;
-                case "prop-arialabel":
-                    Dispatch(new SetMisSelectAriaLabelAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-                case "prop-placeholder":
-                    Dispatch(new SetMisSelectPlaceholderAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-                case "prop-title":
-                    Dispatch(new SetMisSelectTitleAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-                case "prop-cssclass":
-                    Dispatch(new SetMisSelectCssClassAction(string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
-                    break;
-            }
+            return;
+        }
+
+        switch (changedAction.IntentId)
+        {
+            case "prop-value":
+                Dispatch(new SetMisSelectValueAction(changedAction.Value));
+                break;
+            case "prop-state" when Enum.TryParse(changedAction.Value, true, out MisSelectState state):
+                Dispatch(new SetMisSelectStateAction(state));
+                break;
         }
     }
 
@@ -118,9 +169,8 @@ public sealed partial class KitchenSinkMisSelectSection : StoreComponent
         {
             MisSwitchInputAction inputAction => inputAction.IsChecked,
             MisSwitchChangedAction changedAction => changedAction.IsChecked,
-            _ => null,
+            var _ => null,
         };
-
         if (isChecked is not bool checkedValue)
         {
             return;
@@ -137,16 +187,43 @@ public sealed partial class KitchenSinkMisSelectSection : StoreComponent
         }
     }
 
-    private void HandlePropertySelectAction(
-        IMisSelectAction action
+    private void HandlePropertyTextInputAction(
+        IMisTextInputAction action
     )
     {
         ArgumentNullException.ThrowIfNull(action);
-        if (action is MisSelectChangedAction changedAction
-            && changedAction.IntentId == "prop-state"
-            && Enum.TryParse(changedAction.Value, true, out MisSelectState state))
+        if (action is MisTextInputInputAction inputAction)
         {
-            Dispatch(new SetMisSelectStateAction(state));
+            switch (inputAction.IntentId)
+            {
+                case "prop-intentid":
+                    Dispatch(
+                        new SetMisSelectIntentIdAction(
+                            !string.IsNullOrWhiteSpace(inputAction.Value)
+                                ? inputAction.Value
+                                : "kitchen-sink.mis-select"));
+                    break;
+                case "prop-arialabel":
+                    Dispatch(
+                        new SetMisSelectAriaLabelAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+                case "prop-placeholder":
+                    Dispatch(
+                        new SetMisSelectPlaceholderAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+                case "prop-title":
+                    Dispatch(
+                        new SetMisSelectTitleAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+                case "prop-cssclass":
+                    Dispatch(
+                        new SetMisSelectCssClassAction(
+                            string.IsNullOrWhiteSpace(inputAction.Value) ? null : inputAction.Value));
+                    break;
+            }
         }
     }
 
@@ -155,71 +232,14 @@ public sealed partial class KitchenSinkMisSelectSection : StoreComponent
     )
     {
         ArgumentNullException.ThrowIfNull(action);
-        if (action is MisTextareaInputAction inputAction && inputAction.IntentId == "prop-options")
+        if (action is MisTextareaInputAction inputAction && (inputAction.IntentId == "prop-options"))
         {
             Dispatch(new SetMisSelectOptionsAction(ParseSelectOptions(inputAction.Value ?? string.Empty)));
         }
     }
 
-    private void HandleClearSelectEvents(
-        MouseEventArgs args
-    )
-    {
-        ArgumentNullException.ThrowIfNull(args);
-        Dispatch(new ClearMisSelectEventsAction());
-    }
-
     private void HandleToggleEvents()
     {
         Dispatch(new ToggleKitchenSinkSectionEventsAction(EventsSectionKey));
-    }
-
-    private static List<MisSelectOptionViewModel> ParseSelectOptions(
-        string rawText
-    )
-    {
-        if (string.IsNullOrWhiteSpace(rawText))
-        {
-            return [new MisSelectOptionViewModel("option-1", "Option 1")];
-        }
-
-        List<MisSelectOptionViewModel> options = [];
-        string[] lines = rawText.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        foreach (string line in lines)
-        {
-            string[] parts = line.Split('|', StringSplitOptions.TrimEntries);
-            string value = parts.ElementAtOrDefault(0) ?? string.Empty;
-            string label = parts.ElementAtOrDefault(1) ?? value;
-            bool isDisabled = bool.TryParse(parts.ElementAtOrDefault(2), out bool parsedIsDisabled) && parsedIsDisabled;
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                continue;
-            }
-
-            options.Add(new MisSelectOptionViewModel(value, string.IsNullOrWhiteSpace(label) ? value : label, isDisabled));
-        }
-
-        return options.Count == 0
-            ? [new MisSelectOptionViewModel("option-1", "Option 1")]
-            : options;
-    }
-
-    private static string FormatSelectOptionsInput(
-        IReadOnlyList<MisSelectOptionViewModel> options
-    )
-    {
-        ArgumentNullException.ThrowIfNull(options);
-        if (options.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        List<string> lines = [];
-        foreach (MisSelectOptionViewModel option in options)
-        {
-            lines.Add($"{option.Value}|{option.Label}|{option.IsDisabled}");
-        }
-
-        return string.Join(Environment.NewLine, lines);
     }
 }

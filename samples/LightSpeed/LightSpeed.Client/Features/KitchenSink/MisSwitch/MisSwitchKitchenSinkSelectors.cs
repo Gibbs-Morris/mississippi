@@ -12,19 +12,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisSwitch;
 internal static class MisSwitchKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current MisSwitch view model.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The current switch view model.</returns>
-    public static MisSwitchViewModel GetViewModel(
-        MisSwitchKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
     ///     Gets the current list of logged switch events.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -35,5 +22,18 @@ internal static class MisSwitchKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.EventLog;
+    }
+
+    /// <summary>
+    ///     Gets the current MisSwitch view model.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The current switch view model.</returns>
+    public static MisSwitchViewModel GetViewModel(
+        MisSwitchKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

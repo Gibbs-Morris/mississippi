@@ -15,6 +15,16 @@ internal sealed record MisRadioGroupKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misRadioGroup";
 
     /// <summary>
+    ///     Gets the number of events recorded since the last clear.
+    /// </summary>
+    public int EventCount { get; init; }
+
+    /// <summary>
+    ///     Gets the list of emitted interaction event entries.
+    /// </summary>
+    public IReadOnlyList<string> EventLog { get; init; } = [];
+
+    /// <summary>
     ///     Gets the current radio group view model used by the demo component.
     /// </summary>
     public MisRadioGroupViewModel ViewModel { get; init; } = MisRadioGroupViewModel.Default with
@@ -25,20 +35,10 @@ internal sealed record MisRadioGroupKitchenSinkState : IFeatureState
         Title = "Kitchen Sink radio group",
         Options =
         [
-            new MisRadioOptionViewModel("pending", "Pending"),
-            new MisRadioOptionViewModel("approved", "Approved"),
-            new MisRadioOptionViewModel("rejected", "Rejected"),
-            new MisRadioOptionViewModel("archived", "Archived", true),
+            new("pending", "Pending"),
+            new("approved", "Approved"),
+            new("rejected", "Rejected"),
+            new("archived", "Archived", true),
         ],
     };
-
-    /// <summary>
-    ///     Gets the list of emitted interaction event entries.
-    /// </summary>
-    public IReadOnlyList<string> EventLog { get; init; } = [];
-
-    /// <summary>
-    ///     Gets the number of events recorded since the last clear.
-    /// </summary>
-    public int EventCount { get; init; }
 }

@@ -12,19 +12,6 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisTextInput;
 internal static class MisTextInputKitchenSinkSelectors
 {
     /// <summary>
-    ///     Gets the current MisTextInput view model.
-    /// </summary>
-    /// <param name="state">The Kitchen Sink feature state.</param>
-    /// <returns>The current text input view model.</returns>
-    public static MisTextInputViewModel GetViewModel(
-        MisTextInputKitchenSinkState state
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        return state.ViewModel;
-    }
-
-    /// <summary>
     ///     Gets the current list of logged text input events.
     /// </summary>
     /// <param name="state">The Kitchen Sink feature state.</param>
@@ -35,5 +22,18 @@ internal static class MisTextInputKitchenSinkSelectors
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.EventLog;
+    }
+
+    /// <summary>
+    ///     Gets the current MisTextInput view model.
+    /// </summary>
+    /// <param name="state">The Kitchen Sink feature state.</param>
+    /// <returns>The current text input view model.</returns>
+    public static MisTextInputViewModel GetViewModel(
+        MisTextInputKitchenSinkState state
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.ViewModel;
     }
 }

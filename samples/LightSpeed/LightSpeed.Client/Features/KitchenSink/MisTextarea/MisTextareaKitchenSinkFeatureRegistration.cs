@@ -19,19 +19,32 @@ internal static class MisTextareaKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisTextareaValueAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetValue);
-        services.AddReducer<SetMisTextareaIntentIdAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetIntentId);
-        services.AddReducer<SetMisTextareaAriaLabelAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetAriaLabel);
-        services.AddReducer<SetMisTextareaTitleAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetTitle);
-        services.AddReducer<SetMisTextareaCssClassAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetCssClass);
-        services.AddReducer<SetMisTextareaPlaceholderAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetPlaceholder);
-        services.AddReducer<SetMisTextareaRowsAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetRows);
-        services.AddReducer<SetMisTextareaDisabledAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetDisabled);
-        services.AddReducer<SetMisTextareaReadOnlyAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetReadOnly);
-        services.AddReducer<SetMisTextareaRequiredAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetRequired);
-        services.AddReducer<SetMisTextareaStateAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.SetState);
-        services.AddReducer<RecordMisTextareaEventAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.RecordEvent);
-        services.AddReducer<ClearMisTextareaEventsAction, MisTextareaKitchenSinkState>(MisTextareaKitchenSinkReducers.ClearEvents);
+        services.AddReducer<SetMisTextareaValueAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetValue);
+        services.AddReducer<SetMisTextareaIntentIdAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetIntentId);
+        services.AddReducer<SetMisTextareaAriaLabelAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetAriaLabel);
+        services.AddReducer<SetMisTextareaTitleAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetTitle);
+        services.AddReducer<SetMisTextareaCssClassAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisTextareaPlaceholderAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetPlaceholder);
+        services.AddReducer<SetMisTextareaRowsAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetRows);
+        services.AddReducer<SetMisTextareaDisabledAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetDisabled);
+        services.AddReducer<SetMisTextareaReadOnlyAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetReadOnly);
+        services.AddReducer<SetMisTextareaRequiredAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetRequired);
+        services.AddReducer<SetMisTextareaStateAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.SetState);
+        services.AddReducer<RecordMisTextareaEventAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.RecordEvent);
+        services.AddReducer<ClearMisTextareaEventsAction, MisTextareaKitchenSinkState>(
+            MisTextareaKitchenSinkReducers.ClearEvents);
         return services;
     }
 }

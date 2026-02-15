@@ -13,6 +13,11 @@ internal sealed record MisValidationMessageKitchenSinkState : IFeatureState
     public static string FeatureKey => "kitchenSink.misValidationMessage";
 
     /// <summary>
+    ///     Gets the message text displayed within the validation message.
+    /// </summary>
+    public string MessageText { get; init; } = "This field is required.";
+
+    /// <summary>
     ///     Gets the current validation message view model used by the demo component.
     /// </summary>
     public MisValidationMessageViewModel ViewModel { get; init; } = MisValidationMessageViewModel.Default with
@@ -20,9 +25,4 @@ internal sealed record MisValidationMessageKitchenSinkState : IFeatureState
         For = "demo-input",
         Severity = MisValidationMessageSeverity.Error,
     };
-
-    /// <summary>
-    ///     Gets the message text displayed within the validation message.
-    /// </summary>
-    public string MessageText { get; init; } = "This field is required.";
 }

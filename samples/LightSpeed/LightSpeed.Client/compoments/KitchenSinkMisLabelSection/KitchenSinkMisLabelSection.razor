@@ -1,44 +1,74 @@
 @namespace LightSpeed.Client.Compoments
-@inherits StoreComponent
 @using Mississippi.Refraction.Components.Molecules
-@using Mississippi.Refraction.Components.Molecules.MisSwitchActions
 @using Mississippi.Refraction.Components.Molecules.MisTextInputActions
-@using Mississippi.Refraction.Components.Molecules.MisSelectActions
+@inherits StoreComponent
 
 <KitchenSinkDemoSection Title="MisLabel"
                         ComponentTag="MisLabel"
                         Description="Form field label with optional required indicator and semantic states.">
     <ChildContent>
         <MisLabel Model="@LabelModel">@LabelText</MisLabel>
-        <MisTextInput Model="@(new MisTextInputViewModel { IntentId = LabelModel.For ?? "demo-input", Placeholder = "Input associated with label" })"
-                      OnAction="@((IMisTextInputAction _) => {})" />
+        <MisTextInput Model="@(new MisTextInputViewModel
+                             {
+                                 IntentId = LabelModel.For ?? "demo-input",
+                                 Placeholder = "Input associated with label",
+                             })"
+                      OnAction="@((
+                                    IMisTextInputAction _
+                                ) =>
+                                {
+                                })"/>
     </ChildContent>
 
     <Properties>
         <div class="ks-prop-row">
             <span class="ks-prop-label">Text</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-text", Value = LabelText, Placeholder = "Label text" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-text",
+                                     Value = LabelText,
+                                     Placeholder = "Label text",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">For</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-for", Value = LabelModel.For ?? string.Empty, Placeholder = "Associated input id" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-for",
+                                     Value = LabelModel.For ?? string.Empty,
+                                     Placeholder = "Associated input id",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">CssClass</span>
-            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-cssclass", Value = LabelModel.CssClass ?? string.Empty, Placeholder = "Additional CSS class" })"
-                          OnAction="HandlePropertyTextInputAction" />
+            <MisTextInput Model="@(new MisTextInputViewModel
+                                 {
+                                     IntentId = "prop-cssclass",
+                                     Value = LabelModel.CssClass ?? string.Empty,
+                                     Placeholder = "Additional CSS class",
+                                 })"
+                          OnAction="HandlePropertyTextInputAction"/>
         </div>
         <div class="ks-prop-row">
             <span class="ks-prop-label">State</span>
-            <MisSelect Model="@(new MisSelectViewModel { IntentId = "prop-state", Value = LabelModel.State.ToString(), Options = LabelStateOptions })"
-                       OnAction="HandlePropertySelectAction" />
+            <MisSelect Model="@(new MisSelectViewModel
+                              {
+                                  IntentId = "prop-state",
+                                  Value = LabelModel.State.ToString(),
+                                  Options = LabelStateOptions,
+                              })"
+                       OnAction="HandlePropertySelectAction"/>
         </div>
         <div class="ks-prop-row ks-prop-row--toggle">
             <span class="ks-prop-label">IsRequired</span>
-            <MisSwitch Model="@(new MisSwitchViewModel { IntentId = "prop-isrequired", IsChecked = LabelModel.IsRequired })"
-                       OnAction="HandlePropertySwitchAction" />
+            <MisSwitch Model="@(new MisSwitchViewModel
+                              {
+                                  IntentId = "prop-isrequired",
+                                  IsChecked = LabelModel.IsRequired,
+                              })"
+                       OnAction="HandlePropertySwitchAction"/>
         </div>
     </Properties>
 </KitchenSinkDemoSection>

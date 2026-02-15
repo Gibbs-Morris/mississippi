@@ -19,14 +19,22 @@ internal static class MisFormFieldKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisFormFieldLabelTextAction, MisFormFieldKitchenSinkState>(MisFormFieldKitchenSinkReducers.SetLabelText);
-        services.AddReducer<SetMisFormFieldHelpTextAction, MisFormFieldKitchenSinkState>(MisFormFieldKitchenSinkReducers.SetHelpText);
-        services.AddReducer<SetMisFormFieldValidationMessageAction, MisFormFieldKitchenSinkState>(MisFormFieldKitchenSinkReducers.SetValidationMessage);
-        services.AddReducer<SetMisFormFieldInputValueAction, MisFormFieldKitchenSinkState>(MisFormFieldKitchenSinkReducers.SetInputValue);
-        services.AddReducer<SetMisFormFieldShowValidationAction, MisFormFieldKitchenSinkState>(MisFormFieldKitchenSinkReducers.SetShowValidation);
-        services.AddReducer<SetMisFormFieldStateAction, MisFormFieldKitchenSinkState>(MisFormFieldKitchenSinkReducers.SetState);
-        services.AddReducer<SetMisFormFieldDisabledAction, MisFormFieldKitchenSinkState>(MisFormFieldKitchenSinkReducers.SetDisabled);
-        services.AddReducer<SetMisFormFieldCssClassAction, MisFormFieldKitchenSinkState>(MisFormFieldKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisFormFieldLabelTextAction, MisFormFieldKitchenSinkState>(
+            MisFormFieldKitchenSinkReducers.SetLabelText);
+        services.AddReducer<SetMisFormFieldHelpTextAction, MisFormFieldKitchenSinkState>(
+            MisFormFieldKitchenSinkReducers.SetHelpText);
+        services.AddReducer<SetMisFormFieldValidationMessageAction, MisFormFieldKitchenSinkState>(
+            MisFormFieldKitchenSinkReducers.SetValidationMessage);
+        services.AddReducer<SetMisFormFieldInputValueAction, MisFormFieldKitchenSinkState>(
+            MisFormFieldKitchenSinkReducers.SetInputValue);
+        services.AddReducer<SetMisFormFieldShowValidationAction, MisFormFieldKitchenSinkState>(
+            MisFormFieldKitchenSinkReducers.SetShowValidation);
+        services.AddReducer<SetMisFormFieldStateAction, MisFormFieldKitchenSinkState>(
+            MisFormFieldKitchenSinkReducers.SetState);
+        services.AddReducer<SetMisFormFieldDisabledAction, MisFormFieldKitchenSinkState>(
+            MisFormFieldKitchenSinkReducers.SetDisabled);
+        services.AddReducer<SetMisFormFieldCssClassAction, MisFormFieldKitchenSinkState>(
+            MisFormFieldKitchenSinkReducers.SetCssClass);
         return services;
     }
 }

@@ -9,71 +9,44 @@ namespace LightSpeed.Client.Features.KitchenSinkFeatures.MisSwitch;
 internal static class MisSwitchKitchenSinkReducers
 {
     /// <summary>
-    ///     Sets whether the switch is checked.
+    ///     Clears all recorded interaction events.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The clear action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSwitchKitchenSinkState SetChecked(
+    public static MisSwitchKitchenSinkState ClearEvents(
         MisSwitchKitchenSinkState state,
-        SetMisSwitchCheckedAction action
+        ClearMisSwitchEventsAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                IsChecked = action.IsChecked,
-            },
+            EventCount = 0,
+            EventLog = [],
         };
     }
 
     /// <summary>
-    ///     Sets the switch value.
+    ///     Appends a new interaction event entry to the log.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
+    /// <param name="action">The event recording action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSwitchKitchenSinkState SetValue(
+    public static MisSwitchKitchenSinkState RecordEvent(
         MisSwitchKitchenSinkState state,
-        SetMisSwitchValueAction action
+        RecordMisSwitchEventAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
+        int nextEventNumber = state.EventCount + 1;
+        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            ViewModel = state.ViewModel with
-            {
-                Value = NormalizeRequired(action.Value, "true"),
-            },
-        };
-    }
-
-    /// <summary>
-    ///     Sets the intent identifier.
-    /// </summary>
-    /// <param name="state">The current state.</param>
-    /// <param name="action">The update action.</param>
-    /// <returns>The updated state.</returns>
-    public static MisSwitchKitchenSinkState SetIntentId(
-        MisSwitchKitchenSinkState state,
-        SetMisSwitchIntentIdAction action
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(action);
-
-        return state with
-        {
-            ViewModel = state.ViewModel with
-            {
-                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-switch"),
-            },
+            EventCount = nextEventNumber,
+            EventLog = [.. state.EventLog, entry],
         };
     }
 
@@ -90,7 +63,6 @@ internal static class MisSwitchKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -101,24 +73,23 @@ internal static class MisSwitchKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Sets the optional title value.
+    ///     Sets whether the switch is checked.
     /// </summary>
     /// <param name="state">The current state.</param>
     /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSwitchKitchenSinkState SetTitle(
+    public static MisSwitchKitchenSinkState SetChecked(
         MisSwitchKitchenSinkState state,
-        SetMisSwitchTitleAction action
+        SetMisSwitchCheckedAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
-                Title = NormalizeOptional(action.Title),
+                IsChecked = action.IsChecked,
             },
         };
     }
@@ -136,7 +107,6 @@ internal static class MisSwitchKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -159,12 +129,33 @@ internal static class MisSwitchKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
             {
                 IsDisabled = action.IsDisabled,
+            },
+        };
+    }
+
+    /// <summary>
+    ///     Sets the intent identifier.
+    /// </summary>
+    /// <param name="state">The current state.</param>
+    /// <param name="action">The update action.</param>
+    /// <returns>The updated state.</returns>
+    public static MisSwitchKitchenSinkState SetIntentId(
+        MisSwitchKitchenSinkState state,
+        SetMisSwitchIntentIdAction action
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(action);
+        return state with
+        {
+            ViewModel = state.ViewModel with
+            {
+                IntentId = NormalizeRequired(action.IntentId, "kitchen-sink.mis-switch"),
             },
         };
     }
@@ -182,7 +173,6 @@ internal static class MisSwitchKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -205,7 +195,6 @@ internal static class MisSwitchKitchenSinkReducers
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
             ViewModel = state.ViewModel with
@@ -216,57 +205,57 @@ internal static class MisSwitchKitchenSinkReducers
     }
 
     /// <summary>
-    ///     Appends a new interaction event entry to the log.
+    ///     Sets the optional title value.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The event recording action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSwitchKitchenSinkState RecordEvent(
+    public static MisSwitchKitchenSinkState SetTitle(
         MisSwitchKitchenSinkState state,
-        RecordMisSwitchEventAction action
+        SetMisSwitchTitleAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
-        int nextEventNumber = state.EventCount + 1;
-        string entry = $"{nextEventNumber:000}: {action.EventName} - {action.EventDetails}";
         return state with
         {
-            EventCount = nextEventNumber,
-            EventLog = [.. state.EventLog, entry],
+            ViewModel = state.ViewModel with
+            {
+                Title = NormalizeOptional(action.Title),
+            },
         };
     }
 
     /// <summary>
-    ///     Clears all recorded interaction events.
+    ///     Sets the switch value.
     /// </summary>
     /// <param name="state">The current state.</param>
-    /// <param name="action">The clear action.</param>
+    /// <param name="action">The update action.</param>
     /// <returns>The updated state.</returns>
-    public static MisSwitchKitchenSinkState ClearEvents(
+    public static MisSwitchKitchenSinkState SetValue(
         MisSwitchKitchenSinkState state,
-        ClearMisSwitchEventsAction action
+        SetMisSwitchValueAction action
     )
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(action);
-
         return state with
         {
-            EventCount = 0,
-            EventLog = [],
+            ViewModel = state.ViewModel with
+            {
+                Value = NormalizeRequired(action.Value, "true"),
+            },
         };
     }
+
+    private static string? NormalizeOptional(
+        string? value
+    ) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static string NormalizeRequired(
         string? value,
         string fallback
     ) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-
-    private static string? NormalizeOptional(
-        string? value
-    ) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

@@ -19,14 +19,20 @@ internal static class MisButtonKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisButtonIntentIdAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetIntentId);
-        services.AddReducer<SetMisButtonAriaLabelAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetAriaLabel);
+        services.AddReducer<SetMisButtonIntentIdAction, MisButtonKitchenSinkState>(
+            MisButtonKitchenSinkReducers.SetIntentId);
+        services.AddReducer<SetMisButtonAriaLabelAction, MisButtonKitchenSinkState>(
+            MisButtonKitchenSinkReducers.SetAriaLabel);
         services.AddReducer<SetMisButtonTitleAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetTitle);
-        services.AddReducer<SetMisButtonCssClassAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetCssClass);
-        services.AddReducer<SetMisButtonDisabledAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetIsDisabled);
+        services.AddReducer<SetMisButtonCssClassAction, MisButtonKitchenSinkState>(
+            MisButtonKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisButtonDisabledAction, MisButtonKitchenSinkState>(
+            MisButtonKitchenSinkReducers.SetIsDisabled);
         services.AddReducer<SetMisButtonTypeAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.SetType);
-        services.AddReducer<RecordMisButtonEventAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.RecordEvent);
-        services.AddReducer<ClearMisButtonEventsAction, MisButtonKitchenSinkState>(MisButtonKitchenSinkReducers.ClearEvents);
+        services.AddReducer<RecordMisButtonEventAction, MisButtonKitchenSinkState>(
+            MisButtonKitchenSinkReducers.RecordEvent);
+        services.AddReducer<ClearMisButtonEventsAction, MisButtonKitchenSinkState>(
+            MisButtonKitchenSinkReducers.ClearEvents);
         return services;
     }
 }

@@ -19,17 +19,28 @@ internal static class MisRadioGroupKitchenSinkFeatureRegistration
         this IServiceCollection services
     )
     {
-        services.AddReducer<SetMisRadioGroupValueAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetValue);
-        services.AddReducer<SetMisRadioGroupIntentIdAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetIntentId);
-        services.AddReducer<SetMisRadioGroupAriaLabelAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetAriaLabel);
-        services.AddReducer<SetMisRadioGroupTitleAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetTitle);
-        services.AddReducer<SetMisRadioGroupCssClassAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetCssClass);
-        services.AddReducer<SetMisRadioGroupDisabledAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetDisabled);
-        services.AddReducer<SetMisRadioGroupRequiredAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetRequired);
-        services.AddReducer<SetMisRadioGroupStateAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetState);
-        services.AddReducer<SetMisRadioGroupOptionsAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.SetOptions);
-        services.AddReducer<RecordMisRadioGroupEventAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.RecordEvent);
-        services.AddReducer<ClearMisRadioGroupEventsAction, MisRadioGroupKitchenSinkState>(MisRadioGroupKitchenSinkReducers.ClearEvents);
+        services.AddReducer<SetMisRadioGroupValueAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetValue);
+        services.AddReducer<SetMisRadioGroupIntentIdAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetIntentId);
+        services.AddReducer<SetMisRadioGroupAriaLabelAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetAriaLabel);
+        services.AddReducer<SetMisRadioGroupTitleAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetTitle);
+        services.AddReducer<SetMisRadioGroupCssClassAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetCssClass);
+        services.AddReducer<SetMisRadioGroupDisabledAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetDisabled);
+        services.AddReducer<SetMisRadioGroupRequiredAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetRequired);
+        services.AddReducer<SetMisRadioGroupStateAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetState);
+        services.AddReducer<SetMisRadioGroupOptionsAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.SetOptions);
+        services.AddReducer<RecordMisRadioGroupEventAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.RecordEvent);
+        services.AddReducer<ClearMisRadioGroupEventsAction, MisRadioGroupKitchenSinkState>(
+            MisRadioGroupKitchenSinkReducers.ClearEvents);
         return services;
     }
 }
