@@ -1,0 +1,43 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   KitchenSink Page — Scoped Styles
+   Provides the overall page layout and spacing between demo sections.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.ks-page {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: var(--mis-space-xl) var(--mis-space-xl) 4rem;
+    background: var(--mis-bg-default);
+    min-height: 100vh;
+}
+
+.ks-page-header {
+    margin-bottom: var(--mis-space-xl);
+    padding-bottom: var(--mis-space-lg);
+    border-bottom: 2px solid var(--mis-border-decorative);
+}
+
+.ks-page-title {
+    margin: 0;
+    font-family: var(--mis-font-heading);
+    font-size: var(--mis-type-display-size);
+    font-weight: var(--mis-type-display-weight);
+    line-height: var(--mis-type-display-lh);
+    color: var(--mis-text-default);
+    letter-spacing: var(--mis-tracking-wide);
+}
+
+.ks-page-subtitle {
+    margin: var(--mis-space-xs) 0 0;
+    font-family: var(--mis-font-body);
+    font-size: var(--mis-type-body-lg-size);
+    font-weight: var(--mis-type-body-lg-weight);
+    line-height: var(--mis-type-body-lg-lh);
+    color: var(--mis-text-muted);
+}
+
+.ks-page-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mis-space-xl);
+}
