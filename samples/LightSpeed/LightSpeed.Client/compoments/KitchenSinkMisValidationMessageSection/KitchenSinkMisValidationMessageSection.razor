@@ -1,0 +1,36 @@
+@namespace LightSpeed.Client.Compoments
+@inherits StoreComponent
+@using Mississippi.Refraction.Components.Molecules
+@using Mississippi.Refraction.Components.Molecules.MisTextInputActions
+@using Mississippi.Refraction.Components.Molecules.MisSelectActions
+
+<KitchenSinkDemoSection Title="MisValidationMessage"
+                        ComponentTag="MisValidationMessage"
+                        Description="Form validation feedback with severity levels (error, warning, info, success).">
+    <ChildContent>
+        <MisValidationMessage Model="@ValidationModel">@MessageText</MisValidationMessage>
+    </ChildContent>
+
+    <Properties>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">Text</span>
+            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-text", Value = MessageText, Placeholder = "Validation message text" })"
+                          OnAction="HandlePropertyTextInputAction" />
+        </div>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">For</span>
+            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-for", Value = ValidationModel.For ?? string.Empty, Placeholder = "Associated input id" })"
+                          OnAction="HandlePropertyTextInputAction" />
+        </div>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">CssClass</span>
+            <MisTextInput Model="@(new MisTextInputViewModel { IntentId = "prop-cssclass", Value = ValidationModel.CssClass ?? string.Empty, Placeholder = "Additional CSS class" })"
+                          OnAction="HandlePropertyTextInputAction" />
+        </div>
+        <div class="ks-prop-row">
+            <span class="ks-prop-label">Severity</span>
+            <MisSelect Model="@(new MisSelectViewModel { IntentId = "prop-severity", Value = ValidationModel.Severity.ToString(), Options = SeverityOptions })"
+                       OnAction="HandlePropertySelectAction" />
+        </div>
+    </Properties>
+</KitchenSinkDemoSection>

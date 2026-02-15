@@ -1,0 +1,24 @@
+.mis-validation-message {
+    display: flex;
+    align-items: center;
+    gap: var(--mis-spacing-xs, 0.25rem);
+    font-family: var(--mis-font-family, inherit);
+    font-size: var(--mis-font-size-xs, 0.75rem);
+    line-height: var(--mis-line-height-tight, 1.25);
+}
+
+.mis-validation-message--error {
+    color: var(--mis-color-error, #dc2626);
+}
+
+.mis-validation-message--warning {
+    color: var(--mis-color-warning, #d97706);
+}
+
+.mis-validation-message--info {
+    color: var(--mis-color-info, #2563eb);
+}
+
+.mis-validation-message--success {
+    color: var(--mis-color-success, #16a34a);
+}

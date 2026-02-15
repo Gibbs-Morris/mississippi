@@ -1,0 +1,12 @@
+@namespace Mississippi.Refraction.Components.Molecules
+
+@if (ChildContent is not null)
+{
+    <span class="@CssClass"
+          id="@Model.Id"
+          role="@Role"
+          aria-live="@AriaLive"
+          @attributes="AdditionalAttributes">
+        @ChildContent
+    </span>
+}
