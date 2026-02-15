@@ -31,14 +31,13 @@ public sealed partial class KitchenSinkMisSwitchSection : StoreComponent
         Select<KitchenSinkSectionUiState, bool>(state =>
             KitchenSinkSectionUiSelectors.IsEventsOpen(state, EventsSectionKey));
 
+    private bool IsValueToggleChecked => !bool.TryParse(SwitchModel.Value, out bool parsedValue) || parsedValue;
+
     private IReadOnlyList<string> SwitchEvents =>
         Select<MisSwitchKitchenSinkState, IReadOnlyList<string>>(MisSwitchKitchenSinkSelectors.GetEventLog);
 
     private MisSwitchViewModel SwitchModel =>
         Select<MisSwitchKitchenSinkState, MisSwitchViewModel>(MisSwitchKitchenSinkSelectors.GetViewModel);
-
-    private bool IsValueToggleChecked =>
-        !bool.TryParse(SwitchModel.Value, out bool parsedValue) || parsedValue;
 
     private static string FormatAction(
         IMisSwitchAction action

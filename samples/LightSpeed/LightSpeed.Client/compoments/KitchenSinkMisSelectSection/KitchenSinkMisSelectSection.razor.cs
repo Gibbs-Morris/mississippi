@@ -40,8 +40,7 @@ public sealed partial class KitchenSinkMisSelectSection : StoreComponent
     private MisSelectViewModel SelectModel =>
         Select<MisSelectKitchenSinkState, MisSelectViewModel>(MisSelectKitchenSinkSelectors.GetViewModel);
 
-    private IReadOnlyList<MisSelectOptionViewModel> SelectValueOptions =>
-        [.. SelectModel.Options];
+    private IReadOnlyList<MisSelectOptionViewModel> SelectValueOptions => [.. SelectModel.Options];
 
     private static string FormatAction(
         IMisSelectAction action

@@ -42,7 +42,10 @@ public sealed partial class KitchenSinkMisRadioGroupSection : StoreComponent
         Select<MisRadioGroupKitchenSinkState, MisRadioGroupViewModel>(MisRadioGroupKitchenSinkSelectors.GetViewModel);
 
     private IReadOnlyList<MisSelectOptionViewModel> RadioGroupValueOptions =>
-        [.. RadioGroupModel.Options.Select(option => new MisSelectOptionViewModel(option.Value, option.Label, option.IsDisabled))];
+    [
+        .. RadioGroupModel.Options.Select(option =>
+            new MisSelectOptionViewModel(option.Value, option.Label, option.IsDisabled)),
+    ];
 
     private static string FormatAction(
         IMisRadioGroupAction action
