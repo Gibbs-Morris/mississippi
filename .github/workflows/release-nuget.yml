@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
         with:
           fetch-depth: 0
 
@@ -44,12 +44,12 @@ jobs:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
+            ${{ runner.os }}-nuget-
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
         with:
-          versionSpec: "6.0.5"
+          versionSpec: "6.5.1"
 
       - name: Determine Version
         id: gitversion
@@ -60,7 +60,7 @@ jobs:
       - name: Print resolved version
         run: |
           echo "GitVersion SemVer: ${{ steps.gitversion.outputs.SemVer }}"
-          echo "GitVersion NuGetVersion: ${{ steps.gitversion.outputs.SemVer }}"
+          echo "GitVersion FullSemVer: ${{ steps.gitversion.outputs.FullSemVer }}"
 
       - name: Restore
         run: dotnet restore ${{ github.workspace }}/mississippi.slnx
@@ -118,6 +118,10 @@ jobs:
             --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
+          dotnet nuget push "artifacts/nuget/*.snupkg" \
+            --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
 
       - name: Publish summary
         if: always()
@@ -130,5 +134,8 @@ jobs:
           echo "### Packages" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           for pkg in artifacts/nuget/*.nupkg; do
+            [ -f "$pkg" ] && echo "- \`$(basename "$pkg")\`" >> "$GITHUB_STEP_SUMMARY"
+          done
+          for pkg in artifacts/nuget/*.snupkg; do
             [ -f "$pkg" ] && echo "- \`$(basename "$pkg")\`" >> "$GITHUB_STEP_SUMMARY"
           done
