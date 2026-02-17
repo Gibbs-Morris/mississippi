@@ -5,24 +5,24 @@ branches:
     increment: Minor
     is-release-branch: false
     mode: ContinuousDelivery
-    regex: ^features?[/-](?<BranchName>.+)
+    regex: ^feature(s)?[/-]
     source-branches: ["main", "feature"]
-    label: '{BranchName}'
+    label: useBranchName
     track-merge-target: false
     tracks-release-branches: false
   hotfix:
     increment: Patch
     is-release-branch: false
     mode: ContinuousDelivery
-    regex: ^hotfix(es)?[/-](?<BranchName>.+)
-    label: '{BranchName}'
+    regex: ^hotfix(es)?[/-]
+    label: useBranchName
     track-merge-target: false
     tracks-release-branches: false
   main:
     increment: Minor
     is-main-branch: true
     is-release-branch: false
-    mode: ContinuousDelivery
+    mode: ContinuousDeployment
     regex: ^main
     label: "next"
     track-merge-target: true
@@ -40,7 +40,7 @@ branches:
     is-release-branch: true
     mode: ContinuousDeployment
     pre-release-weight: 1000
-    regex: ^releases?[/-](?<BranchName>.+)
+    regex: ^release(s)?[/-]
     label: ""
     track-merge-target: false
     tracks-release-branches: false
@@ -48,9 +48,9 @@ branches:
     increment: Minor
     is-release-branch: false
     mode: ContinuousDelivery
-    regex: ^topic[/-](?<BranchName>.+)
+    regex: ^topic[/-]
     source-branches: ["main", "feature"]
-    label: '{BranchName}'
+    label: useBranchName
     track-merge-target: false
     tracks-release-branches: false
 commit-message-incrementing: Enabled
