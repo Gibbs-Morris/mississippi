@@ -40,7 +40,7 @@ branches:
     is-release-branch: true
     mode: ContinuousDeployment
     pre-release-weight: 1000
-    regex: ^releases?[/-](?<BranchName>.+)
+    regex: ^releases?[/-].+
     label: ""
     track-merge-target: false
     tracks-release-branches: false
