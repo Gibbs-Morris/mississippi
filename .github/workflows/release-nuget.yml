@@ -1,15 +1,10 @@
 name: NuGet Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      confirm:
-        description: Type "confirm" to run a manual release publish.
-        required: true
-        default: ""
   push:
     branches:
       - main
+      - release/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,53 +14,32 @@ env:
   CONFIGURATION: Release
 
 jobs:
-  validate-dispatch:
-    name: Validate Manual Dispatch
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Validate branch and confirmation
-        shell: pwsh
-        run: |
-          $isReleaseBranch = "${{ github.ref }}".StartsWith("refs/heads/release/") -or "${{ github.ref }}".StartsWith("refs/heads/releases/")
-          $isConfirmed = "${{ github.event.inputs.confirm }}" -eq "confirm"
-
-          if (-not $isReleaseBranch) {
-            throw "workflow_dispatch is restricted to release branches (release/* or releases/*). Current ref: ${{ github.ref }}"
-          }
-
-          if (-not $isConfirmed) {
-            throw "Manual publish requires input confirm=confirm."
-          }
-
   build-pack:
     name: Build and Pack
     runs-on: ubuntu-latest
-    needs: validate-dispatch
-    if: always() && (github.event_name != 'workflow_dispatch' || needs.validate-dispatch.result == 'success')
     permissions:
       contents: read
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Setup Dotnet
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           global-json-file: global.json
 
       - name: Cache GitVersion tools
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.gitversion
           key: ${{ runner.os }}-gitversion
           restore-keys: ${{ runner.os }}-gitversion
 
       - name: Cache nugets
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
@@ -73,13 +47,13 @@ jobs:
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v3.2.1
+        uses: gittools/actions/gitversion/setup@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
         with:
           versionSpec: "6.0.5"
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@v3.2.1
+        uses: gittools/actions/gitversion/execute@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
         with:
           useConfigFile: true
 
@@ -106,7 +80,7 @@ jobs:
             -p:PackageVersion=${{ steps.gitversion.outputs.NuGetVersionV2 }}
 
       - name: Upload NuGet artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: nuget-${{ steps.gitversion.outputs.NuGetVersionV2 }}
           path: artifacts/nuget/*
@@ -116,7 +90,6 @@ jobs:
     name: Publish to NuGet
     runs-on: ubuntu-latest
     needs: build-pack
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       id-token: write
@@ -124,7 +97,7 @@ jobs:
 
     steps:
       - name: Download NuGet artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: nuget-*
           path: artifacts/nuget
@@ -135,33 +108,27 @@ jobs:
 
       - name: NuGet login (OIDC)
         id: nuget-login
-        uses: NuGet/login@v1
+        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1
         with:
           user: ${{ secrets.NUGET_USER }}
 
       - name: Push packages
-        shell: pwsh
         run: |
-          $packages = Get-ChildItem -Path "artifacts/nuget" -Filter "*.nupkg" -File |
-            Where-Object { $_.Name -notlike "*.symbols.nupkg" }
-          $symbolPackages = Get-ChildItem -Path "artifacts/nuget" -Filter "*.snupkg" -File
+          dotnet nuget push "artifacts/nuget/*.nupkg" \
+            --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
 
-          if (-not $packages -and -not $symbolPackages) {
-            throw "No .nupkg or .snupkg files found to publish."
-          }
-
-          foreach ($package in $packages) {
-            Write-Host "Publishing $($package.Name)..."
-            dotnet nuget push $package.FullName `
-              --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" `
-              --source https://api.nuget.org/v3/index.json `
-              --skip-duplicate
-          }
-
-          foreach ($symbolPackage in $symbolPackages) {
-            Write-Host "Publishing $($symbolPackage.Name)..."
-            dotnet nuget push $symbolPackage.FullName `
-              --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" `
-              --source https://api.nuget.org/v3/index.json `
-              --skip-duplicate
-          }
+      - name: Publish summary
+        if: always()
+        run: |
+          echo "## NuGet Publish Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Environment:** \`${{ startsWith(github.ref, 'refs/heads/release/') && 'nuget-release' || 'nuget-prerelease' }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Packages" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          for pkg in artifacts/nuget/*.nupkg; do
+            [ -f "$pkg" ] && echo "- \`$(basename "$pkg")\`" >> "$GITHUB_STEP_SUMMARY"
+          done

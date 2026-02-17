@@ -1,2 +1,5 @@
-# This defines the owner for the entire repository
+# CODEOWNERS
+
 * @BenjaminLGibbs
+
+.github/workflows/** @Gibbs-Morris/owners
