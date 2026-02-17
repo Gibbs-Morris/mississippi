@@ -60,7 +60,7 @@ jobs:
       - name: Print resolved version
         run: |
           echo "GitVersion SemVer: ${{ steps.gitversion.outputs.SemVer }}"
-          echo "GitVersion NuGetVersionV2: ${{ steps.gitversion.outputs.NuGetVersionV2 }}"
+          echo "GitVersion NuGetVersion: ${{ steps.gitversion.outputs.SemVer }}"
 
       - name: Restore
         run: dotnet restore ${{ github.workspace }}/mississippi.slnx
@@ -77,12 +77,12 @@ jobs:
             --configuration ${{ env.CONFIGURATION }} \
             --no-build \
             --output ${{ github.workspace }}/artifacts/nuget \
-            -p:PackageVersion=${{ steps.gitversion.outputs.NuGetVersionV2 }}
+            -p:PackageVersion=${{ steps.gitversion.outputs.SemVer }}
 
       - name: Upload NuGet artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: nuget-${{ steps.gitversion.outputs.NuGetVersionV2 }}
+          name: nuget-${{ steps.gitversion.outputs.SemVer }}
           path: artifacts/nuget/*
           if-no-files-found: error
 
