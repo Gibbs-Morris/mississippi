@@ -2,10 +2,14 @@ name: NuGet Release
 
 on:
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "confirm" to run a manual release publish.
+        required: true
+        default: ""
   push:
     branches:
       - main
-      - release/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,9 +19,30 @@ env:
   CONFIGURATION: Release
 
 jobs:
+  validate-dispatch:
+    name: Validate Manual Dispatch
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Validate branch and confirmation
+        shell: pwsh
+        run: |
+          $isReleaseBranch = "${{ github.ref }}".StartsWith("refs/heads/release/") -or "${{ github.ref }}".StartsWith("refs/heads/releases/")
+          $isConfirmed = "${{ github.event.inputs.confirm }}" -eq "confirm"
+
+          if (-not $isReleaseBranch) {
+            throw "workflow_dispatch is restricted to release branches (release/* or releases/*). Current ref: ${{ github.ref }}"
+          }
+
+          if (-not $isConfirmed) {
+            throw "Manual publish requires input confirm=confirm."
+          }
+
   build-pack:
     name: Build and Pack
     runs-on: ubuntu-latest
+    needs: validate-dispatch
+    if: always() && (github.event_name != 'workflow_dispatch' || needs.validate-dispatch.result == 'success')
     permissions:
       contents: read
 
@@ -91,7 +116,7 @@ jobs:
     name: Publish to NuGet
     runs-on: ubuntu-latest
     needs: build-pack
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       id-token: write
@@ -119,14 +144,23 @@ jobs:
         run: |
           $packages = Get-ChildItem -Path "artifacts/nuget" -Filter "*.nupkg" -File |
             Where-Object { $_.Name -notlike "*.symbols.nupkg" }
+          $symbolPackages = Get-ChildItem -Path "artifacts/nuget" -Filter "*.snupkg" -File
 
-          if (-not $packages) {
-            throw "No .nupkg files found to publish."
+          if (-not $packages -and -not $symbolPackages) {
+            throw "No .nupkg or .snupkg files found to publish."
           }
 
           foreach ($package in $packages) {
             Write-Host "Publishing $($package.Name)..."
             dotnet nuget push $package.FullName `
+              --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" `
+              --source https://api.nuget.org/v3/index.json `
+              --skip-duplicate
+          }
+
+          foreach ($symbolPackage in $symbolPackages) {
+            Write-Host "Publishing $($symbolPackage.Name)..."
+            dotnet nuget push $symbolPackage.FullName `
               --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" `
               --source https://api.nuget.org/v3/index.json `
               --skip-duplicate
