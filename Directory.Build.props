@@ -3,6 +3,7 @@
         <Deterministic>true</Deterministic>
         <AnalysisMode>All</AnalysisMode>
         <AnalysisLevel>9</AnalysisLevel>
+        <IsPackable>false</IsPackable>
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>14.0</LangVersion>
         <ImplicitUsings>false</ImplicitUsings>

@@ -1,0 +1,24 @@
+<Project>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..'))" />
+
+    <PropertyGroup>
+        <PackageId>Mississippi.$([System.String]::Copy('$(MSBuildProjectName)').Replace('Mississippi.', ''))</PackageId>
+        <Authors>Benjamin Gibbs</Authors>
+        <Company>Gibbs and Morris Limited</Company>
+        <PackageProjectUrl>https://gibbs-morris.github.io/mississippi/</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>dotnet;csharp;orleans;actor-model;distributed-systems;event-sourcing;cqrs;aggregates;commands;events;projections;streams;signalr;real-time;blazor;source-generators;aspnet-core;azure-cosmos;state-management;reservoir;sagas;snapshots;serialization</PackageTags>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Common.Abstractions'">
+        <IsPackable>true</IsPackable>
+        <Description>Core shared abstractions and defaults used across Mississippi packages.</Description>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
+        <None Include="$(MSBuildThisFileDirectory)..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    </ItemGroup>
+</Project>
