@@ -23,7 +23,7 @@
 #
 # Daily improver that fixes the highest-impact C# guideline violations while preserving behavior and API compatibility.
 #
-# frontmatter-hash: deb477552918eab28ca90f06c7a11a12c4d07deafe89fe6ad2554638fc110b6d
+# frontmatter-hash: b6d531a733041e7ba9e118aecbac063f9e8d28c30d1a78a8ce7465c1e25b3a24
 
 name: "csharp-guideline-improver"
 "on":
@@ -220,7 +220,11 @@ jobs:
   agent:
     needs: activation
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+      pull-requests: read
     concurrency:
       group: "gh-aw-copilot-${{ github.workflow }}"
     env:
@@ -1138,7 +1142,7 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"create_issue\":{\"labels\":[\"automation\",\"decision-needed\"],\"max\":5,\"title_prefix\":\"[csharp-guideline-improver] \"},\"create_pull_request\":{\"base_branch\":\"${{ github.ref_name }}\",\"draft\":true,\"labels\":[\"automation\"],\"max\":1,\"max_patch_size\":1024,\"title_prefix\":\"[csharp-guideline-improver] \"},\"missing_data\":{},\"missing_tool\":{}}"
+          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"create_issue\":{\"labels\":[\"automation\",\"decision-needed\"],\"max\":5,\"title_prefix\":\"[csharp-guideline-improver] \"},\"create_pull_request\":{\"base_branch\":\"main\",\"draft\":true,\"labels\":[\"automation\"],\"max\":1,\"max_patch_size\":1024,\"title_prefix\":\"[csharp-guideline-improver] \"},\"missing_data\":{},\"missing_tool\":{}}"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |

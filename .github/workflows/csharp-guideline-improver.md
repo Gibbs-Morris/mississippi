@@ -4,7 +4,10 @@ on:
   schedule: daily on weekdays
 
 permissions:
-  read-all
+  contents: read
+  actions: read
+  issues: read
+  pull-requests: read
 
 tools:
   github:
@@ -15,6 +18,7 @@ safe-outputs:
     title-prefix: "[csharp-guideline-improver] "
     labels: [automation]
     draft: true
+    base-branch: main
   create-issue:
     title-prefix: "[csharp-guideline-improver] "
     labels: [automation, decision-needed]
@@ -29,7 +33,7 @@ You are a repository improvement agent focused on C# code quality and architectu
 
 ## Instructions
 
-1. Discover and read repository guidance from `.github/copilot‑instructions.md` and `.github/instructions/*.instructions.md`.
+1. Discover and read repository guidance from the Copilot instructions file under `.github/` and `.github/instructions/*.instructions.md`.
 2. Scan C# files under `src/`, `tests/`, and `samples/` for violations with the highest practical impact first (potential bugs, security issues, architecture boundary violations, logging/DI anti-patterns, and coding-standard regressions).
 3. Select at most 5 violations for this run, prioritized by impact and confidence.
 4. Implement fixes that are behavior-preserving and low risk:
