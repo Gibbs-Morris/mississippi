@@ -10,6 +10,8 @@ description: A banking domain sample that demonstrates how Mississippi keeps all
 
 ## Overview
 
+Focus: Public API / Developer Experience.
+
 Spring is a full-stack event-sourced banking application built with the Mississippi framework. It demonstrates a core architectural principle: **all business logic lives in one domain project** (`Spring.Domain`), while the host applications (`Spring.Silo`, `Spring.Server`, `Spring.Client`) contain only infrastructure wiring.
 
 The sample models a banking domain with accounts, deposits, withdrawals, money transfers, and compliance flagging. Every feature is built using Mississippi's event-sourcing patterns — `Command`s, `CommandHandler`s, events, `EventReducer`s, effects, sagas, and projections — all defined inside `Spring.Domain`.
