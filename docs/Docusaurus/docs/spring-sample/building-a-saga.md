@@ -10,6 +10,8 @@ description: Step-by-step walkthrough of the MoneyTransferSaga that orchestrates
 
 ## Overview
 
+Focus: Public API / Developer Experience.
+
 A saga coordinates a workflow that spans multiple aggregates or services. The `MoneyTransferSaga` in Spring transfers money between two bank accounts in two steps:
 
 1. **Withdraw** from the source account
