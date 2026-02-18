@@ -10,6 +10,8 @@ description: Quick reference for every event sourcing concept used in the Spring
 
 ## Overview
 
+Focus: Public API / Developer Experience.
+
 This page defines every concept used in the Spring sample. Each concept maps to a specific base class or interface in the Mississippi framework. Read this page first if you are new to event sourcing or to Mississippi.
 
 ## Domain Terms → Framework Types
