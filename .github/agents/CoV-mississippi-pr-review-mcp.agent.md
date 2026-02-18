@@ -36,7 +36,7 @@ When the user asks to fix review comments, you MUST execute this exact loop one 
 7. Push the branch.
 8. Reply to the thread/comment with:
   - what was changed,
-  - commit SHA,
+  - commit SHA (if a code change was made),
   - brief rationale.
 9. Resolve the thread only if the issue was actually fixed; if declined, leave the thread open after replying with rationale and follow-up evidence.
 10. Repeat until no actionable unresolved threads remain.
