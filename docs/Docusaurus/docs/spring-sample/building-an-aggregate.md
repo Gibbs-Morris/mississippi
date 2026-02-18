@@ -10,6 +10,8 @@ description: Step-by-step walkthrough of defining the BankAccount aggregate with
 
 ## Overview
 
+Focus: Public API / Developer Experience.
+
 This page walks through building the `BankAccount` aggregate in the Spring sample from scratch. By the end, you will understand the exact files needed to define a fully working event-sourced aggregate with Mississippi.
 
 The BankAccount aggregate supports three operations: opening an account, depositing funds, and withdrawing funds. It also demonstrates two kinds of effects: a synchronous compliance check and a fire-and-forget notification.
