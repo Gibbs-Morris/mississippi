@@ -423,7 +423,6 @@ flowchart LR
     Handler -->|pass| Event["FundsDeposited\n(stored to brook)"]
     Event --> Reducer["FundsDepositedReducer\n(update aggregate state)"]
     Event --> Effect1["HighValueTransactionEffect\n(sync: AML check)"]
-    Event --> Effect2["WithdrawalNotificationEffect\n(fire-and-forget: notification)"]
     Event --> ProjReducer["Projection EventReducers\n(update read models)"]
 ```
 
