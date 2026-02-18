@@ -10,6 +10,8 @@ description: How Spring.Silo, Spring.Server, and Spring.Client stay minimal beca
 
 ## Overview
 
+Focus: Public API / Developer Experience.
+
 Spring has three host applications. Each is a thin shell that wires infrastructure — none contains business logic. The domain project defines *what* the system does. The hosts define *how* it runs.
 
 | Host | Role | References |
