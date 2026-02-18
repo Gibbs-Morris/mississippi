@@ -10,6 +10,8 @@ description: Step-by-step walkthrough of building UX projections that transform 
 
 ## Overview
 
+Focus: Public API / Developer Experience.
+
 Aggregates store internal state for command validation. Projections build **read-optimized views** from the same event streams. A single event stream can feed multiple projections, each tailored for a different read pattern.
 
 Spring defines four projections from three event streams:
