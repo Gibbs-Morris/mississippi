@@ -289,7 +289,7 @@ Event reducers use C# `with` expressions to create new immutable state. The orig
 
 ## Step 6: Add Effects
 
-Effects react to events asynchronously. Spring demonstrates both effect types.
+Effects react to events after persistence, and Spring demonstrates both execution modes: blocking (simple) and fire-and-forget.
 
 ### Simple Effect: HighValueTransactionEffect
 
