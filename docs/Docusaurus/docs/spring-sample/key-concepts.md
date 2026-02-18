@@ -179,7 +179,7 @@ For this Spring domain-first walkthrough, focus on `EventReducer` types in `Spri
 
 ## Effect
 
-An effect is an asynchronous side-effect that runs in reaction to an event. Effects handle things that are not part of the core state transition: sending notifications, dispatching commands to other aggregates, calling external APIs.
+An effect is a side-effect that runs in reaction to an event after the event has been persisted. Effects handle things that are not part of the core state transition: sending notifications, dispatching commands to other aggregates, and calling external APIs. Effects can run in either blocking (`SimpleEventEffectBase`) or fire-and-forget (`FireAndForgetEventEffectBase`) mode.
 
 Mississippi provides two effect types:
 
