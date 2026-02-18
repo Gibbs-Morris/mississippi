@@ -159,3 +159,8 @@ tests-only:
   - changed-files:
       - any-glob-to-any-file:
           - 'samples/Crescent/**'
+
+'sample:LightSpeed':
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'samples/LightSpeed/**'
