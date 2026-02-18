@@ -35,12 +35,12 @@ flowchart LR
 
 Spring lives under [`samples/Spring/`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/) and contains these projects:
 
-| Project | Purpose | Lines of Logic |
-|---------|---------|----------------|
-| `Spring.Domain` | `Command`s, `CommandHandler`s, events, `EventReducer`s, effects, sagas, projections | All of it |
-| `Spring.Silo` | Orleans silo host — infrastructure wiring only | ~120 lines in `Program.cs` |
-| `Spring.Server` | ASP.NET API host + Blazor static files | ~90 lines in `Program.cs` |
-| `Spring.Client` | Blazor WebAssembly — UI shell and feature registration | ~50 lines in `Program.cs` |
+| Project | Purpose | Host Surface |
+|---------|---------|--------------|
+| `Spring.Domain` | `Command`s, `CommandHandler`s, events, `EventReducer`s, effects, sagas, projections | Domain logic lives here |
+| `Spring.Silo` | Orleans silo host — infrastructure wiring only | Compact `Program.cs` wiring |
+| `Spring.Server` | ASP.NET API host + Blazor static files | Compact `Program.cs` wiring |
+| `Spring.Client` | Blazor WebAssembly — UI shell and feature registration | Compact `Program.cs` wiring |
 | `Spring.AppHost` | .NET Aspire orchestration for local development | Configuration only |
 | `Spring.Domain.L0Tests` | Unit tests for domain logic | Test code |
 | `Spring.L2Tests` | Integration tests with real infrastructure | Test code |
