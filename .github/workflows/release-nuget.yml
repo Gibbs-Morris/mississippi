@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
@@ -125,11 +125,14 @@ jobs:
 
       - name: Publish summary
         if: always()
+        env:
+          PUBLISH_ENV: ${{ startsWith(github.ref, 'refs/heads/release/') && 'nuget-release' || 'nuget-prerelease' }}
+          BRANCH_NAME: ${{ github.ref_name }}
         run: |
           echo "## NuGet Publish Summary" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Environment:** \`${{ startsWith(github.ref, 'refs/heads/release/') && 'nuget-release' || 'nuget-prerelease' }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Branch:** \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Environment:** \`$PUBLISH_ENV\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Branch:** \`$BRANCH_NAME\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### Packages" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
