@@ -38,13 +38,14 @@ When the user asks to fix review comments, you MUST execute this exact loop one 
   - what was changed,
   - commit SHA,
   - brief rationale.
-9. Resolve that thread.
+9. Resolve the thread only if the issue was actually fixed; if declined, leave the thread open after replying with rationale and follow-up evidence.
 10. Repeat until no actionable unresolved threads remain.
 
 Hard rules for remediation mode:
 
 - No batching of unrelated fixes in one commit.
 - No resolving a thread before push + reply.
+- No resolving declined/not-fixed threads.
 - No skipping unresolved actionable threads.
 - If a thread is not fixed, reply with why and required follow-up evidence.
 
