@@ -179,10 +179,9 @@ build-config:
 tests-only:
   - all:
       - changed-files:
-      - any-glob-to-any-file:
-        - 'tests/**'
-        - '!tests/**/*lock.json'
-          - all-globs-to-all-files: '!src/**'
+          - all-globs-to-all-files:
+              - 'tests/**'
+              - '!tests/**/*lock.json'
 
 # =============================================================================
 # SAMPLE LABELS (sample:*)
