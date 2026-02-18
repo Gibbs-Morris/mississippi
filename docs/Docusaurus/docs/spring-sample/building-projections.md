@@ -259,7 +259,7 @@ The `[GenerateSagaStatusReducers]` attribute does all the work. No manual event 
 
 ## The Complete Projections File Structure
 
-```
+```text
 Projections/
 ├── BankAccountBalance/
 │   ├── BankAccountBalanceProjection.cs

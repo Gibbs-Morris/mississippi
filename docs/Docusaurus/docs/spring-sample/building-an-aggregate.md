@@ -388,7 +388,7 @@ The `INotificationService` is an interface defined in `Spring.Domain`. The imple
 
 ## The Complete Aggregate File Structure
 
-```
+```text
 Aggregates/BankAccount/
 ├── BankAccountAggregate.cs          # State record
 ├── Commands/

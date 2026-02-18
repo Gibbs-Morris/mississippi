@@ -243,7 +243,7 @@ Steps that do not implement `ICompensatable` are skipped during compensation. Th
 
 ## The Complete Saga File Structure
 
-```
+```text
 Aggregates/MoneyTransferSaga/
 ├── MoneyTransferSagaState.cs           # Saga state record (ISagaState)
 ├── Commands/

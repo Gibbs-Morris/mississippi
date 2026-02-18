@@ -191,6 +191,7 @@ Mississippi provides two effect types:
 | **Fire-and-forget effect** | [`FireAndForgetEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/FireAndForgetEventEffectBase.cs) | Runs asynchronously in a separate worker grain. Does not block the command response. Use for non-critical side effects. |
 
 Spring uses both:
+
 - `HighValueTransactionEffect` (simple) — flags deposits over £10,000 by dispatching a command to the `TransactionInvestigationQueueAggregate`.
 - `WithdrawalNotificationEffect` (fire-and-forget) — sends a notification after withdrawals without blocking the response.
 
