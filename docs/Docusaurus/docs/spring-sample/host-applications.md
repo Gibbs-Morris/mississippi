@@ -217,7 +217,7 @@ Compare the domain project to the host projects:
 
 | Metric | Spring.Domain | Spring.Silo | Spring.Server | Spring.Client |
 |--------|:------------:|:-----------:|:-------------:|:-------------:|
-| Domain-specific source files | 30+ | 0 | 0 | 0 |
+| Domain business logic ownership | All domain business logic | No domain business logic | No domain business logic | No domain business logic |
 | Business rules | All | None | None | None |
 | Infrastructure wiring | None | Compact host setup in `Program.cs` | Compact host setup in `Program.cs` | Compact host setup in `Program.cs` |
 | External dependencies | Primarily Mississippi abstractions, plus minimal framework/build dependencies (`Microsoft.Orleans.Sdk`, `Microsoft.Extensions.Http`) | Azure Storage, Cosmos, Orleans, OpenTelemetry | Orleans Client, ASP.NET, Blazor hosting | Blazor WASM, SignalR |
