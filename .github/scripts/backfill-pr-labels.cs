@@ -74,19 +74,24 @@ if (string.IsNullOrEmpty(repo))
 }
 
 // ---------------------------------------------------------------------------
-// Load labeler.yml
+// Load labeler.yml from the default branch (main) via gh API
 // ---------------------------------------------------------------------------
-var labelerPath = Path.Combine(Environment.CurrentDirectory, ".github", "labeler.yml");
+Console.WriteLine($"Fetching .github/labeler.yml from main branch of {repo}...");
+string labelerYamlContent;
 
-if (!File.Exists(labelerPath))
+try
 {
-    Console.Error.WriteLine($"ERROR: {labelerPath} not found");
+    labelerYamlContent = RunGh($"api /repos/{repo}/contents/.github/labeler.yml?ref=main -H \"Accept: application/vnd.github.raw\"");
+}
+catch (Exception ex)
+{
+    Console.Error.WriteLine($"ERROR: Could not fetch labeler.yml from main: {ex.Message}");
     return 1;
 }
 
-var labelerConfig = ParseLabelerYaml(labelerPath);
+var labelerConfig = ParseLabelerYaml(labelerYamlContent.Split('\n'));
 
-Console.WriteLine($"Loaded {labelerConfig.Count} labels from labeler.yml");
+Console.WriteLine($"Loaded {labelerConfig.Count} labels from labeler.yml (main branch)");
 Console.WriteLine($"Config: repo={repo} state={state} max_prs={maxPrs} dry_run={dryRun}");
 Console.WriteLine($"Old labels to strip: {oldLabels.Count}");
 Console.WriteLine();
@@ -354,11 +359,40 @@ static bool FileMatchesPattern(string filepath, string pattern)
 // Labeler rule evaluation (actions/labeler v6 semantics)
 // ==========================================================================
 
-static bool EvaluateAnyGlobToAnyFile(List<string> patterns, List<string> files) =>
-    patterns.Any(p => files.Any(f => FileMatchesPattern(f, p)));
+// actions/labeler v6 semantics for negated globs:
+//   Positive globs select files; negated globs (starting with !) exclude files.
+//   A file "passes" if it matches at least one positive glob AND none of the negated globs.
+//
+// any-glob-to-any-file: true if ANY file passes the combined positive+negated check.
+// all-globs-to-any-file: each pattern is evaluated independently; true if for EVERY pattern,
+//   at least one file matches it (negated patterns invert: true if no file matches the base).
 
-static bool EvaluateAllGlobsToAnyFile(List<string> patterns, List<string> files) =>
-    patterns.All(p => files.Any(f => FileMatchesPattern(f, p)));
+static bool EvaluateAnyGlobToAnyFile(List<string> patterns, List<string> files)
+{
+    var positive = patterns.Where(p => !p.StartsWith('!')).ToList();
+    var negated = patterns.Where(p => p.StartsWith('!')).Select(p => p[1..]).ToList();
+
+    // A file passes if it matches any positive glob and is not excluded by any negated glob
+    return files.Any(f =>
+        positive.Any(p => GlobToRegex(p).IsMatch(f)) &&
+        !negated.Any(n => GlobToRegex(n).IsMatch(f)));
+}
+
+static bool EvaluateAllGlobsToAnyFile(List<string> patterns, List<string> files)
+{
+    // For all-globs-to-any-file, each pattern must be satisfied by at least one file.
+    // Negated patterns: satisfied if NO file matches the base pattern.
+    return patterns.All(p =>
+    {
+        if (p.StartsWith('!'))
+        {
+            var basePattern = p[1..];
+            return !files.Any(f => GlobToRegex(basePattern).IsMatch(f));
+        }
+
+        return files.Any(f => GlobToRegex(p).IsMatch(f));
+    });
+}
 
 static bool EvaluateLabel(List<LabelRule> ruleList, List<string> files)
 {
@@ -418,10 +452,9 @@ static bool EvaluateLabel(List<LabelRule> ruleList, List<string> files)
 //             - "!negated-glob"
 // ==========================================================================
 
-static Dictionary<string, List<LabelRule>> ParseLabelerYaml(string path)
+static Dictionary<string, List<LabelRule>> ParseLabelerYaml(string[] lines)
 {
     var result = new Dictionary<string, List<LabelRule>>();
-    var lines = File.ReadAllLines(path);
 
     string? currentLabel = null;
     List<LabelRule>? currentRules = null;
