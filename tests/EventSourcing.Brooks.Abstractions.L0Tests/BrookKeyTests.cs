@@ -46,6 +46,18 @@ public sealed class BrookKeyTests
     }
 
     /// <summary>
+    ///     Default key should have non-null components.
+    /// </summary>
+    [Fact]
+    public void DefaultKeyHasNonNullComponents()
+    {
+        BrookKey key = default;
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.EntityId);
+        Assert.Equal("|", key.ToString());
+    }
+
+    /// <summary>
     ///     Passing null components should throw ArgumentNullException.
     /// </summary>
     /// <param name="type">The type component to pass to the constructor (may be null for the test).</param>

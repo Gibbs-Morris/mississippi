@@ -51,13 +51,13 @@ public readonly record struct SignalRGroupKey
     ///     Gets the name of the SignalR group.
     /// </summary>
     [Id(1)]
-    public string GroupName { get; }
+    public string GroupName { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Gets the name of the SignalR hub.
     /// </summary>
     [Id(0)]
-    public string HubName { get; }
+    public string HubName { get => field ?? string.Empty; init; }
 
     /// <summary>
     ///     Parses a string into a <see cref="SignalRGroupKey" />.

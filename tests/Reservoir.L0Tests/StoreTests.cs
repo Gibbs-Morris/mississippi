@@ -267,6 +267,42 @@ public sealed class StoreTests : IDisposable
     }
 
     /// <summary>
+    ///     Listener exceptions should not stop notification of other listeners.
+    /// </summary>
+    [Fact]
+    public void ListenerExceptionsDoNotStopOtherListeners()
+    {
+        // Arrange
+        bool secondListenerNotified = false;
+        using IDisposable sub1 = sut.Subscribe(
+            () => throw new InvalidOperationException("listener failure"));
+        using IDisposable sub2 = sut.Subscribe(() => secondListenerNotified = true);
+
+        // Act
+        Exception? exception = Record.Exception(() => sut.Dispatch(new IncrementAction()));
+
+        // Assert
+        Assert.Null(exception);
+        Assert.True(secondListenerNotified);
+    }
+
+    /// <summary>
+    ///     Listener exceptions should not propagate out of dispatch.
+    /// </summary>
+    [Fact]
+    public void ListenerExceptionsDoNotPropagateOutOfDispatch()
+    {
+        // Arrange
+        using IDisposable subscription = sut.Subscribe(() => throw new InvalidOperationException("listener failure"));
+
+        // Act
+        Exception? exception = Record.Exception(() => sut.Dispatch(new IncrementAction()));
+
+        // Assert
+        Assert.Null(exception);
+    }
+
+    /// <summary>
     ///     Store constructor with middleware collection should register middleware.
     /// </summary>
     [Fact]

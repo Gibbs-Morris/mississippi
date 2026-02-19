@@ -1,5 +1,7 @@
 using System;
 
+using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+
 
 namespace Mississippi.EventSourcing.Aggregates.L0Tests;
 
@@ -29,6 +31,22 @@ public class EventTypeRegistryTests
         registry.Register("TestEvent", typeof(AnotherEvent));
         Type? resolved = registry.ResolveType("TestEvent");
         Assert.Equal(typeof(TestEvent), resolved);
+    }
+
+    /// <summary>
+    ///     Register should not add a second name for the same event type.
+    /// </summary>
+    [Fact]
+    public void RegisterIgnoresSecondNameForSameType()
+    {
+        EventTypeRegistry registry = new();
+        registry.Register("TestEvent", typeof(TestEvent));
+        registry.Register("TestEventAlias", typeof(TestEvent));
+
+        Assert.Single(registry.RegisteredTypes);
+        Assert.Equal(typeof(TestEvent), registry.ResolveType("TestEvent"));
+        Assert.Null(registry.ResolveType("TestEventAlias"));
+        Assert.Equal("TestEvent", registry.ResolveName(typeof(TestEvent)));
     }
 
     /// <summary>
@@ -210,6 +228,24 @@ public class EventTypeRegistryTests
     }
 
     /// <summary>
+    ///     ScanAssembly should only count newly registered event types when names are duplicated.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyCountsOnlyNewRegistrations()
+    {
+        EventTypeRegistry registry = new();
+
+        // Pre-register the duplicate name so the scan has something to skip
+        registry.Register("POTBUG.EVENT.DUPLICATE.V1", typeof(DuplicateEventNameOne));
+        int preCount = registry.RegisteredTypes.Count;
+
+        int count = registry.ScanAssembly(typeof(DuplicateEventNameOne).Assembly);
+
+        // Scan should not count the duplicate nor the already-registered type
+        Assert.Equal(registry.RegisteredTypes.Count - preCount, count);
+    }
+
+    /// <summary>
     ///     ScanAssembly should throw when assembly is null.
     /// </summary>
     [Fact]
@@ -218,4 +254,10 @@ public class EventTypeRegistryTests
         EventTypeRegistry registry = new();
         Assert.Throws<ArgumentNullException>(() => registry.ScanAssembly(null!));
     }
+
+    [EventStorageName("POTBUG", "EVENT", "DUPLICATE", 1)]
+    private sealed record DuplicateEventNameOne;
+
+    [EventStorageName("POTBUG", "EVENT", "DUPLICATE", 1)]
+    private sealed record DuplicateEventNameTwo;
 }

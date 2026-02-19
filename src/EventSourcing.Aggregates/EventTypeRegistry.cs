@@ -42,6 +42,11 @@ internal sealed class EventTypeRegistry : IEventTypeRegistry
         ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
         ArgumentNullException.ThrowIfNull(eventType);
 
+        if (typeToName.ContainsKey(eventType))
+        {
+            return;
+        }
+
         // Use TryAdd to avoid overwriting - first registration wins
         if (nameToType.TryAdd(eventName, eventType))
         {
@@ -82,10 +87,33 @@ internal sealed class EventTypeRegistry : IEventTypeRegistry
                 continue;
             }
 
-            Register(attribute.StorageName, type);
-            registeredCount++;
+            if (TryRegister(attribute.StorageName, type))
+            {
+                registeredCount++;
+            }
         }
 
         return registeredCount;
+    }
+
+    private bool TryRegister(
+        string eventName,
+        Type eventType
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
+        ArgumentNullException.ThrowIfNull(eventType);
+
+        if (typeToName.ContainsKey(eventType))
+        {
+            return false;
+        }
+
+        if (!nameToType.TryAdd(eventName, eventType))
+        {
+            return false;
+        }
+
+        return typeToName.TryAdd(eventType, eventName);
     }
 }
