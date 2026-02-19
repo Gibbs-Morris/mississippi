@@ -1,0 +1,18 @@
+<Project>
+    <!-- Override repo-root settings for standalone utility scripts run via 'dotnet run file.cs'.
+         This prevents .github/scripts/ from inheriting analyzers, CPM, AssemblyName
+         conventions, and other project-level concerns that don't apply here. -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>14.0</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+        <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <EnableNETAnalyzers>false</EnableNETAnalyzers>
+        <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+        <NoWarn>IL2026;IL3050</NoWarn>
+        <IsAotCompatible>false</IsAotCompatible>
+    </PropertyGroup>
+</Project>
