@@ -1,6 +1,16 @@
 # PR Labeler configuration
 # See https://github.com/actions/labeler for documentation
 #
+# IMPORTANT: In actions/labeler v6, multiple matcher entries inside a single
+# `changed-files` list are OR'd together. This means a separate
+# `all-globs-to-any-file` block is evaluated INDEPENDENTLY — if it passes on
+# its own, the label matches regardless of the other matcher entries.
+#
+# To combine positive selection with negated exclusions, put BOTH inside the
+# SAME `any-glob-to-any-file` block. The labeler evaluates each glob in the
+# list against each changed file; a negated glob (`!pattern`) rejects the file
+# if it matches, so the net effect is "match these paths, but not lockfiles".
+#
 # Prefix taxonomy:
 #   module-*          - Core framework/module area labels
 #   sample-*          - Sample application labels
@@ -40,7 +50,6 @@ module-aqueduct:
       - any-glob-to-any-file:
           - "src/Aqueduct*/**"
           - "tests/Aqueduct*/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-common:
@@ -48,7 +57,6 @@ module-common:
       - any-glob-to-any-file:
           - "src/Common*/**"
           - "tests/Common*/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-event-sourcing:
@@ -56,7 +64,6 @@ module-event-sourcing:
       - any-glob-to-any-file:
           - "src/EventSourcing*/**"
           - "tests/EventSourcing*/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-inlet:
@@ -64,7 +71,6 @@ module-inlet:
       - any-glob-to-any-file:
           - "src/Inlet*/**"
           - "tests/Inlet*/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-refraction:
@@ -72,7 +78,6 @@ module-refraction:
       - any-glob-to-any-file:
           - "src/Refraction*/**"
           - "tests/Refraction*/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-reservoir:
@@ -80,7 +85,6 @@ module-reservoir:
       - any-glob-to-any-file:
           - "src/Reservoir*/**"
           - "tests/Reservoir*/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-sdk:
@@ -88,7 +92,6 @@ module-sdk:
       - any-glob-to-any-file:
           - "src/Sdk*/**"
           - "tests/Sdk*/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 # =============================================================================
@@ -102,7 +105,6 @@ complex-source-generation:
           - "src/Inlet.*.Generators/**"
           - "src/Inlet.Generators.*/**"
           - "tests/Inlet.*.Generators*/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 # Agent/rule instructions and agent configuration
@@ -113,8 +115,6 @@ config-agentic:
           - ".github/agents/**"
           - ".cursor/**"
           - "agents.md"
-      - all-globs-to-any-file:
-          - "!**/*.lock.json"
 
 # Root build configuration (high-impact, review carefully)
 config-build:
@@ -126,8 +126,6 @@ config-build:
           - "*.slnx"
           - "stryker-config.json"
           - "GitVersion.yml"
-      - all-globs-to-any-file:
-          - "!**/*.lock.json"
 
 # Any dependency lockfile updates (*.lock.json)
 config-dependency-lock:
@@ -146,7 +144,6 @@ documentation-public-website:
   - changed-files:
       - any-glob-to-any-file:
           - "docs/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 # CI/CD and automation
@@ -160,7 +157,6 @@ infra-ci-cd:
           - ".config/dotnet-tools.json"
           - "eng/**"
           - "*.ps1"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 # Files changed directly in repository root (no subdirectories)
@@ -178,19 +174,16 @@ sample-crescent:
   - changed-files:
       - any-glob-to-any-file:
           - "samples/Crescent/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 sample-light-speed:
   - changed-files:
       - any-glob-to-any-file:
           - "samples/LightSpeed/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 sample-spring:
   - changed-files:
       - any-glob-to-any-file:
           - "samples/Spring/**"
-      - all-globs-to-any-file:
           - "!**/*.lock.json"
