@@ -162,13 +162,13 @@ Architectural policy for this feature:
 ## Risks and Mitigations
 
 - Duplicate command execution side effects
-   - Mitigation: strict idempotency contracts + startup validation.
+  - Mitigation: strict idempotency contracts + startup validation.
 - Retry storms and synchronized bursts
-   - Mitigation: exponential backoff + jitter + max attempt policies.
+  - Mitigation: exponential backoff + jitter + max attempt policies.
 - Missing reminder due to registration race
-   - Mitigation: reconciliation and idempotent ensure-scheduled operation.
+  - Mitigation: reconciliation and idempotent ensure-scheduled operation.
 - Audit stream growth/cost
-   - Mitigation: configurable verbosity and retention policy.
+  - Mitigation: configurable verbosity and retention policy.
 
 ## Approval Required
 
