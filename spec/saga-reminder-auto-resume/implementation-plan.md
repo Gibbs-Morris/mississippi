@@ -34,42 +34,51 @@ Architectural policy for this feature:
 
 ### Phase 1.1: Runtime Infrastructure
 
-4. Implement scheduler grain (infrastructure only, no business state persistence):
+1. Implement scheduler grain (infrastructure only, no business state persistence):
+
    - key by `<AggregateType>|<AggregateId>|<ScheduleName>`
    - own Orleans reminder lifecycle
    - dispatch mapped command to aggregate grain on tick
    - apply backoff/jitter/max-attempt policies.
    - support multiple concurrent schedules per aggregate instance.
    - emit optional audit events to `ScheduleAuditAggregate` when audit mode is enabled.
-5. Add reconciliation behavior:
+
+2. Add reconciliation behavior:
+
    - detect active schedule metadata with missing reminder
    - recreate reminder safely and idempotently.
 
-6. Ensure metadata registration does not auto-start reminders.
+3. Ensure metadata registration does not auto-start reminders.
 
 ### Phase 1.2: Aggregate Integration
 
-7. Add attribute scanning/registration for scheduled command bindings.
-8. Add aggregate extension methods/commands to explicitly start schedules per aggregate instance.
-9. Ensure terminal/disabled state can stop schedules deterministically.
+1. Add attribute scanning/registration for scheduled command bindings.
+2. Add aggregate extension methods/commands to explicitly start schedules per aggregate instance.
+3. Ensure terminal/disabled state can stop schedules deterministically.
 
 ### Phase 1.3: Observability
 
-10. Add structured logging extensions for scheduling milestones:
+1. Add structured logging extensions for scheduling milestones:
+
    - schedule_created / schedule_updated / tick_triggered / tick_dispatched / schedule_canceled / schedule_exhausted
-11. Add metrics counters/timers for schedule attempts, failures, and latency.
-12. Add optional lifecycle events strategy:
+
+2. Add metrics counters/timers for schedule attempts, failures, and latency.
+
+3. Add optional lifecycle events strategy:
+
    - default logs-only
    - opt-in standardized events for audit-sensitive domains.
 
-13. Define `ScheduleAuditAggregate` model (opt-in):
+4. Define `ScheduleAuditAggregate` model (opt-in):
+
    - event contracts (`ScheduleStarted`, `ScheduleUpdated`, `ScheduleStopped`, `TickTriggered`, `TickDispatched`, `TickFailed`, `ScheduleExhausted`)
    - aggregate key strategy (`AggregateType|AggregateId|ScheduleName`)
    - audit verbosity modes (lifecycle-only, full tick history).
 
 ### Phase 1.4: Testing
 
-14. Add L0 tests for:
+1. Add L0 tests for:
+
    - attribute parsing/defaults and overrides
    - no auto-start behavior
    - explicit start/stop lifecycle
@@ -81,14 +90,17 @@ Architectural policy for this feature:
    - `ScheduleStartOptions` → `ScheduleRegistration` merge logic
    - duplicate schedule name startup validation rejection
    - `MaxAttempts = 0` means unlimited; negative values rejected.
-15. Add crash-matrix-driven tests for duplicate ticks, delayed ticks, and cancel race.
 
-16. Add audit-mode tests:
+2. Add crash-matrix-driven tests for duplicate ticks, delayed ticks, and cancel race.
+
+3. Add audit-mode tests:
+
    - audit events emitted when enabled
    - no audit events when disabled
    - correlation fields populated correctly.
 
-17. **Add L1 tests for scheduler grain** (requires Orleans test cluster infrastructure):
+4. **Add L1 tests for scheduler grain** (requires Orleans test cluster infrastructure):
+
    - Reminder registration/unregistration via `TestCluster` or `TestSiloBuilder`
    - Tick callback → command dispatch integration
    - Grain activation reconciliation with actual reminder service
@@ -97,10 +109,10 @@ Architectural policy for this feature:
 
 ### Phase 2: Saga Adoption
 
-17. Add `ContinueSagaCommand` and saga-specific resume logic.
-18. Bind saga schedules using phase 1 attributes/runtime API.
-19. Define the `SagaResumeRequested` event that `ContinueSagaCommand` handler emits; ensure `SagaOrchestrationEffect.CanHandle` recognizes it.
-20. Add saga-specific progress checkpointing and tests for compensation resume.
+1. Add `ContinueSagaCommand` and saga-specific resume logic.
+2. Bind saga schedules using phase 1 attributes/runtime API.
+3. Define the `SagaResumeRequested` event that `ContinueSagaCommand` handler emits; ensure `SagaOrchestrationEffect.CanHandle` recognizes it.
+4. Add saga-specific progress checkpointing and tests for compensation resume.
 
 ## File/Module Touch List (Planned)
 
