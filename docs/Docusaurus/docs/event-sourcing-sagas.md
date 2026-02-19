@@ -10,6 +10,8 @@ description: Orchestrate long-running workflows with saga steps, compensation, a
 
 ## Overview
 
+Focus: Public API / Developer Experience.
+
 Mississippi saga orchestration coordinates long-running workflows using event-sourced state, ordered steps, and optional compensation. Sagas execute steps in sequence, emit lifecycle events, and roll back via compensation when a step fails.
 
 ## Key Concepts
@@ -113,12 +115,15 @@ public sealed record TransferSagaState : ISagaState
 }
 ```
 
-The generated registration is called automatically when you use `AddInletSilo()`:
+The generated saga registration is available as an extension method that you call from your host setup:
 
 ```csharp
 // In your silo configuration
+services.AddTransferSaga();
 services.AddInletSilo();
 ```
+
+For domain-level composition across generated aggregates, sagas, and projections, use domain registration methods such as `AddSpringDomainSilo()`.
 
 ([GenerateSagaEndpointsAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs), [SagaSiloRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Silo.Generators/SagaSiloRegistrationGenerator.cs))
 
@@ -157,10 +162,11 @@ services.AddSagaStepInfo<TransferSagaState>(new[]
 
 - Saga orchestration executes ordered steps and emits lifecycle events.
 - Steps implement `ISagaStep<TSaga>` and optionally `ICompensatable<TSaga>` for rollback.
-- Use `[GenerateSagaEndpoints]` for automatic registration or `AddSagaOrchestration` for manual control.
+- Use `[GenerateSagaEndpoints]` for generated saga registration methods, or `AddSagaOrchestration` for manual control.
 - Both paths produce equivalent runtime behavior.
 
 ## Next Steps
 
 - [Saga Public APIs](./event-sourcing-sagas-public-apis.md)
+- [Domain Registration Generators](./domain-registration-generators.md)
 - [Documentation Guide](./contributing/documentation-guide.md)
