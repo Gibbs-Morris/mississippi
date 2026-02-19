@@ -11,7 +11,7 @@ namespace Mississippi.EventSourcing.Aggregates;
 
 /// <summary>
 ///     Default implementation of <see cref="IEventTypeRegistry" /> providing bidirectional
-///     event name ↔ CLR type resolution with O(1) lookup performance.
+///     event name ↔ CLR type resolution with O(1) lookup performance via concurrent dictionaries.
 /// </summary>
 /// <remarks>
 ///     <para>
