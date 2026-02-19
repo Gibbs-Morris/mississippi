@@ -275,14 +275,23 @@ flowchart TD
 ## Alternatives Considered
 
 1. Reminder logic directly inside generic aggregate grain
+
   - Simpler but over-couples scheduling/runtime policy with every aggregate.
+
 2. Orleans timers instead of reminders
-   - Not durable enough for crash/restart recovery.
+
+  - Not durable enough for crash/restart recovery.
+
 3. Feature-specific scheduler per domain (for example saga-only)
+
   - Solves one use case but duplicates infrastructure patterns.
+
 4. External workflow orchestrator
-   - Higher complexity and additional infrastructure.
+
+  - Higher complexity and additional infrastructure.
+
 5. Auto-start all schedules from attributes
+
   - Convenient but unsafe; causes unintended background behavior and weakens domain intent.
 
 ## Security and Reliability
