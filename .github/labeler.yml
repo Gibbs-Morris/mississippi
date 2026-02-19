@@ -18,7 +18,7 @@
 #   documentation-public-website - Docs changes under docs/
 #   config-agentic    - Agent/rules instruction configuration
 #   config-github     - GitHub repository configuration/policy files
-#   config-dependency-lock - Any packages.lock.json dependency lock change
+#   config-dependency-lock - Any *.lock.json dependency lock change
 #   infra-ci-cd       - Build/workflow changes
 #   complex-source-generation - Source generator projects
 #   config-build      - MSBuild/versioning infrastructure
@@ -41,7 +41,7 @@ module-aqueduct:
           - "src/Aqueduct*/**"
           - "tests/Aqueduct*/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 module-common:
   - changed-files:
@@ -49,7 +49,7 @@ module-common:
           - "src/Common*/**"
           - "tests/Common*/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 module-event-sourcing:
   - changed-files:
@@ -57,7 +57,7 @@ module-event-sourcing:
           - "src/EventSourcing*/**"
           - "tests/EventSourcing*/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 module-inlet:
   - changed-files:
@@ -65,7 +65,7 @@ module-inlet:
           - "src/Inlet*/**"
           - "tests/Inlet*/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 module-refraction:
   - changed-files:
@@ -73,7 +73,7 @@ module-refraction:
           - "src/Refraction*/**"
           - "tests/Refraction*/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 module-reservoir:
   - changed-files:
@@ -81,7 +81,7 @@ module-reservoir:
           - "src/Reservoir*/**"
           - "tests/Reservoir*/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 module-sdk:
   - changed-files:
@@ -89,7 +89,7 @@ module-sdk:
           - "src/Sdk*/**"
           - "tests/Sdk*/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 # =============================================================================
 # CROSS-CUTTING LABELS
@@ -103,7 +103,7 @@ complex-source-generation:
           - "src/Inlet.Generators.*/**"
           - "tests/Inlet.*.Generators*/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 # Agent/rule instructions and agent configuration
 config-agentic:
@@ -114,7 +114,7 @@ config-agentic:
           - ".cursor/**"
           - "agents.md"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 # Root build configuration (high-impact, review carefully)
 config-build:
@@ -127,13 +127,13 @@ config-build:
           - "stryker-config.json"
           - "GitVersion.yml"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
-# Any dependency lockfile updates
+# Any dependency lockfile updates (*.lock.json)
 config-dependency-lock:
   - changed-files:
       - any-glob-to-any-file:
-          - "**/packages.lock.json"
+          - "**/*.lock.json"
 
 # GitHub repository configuration and policy files
 config-github:
@@ -147,7 +147,7 @@ documentation-public-website:
       - any-glob-to-any-file:
           - "docs/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 # CI/CD and automation
 infra-ci-cd:
@@ -161,7 +161,7 @@ infra-ci-cd:
           - "eng/**"
           - "*.ps1"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 # Files changed directly in repository root (no subdirectories)
 root:
@@ -179,18 +179,18 @@ sample-crescent:
       - any-glob-to-any-file:
           - "samples/Crescent/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 sample-light-speed:
   - changed-files:
       - any-glob-to-any-file:
           - "samples/LightSpeed/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
 
 sample-spring:
   - changed-files:
       - any-glob-to-any-file:
           - "samples/Spring/**"
       - all-globs-to-any-file:
-          - "!**/packages.lock.json"
+          - "!**/*.lock.json"
