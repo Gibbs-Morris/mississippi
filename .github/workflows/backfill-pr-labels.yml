@@ -1,0 +1,47 @@
+name: Backfill PR Labels
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Log what would change without applying (recommended first)"
+        type: boolean
+        default: true
+      max-prs:
+        description: "Maximum number of PRs to process (newest first)"
+        type: number
+        default: 50
+      state:
+        description: "Which PRs to process"
+        type: choice
+        options:
+          - merged
+          - closed
+          - open
+          - all
+        default: merged
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.x"
+          dotnet-quality: "preview"
+
+      - name: Run backfill script
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          MAX_PRS: ${{ inputs.max-prs }}
+          STATE: ${{ inputs.state }}
+          REPO: ${{ github.repository }}
+        run: dotnet run .github/scripts/backfill-pr-labels.cs
