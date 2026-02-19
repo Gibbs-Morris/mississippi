@@ -68,73 +68,90 @@
 # =============================================================================
 # MODULE LABELS
 #
-# Use `all:` to AND the positive path matcher with the lockfile exclusion.
-# Under `all:`, checkAllChangedFiles requires BOTH to independently pass:
-#   1. any-glob-to-any-file: at least one file matches a module path
-#   2. all-globs-to-any-file: at least one file is NOT a lockfile
+# STRICT SAME-FILE SEMANTICS:
+# A label should apply only when at least one changed file both:
+#   1) matches the area path, and
+#   2) is NOT a lockfile.
+#
+# This is encoded using `all-globs-to-any-file` with BOTH globs in the same
+# matcher entry so they are evaluated against a single changed file.
 # =============================================================================
 
 module-aqueduct:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - "src/Aqueduct*/**"
-          - "tests/Aqueduct*/**"
       - all-globs-to-any-file:
+          - "src/Aqueduct*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Aqueduct*/**"
           - "!**/*.lock.json"
 
 module-common:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - "src/Common*/**"
-          - "tests/Common*/**"
       - all-globs-to-any-file:
+          - "src/Common*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Common*/**"
           - "!**/*.lock.json"
 
 module-event-sourcing:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - "src/EventSourcing*/**"
-          - "tests/EventSourcing*/**"
       - all-globs-to-any-file:
+          - "src/EventSourcing*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/EventSourcing*/**"
           - "!**/*.lock.json"
 
 module-inlet:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - "src/Inlet*/**"
-          - "tests/Inlet*/**"
       - all-globs-to-any-file:
+          - "src/Inlet*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Inlet*/**"
           - "!**/*.lock.json"
 
 module-refraction:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - "src/Refraction*/**"
-          - "tests/Refraction*/**"
       - all-globs-to-any-file:
+          - "src/Refraction*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Refraction*/**"
           - "!**/*.lock.json"
 
 module-reservoir:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - "src/Reservoir*/**"
-          - "tests/Reservoir*/**"
       - all-globs-to-any-file:
+          - "src/Reservoir*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Reservoir*/**"
           - "!**/*.lock.json"
 
 module-sdk:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - "src/Sdk*/**"
-          - "tests/Sdk*/**"
       - all-globs-to-any-file:
+          - "src/Sdk*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Sdk*/**"
           - "!**/*.lock.json"
 
 # =============================================================================
@@ -143,13 +160,18 @@ module-sdk:
 
 # Source generators deserve special attention (complex, affects DX)
 complex-source-generation:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - "src/Inlet.*.Generators/**"
-          - "src/Inlet.Generators.*/**"
-          - "tests/Inlet.*.Generators*/**"
       - all-globs-to-any-file:
+          - "src/Inlet.*.Generators/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "src/Inlet.Generators.*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Inlet.*.Generators*/**"
           - "!**/*.lock.json"
 
 # Agent/rule instructions and agent configuration
@@ -188,26 +210,37 @@ config-github:
 
 # Matches GitHub's default 'documentation' label
 documentation-public-website:
-  - all:
-    - changed-files:
-      - any-glob-to-any-file:
-          - "docs/**"
+  - changed-files:
       - all-globs-to-any-file:
+          - "docs/**"
           - "!**/*.lock.json"
 
 # CI/CD and automation
 infra-ci-cd:
-  - all:
+  - any:
     - changed-files:
-      - any-glob-to-any-file:
-          - ".github/workflows/**"
-          - ".github/actions/**"
-          - ".github/linters/**"
-          - ".config/**"
-          - ".config/dotnet-tools.json"
-          - "eng/**"
-          - "*.ps1"
       - all-globs-to-any-file:
+          - ".github/workflows/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - ".github/actions/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - ".github/linters/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - ".config/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "eng/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "*.ps1"
           - "!**/*.lock.json"
 
 # Files changed directly in repository root (no subdirectories)
@@ -222,25 +255,19 @@ root:
 # =============================================================================
 
 sample-crescent:
-  - all:
-    - changed-files:
-      - any-glob-to-any-file:
-          - "samples/Crescent/**"
+  - changed-files:
       - all-globs-to-any-file:
+          - "samples/Crescent/**"
           - "!**/*.lock.json"
 
 sample-light-speed:
-  - all:
-    - changed-files:
-      - any-glob-to-any-file:
-          - "samples/LightSpeed/**"
+  - changed-files:
       - all-globs-to-any-file:
+          - "samples/LightSpeed/**"
           - "!**/*.lock.json"
 
 sample-spring:
-  - all:
-    - changed-files:
-      - any-glob-to-any-file:
-          - "samples/Spring/**"
+  - changed-files:
       - all-globs-to-any-file:
+          - "samples/Spring/**"
           - "!**/*.lock.json"
