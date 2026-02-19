@@ -1,15 +1,30 @@
 # PR Labeler configuration
 # See https://github.com/actions/labeler for documentation
 #
-# IMPORTANT: In actions/labeler v6, multiple matcher entries inside a single
-# `changed-files` list are OR'd together. This means a separate
-# `all-globs-to-any-file` block is evaluated INDEPENDENTLY — if it passes on
-# its own, the label matches regardless of the other matcher entries.
+# IMPORTANT — actions/labeler v6 matcher semantics:
 #
-# To combine positive selection with negated exclusions, put BOTH inside the
-# SAME `any-glob-to-any-file` block. The labeler evaluates each glob in the
-# list against each changed file; a negated glob (`!pattern`) rejects the file
-# if it matches, so the net effect is "match these paths, but not lockfiles".
+#   Without an explicit `any:` or `all:` wrapper, labeler auto-wraps config
+#   entries into `any:`, which OR's all matcher entries inside `changed-files`.
+#
+#   To AND matchers (e.g. positive path selection + lockfile exclusion), you
+#   MUST use the `all:` wrapper. Under `all:`, every matcher entry inside
+#   `changed-files` must independently pass for the label to apply.
+#
+#   A negated glob like `!**/*.lock.json` inside `any-glob-to-any-file` is
+#   WRONG — it matches any non-lockfile in the entire PR, which is virtually
+#   always true, making the positive path globs irrelevant.
+#
+#   Correct pattern (from the labeler README):
+#     label:
+#       - all:
+#         - changed-files:
+#           - any-glob-to-any-file: ['src/**']       # positive selection
+#           - all-globs-to-any-file: ['!**/*.lock.json']  # exclusion filter
+#
+#   Source: https://github.com/actions/labeler/blob/main/README.md
+#   Source: https://github.com/actions/labeler/blob/main/src/changedFiles.ts
+#     - checkAnyChangedFiles: OR's configs (used under `any:`)
+#     - checkAllChangedFiles: AND's configs (used under `all:`)
 #
 # Prefix taxonomy:
 #   module-*          - Core framework/module area labels
@@ -43,55 +58,71 @@
 
 # =============================================================================
 # MODULE LABELS
+# Labels that use `all:` to AND positive path matching with lockfile exclusion.
+# This ensures lockfile-only changes don't trigger module labels.
 # =============================================================================
 
 module-aqueduct:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "src/Aqueduct*/**"
           - "tests/Aqueduct*/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-common:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "src/Common*/**"
           - "tests/Common*/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-event-sourcing:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "src/EventSourcing*/**"
           - "tests/EventSourcing*/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-inlet:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "src/Inlet*/**"
           - "tests/Inlet*/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-refraction:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "src/Refraction*/**"
           - "tests/Refraction*/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-reservoir:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "src/Reservoir*/**"
           - "tests/Reservoir*/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 module-sdk:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "src/Sdk*/**"
           - "tests/Sdk*/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 # =============================================================================
@@ -100,14 +131,17 @@ module-sdk:
 
 # Source generators deserve special attention (complex, affects DX)
 complex-source-generation:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "src/Inlet.*.Generators/**"
           - "src/Inlet.Generators.*/**"
           - "tests/Inlet.*.Generators*/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 # Agent/rule instructions and agent configuration
+# No lockfile exclusion needed — these paths never contain *.lock.json
 config-agentic:
   - changed-files:
       - any-glob-to-any-file:
@@ -117,6 +151,7 @@ config-agentic:
           - "agents.md"
 
 # Root build configuration (high-impact, review carefully)
+# No lockfile exclusion needed — explicit file names, none are lockfiles
 config-build:
   - changed-files:
       - any-glob-to-any-file:
@@ -141,14 +176,17 @@ config-github:
 
 # Matches GitHub's default 'documentation' label
 documentation-public-website:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "docs/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 # CI/CD and automation
 infra-ci-cd:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - ".github/workflows/**"
           - ".github/actions/**"
@@ -157,6 +195,7 @@ infra-ci-cd:
           - ".config/dotnet-tools.json"
           - "eng/**"
           - "*.ps1"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 # Files changed directly in repository root (no subdirectories)
@@ -171,19 +210,25 @@ root:
 # =============================================================================
 
 sample-crescent:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "samples/Crescent/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 sample-light-speed:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "samples/LightSpeed/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
 
 sample-spring:
-  - changed-files:
+  - all:
+    - changed-files:
       - any-glob-to-any-file:
           - "samples/Spring/**"
+      - all-globs-to-any-file:
           - "!**/*.lock.json"
