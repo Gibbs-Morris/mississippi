@@ -65,6 +65,16 @@ jobs:
           echo "GitVersion SemVer: $SEMVER"
           echo "GitVersion FullSemVer: $FULLSEMVER"
 
+      - name: Ensure stable release version
+        env:
+          SEMVER: ${{ steps.gitversion.outputs.SemVer }}
+        run: |
+          if [[ "$SEMVER" == *-* ]]; then
+            echo "Release workflow requires a stable SemVer without prerelease suffix, but got: $SEMVER"
+            exit 1
+          fi
+          echo "Stable SemVer verified: $SEMVER"
+
       - name: Restore
         run: dotnet restore ${{ github.workspace }}/mississippi.slnx
 
