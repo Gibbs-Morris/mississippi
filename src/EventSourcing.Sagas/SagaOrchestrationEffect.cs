@@ -58,7 +58,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     {
         ArgumentNullException.ThrowIfNull(eventData);
         return eventData is SagaStartedEvent or SagaStepCompleted or SagaStepFailed or SagaCompensating
-            or SagaStepCompensated;
+            or SagaStepCompensated or SagaResumeRequested;
     }
 
     /// <inheritdoc />
@@ -71,6 +71,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
+        ArgumentNullException.ThrowIfNull(currentState);
         return eventData switch
         {
             SagaStartedEvent => ExecuteStepAsync(currentState, 0, cancellationToken),
@@ -87,8 +88,36 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
                 currentState,
                 compensated.StepIndex,
                 cancellationToken),
+            SagaResumeRequested => ExecuteResumeAsync(currentState, cancellationToken),
             var _ => AsyncEnumerable.Empty<object>(),
         };
+    }
+
+    private async IAsyncEnumerable<object> ExecuteResumeAsync(
+        TSaga state,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        switch (state.Phase)
+        {
+            case SagaPhase.Running:
+            case SagaPhase.Failed:
+                await foreach (object evt in ExecuteStepAsync(state, state.LastCompletedStepIndex + 1, cancellationToken))
+                {
+                    yield return evt;
+                }
+
+                break;
+            case SagaPhase.Compensating:
+                await foreach (object evt in ExecuteCompensationAsync(state, state.LastCompletedStepIndex, cancellationToken))
+                {
+                    yield return evt;
+                }
+
+                break;
+            default:
+                yield break;
+        }
     }
 
     private async IAsyncEnumerable<object> ExecuteCompensationAsync(

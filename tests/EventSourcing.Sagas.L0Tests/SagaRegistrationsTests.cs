@@ -1,5 +1,4 @@
 using System;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.EventSourcing.Aggregates.Abstractions;
@@ -27,6 +26,35 @@ public sealed class SagaRegistrationsTests
         IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
         string? eventName = registry.ResolveName(typeof(SagaInputProvided<TestInput>));
         Assert.NotNull(eventName);
+    }
+
+    /// <summary>
+    ///     Verifies saga resume requested event type is registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersSagaResumeRequestedEventType()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
+        string? eventName = registry.ResolveName(typeof(SagaResumeRequested));
+        Assert.NotNull(eventName);
+    }
+
+    /// <summary>
+    ///     Verifies continue-saga command handler is registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersContinueSagaCommandHandler()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ICommandHandler<ContinueSagaCommand, TestSagaState>? handler = provider
+            .GetService<ICommandHandler<ContinueSagaCommand, TestSagaState>>();
+        Assert.NotNull(handler);
+        Assert.IsType<ContinueSagaCommandHandler<TestSagaState>>(handler);
     }
 
     /// <summary>
