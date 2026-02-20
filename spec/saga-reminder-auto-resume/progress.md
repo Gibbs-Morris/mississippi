@@ -1,0 +1,15 @@
+# Progress Log
+
+- 2026-02-19T00:00:00Z: Initial spec session — scaffolded spec folder, captured runtime facts, drafted RFC with crash scenarios/recovery model/DX attribute strategy, verification questions/answers, crash survivability matrix, implementation plan.
+- 2026-02-19T01:00:00Z: Pivoted scope to aggregate-first scheduling framework (phase 1) with saga adoption in phase 2. Reworked RFC, diagrams, verification claims, crash matrix, and phased implementation plan.
+- 2026-02-19T01:15:00Z: Added dedicated `code-samples.md` with developer experience examples and `grain-interfaces.md` with draft scheduler/audit interface contracts. Added `ScheduleAuditAggregate` as opt-in durable audit mode.
+- 2026-02-19T02:10:00Z: Spec review (`errors.md`) identified 28 issues across all files. Systematic remediation applied:
+  - Fixed learned.md: corrected SagaOrchestrationEffect description (async, grain-blocking, not "synchronous"), added verified facts about TSnapshot naming, ISagaState, BrookNameAttribute, Orleans reminder API absence, IServiceProvider policy.
+  - Fixed rfc.md: clarified TSnapshot naming convention, added explicit command dispatch design (no IServiceProvider), addressed saga-effect/command interaction for phase 2, fixed Mermaid diagrams (attribute registration vs runtime scanning, E2→SG feedback as command result not event subscription), resolved MaxAttempts=0 semantics (unlimited), defined reconciliation algorithm with diagram, defined TickToken generation strategy, defined audit "Log Only" mechanism, defined duplicate schedule name validation, added ScheduleStartOptions→ScheduleRegistration mapping table.
+  - Fixed code-samples.md: added BrookName attribute to WorldAggregate, realistic idempotency check (LastAppliedTickToken), TSnapshot naming note, full ISagaState properties on PaymentSagaState.
+  - Fixed grain-interfaces.md: replaced Type with string (CommandTypeName) for Orleans serializability, replaced object audit with strongly-typed ScheduleAuditEvent hierarchy, removed dead IAggregateScheduleReminderGrain, clarified StopAsync unregisters reminder, clarified TAggregate→BrookName identity, added IScheduledCommandDispatcher design notes, clarified MaxAttempts/duplicate validation.
+  - Fixed verification.md: reconciled C5 with audit model (infrastructure vs domain data), marked Q2 as UNVERIFIED platform assumption.
+  - Fixed implementation-plan.md: added Orleans reminder package dependency step, added L1 test project for scheduler grain, expanded test plan, added SagaResumeRequested event in phase 2.
+  - Fixed README.md: added folder naming note explaining saga→aggregate scope expansion.
+  - Fixed progress.md: replaced synthetic 5-minute timestamps with honest session-level entries.
+  - Final consistency pass: added LastAppliedTickToken to rfc.md WorldAggregate (section 4 context), added realistic idempotency check to rfc.md handler, added BrookName import to rfc.md section 1, added TSnapshot naming convention note to rfc.md section 4.
