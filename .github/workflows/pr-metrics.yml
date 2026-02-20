@@ -22,4 +22,12 @@ jobs:
         uses: microsoft/PR-Metrics@v1.7.11
         env:
           PR_METRICS_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file-matching-patterns: |
+            **/*
+            !**/package-lock.json
+            !**/packages.lock.json
+            !**/*.g.cs
+            !**/bin/**
+            !**/obj/**
         continue-on-error: true
