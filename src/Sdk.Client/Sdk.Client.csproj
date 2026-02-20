@@ -1,17 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
-
-    <PropertyGroup>
-        <Description>Meta-package that references all Mississippi client libraries. Install this package in Orleans client applications that consume aggregates and projections.</Description>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
-        <ProjectReference Include="..\Inlet.Client\Inlet.Client.csproj" />
-        <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
-        <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
-        <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
-        <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
-        <ProjectReference Include="..\Inlet.Client.Generators\Inlet.Client.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
-    </ItemGroup>
-
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <Description>Convenience SDK for integrating Mississippi in client applications.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Client\Inlet.Client.csproj" />
+    <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+    <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+    <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Inlet.Client.Generators\Inlet.Client.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

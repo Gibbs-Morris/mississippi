@@ -19,6 +19,8 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Authors>Benjamin Gibbs</Authors>
         <Company>Gibbs and Morris Limited</Company>
+        <Copyright>Copyright (c) Gibbs and Morris Limited</Copyright>
+        <PackageTags>mississippi;cqrs;eventsourcing</PackageTags>
         <PackageProjectUrl>https://gibbs-morris.github.io/mississippi/</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -34,6 +36,9 @@
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
+        <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Link="README.md" />
+    </ItemGroup>
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>

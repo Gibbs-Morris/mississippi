@@ -1,14 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
-	<ItemGroup>
-		<ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Compile Remove="SagaEvents.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Orleans.Sdk" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-	</ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="SagaEvents.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Public contracts and abstractions for EventSourcing.Sagas.</Description>
+  </PropertyGroup>
 </Project>

@@ -1,10 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
-	<ItemGroup>
-		<ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
-		<ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Orleans.Sdk" />
-	</ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Public contracts and abstractions for EventSourcing.UxProjections.</Description>
+  </PropertyGroup>
 </Project>
