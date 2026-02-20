@@ -17,8 +17,9 @@ Governing thought: Use explicit `[GenerateSerializer]`, `[Id]`, and `[Alias]` wi
 
 - Serializable types **MUST** use `[GenerateSerializer]` plus `[Id(n)]` on every serialized member; implicit serialization **MUST NOT** be used. Why: Enables version-tolerant code generation.
 - Types **MUST** include globally unique `[Alias]`; member IDs **MUST** start at 0 per inheritance level and be unique/unchanged for that level. Why: Supports safe renames and deterministic layout.
-- Existing member IDs **MUST NOT** change; breaking type changes (e.g., record-to-class or signedness changes) **MUST NOT** be made. New members **MUST** use unused IDs. Why: Protects rolling deployments.
-- Versioning **MUST** follow additive/compatible changes; removals **SHOULD** use `[NonSerialized]`/`[Obsolete]`; widening numeric types and making properties nullable **SHOULD** be preferred over narrowing. Why: Keeps serialized data readable.
+- While the repository is pre-1.0 (see `.github/instructions/backwards-compatibility.instructions.md`), member IDs and type shapes **MAY** be changed freely; agents **MUST NOT** add compatibility shims for serialization layouts that only exist on the current branch. Why: Pre-release; no rolling deployments to protect.
+- Once the repository reaches 1.0+, existing member IDs **MUST NOT** change; breaking type changes (e.g., record-to-class or signedness changes) **MUST NOT** be made; new members **MUST** use unused IDs. Why: Protects rolling deployments.
+- Post-1.0, versioning **MUST** follow additive/compatible changes; removals **SHOULD** use `[NonSerialized]`/`[Obsolete]`; widening numeric types and making properties nullable **SHOULD** be preferred over narrowing. Why: Keeps serialized data readable.
 - Projects **MUST** include required Orleans packages and build with analyzers as errors; reviewers **SHOULD** verify compatibility. Why: Catches issues at build/review time.
 - Analyzer violations or missing attributes **SHOULD** have focused `.scratchpad/tasks/pending` items if not fixed immediately. Why: Tracks debt.
 
@@ -35,7 +36,7 @@ Developers creating or changing Orleans-serialized types.
 ## Core Principles
 
 - Explicit, stable identifiers prevent serialization breaks.
-- Additive versioning supports rolling upgrades.
+- Additive versioning supports rolling upgrades (post-1.0; pre-1.0 allows free changes per backwards-compatibility policy).
 
 ## References
 

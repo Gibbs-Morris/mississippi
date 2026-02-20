@@ -19,7 +19,7 @@ Governing thought: Use feature-centric namespaces, clear PascalCase identifiers,
 - Namespaces **MUST** be feature-oriented (no `Services/Models` silos), max ten PascalCase segments, no underscores; abbreviations **MUST** be industry-standard only. Why: Improves discoverability.
 - Types **MUST** use PascalCase nouns; interfaces **MUST** prefix `I`; enums **MUST** be singular with PascalCase members. Why: Aligns with .NET guidelines.
 - Methods **MUST** use PascalCase verb phrases; properties **MUST** be PascalCase nouns; booleans **MUST** start with `Is/Has/Can/Should`; DI properties **MUST** follow `private Type Name { get; }`; private fields/locals **MUST** be camelCase with no underscore; constants **MUST** be PascalCase. Why: Keeps identifiers unambiguous.
-- Public (and internal when exposed) symbols **MUST** have XML docs with `<summary>` (imperative voice), `<param>`/`<typeparam>`/`<returns>` as applicable; text **MUST** be factual (no TODOs) and `<example>` snippets **MUST** compile. Why: Ensures IntelliSense and docs quality.
+- Public (and internal when exposed) symbols **MUST** have XML docs with `<summary>` (imperative voice), `<param>`/`<typeparam>`/`<returns>` as applicable; text **MUST** be factual (no TODOs). Why: Ensures IntelliSense and docs quality.
 - Abstract base classes **SHOULD NOT** use "Base" unless intended for inheritance; Orleans abstract grains ending in "Base" **MAY** follow Orleans guidance. Why: Avoids noisy suffixes unless necessary.
 - Documentation for private/internal members **SHOULD** exist only when behavior is non-trivial or exposed via `InternalsVisibleTo`. Why: Balances value vs noise.
 

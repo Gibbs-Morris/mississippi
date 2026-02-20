@@ -80,7 +80,7 @@ When asked to "document changes on this branch" / "document this feature" / "upd
 
 ## Enterprise quality bar (always consider)
 
-- Accuracy, correctness, security, reliability, observability, performance, maintainability, backwards compatibility.
+- Accuracy, correctness, security, reliability, observability, performance, maintainability, backwards compatibility (pre-1.0: API breaks are permitted; see `.github/instructions/backwards-compatibility.instructions.md`).
 - Prefer minimal, low-risk diffs unless explicitly asked to refactor documentation structure.
 - Never include "example output" or "example behavior" unless you can reproduce it from the repo (or clearly label it as non-authoritative and exclude it from factual claims).
 

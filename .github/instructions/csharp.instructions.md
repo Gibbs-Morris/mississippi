@@ -43,7 +43,7 @@ C# contributors across Mississippi and Samples, including Orleans code.
 ## Core Principles
 
 - SOLID + DI seams enable testing and refactoring.
-- Internal-by-default keeps APIs stable and reduces breaking changes.
+- Internal-by-default keeps APIs stable and reduces unintended breaking changes (pre-1.0: intentional breaks are permitted per `.github/instructions/backwards-compatibility.instructions.md`).
 - Orleans POCO pattern and async-first avoid threading issues.
 - Immutable/value-object bias improves correctness and logging/serialization.
 

@@ -92,8 +92,8 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Command handlers **MUST** return `OperationResult<IReadOnlyList<object>>` containing events on success or an error code on failure. Use `AggregateErrorCodes.InvalidCommand` for command validation failures and `AggregateErrorCodes.InvalidState` for state-based rejections. Why: Enables consistent, typed error handling.
 - Command handlers **MUST** validate the command against current state and return events; the framework handles persistence and snapshotting (see Inlet and Client-Server Integration for the full pipeline). Why: Separates business logic from infrastructure concerns.
 - Events **MUST NOT** be modified once written; property names/types **MUST NOT** change on existing events. Why: Events are immutable facts forming an append-only log.
-- Backwards compatibility is critical; adding additional properties to existing events **MAY** be done but is not always advisable. Why: Can introduce subtle compatibility issues.
-- When schema changes are required, a new event type (e.g., `{Event}V2`) **SHOULD** be introduced alongside the existing event rather than modifying the original. Why: Maintains backwards compatibility and enables gradual migration.
+- While the repository is pre-1.0 (see `.github/instructions/backwards-compatibility.instructions.md`), event shapes **MAY** be changed freely; V2 event types and compatibility shims **MUST NOT** be introduced for patterns that only exist on the current branch. Why: Pre-release iteration speed outweighs ceremony; only contracts on `main` define the compatibility baseline.
+- Once the repository reaches 1.0+, adding properties to existing events **MAY** be done but is not always advisable; a new event type (e.g., `{Event}V2`) **SHOULD** be introduced alongside the original for significant schema changes. Why: Post-release, backwards compatibility supports rolling updates and gradual migration.
 
 ### Domain Modeling (Projections)
 
