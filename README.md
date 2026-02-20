@@ -61,7 +61,7 @@ Recommended entry points for application developers are the SDK packages:
 - `Mississippi.Sdk.Server` - server/API integration package
 - `Mississippi.Sdk.Silo` - Orleans silo hosting integration package
 
-Lower-level packages (for advanced scenarios) include focused abstractions and runtime components such as `Mississippi.Common.Abstractions`, `Mississippi.EventSourcing.*`, `Mississippi.Inlet.*`, and `Mississippi.Reservoir.*`.
+Lower-level packages for advanced scenarios are being enabled in stages as the publish workflow is validated. The first package in this rollout is `Mississippi.Common.Abstractions`, followed by focused abstractions and runtime components such as `Mississippi.EventSourcing.*`, `Mississippi.Inlet.*`, and `Mississippi.Reservoir.*`.
 
 Example install command:
 
