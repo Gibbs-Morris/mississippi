@@ -1,6 +1,8 @@
 <Project>
     <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..'))" />
 
+    <!-- Staged NuGet rollout: enable packing for Common.Abstractions first to validate the end-to-end publish workflow,
+         then opt additional src packages in deliberately after workflow verification. -->
     <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Common.Abstractions'">
         <IsPackable>true</IsPackable>
     </PropertyGroup>
