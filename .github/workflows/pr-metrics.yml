@@ -2,7 +2,7 @@ name: PR Metrics
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, edited]
+    types: [opened, reopened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -12,14 +12,16 @@ jobs:
   pr-metrics:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      issues: write
       pull-requests: write
       statuses: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: PR Metrics
-        uses: microsoft/PR-Metrics@v1.7.11
+        uses: microsoft/PR-Metrics@9090a19be52120bc685f529b0b4848ac24575c2c # v1.7.11
         env:
           PR_METRICS_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
