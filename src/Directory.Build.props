@@ -1,7 +1,15 @@
 <Project>
     <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..'))" />
 
-    <PropertyGroup>
+    <!-- Opt specific projects into packing (evaluated before the conditional block below) -->
+    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Common.Abstractions'">
+        <IsPackable>true</IsPackable>
+        <Description>Core shared abstractions and defaults used across Mississippi packages.</Description>
+    </PropertyGroup>
+
+    <!-- Pack identity and metadata — scoped to packable projects only so non-packable
+         projects keep the inherited AssemblyName/RootNamespace from root Directory.Build.props -->
+    <PropertyGroup Condition="'$(IsPackable)' == 'true'">
         <_NormalizedProjectName>$([System.String]::Copy('$(MSBuildProjectName)').Replace('Mississippi.', ''))</_NormalizedProjectName>
         <PackageId>Mississippi.$(_NormalizedProjectName)</PackageId>
         <AssemblyName>Mississippi.$(_NormalizedProjectName)</AssemblyName>
@@ -16,11 +24,6 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <!-- snupkg format only supports PDBs, not embedded source; override inherited IncludeSource -->
         <IncludeSource>false</IncludeSource>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Common.Abstractions'">
-        <IsPackable>true</IsPackable>
-        <Description>Core shared abstractions and defaults used across Mississippi packages.</Description>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsPackable)' == 'true'">

@@ -58,26 +58,33 @@ jobs:
           useConfigFile: true
 
       - name: Print resolved version
+        env:
+          SEMVER: ${{ steps.gitversion.outputs.SemVer }}
+          FULLSEMVER: ${{ steps.gitversion.outputs.FullSemVer }}
         run: |
-          echo "GitVersion SemVer: ${{ steps.gitversion.outputs.SemVer }}"
-          echo "GitVersion FullSemVer: ${{ steps.gitversion.outputs.FullSemVer }}"
+          echo "GitVersion SemVer: $SEMVER"
+          echo "GitVersion FullSemVer: $FULLSEMVER"
 
       - name: Restore
         run: dotnet restore ${{ github.workspace }}/mississippi.slnx
 
       - name: Build
-        run: dotnet build ${{ github.workspace }}/mississippi.slnx --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}
+        env:
+          SEMVER: ${{ steps.gitversion.outputs.SemVer }}
+        run: dotnet build ${{ github.workspace }}/mississippi.slnx --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -warnaserror -p:Version="$SEMVER"
 
       - name: Test (L0/L1)
-        run: dotnet test ${{ github.workspace }}/mississippi.slnx --configuration ${{ env.CONFIGURATION }} --no-build --filter "FullyQualifiedName~.L0Tests.|FullyQualifiedName~.L1Tests."
+        run: dotnet test ${{ github.workspace }}/mississippi.slnx --configuration ${{ env.CONFIGURATION }} --no-build --no-restore --filter "FullyQualifiedName~.L0Tests.|FullyQualifiedName~.L1Tests."
 
       - name: Pack
+        env:
+          SEMVER: ${{ steps.gitversion.outputs.SemVer }}
         run: |
           dotnet pack ${{ github.workspace }}/mississippi.slnx \
             --configuration ${{ env.CONFIGURATION }} \
             --no-build \
             --output ${{ github.workspace }}/artifacts/nuget \
-            -p:PackageVersion=${{ steps.gitversion.outputs.SemVer }}
+            -p:PackageVersion="$SEMVER"
 
       - name: Upload NuGet artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
