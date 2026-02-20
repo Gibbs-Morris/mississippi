@@ -17,6 +17,7 @@ Governing thought: Common rules for every instruction—zero warnings, centraliz
 - **LoggerExtensions Entry Point** - Logging **MUST** go through LoggerExtensions using `[LoggerMessage]`; direct `ILogger.Log*` calls **MUST NOT** be introduced. Why: Enforces the high-performance logging standard across the repo.
 - **No File-Level Copyright Banners** - Copyright or license headers/banners **MUST NOT** appear at the top of source, script, or markup files; repository-level licensing already applies. Why: Avoids noisy/stale headers and keeps diffs focused on behavior.
 - **Canonical Solutions Are .slnx** - `.slnx` files are the source of truth; `.sln` files **MUST NOT** be hand-edited because CI/automation regenerates them via SlnGen for legacy tooling (ReSharper, Stryker). Why: Prevents drift between generated and canonical solutions.
+- **Pre-1.0 Backwards Compatibility Freedom** - While `GitVersion.yml` `next-version` is below `1.0.0`, backwards compatibility **MUST NOT** constrain changes; agents **MUST NOT** add compatibility shims for patterns that only exist on the current branch (compare against `main`). Breaking changes **MUST** update all consumers (samples, tests) in the same PR. See `.github/instructions/backwards-compatibility.instructions.md` for full policy. Why: Prevents unnecessary complexity from compatibility code for patterns that do not exist in the merge target.
 
 ## Scope and Audience
 
