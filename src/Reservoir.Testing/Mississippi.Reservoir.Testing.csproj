@@ -1,10 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Testing utilities for Mississippi Reservoir state management including harnesses for actions, reducers, and effects.</Description>
+    <Description>Testing utilities and fixtures for Mississippi.Reservoir.</Description>
     <PackageTags>$(PackageTags);testing;xunit;fluent-assertions;reservoir;state-management</PackageTags>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
@@ -12,10 +10,8 @@
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <PackageReference Include="Moq" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
     <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
   </ItemGroup>
-
 </Project>

@@ -1,0 +1,86 @@
+name: Src Csproj Description Check
+
+on:
+  pull_request:
+    paths:
+      - src/**/*.csproj
+  push:
+    paths:
+      - src/**/*.csproj
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-descriptions:
+    name: Validate src csproj descriptions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Ensure every src csproj has Description
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $missing = [System.Collections.Generic.List[string]]::new()
+          $empty = [System.Collections.Generic.List[string]]::new()
+
+          $projects = Get-ChildItem -Path ./src -Recurse -Filter *.csproj | Sort-Object FullName
+
+          foreach ($project in $projects) {
+            try {
+              [xml]$xml = Get-Content -Path $project.FullName -Raw
+            }
+            catch {
+              Write-Error "Failed to parse $($project.FullName): $_"
+              exit 1
+            }
+
+            $descriptionNode = $null
+            foreach ($propertyGroup in @($xml.Project.PropertyGroup)) {
+              if ($propertyGroup.Description) {
+                $descriptionNode = $propertyGroup.Description
+                break
+              }
+            }
+
+            $relativePath = [System.IO.Path]::GetRelativePath((Get-Location).Path, $project.FullName).Replace('\\', '/')
+
+            if ($null -eq $descriptionNode) {
+              $missing.Add($relativePath)
+              continue
+            }
+
+            $descriptionText = [string]$descriptionNode
+            if ([string]::IsNullOrWhiteSpace($descriptionText)) {
+              $empty.Add($relativePath)
+            }
+          }
+
+          if ($missing.Count -gt 0 -or $empty.Count -gt 0) {
+            Write-Host 'Description check failed for src csproj files.'
+
+            if ($missing.Count -gt 0) {
+              Write-Host ''
+              Write-Host 'Missing <Description>:'
+              foreach ($item in $missing) {
+                Write-Host " - $item"
+              }
+            }
+
+            if ($empty.Count -gt 0) {
+              Write-Host ''
+              Write-Host 'Empty <Description>:'
+              foreach ($item in $empty) {
+                Write-Host " - $item"
+              }
+            }
+
+            exit 1
+          }
+
+          Write-Host 'All src csproj files contain non-empty <Description> metadata.'

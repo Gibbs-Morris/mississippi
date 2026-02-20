@@ -3,6 +3,7 @@
         <Deterministic>true</Deterministic>
         <AnalysisMode>All</AnalysisMode>
         <AnalysisLevel>9</AnalysisLevel>
+        <IsPackable>false</IsPackable>
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>14.0</LangVersion>
         <ImplicitUsings>false</ImplicitUsings>
@@ -11,11 +12,23 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
         <RepositoryType>git</RepositoryType>
-        <IncludeSymbols>true</IncludeSymbols>
-        <IncludeSource>true</IncludeSource>
         <RepositoryUrl>https://github.com/Gibbs-Morris/mississippi</RepositoryUrl>
-        <AssemblyName>Mississippi.$(MSBuildProjectName)</AssemblyName>
-        <RootNamespace>Mississippi.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <IncludeSource>false</IncludeSource>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Authors>Benjamin Gibbs</Authors>
+        <Company>Gibbs and Morris Limited</Company>
+        <Copyright>Copyright (c) Gibbs and Morris Limited</Copyright>
+        <PackageTags>mississippi;cqrs;eventsourcing</PackageTags>
+        <PackageProjectUrl>https://gibbs-morris.github.io/mississippi/</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <_ProjectIdentityName Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Mississippi.'))">$(MSBuildProjectName)</_ProjectIdentityName>
+        <_ProjectIdentityName Condition="'$(_ProjectIdentityName)' == ''">Mississippi.$(MSBuildProjectName)</_ProjectIdentityName>
+        <PackageId>$(_ProjectIdentityName)</PackageId>
+        <AssemblyName>$(_ProjectIdentityName)</AssemblyName>
+        <RootNamespace>$(_ProjectIdentityName.Replace(" ", "_"))</RootNamespace>
         <NoWarn>
             SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,CA1014,CA2007,CA1040,CA1812,CA1303,VSTHRD111,SA1201,S2436
         </NoWarn>
@@ -25,6 +38,9 @@
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
+        <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Link="README.md" />
+    </ItemGroup>
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>

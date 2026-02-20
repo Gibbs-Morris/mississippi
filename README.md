@@ -53,7 +53,21 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 ### Installation
 
-The Mississippi Framework will be available as a set of NuGet packages. Package names to be confirmed.
+Mississippi packages are published on NuGet under the `Mississippi.*` naming pattern.
+
+Recommended entry points for application developers are the SDK packages:
+
+- `Mississippi.Sdk.Client` - client-side integration package
+- `Mississippi.Sdk.Server` - server/API integration package
+- `Mississippi.Sdk.Silo` - Orleans silo hosting integration package
+
+Lower-level packages for advanced scenarios are being enabled in stages as the publish workflow is validated. The first package in this rollout is `Mississippi.Common.Abstractions`, followed by focused abstractions and runtime components such as `Mississippi.EventSourcing.*`, `Mississippi.Inlet.*`, and `Mississippi.Reservoir.*`.
+
+Example install command:
+
+```powershell
+dotnet add package Mississippi.Sdk.Server --prerelease
+```
 
 ### Building from Source
 

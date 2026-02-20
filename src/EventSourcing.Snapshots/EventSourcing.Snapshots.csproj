@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Sdk" />
   </ItemGroup>
@@ -9,4 +9,7 @@
     <ProjectReference Include="..\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
   </ItemGroup>
+  <PropertyGroup>
+    <Description>Snapshot runtime for persisted aggregate state checkpoints.</Description>
+  </PropertyGroup>
 </Project>

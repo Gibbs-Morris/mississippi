@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
   </ItemGroup>
@@ -7,4 +7,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
+  <PropertyGroup>
+    <Description>Azure Cosmos DB support and storage components shared across Mississippi packages.</Description>
+  </PropertyGroup>
 </Project>
