@@ -35,10 +35,12 @@ public static class SagaRegistrations
         services.AddEventType<SagaStepFailed>();
         services.AddEventType<SagaCompensating>();
         services.AddEventType<SagaStepCompensated>();
+        services.AddEventType<SagaResumeRequested>();
         services.AddEventType<SagaCompleted>();
         services.AddEventType<SagaCompensated>();
         services.AddEventType<SagaFailed>();
         services.AddCommandHandler<StartSagaCommand<TInput>, TSaga, StartSagaCommandHandler<TSaga, TInput>>();
+        services.AddCommandHandler<ContinueSagaCommand, TSaga, ContinueSagaCommandHandler<TSaga>>();
         services.AddReducer<SagaStartedEvent, TSaga, SagaStartedReducer<TSaga>>();
         services.AddReducer<SagaInputProvided<TInput>, TSaga, SagaInputProvidedReducer<TSaga, TInput>>();
         services.AddReducer<SagaStepCompleted, TSaga, SagaStepCompletedReducer<TSaga>>();
