@@ -12,9 +12,16 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
         <RepositoryType>git</RepositoryType>
-        <IncludeSymbols>true</IncludeSymbols>
-        <IncludeSource>true</IncludeSource>
         <RepositoryUrl>https://github.com/Gibbs-Morris/mississippi</RepositoryUrl>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <IncludeSource>false</IncludeSource>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Authors>Benjamin Gibbs</Authors>
+        <Company>Gibbs and Morris Limited</Company>
+        <PackageProjectUrl>https://gibbs-morris.github.io/mississippi/</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageId>Mississippi.$(MSBuildProjectName)</PackageId>
         <AssemblyName>Mississippi.$(MSBuildProjectName)</AssemblyName>
         <RootNamespace>Mississippi.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
