@@ -24,9 +24,11 @@
         <PackageProjectUrl>https://gibbs-morris.github.io/mississippi/</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageId>Mississippi.$(MSBuildProjectName)</PackageId>
-        <AssemblyName>Mississippi.$(MSBuildProjectName)</AssemblyName>
-        <RootNamespace>Mississippi.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+        <_ProjectIdentityName Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Mississippi.'))">$(MSBuildProjectName)</_ProjectIdentityName>
+        <_ProjectIdentityName Condition="'$(_ProjectIdentityName)' == ''">Mississippi.$(MSBuildProjectName)</_ProjectIdentityName>
+        <PackageId>$(_ProjectIdentityName)</PackageId>
+        <AssemblyName>$(_ProjectIdentityName)</AssemblyName>
+        <RootNamespace>$(_ProjectIdentityName.Replace(" ", "_"))</RootNamespace>
         <NoWarn>
             SA1633,SA1111,SA1200,SA1009,SA1507,SA1101,SA1202,SA1204,CA1014,CA2007,CA1040,CA1812,CA1303,VSTHRD111,SA1201,S2436
         </NoWarn>

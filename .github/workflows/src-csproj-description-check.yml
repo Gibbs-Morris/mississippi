@@ -48,7 +48,7 @@ jobs:
               }
             }
 
-            $relativePath = $project.FullName.Replace((Get-Location).Path + '\\', '').Replace('\\', '/')
+            $relativePath = [System.IO.Path]::GetRelativePath((Get-Location).Path, $project.FullName).Replace('\\', '/')
 
             if ($null -eq $descriptionNode) {
               $missing.Add($relativePath)
