@@ -2,9 +2,7 @@
 name: NuGet Prerelease
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -64,6 +62,16 @@ jobs:
         run: |
           echo "GitVersion SemVer: $SEMVER"
           echo "GitVersion FullSemVer: $FULLSEMVER"
+
+      - name: Ensure manual run is from main
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$BRANCH_NAME" != "main" ]]; then
+            echo "NuGet prerelease workflow is restricted to main. Current ref: $BRANCH_NAME"
+            exit 1
+          fi
+          echo "Branch verified: $BRANCH_NAME"
 
       - name: Ensure prerelease version
         env:
