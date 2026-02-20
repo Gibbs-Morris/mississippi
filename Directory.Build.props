@@ -15,6 +15,7 @@
         <IncludeSymbols>true</IncludeSymbols>
         <IncludeSource>true</IncludeSource>
         <RepositoryUrl>https://github.com/Gibbs-Morris/mississippi</RepositoryUrl>
+        <PackageId>Mississippi.$(MSBuildProjectName)</PackageId>
         <AssemblyName>Mississippi.$(MSBuildProjectName)</AssemblyName>
         <RootNamespace>Mississippi.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
         <NoWarn>
