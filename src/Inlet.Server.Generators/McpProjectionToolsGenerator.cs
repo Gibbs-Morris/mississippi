@@ -30,6 +30,11 @@ public sealed class McpProjectionToolsGenerator : IIncrementalGenerator
     private const string GenerateMcpReadToolAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateMcpReadToolAttribute";
 
+    private static string BoolLiteral(
+        bool value
+    ) =>
+        value ? "true" : "false";
+
     private static string EscapeForStringLiteral(
         string value
     ) =>
@@ -135,10 +140,10 @@ public sealed class McpProjectionToolsGenerator : IIncrementalGenerator
             toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(projection.Title!)).Append('"');
         }
 
-        toolAttrBuilder.Append(", Destructive = ").Append(projection.Destructive ? "true" : "false");
-        toolAttrBuilder.Append(", ReadOnly = ").Append(projection.ReadOnly ? "true" : "false");
-        toolAttrBuilder.Append(", Idempotent = ").Append(projection.Idempotent ? "true" : "false");
-        toolAttrBuilder.Append(", OpenWorld = ").Append(projection.OpenWorld ? "true" : "false");
+        toolAttrBuilder.Append(", Destructive = ").Append(BoolLiteral(projection.Destructive));
+        toolAttrBuilder.Append(", ReadOnly = ").Append(BoolLiteral(projection.ReadOnly));
+        toolAttrBuilder.Append(", Idempotent = ").Append(BoolLiteral(projection.Idempotent));
+        toolAttrBuilder.Append(", OpenWorld = ").Append(BoolLiteral(projection.OpenWorld));
         toolAttrBuilder.Append(")]");
         sb.AppendLine(toolAttrBuilder.ToString());
         sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");

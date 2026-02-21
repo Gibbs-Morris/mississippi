@@ -48,6 +48,71 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
     private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
 
+    private static Dictionary<string, string> CollectParameterDescriptions(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? mcpParamDescAttrSymbol
+    )
+    {
+        Dictionary<string, string> parameterDescriptions = new();
+        if (mcpParamDescAttrSymbol is null)
+        {
+            return parameterDescriptions;
+        }
+
+        IPropertySymbol[] publicProperties = typeSymbol.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(p => p.DeclaredAccessibility == Accessibility.Public)
+            .Where(p => !p.IsStatic)
+            .Where(p => p.GetMethod is not null)
+            .ToArray();
+
+        foreach (IPropertySymbol propSymbol in publicProperties)
+        {
+            AttributeData? paramDescAttr = propSymbol.GetAttributes()
+                .FirstOrDefault(a =>
+                    SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
+            if (paramDescAttr is { ConstructorArguments.Length: > 0 })
+            {
+                string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
+                if (!string.IsNullOrEmpty(desc))
+                {
+                    parameterDescriptions[propSymbol.Name] = desc!;
+                }
+            }
+        }
+
+        IMethodSymbol? primaryConstructor =
+            typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
+        bool isPositionalRecord = typeSymbol.IsRecord && (primaryConstructor?.Parameters.Length > 0);
+
+        if (!isPositionalRecord || primaryConstructor is null)
+        {
+            return parameterDescriptions;
+        }
+
+        foreach (IParameterSymbol param in primaryConstructor.Parameters)
+        {
+            if (parameterDescriptions.ContainsKey(param.Name))
+            {
+                continue;
+            }
+
+            AttributeData? paramDescAttr = param.GetAttributes()
+                .FirstOrDefault(a =>
+                    SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
+            if (paramDescAttr is { ConstructorArguments.Length: > 0 })
+            {
+                string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
+                if (!string.IsNullOrEmpty(desc))
+                {
+                    parameterDescriptions[param.Name] = desc!;
+                }
+            }
+        }
+
+        return parameterDescriptions;
+    }
+
     private static string EscapeForStringLiteral(
         string value
     ) =>
@@ -532,49 +597,8 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             .Where(p => p.GetMethod is not null)
             .ToArray();
 
-        // Read [GenerateMcpParameterDescription] from input properties
-        Dictionary<string, string> parameterDescriptions = new();
-        if (mcpParamDescAttrSymbol is not null)
-        {
-            foreach (IPropertySymbol propSymbol in publicProperties)
-            {
-                AttributeData? paramDescAttr = propSymbol.GetAttributes()
-                    .FirstOrDefault(a =>
-                        SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-                if (paramDescAttr is { ConstructorArguments.Length: > 0 })
-                {
-                    string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
-                    if (!string.IsNullOrEmpty(desc))
-                    {
-                        parameterDescriptions[propSymbol.Name] = desc!;
-                    }
-                }
-            }
-
-            // Also check constructor parameters for positional records
-            if (isInputPositionalRecord && primaryConstructor is not null)
-            {
-                foreach (IParameterSymbol param in primaryConstructor.Parameters)
-                {
-                    if (parameterDescriptions.ContainsKey(param.Name))
-                    {
-                        continue;
-                    }
-
-                    AttributeData? paramDescAttr = param.GetAttributes()
-                        .FirstOrDefault(a =>
-                            SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-                    if (paramDescAttr is { ConstructorArguments.Length: > 0 })
-                    {
-                        string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
-                        if (!string.IsNullOrEmpty(desc))
-                        {
-                            parameterDescriptions[param.Name] = desc!;
-                        }
-                    }
-                }
-            }
-        }
+        Dictionary<string, string> parameterDescriptions =
+            CollectParameterDescriptions(inputTypeSymbol, mcpParamDescAttrSymbol);
 
         ImmutableArray<PropertyModel> inputProperties = publicProperties
             .Select(p => new PropertyModel(p))
