@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -208,18 +209,16 @@ public sealed class PropertyModel
         IPropertySymbol propertySymbol
     )
     {
-        foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
+        foreach (SyntaxNode syntax in propertySymbol.DeclaringSyntaxReferences.Select(syntaxRef => syntaxRef.GetSyntax()))
         {
-            SyntaxNode syntax = syntaxRef.GetSyntax();
-
             if (syntax is PropertyDeclarationSyntax propertyDeclaration && propertyDeclaration.Initializer is not null)
             {
-                return " = " + propertyDeclaration.Initializer.Value.ToString();
+                return " = " + propertyDeclaration.Initializer.Value;
             }
 
             if (syntax is ParameterSyntax parameterSyntax && parameterSyntax.Default is not null)
             {
-                return " = " + parameterSyntax.Default.Value.ToString();
+                return " = " + parameterSyntax.Default.Value;
             }
         }
 
@@ -228,13 +227,14 @@ public sealed class PropertyModel
         {
             foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
             {
-                foreach (IParameterSymbol parameter in constructor.Parameters)
+                IParameterSymbol? matchingParameter = constructor.Parameters
+                    .FirstOrDefault(parameter =>
+                        string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
+                        parameter.HasExplicitDefaultValue);
+
+                if (matchingParameter is not null)
                 {
-                    if (string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
-                        parameter.HasExplicitDefaultValue)
-                    {
-                        return " = " + FormatDefaultValue(parameter.ExplicitDefaultValue, parameter.Type);
-                    }
+                    return " = " + FormatDefaultValue(matchingParameter.ExplicitDefaultValue, matchingParameter.Type);
                 }
             }
         }
