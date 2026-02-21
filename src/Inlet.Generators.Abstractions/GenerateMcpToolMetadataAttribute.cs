@@ -18,19 +18,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         <c>ReadOnly = false</c>, <c>Idempotent = false</c>, <c>OpenWorld = false</c>.
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///     [GenerateCommand(Route = "deposit")]
-///     [GenerateMcpToolMetadata(
-///         Title = "Deposit Funds",
-///         Description = "Deposits funds into a bank account. Increases the account balance by the specified amount.",
-///         Destructive = false,
-///         Idempotent = false,
-///         ReadOnly = false,
-///         OpenWorld = false)]
-///     public sealed record DepositFunds { ... }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class GenerateMcpToolMetadataAttribute : Attribute
 {

@@ -18,15 +18,6 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         derived from the property name (e.g., <c>InitialDeposit</c> becomes <c>"initial deposit"</c>).
 ///     </para>
 /// </remarks>
-/// <example>
-///     <code>
-///     public sealed record DepositFunds
-///     {
-///         [GenerateMcpParameterDescription("The amount to deposit in the account's currency. Must be greater than zero.")]
-///         public decimal Amount { get; init; }
-///     }
-///     </code>
-/// </example>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
 public sealed class GenerateMcpParameterDescriptionAttribute : Attribute
 {

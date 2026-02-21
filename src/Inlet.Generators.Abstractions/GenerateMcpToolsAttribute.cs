@@ -26,7 +26,11 @@ public sealed class GenerateMcpToolsAttribute : Attribute
     public string? Description { get; set; }
 
     /// <summary>
-    ///     Gets or sets the prefix for generated tool names. Defaults to the kebab-case aggregate name.
+    ///     Gets or sets an optional prefix for generated tool names.
+    ///     When this value is <see langword="null" /> or empty, no prefix is applied and tool names are
+    ///     derived solely from the aggregate and command names.
+    ///     The generator normalizes the final tool name (including any prefix) to <c>snake_case</c>, so callers
+    ///     should expect <c>snake_case</c> tool identifiers.
     /// </summary>
     public string? ToolPrefix { get; set; }
 }
