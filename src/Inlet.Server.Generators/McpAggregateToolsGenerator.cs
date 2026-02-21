@@ -39,11 +39,11 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
     private const string GenerateMcpToolsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateMcpToolsAttribute";
 
-    private const string McpParameterDescriptionAttributeFullName =
-        "Mississippi.Inlet.Generators.Abstractions.McpParameterDescriptionAttribute";
+    private const string GenerateMcpParameterDescriptionAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpParameterDescriptionAttribute";
 
-    private const string McpToolMetadataAttributeFullName =
-        "Mississippi.Inlet.Generators.Abstractions.McpToolMetadataAttribute";
+    private const string GenerateMcpToolMetadataAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpToolMetadataAttribute";
 
     private static string EscapeForStringLiteral(
         string value
@@ -112,7 +112,7 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
                 continue;
             }
 
-            // Read MCP tool metadata from [McpToolMetadata] if present
+            // Read MCP tool metadata from [GenerateMcpToolMetadata] if present
             AttributeData? metadataAttr = mcpToolMetadataAttrSymbol is not null
                 ? typeSymbol.GetAttributes()
                     .FirstOrDefault(a =>
@@ -152,7 +152,7 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
                 }
             }
 
-            // Read [McpParameterDescription] from each property
+            // Read [GenerateMcpParameterDescription] from each property
             Dictionary<string, string> parameterDescriptions = new();
             IPropertySymbol[] publicProperties = typeSymbol.GetMembers()
                 .OfType<IPropertySymbol>()
@@ -187,7 +187,7 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
                 typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
             bool isPositionalRecord = typeSymbol.IsRecord && (primaryConstructor?.Parameters.Length > 0);
 
-            // For positional records, also check constructor parameters for [McpParameterDescription]
+            // For positional records, also check constructor parameters for [GenerateMcpParameterDescription]
             if (isPositionalRecord && primaryConstructor is not null && mcpParamDescAttrSymbol is not null)
             {
                 foreach (IParameterSymbol param in primaryConstructor.Parameters)
@@ -410,9 +410,9 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
         }
 
         INamedTypeSymbol? mcpToolMetadataAttrSymbol =
-            compilation.GetTypeByMetadataName(McpToolMetadataAttributeFullName);
+            compilation.GetTypeByMetadataName(GenerateMcpToolMetadataAttributeFullName);
         INamedTypeSymbol? mcpParamDescAttrSymbol =
-            compilation.GetTypeByMetadataName(McpParameterDescriptionAttributeFullName);
+            compilation.GetTypeByMetadataName(GenerateMcpParameterDescriptionAttributeFullName);
         foreach (IAssemblySymbol referencedAssembly in GeneratorSymbolAnalysis.GetReferencedAssemblies(compilation))
         {
             FindAggregatesInNamespace(

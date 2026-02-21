@@ -43,8 +43,8 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
-    private const string McpParameterDescriptionAttributeFullName =
-        "Mississippi.Inlet.Generators.Abstractions.McpParameterDescriptionAttribute";
+    private const string GenerateMcpParameterDescriptionAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpParameterDescriptionAttribute";
 
     private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
 
@@ -354,7 +354,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         }
 
         INamedTypeSymbol? mcpParamDescAttrSymbol =
-            compilation.GetTypeByMetadataName(McpParameterDescriptionAttributeFullName);
+            compilation.GetTypeByMetadataName(GenerateMcpParameterDescriptionAttributeFullName);
 
         foreach (IAssemblySymbol referencedAssembly in GeneratorSymbolAnalysis.GetReferencedAssemblies(compilation))
         {
@@ -541,7 +541,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             .Where(p => p.GetMethod is not null)
             .ToArray();
 
-        // Read [McpParameterDescription] from input properties
+        // Read [GenerateMcpParameterDescription] from input properties
         Dictionary<string, string> parameterDescriptions = new();
         if (mcpParamDescAttrSymbol is not null)
         {

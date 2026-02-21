@@ -22,20 +22,20 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///     <code>
 ///     public sealed record DepositFunds
 ///     {
-///         [McpParameterDescription("The amount to deposit in the account's currency. Must be greater than zero.")]
+///         [GenerateMcpParameterDescription("The amount to deposit in the account's currency. Must be greater than zero.")]
 ///         public decimal Amount { get; init; }
 ///     }
 ///     </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter)]
-public sealed class McpParameterDescriptionAttribute : Attribute
+public sealed class GenerateMcpParameterDescriptionAttribute : Attribute
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="McpParameterDescriptionAttribute" /> class
+    ///     Initializes a new instance of the <see cref="GenerateMcpParameterDescriptionAttribute" /> class
     ///     with the specified description text.
     /// </summary>
     /// <param name="description">The description text for the parameter.</param>
-    public McpParameterDescriptionAttribute(
+    public GenerateMcpParameterDescriptionAttribute(
         string description
     ) =>
         Description = description;

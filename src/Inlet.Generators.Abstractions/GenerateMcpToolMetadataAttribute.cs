@@ -21,7 +21,7 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 /// <example>
 ///     <code>
 ///     [GenerateCommand(Route = "deposit")]
-///     [McpToolMetadata(
+///     [GenerateMcpToolMetadata(
 ///         Title = "Deposit Funds",
 ///         Description = "Deposits funds into a bank account. Increases the account balance by the specified amount.",
 ///         Destructive = false,
@@ -32,7 +32,7 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///     </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-public sealed class McpToolMetadataAttribute : Attribute
+public sealed class GenerateMcpToolMetadataAttribute : Attribute
 {
     /// <summary>
     ///     Gets or sets a human-readable description of the tool for LLM consumption.

@@ -9,7 +9,7 @@ namespace Spring.Domain.Aggregates.BankAccount.Commands;
 ///     Command to deposit funds into a bank account.
 /// </summary>
 [GenerateCommand(Route = "deposit")]
-[McpToolMetadata(
+[GenerateMcpToolMetadata(
     Title = "Deposit Funds",
     Description = "Deposits funds into a bank account. Increases the account balance by the specified amount.",
     Destructive = false,
@@ -24,6 +24,6 @@ public sealed record DepositFunds
     ///     Gets the amount to deposit.
     /// </summary>
     [Id(0)]
-    [McpParameterDescription("The amount to deposit in the account currency. Must be greater than zero.")]
+    [GenerateMcpParameterDescription("The amount to deposit in the account currency. Must be greater than zero.")]
     public decimal Amount { get; init; }
 }

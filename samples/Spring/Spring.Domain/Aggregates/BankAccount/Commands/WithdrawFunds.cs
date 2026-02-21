@@ -9,7 +9,7 @@ namespace Spring.Domain.Aggregates.BankAccount.Commands;
 ///     Command to withdraw funds from a bank account.
 /// </summary>
 [GenerateCommand(Route = "withdraw")]
-[McpToolMetadata(
+[GenerateMcpToolMetadata(
     Title = "Withdraw Funds",
     Description = "Withdraws funds from a bank account. Decreases the account balance by the specified amount. Fails if insufficient funds.",
     Destructive = true,
@@ -24,7 +24,7 @@ public sealed record WithdrawFunds
     ///     Gets the amount to withdraw.
     /// </summary>
     [Id(0)]
-    [McpParameterDescription(
+    [GenerateMcpParameterDescription(
         "The amount to withdraw in the account currency. Must be greater than zero and not exceed the current balance.")]
     public decimal Amount { get; init; }
 }

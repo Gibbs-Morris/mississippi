@@ -11,7 +11,7 @@ namespace Spring.Domain.Aggregates.BankAccount.Commands;
 /// <param name="HolderName">The name of the account holder.</param>
 /// <param name="InitialDeposit">The initial deposit amount. Defaults to 0.</param>
 [GenerateCommand(Route = "open")]
-[McpToolMetadata(
+[GenerateMcpToolMetadata(
     Title = "Open Bank Account",
     Description = "Opens a new bank account for the specified holder with an optional initial deposit.",
     Destructive = false,
@@ -22,9 +22,9 @@ namespace Spring.Domain.Aggregates.BankAccount.Commands;
 [Alias("Spring.Domain.BankAccount.Commands.OpenAccount")]
 public sealed record OpenAccount(
     [property: Id(0)]
-    [McpParameterDescription("The full name of the account holder.")]
+    [GenerateMcpParameterDescription("The full name of the account holder.")]
     string HolderName,
     [property: Id(1)]
-    [McpParameterDescription("The initial deposit amount. Defaults to zero if not specified.")]
+    [GenerateMcpParameterDescription("The initial deposit amount. Defaults to zero if not specified.")]
     decimal InitialDeposit = 0
 );
