@@ -677,7 +677,7 @@
           "Mississippi.Reservoir.Blazor": "[1.0.0, )"
         }
       },
-      "spring.domain": {
+      "Mississippi.Spring.Domain": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Http": "[10.0.3, )",

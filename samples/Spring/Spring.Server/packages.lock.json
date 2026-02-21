@@ -98,6 +98,15 @@
         "resolved": "17.14.15",
         "contentHash": "mXQPJsbuUD2ydq4/ffd8h8tSOFCXec+2xJOVNCvXjuMOq/+5EKHq3D2m2MC2+nUaXeFMSt66VS/J4HdKBixgcw=="
       },
+      "ModelContextProtocol.AspNetCore": {
+        "type": "Direct",
+        "requested": "[0.8.0-preview.1, )",
+        "resolved": "0.8.0-preview.1",
+        "contentHash": "vtDaGXuZ4zLurH/63ymCDxKy3tIeJc5sLJV0nVtWBHj1gM9ME3jNKY1t+RrUQ9P22t4T1nHUEeBP0xR3J3YBgA==",
+        "dependencies": {
+          "ModelContextProtocol": "0.8.0-preview.1"
+        }
+      },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
         "type": "Direct",
         "requested": "[1.15.0, )",
@@ -227,6 +236,16 @@
         "resolved": "3.11.0",
         "contentHash": "v/EW3UE8/lbEYHoC2Qq7AR/DnmvpgdtAMndfQNmpuIMx/Mto8L5JnuCfdBYtgvalQOtfNCnxFejxuRrryvUTsg=="
       },
+      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
+        "type": "Transitive",
+        "resolved": "10.0.103",
+        "contentHash": "tIq6T4oyBMjxxxllslJu2fOJqEj8SOW29IfWqHYxubreOVlFWnxPN2PjDMuwoHjkrOnPKyuqoNcVYh5YOZcs0Q=="
+      },
+      "Microsoft.Extensions.AI.Abstractions": {
+        "type": "Transitive",
+        "resolved": "10.2.0",
+        "contentHash": "ONGlIBht0ygEdKc0bCt9XWUiq19/460dAu7fCKzPM34OFJSMQIohEDTJwjCJ8vVp8znNakloc9xFF9+R/eDCYQ=="
+      },
       "Microsoft.Extensions.Azure": {
         "type": "Transitive",
         "resolved": "1.13.0",
@@ -351,6 +370,22 @@
         "type": "Transitive",
         "resolved": "10.0.103",
         "contentHash": "cMtGW5/r0ck72Jg2QwZcNTX59z+iB/B1kW84VMa/eX8L19DhHIuIcQjfK0pgLLBxd60Jl0Bj9GUolcM0MnJnZA=="
+      },
+      "ModelContextProtocol": {
+        "type": "Transitive",
+        "resolved": "0.8.0-preview.1",
+        "contentHash": "hDhRtuMa2XBI70X/aIyvDv8/b5HIlRGenMiAk5LkM/8dhBuYNYBpbCwCFF+D2l0g8wa24WddPA3ciI55Uc3+/A==",
+        "dependencies": {
+          "ModelContextProtocol.Core": "0.8.0-preview.1"
+        }
+      },
+      "ModelContextProtocol.Core": {
+        "type": "Transitive",
+        "resolved": "0.8.0-preview.1",
+        "contentHash": "BceTXxLV5d16gIJHiGvHPLlQARat3u53FuJv+sZfO+L7BGbdFwTbUJxUS0/gCpxmwd8GGnCjhT5Qdfw1+m9WJw==",
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.2.0"
+        }
       },
       "OpenTelemetry": {
         "type": "Transitive",
@@ -680,16 +715,17 @@
           "Mississippi.Inlet.Server": "[1.0.0, )"
         }
       },
-      "spring.client": {
+      "Mississippi.Spring.Client": {
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.3, )",
+          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
-          "Spring.Domain": "[1.0.0, )"
+          "Mississippi.Spring.Domain": "[1.0.0, )"
         }
       },
-      "spring.domain": {
+      "Mississippi.Spring.Domain": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",

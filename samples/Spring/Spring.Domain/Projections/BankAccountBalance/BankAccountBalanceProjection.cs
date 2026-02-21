@@ -20,6 +20,9 @@ namespace Spring.Domain.Projections.BankAccountBalance;
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTBALANCE")]
 [GenerateProjectionEndpoints]
+[GenerateMcpReadTool(
+    Title = "Get Bank Account Balance",
+    Description = "Retrieves the current balance and holder name for a bank account.")]
 [GenerateSerializer]
 [Alias("Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection")]
 public sealed record BankAccountBalanceProjection

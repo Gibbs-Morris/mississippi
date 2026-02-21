@@ -74,6 +74,7 @@
     <Project Path="src\Inlet.Client.Generators\Inlet.Client.Generators.csproj" />
     <Project Path="src\Inlet.Server.Generators\Inlet.Server.Generators.csproj" />
     <Project Path="src\Inlet.Silo.Generators\Inlet.Silo.Generators.csproj" />
+    <Project Path="src\Inlet.Mcp.Generators\Inlet.Mcp.Generators.csproj" />
     <Project Path="src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <Project Path="src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
   </Folder>
