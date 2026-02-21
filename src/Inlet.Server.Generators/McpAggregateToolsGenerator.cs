@@ -492,7 +492,13 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
         // Use the actual declared default value expression if available
         if (prop.DefaultValueExpression is not null)
         {
-            return prop.DefaultValueExpression;
+            string declaredExpression = prop.DefaultValueExpression.TrimEnd();
+            if (declaredExpression.EndsWith(";", StringComparison.Ordinal))
+            {
+                declaredExpression = declaredExpression.TrimEnd(';').TrimEnd();
+            }
+
+            return declaredExpression;
         }
 
         // Fallback to type-based defaults for properties detected as having defaults

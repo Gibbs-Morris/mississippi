@@ -1,6 +1,7 @@
 using System;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 
 namespace Mississippi.Inlet.Generators.Core.Analysis;
@@ -160,17 +161,16 @@ public sealed class PropertyModel
         IPropertySymbol propertySymbol
     )
     {
-        // Check for initializer in declaring syntax
-        // This handles both regular property initializers (public int X { get; } = 5)
-        // and positional record parameter defaults (record Foo(int X = 5))
         foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
         {
             SyntaxNode syntax = syntaxRef.GetSyntax();
-            string syntaxText = syntax.ToString();
 
-            // Look for "= ..." pattern (property initializer or parameter default)
-            // Handle various spacing: "= 0", " = 0", "= default", etc.
-            if (syntaxText.Contains("= "))
+            if (syntax is PropertyDeclarationSyntax propertyDeclaration && propertyDeclaration.Initializer is not null)
+            {
+                return true;
+            }
+
+            if (syntax is ParameterSyntax parameterSyntax && parameterSyntax.Default is not null)
             {
                 return true;
             }
@@ -208,16 +208,18 @@ public sealed class PropertyModel
         IPropertySymbol propertySymbol
     )
     {
-        // Try to extract from declaring syntax (property initializer or parameter default)
         foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
         {
             SyntaxNode syntax = syntaxRef.GetSyntax();
-            string syntaxText = syntax.ToString();
-            int equalsIndex = syntaxText.IndexOf("= ", StringComparison.Ordinal);
-            if (equalsIndex >= 0)
+
+            if (syntax is PropertyDeclarationSyntax propertyDeclaration && propertyDeclaration.Initializer is not null)
             {
-                string valueText = syntaxText.Substring(equalsIndex + 2).Trim();
-                return " = " + valueText;
+                return " = " + propertyDeclaration.Initializer.Value.ToString();
+            }
+
+            if (syntax is ParameterSyntax parameterSyntax && parameterSyntax.Default is not null)
+            {
+                return " = " + parameterSyntax.Default.Value.ToString();
             }
         }
 

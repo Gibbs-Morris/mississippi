@@ -8,8 +8,8 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         When applied to a projection record that also has <see cref="GenerateProjectionEndpointsAttribute" />,
-///         the MCP generator produces a tool method that AI agents can invoke to read the projection state.
+///         When applied to a projection record, the MCP generator produces a tool method
+///         that AI agents can invoke to read the projection state.
 ///     </para>
 ///     <para>
 ///         Projection read tools default to <c>ReadOnly = true</c>, <c>Destructive = false</c>,

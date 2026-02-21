@@ -65,11 +65,11 @@ public sealed class McpSagaToolsGeneratorTests
         List<MetadataReference> references =
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.dll")),
         ];
 
-        string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
+        string netstandardPath = Path.Join(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
             references.Add(MetadataReference.CreateFromFile(netstandardPath));
@@ -88,6 +88,9 @@ public sealed class McpSagaToolsGeneratorTests
             compilation,
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
+
+        Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 

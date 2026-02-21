@@ -13,6 +13,10 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 ///         help LLMs understand the tool's behavior, side effects, and intended usage.
 ///     </para>
 ///     <para>
+///         This attribute's public name is <see cref="GenerateMcpToolMetadataAttribute" />
+///         and companion parameter descriptions use <c>GenerateMcpParameterDescriptionAttribute</c>.
+///     </para>
+///     <para>
 ///         When this attribute is absent, the generator uses sensible defaults based on
 ///         the MCP specification: commands default to <c>Destructive = true</c>,
 ///         <c>ReadOnly = false</c>, <c>Idempotent = false</c>, <c>OpenWorld = false</c>.

@@ -8,9 +8,8 @@ namespace Mississippi.Inlet.Generators.Abstractions;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         When applied to an aggregate record that also has <see cref="GenerateAggregateEndpointsAttribute" />,
-///         the MCP generator produces a tools class exposing each command as an MCP tool
-///         that AI agents can invoke via the MCP HTTP transport.
+///         When applied to an aggregate record, the MCP generator produces a tools class
+///         exposing each command as an MCP tool that AI agents can invoke via the MCP HTTP transport.
 ///     </para>
 ///     <para>
 ///         The generated tools class contains one method per command marked with <see cref="GenerateCommandAttribute" />,
