@@ -220,6 +220,7 @@ public sealed class McpToolRegistrationGenerator : IIncrementalGenerator
             return null;
         }
 
+        toolsClassNames.Sort(StringComparer.Ordinal);
         string outputNamespace = targetRootNamespace + ".McpTools";
         return new(outputNamespace, toolsClassNames);
     }

@@ -489,7 +489,14 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
         PropertyModel prop
     )
     {
-        // For numeric types, default to 0
+        // Use the actual declared default value expression if available
+        if (prop.DefaultValueExpression is not null)
+        {
+            return prop.DefaultValueExpression;
+        }
+
+        // Fallback to type-based defaults for properties detected as having defaults
+        // but where the expression could not be extracted
         if (prop.SourceTypeName.Contains("decimal") ||
             prop.SourceTypeName.Contains("int") ||
             prop.SourceTypeName.Contains("long") ||

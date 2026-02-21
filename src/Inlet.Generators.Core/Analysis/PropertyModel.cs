@@ -40,6 +40,7 @@ public sealed class PropertyModel
                                     SpecialType.System_Nullable_T);
         IsNullable = isNullableAnnotation || isNullableValueType;
         HasDefaultValue = HasPropertyDefaultValue(propertySymbol);
+        DefaultValueExpression = ExtractDefaultValueExpression(propertySymbol);
         IsRequired = !IsNullable && !HasDefaultValue;
 
         // For collections with custom element types, extract the element info
@@ -59,6 +60,11 @@ public sealed class PropertyModel
             ElementIsEnum = elementType is not null && TypeAnalyzer.IsEnumType(elementType);
         }
     }
+
+    /// <summary>
+    ///     Gets the default value expression as a C# literal string, or <c>null</c> if no default is declared.
+    /// </summary>
+    public string? DefaultValueExpression { get; }
 
     /// <summary>
     ///     Gets the DTO type name.
@@ -191,5 +197,97 @@ public sealed class PropertyModel
         }
 
         return false;
+    }
+
+    /// <summary>
+    ///     Extracts the default value expression from a property's syntax or its corresponding constructor parameter.
+    /// </summary>
+    /// <param name="propertySymbol">The property symbol.</param>
+    /// <returns>The C# literal expression (e.g., <c>" = 100.0m"</c>), or <c>null</c> if none.</returns>
+    private static string? ExtractDefaultValueExpression(
+        IPropertySymbol propertySymbol
+    )
+    {
+        // Try to extract from declaring syntax (property initializer or parameter default)
+        foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
+        {
+            SyntaxNode syntax = syntaxRef.GetSyntax();
+            string syntaxText = syntax.ToString();
+            int equalsIndex = syntaxText.IndexOf("= ", StringComparison.Ordinal);
+            if (equalsIndex >= 0)
+            {
+                string valueText = syntaxText.Substring(equalsIndex + 2).Trim();
+                return " = " + valueText;
+            }
+        }
+
+        // For positional record properties, extract from the primary constructor parameter
+        if (propertySymbol.ContainingType is INamedTypeSymbol containingType)
+        {
+            foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
+            {
+                foreach (IParameterSymbol parameter in constructor.Parameters)
+                {
+                    if (string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
+                        parameter.HasExplicitDefaultValue)
+                    {
+                        return " = " + FormatDefaultValue(parameter.ExplicitDefaultValue, parameter.Type);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Formats a compile-time constant value as a C# literal.
+    /// </summary>
+    private static string FormatDefaultValue(
+        object? value,
+        ITypeSymbol type
+    )
+    {
+        if (value is null)
+        {
+            return "null";
+        }
+
+        if (value is string s)
+        {
+            return "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+        }
+
+        if (value is bool b)
+        {
+            return b ? "true" : "false";
+        }
+
+        if (value is decimal d)
+        {
+            return d.ToString(System.Globalization.CultureInfo.InvariantCulture) + "m";
+        }
+
+        if (value is float f)
+        {
+            return f.ToString(System.Globalization.CultureInfo.InvariantCulture) + "f";
+        }
+
+        if (value is double dbl)
+        {
+            return dbl.ToString(System.Globalization.CultureInfo.InvariantCulture) + "d";
+        }
+
+        if (value is long l)
+        {
+            return l.ToString(System.Globalization.CultureInfo.InvariantCulture) + "L";
+        }
+
+        if (type.TypeKind == TypeKind.Enum)
+        {
+            return "(" + type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) + ")" + value;
+        }
+
+        return value.ToString();
     }
 }
