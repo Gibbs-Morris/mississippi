@@ -243,7 +243,7 @@ public sealed class PropertyModel
             {
                 '\\' => "'\\\\'",
                 '\'' => "'\\\''",
-                _ => "'" + c + "'",
+                var _ => "'" + c + "'",
             };
         }
 
