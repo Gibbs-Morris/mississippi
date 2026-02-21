@@ -10,9 +10,9 @@ namespace Spring.Domain.Aggregates.BankAccount.Commands;
 /// </summary>
 [GenerateCommand(Route = "withdraw")]
 [GenerateMcpToolMetadata(
-    Title = "Withdraw Funds",
     Description =
         "Withdraws funds from a bank account. Decreases the account balance by the specified amount. Fails if insufficient funds.",
+    Title = "Withdraw Funds",
     Destructive = true,
     Idempotent = false,
     ReadOnly = false,
