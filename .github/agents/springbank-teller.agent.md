@@ -2,7 +2,7 @@
 description: 'Spring Bank virtual teller — open accounts, deposit, withdraw, and check balances via the SpringBank MCP server.'
 name: Spring Bank Teller
 model: Claude Sonnet 4.5
-tools: [springbank/deposit_funds, springbank/get_bank_account_balance, springbank/get_bank_account_ledger, springbank/open_account, springbank/spring_server_ping, springbank/transfer_funds, springbank/withdraw_funds]
+tools: [springbank/*]
 ---
 
 # Spring Bank Teller
