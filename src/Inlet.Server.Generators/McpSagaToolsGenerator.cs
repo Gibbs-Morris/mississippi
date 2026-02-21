@@ -64,21 +64,18 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         string targetRootNamespace
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
-        {
-            McpSagaInfo? info = TryGetSagaInfo(
-                typeSymbol,
-                sagaEndpointsAttrSymbol,
-                sagaEndpointsGenericAttrSymbol,
-                mcpSagaToolsAttrSymbol,
-                sagaStateSymbol,
-                mcpParamDescAttrSymbol,
-                targetRootNamespace);
-            if (info is not null)
-            {
-                sagas.Add(info);
-            }
-        }
+        sagas.AddRange(
+            namespaceSymbol
+                .GetTypeMembers()
+                .Select(typeSymbol => TryGetSagaInfo(
+                    typeSymbol,
+                    sagaEndpointsAttrSymbol,
+                    sagaEndpointsGenericAttrSymbol,
+                    mcpSagaToolsAttrSymbol,
+                    sagaStateSymbol,
+                    mcpParamDescAttrSymbol,
+                    targetRootNamespace))
+                .Where(info => info is not null)!);
 
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
@@ -140,15 +137,9 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             PropertyModel prop = saga.InputProperties[i];
             string paramName = NamingConventions.ToCamelCase(prop.Name);
             string paramType = prop.SourceTypeName;
-            string descriptionText;
-            if (saga.ParameterDescriptions.TryGetValue(prop.Name, out string? customParamDesc))
-            {
-                descriptionText = EscapeForStringLiteral(customParamDesc);
-            }
-            else
-            {
-                descriptionText = ToHumanReadable(prop.Name);
-            }
+            string descriptionText = saga.ParameterDescriptions.TryGetValue(prop.Name, out string? customParamDesc)
+                ? EscapeForStringLiteral(customParamDesc)
+                : ToHumanReadable(prop.Name);
 
             sb.AppendLine($"[Description(\"{descriptionText}\")] {paramType} {paramName},");
         }
@@ -550,7 +541,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
                 AttributeData? paramDescAttr = propSymbol.GetAttributes()
                     .FirstOrDefault(a =>
                         SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-                if (paramDescAttr?.ConstructorArguments.Length > 0)
+                if (paramDescAttr is { ConstructorArguments.Length: > 0 })
                 {
                     string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
                     if (!string.IsNullOrEmpty(desc))
@@ -573,7 +564,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
                     AttributeData? paramDescAttr = param.GetAttributes()
                         .FirstOrDefault(a =>
                             SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-                    if (paramDescAttr?.ConstructorArguments.Length > 0)
+                    if (paramDescAttr is { ConstructorArguments.Length: > 0 })
                     {
                         string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
                         if (!string.IsNullOrEmpty(desc))

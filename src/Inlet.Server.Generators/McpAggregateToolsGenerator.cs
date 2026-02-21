@@ -60,20 +60,17 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
         string targetRootNamespace
     )
     {
-        foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
-        {
-            McpAggregateInfo? info = TryGetAggregateInfo(
-                typeSymbol,
-                mcpToolsAttrSymbol,
-                commandAttrSymbol,
-                mcpToolMetadataAttrSymbol,
-                mcpParamDescAttrSymbol,
-                targetRootNamespace);
-            if (info is not null)
-            {
-                aggregates.Add(info);
-            }
-        }
+        aggregates.AddRange(
+            namespaceSymbol
+                .GetTypeMembers()
+                .Select(typeSymbol => TryGetAggregateInfo(
+                    typeSymbol,
+                    mcpToolsAttrSymbol,
+                    commandAttrSymbol,
+                    mcpToolMetadataAttrSymbol,
+                    mcpParamDescAttrSymbol,
+                    targetRootNamespace))
+                .Where(info => info is not null)!);
 
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
@@ -167,7 +164,7 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
                     AttributeData? paramDescAttr = propSymbol.GetAttributes()
                         .FirstOrDefault(a =>
                             SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-                    if (paramDescAttr?.ConstructorArguments.Length > 0)
+                    if (paramDescAttr is { ConstructorArguments.Length: > 0 })
                     {
                         string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
                         if (!string.IsNullOrEmpty(desc))
@@ -200,7 +197,7 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
                     AttributeData? paramDescAttr = param.GetAttributes()
                         .FirstOrDefault(a =>
                             SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-                    if (paramDescAttr?.ConstructorArguments.Length > 0)
+                    if (paramDescAttr is { ConstructorArguments.Length: > 0 })
                     {
                         string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
                         if (!string.IsNullOrEmpty(desc))
@@ -275,15 +272,9 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
             PropertyModel prop = command.Properties[i];
             string paramName = NamingConventions.ToCamelCase(prop.Name);
             string paramType = GetMcpParameterType(prop);
-            string descriptionText;
-            if (command.ParameterDescriptions.TryGetValue(prop.Name, out string? customParamDesc))
-            {
-                descriptionText = EscapeForStringLiteral(customParamDesc);
-            }
-            else
-            {
-                descriptionText = ToHumanReadable(prop.Name);
-            }
+            string descriptionText = command.ParameterDescriptions.TryGetValue(prop.Name, out string? customParamDesc)
+                ? EscapeForStringLiteral(customParamDesc)
+                : ToHumanReadable(prop.Name);
 
             string defaultValue = prop.HasDefaultValue ? GetDefaultValueExpression(prop) : string.Empty;
             string trailingComma = ",";
