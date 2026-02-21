@@ -182,12 +182,13 @@ public sealed class PropertyModel
         {
             foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
             {
-                IParameterSymbol? matchingParameter = constructor.Parameters.FirstOrDefault(parameter =>
-                    string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
-                    parameter.HasExplicitDefaultValue);
-                if (matchingParameter is not null)
+                foreach (IParameterSymbol parameter in constructor.Parameters)
                 {
-                    return " = " + FormatDefaultValue(matchingParameter.ExplicitDefaultValue, matchingParameter.Type);
+                    if (string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
+                        parameter.HasExplicitDefaultValue)
+                    {
+                        return " = " + FormatDefaultValue(parameter.ExplicitDefaultValue, parameter.Type);
+                    }
                 }
             }
         }
