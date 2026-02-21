@@ -33,15 +33,6 @@ public sealed class GenerateMcpSagaToolsAttribute : Attribute
     public string? Description { get; set; }
 
     /// <summary>
-    ///     Gets or sets the tool name prefix for generated saga tools.
-    /// </summary>
-    /// <remarks>
-    ///     Defaults to the snake_case saga name. The generator appends <c>_status</c>
-    ///     for the status tool and uses the prefix directly for the start tool.
-    /// </remarks>
-    public string? ToolPrefix { get; set; }
-
-    /// <summary>
     ///     Gets or sets a human-readable title for the saga tools.
     /// </summary>
     /// <remarks>
@@ -49,4 +40,13 @@ public sealed class GenerateMcpSagaToolsAttribute : Attribute
     ///     "Transfer Funds" (start) and "Transfer Funds Status" (status).
     /// </remarks>
     public string? Title { get; set; }
+
+    /// <summary>
+    ///     Gets or sets the tool name prefix for generated saga tools.
+    /// </summary>
+    /// <remarks>
+    ///     Defaults to the snake_case saga name. The generator appends <c>_status</c>
+    ///     for the status tool and uses the prefix directly for the start tool.
+    /// </remarks>
+    public string? ToolPrefix { get; set; }
 }

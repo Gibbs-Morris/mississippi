@@ -60,7 +60,6 @@ public sealed class McpSagaToolsGeneratorTests
         )
     {
         SyntaxTree[] syntaxTrees = sources.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray();
-
         string runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
         List<MetadataReference> references =
         [
@@ -68,7 +67,6 @@ public sealed class McpSagaToolsGeneratorTests
             MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Collections.dll")),
         ];
-
         string netstandardPath = Path.Join(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
@@ -81,17 +79,108 @@ public sealed class McpSagaToolsGeneratorTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
-
         McpSagaToolsGenerator generator = new();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
         driver = driver.RunGeneratorsAndUpdateCompilation(
             compilation,
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
-
         Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
-
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Custom Title from GenerateMcpSagaTools attribute should appear on generated tools.
+    /// </summary>
+    [Fact]
+    public void CustomTitleIsApplied()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools(Title = "Order Process")]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("Title = \"Order Process\"", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("Title = \"Order Process Status\"", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Custom ToolPrefix from GenerateMcpSagaTools attribute should override default tool naming.
+    /// </summary>
+    [Fact]
+    public void CustomToolPrefixIsApplied()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools(ToolPrefix = "start_order")]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("Name = \"start_order\"", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("Name = \"start_order_status\"", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated file name should follow the pattern SagaName + SagaMcpTools.g.cs.
+    /// </summary>
+    [Fact]
+    public void GeneratedFileNameMatchesToolsClassName()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        Assert.Single(runResult.GeneratedTrees);
+        Assert.Contains(
+            runResult.GeneratedTrees,
+            tree => tree.FilePath.Contains("OrderSagaMcpTools.g.cs", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -125,6 +214,118 @@ public sealed class McpSagaToolsGeneratorTests
     }
 
     /// <summary>
+    ///     Generated tools class should inject IAggregateGrainFactory via constructor.
+    /// </summary>
+    [Fact]
+    public void GeneratesConstructorWithAggregateGrainFactory()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("IAggregateGrainFactory aggregateGrainFactory", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AggregateGrainFactory = aggregateGrainFactory;", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated tools class should be placed in the McpTools sub-namespace.
+    /// </summary>
+    [Fact]
+    public void GeneratesInMcpToolsNamespace()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("namespace TestApp.Server.McpTools;", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generator should produce no output when the type does not implement ISagaState.
+    /// </summary>
+    [Fact]
+    public void GeneratesNoOutputWithoutISagaState()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     Generator should produce no output when GenerateSagaEndpoints attribute is missing.
+    /// </summary>
+    [Fact]
+    public void GeneratesNoOutputWithoutSagaEndpointsAttribute()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
     ///     Generator should produce both start and status tool methods for a saga.
     /// </summary>
     [Fact]
@@ -153,6 +354,98 @@ public sealed class McpSagaToolsGeneratorTests
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("OrderAsync", generatedCode, StringComparison.Ordinal);
         Assert.Contains("GetOrderStatusAsync", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated tools class should have the McpServerToolType attribute.
+    /// </summary>
+    [Fact]
+    public void GeneratesToolsClassWithMcpServerToolType()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("[McpServerToolType]", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Input parameter descriptions should be generated from GenerateMcpParameterDescription attributes.
+    /// </summary>
+    [Fact]
+    public void InputParameterDescriptionsFromAttribute()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      [GenerateMcpParameterDescription("The unique identifier of the customer")]
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("The unique identifier of the customer", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Saga state type name should have the SagaState suffix removed for tool naming.
+    /// </summary>
+    [Fact]
+    public void RemovesSagaStateSuffixFromToolName()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartTransferInput
+                                  {
+                                      public string AccountId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartTransferInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record TransferSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("Name = \"transfer\"", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("Name = \"transfer_status\"", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -189,340 +482,6 @@ public sealed class McpSagaToolsGeneratorTests
     }
 
     /// <summary>
-    ///     Status tool should use read-only behavioral annotations.
-    /// </summary>
-    [Fact]
-    public void StatusToolHasReadOnlyBehavior()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("Name = \"order_status\"", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Saga state type name should have the SagaState suffix removed for tool naming.
-    /// </summary>
-    [Fact]
-    public void RemovesSagaStateSuffixFromToolName()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartTransferInput
-                                  {
-                                      public string AccountId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartTransferInput))]
-                                  [GenerateMcpSagaTools]
-                                  public sealed record TransferSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("Name = \"transfer\"", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("Name = \"transfer_status\"", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Custom ToolPrefix from GenerateMcpSagaTools attribute should override default tool naming.
-    /// </summary>
-    [Fact]
-    public void CustomToolPrefixIsApplied()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools(ToolPrefix = "start_order")]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("Name = \"start_order\"", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("Name = \"start_order_status\"", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Custom Title from GenerateMcpSagaTools attribute should appear on generated tools.
-    /// </summary>
-    [Fact]
-    public void CustomTitleIsApplied()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools(Title = "Order Process")]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("Title = \"Order Process\"", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("Title = \"Order Process Status\"", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generator should produce no output when GenerateSagaEndpoints attribute is missing.
-    /// </summary>
-    [Fact]
-    public void GeneratesNoOutputWithoutSagaEndpointsAttribute()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  [GenerateMcpSagaTools]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        Assert.Empty(runResult.GeneratedTrees);
-    }
-
-    /// <summary>
-    ///     Generator should produce no output when the type does not implement ISagaState.
-    /// </summary>
-    [Fact]
-    public void GeneratesNoOutputWithoutISagaState()
-    {
-        const string source = """
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools]
-                                  public sealed record OrderSagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        Assert.Empty(runResult.GeneratedTrees);
-    }
-
-    /// <summary>
-    ///     Input parameter descriptions should be generated from GenerateMcpParameterDescription attributes.
-    /// </summary>
-    [Fact]
-    public void InputParameterDescriptionsFromAttribute()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      [GenerateMcpParameterDescription("The unique identifier of the customer")]
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains(
-            "The unique identifier of the customer",
-            generatedCode,
-            StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated tools class name should include the Saga suffix (e.g., OrderSagaMcpTools).
-    /// </summary>
-    [Fact]
-    public void ToolsClassNameIncludesSagaSuffix()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("public sealed class OrderSagaMcpTools", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated file name should follow the pattern SagaName + SagaMcpTools.g.cs.
-    /// </summary>
-    [Fact]
-    public void GeneratedFileNameMatchesToolsClassName()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        Assert.Single(runResult.GeneratedTrees);
-        Assert.Contains(
-            runResult.GeneratedTrees,
-            tree => tree.FilePath.Contains("OrderSagaMcpTools.g.cs", StringComparison.Ordinal));
-    }
-
-    /// <summary>
-    ///     Generated tools class should inject IAggregateGrainFactory via constructor.
-    /// </summary>
-    [Fact]
-    public void GeneratesConstructorWithAggregateGrainFactory()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("IAggregateGrainFactory aggregateGrainFactory", generatedCode, StringComparison.Ordinal);
-        Assert.Contains(
-            "AggregateGrainFactory = aggregateGrainFactory;",
-            generatedCode,
-            StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated tools class should be placed in the McpTools sub-namespace.
-    /// </summary>
-    [Fact]
-    public void GeneratesInMcpToolsNamespace()
-    {
-        const string source = """
-                              using Mississippi.EventSourcing.Sagas.Abstractions;
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace TestApp.Domain.Sagas
-                              {
-                                  public sealed record StartOrderInput
-                                  {
-                                      public string CustomerId { get; init; }
-                                  }
-
-                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
-                                  [GenerateMcpSagaTools]
-                                  public sealed record OrderSagaState : ISagaState
-                                  {
-                                  }
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("namespace TestApp.Server.McpTools;", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Status tool description should be derived from the saga description or default text.
     /// </summary>
     [Fact]
@@ -553,10 +512,10 @@ public sealed class McpSagaToolsGeneratorTests
     }
 
     /// <summary>
-    ///     Generated tools class should have the McpServerToolType attribute.
+    ///     Status tool should use read-only behavioral annotations.
     /// </summary>
     [Fact]
-    public void GeneratesToolsClassWithMcpServerToolType()
+    public void StatusToolHasReadOnlyBehavior()
     {
         const string source = """
                               using Mississippi.EventSourcing.Sagas.Abstractions;
@@ -579,6 +538,36 @@ public sealed class McpSagaToolsGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("[McpServerToolType]", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("Name = \"order_status\"", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated tools class name should include the Saga suffix (e.g., OrderSagaMcpTools).
+    /// </summary>
+    [Fact]
+    public void ToolsClassNameIncludesSagaSuffix()
+    {
+        const string source = """
+                              using Mississippi.EventSourcing.Sagas.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains("public sealed class OrderSagaMcpTools", generatedCode, StringComparison.Ordinal);
     }
 }

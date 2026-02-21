@@ -12,8 +12,6 @@ namespace Spring.Server.McpTools;
 [McpServerToolType]
 public sealed class SpringServerPingMcpTools
 {
-    private TimeProvider TimeProvider { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="SpringServerPingMcpTools" /> class.
     /// </summary>
@@ -22,6 +20,8 @@ public sealed class SpringServerPingMcpTools
         TimeProvider timeProvider
     ) =>
         TimeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+
+    private TimeProvider TimeProvider { get; }
 
     /// <summary>
     ///     Confirms that Spring.Server is alive and reachable via MCP.

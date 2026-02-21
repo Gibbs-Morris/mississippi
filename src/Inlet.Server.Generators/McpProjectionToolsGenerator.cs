@@ -35,6 +35,24 @@ public sealed class McpProjectionToolsGenerator : IIncrementalGenerator
     ) =>
         value ? "true" : "false";
 
+    private static string DeriveAtVersionDescription(
+        string baseDescription
+    )
+    {
+        // Transform a "current state" description into an "at version" variant.
+        // e.g. "Retrieves the current balance..." -> "Retrieves the balance... at a specific historical version."
+        // If the base description contains "current", remove it.
+        string result = baseDescription.Replace("current ", string.Empty).Replace("Current ", string.Empty);
+
+        // Remove trailing period for appending
+        if (result.EndsWith(".", StringComparison.Ordinal))
+        {
+            result = result.Substring(0, result.Length - 1);
+        }
+
+        return result + " at a specific historical version.";
+    }
+
     private static string EscapeForStringLiteral(
         string value
     ) =>
@@ -78,7 +96,6 @@ public sealed class McpProjectionToolsGenerator : IIncrementalGenerator
         sb.AppendLine("/// <param name=\"version\">The specific version to retrieve.</param>");
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
         sb.AppendLine("/// <returns>A JSON representation of the projection state at the specified version.</returns>");
-
         StringBuilder toolAttrBuilder = new();
         toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(title))
@@ -183,7 +200,6 @@ public sealed class McpProjectionToolsGenerator : IIncrementalGenerator
         sb.AppendLine("/// <param name=\"entityId\">The entity identifier.</param>");
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
         sb.AppendLine("/// <returns>The latest version number, or a not-found message.</returns>");
-
         StringBuilder toolAttrBuilder = new();
         toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(title))
@@ -219,26 +235,6 @@ public sealed class McpProjectionToolsGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine("return version.Value.ToString();");
         sb.CloseBrace();
-    }
-
-    private static string DeriveAtVersionDescription(
-        string baseDescription
-    )
-    {
-        // Transform a "current state" description into an "at version" variant.
-        // e.g. "Retrieves the current balance..." -> "Retrieves the balance... at a specific historical version."
-        // If the base description contains "current", remove it.
-        string result = baseDescription
-            .Replace("current ", string.Empty)
-            .Replace("Current ", string.Empty);
-
-        // Remove trailing period for appending
-        if (result.EndsWith(".", StringComparison.Ordinal))
-        {
-            result = result.Substring(0, result.Length - 1);
-        }
-
-        return result + " at a specific historical version.";
     }
 
     private static string GenerateToolsClass(

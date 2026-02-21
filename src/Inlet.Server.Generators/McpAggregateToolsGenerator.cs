@@ -36,19 +36,105 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
 
-    private const string GenerateMcpToolsAttributeFullName =
-        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpToolsAttribute";
-
     private const string GenerateMcpParameterDescriptionAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateMcpParameterDescriptionAttribute";
 
     private const string GenerateMcpToolMetadataAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateMcpToolMetadataAttribute";
 
+    private const string GenerateMcpToolsAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpToolsAttribute";
+
+    private static void AppendMcpServerToolAttribute(
+        SourceBuilder sb,
+        string toolName,
+        string? title,
+        bool destructive,
+        bool readOnly,
+        bool idempotent,
+        bool openWorld
+    )
+    {
+        StringBuilder toolAttrBuilder = new();
+        toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
+        if (!string.IsNullOrEmpty(title))
+        {
+            toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(title!)).Append('"');
+        }
+
+        toolAttrBuilder.Append(", Destructive = ").Append(BoolLiteral(destructive));
+        toolAttrBuilder.Append(", ReadOnly = ").Append(BoolLiteral(readOnly));
+        toolAttrBuilder.Append(", Idempotent = ").Append(BoolLiteral(idempotent));
+        toolAttrBuilder.Append(", OpenWorld = ").Append(BoolLiteral(openWorld));
+        toolAttrBuilder.Append(")]");
+        sb.AppendLine(toolAttrBuilder.ToString());
+    }
+
     private static string BoolLiteral(
         bool value
     ) =>
         value ? "true" : "false";
+
+    private static Dictionary<string, string> CollectParameterDescriptions(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? mcpParamDescAttrSymbol
+    )
+    {
+        Dictionary<string, string> parameterDescriptions = new();
+        if (mcpParamDescAttrSymbol is null)
+        {
+            return parameterDescriptions;
+        }
+
+        IPropertySymbol[] publicProperties = typeSymbol.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(p => p.DeclaredAccessibility == Accessibility.Public)
+            .Where(p => !p.IsStatic)
+            .Where(p => p.GetMethod is not null)
+            .ToArray();
+        foreach (IPropertySymbol propSymbol in publicProperties)
+        {
+            AttributeData? paramDescAttr = propSymbol.GetAttributes()
+                .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
+            if (paramDescAttr is { ConstructorArguments.Length: > 0 })
+            {
+                string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
+                if (!string.IsNullOrEmpty(desc))
+                {
+                    parameterDescriptions[propSymbol.Name] = desc!;
+                }
+            }
+        }
+
+        IMethodSymbol? primaryConstructor =
+            typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
+        bool isPositionalRecord = typeSymbol.IsRecord && (primaryConstructor?.Parameters.Length > 0);
+        if (!isPositionalRecord || primaryConstructor is null)
+        {
+            return parameterDescriptions;
+        }
+
+        foreach (IParameterSymbol param in primaryConstructor.Parameters)
+        {
+            if (parameterDescriptions.ContainsKey(param.Name))
+            {
+                continue;
+            }
+
+            AttributeData? paramDescAttr = param.GetAttributes()
+                .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
+            if (paramDescAttr is { ConstructorArguments.Length: > 0 })
+            {
+                string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
+                if (!string.IsNullOrEmpty(desc))
+                {
+                    parameterDescriptions[param.Name] = desc!;
+                }
+            }
+        }
+
+        return parameterDescriptions;
+    }
 
     private static string EscapeForStringLiteral(
         string value
@@ -66,8 +152,7 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
     )
     {
         aggregates.AddRange(
-            namespaceSymbol
-                .GetTypeMembers()
+            namespaceSymbol.GetTypeMembers()
                 .Select(typeSymbol => TryGetAggregateInfo(
                     typeSymbol,
                     mcpToolsAttrSymbol,
@@ -76,7 +161,6 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
                     mcpParamDescAttrSymbol,
                     targetRootNamespace))
                 .Where(info => info is not null)!);
-
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
             FindAggregatesInNamespace(
@@ -117,25 +201,20 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
             (string? metadataTitle, string? metadataDescription, bool metadataDestructive, bool metadataReadOnly,
                     bool metadataIdempotent, bool metadataOpenWorld) =
                 ReadToolMetadata(typeSymbol, mcpToolMetadataAttrSymbol);
-
             IPropertySymbol[] publicProperties = typeSymbol.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public)
                 .Where(p => !p.IsStatic)
                 .Where(p => p.GetMethod is not null)
                 .ToArray();
-
             Dictionary<string, string> parameterDescriptions =
                 CollectParameterDescriptions(typeSymbol, mcpParamDescAttrSymbol);
-
             ImmutableArray<PropertyModel> properties = publicProperties
                 .Select(p => new PropertyModel(p))
                 .ToImmutableArray();
-
             IMethodSymbol? primaryConstructor =
                 typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
             bool isPositionalRecord = typeSymbol.IsRecord && (primaryConstructor?.Parameters.Length > 0);
-
             commands.Add(
                 new(
                     typeSymbol.Name,
@@ -152,125 +231,6 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
         }
 
         return commands;
-    }
-
-    private static Dictionary<string, string> CollectParameterDescriptions(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol? mcpParamDescAttrSymbol
-    )
-    {
-        Dictionary<string, string> parameterDescriptions = new();
-        if (mcpParamDescAttrSymbol is null)
-        {
-            return parameterDescriptions;
-        }
-
-        IPropertySymbol[] publicProperties = typeSymbol.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(p => p.DeclaredAccessibility == Accessibility.Public)
-            .Where(p => !p.IsStatic)
-            .Where(p => p.GetMethod is not null)
-            .ToArray();
-
-        foreach (IPropertySymbol propSymbol in publicProperties)
-        {
-            AttributeData? paramDescAttr = propSymbol.GetAttributes()
-                .FirstOrDefault(a =>
-                    SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-            if (paramDescAttr is { ConstructorArguments.Length: > 0 })
-            {
-                string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
-                if (!string.IsNullOrEmpty(desc))
-                {
-                    parameterDescriptions[propSymbol.Name] = desc!;
-                }
-            }
-        }
-
-        IMethodSymbol? primaryConstructor =
-            typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
-        bool isPositionalRecord = typeSymbol.IsRecord && (primaryConstructor?.Parameters.Length > 0);
-
-        if (!isPositionalRecord || primaryConstructor is null)
-        {
-            return parameterDescriptions;
-        }
-
-        foreach (IParameterSymbol param in primaryConstructor.Parameters)
-        {
-            if (parameterDescriptions.ContainsKey(param.Name))
-            {
-                continue;
-            }
-
-            AttributeData? paramDescAttr = param.GetAttributes()
-                .FirstOrDefault(a =>
-                    SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-            if (paramDescAttr is { ConstructorArguments.Length: > 0 })
-            {
-                string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
-                if (!string.IsNullOrEmpty(desc))
-                {
-                    parameterDescriptions[param.Name] = desc!;
-                }
-            }
-        }
-
-        return parameterDescriptions;
-    }
-
-    private static (string? Title, string? Description, bool Destructive, bool ReadOnly, bool Idempotent,
-        bool OpenWorld) ReadToolMetadata(
-        INamedTypeSymbol typeSymbol,
-        INamedTypeSymbol? mcpToolMetadataAttrSymbol
-    )
-    {
-        if (mcpToolMetadataAttrSymbol is null)
-        {
-            return (null, null, true, false, false, false);
-        }
-
-        AttributeData? metadataAttr = typeSymbol.GetAttributes()
-            .FirstOrDefault(a =>
-                SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpToolMetadataAttrSymbol));
-        if (metadataAttr is null)
-        {
-            return (null, null, true, false, false, false);
-        }
-
-        string? title = null;
-        string? description = null;
-        bool destructive = true;
-        bool readOnly = false;
-        bool idempotent = false;
-        bool openWorld = false;
-
-        foreach (KeyValuePair<string, TypedConstant> namedArg in metadataAttr.NamedArguments)
-        {
-            switch (namedArg.Key)
-            {
-                case "Title":
-                    title = namedArg.Value.Value?.ToString();
-                    break;
-                case "Description":
-                    description = namedArg.Value.Value?.ToString();
-                    break;
-                case "Destructive":
-                    destructive = namedArg.Value.Value is true;
-                    break;
-                case "ReadOnly":
-                    readOnly = namedArg.Value.Value is true;
-                    break;
-                case "Idempotent":
-                    idempotent = namedArg.Value.Value is true;
-                    break;
-                case "OpenWorld":
-                    openWorld = namedArg.Value.Value is true;
-                    break;
-            }
-        }
-
-        return (title, description, destructive, readOnly, idempotent, openWorld);
     }
 
     private static void GenerateCommandToolMethod(
@@ -293,7 +253,6 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
 
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
         sb.AppendLine("/// <returns>A message indicating the command result.</returns>");
-
         AppendMcpServerToolAttribute(
             sb,
             toolName,
@@ -316,7 +275,6 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
             string descriptionText = command.ParameterDescriptions.TryGetValue(prop.Name, out string? customParamDesc)
                 ? EscapeForStringLiteral(customParamDesc)
                 : ToHumanReadable(prop.Name);
-
             string defaultValue = prop.HasDefaultValue ? GetDefaultValueExpression(prop) : string.Empty;
             string trailingComma = ",";
             sb.AppendLine($"[Description(\"{descriptionText}\")] {paramType} {paramName}{defaultValue}{trailingComma}");
@@ -364,31 +322,6 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
             $": $\"Failed to execute {command.TypeName} on {{entityId}}: [{{result.ErrorCode}}] {{result.ErrorMessage}}\";");
         sb.DecreaseIndent();
         sb.CloseBrace();
-    }
-
-    private static void AppendMcpServerToolAttribute(
-        SourceBuilder sb,
-        string toolName,
-        string? title,
-        bool destructive,
-        bool readOnly,
-        bool idempotent,
-        bool openWorld
-    )
-    {
-        StringBuilder toolAttrBuilder = new();
-        toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
-        if (!string.IsNullOrEmpty(title))
-        {
-            toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(title!)).Append('"');
-        }
-
-        toolAttrBuilder.Append(", Destructive = ").Append(BoolLiteral(destructive));
-        toolAttrBuilder.Append(", ReadOnly = ").Append(BoolLiteral(readOnly));
-        toolAttrBuilder.Append(", Idempotent = ").Append(BoolLiteral(idempotent));
-        toolAttrBuilder.Append(", OpenWorld = ").Append(BoolLiteral(openWorld));
-        toolAttrBuilder.Append(")]");
-        sb.AppendLine(toolAttrBuilder.ToString());
     }
 
     private static string GenerateToolsClass(
@@ -537,6 +470,58 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
         }
 
         return sourceType;
+    }
+
+    private static (string? Title, string? Description, bool Destructive, bool ReadOnly, bool Idempotent, bool OpenWorld
+        ) ReadToolMetadata(
+            INamedTypeSymbol typeSymbol,
+            INamedTypeSymbol? mcpToolMetadataAttrSymbol
+        )
+    {
+        if (mcpToolMetadataAttrSymbol is null)
+        {
+            return (null, null, true, false, false, false);
+        }
+
+        AttributeData? metadataAttr = typeSymbol.GetAttributes()
+            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpToolMetadataAttrSymbol));
+        if (metadataAttr is null)
+        {
+            return (null, null, true, false, false, false);
+        }
+
+        string? title = null;
+        string? description = null;
+        bool destructive = true;
+        bool readOnly = false;
+        bool idempotent = false;
+        bool openWorld = false;
+        foreach (KeyValuePair<string, TypedConstant> namedArg in metadataAttr.NamedArguments)
+        {
+            switch (namedArg.Key)
+            {
+                case "Title":
+                    title = namedArg.Value.Value?.ToString();
+                    break;
+                case "Description":
+                    description = namedArg.Value.Value?.ToString();
+                    break;
+                case "Destructive":
+                    destructive = namedArg.Value.Value is true;
+                    break;
+                case "ReadOnly":
+                    readOnly = namedArg.Value.Value is true;
+                    break;
+                case "Idempotent":
+                    idempotent = namedArg.Value.Value is true;
+                    break;
+                case "OpenWorld":
+                    openWorld = namedArg.Value.Value is true;
+                    break;
+            }
+        }
+
+        return (title, description, destructive, readOnly, idempotent, openWorld);
     }
 
     private static string ToHumanReadable(

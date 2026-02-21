@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 
 using Microsoft.CodeAnalysis;
@@ -154,53 +155,6 @@ public sealed class PropertyModel
     public ITypeSymbol SourceTypeSymbol { get; }
 
     /// <summary>
-    ///     Determines whether a property has a default value.
-    /// </summary>
-    /// <param name="propertySymbol">The property symbol.</param>
-    /// <returns><c>true</c> if the property has a default value.</returns>
-    private static bool HasPropertyDefaultValue(
-        IPropertySymbol propertySymbol
-    )
-    {
-        foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
-        {
-            SyntaxNode syntax = syntaxRef.GetSyntax();
-
-            if (syntax is PropertyDeclarationSyntax propertyDeclaration && propertyDeclaration.Initializer is not null)
-            {
-                return true;
-            }
-
-            if (syntax is ParameterSyntax parameterSyntax && parameterSyntax.Default is not null)
-            {
-                return true;
-            }
-        }
-
-        // For positional record properties, check if the associated parameter has a default
-        // Positional record properties are synthesized and may have empty DeclaringSyntaxReferences
-        // We need to check the containing type's primary constructor parameters
-        if (propertySymbol.ContainingType is INamedTypeSymbol containingType)
-        {
-            // Find matching primary constructor parameter by name
-            foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
-            {
-                // Primary constructor is the one generated from record parameters
-                foreach (IParameterSymbol parameter in constructor.Parameters)
-                {
-                    if (string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
-                        parameter.HasExplicitDefaultValue)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
     ///     Extracts the default value expression from a property's syntax or its corresponding constructor parameter.
     /// </summary>
     /// <param name="propertySymbol">The property symbol.</param>
@@ -209,7 +163,8 @@ public sealed class PropertyModel
         IPropertySymbol propertySymbol
     )
     {
-        foreach (SyntaxNode syntax in propertySymbol.DeclaringSyntaxReferences.Select(syntaxRef => syntaxRef.GetSyntax()))
+        foreach (SyntaxNode syntax in
+                 propertySymbol.DeclaringSyntaxReferences.Select(syntaxRef => syntaxRef.GetSyntax()))
         {
             if (syntax is PropertyDeclarationSyntax propertyDeclaration && propertyDeclaration.Initializer is not null)
             {
@@ -227,11 +182,9 @@ public sealed class PropertyModel
         {
             foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
             {
-                IParameterSymbol? matchingParameter = constructor.Parameters
-                    .FirstOrDefault(parameter =>
-                        string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
-                        parameter.HasExplicitDefaultValue);
-
+                IParameterSymbol? matchingParameter = constructor.Parameters.FirstOrDefault(parameter =>
+                    string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
+                    parameter.HasExplicitDefaultValue);
                 if (matchingParameter is not null)
                 {
                     return " = " + FormatDefaultValue(matchingParameter.ExplicitDefaultValue, matchingParameter.Type);
@@ -267,22 +220,22 @@ public sealed class PropertyModel
 
         if (value is decimal d)
         {
-            return d.ToString(System.Globalization.CultureInfo.InvariantCulture) + "m";
+            return d.ToString(CultureInfo.InvariantCulture) + "m";
         }
 
         if (value is float f)
         {
-            return f.ToString(System.Globalization.CultureInfo.InvariantCulture) + "f";
+            return f.ToString(CultureInfo.InvariantCulture) + "f";
         }
 
         if (value is double dbl)
         {
-            return dbl.ToString(System.Globalization.CultureInfo.InvariantCulture) + "d";
+            return dbl.ToString(CultureInfo.InvariantCulture) + "d";
         }
 
         if (value is long l)
         {
-            return l.ToString(System.Globalization.CultureInfo.InvariantCulture) + "L";
+            return l.ToString(CultureInfo.InvariantCulture) + "L";
         }
 
         if (type.TypeKind == TypeKind.Enum)
@@ -291,5 +244,51 @@ public sealed class PropertyModel
         }
 
         return value.ToString();
+    }
+
+    /// <summary>
+    ///     Determines whether a property has a default value.
+    /// </summary>
+    /// <param name="propertySymbol">The property symbol.</param>
+    /// <returns><c>true</c> if the property has a default value.</returns>
+    private static bool HasPropertyDefaultValue(
+        IPropertySymbol propertySymbol
+    )
+    {
+        foreach (SyntaxReference syntaxRef in propertySymbol.DeclaringSyntaxReferences)
+        {
+            SyntaxNode syntax = syntaxRef.GetSyntax();
+            if (syntax is PropertyDeclarationSyntax propertyDeclaration && propertyDeclaration.Initializer is not null)
+            {
+                return true;
+            }
+
+            if (syntax is ParameterSyntax parameterSyntax && parameterSyntax.Default is not null)
+            {
+                return true;
+            }
+        }
+
+        // For positional record properties, check if the associated parameter has a default
+        // Positional record properties are synthesized and may have empty DeclaringSyntaxReferences
+        // We need to check the containing type's primary constructor parameters
+        if (propertySymbol.ContainingType is INamedTypeSymbol containingType)
+        {
+            // Find matching primary constructor parameter by name
+            foreach (IMethodSymbol constructor in containingType.InstanceConstructors)
+            {
+                // Primary constructor is the one generated from record parameters
+                foreach (IParameterSymbol parameter in constructor.Parameters)
+                {
+                    if (string.Equals(parameter.Name, propertySymbol.Name, StringComparison.Ordinal) &&
+                        parameter.HasExplicitDefaultValue)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }

@@ -34,6 +34,9 @@ namespace Mississippi.Inlet.Server.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 {
+    private const string GenerateMcpParameterDescriptionAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpParameterDescriptionAttribute";
+
     private const string GenerateMcpSagaToolsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateMcpSagaToolsAttribute";
 
@@ -42,9 +45,6 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
-
-    private const string GenerateMcpParameterDescriptionAttributeFullName =
-        "Mississippi.Inlet.Generators.Abstractions.GenerateMcpParameterDescriptionAttribute";
 
     private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
 
@@ -65,12 +65,10 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             .Where(p => !p.IsStatic)
             .Where(p => p.GetMethod is not null)
             .ToArray();
-
         foreach (IPropertySymbol propSymbol in publicProperties)
         {
             AttributeData? paramDescAttr = propSymbol.GetAttributes()
-                .FirstOrDefault(a =>
-                    SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
+                .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
             if (paramDescAttr is { ConstructorArguments.Length: > 0 })
             {
                 string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
@@ -84,7 +82,6 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         IMethodSymbol? primaryConstructor =
             typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
         bool isPositionalRecord = typeSymbol.IsRecord && (primaryConstructor?.Parameters.Length > 0);
-
         if (!isPositionalRecord || primaryConstructor is null)
         {
             return parameterDescriptions;
@@ -98,8 +95,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             }
 
             AttributeData? paramDescAttr = param.GetAttributes()
-                .FirstOrDefault(a =>
-                    SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
+                .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
             if (paramDescAttr is { ConstructorArguments.Length: > 0 })
             {
                 string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
@@ -130,8 +126,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
     )
     {
         sagas.AddRange(
-            namespaceSymbol
-                .GetTypeMembers()
+            namespaceSymbol.GetTypeMembers()
                 .Select(typeSymbol => TryGetSagaInfo(
                     typeSymbol,
                     sagaEndpointsAttrSymbol,
@@ -141,7 +136,6 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
                     mcpParamDescAttrSymbol,
                     targetRootNamespace))
                 .Where(info => info is not null)!);
-
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
             FindSagasInNamespace(
@@ -161,9 +155,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         McpSagaInfo saga
     )
     {
-        string description = saga.Description is not null
-            ? saga.Description
-            : $"Starts the {saga.SagaName} saga.";
+        string description = saga.Description is not null ? saga.Description : $"Starts the {saga.SagaName} saga.";
         string toolName = saga.ToolPrefix;
         string methodName = saga.SagaName + "Async";
         sb.AppendSummary(description);
@@ -177,8 +169,8 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         }
 
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
-        sb.AppendLine("/// <returns>A message indicating whether the saga was started, including the saga identifier.</returns>");
-
+        sb.AppendLine(
+            "/// <returns>A message indicating whether the saga was started, including the saga identifier.</returns>");
         StringBuilder toolAttrBuilder = new();
         toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(saga.Title))
@@ -205,7 +197,6 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             string descriptionText = saga.ParameterDescriptions.TryGetValue(prop.Name, out string? customParamDesc)
                 ? EscapeForStringLiteral(customParamDesc)
                 : ToHumanReadable(prop.Name);
-
             sb.AppendLine($"[Description(\"{descriptionText}\")] {paramType} {paramName},");
         }
 
@@ -253,8 +244,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.AppendLine("return result.Success");
         sb.IncreaseIndent();
         sb.AppendLine($"? $\"{saga.SagaName} started successfully. Saga ID: {{sagaId}}\"");
-        sb.AppendLine(
-            $": $\"Failed to start {saga.SagaName}: [{{result.ErrorCode}}] {{result.ErrorMessage}}\";");
+        sb.AppendLine($": $\"Failed to start {saga.SagaName}: [{{result.ErrorCode}}] {{result.ErrorMessage}}\";");
         sb.DecreaseIndent();
         sb.CloseBrace();
     }
@@ -266,13 +256,12 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
     {
         string baseDescription = saga.Description ?? $"the {saga.SagaName} saga";
         string trimmed = baseDescription.TrimEnd('.');
-        if (trimmed.Length > 0 && char.IsUpper(trimmed[0]))
+        if ((trimmed.Length > 0) && char.IsUpper(trimmed[0]))
         {
             trimmed = char.ToLowerInvariant(trimmed[0]) + trimmed.Substring(1);
         }
 
         string description = $"Gets the current status and state of {trimmed}.";
-
         string toolName = saga.ToolPrefix + "_status";
         string methodName = "Get" + saga.SagaName + "StatusAsync";
         string title = saga.Title is not null ? saga.Title + " Status" : string.Empty;
@@ -280,7 +269,6 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.AppendLine("/// <param name=\"sagaId\">The saga identifier returned when the saga was started.</param>");
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
         sb.AppendLine("/// <returns>A JSON representation of the saga state.</returns>");
-
         StringBuilder toolAttrBuilder = new();
         toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(title))
@@ -297,7 +285,8 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
         sb.AppendLine($"public async Task<string> {methodName}(");
         sb.IncreaseIndent();
-        sb.AppendLine("[Description(\"The saga identifier (GUID) returned when the saga was started\")] string sagaId,");
+        sb.AppendLine(
+            "[Description(\"The saga identifier (GUID) returned when the saga was started\")] string sagaId,");
         sb.AppendLine("CancellationToken cancellationToken = default");
         sb.DecreaseIndent();
         sb.AppendLine(")");
@@ -381,7 +370,6 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
         // Generate status tool method
         GenerateStatusToolMethod(sb, saga);
-
         sb.CloseBrace();
         return sb.ToString();
     }
@@ -411,7 +399,6 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
         INamedTypeSymbol? mcpParamDescAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateMcpParameterDescriptionAttributeFullName);
-
         foreach (IAssemblySymbol referencedAssembly in GeneratorSymbolAnalysis.GetReferencedAssemblies(compilation))
         {
             FindSagasInNamespace(
@@ -554,8 +541,10 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
         // Must also have [GenerateSagaEndpoints]
         AttributeData? sagaAttr = typeSymbol.GetAttributes()
-            .FirstOrDefault(a =>
-                MatchesSagaEndpointsAttribute(a, sagaEndpointsAttrSymbol, sagaEndpointsGenericAttrSymbol));
+            .FirstOrDefault(a => MatchesSagaEndpointsAttribute(
+                a,
+                sagaEndpointsAttrSymbol,
+                sagaEndpointsGenericAttrSymbol));
         if (sagaAttr is null)
         {
             return null;
@@ -575,12 +564,11 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
         // Read MCP metadata from [GenerateMcpSagaTools]
         string? title = mcpAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Title").Value.Value?.ToString();
-        string? description =
-            mcpAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Description").Value.Value?.ToString();
-        string? toolPrefix =
-            mcpAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "ToolPrefix").Value.Value?.ToString();
+        string? description = mcpAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Description")
+            .Value.Value?.ToString();
+        string? toolPrefix = mcpAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "ToolPrefix")
+            .Value.Value?.ToString();
         string sagaName = RemoveSagaSuffix(typeSymbol.Name);
-
         if (string.IsNullOrEmpty(toolPrefix))
         {
             toolPrefix = ToSnakeCase(sagaName);
@@ -596,14 +584,11 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             .Where(p => !p.IsStatic)
             .Where(p => p.GetMethod is not null)
             .ToArray();
-
         Dictionary<string, string> parameterDescriptions =
             CollectParameterDescriptions(inputTypeSymbol, mcpParamDescAttrSymbol);
-
         ImmutableArray<PropertyModel> inputProperties = publicProperties
             .Select(p => new PropertyModel(p))
             .ToImmutableArray();
-
         string sagaNamespace = TypeAnalyzer.GetFullNamespace(typeSymbol);
         string inputTypeNamespace = TypeAnalyzer.GetFullNamespace(inputTypeSymbol);
         string outputNamespace = targetRootNamespace + ".McpTools";
@@ -770,13 +755,13 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         public string? Title { get; }
 
         /// <summary>
-        ///     Gets the generated tools class name.
-        /// </summary>
-        public string ToolsClassName { get; }
-
-        /// <summary>
         ///     Gets the prefix for generated tool names.
         /// </summary>
         public string ToolPrefix { get; }
+
+        /// <summary>
+        ///     Gets the generated tools class name.
+        /// </summary>
+        public string ToolsClassName { get; }
     }
 }

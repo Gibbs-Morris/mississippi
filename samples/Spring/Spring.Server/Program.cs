@@ -90,10 +90,7 @@ builder.Services.AddSpringDomainServer();
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.
-builder.Services.AddMcpServer()
-    .WithHttpTransport()
-    .WithGeneratedMcpTools()
-    .WithTools<SpringServerPingMcpTools>();
+builder.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringServerPingMcpTools>();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files
