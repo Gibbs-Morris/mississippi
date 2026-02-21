@@ -237,6 +237,16 @@ public sealed class PropertyModel
             return "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
         }
 
+        if (value is char c)
+        {
+            return c switch
+            {
+                '\\' => "'\\\\'",
+                '\'' => "'\\\''",
+                _ => "'" + c + "'",
+            };
+        }
+
         if (value is bool b)
         {
             return b ? "true" : "false";
