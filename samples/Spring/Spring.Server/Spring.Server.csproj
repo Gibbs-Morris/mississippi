@@ -34,7 +34,6 @@
     <ProjectReference Include="..\..\..\src\EventSourcing.Sagas\EventSourcing.Sagas.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <ProjectReference Include="..\..\..\src\Inlet.Server.Generators\Inlet.Server.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
-    <ProjectReference Include="..\..\..\src\Inlet.Mcp.Generators\Inlet.Mcp.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
