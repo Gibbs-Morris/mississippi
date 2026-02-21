@@ -48,6 +48,63 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
     private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
 
+    private static void AddDescriptionIfPresent(
+        ISymbol symbol,
+        string key,
+        INamedTypeSymbol mcpParamDescAttrSymbol,
+        Dictionary<string, string> parameterDescriptions
+    )
+    {
+        AttributeData? attribute = symbol.GetAttributes()
+            .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
+        if (attribute is not { ConstructorArguments.Length: > 0 })
+        {
+            return;
+        }
+
+        string? description = attribute.ConstructorArguments[0].Value?.ToString();
+        if (!string.IsNullOrEmpty(description))
+        {
+            parameterDescriptions[key] = description!;
+        }
+    }
+
+    private static void AddDescriptionsFromPrimaryConstructor(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol mcpParamDescAttrSymbol,
+        Dictionary<string, string> parameterDescriptions
+    )
+    {
+        IMethodSymbol? primaryConstructor =
+            typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
+        if (!typeSymbol.IsRecord || primaryConstructor is null || (primaryConstructor.Parameters.Length == 0))
+        {
+            return;
+        }
+
+        foreach (IParameterSymbol parameter in primaryConstructor.Parameters)
+        {
+            if (HasDescriptionForParameter(parameterDescriptions, parameter.Name))
+            {
+                continue;
+            }
+
+            AddDescriptionIfPresent(parameter, parameter.Name, mcpParamDescAttrSymbol, parameterDescriptions);
+        }
+    }
+
+    private static void AddDescriptionsFromProperties(
+        IEnumerable<IPropertySymbol> publicProperties,
+        INamedTypeSymbol mcpParamDescAttrSymbol,
+        Dictionary<string, string> parameterDescriptions
+    )
+    {
+        foreach (IPropertySymbol propertySymbol in publicProperties)
+        {
+            AddDescriptionIfPresent(propertySymbol, propertySymbol.Name, mcpParamDescAttrSymbol, parameterDescriptions);
+        }
+    }
+
     private static Dictionary<string, string> CollectParameterDescriptions(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? mcpParamDescAttrSymbol
@@ -59,53 +116,9 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             return parameterDescriptions;
         }
 
-        IPropertySymbol[] publicProperties = typeSymbol.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(p => p.DeclaredAccessibility == Accessibility.Public)
-            .Where(p => !p.IsStatic)
-            .Where(p => p.GetMethod is not null)
-            .ToArray();
-        foreach (IPropertySymbol propSymbol in publicProperties)
-        {
-            AttributeData? paramDescAttr = propSymbol.GetAttributes()
-                .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-            if (paramDescAttr is { ConstructorArguments.Length: > 0 })
-            {
-                string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
-                if (!string.IsNullOrEmpty(desc))
-                {
-                    parameterDescriptions[propSymbol.Name] = desc!;
-                }
-            }
-        }
-
-        IMethodSymbol? primaryConstructor =
-            typeSymbol.Constructors.FirstOrDefault(c => (c.Parameters.Length > 0) && !c.IsStatic);
-        bool isPositionalRecord = typeSymbol.IsRecord && (primaryConstructor?.Parameters.Length > 0);
-        if (!isPositionalRecord || primaryConstructor is null)
-        {
-            return parameterDescriptions;
-        }
-
-        foreach (IParameterSymbol param in primaryConstructor.Parameters)
-        {
-            if (parameterDescriptions.ContainsKey(param.Name))
-            {
-                continue;
-            }
-
-            AttributeData? paramDescAttr = param.GetAttributes()
-                .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, mcpParamDescAttrSymbol));
-            if (paramDescAttr is { ConstructorArguments.Length: > 0 })
-            {
-                string? desc = paramDescAttr.ConstructorArguments[0].Value?.ToString();
-                if (!string.IsNullOrEmpty(desc))
-                {
-                    parameterDescriptions[param.Name] = desc!;
-                }
-            }
-        }
-
+        IPropertySymbol[] publicProperties = GetPublicReadableInstanceProperties(typeSymbol);
+        AddDescriptionsFromProperties(publicProperties, mcpParamDescAttrSymbol, parameterDescriptions);
+        AddDescriptionsFromPrimaryConstructor(typeSymbol, mcpParamDescAttrSymbol, parameterDescriptions);
         return parameterDescriptions;
     }
 
@@ -374,6 +387,16 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
+    private static IPropertySymbol[] GetPublicReadableInstanceProperties(
+        INamedTypeSymbol typeSymbol
+    ) =>
+        typeSymbol.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Where(p => p.DeclaredAccessibility == Accessibility.Public)
+            .Where(p => !p.IsStatic)
+            .Where(p => p.GetMethod is not null)
+            .ToArray();
+
     private static List<McpSagaInfo> GetSagasFromCompilation(
         Compilation compilation,
         string targetRootNamespace
@@ -414,6 +437,13 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
         return sagas;
     }
+
+    private static bool HasDescriptionForParameter(
+        Dictionary<string, string> parameterDescriptions,
+        string parameterName
+    ) =>
+        parameterDescriptions.ContainsKey(parameterName) ||
+        parameterDescriptions.ContainsKey(ToPascalCase(parameterName));
 
     private static bool MatchesSagaEndpointsAttribute(
         AttributeData attr,
@@ -468,6 +498,11 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
         return sb.ToString();
     }
+
+    private static string ToPascalCase(
+        string value
+    ) =>
+        string.IsNullOrEmpty(value) ? value : char.ToUpperInvariant(value[0]) + value.Substring(1);
 
     private static string ToSnakeCase(
         string value
