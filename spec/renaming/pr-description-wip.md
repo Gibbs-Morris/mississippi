@@ -340,3 +340,40 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): folder/project rename with direct reference rewires in dependent storage projects and architecture tests.
 - Risks / breaking surface: compile breaks from stale references; mitigated by updating all direct `ProjectReference` and solution entries.
 - Follow-up items (if any): execute `T04` next.
+
+## Task 08: Common.Cosmos.L0Tests -> Common.Runtime.Storage.Cosmos.L0Tests
+
+- Task type: `TestRename`
+- Linked pair: `T04`
+
+### Summary
+- Renamed the mirrored test project for `Common.Runtime.Storage.Cosmos` to keep the interleaved project/test sequence aligned.
+
+### Changes made
+- Folder rename: `tests/Common.Cosmos.L0Tests` -> `tests/Common.Runtime.Storage.Cosmos.L0Tests`
+- `.csproj` rename: `tests/Common.Runtime.Storage.Cosmos.L0Tests/Common.Cosmos.L0Tests.csproj` -> `tests/Common.Runtime.Storage.Cosmos.L0Tests/Common.Runtime.Storage.Cosmos.L0Tests.csproj`
+- `.slnx` updates: updated `mississippi.slnx` path under `/Tests/Core/`
+- `.csproj` updates:
+	- `tests/Common.Runtime.Storage.Cosmos.L0Tests/Common.Runtime.Storage.Cosmos.L0Tests.csproj` (added temporary `<AssemblyName>Mississippi.Common.Cosmos.L0Tests</AssemblyName>`)
+
+### Files touched
+- `tests/Common.Runtime.Storage.Cosmos.L0Tests/`
+- `mississippi.slnx`
+- `spec/renaming/task-checklist.md`
+- `spec/renaming/pr-description-wip.md`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task T04: rename Common.Cosmos.L0Tests to Common.Runtime.Storage.Cosmos.L0Tests`
+
+### PR-ready notes
+- Business value: keeps mirrored test project names consistent with runtime/storage naming and reduces naming drift across the solution.
+- How it works (high level): file-system rename + solution path update, with temporary assembly-name continuity to avoid staged sequence breakage.
+- Risks / breaking surface: stale paths in solution or tooling; mitigated by updating `.slnx` and validating with both solution builds and test suites.
+- Follow-up items (if any): continue to `P05`.

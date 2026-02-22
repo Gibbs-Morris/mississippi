@@ -12,10 +12,9 @@ Companion notes file for PR authoring: `pr-description-wip.md`.
 - Required verification for **every** task:
   - Build `mississippi.slnx`
   - Build `samples.slnx`
-  - Run cleanup for Mississippi solution
-  - Run cleanup for Samples solution
   - Run tests for Mississippi solution
   - Run tests for Samples solution
+- Cleanup is executed once at the end of the full rename run (not per task).
 
 ## Required Command Set Per Task
 
@@ -24,8 +23,6 @@ Run all commands below for each task:
 ```powershell
 pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/build-sample-solution.ps1
-pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1
-pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1
 ```
@@ -40,8 +37,6 @@ Copy this block for each task:
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [x] Commit created for this task only
@@ -65,7 +60,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `T03` Verify mirrored tests: no dedicated mirrored test project exists (record verification)
 
 - [x] `P04` Rename `Common.Cosmos` -> `Common.Runtime.Storage.Cosmos`
-- [ ] `T04` Rename mirrored tests: `Common.Cosmos.L0Tests` -> `Common.Runtime.Storage.Cosmos.L0Tests`
+- [x] `T04` Rename mirrored tests: `Common.Cosmos.L0Tests` -> `Common.Runtime.Storage.Cosmos.L0Tests`
 
 - [ ] `P05` Rename `EventSourcing.Brooks.Abstractions` -> `Brooks.Abstractions`
 - [ ] `T05` Rename mirrored tests: `EventSourcing.Brooks.Abstractions.L0Tests` -> `Brooks.Abstractions.L0Tests`
@@ -162,8 +157,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Implement changes
 - [x] Build: `mississippi.slnx` passes
 - [x] Build: `samples.slnx` passes
-- [x] Cleanup: Mississippi passes
-- [x] Cleanup: Samples passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
 - [x] Commit created for this task only
@@ -175,8 +168,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Implement changes
 - [x] Build: `mississippi.slnx` passes
 - [x] Build: `samples.slnx` passes
-- [x] Cleanup: Mississippi passes
-- [x] Cleanup: Samples passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
 - [x] Commit created for this task only
@@ -188,8 +179,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Implement changes
 - [x] Build: `mississippi.slnx` passes
 - [x] Build: `samples.slnx` passes
-- [x] Cleanup: Mississippi passes
-- [x] Cleanup: Samples passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
 - [x] Commit created for this task only
@@ -201,8 +190,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Implement changes
 - [x] Build: `mississippi.slnx` passes
 - [x] Build: `samples.slnx` passes
-- [x] Cleanup: Mississippi passes
-- [x] Cleanup: Samples passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
 - [x] Commit created for this task only
@@ -214,8 +201,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Implement changes
 - [x] Build: `mississippi.slnx` passes
 - [x] Build: `samples.slnx` passes
-- [x] Cleanup: Mississippi passes
-- [x] Cleanup: Samples passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -227,21 +212,28 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Implement changes
 - [x] Build: `mississippi.slnx` passes
 - [x] Build: `samples.slnx` passes
-- [x] Cleanup: Mississippi passes
-- [x] Cleanup: Samples passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
 - [ ] Commit created for this task only
 - Commit SHA: `<fill after commit>`
 - Notes: Mirrored test-project rename `T04` follows immediately.
 
+### [x] Task: Rename `Common.Cosmos.L0Tests` -> `Common.Runtime.Storage.Cosmos.L0Tests`
+
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [ ] Commit created for this task only
+- Commit SHA: `<fill after commit>`
+- Notes: Added temporary `<AssemblyName>Mississippi.Common.Cosmos.L0Tests</AssemblyName>` to preserve internal-access compatibility during staged renames.
+
 ### [ ] Task: Rename `EventSourcing.Brooks.Abstractions` -> `Brooks.Abstractions`
 
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -253,8 +245,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -266,8 +256,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -279,8 +267,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -292,8 +278,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -305,8 +289,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -318,8 +300,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -331,8 +311,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -344,8 +322,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -357,8 +333,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -370,8 +344,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -383,8 +355,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -396,8 +366,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -409,8 +377,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -422,8 +388,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -435,8 +399,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -448,8 +410,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -461,8 +421,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -474,8 +432,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Implement changes
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] Commit created for this task only
@@ -503,8 +459,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Delete old source `.csproj` files/folders
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] WIP notes appended to `pr-description-wip.md`
@@ -521,8 +475,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Delete old source `.csproj` files/folders
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] WIP notes appended to `pr-description-wip.md`
@@ -539,8 +491,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Delete old source `.csproj` files/folders
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] WIP notes appended to `pr-description-wip.md`
@@ -557,8 +507,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Delete old source `.csproj` files/folders
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] WIP notes appended to `pr-description-wip.md`
@@ -575,8 +523,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Delete old source `.csproj` files/folders
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] WIP notes appended to `pr-description-wip.md`
@@ -594,8 +540,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Update `ProjectReference` entries to include new project
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] WIP notes appended to `pr-description-wip.md`
@@ -611,8 +555,6 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Update `ProjectReference` entries to include new project
 - [ ] Build: `mississippi.slnx` passes
 - [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
 - [ ] WIP notes appended to `pr-description-wip.md`

@@ -1,4 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Mississippi.Common.Cosmos.L0Tests</AssemblyName>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />
   </ItemGroup>

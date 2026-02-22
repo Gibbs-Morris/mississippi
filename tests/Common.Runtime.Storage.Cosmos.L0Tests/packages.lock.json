@@ -242,17 +242,17 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
-      "Mississippi.Common.Cosmos": {
+      "Mississippi.Common.Runtime.Storage.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Common.Runtime.Storage.Cosmos": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Azure.Cosmos": "[3.57.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
-          "Mississippi.Common.Cosmos.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Runtime.Storage.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
-      },
-      "Mississippi.Common.Cosmos.Abstractions": {
-        "type": "Project"
       },
       "Microsoft.Azure.Cosmos": {
         "type": "CentralTransitive",
