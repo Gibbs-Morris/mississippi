@@ -75,3 +75,4 @@ When learning Spring, start with the domain pages first (`Aggregate` → `Saga` 
 - [Building a Saga](./building-a-saga.md) — Multi-step money transfer with compensation
 - [Building Projections](./building-projections.md) — Read-optimized views from event streams
 - [Host Applications](./host-applications.md) — How Silo, Server, and Client stay minimal
+- [MCP in VS Code](./mcp-server-vscode-testing.md) — Configure VS Code to call Spring MCP tools for local testing
