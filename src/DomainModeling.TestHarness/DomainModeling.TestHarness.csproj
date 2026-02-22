@@ -11,7 +11,7 @@
     <PackageReference Include="Moq" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
+    <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
     <ProjectReference Include="..\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
+    <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
     <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />

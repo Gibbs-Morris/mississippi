@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <Compile Remove="SagaEvents.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Public contracts and abstractions for DomainModeling (aggregates, sagas, and ux projections).</Description>
+  </PropertyGroup>
+</Project>

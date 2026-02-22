@@ -6,7 +6,7 @@
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
     <ProjectReference Include="..\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
-    <ProjectReference Include="..\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
+    <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <Description>UX projection runtime for client-optimized read models.</Description>
