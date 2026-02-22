@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions;
 using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
 using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
