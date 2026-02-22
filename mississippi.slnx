@@ -121,7 +121,7 @@
   <Folder Name="/Tests/EventSourcing/Snapshots/">
     <Project Path="tests\EventSourcing.Snapshots.Abstractions.L0Tests\EventSourcing.Snapshots.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Snapshots.L0Tests\EventSourcing.Snapshots.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Snapshots.Cosmos.L0Tests\EventSourcing.Snapshots.Cosmos.L0Tests.csproj" />
+    <Project Path="tests\Tributary.Runtime.Storage.Cosmos.L0Tests\Tributary.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/UxProjections/">
     <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj" />
