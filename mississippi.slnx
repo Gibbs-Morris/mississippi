@@ -69,7 +69,7 @@
   </Folder>
   <Folder Name="/Framework/SDK/">
     <Project Path="src\Sdk.Client\Sdk.Client.csproj" />
-    <Project Path="src\Sdk.Server\Sdk.Server.csproj" />
+    <Project Path="src\Sdk.Gateway\Sdk.Gateway.csproj" />
     <Project Path="src\Sdk.Silo\Sdk.Silo.csproj" />
     <Project Path="src\Inlet.Client.Generators\Inlet.Client.Generators.csproj" />
     <Project Path="src\Inlet.Gateway.Generators\Inlet.Gateway.Generators.csproj" />
@@ -148,7 +148,7 @@
   </Folder>
   <Folder Name="/Tests/SDK/">
     <Project Path="tests\Sdk.Client.L0Tests\Sdk.Client.L0Tests.csproj" />
-    <Project Path="tests\Sdk.Server.L0Tests\Sdk.Server.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Gateway.L0Tests\Sdk.Gateway.L0Tests.csproj" />
     <Project Path="tests\Sdk.Silo.L0Tests\Sdk.Silo.L0Tests.csproj" />
     <Project Path="tests\Inlet.Client.Generators.L0Tests\Inlet.Client.Generators.L0Tests.csproj" />
     <Project Path="tests\Inlet.Gateway.Generators.L0Tests\Inlet.Gateway.Generators.L0Tests.csproj" />
