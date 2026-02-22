@@ -71,7 +71,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `P07` Rename `EventSourcing.Brooks.Cosmos` -> `Brooks.Runtime.Storage.Cosmos`
 - [x] `T07` Rename mirrored tests: `EventSourcing.Brooks.Cosmos.L0Tests` -> `Brooks.Runtime.Storage.Cosmos.L0Tests`
 
-- [ ] `P08` Rename `EventSourcing.Serialization.Abstractions` -> `Brooks.Serialization.Abstractions`
+- [x] `P08` Rename `EventSourcing.Serialization.Abstractions` -> `Brooks.Serialization.Abstractions`
 - [ ] `T08` Rename mirrored tests: `EventSourcing.Serialization.L0Tests` -> `Brooks.Serialization.Abstractions.L0Tests`
 
 - [ ] `P09` Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
@@ -291,20 +291,20 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Build: `samples.slnx` passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Commit created for this task only
+- Commit SHA: `d4802d1b`
 - Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.Cosmos.L0Tests</AssemblyName>` in `Brooks.Runtime.Storage.Cosmos.L0Tests.csproj` to preserve internal-access compatibility during staged renames.
 
-### [ ] Task: Rename `EventSourcing.Serialization.Abstractions` -> `Brooks.Serialization.Abstractions`
+### [x] Task: Rename `EventSourcing.Serialization.Abstractions` -> `Brooks.Serialization.Abstractions`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
 - [ ] Commit created for this task only
 - Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.Abstractions</AssemblyName>` in `Brooks.Serialization.Abstractions.csproj` so P08 validates before mirrored test rename task T08.
 
 ### [ ] Task: Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
 

@@ -5,6 +5,6 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
   </ItemGroup>
 </Project>

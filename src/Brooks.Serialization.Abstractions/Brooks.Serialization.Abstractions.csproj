@@ -5,6 +5,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
   <PropertyGroup>
+    <AssemblyName>Mississippi.EventSourcing.Serialization.Abstractions</AssemblyName>
     <Description>Public contracts and abstractions for EventSourcing.Serialization.</Description>
   </PropertyGroup>
 </Project>

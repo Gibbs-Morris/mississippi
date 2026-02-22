@@ -631,7 +631,7 @@ Use this file as the running source of truth for the final PR description.
 - Tests Samples: pass
 
 ### Commit
-- SHA: `<fill after commit>`
+- SHA: `d4802d1b`
 - Message: `Task T07: rename EventSourcing.Brooks.Cosmos.L0Tests to Brooks.Runtime.Storage.Cosmos.L0Tests`
 
 ### PR-ready notes
@@ -639,3 +639,48 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): test folder/project rename with solution path update and temporary assembly-name continuity.
 - Risks / breaking surface: stale solution path or internals access regressions; mitigated by full gate runs.
 - Follow-up items (if any): execute `P08` immediately.
+
+## Task 15: EventSourcing.Serialization.Abstractions -> Brooks.Serialization.Abstractions
+
+- Task type: `ProjectRename`
+- Linked pair: `P08`
+
+### Summary
+- Renamed serialization abstractions project to `Brooks.Serialization.Abstractions` and rewired direct references.
+
+### Changes made
+- Folder rename: `src/EventSourcing.Serialization.Abstractions` -> `src/Brooks.Serialization.Abstractions`
+- `.csproj` rename: `src/Brooks.Serialization.Abstractions/EventSourcing.Serialization.Abstractions.csproj` -> `src/Brooks.Serialization.Abstractions/Brooks.Serialization.Abstractions.csproj`
+- `.slnx` updates: updated `mississippi.slnx` project path under `/Framework/EventSourcing/Serialization/`
+- `.csproj` `ProjectReference` updates:
+	- `src/EventSourcing.Aggregates/EventSourcing.Aggregates.csproj`
+	- `src/EventSourcing.Snapshots/EventSourcing.Snapshots.csproj`
+	- `src/EventSourcing.Serialization.Json/EventSourcing.Serialization.Json.csproj`
+	- `tests/EventSourcing.Serialization.L0Tests/EventSourcing.Serialization.L0Tests.csproj`
+	- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+- Task-local stabilization (csproj-only): added `<AssemblyName>Mississippi.EventSourcing.Serialization.Abstractions</AssemblyName>` to preserve assembly identity until `T08`.
+
+### Files touched
+- `src/Brooks.Serialization.Abstractions/`
+- `mississippi.slnx`
+- `src/EventSourcing.Aggregates/EventSourcing.Aggregates.csproj`
+- `src/EventSourcing.Snapshots/EventSourcing.Snapshots.csproj`
+- `src/EventSourcing.Serialization.Json/EventSourcing.Serialization.Json.csproj`
+- `tests/EventSourcing.Serialization.L0Tests/EventSourcing.Serialization.L0Tests.csproj`
+- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task P08: rename EventSourcing.Serialization.Abstractions to Brooks.Serialization.Abstractions`
+
+### PR-ready notes
+- Business value: aligns serialization abstractions naming with the Brooks package taxonomy and reduces namespace ambiguity.
+- How it works (high level): project folder/file rename with direct source/test reference rewires and temporary assembly-name continuity.
+- Risks / breaking surface: stale references and internals access regressions; mitigated by full gate runs.
+- Follow-up items (if any): execute `T08` immediately.

@@ -3,7 +3,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
+    <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <Description>JSON serialization implementation for EventSourcing.Serialization.</Description>
