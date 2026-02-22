@@ -713,7 +713,7 @@ Use this file as the running source of truth for the final PR description.
 - Tests Samples: pass
 
 ### Commit
-- SHA: `<fill after commit>`
+- SHA: `5a0fac1a`
 - Message: `Task T08: rename EventSourcing.Serialization.L0Tests to Brooks.Serialization.Abstractions.L0Tests`
 
 ### PR-ready notes

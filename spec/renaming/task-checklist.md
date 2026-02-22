@@ -313,8 +313,8 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Build: `samples.slnx` passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Commit created for this task only
+- Commit SHA: `5a0fac1a`
 - Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.L0Tests</AssemblyName>` in `Brooks.Serialization.Abstractions.L0Tests.csproj` to preserve internal-access compatibility during staged renames.
 
 ### [ ] Task: Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
