@@ -4,6 +4,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
   <PropertyGroup>
+    <AssemblyName>Mississippi.Inlet.Server.Abstractions</AssemblyName>
     <Description>Public contracts and abstractions for Inlet.Server.</Description>
   </PropertyGroup>
 </Project>

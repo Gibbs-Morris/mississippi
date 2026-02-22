@@ -9,6 +9,6 @@
     <ProjectReference Include="..\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Silo\Inlet.Silo.csproj" />
-    <ProjectReference Include="..\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
   </ItemGroup>
 </Project>

@@ -12,6 +12,6 @@
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />
-    <ProjectReference Include="..\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
   </ItemGroup>
 </Project>
