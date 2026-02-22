@@ -209,7 +209,7 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
-      "Mississippi.EventSourcing.Serialization.Abstractions": {
+      "Mississippi.Brooks.Serialization.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",

@@ -676,7 +676,7 @@ Use this file as the running source of truth for the final PR description.
 - Tests Samples: pass
 
 ### Commit
-- SHA: `<fill after commit>`
+- SHA: `ab8f21b4`
 - Message: `Task P08: rename EventSourcing.Serialization.Abstractions to Brooks.Serialization.Abstractions`
 
 ### PR-ready notes
@@ -684,3 +684,40 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): project folder/file rename with direct source/test reference rewires and temporary assembly-name continuity.
 - Risks / breaking surface: stale references and internals access regressions; mitigated by full gate runs.
 - Follow-up items (if any): execute `T08` immediately.
+
+## Task 16: EventSourcing.Serialization.L0Tests -> Brooks.Serialization.Abstractions.L0Tests
+
+- Task type: `TestRename`
+- Linked pair: `T08`
+
+### Summary
+- Renamed the mirrored serialization abstractions L0 test project to align with `P08`.
+
+### Changes made
+- Folder rename: `tests/EventSourcing.Serialization.L0Tests` -> `tests/Brooks.Serialization.Abstractions.L0Tests`
+- `.csproj` rename: `tests/Brooks.Serialization.Abstractions.L0Tests/EventSourcing.Serialization.L0Tests.csproj` -> `tests/Brooks.Serialization.Abstractions.L0Tests/Brooks.Serialization.Abstractions.L0Tests.csproj`
+- `.slnx` updates: updated `mississippi.slnx` test project path under `/Tests/EventSourcing/Serialization/`
+- `.csproj` updates:
+	- `tests/Brooks.Serialization.Abstractions.L0Tests/Brooks.Serialization.Abstractions.L0Tests.csproj` (added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.L0Tests</AssemblyName>`)
+
+### Files touched
+- `tests/Brooks.Serialization.Abstractions.L0Tests/`
+- `mississippi.slnx`
+- `spec/renaming/task-checklist.md`
+- `spec/renaming/pr-description-wip.md`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task T08: rename EventSourcing.Serialization.L0Tests to Brooks.Serialization.Abstractions.L0Tests`
+
+### PR-ready notes
+- Business value: keeps serialization abstractions test naming aligned with the renamed abstractions project and clarifies project intent.
+- How it works (high level): test folder/project rename with solution path update and temporary assembly-name continuity.
+- Risks / breaking surface: stale solution path or internals access regressions; mitigated by full gate runs.
+- Follow-up items (if any): continue to `P09`.

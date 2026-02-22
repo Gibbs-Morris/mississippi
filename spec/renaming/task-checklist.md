@@ -72,7 +72,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `T07` Rename mirrored tests: `EventSourcing.Brooks.Cosmos.L0Tests` -> `Brooks.Runtime.Storage.Cosmos.L0Tests`
 
 - [x] `P08` Rename `EventSourcing.Serialization.Abstractions` -> `Brooks.Serialization.Abstractions`
-- [ ] `T08` Rename mirrored tests: `EventSourcing.Serialization.L0Tests` -> `Brooks.Serialization.Abstractions.L0Tests`
+- [x] `T08` Rename mirrored tests: `EventSourcing.Serialization.L0Tests` -> `Brooks.Serialization.Abstractions.L0Tests`
 
 - [ ] `P09` Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
 - [ ] `T09` Rename mirrored tests: `EventSourcing.Serialization.Json.L0Tests` -> `Brooks.Serialization.Json.L0Tests`
@@ -302,9 +302,20 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Build: `samples.slnx` passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `ab8f21b4`
+- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.Abstractions</AssemblyName>` in `Brooks.Serialization.Abstractions.csproj` so P08 validates before mirrored test rename task T08.
+
+### [x] Task: Rename `EventSourcing.Serialization.L0Tests` -> `Brooks.Serialization.Abstractions.L0Tests`
+
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
 - [ ] Commit created for this task only
 - Commit SHA: `<fill after commit>`
-- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.Abstractions</AssemblyName>` in `Brooks.Serialization.Abstractions.csproj` so P08 validates before mirrored test rename task T08.
+- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.L0Tests</AssemblyName>` in `Brooks.Serialization.Abstractions.L0Tests.csproj` to preserve internal-access compatibility during staged renames.
 
 ### [ ] Task: Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
 
