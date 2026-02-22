@@ -3,6 +3,9 @@
         <PackageReference Include="Microsoft.Orleans.TestingHost" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     </ItemGroup>
+  <PropertyGroup>
+    <AssemblyName>Mississippi.EventSourcing.Brooks.L0Tests</AssemblyName>
+  </PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\src\Brooks.Runtime\Brooks.Runtime.csproj" />
       <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />

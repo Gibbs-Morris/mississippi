@@ -522,3 +522,40 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): project folder/file rename plus direct reference rewires across source, test, and sample projects.
 - Risks / breaking surface: stale references and internals access regressions; mitigated by full gate runs and temporary assembly-name continuity.
 - Follow-up items (if any): execute `T06` immediately.
+
+## Task 12: EventSourcing.Brooks.L0Tests -> Brooks.Runtime.L0Tests
+
+- Task type: `TestRename`
+- Linked pair: `T06`
+
+### Summary
+- Renamed the mirrored Brooks runtime L0 test project to match `P06`.
+
+### Changes made
+- Folder rename: `tests/EventSourcing.Brooks.L0Tests` -> `tests/Brooks.Runtime.L0Tests`
+- `.csproj` rename: `tests/Brooks.Runtime.L0Tests/EventSourcing.Brooks.L0Tests.csproj` -> `tests/Brooks.Runtime.L0Tests/Brooks.Runtime.L0Tests.csproj`
+- `.slnx` updates: updated `mississippi.slnx` test project path under `/Tests/EventSourcing/Brooks/`
+- `.csproj` updates:
+	- `tests/Brooks.Runtime.L0Tests/Brooks.Runtime.L0Tests.csproj` (added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.L0Tests</AssemblyName>`)
+
+### Files touched
+- `tests/Brooks.Runtime.L0Tests/`
+- `mississippi.slnx`
+- `spec/renaming/task-checklist.md`
+- `spec/renaming/pr-description-wip.md`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task T06: rename EventSourcing.Brooks.L0Tests to Brooks.Runtime.L0Tests`
+
+### PR-ready notes
+- Business value: keeps runtime test naming consistent with runtime project naming.
+- How it works (high level): test folder/project rename with solution path update and temporary assembly-name continuity.
+- Risks / breaking surface: stale solution path or internals access regressions; mitigated by full gate runs.
+- Follow-up items (if any): continue to `P07`.
