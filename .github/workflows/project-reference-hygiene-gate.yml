@@ -99,7 +99,7 @@ jobs:
           }
 
       - name: Restore solution
-        run: dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
+        run: dotnet restore ${{ github.workspace }}/${{ matrix.solution }} -p:EnableReferenceTrimmer=true
 
       - name: Build with ReferenceTrimmer and fail on RT0002
         shell: pwsh
