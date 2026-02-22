@@ -96,20 +96,16 @@
     <Project Path="tests\Brooks.Runtime.L0Tests\Brooks.Runtime.L0Tests.csproj" />
     <Project Path="tests\Brooks.Runtime.Storage.Cosmos.L0Tests\Brooks.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
-  <Folder Name="/Tests/EventSourcing/Reducers/">
-    <Project Path="tests\EventSourcing.Reducers.L0Tests\EventSourcing.Reducers.L0Tests.csproj" />
-  </Folder>
-
   <Folder Name="/Tests/EventSourcing/Serialization/">
     <Project Path="tests\Brooks.Serialization.Abstractions.L0Tests\Brooks.Serialization.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Brooks.Serialization.Json.L0Tests\Brooks.Serialization.Json.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Snapshots/">
-    <Project Path="tests\EventSourcing.Snapshots.L0Tests\EventSourcing.Snapshots.L0Tests.csproj" />
     <Project Path="tests\Tributary.Runtime.Storage.Cosmos.L0Tests\Tributary.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Tributary/">
     <Project Path="tests\Tributary.Abstractions.L0Tests\Tributary.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Tributary.Runtime.L0Tests\Tributary.Runtime.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Refraction/">
     <Project Path="tests\Refraction.Abstractions.L0Tests\Refraction.Abstractions.L0Tests.csproj" />
