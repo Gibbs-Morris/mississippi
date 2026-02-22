@@ -259,3 +259,40 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): folder and project rename with direct dependency rewiring in source and architecture tests.
 - Risks / breaking surface: downstream compile references to old project path; mitigated by updating all known direct `ProjectReference` and solution entries.
 - Follow-up items (if any): execute `T03` verification task next.
+
+## Task 06: Verify mirrored tests for Common runtime storage abstractions rename
+
+- Task type: `TestRename`
+- Linked pair: `T03`
+
+### Summary
+- Verified that no dedicated mirrored test project exists for `Common.Cosmos.Abstractions` and recorded this as the required paired test task outcome.
+
+### Changes made
+- Folder rename: none
+- `.csproj` rename: none
+- `.slnx` updates: none
+- `.csproj` `ProjectReference` updates: none
+- Verification evidence captured in task tracking docs.
+
+### Files touched
+- `spec/renaming/task-checklist.md`
+- `spec/renaming/pr-description-wip.md`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Cleanup Mississippi: pass
+- Cleanup Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task T03: verify no mirrored test project for Common.Runtime.Storage.Abstractions rename`
+
+### PR-ready notes
+- Business value: enforces deterministic interleaving while avoiding unnecessary test-project churn.
+- How it works (high level): explicit repository search and path verification with recorded outcome.
+- Risks / breaking surface: low; documentation and task-tracking only.
+- Follow-up items (if any): continue to `P04` then `T04`.
