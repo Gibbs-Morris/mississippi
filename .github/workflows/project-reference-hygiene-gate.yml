@@ -63,7 +63,7 @@ jobs:
           $solutionPath = Join-Path $env:GITHUB_WORKSPACE '${{ matrix.solution }}'
           $logPath = Join-Path $env:RUNNER_TEMP ('rt0002-' + '${{ matrix.solution }}'.Replace('/', '_').Replace('.', '_') + '.log')
 
-          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -p:EnableReferenceTrimmer=true -p:GenerateDocumentationFile=true '-p:NoWarn=$(NoWarn);419;1570;1573;1574;1584;1591;SA1602' 2>&1 | Tee-Object -FilePath $logPath
+          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -p:EnableReferenceTrimmer=true -p:GenerateDocumentationFile=true 2>&1 | Tee-Object -FilePath $logPath
           if ($LASTEXITCODE -ne 0) {
             throw "Build failed before RT0002 evaluation."
           }
