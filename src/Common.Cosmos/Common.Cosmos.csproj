@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Runtime.Storage.Abstractions\Common.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" />

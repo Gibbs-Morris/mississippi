@@ -219,3 +219,43 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): mirrored test folder/project rename plus solution path update and assembly-name stabilization.
 - Risks / breaking surface: internal-access failures if assembly identity drifts; mitigated by preserving previous test assembly name in csproj.
 - Follow-up items (if any): continue with `P03` then `T03`.
+
+## Task 05: Common.Cosmos.Abstractions -> Common.Runtime.Storage.Abstractions
+
+- Task type: `ProjectRename`
+- Linked pair: `P03`
+
+### Summary
+- Renamed the Common Cosmos abstractions project to `Common.Runtime.Storage.Abstractions` and updated all direct solution/project references.
+
+### Changes made
+- Folder rename: `src/Common.Cosmos.Abstractions` -> `src/Common.Runtime.Storage.Abstractions`
+- `.csproj` rename: `src/Common.Runtime.Storage.Abstractions/Common.Cosmos.Abstractions.csproj` -> `src/Common.Runtime.Storage.Abstractions/Common.Runtime.Storage.Abstractions.csproj`
+- `.slnx` updates: updated `mississippi.slnx` project path for renamed abstractions project
+- `.csproj` `ProjectReference` updates:
+	- `src/Common.Cosmos/Common.Cosmos.csproj`
+	- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+
+### Files touched
+- `src/Common.Runtime.Storage.Abstractions/`
+- `mississippi.slnx`
+- `src/Common.Cosmos/Common.Cosmos.csproj`
+- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Cleanup Mississippi: pass
+- Cleanup Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `see git log (Task P03 commit)`
+- Message: `Task P03: rename Common.Cosmos.Abstractions to Common.Runtime.Storage.Abstractions`
+
+### PR-ready notes
+- Business value: aligns storage abstractions naming with the target architecture split and improves package intent clarity.
+- How it works (high level): folder and project rename with direct dependency rewiring in source and architecture tests.
+- Risks / breaking surface: downstream compile references to old project path; mitigated by updating all known direct `ProjectReference` and solution entries.
+- Follow-up items (if any): execute `T03` verification task next.

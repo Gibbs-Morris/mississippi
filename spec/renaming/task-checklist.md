@@ -61,7 +61,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `P02` Rename `Aqueduct.Grains` -> `Aqueduct.Runtime`
 - [x] `T02` Rename mirrored tests: `Aqueduct.Grains.L0Tests` -> `Aqueduct.Runtime.L0Tests`
 
-- [ ] `P03` Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
+- [x] `P03` Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
 - [ ] `T03` Verify mirrored tests: no dedicated mirrored test project exists (record verification)
 
 - [ ] `P04` Rename `Common.Cosmos` -> `Common.Runtime.Storage.Cosmos`
@@ -196,18 +196,18 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - Commit SHA: `faa34bd3`
 - Notes: Added temporary `<AssemblyName>Mississippi.Aqueduct.Grains.L0Tests</AssemblyName>` in `Aqueduct.Runtime.L0Tests.csproj` to preserve internal-access compatibility for T02.
 
-### [ ] Task: Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
+### [x] Task: Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Cleanup: Mississippi passes
+- [x] Cleanup: Samples passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `6036a41f`
+- Notes: No mirrored dedicated test project exists for this abstractions project; T03 records this explicitly.
 
 ### [ ] Task: Rename `Common.Cosmos` -> `Common.Runtime.Storage.Cosmos`
 

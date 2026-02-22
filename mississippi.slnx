@@ -3,7 +3,7 @@
 
   <Folder Name="/Framework/Core/">
     <Project Path="src\Common.Abstractions\Common.Abstractions.csproj" />
-    <Project Path="src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
+    <Project Path="src\Common.Runtime.Storage.Abstractions\Common.Runtime.Storage.Abstractions.csproj" />
     <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/Aqueduct/">
