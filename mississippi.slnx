@@ -23,7 +23,6 @@
     <Project Path="src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Reducers/">
-    <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
   </Folder>
 
@@ -32,9 +31,11 @@
     <Project Path="src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Snapshots/">
-    <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
     <Project Path="src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
+  </Folder>
+  <Folder Name="/Framework/EventSourcing/Tributary/">
+    <Project Path="src\Tributary.Abstractions\Tributary.Abstractions.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Testing/">
     <Project Path="src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />

@@ -7,8 +7,7 @@
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
     <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
-    <ProjectReference Include="..\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
-    <ProjectReference Include="..\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
+    <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />

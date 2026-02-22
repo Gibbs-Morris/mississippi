@@ -12,6 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
-    <ProjectReference Include="..\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
+    <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
   </ItemGroup>
 </Project>

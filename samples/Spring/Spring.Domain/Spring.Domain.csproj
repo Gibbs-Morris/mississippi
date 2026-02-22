@@ -15,7 +15,7 @@
     <ProjectReference Include="..\..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Tributary.Abstractions\Tributary.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
   </ItemGroup>
