@@ -73,12 +73,43 @@ jobs:
           }
 
           $matches = Select-String -Path $logPath -Pattern 'RT0002: ProjectReference .+ can be removed'
+          $entryPattern = 'RT0002: ProjectReference (?<Reference>.+?) can be removed \[(?<Owner>.+?\.csproj)\]'
+
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "## RT0002 Report (${{ matrix.solution }})"
           if ($matches) {
+            $entries = @()
+            foreach ($match in $matches) {
+              if ($match.Line -match $entryPattern) {
+                $entries += [PSCustomObject]@{
+                  Owner = $Matches.Owner
+                  Reference = $Matches.Reference
+                }
+              }
+            }
+
+            $deduped = $entries | Sort-Object Owner, Reference -Unique
+            $grouped = $deduped | Group-Object Owner | Sort-Object Name
+
             Write-Host "Unused ProjectReferences found (RT0002):"
-            $matches | ForEach-Object { Write-Host $_.Line }
+            foreach ($group in $grouped) {
+              Write-Host "- $($group.Name)"
+              foreach ($item in ($group.Group | Sort-Object Reference)) {
+                Write-Host "  - $($item.Reference)"
+              }
+            }
+
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "Found $($deduped.Count) removable project reference(s)."
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ""
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "| Owner Project | Removable ProjectReference |"
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "| --- | --- |"
+            foreach ($item in $deduped) {
+              Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "| ``$($item.Owner)`` | ``$($item.Reference)`` |"
+            }
+
             throw "RT0002 findings detected."
           }
 
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "No RT0002 findings."
           Write-Host "No RT0002 findings for $solutionPath"
 
       - name: Upload RT0002 logs
