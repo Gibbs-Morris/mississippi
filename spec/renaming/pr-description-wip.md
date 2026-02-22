@@ -182,3 +182,40 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): project folder/file rename plus comprehensive project-reference rewiring in dependent source and test projects.
 - Risks / breaking surface: assembly identity drift can break internal test access; mitigated by temporary assembly-name stabilization pending mirrored test rename.
 - Follow-up items (if any): execute `T02` immediately after this commit.
+
+## Task 04: Aqueduct.Grains.L0Tests -> Aqueduct.Runtime.L0Tests
+
+- Task type: `TestRename`
+- Linked pair: `T02`
+
+### Summary
+- Renamed the mirrored Aqueduct runtime L0 test project to align with `P02` and updated solution wiring.
+
+### Changes made
+- Folder rename: `tests/Aqueduct.Grains.L0Tests` -> `tests/Aqueduct.Runtime.L0Tests`
+- `.csproj` rename: `tests/Aqueduct.Runtime.L0Tests/Aqueduct.Grains.L0Tests.csproj` -> `tests/Aqueduct.Runtime.L0Tests/Aqueduct.Runtime.L0Tests.csproj`
+- `.slnx` updates: updated `mississippi.slnx` test project path to renamed project
+- `.csproj` `ProjectReference` updates: none beyond path continuity inside renamed project
+- Task-local stabilization (csproj-only): added `<AssemblyName>Mississippi.Aqueduct.Grains.L0Tests</AssemblyName>` in `tests/Aqueduct.Runtime.L0Tests/Aqueduct.Runtime.L0Tests.csproj` to preserve internal-access compatibility.
+
+### Files touched
+- `tests/Aqueduct.Runtime.L0Tests/`
+- `mississippi.slnx`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Cleanup Mississippi: pass
+- Cleanup Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `see git log (Task T02 commit)`
+- Message: `Task T02: rename mirrored Aqueduct.Grains L0 tests to Aqueduct.Runtime.L0Tests`
+
+### PR-ready notes
+- Business value: keeps test project naming in lockstep with runtime project naming to reduce confusion and drift.
+- How it works (high level): mirrored test folder/project rename plus solution path update and assembly-name stabilization.
+- Risks / breaking surface: internal-access failures if assembly identity drifts; mitigated by preserving previous test assembly name in csproj.
+- Follow-up items (if any): continue with `P03` then `T03`.

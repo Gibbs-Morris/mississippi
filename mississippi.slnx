@@ -91,7 +91,7 @@
   </Folder>
   <Folder Name="/Tests/Aqueduct/">
     <Project Path="tests\Aqueduct.Abstractions.L0Tests\Aqueduct.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Aqueduct.Grains.L0Tests\Aqueduct.Grains.L0Tests.csproj" />
+    <Project Path="tests\Aqueduct.Runtime.L0Tests\Aqueduct.Runtime.L0Tests.csproj" />
     <Project Path="tests\Aqueduct.Gateway.L0Tests\Aqueduct.Gateway.L0Tests.csproj" />
     <Project Path="tests\Aqueduct.Gateway.L2Tests\Aqueduct.Gateway.L2Tests.csproj" />
     <Project Path="tests\Aqueduct.Gateway.L2Tests.AppHost\Aqueduct.Gateway.L2Tests.AppHost.csproj" />

@@ -59,7 +59,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `T01` Rename mirrored tests: `Aqueduct.L0Tests` -> `Aqueduct.Gateway.L0Tests`; `Aqueduct.L2Tests` -> `Aqueduct.Gateway.L2Tests`; `Aqueduct.L2Tests.AppHost` -> `Aqueduct.Gateway.L2Tests.AppHost`
 
 - [x] `P02` Rename `Aqueduct.Grains` -> `Aqueduct.Runtime`
-- [ ] `T02` Rename mirrored tests: `Aqueduct.Grains.L0Tests` -> `Aqueduct.Runtime.L0Tests`
+- [x] `T02` Rename mirrored tests: `Aqueduct.Grains.L0Tests` -> `Aqueduct.Runtime.L0Tests`
 
 - [ ] `P03` Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
 - [ ] `T03` Verify mirrored tests: no dedicated mirrored test project exists (record verification)
@@ -180,8 +180,21 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
 - [x] Commit created for this task only
-- Commit SHA: `23e33175`
+- Commit SHA: `2c64f3a4`
 - Notes: Added temporary `<AssemblyName>Mississippi.Aqueduct.Grains</AssemblyName>` in `Aqueduct.Runtime.csproj` so P02 passes before mirrored test rename task T02.
+
+### [x] Task: Rename `Aqueduct.Grains.L0Tests` -> `Aqueduct.Runtime.L0Tests`
+
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Cleanup: Mississippi passes
+- [x] Cleanup: Samples passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `faa34bd3`
+- Notes: Added temporary `<AssemblyName>Mississippi.Aqueduct.Grains.L0Tests</AssemblyName>` in `Aqueduct.Runtime.L0Tests.csproj` to preserve internal-access compatibility for T02.
 
 ### [ ] Task: Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
 
