@@ -15,7 +15,7 @@
         <ProjectReference Include="..\..\src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />

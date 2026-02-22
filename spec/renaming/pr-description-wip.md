@@ -377,3 +377,60 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): file-system rename + solution path update, with temporary assembly-name continuity to avoid staged sequence breakage.
 - Risks / breaking surface: stale paths in solution or tooling; mitigated by updating `.slnx` and validating with both solution builds and test suites.
 - Follow-up items (if any): continue to `P05`.
+
+## Task 09: EventSourcing.Brooks.Abstractions -> Brooks.Abstractions
+
+- Task type: `ProjectRename`
+- Linked pair: `P05`
+
+### Summary
+- Renamed the Brooks abstractions project to `Brooks.Abstractions` and rewired all direct project references.
+
+### Changes made
+- Folder rename: `src/EventSourcing.Brooks.Abstractions` -> `src/Brooks.Abstractions`
+- `.csproj` rename: `src/Brooks.Abstractions/EventSourcing.Brooks.Abstractions.csproj` -> `src/Brooks.Abstractions/Brooks.Abstractions.csproj`
+- `.slnx` updates: updated `mississippi.slnx` project path under `/Framework/EventSourcing/Brooks/`
+- `.csproj` `ProjectReference` updates:
+	- `src/Inlet.Silo/Inlet.Silo.csproj`
+	- `src/EventSourcing.Sagas.Abstractions/EventSourcing.Sagas.Abstractions.csproj`
+	- `src/EventSourcing.UxProjections.Abstractions/EventSourcing.UxProjections.Abstractions.csproj`
+	- `src/EventSourcing.Snapshots.Abstractions/EventSourcing.Snapshots.Abstractions.csproj`
+	- `src/EventSourcing.Aggregates.Abstractions/EventSourcing.Aggregates.Abstractions.csproj`
+	- `src/EventSourcing.Brooks/EventSourcing.Brooks.csproj`
+	- `src/EventSourcing.Brooks.Cosmos/EventSourcing.Brooks.Cosmos.csproj`
+	- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+	- `tests/Testing.Utilities/Testing.Utilities.csproj`
+	- `tests/EventSourcing.Brooks.Abstractions.L0Tests/EventSourcing.Brooks.Abstractions.L0Tests.csproj`
+	- `samples/Spring/Spring.Domain/Spring.Domain.csproj`
+- Task-local stabilization (csproj-only): added `<AssemblyName>Mississippi.EventSourcing.Brooks.Abstractions</AssemblyName>` to preserve assembly identity until `T05`.
+
+### Files touched
+- `src/Brooks.Abstractions/`
+- `mississippi.slnx`
+- `src/Inlet.Silo/Inlet.Silo.csproj`
+- `src/EventSourcing.Sagas.Abstractions/EventSourcing.Sagas.Abstractions.csproj`
+- `src/EventSourcing.UxProjections.Abstractions/EventSourcing.UxProjections.Abstractions.csproj`
+- `src/EventSourcing.Snapshots.Abstractions/EventSourcing.Snapshots.Abstractions.csproj`
+- `src/EventSourcing.Aggregates.Abstractions/EventSourcing.Aggregates.Abstractions.csproj`
+- `src/EventSourcing.Brooks/EventSourcing.Brooks.csproj`
+- `src/EventSourcing.Brooks.Cosmos/EventSourcing.Brooks.Cosmos.csproj`
+- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+- `tests/Testing.Utilities/Testing.Utilities.csproj`
+- `tests/EventSourcing.Brooks.Abstractions.L0Tests/EventSourcing.Brooks.Abstractions.L0Tests.csproj`
+- `samples/Spring/Spring.Domain/Spring.Domain.csproj`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task P05: rename EventSourcing.Brooks.Abstractions to Brooks.Abstractions`
+
+### PR-ready notes
+- Business value: simplifies Brooks contract naming and aligns it with the target taxonomy used by follow-on runtime/storage tasks.
+- How it works (high level): project folder/file rename plus direct reference rewiring in dependent source, test, and sample projects.
+- Risks / breaking surface: stale references and internals access regressions; mitigated by full gate run and temporary assembly-name continuity.
+- Follow-up items (if any): execute `T05` immediately.

@@ -18,7 +18,7 @@
     <Project Path="src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Brooks/">
-    <Project Path="src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
+    <Project Path="src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
     <Project Path="src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
   </Folder>
