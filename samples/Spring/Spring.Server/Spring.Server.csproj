@@ -33,7 +33,7 @@
     <ProjectReference Include="..\..\..\src\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Sagas\EventSourcing.Sagas.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
-    <ProjectReference Include="..\..\..\src\Inlet.Server.Generators\Inlet.Server.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\..\..\src\Inlet.Gateway.Generators\Inlet.Gateway.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
