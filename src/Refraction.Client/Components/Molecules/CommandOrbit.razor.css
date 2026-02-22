@@ -1,0 +1,15 @@
+.rf-command-orbit {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rf-command-orbit[data-state="latent"] {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rf-command-orbit[data-state="expanded"] {
+    opacity: 1;
+}

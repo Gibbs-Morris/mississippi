@@ -1,0 +1,33 @@
+.rf-pane {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--rf-color-surface-glass);
+    border: var(--rf-raw-stroke-hairline) solid var(--rf-color-text-muted);
+    border-radius: 4px;
+}
+
+.rf-pane__header {
+    padding: var(--rf-raw-space-3) var(--rf-raw-space-4);
+    border-bottom: var(--rf-raw-stroke-hairline) solid var(--rf-color-text-muted);
+}
+
+.rf-pane__title {
+    margin: 0;
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-sm);
+    font-weight: 500;
+    color: var(--rf-color-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.rf-pane__content {
+    flex: 1;
+    padding: var(--rf-raw-space-4);
+    overflow: auto;
+}
+
+.rf-pane__footer {
+    padding: var(--rf-raw-space-3) var(--rf-raw-space-4);
+    border-top: var(--rf-raw-stroke-hairline) solid var(--rf-color-text-muted);
+}

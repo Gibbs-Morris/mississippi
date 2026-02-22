@@ -1,0 +1,22 @@
+.rf-notification-pulse {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rf-raw-space-2);
+}
+
+.rf-notification-pulse__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--rf-color-status-warning);
+}
+
+.rf-notification-pulse[data-state="critical"] .rf-notification-pulse__dot {
+    background-color: var(--rf-color-status-error);
+}
+
+.rf-notification-pulse__content {
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-xs);
+    color: var(--rf-color-text-secondary);
+}

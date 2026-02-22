@@ -1,0 +1,10 @@
+.rf-telemetry-strip {
+    display: flex;
+    align-items: center;
+    gap: var(--rf-raw-space-4);
+    padding: var(--rf-raw-space-2) var(--rf-raw-space-4);
+    background-color: var(--rf-color-surface-glass);
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-xs);
+    color: var(--rf-color-text-secondary);
+}

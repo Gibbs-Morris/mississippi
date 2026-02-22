@@ -1,0 +1,97 @@
+/*
+ * Refraction Design Tokens
+ * Neo Blue holographic HUD system.
+ */
+
+:root {
+    /* ═══════════════════════════════════════════════════════════════════════
+     * RAW TOKENS - Base palette values (not meant for direct consumption)
+     * ═══════════════════════════════════════════════════════════════════════ */
+
+    /* Neo Blue (5-step palette) */
+    --rf-raw-neo-blue-n1: hsl(200, 100%, 80%);  /* brightest */
+    --rf-raw-neo-blue-n2: hsl(200, 95%, 70%);
+    --rf-raw-neo-blue-n3: hsl(200, 90%, 60%);   /* base accent */
+    --rf-raw-neo-blue-n4: hsl(200, 85%, 45%);
+    --rf-raw-neo-blue-n5: hsl(200, 80%, 30%);   /* darkest */
+
+    /* Neutral (void to near-white) */
+    --rf-raw-neutral-900: hsl(220, 15%, 6%);
+    --rf-raw-neutral-800: hsl(220, 12%, 12%);
+    --rf-raw-neutral-700: hsl(220, 10%, 18%);
+    --rf-raw-neutral-600: hsl(220, 8%, 28%);
+    --rf-raw-neutral-500: hsl(220, 6%, 45%);
+    --rf-raw-neutral-400: hsl(220, 4%, 65%);
+    --rf-raw-neutral-200: hsl(220, 4%, 85%);
+    --rf-raw-neutral-100: hsl(220, 5%, 95%);
+
+    /* Status colors */
+    --rf-raw-amber: hsl(40, 100%, 55%);
+    --rf-raw-red: hsl(0, 85%, 55%);
+    --rf-raw-green: hsl(145, 75%, 50%);
+
+    /* Alpha and glow values */
+    --rf-raw-alpha-soft: 0.08;
+    --rf-raw-alpha-medium: 0.25;
+    --rf-raw-alpha-strong: 0.6;
+    --rf-raw-glow-radius: 8px;
+    --rf-raw-stroke-hairline: 1px;
+    --rf-raw-stroke-default: 1.5px;
+    --rf-raw-stroke-bold: 2px;
+
+    /* Spacing scale */
+    --rf-raw-space-1: 0.25rem;
+    --rf-raw-space-2: 0.5rem;
+    --rf-raw-space-3: 0.75rem;
+    --rf-raw-space-4: 1rem;
+    --rf-raw-space-6: 1.5rem;
+    --rf-raw-space-8: 2rem;
+    --rf-raw-space-12: 3rem;
+
+    /* Typography */
+    --rf-raw-font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+    --rf-raw-font-sans: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --rf-raw-text-xs: 0.625rem;
+    --rf-raw-text-sm: 0.75rem;
+    --rf-raw-text-base: 0.875rem;
+    --rf-raw-text-lg: 1rem;
+    --rf-raw-text-xl: 1.25rem;
+
+    /* Timing */
+    --rf-raw-duration-instant: 80ms;
+    --rf-raw-duration-fast: 150ms;
+    --rf-raw-duration-normal: 250ms;
+    --rf-raw-duration-slow: 400ms;
+    --rf-raw-easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --rf-raw-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     * SEMANTIC TOKENS - Purpose-based aliases (use these in components)
+     * ═══════════════════════════════════════════════════════════════════════ */
+
+    /* Surfaces */
+    --rf-color-surface-void: var(--rf-raw-neutral-900);
+    --rf-color-surface-glass: hsla(200, 40%, 20%, var(--rf-raw-alpha-soft));
+    --rf-color-surface-elevated: var(--rf-raw-neutral-800);
+
+    /* Actions and interactive */
+    --rf-color-action-primary: var(--rf-raw-neo-blue-n3);
+    --rf-color-action-hover: var(--rf-raw-neo-blue-n2);
+    --rf-color-action-pressed: var(--rf-raw-neo-blue-n4);
+
+    /* Text */
+    --rf-color-text-primary: var(--rf-raw-neutral-100);
+    --rf-color-text-secondary: var(--rf-raw-neutral-400);
+    --rf-color-text-muted: var(--rf-raw-neutral-500);
+    --rf-color-text-accent: var(--rf-raw-neo-blue-n2);
+
+    /* Status */
+    --rf-color-status-warning: var(--rf-raw-amber);
+    --rf-color-status-error: var(--rf-raw-red);
+    --rf-color-status-success: var(--rf-raw-green);
+
+    /* Focus */
+    --rf-color-focus-ring: var(--rf-raw-neo-blue-n2);
+    --rf-focus-ring-width: 2px;
+    --rf-focus-ring-offset: 2px;
+}

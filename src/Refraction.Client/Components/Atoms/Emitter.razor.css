@@ -1,0 +1,12 @@
+.rf-emitter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rf-emitter__seed {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--rf-color-action-primary);
+}

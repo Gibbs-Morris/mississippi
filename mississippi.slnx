@@ -49,7 +49,7 @@
   </Folder>
   <Folder Name="/Framework/Refraction/">
     <Project Path="src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
-    <Project Path="src\Refraction\Refraction.csproj" />
+    <Project Path="src\Refraction.Client\Refraction.Client.csproj" />
     <Project Path="src\Refraction.Pages\Refraction.Pages.csproj" />
   </Folder>
   <Folder Name="/Framework/Reservoir/">
@@ -130,7 +130,7 @@
   </Folder>
   <Folder Name="/Tests/Refraction/">
     <Project Path="tests\Refraction.Abstractions.L0Tests\Refraction.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Refraction.L0Tests\Refraction.L0Tests.csproj" />
+    <Project Path="tests\Refraction.Client.L0Tests\Refraction.Client.L0Tests.csproj" />
     <Project Path="tests\Refraction.Pages.L0Tests\Refraction.Pages.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Reservoir/">

@@ -1,0 +1,12 @@
+@* Emitter - origin point for materialize/dematerialize gestures (state-down, events-up) *@
+
+<div class="rf-emitter"
+     data-state="@State"
+     tabindex="0"
+     role="button"
+     @onclick="HandleClickAsync"
+     @onfocus="HandleFocusAsync"
+     @attributes="AdditionalAttributes">
+    @* E0 Seed: minimal idle indicator *@
+    <span class="rf-emitter__seed"></span>
+</div>
