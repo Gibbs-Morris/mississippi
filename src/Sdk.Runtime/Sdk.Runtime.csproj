@@ -10,14 +10,13 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
-    <ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+    <ProjectReference Include="..\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
     <ProjectReference Include="..\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
     <ProjectReference Include="..\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
-    <ProjectReference Include="..\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <ProjectReference Include="..\Inlet.Runtime\Inlet.Runtime.csproj" />
     <ProjectReference Include="..\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
   </ItemGroup>

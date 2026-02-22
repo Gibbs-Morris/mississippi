@@ -14,7 +14,7 @@
   <Folder Name="/Framework/EventSourcing/" />
   <Folder Name="/Framework/EventSourcing/Aggregates/">
     <Project Path="src\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
+    <Project Path="src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
     <Project Path="src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Brooks/">
@@ -26,9 +26,7 @@
     <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
   </Folder>
-  <Folder Name="/Framework/EventSourcing/Sagas/">
-    <Project Path="src\EventSourcing.Sagas\EventSourcing.Sagas.csproj" />
-  </Folder>
+
   <Folder Name="/Framework/EventSourcing/Serialization/">
     <Project Path="src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
     <Project Path="src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
@@ -39,7 +37,6 @@
     <Project Path="src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/UxProjections/">
-    <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Testing/">
@@ -97,8 +94,8 @@
   <Folder Name="/Tests/EventSourcing/" />
   <Folder Name="/Tests/EventSourcing/Aggregates/">
     <Project Path="tests\DomainModeling.Abstractions.L0Tests\DomainModeling.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\DomainModeling.Runtime.L0Tests\DomainModeling.Runtime.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Aggregates.Api.L0Tests\EventSourcing.Aggregates.Api.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Aggregates.L0Tests\EventSourcing.Aggregates.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Brooks/">
     <Project Path="tests\Brooks.Abstractions.L0Tests\Brooks.Abstractions.L0Tests.csproj" />
@@ -109,9 +106,7 @@
     <Project Path="tests\EventSourcing.Reducers.Abstractions.L0Tests\EventSourcing.Reducers.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Reducers.L0Tests\EventSourcing.Reducers.L0Tests.csproj" />
   </Folder>
-  <Folder Name="/Tests/EventSourcing/Sagas/">
-    <Project Path="tests\EventSourcing.Sagas.L0Tests\EventSourcing.Sagas.L0Tests.csproj" />
-  </Folder>
+
   <Folder Name="/Tests/EventSourcing/Serialization/">
     <Project Path="tests\Brooks.Serialization.Abstractions.L0Tests\Brooks.Serialization.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Brooks.Serialization.Json.L0Tests\Brooks.Serialization.Json.L0Tests.csproj" />
@@ -122,7 +117,6 @@
     <Project Path="tests\Tributary.Runtime.Storage.Cosmos.L0Tests\Tributary.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/UxProjections/">
-    <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Refraction/">
