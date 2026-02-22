@@ -45,7 +45,7 @@
     <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Testing/">
-    <Project Path="src\EventSourcing.Testing\Mississippi.EventSourcing.Testing.csproj" />
+    <Project Path="src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />
   </Folder>
   <Folder Name="/Framework/Refraction/">
     <Project Path="src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
