@@ -6,7 +6,7 @@
     <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
     <ProjectReference Include="..\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
-    <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+    <ProjectReference Include="..\Reservoir.Client\Reservoir.Client.csproj" />
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>

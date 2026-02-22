@@ -32,6 +32,6 @@
         <ProjectReference Include="..\..\src\Inlet.Gateway\Inlet.Gateway.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Client\Reservoir.Client.csproj" />
     </ItemGroup>
 </Project>

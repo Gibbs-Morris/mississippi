@@ -10,5 +10,7 @@
   </ItemGroup>
   <PropertyGroup>
     <Description>Blazor integration for Reservoir state, actions, reducers, and effects.</Description>
+    <AssemblyName>Mississippi.Reservoir.Blazor</AssemblyName>
+    <RootNamespace>Mississippi.Reservoir.Blazor</RootNamespace>
   </PropertyGroup>
 </Project>
