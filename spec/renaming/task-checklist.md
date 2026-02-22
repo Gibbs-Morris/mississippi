@@ -93,8 +93,8 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `P08` Rename `EventSourcing.Serialization.Abstractions` -> `Brooks.Serialization.Abstractions`
 - [x] `T08` Rename mirrored tests: `EventSourcing.Serialization.L0Tests` -> `Brooks.Serialization.Abstractions.L0Tests`
 
-- [ ] `P09` Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
-- [ ] `T09` Rename mirrored tests: `EventSourcing.Serialization.Json.L0Tests` -> `Brooks.Serialization.Json.L0Tests`
+- [x] `P09` Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
+- [x] `T09` Rename mirrored tests: `EventSourcing.Serialization.Json.L0Tests` -> `Brooks.Serialization.Json.L0Tests`
 
 - [ ] `P10` Rename `EventSourcing.Snapshots.Cosmos` -> `Tributary.Runtime.Storage.Cosmos`
 - [ ] `T10` Rename mirrored tests: `EventSourcing.Snapshots.Cosmos.L0Tests` -> `Tributary.Runtime.Storage.Cosmos.L0Tests`
@@ -336,16 +336,27 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - Commit SHA: `5a0fac1a`
 - Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.L0Tests</AssemblyName>` in `Brooks.Serialization.Abstractions.L0Tests.csproj` to preserve internal-access compatibility during staged renames.
 
-### [ ] Task: Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
+### [x] Task: Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `60a28a4f`
+- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.Json</AssemblyName>`. Found extra consumers: `Architecture.L0Tests.csproj`, `Crescent.L2Tests.csproj` — both updated.
+
+### [x] Task: Rename `EventSourcing.Serialization.Json.L0Tests` -> `Brooks.Serialization.Json.L0Tests`
+
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `d1407f7e`
+- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.Json.L0Tests</AssemblyName>` in `Brooks.Serialization.Json.L0Tests.csproj`.
 
 ### [ ] Task: Rename `EventSourcing.Snapshots.Cosmos` -> `Tributary.Runtime.Storage.Cosmos`
 

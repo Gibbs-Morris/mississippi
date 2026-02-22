@@ -735,3 +735,81 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): test folder/project rename with solution path update and temporary assembly-name continuity.
 - Risks / breaking surface: stale solution path or internals access regressions; mitigated by full gate runs.
 - Follow-up items (if any): continue to `P09`.
+
+## Task 17: EventSourcing.Serialization.Json -> Brooks.Serialization.Json
+- Task type: SourceRename
+- Linked pair: P09
+
+### Summary
+- Renamed the JSON serialization implementation project to align with the Brooks.* area naming.
+
+### Changes made
+- Folder rename: src/EventSourcing.Serialization.Json -> src/Brooks.Serialization.Json
+- .csproj rename: EventSourcing.Serialization.Json.csproj -> Brooks.Serialization.Json.csproj
+- .slnx updates: updated mississippi.slnx project path under /Framework/EventSourcing/Serialization/
+- .csproj updates:
+    - src/Brooks.Serialization.Json/Brooks.Serialization.Json.csproj (added temporary <AssemblyName>Mississippi.EventSourcing.Serialization.Json</AssemblyName>)
+    - src/Sdk.Silo/Sdk.Silo.csproj (updated ProjectReference)
+    - src/Sdk.Server/Sdk.Server.csproj (updated ProjectReference)
+    - 	ests/Architecture.L0Tests/Architecture.L0Tests.csproj (updated ProjectReference — extra consumer found during gates)
+    - samples/Crescent/Crescent.L2Tests/Crescent.L2Tests.csproj (updated ProjectReference — extra consumer found during gates)
+    - 	ests/EventSourcing.Serialization.Json.L0Tests/EventSourcing.Serialization.Json.L0Tests.csproj (updated ProjectReference to new source path, pre-T09)
+
+### Files touched
+- src/Brooks.Serialization.Json/
+- mississippi.slnx
+- src/Sdk.Server/Sdk.Server.csproj
+- src/Sdk.Silo/Sdk.Silo.csproj
+- 	ests/Architecture.L0Tests/Architecture.L0Tests.csproj
+- samples/Crescent/Crescent.L2Tests/Crescent.L2Tests.csproj
+- 	ests/EventSourcing.Serialization.Json.L0Tests/EventSourcing.Serialization.Json.L0Tests.csproj
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `60a28a4f`
+- Message: `P09: rename EventSourcing.Serialization.Json -> Brooks.Serialization.Json`
+
+### PR-ready notes
+- Business value: aligns the JSON serialization implementation project with the Brooks.Serialization.* namespace grouping used by its abstractions project.
+- How it works (high level): project folder/file rename with direct source/test reference rewires and temporary assembly-name continuity.
+- Risks / breaking surface: extra consumers in Architecture.L0Tests and Crescent.L2Tests required finding during gate failures; mitigated by re-running all four gates clean.
+- Follow-up items (if any): execute `T09` immediately.
+
+## Task 18: EventSourcing.Serialization.Json.L0Tests -> Brooks.Serialization.Json.L0Tests
+- Task type: TestRename
+- Linked pair: T09
+
+### Summary
+- Renamed the mirrored JSON serialization L0 test project to align with P09.
+
+### Changes made
+- Folder rename: 	ests/EventSourcing.Serialization.Json.L0Tests -> 	ests/Brooks.Serialization.Json.L0Tests
+- .csproj rename: EventSourcing.Serialization.Json.L0Tests.csproj -> Brooks.Serialization.Json.L0Tests.csproj
+- .slnx updates: updated mississippi.slnx test project path under /Tests/EventSourcing/Serialization/
+- .csproj updates:
+    - 	ests/Brooks.Serialization.Json.L0Tests/Brooks.Serialization.Json.L0Tests.csproj (added temporary <AssemblyName>Mississippi.EventSourcing.Serialization.Json.L0Tests</AssemblyName>)
+
+### Files touched
+- 	ests/Brooks.Serialization.Json.L0Tests/
+- mississippi.slnx
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `d1407f7e`
+- Message: `T09: rename EventSourcing.Serialization.Json.L0Tests -> Brooks.Serialization.Json.L0Tests`
+
+### PR-ready notes
+- Business value: keeps serialization JSON test naming aligned with the renamed source project.
+- How it works (high level): test folder/project rename with solution path update and temporary assembly-name continuity.
+- Risks / breaking surface: stale solution path or internals access regressions; mitigated by full gate runs.
+- Follow-up items (if any): continue to `P10`.
