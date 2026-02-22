@@ -9,7 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />
-    <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <AssemblyName>Mississippi.EventSourcing.Brooks.Cosmos</AssemblyName>

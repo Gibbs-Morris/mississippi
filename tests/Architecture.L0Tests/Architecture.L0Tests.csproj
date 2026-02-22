@@ -16,6 +16,7 @@
         <ProjectReference Include="..\..\src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Runtime\Brooks.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Runtime\Tributary.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Abstractions\Tributary.Abstractions.csproj" />
