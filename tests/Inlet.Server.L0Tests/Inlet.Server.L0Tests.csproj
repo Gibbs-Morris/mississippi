@@ -10,7 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Inlet.Server\Inlet.Server.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Gateway\Inlet.Gateway.csproj" />
         <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
     </ItemGroup>
 

@@ -13,7 +13,7 @@
     <ProjectReference Include="..\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
     <ProjectReference Include="..\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
-    <ProjectReference Include="..\Inlet.Server\Inlet.Server.csproj" />
+    <ProjectReference Include="..\Inlet.Gateway\Inlet.Gateway.csproj" />
     <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
     <ProjectReference Include="..\Inlet.Server.Generators\Inlet.Server.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />

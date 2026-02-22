@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <AssemblyName>Mississippi.Inlet.Server</AssemblyName>
     <Description>Server runtime for exposing Inlet projections and API transport.</Description>
   </PropertyGroup>
   <ItemGroup>
