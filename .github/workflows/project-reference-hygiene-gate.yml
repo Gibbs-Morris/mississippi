@@ -79,7 +79,7 @@ jobs:
 
       - name: Upload RT0002 logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: rt0002-logs-${{ matrix.solution }}
           path: ${{ runner.temp }}/rt0002-*.log
