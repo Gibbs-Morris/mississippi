@@ -141,7 +141,7 @@
   </Folder>
   <Folder Name="/Tests/Inlet/">
     <Project Path="tests\Inlet.Abstractions.L0Tests\Inlet.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Blazor.Server.L0Tests\Inlet.Blazor.Server.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Gateway.Abstractions.L0Tests\Inlet.Gateway.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Inlet.Client.L0Tests\Inlet.Client.L0Tests.csproj" />
     <Project Path="tests\Inlet.Silo.L0Tests\Inlet.Silo.L0Tests.csproj" />
     <Project Path="tests\Inlet.Server.L0Tests\Inlet.Server.L0Tests.csproj" />
