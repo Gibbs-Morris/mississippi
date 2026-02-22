@@ -62,7 +62,7 @@
     <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <Project Path="src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
     <Project Path="src\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
-    <Project Path="src\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />
+    <Project Path="src\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
     <Project Path="src\Inlet.Client\Inlet.Client.csproj" />
     <Project Path="src\Inlet.Gateway\Inlet.Gateway.csproj" />
     <Project Path="src\Inlet.Silo\Inlet.Silo.csproj" />

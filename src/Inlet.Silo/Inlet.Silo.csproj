@@ -11,7 +11,7 @@
     <ProjectReference Include="..\EventSourcing.Sagas\EventSourcing.Sagas.csproj" />
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
-    <ProjectReference Include="..\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
   </ItemGroup>
 </Project>

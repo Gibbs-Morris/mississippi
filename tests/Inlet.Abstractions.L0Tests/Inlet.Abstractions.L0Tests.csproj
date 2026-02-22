@@ -3,7 +3,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>
