@@ -5,7 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
     </ItemGroup>
 
 </Project>

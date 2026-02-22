@@ -92,7 +92,7 @@
   <Folder Name="/Tests/EventSourcing/Aggregates/">
     <Project Path="tests\DomainModeling.Abstractions.L0Tests\DomainModeling.Abstractions.L0Tests.csproj" />
     <Project Path="tests\DomainModeling.Runtime.L0Tests\DomainModeling.Runtime.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Aggregates.Api.L0Tests\EventSourcing.Aggregates.Api.L0Tests.csproj" />
+    <Project Path="tests\DomainModeling.Gateway.L0Tests\DomainModeling.Gateway.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Brooks/">
     <Project Path="tests\Brooks.Abstractions.L0Tests\Brooks.Abstractions.L0Tests.csproj" />
@@ -112,9 +112,6 @@
     <Project Path="tests\EventSourcing.Snapshots.Abstractions.L0Tests\EventSourcing.Snapshots.Abstractions.L0Tests.csproj" />
     <Project Path="tests\EventSourcing.Snapshots.L0Tests\EventSourcing.Snapshots.L0Tests.csproj" />
     <Project Path="tests\Tributary.Runtime.Storage.Cosmos.L0Tests\Tributary.Runtime.Storage.Cosmos.L0Tests.csproj" />
-  </Folder>
-  <Folder Name="/Tests/EventSourcing/UxProjections/">
-    <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Refraction/">
     <Project Path="tests\Refraction.Abstractions.L0Tests\Refraction.Abstractions.L0Tests.csproj" />
