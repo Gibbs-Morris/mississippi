@@ -32,6 +32,7 @@
   </Folder>
   <Folder Name="/Framework/EventSourcing/Tributary/">
     <Project Path="src\Tributary.Abstractions\Tributary.Abstractions.csproj" />
+    <Project Path="src\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
     <Project Path="src\Tributary.Runtime\Tributary.Runtime.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Testing/">
