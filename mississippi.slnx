@@ -116,7 +116,7 @@
   </Folder>
   <Folder Name="/Tests/EventSourcing/Serialization/">
     <Project Path="tests\Brooks.Serialization.Abstractions.L0Tests\Brooks.Serialization.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Serialization.Json.L0Tests\EventSourcing.Serialization.Json.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Serialization.Json.L0Tests\Brooks.Serialization.Json.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Snapshots/">
     <Project Path="tests\EventSourcing.Snapshots.Abstractions.L0Tests\EventSourcing.Snapshots.Abstractions.L0Tests.csproj" />
