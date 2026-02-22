@@ -144,7 +144,7 @@
     <Project Path="tests\Inlet.Gateway.Abstractions.L0Tests\Inlet.Gateway.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Inlet.Client.L0Tests\Inlet.Client.L0Tests.csproj" />
     <Project Path="tests\Inlet.Silo.L0Tests\Inlet.Silo.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Server.L0Tests\Inlet.Server.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Gateway.L0Tests\Inlet.Gateway.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/SDK/">
     <Project Path="tests\Sdk.Client.L0Tests\Sdk.Client.L0Tests.csproj" />
