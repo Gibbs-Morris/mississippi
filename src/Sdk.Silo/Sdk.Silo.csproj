@@ -17,7 +17,7 @@
     <ProjectReference Include="..\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
     <ProjectReference Include="..\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
-    <ProjectReference Include="..\Inlet.Silo\Inlet.Silo.csproj" />
+    <ProjectReference Include="..\Inlet.Runtime\Inlet.Runtime.csproj" />
     <ProjectReference Include="..\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
   </ItemGroup>
 </Project>

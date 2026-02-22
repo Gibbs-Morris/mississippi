@@ -65,7 +65,7 @@
     <Project Path="src\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
     <Project Path="src\Inlet.Client\Inlet.Client.csproj" />
     <Project Path="src\Inlet.Gateway\Inlet.Gateway.csproj" />
-    <Project Path="src\Inlet.Silo\Inlet.Silo.csproj" />
+    <Project Path="src\Inlet.Runtime\Inlet.Runtime.csproj" />
   </Folder>
   <Folder Name="/Framework/SDK/">
     <Project Path="src\Sdk.Client\Sdk.Client.csproj" />

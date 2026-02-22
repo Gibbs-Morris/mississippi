@@ -28,7 +28,7 @@
         <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />
-        <ProjectReference Include="..\..\src\Inlet.Silo\Inlet.Silo.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Runtime\Inlet.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Gateway\Inlet.Gateway.csproj" />
         <ProjectReference Include="..\..\src\Reservoir\Reservoir.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
