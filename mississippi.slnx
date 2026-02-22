@@ -56,7 +56,7 @@
     <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
     <Project Path="src\Reservoir.Core\Reservoir.Core.csproj" />
     <Project Path="src\Reservoir.Client\Reservoir.Client.csproj" />
-    <Project Path="src\Reservoir.Testing\Mississippi.Reservoir.Testing.csproj" />
+    <Project Path="src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
   </Folder>
   <Folder Name="/Framework/Inlet/">
     <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
@@ -137,7 +137,7 @@
     <Project Path="tests\Reservoir.Abstractions.L0Tests\Reservoir.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Reservoir.Client.L0Tests\Reservoir.Client.L0Tests.csproj" />
     <Project Path="tests\Reservoir.Core.L0Tests\Reservoir.Core.L0Tests.csproj" />
-    <Project Path="tests\Reservoir.Testing.L0Tests\Reservoir.Testing.L0Tests.csproj" />
+    <Project Path="tests\Reservoir.TestHarness.L0Tests\Reservoir.TestHarness.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Inlet/">
     <Project Path="tests\Inlet.Abstractions.L0Tests\Inlet.Abstractions.L0Tests.csproj" />

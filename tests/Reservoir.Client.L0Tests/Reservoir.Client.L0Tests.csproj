@@ -11,7 +11,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Client\Reservoir.Client.csproj" />
-        <ProjectReference Include="..\..\src\Reservoir.Testing\Mississippi.Reservoir.Testing.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
     </ItemGroup>
 
 </Project>
