@@ -471,3 +471,54 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): test folder/project rename plus solution path update and temporary assembly-name continuity.
 - Risks / breaking surface: stale test project path references; mitigated with `.slnx` update and full gate runs.
 - Follow-up items (if any): continue to `P06`.
+
+## Task 11: EventSourcing.Brooks -> Brooks.Runtime
+
+- Task type: `ProjectRename`
+- Linked pair: `P06`
+
+### Summary
+- Renamed the Brooks runtime project to `Brooks.Runtime` and rewired direct source/test/sample references.
+
+### Changes made
+- Folder rename: `src/EventSourcing.Brooks` -> `src/Brooks.Runtime`
+- `.csproj` rename: `src/Brooks.Runtime/EventSourcing.Brooks.csproj` -> `src/Brooks.Runtime/Brooks.Runtime.csproj`
+- `.slnx` updates: updated `mississippi.slnx` project path under `/Framework/EventSourcing/Brooks/`
+- `.csproj` `ProjectReference` updates:
+	- `src/Sdk.Silo/Sdk.Silo.csproj`
+	- `src/EventSourcing.UxProjections/EventSourcing.UxProjections.csproj`
+	- `src/EventSourcing.Snapshots/EventSourcing.Snapshots.csproj`
+	- `src/EventSourcing.Aggregates/EventSourcing.Aggregates.csproj`
+	- `tests/Inlet.Silo.L0Tests/Inlet.Silo.L0Tests.csproj`
+	- `tests/EventSourcing.Brooks.L0Tests/EventSourcing.Brooks.L0Tests.csproj`
+	- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+	- `samples/Crescent/Crescent.L2Tests/Crescent.L2Tests.csproj`
+- Task-local stabilization (csproj-only): added `<AssemblyName>Mississippi.EventSourcing.Brooks</AssemblyName>` to preserve assembly identity until `T06`.
+
+### Files touched
+- `src/Brooks.Runtime/`
+- `mississippi.slnx`
+- `src/Sdk.Silo/Sdk.Silo.csproj`
+- `src/EventSourcing.UxProjections/EventSourcing.UxProjections.csproj`
+- `src/EventSourcing.Snapshots/EventSourcing.Snapshots.csproj`
+- `src/EventSourcing.Aggregates/EventSourcing.Aggregates.csproj`
+- `tests/Inlet.Silo.L0Tests/Inlet.Silo.L0Tests.csproj`
+- `tests/EventSourcing.Brooks.L0Tests/EventSourcing.Brooks.L0Tests.csproj`
+- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+- `samples/Crescent/Crescent.L2Tests/Crescent.L2Tests.csproj`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task P06: rename EventSourcing.Brooks to Brooks.Runtime`
+
+### PR-ready notes
+- Business value: aligns Brooks runtime naming with the target package taxonomy and reduces ambiguity between abstractions/runtime/storage projects.
+- How it works (high level): project folder/file rename plus direct reference rewires across source, test, and sample projects.
+- Risks / breaking surface: stale references and internals access regressions; mitigated by full gate runs and temporary assembly-name continuity.
+- Follow-up items (if any): execute `T06` immediately.
