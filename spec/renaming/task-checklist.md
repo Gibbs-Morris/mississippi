@@ -96,56 +96,56 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `P09` Rename `EventSourcing.Serialization.Json` -> `Brooks.Serialization.Json`
 - [x] `T09` Rename mirrored tests: `EventSourcing.Serialization.Json.L0Tests` -> `Brooks.Serialization.Json.L0Tests`
 
-- [ ] `P10` Rename `EventSourcing.Snapshots.Cosmos` -> `Tributary.Runtime.Storage.Cosmos`
-- [ ] `T10` Rename mirrored tests: `EventSourcing.Snapshots.Cosmos.L0Tests` -> `Tributary.Runtime.Storage.Cosmos.L0Tests`
+- [x] `P10` Rename `EventSourcing.Snapshots.Cosmos` -> `Tributary.Runtime.Storage.Cosmos`
+- [x] `T10` Rename mirrored tests: `EventSourcing.Snapshots.Cosmos.L0Tests` -> `Tributary.Runtime.Storage.Cosmos.L0Tests`
 
-- [ ] `P11` Rename `Inlet.Server.Abstractions` -> `Inlet.Gateway.Abstractions`
-- [ ] `T11` Rename mirrored tests: `Inlet.Blazor.Server.L0Tests` -> `Inlet.Gateway.Abstractions.L0Tests`
+- [x] `P11` Rename `Inlet.Server.Abstractions` -> `Inlet.Gateway.Abstractions`
+- [x] `T11` Rename mirrored tests: `Inlet.Blazor.Server.L0Tests` -> `Inlet.Gateway.Abstractions.L0Tests`
 
-- [ ] `P12` Rename `Inlet.Server` -> `Inlet.Gateway`
-- [ ] `T12` Rename mirrored tests: `Inlet.Server.L0Tests` -> `Inlet.Gateway.L0Tests`
+- [x] `P12` Rename `Inlet.Server` -> `Inlet.Gateway`
+- [x] `T12` Rename mirrored tests: `Inlet.Server.L0Tests` -> `Inlet.Gateway.L0Tests`
 
-- [ ] `P13` Rename `Inlet.Server.Generators` -> `Inlet.Gateway.Generators`
-- [ ] `T13` Rename mirrored tests: `Inlet.Server.Generators.L0Tests` -> `Inlet.Gateway.Generators.L0Tests`
+- [x] `P13` Rename `Inlet.Server.Generators` -> `Inlet.Gateway.Generators`
+- [x] `T13` Rename mirrored tests: `Inlet.Server.Generators.L0Tests` -> `Inlet.Gateway.Generators.L0Tests`
 
-- [ ] `P14` Rename `Inlet.Silo.Abstractions` -> `Inlet.Runtime.Abstractions`
-- [ ] `T14` Verify mirrored tests: no dedicated mirrored test project exists (record verification)
+- [x] `P14` Rename `Inlet.Silo.Abstractions` -> `Inlet.Runtime.Abstractions`
+- [x] `T14` Verify mirrored tests: no dedicated mirrored test project exists (record verification)
 
-- [ ] `P15` Rename `Inlet.Silo` -> `Inlet.Runtime`
-- [ ] `T15` Rename mirrored tests: `Inlet.Silo.L0Tests` -> `Inlet.Runtime.L0Tests`
+- [x] `P15` Rename `Inlet.Silo` -> `Inlet.Runtime`
+- [x] `T15` Rename mirrored tests: `Inlet.Silo.L0Tests` -> `Inlet.Runtime.L0Tests`
 
-- [ ] `P16` Rename `Inlet.Silo.Generators` -> `Inlet.Runtime.Generators`
-- [ ] `T16` Rename mirrored tests: `Inlet.Silo.Generators.L0Tests` -> `Inlet.Runtime.Generators.L0Tests`
+- [x] `P16` Rename `Inlet.Silo.Generators` -> `Inlet.Runtime.Generators`
+- [x] `T16` Rename mirrored tests: `Inlet.Silo.Generators.L0Tests` -> `Inlet.Runtime.Generators.L0Tests`
 
-- [ ] `P17` Rename `Mississippi.EventSourcing.Testing` -> `DomainModeling.TestHarness`
-- [ ] `T17` Verify mirrored tests: no dedicated mirrored test project exists (record verification)
+- [x] `P17` Rename `Mississippi.EventSourcing.Testing` -> `DomainModeling.TestHarness`
+- [x] `T17` Verify mirrored tests: no dedicated mirrored test project exists (record verification)
 
-- [ ] `P18` Rename `Refraction` -> `Refraction.Client`
-- [ ] `T18` Rename mirrored tests: `Refraction.L0Tests` -> `Refraction.Client.L0Tests`
+- [x] `P18` Rename `Refraction` -> `Refraction.Client`
+- [x] `T18` Rename mirrored tests: `Refraction.L0Tests` -> `Refraction.Client.L0Tests`
 
-- [ ] `P19` Rename `Refraction.Pages` -> `Refraction.Client.StateManagement`
-- [ ] `T19` Rename mirrored tests: `Refraction.Pages.L0Tests` -> `Refraction.Client.StateManagement.L0Tests`
+- [x] `P19` Rename `Refraction.Pages` -> `Refraction.Client.StateManagement`
+- [x] `T19` Rename mirrored tests: `Refraction.Pages.L0Tests` -> `Refraction.Client.StateManagement.L0Tests`
 
-- [ ] `P20` Rename `Reservoir` -> `Reservoir.Core`
-- [ ] `T20` Rename mirrored tests: `Reservoir.L0Tests` -> `Reservoir.Core.L0Tests`
+- [x] `P20` Rename `Reservoir` -> `Reservoir.Core`
+- [x] `T20` Rename mirrored tests: `Reservoir.L0Tests` -> `Reservoir.Core.L0Tests`
 
-- [ ] `P21` Rename `Reservoir.Blazor` -> `Reservoir.Client`
-- [ ] `T21` Rename mirrored tests: `Reservoir.Blazor.L0Tests` -> `Reservoir.Client.L0Tests`
+- [x] `P21` Rename `Reservoir.Blazor` -> `Reservoir.Client`
+- [x] `T21` Rename mirrored tests: `Reservoir.Blazor.L0Tests` -> `Reservoir.Client.L0Tests`
 
-- [ ] `P22` Rename `Sdk.Server` -> `Sdk.Gateway`
-- [ ] `T22` Rename mirrored tests: `Sdk.Server.L0Tests` -> `Sdk.Gateway.L0Tests`
+- [x] `P22` Rename `Sdk.Server` -> `Sdk.Gateway`
+- [x] `T22` Rename mirrored tests: `Sdk.Server.L0Tests` -> `Sdk.Gateway.L0Tests`
 
-- [ ] `P23` Rename `Sdk.Silo` -> `Sdk.Runtime`
-- [ ] `T23` Rename mirrored tests: `Sdk.Silo.L0Tests` -> `Sdk.Runtime.L0Tests`
+- [x] `P23` Rename `Sdk.Silo` -> `Sdk.Runtime`
+- [x] `T23` Rename mirrored tests: `Sdk.Silo.L0Tests` -> `Sdk.Runtime.L0Tests`
 
-- [ ] `P23b` Rename `Mississippi.Reservoir.Testing` -> `Reservoir.TestHarness`
-- [ ] `T23b` Rename mirrored tests: `Reservoir.Testing.L0Tests` -> `Reservoir.TestHarness.L0Tests`
+- [x] `P23b` Rename `Mississippi.Reservoir.Testing` -> `Reservoir.TestHarness`
+- [x] `T23b` Rename mirrored tests: `Reservoir.Testing.L0Tests` -> `Reservoir.TestHarness.L0Tests`
 
-- [ ] `P24` Merge `EventSourcing.Aggregates.Abstractions` + `EventSourcing.Sagas.Abstractions` + `EventSourcing.UxProjections.Abstractions` -> `DomainModeling.Abstractions`
-- [ ] `T24` Merge mirrored tests: `EventSourcing.Aggregates.Abstractions.L0Tests` + `EventSourcing.UxProjections.Abstractions.L0Tests` -> `DomainModeling.Abstractions.L0Tests`
+- [x] `P24` Merge `EventSourcing.Aggregates.Abstractions` + `EventSourcing.Sagas.Abstractions` + `EventSourcing.UxProjections.Abstractions` -> `DomainModeling.Abstractions`
+- [x] `T24` Merge mirrored tests: `EventSourcing.Aggregates.Abstractions.L0Tests` + `EventSourcing.UxProjections.Abstractions.L0Tests` -> `DomainModeling.Abstractions.L0Tests`
 
-- [ ] `P25` Merge `EventSourcing.Aggregates` + `EventSourcing.Sagas` + `EventSourcing.UxProjections` -> `DomainModeling.Runtime`
-- [ ] `T25` Merge mirrored tests: `EventSourcing.Aggregates.L0Tests` + `EventSourcing.Sagas.L0Tests` + `EventSourcing.UxProjections.L0Tests` -> `DomainModeling.Runtime.L0Tests`
+- [x] `P25` Merge `EventSourcing.Aggregates` + `EventSourcing.Sagas` + `EventSourcing.UxProjections` -> `DomainModeling.Runtime`
+- [x] `T25` Merge mirrored tests: `EventSourcing.Aggregates.L0Tests` + `EventSourcing.Sagas.L0Tests` + `EventSourcing.UxProjections.L0Tests` -> `DomainModeling.Runtime.L0Tests`
 
 - [ ] `P26` Merge `EventSourcing.Aggregates.Api` + `EventSourcing.UxProjections.Api` -> `DomainModeling.Gateway`
 - [ ] `T26` Merge mirrored tests: `EventSourcing.Aggregates.Api.L0Tests` + `EventSourcing.UxProjections.Api.L0Tests` -> `DomainModeling.Gateway.L0Tests`
@@ -358,159 +358,159 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - Commit SHA: `d1407f7e`
 - Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Serialization.Json.L0Tests</AssemblyName>` in `Brooks.Serialization.Json.L0Tests.csproj`.
 
-### [ ] Task: Rename `EventSourcing.Snapshots.Cosmos` -> `Tributary.Runtime.Storage.Cosmos`
+### [x] Task: Rename `EventSourcing.Snapshots.Cosmos` -> `Tributary.Runtime.Storage.Cosmos`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `b03ba57e` (P10), `edf51c23` (T10)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Inlet.Server.Abstractions` -> `Inlet.Gateway.Abstractions`
+### [x] Task: Rename `Inlet.Server.Abstractions` -> `Inlet.Gateway.Abstractions`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `521ee4cd` (P11), `7eec627d` (T11)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Inlet.Server` -> `Inlet.Gateway`
+### [x] Task: Rename `Inlet.Server` -> `Inlet.Gateway`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `11558f22` (P12), `ade812b1` (T12)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Inlet.Server.Generators` -> `Inlet.Gateway.Generators`
+### [x] Task: Rename `Inlet.Server.Generators` -> `Inlet.Gateway.Generators`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `1f055fd4` (P13), `52f8aded` (T13)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Inlet.Silo.Abstractions` -> `Inlet.Runtime.Abstractions`
+### [x] Task: Rename `Inlet.Silo.Abstractions` -> `Inlet.Runtime.Abstractions`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `64fd1807` (P14) — T14: no test project (verified)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Inlet.Silo` -> `Inlet.Runtime`
+### [x] Task: Rename `Inlet.Silo` -> `Inlet.Runtime`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `4d9e7e04` (P15), `2a42d0bf` (T15)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Inlet.Silo.Generators` -> `Inlet.Runtime.Generators`
+### [x] Task: Rename `Inlet.Silo.Generators` -> `Inlet.Runtime.Generators`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `109a428a` (P16), `6670b331` (T16)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Mississippi.EventSourcing.Testing` -> `DomainModeling.TestHarness`
+### [x] Task: Rename `Mississippi.EventSourcing.Testing` -> `DomainModeling.TestHarness`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `c7f54113` (P17) — T17: no test project (verified)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Refraction` -> `Refraction.Client`
+### [x] Task: Rename `Refraction` -> `Refraction.Client`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `fa02708f` (P18), `09d89fcf` (T18)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Refraction.Pages` -> `Refraction.Client.StateManagement`
+### [x] Task: Rename `Refraction.Pages` -> `Refraction.Client.StateManagement`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `d8c28240` (P19), `ac070de6` (T19)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Reservoir` -> `Reservoir.Core`
+### [x] Task: Rename `Reservoir` -> `Reservoir.Core`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `d70315e9` (P20), `436eb591` (T20)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Reservoir.Blazor` -> `Reservoir.Client`
+### [x] Task: Rename `Reservoir.Blazor` -> `Reservoir.Client`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `b004742a` (P21), `12778344` (T21)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Sdk.Server` -> `Sdk.Gateway`
+### [x] Task: Rename `Sdk.Server` -> `Sdk.Gateway`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `14bed8d3` (P22), `db6ee1ae` (T22)
 - Notes: `<optional>`
 
-### [ ] Task: Rename `Sdk.Silo` -> `Sdk.Runtime`
+### [x] Task: Rename `Sdk.Silo` -> `Sdk.Runtime`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `a9e3e54a` (P23), `264846c2` (T23), `23ba37bb` (P23b), `66465d0c` (T23b)
+- Notes: P23b also covers Reservoir.Testing -> Reservoir.TestHarness rename.
 
 ## Merge Tasks (Phase 2)
 
@@ -524,36 +524,36 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - Do not modify `.cs` file contents in this stage; move files only.
 - After completing each task, append a task entry to `pr-description-wip.md` before starting the next task.
 
-### [ ] Task: Merge `EventSourcing.Aggregates.Abstractions` + `EventSourcing.Sagas.Abstractions` + `EventSourcing.UxProjections.Abstractions` -> `DomainModeling.Abstractions`
+### [x] Task: Merge `EventSourcing.Aggregates.Abstractions` + `EventSourcing.Sagas.Abstractions` + `EventSourcing.UxProjections.Abstractions` -> `DomainModeling.Abstractions`
 
-- [ ] Create target project/folder (`DomainModeling.Abstractions`)
-- [ ] Add target project to `.slnx`
-- [ ] Move all `.cs` files from all source projects into target
-- [ ] Update `ProjectReference` entries to target project
-- [ ] Delete old source `.csproj` files/folders
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] WIP notes appended to `pr-description-wip.md`
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Create target project/folder (`DomainModeling.Abstractions`)
+- [x] Add target project to `.slnx`
+- [x] Move all `.cs` files from all source projects into target
+- [x] Update `ProjectReference` entries to target project
+- [x] Delete old source `.csproj` files/folders
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] WIP notes appended to `pr-description-wip.md`
+- [x] Commit created for this task only
+- Commit SHA: `92a0ab09` (P24), `399d69dd` (T24)
 - Notes: `<optional>`
 
-### [ ] Task: Merge `EventSourcing.Aggregates` + `EventSourcing.Sagas` + `EventSourcing.UxProjections` -> `DomainModeling.Runtime`
+### [x] Task: Merge `EventSourcing.Aggregates` + `EventSourcing.Sagas` + `EventSourcing.UxProjections` -> `DomainModeling.Runtime`
 
-- [ ] Create target project/folder (`DomainModeling.Runtime`)
-- [ ] Add target project to `.slnx`
-- [ ] Move all `.cs` files from all source projects into target
-- [ ] Update `ProjectReference` entries to target project
-- [ ] Delete old source `.csproj` files/folders
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] WIP notes appended to `pr-description-wip.md`
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Create target project/folder (`DomainModeling.Runtime`)
+- [x] Add target project to `.slnx`
+- [x] Move all `.cs` files from all source projects into target
+- [x] Update `ProjectReference` entries to target project
+- [x] Delete old source `.csproj` files/folders
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] WIP notes appended to `pr-description-wip.md`
+- [x] Commit created for this task only
+- Commit SHA: `32384a05` (P25), `4ae4d32a` (T25)
 - Notes: `<optional>`
 
 ### [ ] Task: Merge `EventSourcing.Aggregates.Api` + `EventSourcing.UxProjections.Api` -> `DomainModeling.Gateway`
