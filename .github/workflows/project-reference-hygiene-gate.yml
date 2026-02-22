@@ -24,6 +24,7 @@ jobs:
     name: "Fail on Unused ProjectReference (RT0002)"
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - solution: mississippi.slnx
