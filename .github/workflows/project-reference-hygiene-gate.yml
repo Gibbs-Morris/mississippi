@@ -25,7 +25,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        solution: [ mississippi.slnx, samples.slnx ]
+        include:
+          - solution: mississippi.slnx
+            artifact_suffix: mississippi-slnx
+          - solution: samples.slnx
+            artifact_suffix: samples-slnx
 
     steps:
       - name: Checkout
@@ -81,5 +85,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rt0002-logs-${{ matrix.solution }}
+          name: rt0002-logs-${{ matrix.artifact_suffix }}
           path: ${{ runner.temp }}/rt0002-*.log
