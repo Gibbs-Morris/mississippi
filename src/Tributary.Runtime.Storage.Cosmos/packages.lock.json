@@ -571,11 +571,19 @@
           "Newtonsoft.Json": "[13.0.4, )"
         }
       },
-      "Mississippi.EventSourcing.Snapshots.Abstractions": {
+      "Mississippi.Tributary.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Tributary.Runtime.Storage.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
+          "Mississippi.Tributary.Abstractions": "[1.0.0, )"
         }
       },
       "CloudNative.CloudEvents": {

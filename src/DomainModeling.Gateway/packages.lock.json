@@ -199,21 +199,6 @@
         "resolved": "10.0.0",
         "contentHash": "r+m+05b+TndDQIN6/yMkotk7wNsUPpYgLKOac8QR9DdU9gcPTJIU1RoyXY8otCqPxH55XF4hewEt6lJu0lSz3Q=="
       },
-      "Mississippi.Aqueduct.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Aqueduct.Gateway": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
-        }
-      },
       "Mississippi.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -222,24 +207,6 @@
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
-      },
-      "Mississippi.Brooks.Runtime": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Brooks.Runtime.Storage.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Brooks.Serialization.Abstractions": {
-        "type": "Project"
       },
       "Mississippi.Common.Abstractions": {
         "type": "Project",
@@ -255,66 +222,8 @@
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.DomainModeling.Runtime": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Brooks.Runtime": "[1.0.0, )",
-          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
-          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
-          "Mississippi.Tributary.Abstractions": "[1.0.0, )",
-          "Mississippi.Tributary.Runtime": "[1.0.0, )"
-        }
-      },
       "Mississippi.Inlet.Abstractions": {
         "type": "Project"
-      },
-      "Mississippi.Inlet.Gateway.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.Inlet.Runtime": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Runtime.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Inlet.Runtime.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Tributary.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Tributary.Runtime": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Brooks.Runtime": "[1.0.0, )",
-          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
-          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
-          "Mississippi.Tributary.Abstractions": "[1.0.0, )",
-          "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Tributary.Runtime.Storage.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Tributary.Abstractions": "[1.0.0, )"
-        }
       },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",

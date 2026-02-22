@@ -87,10 +87,7 @@
       "Castle.Core": {
         "type": "Transitive",
         "resolved": "5.1.1",
-        "contentHash": "rpYtIczkzGpf+EkZgDr9CClTdemhsrwA/W5hMoPjLkRFnXzH44zDLoovXeKtmxb1ykXK9aJVODSpiJml8CTw2g==",
-        "dependencies": {
-          "System.Diagnostics.EventLog": "6.0.0"
-        }
+        "contentHash": "rpYtIczkzGpf+EkZgDr9CClTdemhsrwA/W5hMoPjLkRFnXzH44zDLoovXeKtmxb1ykXK9aJVODSpiJml8CTw2g=="
       },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",
@@ -120,11 +117,6 @@
           "Microsoft.TestPlatform.ObjectModel": "18.0.1",
           "Newtonsoft.Json": "13.0.3"
         }
-      },
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "6.0.0",
-        "contentHash": "lcyUiXTsETK2ALsZrX+nWuHSIQeazhqPphLfaRxzdGaG93+0kELqpgEHtwWOlQe7+jSFnKwaCAgL4kjeZCQJnw=="
       },
       "xunit.abstractions": {
         "type": "Transitive",
@@ -166,8 +158,43 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
-      "Mississippi.EventSourcing.Reducers.Abstractions": {
+      "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
+      },
+      "Mississippi.Reservoir.Client": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.Core": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.TestHarness": {
+        "type": "Project",
+        "dependencies": {
+          "FluentAssertions": "[8.8.0, )",
+          "Microsoft.Extensions.TimeProvider.Testing": "[10.3.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )",
+          "Moq": "[4.20.72, )"
+        }
+      },
+      "FluentAssertions": {
+        "type": "CentralTransitive",
+        "requested": "[8.8.0, )",
+        "resolved": "8.8.0",
+        "contentHash": "m0kwcqBwvVel03FuMa7Ozo/oTaxYbjeNlcOhQFkyQpwX/8wks6RNl/Jnn58DCZVs6c2oG1RsCZw7HfKSaxLm3w=="
+      },
+      "Microsoft.Extensions.TimeProvider.Testing": {
+        "type": "CentralTransitive",
+        "requested": "[10.3.0, )",
+        "resolved": "10.3.0",
+        "contentHash": "CKjS1u0JlMIA44o/0NV8nXRCaudpol3ERVlB9eu21kvq++EMt7fBavbPxWXN+nOpsdDhz/pb0MY2RBpk2/PGbA=="
       },
       "Newtonsoft.Json": {
         "type": "CentralTransitive",

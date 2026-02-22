@@ -521,6 +521,15 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Brooks.Runtime.Storage.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
