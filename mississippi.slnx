@@ -151,7 +151,7 @@
     <Project Path="tests\Sdk.Server.L0Tests\Sdk.Server.L0Tests.csproj" />
     <Project Path="tests\Sdk.Silo.L0Tests\Sdk.Silo.L0Tests.csproj" />
     <Project Path="tests\Inlet.Client.Generators.L0Tests\Inlet.Client.Generators.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Server.Generators.L0Tests\Inlet.Server.Generators.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Gateway.Generators.L0Tests\Inlet.Gateway.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">
