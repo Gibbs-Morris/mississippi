@@ -10,7 +10,7 @@
     <ProjectReference Include="..\..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
     <ProjectReference Include="..\..\..\src\Refraction.Client\Refraction.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\Refraction.Pages\Refraction.Pages.csproj" />
+    <ProjectReference Include="..\..\..\src\Refraction.Client.StateManagement\Refraction.Client.StateManagement.csproj" />
   </ItemGroup>
 
 </Project>
