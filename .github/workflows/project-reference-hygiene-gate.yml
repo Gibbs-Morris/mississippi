@@ -94,18 +94,18 @@ jobs:
           $solutionPath = Join-Path $env:GITHUB_WORKSPACE '${{ matrix.solution }}'
           $logPath = Join-Path $env:RUNNER_TEMP ('rt0002-' + '${{ matrix.solution }}'.Replace('/', '_').Replace('.', '_') + '.log')
 
-          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -p:EnableReferenceTrimmer=true -p:GenerateDocumentationFile=true 2>&1 | Tee-Object -FilePath $logPath
+          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -warnaserror -p:EnableReferenceTrimmer=true -p:GenerateDocumentationFile=true 2>&1 | Tee-Object -FilePath $logPath
           if ($LASTEXITCODE -ne 0) {
             throw "Build failed before RT0002 evaluation."
           }
 
-          $matches = Select-String -Path $logPath -Pattern 'RT0002: ProjectReference .+ can be removed'
+          $matchedLines = Select-String -Path $logPath -Pattern 'RT0002: ProjectReference .+ can be removed'
           $entryPattern = 'RT0002: ProjectReference (?<Reference>.+?) can be removed \[(?<Owner>.+?\.csproj)\]'
 
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "## RT0002 Report (${{ matrix.solution }})"
-          if ($matches) {
+          if ($matchedLines) {
             $entries = @()
-            foreach ($match in $matches) {
+            foreach ($match in $matchedLines) {
               if ($match.Line -match $entryPattern) {
                 $entries += [PSCustomObject]@{
                   Owner = $Matches.Owner
