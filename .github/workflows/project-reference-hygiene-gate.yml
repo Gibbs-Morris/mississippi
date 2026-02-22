@@ -82,7 +82,7 @@ jobs:
           if ($null -eq $existingInjection) {
             $itemGroup = $directoryBuild.CreateElement('ItemGroup')
             $itemGroup.SetAttribute('Label', 'ReferenceTrimmerCiInjection')
-            $itemGroup.SetAttribute('Condition', "'$(EnableReferenceTrimmer)' == 'true'")
+            $itemGroup.SetAttribute('Condition', "'`$(EnableReferenceTrimmer)' == 'true'")
 
             $packageReference = $directoryBuild.CreateElement('PackageReference')
             $packageReference.SetAttribute('Include', 'ReferenceTrimmer')
