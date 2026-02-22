@@ -58,7 +58,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `P01` Rename `Aqueduct` -> `Aqueduct.Gateway`
 - [x] `T01` Rename mirrored tests: `Aqueduct.L0Tests` -> `Aqueduct.Gateway.L0Tests`; `Aqueduct.L2Tests` -> `Aqueduct.Gateway.L2Tests`; `Aqueduct.L2Tests.AppHost` -> `Aqueduct.Gateway.L2Tests.AppHost`
 
-- [ ] `P02` Rename `Aqueduct.Grains` -> `Aqueduct.Runtime`
+- [x] `P02` Rename `Aqueduct.Grains` -> `Aqueduct.Runtime`
 - [ ] `T02` Rename mirrored tests: `Aqueduct.Grains.L0Tests` -> `Aqueduct.Runtime.L0Tests`
 
 - [ ] `P03` Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
@@ -170,18 +170,18 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - Commit SHA: `f26776d8`
 - Notes: Added temporary `<AssemblyName>Mississippi.Aqueduct</AssemblyName>` in `Aqueduct.Gateway.csproj` so P01 passes before mirrored test rename task T01.
 
-### [ ] Task: Rename `Aqueduct.Grains` -> `Aqueduct.Runtime`
+### [x] Task: Rename `Aqueduct.Grains` -> `Aqueduct.Runtime`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Cleanup: Mississippi passes
+- [x] Cleanup: Samples passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `23e33175`
+- Notes: Added temporary `<AssemblyName>Mississippi.Aqueduct.Grains</AssemblyName>` in `Aqueduct.Runtime.csproj` so P02 passes before mirrored test rename task T02.
 
 ### [ ] Task: Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
 

@@ -133,3 +133,52 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): mirrored folder/project renames, solution entry rewiring, and targeted test project reference updates.
 - Risks / breaking surface: test assembly identity can break `InternalsVisibleTo`; mitigated by preserving original L0 test assembly name in csproj.
 - Follow-up items (if any): continue with `P02` then `T02` in sequence.
+
+## Task 03: Aqueduct.Grains -> Aqueduct.Runtime
+
+- Task type: `ProjectRename`
+- Linked pair: `P02`
+
+### Summary
+- Renamed the Aqueduct grains runtime project to `Aqueduct.Runtime` and rewired all direct project references while keeping source code behavior unchanged.
+
+### Changes made
+- Folder rename: `src/Aqueduct.Grains` -> `src/Aqueduct.Runtime`
+- `.csproj` rename: `src/Aqueduct.Runtime/Aqueduct.Grains.csproj` -> `src/Aqueduct.Runtime/Aqueduct.Runtime.csproj`
+- `.slnx` updates: updated `mississippi.slnx` project path to the renamed runtime project
+- `.csproj` `ProjectReference` updates:
+	- `src/Sdk.Silo/Sdk.Silo.csproj`
+	- `tests/Aqueduct.Gateway.L0Tests/Aqueduct.Gateway.L0Tests.csproj`
+	- `tests/Aqueduct.Gateway.L2Tests/Aqueduct.Gateway.L2Tests.csproj`
+	- `tests/Aqueduct.Grains.L0Tests/Aqueduct.Grains.L0Tests.csproj`
+	- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+	- `tests/Inlet.Silo.L0Tests/Inlet.Silo.L0Tests.csproj`
+- Task-local stabilization (csproj-only): added `<AssemblyName>Mississippi.Aqueduct.Grains</AssemblyName>` in `src/Aqueduct.Runtime/Aqueduct.Runtime.csproj` to preserve assembly identity until `T02`.
+
+### Files touched
+- `src/Aqueduct.Runtime/`
+- `mississippi.slnx`
+- `src/Sdk.Silo/Sdk.Silo.csproj`
+- `tests/Aqueduct.Gateway.L0Tests/Aqueduct.Gateway.L0Tests.csproj`
+- `tests/Aqueduct.Gateway.L2Tests/Aqueduct.Gateway.L2Tests.csproj`
+- `tests/Aqueduct.Grains.L0Tests/Aqueduct.Grains.L0Tests.csproj`
+- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+- `tests/Inlet.Silo.L0Tests/Inlet.Silo.L0Tests.csproj`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Cleanup Mississippi: pass
+- Cleanup Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `see git log (Task P02 commit)`
+- Message: `Task P02: rename Aqueduct.Grains project to Aqueduct.Runtime`
+
+### PR-ready notes
+- Business value: aligns runtime naming with target architecture and reduces future rename complexity in downstream projects.
+- How it works (high level): project folder/file rename plus comprehensive project-reference rewiring in dependent source and test projects.
+- Risks / breaking surface: assembly identity drift can break internal test access; mitigated by temporary assembly-name stabilization pending mirrored test rename.
+- Follow-up items (if any): execute `T02` immediately after this commit.

@@ -6,7 +6,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+        <ProjectReference Include="..\..\src\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
         <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
     </ItemGroup>
 

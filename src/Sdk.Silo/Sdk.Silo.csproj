@@ -18,6 +18,6 @@
     <ProjectReference Include="..\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
     <ProjectReference Include="..\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <ProjectReference Include="..\Inlet.Silo\Inlet.Silo.csproj" />
-    <ProjectReference Include="..\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+    <ProjectReference Include="..\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
   </ItemGroup>
 </Project>

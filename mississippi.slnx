@@ -9,7 +9,7 @@
   <Folder Name="/Framework/Aqueduct/">
     <Project Path="src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
     <Project Path="src\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
-    <Project Path="src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+    <Project Path="src\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/" />
   <Folder Name="/Framework/EventSourcing/Aggregates/">

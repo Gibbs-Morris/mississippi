@@ -15,7 +15,7 @@
     <!-- Aqueduct projects under test -->
     <ProjectReference Include="..\..\src\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
     <ProjectReference Include="..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
-    <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+    <ProjectReference Include="..\..\src\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
     <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
   </ItemGroup>
 
