@@ -23,7 +23,7 @@
         <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
+        <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />

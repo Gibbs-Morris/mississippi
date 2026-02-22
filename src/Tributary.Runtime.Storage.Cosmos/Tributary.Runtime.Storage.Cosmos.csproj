@@ -11,6 +11,7 @@
     <ProjectReference Include="..\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
+    <AssemblyName>Mississippi.EventSourcing.Snapshots.Cosmos</AssemblyName>
     <Description>Azure Cosmos DB provider for EventSourcing.Snapshots storage.</Description>
   </PropertyGroup>
 </Project>
