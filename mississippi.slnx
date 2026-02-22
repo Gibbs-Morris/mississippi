@@ -108,6 +108,7 @@
   </Folder>
   <Folder Name="/Tests/EventSourcing/Tributary/">
     <Project Path="tests\Tributary.Abstractions.L0Tests\Tributary.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Tributary.Runtime.Storage.Abstractions.L0Tests\Tributary.Runtime.Storage.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Tributary.Runtime.L0Tests\Tributary.Runtime.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Refraction/">
