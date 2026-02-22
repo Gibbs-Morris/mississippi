@@ -3,6 +3,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+    <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
   </ItemGroup>
 </Project>

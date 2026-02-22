@@ -15,7 +15,7 @@
     <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
-    <ProjectReference Include="..\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+    <ProjectReference Include="..\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
     <ProjectReference Include="..\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
     <ProjectReference Include="..\Inlet.Silo\Inlet.Silo.csproj" />
     <ProjectReference Include="..\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />

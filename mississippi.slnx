@@ -32,7 +32,7 @@
   </Folder>
   <Folder Name="/Framework/EventSourcing/Serialization/">
     <Project Path="src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+    <Project Path="src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Snapshots/">
     <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />

@@ -20,7 +20,7 @@
         <ProjectReference Include="..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+        <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
