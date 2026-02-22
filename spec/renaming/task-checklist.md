@@ -63,7 +63,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `T04` Rename mirrored tests: `Common.Cosmos.L0Tests` -> `Common.Runtime.Storage.Cosmos.L0Tests`
 
 - [x] `P05` Rename `EventSourcing.Brooks.Abstractions` -> `Brooks.Abstractions`
-- [ ] `T05` Rename mirrored tests: `EventSourcing.Brooks.Abstractions.L0Tests` -> `Brooks.Abstractions.L0Tests`
+- [x] `T05` Rename mirrored tests: `EventSourcing.Brooks.Abstractions.L0Tests` -> `Brooks.Abstractions.L0Tests`
 
 - [ ] `P06` Rename `EventSourcing.Brooks` -> `Brooks.Runtime`
 - [ ] `T06` Rename mirrored tests: `EventSourcing.Brooks.L0Tests` -> `Brooks.Runtime.L0Tests`
@@ -239,6 +239,17 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [ ] Commit created for this task only
 - Commit SHA: `<fill after commit>`
 - Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.Abstractions</AssemblyName>` in `Brooks.Abstractions.csproj` so P05 validates before mirrored test rename task T05.
+
+### [x] Task: Rename `EventSourcing.Brooks.Abstractions.L0Tests` -> `Brooks.Abstractions.L0Tests`
+
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [ ] Commit created for this task only
+- Commit SHA: `<fill after commit>`
+- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.Abstractions.L0Tests</AssemblyName>` in `Brooks.Abstractions.L0Tests.csproj` to preserve internal-access compatibility during staged renames.
 
 ### [ ] Task: Rename `EventSourcing.Brooks` -> `Brooks.Runtime`
 

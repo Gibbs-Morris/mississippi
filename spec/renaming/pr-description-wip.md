@@ -434,3 +434,40 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): project folder/file rename plus direct reference rewiring in dependent source, test, and sample projects.
 - Risks / breaking surface: stale references and internals access regressions; mitigated by full gate run and temporary assembly-name continuity.
 - Follow-up items (if any): execute `T05` immediately.
+
+## Task 10: EventSourcing.Brooks.Abstractions.L0Tests -> Brooks.Abstractions.L0Tests
+
+- Task type: `TestRename`
+- Linked pair: `T05`
+
+### Summary
+- Renamed the mirrored Brooks abstractions test project to keep the test topology aligned with `P05`.
+
+### Changes made
+- Folder rename: `tests/EventSourcing.Brooks.Abstractions.L0Tests` -> `tests/Brooks.Abstractions.L0Tests`
+- `.csproj` rename: `tests/Brooks.Abstractions.L0Tests/EventSourcing.Brooks.Abstractions.L0Tests.csproj` -> `tests/Brooks.Abstractions.L0Tests/Brooks.Abstractions.L0Tests.csproj`
+- `.slnx` updates: updated `mississippi.slnx` test project path under `/Tests/EventSourcing/Brooks/`
+- `.csproj` updates:
+	- `tests/Brooks.Abstractions.L0Tests/Brooks.Abstractions.L0Tests.csproj` (added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.Abstractions.L0Tests</AssemblyName>`)
+
+### Files touched
+- `tests/Brooks.Abstractions.L0Tests/`
+- `mississippi.slnx`
+- `spec/renaming/task-checklist.md`
+- `spec/renaming/pr-description-wip.md`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task T05: rename EventSourcing.Brooks.Abstractions.L0Tests to Brooks.Abstractions.L0Tests`
+
+### PR-ready notes
+- Business value: maintains mirrored naming between Brooks abstractions and its L0 test project.
+- How it works (high level): test folder/project rename plus solution path update and temporary assembly-name continuity.
+- Risks / breaking surface: stale test project path references; mitigated with `.slnx` update and full gate runs.
+- Follow-up items (if any): continue to `P06`.
