@@ -11,7 +11,7 @@ using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Naming;
 
 
-namespace Mississippi.Inlet.Server.Generators;
+namespace Mississippi.Inlet.Gateway.Generators;
 
 /// <summary>
 ///     Generates server-side domain composition registrations that aggregate all generated mapper registrations.

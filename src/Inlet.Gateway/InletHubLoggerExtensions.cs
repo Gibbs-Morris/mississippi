@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Inlet.Server;
+namespace Mississippi.Inlet.Gateway;
 
 /// <summary>
 ///     High-performance logging extensions for <see cref="InletHub" />.

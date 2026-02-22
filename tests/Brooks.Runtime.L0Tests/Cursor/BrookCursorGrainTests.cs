@@ -1,15 +1,15 @@
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
-using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
-using Mississippi.EventSourcing.Brooks.L0Tests.Infrastructure;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Cursor;
+using Mississippi.Brooks.Abstractions.Writer;
+using Mississippi.Brooks.Runtime.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 
 using Orleans.TestingHost;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests.Cursor;
+namespace Mississippi.Brooks.Runtime.L0Tests.Cursor;
 
 /// <summary>
 ///     Integration tests for <see cref="IBrookCursorGrain" /> behavior.

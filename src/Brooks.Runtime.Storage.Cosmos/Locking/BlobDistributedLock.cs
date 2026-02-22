@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Azure;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
 /// <summary>
 ///     Distributed lock implementation using Azure Blob Storage leases.

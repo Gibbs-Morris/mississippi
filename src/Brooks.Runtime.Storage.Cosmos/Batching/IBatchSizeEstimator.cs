@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Batching;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Batching;
 
 /// <summary>
 ///     Provides functionality for estimating batch sizes and creating size-limited batches for Cosmos DB operations.

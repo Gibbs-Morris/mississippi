@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests;
+namespace Mississippi.Reservoir.Client.L0Tests;
 
 /// <summary>
 ///     A testable implementation of <see cref="NavigationManager" /> for unit testing.

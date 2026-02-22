@@ -1,4 +1,4 @@
-namespace Mississippi.Refraction.Contracts;
+namespace Mississippi.Refraction.Client.Contracts;
 
 /// <summary>
 ///     Type-safe component state that converts to string for CSS data-attribute binding.

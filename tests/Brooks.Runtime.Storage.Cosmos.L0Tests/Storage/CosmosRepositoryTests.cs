@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 using Microsoft.Azure.Cosmos;
 
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Common.Cosmos.Abstractions.Retry;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Storage;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Storage;
 
 /// <summary>
 ///     Tests for <see cref="CosmosRepository" /> covering the Storage/CosmosRepository plan items.

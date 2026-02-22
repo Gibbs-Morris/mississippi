@@ -1,10 +1,10 @@
 using System;
 using System.Reflection;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions;
+namespace Mississippi.Brooks.Abstractions;
 
 /// <summary>
 ///     Provides helper methods for working with types decorated with <see cref="BrookNameAttribute" />.

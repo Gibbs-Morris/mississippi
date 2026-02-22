@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace Mississippi.Inlet.Silo.Abstractions;
+namespace Mississippi.Inlet.Runtime.Abstractions;
 
 /// <summary>
 ///     Registry that maps projection paths to their brook names.

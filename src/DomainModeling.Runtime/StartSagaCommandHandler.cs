@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Sagas;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Handles start commands for saga orchestration by emitting the saga-started event.

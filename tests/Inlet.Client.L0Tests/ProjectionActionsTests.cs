@@ -1,6 +1,7 @@
 using System;
 
 using Mississippi.Inlet.Client.Abstractions.Actions;
+using Mississippi.Inlet.Client.L0Tests.Helpers;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;

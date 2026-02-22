@@ -1,12 +1,12 @@
 using System;
 
-using Mississippi.EventSourcing.Serialization.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Brooks.Serialization.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Snapshots.L0Tests;
+namespace Mississippi.Tributary.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotStateConverter{TSnapshot}" />.

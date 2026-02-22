@@ -9,11 +9,11 @@ using Microsoft.AspNetCore.Components;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Effects;
+namespace Mississippi.Reservoir.Client.BuiltIn.Navigation.Effects;
 
 /// <summary>
 ///     Effect that handles navigation actions by calling NavigationManager.

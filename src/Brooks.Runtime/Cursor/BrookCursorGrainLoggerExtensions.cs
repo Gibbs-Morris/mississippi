@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cursor;
+namespace Mississippi.Brooks.Runtime.Cursor;
 
 /// <summary>
 ///     High-performance logging extensions for <see cref="BrookCursorGrain" />.

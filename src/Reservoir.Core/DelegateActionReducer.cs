@@ -4,7 +4,7 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Reservoir;
+namespace Mississippi.Reservoir.Core;
 
 /// <summary>
 ///     An action reducer implemented as a delegate.

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
 /// <summary>
 ///     Provides functionality for acquiring and managing distributed locks.

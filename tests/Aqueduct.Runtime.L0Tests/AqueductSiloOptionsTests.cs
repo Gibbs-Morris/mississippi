@@ -7,7 +7,7 @@ using NSubstitute;
 using Orleans.Hosting;
 
 
-namespace Mississippi.Aqueduct.Grains.L0Tests;
+namespace Mississippi.Aqueduct.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AqueductSiloOptions" />.

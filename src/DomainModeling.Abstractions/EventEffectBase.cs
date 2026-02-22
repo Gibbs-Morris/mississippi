@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Base class for event effects that handle a specific event type.

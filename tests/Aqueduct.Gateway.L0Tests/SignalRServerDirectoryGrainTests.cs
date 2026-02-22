@@ -3,11 +3,11 @@ using System.Collections.Immutable;
 using System.Threading.Tasks;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
-using Mississippi.Aqueduct.L0Tests.Infrastructure;
+using Mississippi.Aqueduct.Gateway.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 
 
-namespace Mississippi.Aqueduct.L0Tests;
+namespace Mississippi.Aqueduct.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="ISignalRServerDirectoryGrain" /> operations.

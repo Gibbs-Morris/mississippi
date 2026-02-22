@@ -1,7 +1,8 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Factory for resolving UX projection grains.
@@ -13,7 +14,7 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 ///     </para>
 ///     <para>
 ///         Projection types must be decorated with
-///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         <see cref="BrookNameAttribute" />
 ///         to identify which brook they read from.
 ///     </para>
 /// </remarks>
@@ -33,7 +34,7 @@ public interface IUxProjectionGrainFactory
     /// </summary>
     /// <typeparam name="TProjection">
     ///     The projection state type, decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    ///     <see cref="BrookNameAttribute" />.
     /// </typeparam>
     /// <param name="entityId">The entity identifier within the brook.</param>
     /// <returns>A grain reference for the UX projection cursor.</returns>
@@ -47,13 +48,13 @@ public interface IUxProjectionGrainFactory
     /// </summary>
     /// <typeparam name="TProjection">
     ///     The projection state type, decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    ///     <see cref="BrookNameAttribute" />.
     /// </typeparam>
     /// <param name="entityId">The entity identifier.</param>
     /// <returns>A grain reference for the UX projection.</returns>
     /// <remarks>
     ///     The grain is keyed by just the entity ID. The brook name is obtained from
-    ///     the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///     the <see cref="BrookNameAttribute" />
     ///     on the <typeparamref name="TProjection" /> type itself.
     /// </remarks>
     IUxProjectionGrain<TProjection> GetUxProjectionGrain<TProjection>(
@@ -76,7 +77,7 @@ public interface IUxProjectionGrainFactory
     /// </summary>
     /// <typeparam name="TProjection">
     ///     The projection state type, decorated with
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    ///     <see cref="BrookNameAttribute" />.
     /// </typeparam>
     /// <param name="entityId">The entity identifier within the brook.</param>
     /// <param name="version">The specific version to retrieve.</param>

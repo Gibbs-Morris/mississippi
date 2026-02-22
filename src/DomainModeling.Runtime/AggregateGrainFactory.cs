@@ -2,12 +2,12 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Aggregates;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Factory for resolving aggregate grains by their aggregate key.

@@ -1,7 +1,7 @@
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     Combines the snapshot key and envelope for mapping to a storage document.

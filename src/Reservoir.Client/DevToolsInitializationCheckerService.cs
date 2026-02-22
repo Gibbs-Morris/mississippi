@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 
-namespace Mississippi.Reservoir.Blazor;
+namespace Mississippi.Reservoir.Client;
 
 /// <summary>
 ///     Hosted service that checks if DevTools was properly initialized.

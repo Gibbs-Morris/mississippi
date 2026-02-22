@@ -1,7 +1,7 @@
 using Mississippi.Testing.Utilities.Orleans;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests.Infrastructure;
+namespace Mississippi.DomainModeling.Runtime.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Shared Orleans TestCluster fixture for UxProjections grain tests.

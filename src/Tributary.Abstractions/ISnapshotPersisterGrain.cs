@@ -5,7 +5,7 @@ using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     An Orleans grain that handles background persistence of snapshots to storage.

@@ -1,4 +1,4 @@
-namespace Mississippi.Refraction.Events;
+namespace Mississippi.Refraction.Client.Events;
 
 /// <summary>
 ///     Event raised when a pane receives focus.

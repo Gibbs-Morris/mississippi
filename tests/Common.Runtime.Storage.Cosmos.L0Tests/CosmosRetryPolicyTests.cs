@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Mississippi.Common.Cosmos.Retry;
+using Mississippi.Common.Runtime.Storage.Cosmos.Retry;
 
 
-namespace Mississippi.Common.Cosmos.L0Tests;
+namespace Mississippi.Common.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="CosmosRetryPolicy" />.

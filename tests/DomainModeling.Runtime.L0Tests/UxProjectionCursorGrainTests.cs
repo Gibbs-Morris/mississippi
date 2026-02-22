@@ -1,14 +1,14 @@
 using System;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionCursorGrain" />.

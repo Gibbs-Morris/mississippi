@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Api;
+namespace Mississippi.DomainModeling.Gateway;
 
 /// <summary>
 ///     High-performance logging extensions for <see cref="AggregateServiceBase{TAggregate}" />.

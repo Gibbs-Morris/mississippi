@@ -6,19 +6,18 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
-using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
-using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Diagnostics;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Factory;
+using Mississippi.Brooks.Abstractions.Reader;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
 
 using Orleans;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Snapshots;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     Snapshot cache grain that provides immutable, versioned state access.

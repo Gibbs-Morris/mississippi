@@ -5,17 +5,17 @@ using System.Threading;
 
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
-using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
-using Mississippi.EventSourcing.Brooks.Diagnostics;
-using Mississippi.EventSourcing.Brooks.Factory;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Cursor;
+using Mississippi.Brooks.Abstractions.Reader;
+using Mississippi.Brooks.Runtime.Diagnostics;
+using Mississippi.Brooks.Runtime.Factory;
 
 using Orleans;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Brooks.Reader;
+namespace Mississippi.Brooks.Runtime.Reader;
 
 /// <summary>
 ///     Orleans grain implementation for reading events from a brook using asynchronous streaming.

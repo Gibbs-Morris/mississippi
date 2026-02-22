@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 
 
-namespace Mississippi.Reservoir.Selectors;
+namespace Mississippi.Reservoir.Core.Selectors;
 
 /// <summary>
 ///     Utilities for creating memoized selectors that cache results

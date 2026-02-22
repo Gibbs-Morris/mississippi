@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+namespace Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
 
 /// <summary>
 ///     Feature state for tracking browser navigation in a Reservoir store.

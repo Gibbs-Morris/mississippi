@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Abstracts Cosmos container operations for snapshot storage.

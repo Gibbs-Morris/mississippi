@@ -1,7 +1,7 @@
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotStorageOptions" />.

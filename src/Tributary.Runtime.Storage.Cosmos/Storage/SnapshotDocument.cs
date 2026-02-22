@@ -3,7 +3,7 @@ using System;
 using Newtonsoft.Json;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     Cosmos document representation of a snapshot.

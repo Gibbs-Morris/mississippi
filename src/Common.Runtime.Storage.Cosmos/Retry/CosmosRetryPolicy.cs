@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 
-using Mississippi.Common.Cosmos.Abstractions.Retry;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 
-namespace Mississippi.Common.Cosmos.Retry;
+namespace Mississippi.Common.Runtime.Storage.Cosmos.Retry;
 
 /// <summary>
 ///     Retry policy implementation for Cosmos DB operations.

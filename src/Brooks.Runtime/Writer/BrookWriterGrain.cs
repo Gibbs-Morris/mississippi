@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
-using Mississippi.EventSourcing.Brooks.Diagnostics;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Abstractions.Writer;
+using Mississippi.Brooks.Runtime.Diagnostics;
+using Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.EventSourcing.Brooks.Writer;
+namespace Mississippi.Brooks.Runtime.Writer;
 
 /// <summary>
 ///     Orleans grain implementation for writing events to a Mississippi brook (event stream).

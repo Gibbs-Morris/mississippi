@@ -1,7 +1,7 @@
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+namespace Mississippi.Brooks.Abstractions.Streaming;
 
 /// <summary>
 ///     Configuration options for the brook provider that interfaces with Orleans streams.

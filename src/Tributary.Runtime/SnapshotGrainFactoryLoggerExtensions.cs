@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     High-performance logging extensions for the snapshot grain factory.

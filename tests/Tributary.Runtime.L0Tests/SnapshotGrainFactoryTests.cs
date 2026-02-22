@@ -2,14 +2,14 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 using Moq;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Snapshots.L0Tests;
+namespace Mississippi.Tributary.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotGrainFactory" />.

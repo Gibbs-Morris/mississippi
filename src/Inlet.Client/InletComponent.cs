@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components;
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.Abstractions.State;
-using Mississippi.Reservoir.Blazor;
+using Mississippi.Reservoir.Client;
 
 
 namespace Mississippi.Inlet.Client;

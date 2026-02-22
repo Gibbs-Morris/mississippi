@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Sagas.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Command that starts a saga with the supplied input.

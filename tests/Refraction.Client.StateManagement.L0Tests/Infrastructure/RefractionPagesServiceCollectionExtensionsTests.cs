@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Refraction.Pages.Infrastructure;
+using Mississippi.Refraction.Client.StateManagement.Infrastructure;
 
 
-namespace Mississippi.Refraction.Pages.L0Tests.Infrastructure;
+namespace Mississippi.Refraction.Client.StateManagement.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Tests for <see cref="RefractionPagesServiceCollectionExtensions" />.

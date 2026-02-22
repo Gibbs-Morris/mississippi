@@ -1,12 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Effects;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Reducers;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Effects;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Reducers;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Core;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation;
+namespace Mississippi.Reservoir.Client.BuiltIn.Navigation;
 
 /// <summary>
 ///     Extension methods for registering the built-in navigation feature.

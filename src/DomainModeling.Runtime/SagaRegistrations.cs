@@ -2,13 +2,11 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.EventSourcing.Aggregates;
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Reducers;
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Tributary.Runtime;
 
 
-namespace Mississippi.EventSourcing.Sagas;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Provides extension methods for registering saga orchestration components.

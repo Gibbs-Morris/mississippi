@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Sagas.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Invalid step type without the saga step interface.

@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Provides bidirectional conversion between domain events and <see cref="BrookEvent" /> storage format.

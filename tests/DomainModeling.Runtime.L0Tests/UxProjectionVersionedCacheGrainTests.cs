@@ -4,15 +4,14 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionVersionedCacheGrain{TProjection}" />.

@@ -2,12 +2,12 @@ using System;
 
 using FluentAssertions;
 
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Reducers;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Reducers;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests.BuiltIn.Lifecycle.Reducers;
+namespace Mississippi.Reservoir.Client.L0Tests.BuiltIn.Lifecycle.Reducers;
 
 /// <summary>
 ///     Unit tests for <see cref="LifecycleReducers" />.

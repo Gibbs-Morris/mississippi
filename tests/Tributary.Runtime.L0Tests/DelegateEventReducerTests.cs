@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.EventSourcing.Reducers.L0Tests;
+namespace Mississippi.Tributary.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="DelegateEventReducer{TEvent,TProjection}" />.

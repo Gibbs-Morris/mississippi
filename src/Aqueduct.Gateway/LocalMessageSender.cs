@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Sends SignalR invocation messages to local hub connections.

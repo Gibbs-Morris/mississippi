@@ -1,7 +1,7 @@
 using Mississippi.Inlet.Client.Abstractions.State;
 
 
-namespace Mississippi.Inlet.Client.L0Tests;
+namespace Mississippi.Inlet.Client.L0Tests.Helpers;
 
 /// <summary>
 ///     Concrete implementation of AggregateCommandStateBase for testing.

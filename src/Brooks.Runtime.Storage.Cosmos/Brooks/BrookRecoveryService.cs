@@ -8,13 +8,13 @@ using Azure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Common.Cosmos.Abstractions.Retry;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Brooks;
 
 /// <summary>
 ///     Service for recovering and managing brook cursor positions in Cosmos DB.

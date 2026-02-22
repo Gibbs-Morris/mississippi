@@ -6,12 +6,12 @@ using Azure;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 
-using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Locking;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Locking;
 
 /// <summary>
 ///     Tests for <see cref="BlobLeaseClientAdapter" />.

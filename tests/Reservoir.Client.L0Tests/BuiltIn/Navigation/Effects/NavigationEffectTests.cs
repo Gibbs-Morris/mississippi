@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using FluentAssertions;
 
 using Mississippi.Reservoir.Abstractions.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Effects;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Effects;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests.BuiltIn.Navigation.Effects;
+namespace Mississippi.Reservoir.Client.L0Tests.BuiltIn.Navigation.Effects;
 
 /// <summary>
 ///     Unit tests for <see cref="NavigationEffect" />.

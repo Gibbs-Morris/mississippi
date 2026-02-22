@@ -1,11 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Reducers;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Reducers;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
+using Mississippi.Reservoir.Core;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle;
+namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
 
 /// <summary>
 ///     Extension methods for registering the built-in lifecycle feature.

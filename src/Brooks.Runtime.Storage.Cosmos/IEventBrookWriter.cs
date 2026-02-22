@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Provides functionality for writing events to Cosmos DB event brooks.

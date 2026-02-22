@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Aggregates.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateRegistrations" />.

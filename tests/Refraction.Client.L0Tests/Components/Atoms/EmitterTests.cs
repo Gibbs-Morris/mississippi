@@ -5,10 +5,10 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
-using Mississippi.Refraction.Components.Atoms;
+using Mississippi.Refraction.Client.Components.Atoms;
 
 
-namespace Mississippi.Refraction.L0Tests.Components.Atoms;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms;
 
 /// <summary>
 ///     Smoke tests for <see cref="Emitter" /> component.

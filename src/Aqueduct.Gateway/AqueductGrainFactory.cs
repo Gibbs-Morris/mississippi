@@ -9,7 +9,7 @@ using Mississippi.Aqueduct.Abstractions.Keys;
 using Orleans;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Factory for resolving Aqueduct SignalR grains by key.

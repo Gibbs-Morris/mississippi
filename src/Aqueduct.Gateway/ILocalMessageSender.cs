@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Defines a service for sending SignalR messages to local connections.

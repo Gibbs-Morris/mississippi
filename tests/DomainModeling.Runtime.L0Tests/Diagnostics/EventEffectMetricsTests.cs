@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
-using Mississippi.EventSourcing.Aggregates.Diagnostics;
+using Mississippi.DomainModeling.Runtime.Diagnostics;
 
 
-namespace Mississippi.EventSourcing.Aggregates.L0Tests.Diagnostics;
+namespace Mississippi.DomainModeling.Runtime.L0Tests.Diagnostics;
 
 /// <summary>
 ///     Tests for <see cref="EventEffectMetrics" />.

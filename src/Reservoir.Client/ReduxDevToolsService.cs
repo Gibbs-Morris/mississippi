@@ -15,7 +15,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.Events;
 
 
-namespace Mississippi.Reservoir.Blazor;
+namespace Mississippi.Reservoir.Client;
 
 /// <summary>
 ///     Scoped service that integrates the Reservoir store with Redux DevTools.

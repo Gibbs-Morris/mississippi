@@ -2,14 +2,14 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Aggregates.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateGrainFactory" />.

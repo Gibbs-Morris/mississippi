@@ -1,7 +1,7 @@
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
+namespace Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 
 /// <summary>
 ///     Action dispatched when the browser location has changed.

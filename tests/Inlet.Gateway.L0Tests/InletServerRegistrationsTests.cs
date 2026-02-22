@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 
-namespace Mississippi.Inlet.Server.L0Tests;
+namespace Mississippi.Inlet.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InletServerRegistrations" />.

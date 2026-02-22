@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.UxProjections.L0Tests.Infrastructure;
+namespace Mississippi.DomainModeling.Runtime.L0Tests.Infrastructure;
 
 /// <summary>
 ///     xUnit collection definition to share a single TestCluster across tests.

@@ -4,7 +4,7 @@ using System.Threading;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Reader;
+namespace Mississippi.Brooks.Abstractions.Reader;
 
 /// <summary>
 ///     Grain interface for reading events from a brook using asynchronous streaming.

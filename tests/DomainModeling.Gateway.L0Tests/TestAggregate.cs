@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Aggregates.Api.L0Tests;
+namespace Mississippi.DomainModeling.Gateway.L0Tests;
 
 /// <summary>
 ///     Test aggregate record for unit tests.

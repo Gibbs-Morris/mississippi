@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Diagnostics;
+namespace Mississippi.Brooks.Runtime.Diagnostics;
 
 /// <summary>
 ///     OpenTelemetry metrics for brook read/write operations.

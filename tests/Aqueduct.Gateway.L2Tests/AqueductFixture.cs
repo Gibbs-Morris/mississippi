@@ -1,9 +1,9 @@
 using Mississippi.Aqueduct.Abstractions.Grains;
-using Mississippi.Aqueduct.Grains;
+using Mississippi.Aqueduct.Runtime;
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.Aqueduct.L2Tests;
+namespace Mississippi.Aqueduct.Gateway.L2Tests;
 
 /// <summary>
 ///     xUnit fixture that starts an Orleans silo with MemoryStreams for Aqueduct integration testing.

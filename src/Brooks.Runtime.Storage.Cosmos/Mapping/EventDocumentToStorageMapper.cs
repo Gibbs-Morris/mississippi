@@ -1,8 +1,8 @@
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Mapping;
 
 /// <summary>
 ///     Maps event documents to event storage models.

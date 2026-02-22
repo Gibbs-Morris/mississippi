@@ -2,10 +2,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-using Mississippi.Inlet.Silo.Abstractions;
+using Mississippi.Inlet.Runtime.Abstractions;
 
 
-namespace Mississippi.Inlet.Silo;
+namespace Mississippi.Inlet.Runtime;
 
 /// <summary>
 ///     Thread-safe implementation of <see cref="IProjectionBrookRegistry" />.

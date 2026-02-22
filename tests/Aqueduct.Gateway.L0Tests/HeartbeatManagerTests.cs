@@ -11,7 +11,7 @@ using Mississippi.Aqueduct.Abstractions.Grains;
 using NSubstitute;
 
 
-namespace Mississippi.Aqueduct.L0Tests;
+namespace Mississippi.Aqueduct.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="HeartbeatManager" />.

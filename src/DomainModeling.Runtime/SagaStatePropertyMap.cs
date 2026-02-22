@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 
 
-namespace Mississippi.EventSourcing.Sagas;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Caches saga state property metadata for mutation.

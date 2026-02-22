@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn;
+namespace Mississippi.Reservoir.Client.BuiltIn;
 
 /// <summary>
 ///     Extension methods for registering all built-in Reservoir Blazor features.

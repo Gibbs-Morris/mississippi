@@ -1,7 +1,7 @@
 using System.Text.Json;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests;
+namespace Mississippi.Reservoir.Client.L0Tests;
 
 /// <summary>
 ///     Tests for ReservoirDevToolsOptions.

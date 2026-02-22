@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
+namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="CommandHandlerBase{TCommand, TSnapshot}" /> behavior.

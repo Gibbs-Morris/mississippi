@@ -7,16 +7,16 @@ using Azure;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Common.Cosmos.Abstractions.Retry;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
-using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Brooks;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Brooks;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Brooks;
 
 /// <summary>
 ///     Tests for <see cref="BrookRecoveryService" /> behavior under cursor/lock scenarios.

@@ -5,18 +5,18 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Diagnostics;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Storage.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.EventSourcing.UxProjections;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Orleans grain implementation that tracks the brook cursor position for a specific UX projection type.

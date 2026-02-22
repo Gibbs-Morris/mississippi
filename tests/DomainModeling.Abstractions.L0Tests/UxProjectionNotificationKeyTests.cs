@@ -1,9 +1,9 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
+namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionNotificationKey" /> behavior.

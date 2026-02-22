@@ -1,12 +1,12 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Represents a composite key for identifying UX projection cursors,

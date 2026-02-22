@@ -1,10 +1,10 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Streaming;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Brooks;
+namespace Mississippi.Brooks.Runtime;
 
 /// <summary>
 ///     Default implementation of <see cref="IStreamIdFactory" /> that creates Orleans stream identifiers

@@ -1,8 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using Mississippi.Tributary.Abstractions;
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+
+namespace Mississippi.Tributary.Runtime.Storage.Abstractions;
 
 /// <summary>
 ///     Provides read access to projection snapshots as raw envelopes so storage remains serialization-agnostic.

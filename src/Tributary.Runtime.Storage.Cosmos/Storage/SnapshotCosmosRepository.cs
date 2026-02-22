@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     Cosmos-backed implementation of <see cref="ISnapshotCosmosRepository" />.

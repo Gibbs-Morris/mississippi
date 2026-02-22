@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Mississippi.Tributary.Abstractions;
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+
+namespace Mississippi.Tributary.Runtime.Storage.Abstractions;
 
 /// <summary>
 ///     Provides write, delete, and pruning operations for projection snapshots using raw envelopes.

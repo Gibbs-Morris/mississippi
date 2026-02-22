@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Abstractions.Subscriptions;
 
 using Orleans;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Subscriptions;
+namespace Mississippi.DomainModeling.Runtime.Subscriptions;
 
 /// <summary>
 ///     Orleans grain implementation that manages projection subscriptions for a single SignalR connection.

@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Common.Cosmos.Retry;
+namespace Mississippi.Common.Runtime.Storage.Cosmos.Retry;
 
 /// <summary>
 ///     High-performance logging extensions for <see cref="CosmosRetryPolicy" />.

@@ -12,7 +12,7 @@ using Mississippi.Inlet.Generators.Core.Emit;
 using Mississippi.Inlet.Generators.Core.Naming;
 
 
-namespace Mississippi.Inlet.Server.Generators;
+namespace Mississippi.Inlet.Gateway.Generators;
 
 /// <summary>
 ///     Generates MCP read tool classes for projections marked with [GenerateMcpReadTool].

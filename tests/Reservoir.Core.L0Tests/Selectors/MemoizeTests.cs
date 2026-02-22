@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.Reservoir.Selectors;
+using Mississippi.Reservoir.Core.Selectors;
 
 
-namespace Mississippi.Reservoir.L0Tests.Selectors;
+namespace Mississippi.Reservoir.Core.L0Tests.Selectors;
 
 /// <summary>
 ///     Tests for <see cref="Memoize" />.

@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Inlet.Server.Abstractions;
+namespace Mississippi.Inlet.Gateway.Abstractions;
 
 /// <summary>
 ///     Logging extension methods for <see cref="InProcessProjectionNotifier" />.

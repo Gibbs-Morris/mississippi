@@ -1,9 +1,9 @@
 using System;
 
 using Mississippi.Inlet.Client.Abstractions.Actions;
-using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;

@@ -15,7 +15,7 @@ using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Implementation of <see cref="IAqueductNotifier" /> that routes messages

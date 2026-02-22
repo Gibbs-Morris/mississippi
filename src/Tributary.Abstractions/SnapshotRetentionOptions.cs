@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     Configuration options for snapshot retention and replay strategies.

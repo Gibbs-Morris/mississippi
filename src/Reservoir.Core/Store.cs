@@ -12,7 +12,7 @@ using Mississippi.Reservoir.Abstractions.Events;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir;
+namespace Mississippi.Reservoir.Core;
 
 /// <summary>
 ///     Central state container implementing Redux-like dispatch pattern.

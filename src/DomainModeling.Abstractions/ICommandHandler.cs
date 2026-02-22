@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Defines a command handler that attempts to process a command against aggregate state.

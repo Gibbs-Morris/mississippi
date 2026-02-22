@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Api.L0Tests;
+namespace Mississippi.DomainModeling.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateServiceBase{TAggregate}" />.

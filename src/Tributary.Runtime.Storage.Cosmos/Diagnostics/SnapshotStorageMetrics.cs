@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Diagnostics;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Diagnostics;
 
 /// <summary>
 ///     OpenTelemetry metrics for Cosmos DB snapshot storage operations.

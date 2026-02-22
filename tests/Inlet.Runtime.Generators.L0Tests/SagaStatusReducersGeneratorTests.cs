@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
 
-namespace Mississippi.Inlet.Silo.Generators.L0Tests;
+namespace Mississippi.Inlet.Runtime.Generators.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SagaStatusReducersGenerator" />.

@@ -1,11 +1,11 @@
 using System;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Aggregates;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Typed registration entry for fire-and-forget effects.

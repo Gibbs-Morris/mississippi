@@ -1,10 +1,10 @@
 using System;
 
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Reducers;
+namespace Mississippi.Reservoir.Client.BuiltIn.Navigation.Reducers;
 
 /// <summary>
 ///     Pure reducer functions for the navigation feature state.

@@ -3,10 +3,10 @@ using System.Reflection;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Refraction.Pages.Scenes;
+using Mississippi.Refraction.Client.StateManagement.Scenes;
 
 
-namespace Mississippi.Refraction.Pages.L0Tests.Scenes;
+namespace Mississippi.Refraction.Client.StateManagement.L0Tests.Scenes;
 
 /// <summary>
 ///     Tests for <see cref="SceneBase{TState}" />.

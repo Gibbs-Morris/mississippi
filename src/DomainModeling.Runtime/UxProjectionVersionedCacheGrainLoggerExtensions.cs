@@ -2,11 +2,11 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.UxProjections;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Logger extensions for <see cref="UxProjectionVersionedCacheGrain{TProjection}" />.

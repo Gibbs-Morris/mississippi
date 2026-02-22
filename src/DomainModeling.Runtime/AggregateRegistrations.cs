@@ -5,11 +5,11 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Aggregates;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Provides extension methods for registering aggregate components in the dependency injection container.

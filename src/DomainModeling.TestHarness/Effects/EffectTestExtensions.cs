@@ -5,7 +5,7 @@ using System.Linq;
 using FluentAssertions;
 
 
-namespace Mississippi.EventSourcing.Testing.Effects;
+namespace Mississippi.DomainModeling.TestHarness.Effects;
 
 /// <summary>
 ///     Extension methods for effect testing assertions.

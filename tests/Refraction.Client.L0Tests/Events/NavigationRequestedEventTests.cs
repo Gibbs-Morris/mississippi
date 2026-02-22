@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 
-using Mississippi.Refraction.Events;
+using Mississippi.Refraction.Client.Events;
 
 
-namespace Mississippi.Refraction.L0Tests.Events;
+namespace Mississippi.Refraction.Client.L0Tests.Events;
 
 /// <summary>
 ///     Tests for <see cref="NavigationRequestedEvent" /> record.

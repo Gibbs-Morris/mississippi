@@ -5,7 +5,7 @@ using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
+namespace Mississippi.DomainModeling.Abstractions.Subscriptions;
 
 /// <summary>
 ///     Grain managing all projection subscriptions for a single SignalR connection.

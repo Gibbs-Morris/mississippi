@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 
 
-namespace Mississippi.Refraction.Pages.Infrastructure;
+namespace Mississippi.Refraction.Client.StateManagement.Infrastructure;
 
 /// <summary>
 ///     Extension methods for registering Refraction.Pages services.

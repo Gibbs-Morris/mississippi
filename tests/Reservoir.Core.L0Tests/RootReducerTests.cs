@@ -5,7 +5,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir.L0Tests;
+namespace Mississippi.Reservoir.Core.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="RootReducer{TState}" />.

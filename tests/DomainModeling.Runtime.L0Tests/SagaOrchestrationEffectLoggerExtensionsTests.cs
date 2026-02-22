@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Sagas.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SagaOrchestrationEffectLoggerExtensions" />.

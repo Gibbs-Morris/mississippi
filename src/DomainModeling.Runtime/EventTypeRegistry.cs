@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Aggregates;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Default implementation of <see cref="IEventTypeRegistry" /> providing bidirectional

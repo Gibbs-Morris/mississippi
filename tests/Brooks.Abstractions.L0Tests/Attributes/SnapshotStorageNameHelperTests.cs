@@ -1,10 +1,10 @@
 using System;
 using System.ComponentModel;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests.Attributes;
+namespace Mississippi.Brooks.Abstractions.L0Tests.Attributes;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotStorageNameHelper" /> functionality.

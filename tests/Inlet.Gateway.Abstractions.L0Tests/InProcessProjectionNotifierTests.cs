@@ -3,10 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Server.Abstractions;
 
-
-namespace Mississippi.Inlet.Blazor.Server.L0Tests;
+namespace Mississippi.Inlet.Gateway.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InProcessProjectionNotifier" />.

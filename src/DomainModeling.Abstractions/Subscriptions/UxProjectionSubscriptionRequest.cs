@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
+namespace Mississippi.DomainModeling.Abstractions.Subscriptions;
 
 /// <summary>
 ///     Request to subscribe to a projection for real-time version change notifications.

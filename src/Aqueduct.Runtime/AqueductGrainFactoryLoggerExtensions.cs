@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Aqueduct.Grains;
+namespace Mississippi.Aqueduct.Runtime;
 
 /// <summary>
 ///     Logger extensions for <see cref="AqueductGrainFactory" />.

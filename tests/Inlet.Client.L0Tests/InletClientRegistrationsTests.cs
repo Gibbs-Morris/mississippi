@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions;
-using Mississippi.Reservoir;
 using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;

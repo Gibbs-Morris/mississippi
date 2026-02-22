@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     High-performance logging extensions for snapshot storage operations.

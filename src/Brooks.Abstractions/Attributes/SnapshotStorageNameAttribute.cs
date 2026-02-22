@@ -2,7 +2,7 @@ using System;
 using System.Text.RegularExpressions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+namespace Mississippi.Brooks.Abstractions.Attributes;
 
 /// <summary>
 ///     Attribute used to define the storage name and version of a snapshot/state/projection in the event sourcing system.

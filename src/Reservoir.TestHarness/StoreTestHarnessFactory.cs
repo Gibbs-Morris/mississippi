@@ -1,7 +1,7 @@
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir.Testing;
+namespace Mississippi.Reservoir.TestHarness;
 
 /// <summary>
 ///     Factory methods for creating test harnesses.

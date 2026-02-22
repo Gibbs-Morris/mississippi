@@ -10,7 +10,7 @@ using NSubstitute;
 using Orleans;
 
 
-namespace Mississippi.Aqueduct.Grains.L0Tests;
+namespace Mississippi.Aqueduct.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AqueductGrainFactory" /> in the Grains assembly.

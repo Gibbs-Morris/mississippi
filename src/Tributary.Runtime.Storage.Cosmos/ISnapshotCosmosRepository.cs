@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Defines Cosmos-backed snapshot persistence operations.

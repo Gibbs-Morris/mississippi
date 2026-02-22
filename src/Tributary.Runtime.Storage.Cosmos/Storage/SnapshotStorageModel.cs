@@ -1,9 +1,9 @@
 using System;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     Represents a snapshot in storage form prior to Cosmos document serialization.

@@ -5,23 +5,24 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Diagnostics;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Diagnostics;
 
 using Orleans;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.UxProjections;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     UX projection grain that provides cached, read-optimized access to projection state.
 /// </summary>
 /// <typeparam name="TProjection">
 ///     The projection state type. Must be decorated with
-///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+///     <see cref="BrookNameAttribute" />.
 /// </typeparam>
 /// <remarks>
 ///     <para>
@@ -31,12 +32,12 @@ namespace Mississippi.EventSourcing.UxProjections;
 ///     </para>
 ///     <para>
 ///         The grain is keyed by just the entity ID. The brook name is obtained from
-///         the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         the <see cref="BrookNameAttribute" />
 ///         on the <typeparamref name="TProjection" /> type itself.
 ///     </para>
 ///     <para>
 ///         The projection type <typeparamref name="TProjection" /> MUST be decorated with
-///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+///         <see cref="BrookNameAttribute" />.
 ///         If the attribute is missing, the grain will fail to activate with an exception.
 ///     </para>
 ///     <para>
@@ -87,7 +88,7 @@ internal sealed class UxProjectionGrain<TProjection>
 
     /// <summary>
     ///     Gets the brook name from the
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///     <see cref="BrookNameAttribute" />
     ///     on the <typeparamref name="TProjection" /> type.
     /// </summary>
     /// <remarks>
@@ -170,14 +171,14 @@ internal sealed class UxProjectionGrain<TProjection>
 
     /// <summary>
     ///     Called when the grain is activated. Validates the projection type has
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///     <see cref="BrookNameAttribute" />
     ///     and initializes the entity ID.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the activation operation.</returns>
     /// <exception cref="InvalidOperationException">
     ///     Thrown when the <typeparamref name="TProjection" /> type is missing the
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+    ///     <see cref="BrookNameAttribute" />.
     /// </exception>
     public Task OnActivateAsync(
         CancellationToken token

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.EventSourcing.Reducers;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     High-performance logging helpers for <see cref="RootReducer{TProjection}" />.

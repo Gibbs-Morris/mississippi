@@ -11,11 +11,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Aggregates.Diagnostics;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Diagnostics;
+using Mississippi.Tributary.Runtime;
 
 
-namespace Mississippi.EventSourcing.Aggregates;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Root-level event effect dispatcher that composes one or more <see cref="IEventEffect{TAggregate}" /> instances.
@@ -28,7 +29,7 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///         All matching effects are invoked (unlike reducers which use first-match-wins).
 ///     </para>
 ///     <para>
-///         This pattern mirrors <see cref="Mississippi.EventSourcing.Reducers.RootReducer{TProjection}" />
+///         This pattern mirrors <see cref="RootReducer{TProjection}" />
 ///         for consistency across the framework.
 ///     </para>
 /// </remarks>

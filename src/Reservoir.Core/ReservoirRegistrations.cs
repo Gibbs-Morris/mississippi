@@ -6,10 +6,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
-using Mississippi.Reservoir.State;
+using Mississippi.Reservoir.Core.State;
 
 
-namespace Mississippi.Reservoir;
+namespace Mississippi.Reservoir.Core;
 
 /// <summary>
 ///     Provides extension methods for registering Reservoir components in the dependency injection container.

@@ -1,8 +1,8 @@
+using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Common.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests.Streaming;
+namespace Mississippi.Brooks.Abstractions.L0Tests.Streaming;
 
 /// <summary>
 ///     Tests for <see cref="BrookProviderOptions" />.

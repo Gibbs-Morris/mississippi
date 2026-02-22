@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     Defines a factory for resolving Orleans snapshot grains by key.

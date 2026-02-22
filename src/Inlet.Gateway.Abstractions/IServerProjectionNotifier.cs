@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Inlet.Server.Abstractions;
+namespace Mississippi.Inlet.Gateway.Abstractions;
 
 /// <summary>
 ///     Provides notifications when projections are updated (server-side interface).

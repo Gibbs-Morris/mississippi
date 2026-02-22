@@ -14,7 +14,7 @@ using Mississippi.Testing.Utilities.SignalR;
 using NSubstitute;
 
 
-namespace Mississippi.Aqueduct.L0Tests;
+namespace Mississippi.Aqueduct.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AqueductHubLifetimeManager{THub}" />.

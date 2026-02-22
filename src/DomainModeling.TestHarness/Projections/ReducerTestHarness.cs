@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Testing.Projections;
+namespace Mississippi.DomainModeling.TestHarness.Projections;
 
 /// <summary>
 ///     A fluent test harness for testing event reducers and projections.

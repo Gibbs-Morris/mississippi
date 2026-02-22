@@ -3,10 +3,10 @@ using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Silo.Abstractions;
+using Mississippi.Inlet.Runtime.Abstractions;
 
 
-namespace Mississippi.Inlet.Silo.L0Tests;
+namespace Mississippi.Inlet.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for ProjectionBrookRegistry via <see cref="IProjectionBrookRegistry" />.

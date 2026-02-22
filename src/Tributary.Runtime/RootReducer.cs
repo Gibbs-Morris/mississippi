@@ -9,10 +9,10 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Reducers;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     Root-level event reducer that composes one or more <see cref="IEventReducer{TProjection}" /> instances.

@@ -12,7 +12,7 @@ using Mississippi.Inlet.Generators.Core.Emit;
 using Mississippi.Inlet.Generators.Core.Naming;
 
 
-namespace Mississippi.Inlet.Silo.Generators;
+namespace Mississippi.Inlet.Runtime.Generators;
 
 /// <summary>
 ///     Generates silo-side service registrations for aggregates marked with [GenerateAggregateEndpoints].

@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Abstractions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Core;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests.BuiltIn.Navigation;
+namespace Mississippi.Reservoir.Client.L0Tests.BuiltIn.Navigation;
 
 /// <summary>
 ///     Tests for NavigationFeatureRegistration.

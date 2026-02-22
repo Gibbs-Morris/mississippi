@@ -11,7 +11,7 @@ using Mississippi.Aqueduct.Abstractions.Grains;
 using Orleans.Runtime;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Manages periodic heartbeat operations for server liveness tracking.

@@ -1,12 +1,12 @@
 using System;
 using System.Globalization;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Represents a composite key for identifying a versioned UX projection,

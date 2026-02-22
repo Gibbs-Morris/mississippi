@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 
-namespace Mississippi.Inlet.Server.Abstractions;
+namespace Mississippi.Inlet.Gateway.Abstractions;
 
 /// <summary>
 ///     Extension methods for registering Inlet in-process server services.

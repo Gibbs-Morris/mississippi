@@ -1,4 +1,4 @@
-namespace Mississippi.Reservoir.Blazor;
+namespace Mississippi.Reservoir.Client;
 
 /// <summary>
 ///     Tracks whether DevTools has been initialized by the component.

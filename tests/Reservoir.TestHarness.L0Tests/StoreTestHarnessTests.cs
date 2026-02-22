@@ -11,7 +11,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir.Testing.L0Tests;
+namespace Mississippi.Reservoir.TestHarness.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="StoreTestHarness{TState}" /> and <see cref="StoreScenario{TState}" />.

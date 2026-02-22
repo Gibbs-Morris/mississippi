@@ -11,12 +11,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Abstractions;
-using Mississippi.Common.Cosmos.Abstractions.Retry;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 using Newtonsoft.Json;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     Cosmos SDK implementation of <see cref="ISnapshotContainerOperations" />.

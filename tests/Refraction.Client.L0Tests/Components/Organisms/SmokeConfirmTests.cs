@@ -5,10 +5,10 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Refraction.Components.Organisms;
+using Mississippi.Refraction.Client.Components.Organisms;
 
 
-namespace Mississippi.Refraction.L0Tests.Components.Organisms;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Organisms;
 
 /// <summary>
 ///     Tests for <see cref="SmokeConfirm" /> component.

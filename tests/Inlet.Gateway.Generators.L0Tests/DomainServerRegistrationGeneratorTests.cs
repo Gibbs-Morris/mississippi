@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
 
-namespace Mississippi.Inlet.Server.Generators.L0Tests;
+namespace Mississippi.Inlet.Gateway.Generators.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="DomainServerRegistrationGenerator" />.

@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests;
+namespace Mississippi.Reservoir.Client.L0Tests;
 
 /// <summary>
 ///     Tests for ReservoirDevToolsInterop.

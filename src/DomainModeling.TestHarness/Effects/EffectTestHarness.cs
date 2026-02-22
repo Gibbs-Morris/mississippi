@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Testing.Effects;
+namespace Mississippi.DomainModeling.TestHarness.Effects;
 
 /// <summary>
 ///     Test harness for testing event effects that dispatch commands to other aggregates.

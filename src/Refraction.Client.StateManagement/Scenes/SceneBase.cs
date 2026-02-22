@@ -8,7 +8,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Refraction.Pages.Scenes;
+namespace Mississippi.Refraction.Client.StateManagement.Scenes;
 
 /// <summary>
 ///     Base class for scene components that connect to Reservoir state.

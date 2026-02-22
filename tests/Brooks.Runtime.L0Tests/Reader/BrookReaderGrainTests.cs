@@ -5,17 +5,17 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
-using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
-using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
-using Mississippi.EventSourcing.Brooks.L0Tests.Infrastructure;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Cursor;
+using Mississippi.Brooks.Abstractions.Reader;
+using Mississippi.Brooks.Abstractions.Writer;
+using Mississippi.Brooks.Runtime.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 
 using Orleans.TestingHost;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
+namespace Mississippi.Brooks.Runtime.L0Tests.Reader;
 
 /// <summary>
 ///     Integration tests for <see cref="IBrookReaderGrain" /> and <see cref="IBrookAsyncReaderGrain" />.

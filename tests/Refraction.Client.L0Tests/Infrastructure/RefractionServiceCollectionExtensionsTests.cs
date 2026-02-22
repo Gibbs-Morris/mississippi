@@ -3,10 +3,10 @@ using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Refraction.Infrastructure;
+using Mississippi.Refraction.Client.Infrastructure;
 
 
-namespace Mississippi.Refraction.L0Tests.Infrastructure;
+namespace Mississippi.Refraction.Client.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Tests for <see cref="RefractionServiceCollectionExtensions" />.

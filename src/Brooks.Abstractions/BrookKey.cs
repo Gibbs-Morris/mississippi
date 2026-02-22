@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions;
+namespace Mississippi.Brooks.Abstractions;
 
 /// <summary>
 ///     Represents a composite key for identifying brooks, consisting of a brook name and entity id component.

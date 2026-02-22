@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.EventSourcing.Serialization.Json.L0Tests;
+namespace Mississippi.Brooks.Serialization.Json.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="JsonSerializationProvider" /> behavior.

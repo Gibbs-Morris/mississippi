@@ -8,14 +8,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
 
+using Mississippi.Brooks.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
+namespace Mississippi.DomainModeling.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionControllerBase{TProjection, TDto}" /> using identity mapping.

@@ -3,15 +3,15 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.Brooks.Factory;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.Brooks.Abstractions.Factory;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Factory;
+using Mississippi.Brooks.Runtime.Reader;
 
 using Orleans.Hosting;
 
 
-namespace Mississippi.EventSourcing.Brooks;
+namespace Mississippi.Brooks.Runtime;
 
 /// <summary>
 ///     Extension methods for registering EventSourcing services in dependency injection.

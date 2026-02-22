@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+namespace Mississippi.Brooks.Abstractions.Attributes;
 
 /// <summary>
 ///     Provides helper methods for working with snapshot storage names.

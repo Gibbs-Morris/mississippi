@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Reservoir.Blazor;
+namespace Mississippi.Reservoir.Client;
 
 /// <summary>
 ///     Logger extensions for Reservoir DevTools.

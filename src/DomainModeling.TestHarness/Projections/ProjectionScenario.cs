@@ -5,10 +5,10 @@ using System.Reflection;
 
 using FluentAssertions;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Testing.Projections;
+namespace Mississippi.DomainModeling.TestHarness.Projections;
 
 /// <summary>
 ///     A fluent scenario builder for Given/When/Then style projection testing.

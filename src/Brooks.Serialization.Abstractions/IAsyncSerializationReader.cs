@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.EventSourcing.Serialization.Abstractions;
+namespace Mississippi.Brooks.Serialization.Abstractions;
 
 /// <summary>
 ///     Provides asynchronous deserialization functionality for reading objects from streams.

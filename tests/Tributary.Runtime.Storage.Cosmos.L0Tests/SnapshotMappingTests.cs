@@ -1,12 +1,12 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Mapping;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for snapshot mapping utilities.

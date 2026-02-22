@@ -5,14 +5,14 @@ using System.Linq;
 
 using Microsoft.Extensions.Time.Testing;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Serialization.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Serialization.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Aggregates.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookEventConverter" />.

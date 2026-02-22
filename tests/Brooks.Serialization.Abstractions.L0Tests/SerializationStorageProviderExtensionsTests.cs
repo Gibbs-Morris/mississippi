@@ -8,10 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Serialization.Abstractions;
 
-
-namespace Mississippi.EventSourcing.Serialization.L0Tests;
+namespace Mississippi.Brooks.Serialization.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests covering <see cref="SerializationStorageProviderExtensions" /> registrations.

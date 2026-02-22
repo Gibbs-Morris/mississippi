@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Concurrent;
 
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Sagas;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Applies saga infrastructure event data to saga state instances.

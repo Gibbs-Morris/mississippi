@@ -7,14 +7,14 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
-using Mississippi.Aqueduct.L0Tests.Infrastructure;
+using Mississippi.Aqueduct.Gateway.L0Tests.Infrastructure;
 
 using NSubstitute;
 
 using Orleans;
 
 
-namespace Mississippi.Aqueduct.L0Tests;
+namespace Mississippi.Aqueduct.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AqueductNotifier" /> operations.

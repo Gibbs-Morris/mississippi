@@ -1,4 +1,4 @@
-namespace Mississippi.Refraction;
+namespace Mississippi.Refraction.Client;
 
 /// <summary>
 ///     Component state values used across all Refraction components.

@@ -1,9 +1,9 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Factory;
+using Mississippi.Brooks.Runtime.Reader;
 
 
-namespace Mississippi.EventSourcing.Brooks.Factory;
+namespace Mississippi.Brooks.Runtime.Factory;
 
 /// <summary>
 ///     Extended factory interface for resolving internal Orleans grains.

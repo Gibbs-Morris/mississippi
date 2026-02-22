@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.Inlet.Silo.Abstractions;
+namespace Mississippi.Inlet.Runtime.Abstractions;
 
 /// <summary>
 ///     Handler that processes projection subscription requests and manages server connections.

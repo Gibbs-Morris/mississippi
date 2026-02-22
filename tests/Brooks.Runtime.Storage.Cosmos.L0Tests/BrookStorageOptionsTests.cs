@@ -1,7 +1,7 @@
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookStorageOptions" /> defaults and mutability.

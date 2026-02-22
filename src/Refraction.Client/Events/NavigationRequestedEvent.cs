@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 
-namespace Mississippi.Refraction.Events;
+namespace Mississippi.Refraction.Client.Events;
 
 /// <summary>
 ///     Event raised when navigation is requested.

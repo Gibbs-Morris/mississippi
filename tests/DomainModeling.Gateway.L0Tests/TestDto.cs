@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
+namespace Mississippi.DomainModeling.Gateway.L0Tests;
 
 /// <summary>
 ///     Test DTO class for testing purposes.

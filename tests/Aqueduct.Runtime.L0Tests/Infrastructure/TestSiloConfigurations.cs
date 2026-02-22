@@ -4,7 +4,7 @@ using Orleans.Hosting;
 using Orleans.TestingHost;
 
 
-namespace Mississippi.Aqueduct.Grains.L0Tests.Infrastructure;
+namespace Mississippi.Aqueduct.Runtime.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Silo configuration for the Aqueduct Grains test cluster.

@@ -4,18 +4,17 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Diagnostics;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Diagnostics;
+using Mississippi.Tributary.Abstractions;
 
 using Orleans;
 using Orleans.Concurrency;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.UxProjections;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Versioned UX projection cache grain that provides cached access

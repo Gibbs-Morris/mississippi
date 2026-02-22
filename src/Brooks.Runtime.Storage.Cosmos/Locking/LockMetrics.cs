@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
 /// <summary>
 ///     OpenTelemetry metrics for distributed lock operations.

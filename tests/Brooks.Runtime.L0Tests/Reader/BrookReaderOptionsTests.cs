@@ -1,7 +1,7 @@
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.Brooks.Runtime.Reader;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
+namespace Mississippi.Brooks.Runtime.L0Tests.Reader;
 
 /// <summary>
 ///     Tests for <see cref="BrookReaderOptions" />.

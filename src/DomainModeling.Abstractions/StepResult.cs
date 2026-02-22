@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 
-namespace Mississippi.EventSourcing.Sagas.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Represents the outcome of a saga step execution.

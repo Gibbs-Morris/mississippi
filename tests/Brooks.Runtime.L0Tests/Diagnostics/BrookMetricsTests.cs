@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Diagnostics;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Diagnostics;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests.Diagnostics;
+namespace Mississippi.Brooks.Runtime.L0Tests.Diagnostics;
 
 /// <summary>
 ///     Tests for brook read/write metrics.

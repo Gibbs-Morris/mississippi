@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.TestHarness.Projections;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Testing.Aggregates;
+namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 
 /// <summary>
 ///     A fluent test harness for testing aggregate command handlers and reducers together.
@@ -51,7 +52,7 @@ namespace Mississippi.EventSourcing.Testing.Aggregates;
 ///     <para>
 ///         <strong>Unified Testing Approach:</strong>
 ///         This harness shares design patterns with
-///         <see cref="Mississippi.EventSourcing.Testing.Projections.ReducerTestHarness{TProjection}" />,
+///         <see cref="ReducerTestHarness{TProjection}" />,
 ///         enabling consistent testing for both projections and aggregates.
 ///     </para>
 /// </remarks>

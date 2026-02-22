@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Unit tests for <see cref="UxProjectionCursorGrain" /> covering the grain implementation directly.

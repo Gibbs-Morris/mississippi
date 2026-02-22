@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.UxProjections;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Logger extensions for <see cref="UxProjectionGrain{TProjection}" />.

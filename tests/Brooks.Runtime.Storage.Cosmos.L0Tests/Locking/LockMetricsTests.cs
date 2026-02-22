@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Locking;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Locking;
 
 /// <summary>
 ///     Tests for distributed lock metrics.

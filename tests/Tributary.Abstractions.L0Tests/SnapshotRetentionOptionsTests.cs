@@ -1,9 +1,9 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
+namespace Mississippi.Tributary.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotRetentionOptions" /> to verify base snapshot version calculation.

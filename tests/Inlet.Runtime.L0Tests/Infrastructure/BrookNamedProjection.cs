@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Abstractions;
 
 
-namespace Mississippi.Inlet.Silo.L0Tests.Infrastructure;
+namespace Mississippi.Inlet.Runtime.L0Tests.Infrastructure;
 
 /// <summary>
 ///     A test projection with both ProjectionPathAttribute and BrookNameAttribute.

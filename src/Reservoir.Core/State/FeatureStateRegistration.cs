@@ -2,7 +2,7 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir.State;
+namespace Mississippi.Reservoir.Core.State;
 
 /// <summary>
 ///     Represents a typed feature state registration that provides the initial state,

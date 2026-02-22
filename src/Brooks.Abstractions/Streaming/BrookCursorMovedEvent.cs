@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
+namespace Mississippi.Brooks.Abstractions.Streaming;
 
 /// <summary>
 ///     Represents an event that occurs when a brook cursor position has moved to a new position.

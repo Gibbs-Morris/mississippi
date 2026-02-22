@@ -5,13 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Brooks.Abstractions.Factory;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Reader;
 using Mississippi.Common.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.Brooks.Reader;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests;
+namespace Mississippi.Brooks.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="EventSourcingRegistrations" /> extension methods.

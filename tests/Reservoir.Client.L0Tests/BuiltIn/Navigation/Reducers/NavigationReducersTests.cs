@@ -1,11 +1,11 @@
 using FluentAssertions;
 
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Reducers;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Reducers;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests.BuiltIn.Navigation.Reducers;
+namespace Mississippi.Reservoir.Client.L0Tests.BuiltIn.Navigation.Reducers;
 
 /// <summary>
 ///     Unit tests for <see cref="NavigationReducers" />.

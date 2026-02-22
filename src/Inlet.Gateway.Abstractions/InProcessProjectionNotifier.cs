@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Inlet.Server.Abstractions;
+namespace Mississippi.Inlet.Gateway.Abstractions;
 
 /// <summary>
 ///     In-process implementation of <see cref="IServerProjectionNotifier" /> for server-side use.

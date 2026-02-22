@@ -1,10 +1,10 @@
 using System;
 
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Reducers;
+namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Reducers;
 
 /// <summary>
 ///     Pure reducer functions for the lifecycle feature state.

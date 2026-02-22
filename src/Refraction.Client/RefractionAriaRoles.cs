@@ -1,4 +1,4 @@
-namespace Mississippi.Refraction;
+namespace Mississippi.Refraction.Client;
 
 /// <summary>
 ///     ARIA role constants for accessibility.

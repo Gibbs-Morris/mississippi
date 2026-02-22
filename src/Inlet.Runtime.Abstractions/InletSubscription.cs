@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Mississippi.Inlet.Silo.Abstractions;
+namespace Mississippi.Inlet.Runtime.Abstractions;
 
 /// <summary>
 ///     Represents an active subscription to a projection.

@@ -1,11 +1,11 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
+namespace Mississippi.DomainModeling.Abstractions.Subscriptions;
 
 /// <summary>
 ///     Event published when a projection's version changes.

@@ -1,4 +1,4 @@
-namespace Mississippi.Aqueduct.L2Tests;
+namespace Mississippi.Aqueduct.Gateway.L2Tests;
 
 /// <summary>
 ///     Test collection that shares the <see cref="AqueductFixture" /> across all Aqueduct L2 tests.

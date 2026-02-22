@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 
 using Microsoft.Azure.Cosmos;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Provides low-level Cosmos DB operations for event brook management.

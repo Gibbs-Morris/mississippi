@@ -1,25 +1,26 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     A generic aggregate grain interface that executes commands against an aggregate.
 /// </summary>
 /// <typeparam name="TAggregate">
 ///     The aggregate state type, decorated with
-///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+///     <see cref="BrookNameAttribute" />.
 /// </typeparam>
 /// <remarks>
 ///     <para>
 ///         This generic grain interface eliminates the need for custom grain interfaces per aggregate.
 ///         The grain is keyed by entity ID only; the brook name is derived from the
-///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         <see cref="BrookNameAttribute" />
 ///         on the <typeparamref name="TAggregate" /> type.
 ///     </para>
 ///     <para>

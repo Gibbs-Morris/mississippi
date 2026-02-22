@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Aggregates.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="FireAndForgetEffectWorkerGrain{TEvent, TAggregate}" />.

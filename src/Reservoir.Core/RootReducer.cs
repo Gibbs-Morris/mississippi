@@ -8,7 +8,7 @@ using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Reservoir;
+namespace Mississippi.Reservoir.Core;
 
 /// <summary>
 ///     Root-level reducer that composes one or more <see cref="IActionReducer{TState}" /> instances.

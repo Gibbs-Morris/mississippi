@@ -4,10 +4,10 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Refraction.Components.Molecules;
+using Mississippi.Refraction.Client.Components.Molecules;
 
 
-namespace Mississippi.Refraction.L0Tests.Components.Molecules;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Molecules;
 
 /// <summary>
 ///     Tests for <see cref="TelemetryStrip" /> component.

@@ -1,12 +1,12 @@
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     A grain that tracks the latest known brook position for a specific UX projection type.

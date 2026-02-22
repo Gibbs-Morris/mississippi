@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Reducers.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     Defines an event reducer that attempts to transform an incoming event into a projection.

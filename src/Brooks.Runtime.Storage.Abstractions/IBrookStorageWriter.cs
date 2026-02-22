@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Mississippi.Brooks.Abstractions;
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+
+namespace Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 /// <summary>
 ///     Provides write access to brooks.

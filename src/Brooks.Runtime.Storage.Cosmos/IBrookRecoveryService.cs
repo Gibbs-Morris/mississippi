@@ -1,10 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Provides functionality for recovering and managing brook cursor positions in Cosmos DB.

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 
 
-namespace Mississippi.Aqueduct.L0Tests;
+namespace Mississippi.Aqueduct.Gateway.L0Tests;
 
 /// <summary>
 ///     A test hub for testing the AqueductHubLifetimeManager.

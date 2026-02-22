@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     Document model for storing brook cursor position information in Cosmos DB.

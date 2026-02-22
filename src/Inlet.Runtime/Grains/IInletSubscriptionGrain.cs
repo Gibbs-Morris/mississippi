@@ -1,13 +1,13 @@
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 
-using Mississippi.Inlet.Silo.Abstractions;
+using Mississippi.Inlet.Runtime.Abstractions;
 
 using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.Inlet.Silo.Grains;
+namespace Mississippi.Inlet.Runtime.Grains;
 
 /// <summary>
 ///     Grain managing all projection subscriptions for a single SignalR connection.

@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotWriteModel" />.

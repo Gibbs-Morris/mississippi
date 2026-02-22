@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 
 
-namespace Mississippi.EventSourcing.Reducers.Abstractions.L0Tests;
+namespace Mississippi.Tributary.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for event reducer abstractions.

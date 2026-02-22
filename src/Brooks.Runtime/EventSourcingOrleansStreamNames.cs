@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Brooks;
+namespace Mississippi.Brooks.Runtime;
 
 /// <summary>
 ///     Contains constant stream names used for Orleans event sourcing cursor updates.

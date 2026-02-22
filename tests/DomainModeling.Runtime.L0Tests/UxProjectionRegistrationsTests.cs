@@ -3,10 +3,10 @@ using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionRegistrations" />.

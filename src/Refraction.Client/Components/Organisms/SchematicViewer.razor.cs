@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Refraction.Components.Organisms;
+namespace Mississippi.Refraction.Client.Components.Organisms;
 
 /// <summary>
 ///     SchematicViewer component - the primary representation for complex objects.

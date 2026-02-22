@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions.Grains;
-using Mississippi.Aqueduct.Grains.Diagnostics;
-using Mississippi.Aqueduct.Grains.Grains.State;
+using Mississippi.Aqueduct.Runtime.Diagnostics;
+using Mississippi.Aqueduct.Runtime.Grains.State;
 
 using Orleans;
 using Orleans.Runtime;
 
 
-namespace Mississippi.Aqueduct.Grains.Grains;
+namespace Mississippi.Aqueduct.Runtime.Grains;
 
 /// <summary>
 ///     Orleans grain implementation that tracks active SignalR servers for failure detection.

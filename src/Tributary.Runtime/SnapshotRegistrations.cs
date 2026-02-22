@@ -3,10 +3,10 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     Provides extension methods for registering snapshot caching components in the dependency injection container.

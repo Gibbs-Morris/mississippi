@@ -6,7 +6,7 @@ using Azure;
 using Azure.Storage.Blobs.Models;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
 /// <summary>
 ///     Abstraction over BlobLeaseClient for testability.

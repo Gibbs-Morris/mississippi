@@ -1,8 +1,8 @@
-using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Mapping;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Mapping;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Mapping;
 
 /// <summary>
 ///     Tests <see cref="CursorDocumentToStorageMapper" /> to ensure cursor documents are mapped correctly.

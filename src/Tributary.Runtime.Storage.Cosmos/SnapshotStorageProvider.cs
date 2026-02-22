@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Diagnostics;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Diagnostics;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Cosmos DB implementation of <see cref="ISnapshotStorageProvider" />.

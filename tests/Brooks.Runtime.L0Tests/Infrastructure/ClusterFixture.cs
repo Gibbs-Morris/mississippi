@@ -1,7 +1,7 @@
 using Mississippi.Testing.Utilities.Orleans;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests.Infrastructure;
+namespace Mississippi.Brooks.Runtime.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Shared Orleans TestCluster fixture for EventSourcing grain tests.

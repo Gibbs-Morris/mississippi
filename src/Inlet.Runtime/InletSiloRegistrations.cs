@@ -4,12 +4,12 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Silo.Abstractions;
+using Mississippi.Inlet.Runtime.Abstractions;
 
 
-namespace Mississippi.Inlet.Silo;
+namespace Mississippi.Inlet.Runtime;
 
 /// <summary>
 ///     Extension methods for registering Inlet Silo services.

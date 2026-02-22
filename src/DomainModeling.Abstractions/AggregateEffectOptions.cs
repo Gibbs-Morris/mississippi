@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Configuration options for aggregate effect processing.

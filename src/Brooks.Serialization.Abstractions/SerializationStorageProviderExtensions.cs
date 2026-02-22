@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 
-namespace Mississippi.EventSourcing.Serialization.Abstractions;
+namespace Mississippi.Brooks.Serialization.Abstractions;
 
 /// <summary>
 ///     Provides extension methods for registering serialization storage providers in dependency injection containers.

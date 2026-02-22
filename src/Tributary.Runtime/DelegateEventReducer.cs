@@ -3,10 +3,10 @@ using System;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Reducers;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     Adapter that allows an event reducer to be expressed as a delegate.

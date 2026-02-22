@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Diagnostics;
+namespace Mississippi.DomainModeling.Runtime.Diagnostics;
 
 /// <summary>
 ///     OpenTelemetry metrics for event effect execution.

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 
 using Newtonsoft.Json;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Batching;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Batching;
 
 /// <summary>
 ///     Estimates the size of batches and individual events for Cosmos DB operations.

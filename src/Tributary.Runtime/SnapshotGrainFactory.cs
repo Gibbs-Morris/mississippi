@@ -2,12 +2,12 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Snapshots;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     Factory for resolving Orleans snapshot grains (cache and persister) by key.

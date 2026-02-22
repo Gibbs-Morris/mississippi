@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     Converts between typed snapshot state and serialized <see cref="SnapshotEnvelope" /> payloads.

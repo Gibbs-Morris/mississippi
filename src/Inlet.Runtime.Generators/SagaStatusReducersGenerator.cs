@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 using Mississippi.Inlet.Generators.Core.Emit;
 
 
-namespace Mississippi.Inlet.Silo.Generators;
+namespace Mississippi.Inlet.Runtime.Generators;
 
 /// <summary>
 ///     Generates saga status reducers for projections marked with [GenerateSagaStatusReducers].

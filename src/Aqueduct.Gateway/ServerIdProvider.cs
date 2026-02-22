@@ -3,7 +3,7 @@ using System;
 using Mississippi.Aqueduct.Abstractions;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Default implementation of <see cref="IServerIdProvider" /> that generates

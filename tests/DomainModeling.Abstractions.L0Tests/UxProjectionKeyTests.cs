@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests;
+namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionKey" /> behavior.

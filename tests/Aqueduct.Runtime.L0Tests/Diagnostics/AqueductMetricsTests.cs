@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Mississippi.Aqueduct.Grains.Diagnostics;
+using Mississippi.Aqueduct.Runtime.Diagnostics;
 
 
-namespace Mississippi.Aqueduct.Grains.L0Tests.Diagnostics;
+namespace Mississippi.Aqueduct.Runtime.L0Tests.Diagnostics;
 
 /// <summary>
 ///     Tests for Aqueduct SignalR metrics.

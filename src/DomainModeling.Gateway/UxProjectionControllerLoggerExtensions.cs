@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Api;
+namespace Mississippi.DomainModeling.Gateway;
 
 /// <summary>
 ///     High-performance logging extensions for UX projection controller operations.

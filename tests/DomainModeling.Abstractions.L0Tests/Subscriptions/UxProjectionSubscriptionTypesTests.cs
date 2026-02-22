@@ -1,10 +1,10 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.DomainModeling.Abstractions.Subscriptions;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions.L0Tests.Subscriptions;
+namespace Mississippi.DomainModeling.Abstractions.L0Tests.Subscriptions;
 
 /// <summary>
 ///     Tests for UX projection subscription types.

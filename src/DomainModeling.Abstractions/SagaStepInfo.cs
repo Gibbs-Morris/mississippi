@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.EventSourcing.Sagas.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Describes a saga step for orchestration.

@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Aggregates.Abstractions.L0Tests;
+namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="AggregateErrorCodes" /> constants.

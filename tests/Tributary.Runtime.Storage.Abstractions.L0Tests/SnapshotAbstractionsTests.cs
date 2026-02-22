@@ -7,8 +7,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Tributary.Abstractions;
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
+
+namespace Mississippi.Tributary.Runtime.Storage.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for snapshot abstractions and registration helpers.

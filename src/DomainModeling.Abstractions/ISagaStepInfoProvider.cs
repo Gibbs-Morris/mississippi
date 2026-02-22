@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 
-namespace Mississippi.EventSourcing.Sagas.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Provides saga step metadata for orchestration.

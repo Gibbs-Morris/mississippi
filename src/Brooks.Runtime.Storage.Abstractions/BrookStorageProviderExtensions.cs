@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+namespace Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 /// <summary>
 ///     Provides extension methods for registering brook storage providers in the dependency injection container.

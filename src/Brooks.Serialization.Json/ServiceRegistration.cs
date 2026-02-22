@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.EventSourcing.Serialization.Abstractions;
+using Mississippi.Brooks.Serialization.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Serialization.Json;
+namespace Mississippi.Brooks.Serialization.Json;
 
 /// <summary>
 ///     Extension methods for registering JSON serialization services.

@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Testing.Effects;
+namespace Mississippi.DomainModeling.TestHarness.Effects;
 
 /// <summary>
 ///     Test harness for testing fire-and-forget event effects.

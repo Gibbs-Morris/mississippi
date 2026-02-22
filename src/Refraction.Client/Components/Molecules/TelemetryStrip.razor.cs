@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Refraction.Components.Molecules;
+namespace Mississippi.Refraction.Client.Components.Molecules;
 
 /// <summary>
 ///     TelemetryStrip component - read-only status display strip.

@@ -1,11 +1,11 @@
 using System.Collections.Immutable;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Mapping;
 
 /// <summary>
 ///     Maps Cosmos snapshot documents directly to envelopes (used by tests or specialized flows).

@@ -15,7 +15,7 @@ using Mississippi.Common.Abstractions;
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Registrations;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Registrations;
 
 /// <summary>
 ///     Tests for Cosmos container/database initialization wiring.

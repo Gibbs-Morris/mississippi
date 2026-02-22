@@ -7,13 +7,13 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-using Mississippi.Common.Cosmos.Abstractions.Retry;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotContainerOperations" />.

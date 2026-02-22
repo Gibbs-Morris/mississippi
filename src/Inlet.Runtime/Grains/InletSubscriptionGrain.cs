@@ -11,19 +11,19 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.Inlet.Server.Abstractions;
-using Mississippi.Inlet.Silo.Abstractions;
-using Mississippi.Inlet.Silo.Diagnostics;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Storage.Abstractions;
+using Mississippi.Inlet.Gateway.Abstractions;
+using Mississippi.Inlet.Runtime.Abstractions;
+using Mississippi.Inlet.Runtime.Diagnostics;
 
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.Inlet.Silo.Grains;
+namespace Mississippi.Inlet.Runtime.Grains;
 
 /// <summary>
 ///     Orleans grain implementation managing projection subscriptions for a single SignalR connection.

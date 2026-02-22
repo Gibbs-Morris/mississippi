@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+namespace Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 /// <summary>
 ///     Provides unified read and write access to brook event storage.

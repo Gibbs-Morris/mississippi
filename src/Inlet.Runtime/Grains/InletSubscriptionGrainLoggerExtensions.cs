@@ -3,7 +3,7 @@ using System;
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Inlet.Silo.Grains;
+namespace Mississippi.Inlet.Runtime.Grains;
 
 /// <summary>
 ///     High-performance logging extensions for <see cref="InletSubscriptionGrain" />.

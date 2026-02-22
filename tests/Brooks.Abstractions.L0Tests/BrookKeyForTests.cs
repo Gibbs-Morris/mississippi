@@ -1,9 +1,9 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
+namespace Mississippi.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookKey.ForGrain{TGrain}" /> and <see cref="BrookKey.ForType{T}" /> functionality.

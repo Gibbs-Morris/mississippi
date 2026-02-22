@@ -1,7 +1,9 @@
 using System;
 
+using Mississippi.Brooks.Abstractions.Attributes;
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Marks an aggregate type for source generation of a strongly-typed aggregate service and optional HTTP API.
@@ -28,7 +30,7 @@ namespace Mississippi.EventSourcing.Aggregates.Abstractions;
 ///     </para>
 ///     <para>
 ///         The aggregate type must also be decorated with
-///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         <see cref="BrookNameAttribute" />
 ///         to define the event stream identity.
 ///     </para>
 /// </remarks>

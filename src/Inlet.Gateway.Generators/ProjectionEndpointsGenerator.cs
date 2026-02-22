@@ -11,7 +11,7 @@ using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Emit;
 
 
-namespace Mississippi.Inlet.Server.Generators;
+namespace Mississippi.Inlet.Gateway.Generators;
 
 /// <summary>
 ///     Generates server-side code for projections marked with [GenerateProjectionEndpoints].

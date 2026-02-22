@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 
 
-namespace Mississippi.Refraction.Components.Atoms;
+namespace Mississippi.Refraction.Client.Components.Atoms;
 
 /// <summary>
 ///     InputField component - instrument-style input with HUD aesthetics.

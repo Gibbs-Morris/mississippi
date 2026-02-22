@@ -2,7 +2,7 @@ using System;
 using System.Collections.Immutable;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
+namespace Mississippi.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for the <see cref="BrookEvent" /> record.

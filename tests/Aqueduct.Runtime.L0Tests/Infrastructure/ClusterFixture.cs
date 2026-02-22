@@ -1,7 +1,7 @@
 using Mississippi.Testing.Utilities.Orleans;
 
 
-namespace Mississippi.Aqueduct.Grains.L0Tests.Infrastructure;
+namespace Mississippi.Aqueduct.Runtime.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Shared Orleans TestCluster fixture for Aqueduct Grains tests.

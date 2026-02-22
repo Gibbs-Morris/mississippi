@@ -3,7 +3,7 @@ using System;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
+namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
 
 /// <summary>
 ///     Feature state for tracking application lifecycle in a Reservoir store.

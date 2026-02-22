@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
-using Mississippi.EventSourcing.UxProjections.Subscriptions;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.DomainModeling.Abstractions.Subscriptions;
+using Mississippi.DomainModeling.Runtime.Subscriptions;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests.Subscriptions;
+namespace Mississippi.DomainModeling.Runtime.L0Tests.Subscriptions;
 
 /// <summary>
 ///     Unit tests for <see cref="UxProjectionSubscriptionGrain" />.

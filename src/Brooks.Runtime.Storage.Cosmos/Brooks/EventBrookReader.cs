@@ -6,13 +6,13 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Common.Cosmos.Abstractions.Retry;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Brooks;
 
 /// <summary>
 ///     Cosmos DB implementation of the event brook reader for reading events from brooks.

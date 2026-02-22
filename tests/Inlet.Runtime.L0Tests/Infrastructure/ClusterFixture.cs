@@ -1,7 +1,7 @@
 using Mississippi.Testing.Utilities.Orleans;
 
 
-namespace Mississippi.Inlet.Silo.L0Tests.Infrastructure;
+namespace Mississippi.Inlet.Runtime.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Shared Orleans TestCluster fixture for Inlet Orleans grain tests.

@@ -1,4 +1,4 @@
-namespace Mississippi.Inlet.Server.Abstractions;
+namespace Mississippi.Inlet.Gateway.Abstractions;
 
 /// <summary>
 ///     Constants for SignalR hub method names used by Inlet.

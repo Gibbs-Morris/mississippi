@@ -5,7 +5,7 @@ using Mississippi.Aqueduct.Abstractions.Grains;
 using Orleans;
 
 
-namespace Mississippi.Aqueduct.Grains.Grains.State;
+namespace Mississippi.Aqueduct.Runtime.Grains.State;
 
 /// <summary>
 ///     Persisted state for a group grain implementing <see cref="ISignalRGroupGrain" />.

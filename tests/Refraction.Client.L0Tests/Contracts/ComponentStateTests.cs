@@ -1,9 +1,9 @@
 using System;
 
-using Mississippi.Refraction.Contracts;
+using Mississippi.Refraction.Client.Contracts;
 
 
-namespace Mississippi.Refraction.L0Tests.Contracts;
+namespace Mississippi.Refraction.Client.L0Tests.Contracts;
 
 /// <summary>
 ///     Tests for <see cref="ComponentState" /> record struct.

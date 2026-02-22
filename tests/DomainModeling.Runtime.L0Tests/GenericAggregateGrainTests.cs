@@ -8,13 +8,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
-using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
-using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
-using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Cursor;
+using Mississippi.Brooks.Abstractions.Factory;
+using Mississippi.Brooks.Abstractions.Writer;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 using Moq;
 
@@ -22,7 +21,7 @@ using Orleans;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Aggregates.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="GenericAggregateGrain{TAggregate}" />.

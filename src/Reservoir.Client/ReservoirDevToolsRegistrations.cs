@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 
-namespace Mississippi.Reservoir.Blazor;
+namespace Mississippi.Reservoir.Client;
 
 /// <summary>
 ///     Extension methods for registering Reservoir DevTools integration.

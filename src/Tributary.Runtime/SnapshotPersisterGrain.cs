@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Diagnostics;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
 
 using Orleans;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Snapshots;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     Grain that handles background persistence of snapshots to storage.

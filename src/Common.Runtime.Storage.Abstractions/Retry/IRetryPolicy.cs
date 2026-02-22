@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.Common.Cosmos.Abstractions.Retry;
+namespace Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 /// <summary>
 ///     Provides retry functionality for operations that may fail due to transient errors.

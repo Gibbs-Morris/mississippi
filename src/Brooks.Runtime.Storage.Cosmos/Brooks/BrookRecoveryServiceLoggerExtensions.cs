@@ -2,10 +2,10 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Brooks;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Brooks;
 
 /// <summary>
 ///     High-performance logging extensions for <see cref="BrookRecoveryService" />.

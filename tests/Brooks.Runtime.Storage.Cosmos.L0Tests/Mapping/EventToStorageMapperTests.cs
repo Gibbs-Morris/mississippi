@@ -2,12 +2,12 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Cosmos.Mapping;
-using Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Mapping;
+using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.L0Tests.Mapping;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Mapping;
 
 /// <summary>
 ///     Test class for EventToStorageMapper functionality.

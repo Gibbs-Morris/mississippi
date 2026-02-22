@@ -1,11 +1,11 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Represents a key for identifying UX projection notification grains.

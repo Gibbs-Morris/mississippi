@@ -9,7 +9,7 @@ using Mississippi.Common.Abstractions;
 using Orleans.Hosting;
 
 
-namespace Mississippi.Aqueduct.Grains;
+namespace Mississippi.Aqueduct.Runtime;
 
 /// <summary>
 ///     Extension methods for configuring Aqueduct on Orleans silos.

@@ -5,7 +5,7 @@ using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Grain interface for executing fire-and-forget event effects.

@@ -1,4 +1,4 @@
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
+namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
 
 /// <summary>
 ///     Represents the current phase of the application lifecycle.

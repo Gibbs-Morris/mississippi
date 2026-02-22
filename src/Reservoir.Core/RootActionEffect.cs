@@ -13,7 +13,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir;
+namespace Mississippi.Reservoir.Core;
 
 /// <summary>
 ///     Root-level action effect dispatcher that composes one or more

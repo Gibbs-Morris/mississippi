@@ -7,10 +7,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
+namespace Mississippi.Brooks.Runtime.Storage.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookStorageProviderExtensions" /> registration helpers.

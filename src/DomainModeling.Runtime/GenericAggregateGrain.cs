@@ -9,32 +9,31 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Aggregates.Diagnostics;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.Brooks.Abstractions.Factory;
-using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Factory;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Diagnostics;
+using Mississippi.Tributary.Abstractions;
 
 using Orleans;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Aggregates;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Generic aggregate grain that processes commands for any aggregate type.
 /// </summary>
 /// <typeparam name="TAggregate">
 ///     The aggregate state type, decorated with
-///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+///     <see cref="BrookNameAttribute" />.
 /// </typeparam>
 /// <remarks>
 ///     <para>
 ///         This grain eliminates the need for custom grain classes per aggregate. The grain is keyed
 ///         by entity ID only; the brook name is derived from the
-///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         <see cref="BrookNameAttribute" />
 ///         on the <typeparamref name="TAggregate" /> type.
 ///     </para>
 ///     <para>
@@ -43,7 +42,7 @@ namespace Mississippi.EventSourcing.Aggregates;
 ///     </para>
 ///     <para>
 ///         The <typeparamref name="TAggregate" /> type MUST be decorated with
-///         <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+///         <see cref="BrookNameAttribute" />.
 ///         If the attribute is missing, the grain will fail to activate with an exception.
 ///     </para>
 /// </remarks>
@@ -111,7 +110,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
     /// <summary>
     ///     Gets the brook name from the
-    ///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///     <see cref="BrookNameAttribute" />
     ///     on the <typeparamref name="TAggregate" /> type.
     /// </summary>
     private static string BrookName => BrookNameHelper.GetBrookName<TAggregate>();
@@ -215,7 +214,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="token">Cancellation token.</param>
     /// <returns>A task representing the activation operation.</returns>
     /// <exception cref="InvalidOperationException">
-    ///     Thrown when the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+    ///     Thrown when the <see cref="BrookNameAttribute" />
     ///     is missing from the <typeparamref name="TAggregate" /> type.
     /// </exception>
     public Task OnActivateAsync(

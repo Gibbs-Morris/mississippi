@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
-using Mississippi.Inlet.Silo.Diagnostics;
+using Mississippi.Inlet.Runtime.Diagnostics;
 
 
-namespace Mississippi.Inlet.Silo.L0Tests;
+namespace Mississippi.Inlet.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InletMetrics" />.

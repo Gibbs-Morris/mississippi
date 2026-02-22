@@ -1,14 +1,14 @@
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.EventSourcing.UxProjections.L0Tests.Infrastructure;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.L0Tests.Infrastructure;
 using Mississippi.Testing.Utilities.Orleans;
 
 using Orleans.TestingHost;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Integration tests for <see cref="IUxProjectionCursorGrain" /> behavior using a real Orleans cluster.

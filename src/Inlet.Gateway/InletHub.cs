@@ -4,12 +4,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
-using Mississippi.Inlet.Silo.Grains;
+using Mississippi.Inlet.Runtime.Grains;
 
 using Orleans;
 
 
-namespace Mississippi.Inlet.Server;
+namespace Mississippi.Inlet.Gateway;
 
 /// <summary>
 ///     SignalR hub for managing projection subscriptions via Inlet.

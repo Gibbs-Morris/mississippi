@@ -6,11 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 
 using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Core;
 
 using Moq;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests;
+namespace Mississippi.Reservoir.Client.L0Tests;
 
 /// <summary>
 ///     Tests for Reservoir DevTools registrations.

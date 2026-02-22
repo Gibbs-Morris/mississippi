@@ -1,10 +1,10 @@
 using System;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Sagas;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Reducer for <see cref="SagaStartedEvent" />.

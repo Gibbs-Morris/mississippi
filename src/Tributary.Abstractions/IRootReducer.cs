@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Reducers.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     Interface for root-level reducers that process events and update projection state.

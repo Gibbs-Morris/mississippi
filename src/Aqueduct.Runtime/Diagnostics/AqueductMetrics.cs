@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 
-namespace Mississippi.Aqueduct.Grains.Diagnostics;
+namespace Mississippi.Aqueduct.Runtime.Diagnostics;
 
 /// <summary>
 ///     OpenTelemetry metrics for Aqueduct SignalR backplane.

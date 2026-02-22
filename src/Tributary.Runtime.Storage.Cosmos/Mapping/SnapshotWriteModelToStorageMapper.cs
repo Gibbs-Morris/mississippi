@@ -1,10 +1,10 @@
 using System.Linq;
 
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.Mapping;
 
 /// <summary>
 ///     Maps snapshot write models to storage models.

@@ -1,9 +1,9 @@
-using Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
-using Mississippi.EventSourcing.Brooks.Abstractions.Reader;
-using Mississippi.EventSourcing.Brooks.Abstractions.Writer;
+using Mississippi.Brooks.Abstractions.Cursor;
+using Mississippi.Brooks.Abstractions.Reader;
+using Mississippi.Brooks.Abstractions.Writer;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Factory;
+namespace Mississippi.Brooks.Abstractions.Factory;
 
 /// <summary>
 ///     Defines a factory for resolving Orleans grains for writing, reading, and cursor retrieval.

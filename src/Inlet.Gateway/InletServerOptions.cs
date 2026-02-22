@@ -1,7 +1,7 @@
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.Inlet.Server;
+namespace Mississippi.Inlet.Gateway;
 
 /// <summary>
 ///     Configuration options for Inlet Server.

@@ -1,7 +1,7 @@
 using Azure.Storage.Blobs;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Locking;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
 /// <summary>
 ///     Factory for creating <see cref="Azure.Storage.Blobs.Specialized.BlobLeaseClient" /> instances.

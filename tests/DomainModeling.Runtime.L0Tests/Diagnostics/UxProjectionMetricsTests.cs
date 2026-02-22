@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Mississippi.EventSourcing.UxProjections.Diagnostics;
+using Mississippi.DomainModeling.Runtime.Diagnostics;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests.Diagnostics;
+namespace Mississippi.DomainModeling.Runtime.L0Tests.Diagnostics;
 
 /// <summary>
 ///     Tests for UX projection metrics.

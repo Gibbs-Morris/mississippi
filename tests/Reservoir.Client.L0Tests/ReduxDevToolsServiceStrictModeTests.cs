@@ -8,11 +8,12 @@ using Microsoft.JSInterop;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
+using Mississippi.Reservoir.Core;
 
 using Moq;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests;
+namespace Mississippi.Reservoir.Client.L0Tests;
 
 /// <summary>
 ///     Tests for ReduxDevToolsService strict time-travel rehydration mode.

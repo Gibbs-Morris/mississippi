@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Defines a registry for tracking local SignalR hub connections.

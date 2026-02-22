@@ -3,10 +3,10 @@ using System.Collections.Generic;
 
 using FluentAssertions;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Testing.Aggregates;
+namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 
 /// <summary>
 ///     Extension methods for testing command handlers with a fluent API.

@@ -5,11 +5,11 @@ using System.Reflection;
 
 using FluentAssertions;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Testing.Aggregates;
+namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 
 /// <summary>
 ///     A fluent scenario builder for Given/When/Then style aggregate testing.

@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.Brooks.Cursor;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Cursor;
+using Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests.Cursor;
+namespace Mississippi.Brooks.Runtime.L0Tests.Cursor;
 
 /// <summary>
 ///     Unit tests for <see cref="BrookCursorGrain" />.

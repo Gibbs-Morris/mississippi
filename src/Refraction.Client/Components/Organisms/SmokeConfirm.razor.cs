@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Refraction.Components.Organisms;
+namespace Mississippi.Refraction.Client.Components.Organisms;
 
 /// <summary>
 ///     SmokeConfirm component - a rare occlusion surface for destructive confirmation.

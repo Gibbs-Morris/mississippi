@@ -11,7 +11,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir.Testing;
+namespace Mississippi.Reservoir.TestHarness;
 
 /// <summary>
 ///     A fluent scenario builder for Given/When/Then style state testing.

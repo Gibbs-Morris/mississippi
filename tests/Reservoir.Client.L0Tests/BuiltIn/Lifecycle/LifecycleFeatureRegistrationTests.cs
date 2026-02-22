@@ -4,12 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Reservoir.Abstractions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
+using Mississippi.Reservoir.Core;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests.BuiltIn.Lifecycle;
+namespace Mississippi.Reservoir.Client.L0Tests.BuiltIn.Lifecycle;
 
 /// <summary>
 ///     Tests for LifecycleFeatureRegistration.

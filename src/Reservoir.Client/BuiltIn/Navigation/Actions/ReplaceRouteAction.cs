@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
+namespace Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 
 /// <summary>
 ///     Action dispatched to replace the current URI in browser history rather than pushing a new entry.

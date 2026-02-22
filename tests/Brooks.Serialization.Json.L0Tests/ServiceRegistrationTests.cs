@@ -1,9 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.EventSourcing.Serialization.Abstractions;
+using Mississippi.Brooks.Serialization.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Serialization.Json.L0Tests;
+namespace Mississippi.Brooks.Serialization.Json.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="ServiceRegistration" /> behavior.

@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-using Mississippi.EventSourcing.Brooks.Factory;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.Brooks.Runtime.Factory;
+using Mississippi.Brooks.Runtime.Reader;
 using Mississippi.Testing.Utilities.Mocks;
 
 using Moq;
@@ -12,7 +12,7 @@ using Moq;
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
+namespace Mississippi.Brooks.Runtime.L0Tests.Reader;
 
 /// <summary>
 ///     Unit tests for <see cref="BrookReaderGrain" />.

@@ -1,10 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Sagas.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Step that fails compensation without providing an error code.

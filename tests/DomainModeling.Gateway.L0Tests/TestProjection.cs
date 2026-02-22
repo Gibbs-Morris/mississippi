@@ -1,7 +1,7 @@
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Api.L0Tests;
+namespace Mississippi.DomainModeling.Gateway.L0Tests;
 
 /// <summary>
 ///     Test projection class for testing purposes.

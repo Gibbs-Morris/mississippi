@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
+using Mississippi.Brooks.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Api;
+namespace Mississippi.DomainModeling.Gateway;
 
 /// <summary>
 ///     Abstract base controller for exposing UX projections via HTTP endpoints with DTO mapping.

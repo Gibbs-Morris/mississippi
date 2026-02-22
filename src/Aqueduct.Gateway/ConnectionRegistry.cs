@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Thread-safe registry for tracking local SignalR hub connections.

@@ -4,11 +4,11 @@ using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Inlet.Silo.Abstractions;
-using Mississippi.Inlet.Silo.L0Tests.Infrastructure;
+using Mississippi.Inlet.Runtime.Abstractions;
+using Mississippi.Inlet.Runtime.L0Tests.Infrastructure;
 
 
-namespace Mississippi.Inlet.Silo.L0Tests;
+namespace Mississippi.Inlet.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InletSiloRegistrations" />.

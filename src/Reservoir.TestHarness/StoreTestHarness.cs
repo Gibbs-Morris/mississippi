@@ -8,7 +8,7 @@ using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Reservoir.Testing;
+namespace Mississippi.Reservoir.TestHarness;
 
 /// <summary>
 ///     A fluent test harness for testing Reservoir actions, reducers, and effects in isolation.

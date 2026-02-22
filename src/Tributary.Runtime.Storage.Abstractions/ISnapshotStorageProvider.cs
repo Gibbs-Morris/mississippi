@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+namespace Mississippi.Tributary.Runtime.Storage.Abstractions;
 
 /// <summary>
 ///     Combines snapshot read, write, delete, and pruning operations for snapshot envelopes.

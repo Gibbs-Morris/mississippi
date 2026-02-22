@@ -2,15 +2,15 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
 
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.UxProjections.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="UxProjectionGrainFactory" />.

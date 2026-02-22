@@ -1,14 +1,14 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Streaming;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions.Subscriptions;
+using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Abstractions.Subscriptions;
 
 using Orleans;
 using Orleans.Streams;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Subscriptions;
+namespace Mississippi.DomainModeling.Runtime.Subscriptions;
 
 /// <summary>
 ///     Represents an active projection subscription within a <see cref="UxProjectionSubscriptionGrain" />.

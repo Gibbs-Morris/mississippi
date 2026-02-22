@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Refraction.Components.Atoms;
+namespace Mississippi.Refraction.Client.Components.Atoms;
 
 /// <summary>
 ///     ProgressArc component - an arc-based progress indicator.

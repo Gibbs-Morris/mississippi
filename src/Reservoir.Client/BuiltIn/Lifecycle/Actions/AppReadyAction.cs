@@ -3,7 +3,7 @@ using System;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.Actions;
+namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
 
 /// <summary>
 ///     Action dispatched when the application has completed initialization and is ready for use.

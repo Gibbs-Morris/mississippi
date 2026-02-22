@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     High-performance logging extensions for <see cref="SnapshotStorageProvider" />.

@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Aqueduct;
 using Mississippi.Aqueduct.Abstractions;
-using Mississippi.Inlet.Silo;
+using Mississippi.Aqueduct.Gateway;
+using Mississippi.Inlet.Runtime;
 
 
-namespace Mississippi.Inlet.Server;
+namespace Mississippi.Inlet.Gateway;
 
 /// <summary>
 ///     Extension methods for registering Inlet Server services.

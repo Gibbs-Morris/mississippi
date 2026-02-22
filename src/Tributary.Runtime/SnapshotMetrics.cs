@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Diagnostics;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     OpenTelemetry metrics for snapshot caching and persistence.

@@ -12,7 +12,7 @@ using Mississippi.Inlet.Generators.Core.Emit;
 using Mississippi.Inlet.Generators.Core.Naming;
 
 
-namespace Mississippi.Inlet.Server.Generators;
+namespace Mississippi.Inlet.Gateway.Generators;
 
 /// <summary>
 ///     Generates MCP tool registration extension methods that wire all generated MCP tools.

@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests;
+namespace Mississippi.Brooks.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="BrookPosition" /> conversion helpers.

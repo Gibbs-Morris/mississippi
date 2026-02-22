@@ -1,7 +1,7 @@
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 
-namespace Mississippi.EventSourcing.Snapshots.L0Tests;
+namespace Mississippi.Tributary.Runtime.L0Tests;
 
 /// <summary>
 ///     Test grain type for snapshot cache grain tests.

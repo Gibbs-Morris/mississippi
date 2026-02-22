@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Mississippi.EventSourcing.Snapshots.Cosmos.Diagnostics;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Diagnostics;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests.Diagnostics;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests.Diagnostics;
 
 /// <summary>
 ///     Tests for snapshot storage metrics.

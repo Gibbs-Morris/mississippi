@@ -10,10 +10,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
-using Mississippi.Reservoir.State;
+using Mississippi.Reservoir.Core.State;
 
 
-namespace Mississippi.Reservoir.L0Tests;
+namespace Mississippi.Reservoir.Core.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="Store" />.

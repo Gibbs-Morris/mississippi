@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.JSInterop;
 
 
-namespace Mississippi.Reservoir.Blazor;
+namespace Mississippi.Reservoir.Client;
 
 /// <summary>
 ///     Provides JavaScript interop for Redux DevTools communication.

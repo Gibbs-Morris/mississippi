@@ -6,9 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
+using Mississippi.Reservoir.Core;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests;
+namespace Mississippi.Reservoir.Client.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="StoreComponent" />.

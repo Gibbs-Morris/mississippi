@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions.L0Tests;
+namespace Mississippi.Tributary.Abstractions.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotKey" />.

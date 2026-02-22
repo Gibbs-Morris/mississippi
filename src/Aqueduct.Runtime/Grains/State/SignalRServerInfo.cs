@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.Aqueduct.Grains.Grains.State;
+namespace Mississippi.Aqueduct.Runtime.Grains.State;
 
 /// <summary>
 ///     Information about a SignalR server registered in the directory.

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace Mississippi.Reservoir;
+namespace Mississippi.Reservoir.Core;
 
 /// <summary>
 ///     A simple observable subject that allows publishing values to multiple subscribers.

@@ -5,7 +5,7 @@ using System.Text.Json;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Reservoir.Blazor;
+namespace Mississippi.Reservoir.Client;
 
 /// <summary>
 ///     Configuration options for Reservoir Redux DevTools integration.

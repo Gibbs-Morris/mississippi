@@ -4,7 +4,7 @@ using Orleans.Hosting;
 using Orleans.TestingHost;
 
 
-namespace Mississippi.Aqueduct.L0Tests.Infrastructure;
+namespace Mississippi.Aqueduct.Gateway.L0Tests.Infrastructure;
 
 /// <summary>
 ///     Silo configuration for the SignalR Orleans test cluster.

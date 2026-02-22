@@ -1,7 +1,7 @@
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Configuration options for the Cosmos DB brook storage provider.

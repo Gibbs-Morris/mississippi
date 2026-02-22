@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions.Storage;
-using Mississippi.EventSourcing.Brooks.Reader;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Runtime.Reader;
+using Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Brooks.L0Tests.Reader;
+namespace Mississippi.Brooks.Runtime.L0Tests.Reader;
 
 /// <summary>
 ///     Unit tests for <see cref="BrookSliceReaderGrain" />.

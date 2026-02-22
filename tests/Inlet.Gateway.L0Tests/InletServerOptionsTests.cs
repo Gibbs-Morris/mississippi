@@ -1,7 +1,7 @@
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.Inlet.Server.L0Tests;
+namespace Mississippi.Inlet.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="InletServerOptions" />.

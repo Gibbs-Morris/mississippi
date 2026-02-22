@@ -4,7 +4,7 @@ using System.Globalization;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     Identifies a specific snapshot version for a projection, scoped by brook name, projection type, projection id, and

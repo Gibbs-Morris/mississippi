@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
+namespace Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 
 /// <summary>
 ///     Action dispatched to update query string parameters on the current URI.

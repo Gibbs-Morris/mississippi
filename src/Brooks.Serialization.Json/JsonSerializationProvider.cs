@@ -4,10 +4,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Serialization.Abstractions;
+using Mississippi.Brooks.Serialization.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Serialization.Json;
+namespace Mississippi.Brooks.Serialization.Json;
 
 /// <summary>
 ///     Provides JSON serialization functionality using System.Text.Json.

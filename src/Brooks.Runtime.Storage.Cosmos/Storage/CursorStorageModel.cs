@@ -1,7 +1,7 @@
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     Storage model for brook cursor position information.

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Handles side effects triggered by domain events within aggregate grains.

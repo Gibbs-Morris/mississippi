@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     Represents a serialized snapshot payload and its content type.

@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Abstractions;
+namespace Mississippi.Tributary.Runtime.Storage.Abstractions;
 
 /// <summary>
 ///     Provides helper methods for registering snapshot storage providers and their options.

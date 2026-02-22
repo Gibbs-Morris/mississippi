@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Api;
+namespace Mississippi.DomainModeling.Gateway;
 
 /// <summary>
 ///     Abstract base controller for exposing aggregate commands via HTTP endpoints.

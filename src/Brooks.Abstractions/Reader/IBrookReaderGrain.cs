@@ -6,7 +6,7 @@ using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Reader;
+namespace Mississippi.Brooks.Abstractions.Reader;
 
 /// <summary>
 ///     Main entry point grain for reading events from a brook (event stream) using batch operations.

@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Abstractions;
-using Mississippi.Reservoir.Blazor.BuiltIn;
-using Mississippi.Reservoir.Blazor.BuiltIn.Lifecycle.State;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Client.BuiltIn;
+using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.State;
+using Mississippi.Reservoir.Core;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests.BuiltIn;
+namespace Mississippi.Reservoir.Client.L0Tests.BuiltIn;
 
 /// <summary>
 ///     Tests for ReservoirBlazorBuiltInRegistrations.

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 using Mississippi.Testing.Utilities.SignalR;
 
 
-namespace Mississippi.Aqueduct.L0Tests;
+namespace Mississippi.Aqueduct.Gateway.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="ConnectionRegistry" />.

@@ -1,9 +1,9 @@
 using System;
 
-using BrookNameAttribute = Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute;
+using BrookNameAttribute = Mississippi.Brooks.Abstractions.Attributes.BrookNameAttribute;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.L0Tests.Attributes;
+namespace Mississippi.Brooks.Abstractions.L0Tests.Attributes;
 
 /// <summary>
 ///     Contains unit tests that verify the behavior of the <see cref="BrookNameAttribute" /> class.

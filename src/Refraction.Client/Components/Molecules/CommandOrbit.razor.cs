@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Refraction.Components.Molecules;
+namespace Mississippi.Refraction.Client.Components.Molecules;
 
 /// <summary>
 ///     CommandOrbit component - radial action menu around an emitter.

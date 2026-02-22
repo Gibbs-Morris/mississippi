@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 
-namespace Mississippi.EventSourcing.Testing.Effects;
+namespace Mississippi.DomainModeling.TestHarness.Effects;
 
 /// <summary>
 ///     Base result class for effect test assertions.

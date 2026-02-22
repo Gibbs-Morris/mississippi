@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Brooks.Abstractions;
 using Mississippi.Common.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Common.Cosmos.Abstractions.Retry;
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 
-namespace Mississippi.EventSourcing.Brooks.Cosmos.Storage;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
 
 /// <summary>
 ///     Repository implementation for Cosmos DB operations on brooks and events.

@@ -4,7 +4,7 @@ using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.Brooks.Abstractions.Cursor;
+namespace Mississippi.Brooks.Abstractions.Cursor;
 
 /// <summary>
 ///     Orleans grain contract that exposes the cursor (latest version) of a Mississippi brook.

@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Brooks.Reader;
+namespace Mississippi.Brooks.Runtime.Reader;
 
 /// <summary>
 ///     Configuration options for brook reader operations.

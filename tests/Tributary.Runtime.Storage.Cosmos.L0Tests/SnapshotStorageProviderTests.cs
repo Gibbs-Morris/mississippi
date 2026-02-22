@@ -5,12 +5,12 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging.Abstractions;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 using Moq;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotStorageProvider" />.

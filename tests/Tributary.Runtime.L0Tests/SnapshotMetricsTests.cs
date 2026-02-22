@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
-using Mississippi.EventSourcing.Snapshots.Diagnostics;
 
-
-namespace Mississippi.EventSourcing.Snapshots.L0Tests.Diagnostics;
+namespace Mississippi.Tributary.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for snapshot metrics.

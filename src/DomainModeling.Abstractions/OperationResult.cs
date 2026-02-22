@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Represents the result of an aggregate operation that may succeed or fail.

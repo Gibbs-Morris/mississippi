@@ -1,4 +1,4 @@
-namespace Mississippi.Aqueduct.Grains.L0Tests.Infrastructure;
+namespace Mississippi.Aqueduct.Runtime.L0Tests.Infrastructure;
 
 /// <summary>
 ///     xUnit collection definition to share a single TestCluster across tests.

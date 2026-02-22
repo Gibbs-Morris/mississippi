@@ -11,7 +11,7 @@ using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Naming;
 
 
-namespace Mississippi.Inlet.Silo.Generators;
+namespace Mississippi.Inlet.Runtime.Generators;
 
 /// <summary>
 ///     Generates silo-side domain composition registrations that aggregate all generated aggregate, saga,

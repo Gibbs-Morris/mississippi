@@ -1,20 +1,21 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 using Orleans;
 using Orleans.Concurrency;
 
 
-namespace Mississippi.EventSourcing.UxProjections.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     A stateless worker grain that provides read access to a UX projection.
 /// </summary>
 /// <typeparam name="TProjection">
 ///     The projection state type, decorated with
-///     <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />.
+///     <see cref="BrookNameAttribute" />.
 /// </typeparam>
 /// <remarks>
 ///     <para>
@@ -24,7 +25,7 @@ namespace Mississippi.EventSourcing.UxProjections.Abstractions;
 ///     </para>
 ///     <para>
 ///         The grain is keyed by just the entity ID. The brook name is obtained from
-///         the <see cref="Mississippi.EventSourcing.Brooks.Abstractions.Attributes.BrookNameAttribute" />
+///         the <see cref="BrookNameAttribute" />
 ///         on the <typeparamref name="TProjection" /> type itself.
 ///     </para>
 ///     <para>

@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.EventSourcing.Sagas.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Marks a class as a saga step and binds it to the specified saga state type.

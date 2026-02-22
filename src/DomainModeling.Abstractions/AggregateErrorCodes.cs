@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Provides well-known error codes for common aggregate operation failures.

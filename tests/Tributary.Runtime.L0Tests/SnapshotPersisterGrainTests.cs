@@ -3,14 +3,15 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
 
 using Moq;
 
 using Orleans.Runtime;
 
 
-namespace Mississippi.EventSourcing.Snapshots.L0Tests;
+namespace Mississippi.Tributary.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotPersisterGrain" />.

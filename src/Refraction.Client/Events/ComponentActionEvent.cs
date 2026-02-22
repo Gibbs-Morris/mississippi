@@ -1,4 +1,4 @@
-namespace Mississippi.Refraction.Events;
+namespace Mississippi.Refraction.Client.Events;
 
 /// <summary>
 ///     Event raised when an action is triggered within a component.

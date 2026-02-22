@@ -1,7 +1,7 @@
 using Mississippi.Common.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Options controlling Cosmos snapshot persistence.

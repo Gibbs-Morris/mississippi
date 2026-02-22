@@ -12,14 +12,15 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.Common.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
-using Mississippi.Common.Cosmos.Abstractions.Retry;
-using Mississippi.Common.Cosmos.Retry;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Mapping;
-using Mississippi.EventSourcing.Snapshots.Cosmos.Storage;
+using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
+using Mississippi.Common.Runtime.Storage.Cosmos.Retry;
+using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Mapping;
+using Mississippi.Tributary.Runtime.Storage.Cosmos.Storage;
 
 
-namespace Mississippi.EventSourcing.Snapshots.Cosmos;
+namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 /// <summary>
 ///     Extension methods for registering Cosmos snapshot storage provider services.

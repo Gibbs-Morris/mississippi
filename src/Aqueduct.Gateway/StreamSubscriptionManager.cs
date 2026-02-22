@@ -13,7 +13,7 @@ using Orleans.Runtime;
 using Orleans.Streams;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     Manages Orleans stream subscriptions for the Aqueduct SignalR backplane.

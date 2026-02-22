@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Mississippi.EventSourcing.Aggregates.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Envelope containing all data needed to execute a fire-and-forget effect.

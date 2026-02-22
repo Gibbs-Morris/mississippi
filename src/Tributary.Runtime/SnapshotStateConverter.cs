@@ -1,10 +1,10 @@
 using System;
 
-using Mississippi.EventSourcing.Serialization.Abstractions;
-using Mississippi.EventSourcing.Snapshots.Abstractions;
+using Mississippi.Brooks.Serialization.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Snapshots;
+namespace Mississippi.Tributary.Runtime;
 
 /// <summary>
 ///     Default implementation of <see cref="ISnapshotStateConverter{TSnapshot}" /> that uses

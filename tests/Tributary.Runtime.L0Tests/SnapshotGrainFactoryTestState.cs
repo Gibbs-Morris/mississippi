@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Snapshots.L0Tests;
+namespace Mississippi.Tributary.Runtime.L0Tests;
 
 /// <summary>
 ///     Test state for factory tests. Contains an example value property for state representation.

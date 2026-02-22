@@ -16,7 +16,7 @@ using Orleans;
 using Orleans.Runtime;
 
 
-namespace Mississippi.Aqueduct;
+namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
 ///     A custom <see cref="HubLifetimeManager{THub}" /> implementation that uses Aqueduct

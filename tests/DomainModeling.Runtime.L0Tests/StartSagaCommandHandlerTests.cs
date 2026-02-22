@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Time.Testing;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.EventSourcing.Sagas.L0Tests;
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="StartSagaCommandHandler{TSaga,TInput}" />.

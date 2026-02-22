@@ -10,7 +10,7 @@ using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 
-namespace Mississippi.Reservoir.Blazor.L0Tests;
+namespace Mississippi.Reservoir.Client.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="DevToolsInitializationCheckerService" />.

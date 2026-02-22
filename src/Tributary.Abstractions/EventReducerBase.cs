@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Mississippi.EventSourcing.Reducers.Abstractions;
+namespace Mississippi.Tributary.Abstractions;
 
 /// <summary>
 ///     Provides a base class for event reducers that transform an incoming event into a projection.
