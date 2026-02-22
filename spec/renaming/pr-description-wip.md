@@ -559,3 +559,46 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): test folder/project rename with solution path update and temporary assembly-name continuity.
 - Risks / breaking surface: stale solution path or internals access regressions; mitigated by full gate runs.
 - Follow-up items (if any): continue to `P07`.
+
+## Task 13: EventSourcing.Brooks.Cosmos -> Brooks.Runtime.Storage.Cosmos
+
+- Task type: `ProjectRename`
+- Linked pair: `P07`
+
+### Summary
+- Renamed the Brooks Cosmos storage project to `Brooks.Runtime.Storage.Cosmos` and rewired direct references.
+
+### Changes made
+- Folder rename: `src/EventSourcing.Brooks.Cosmos` -> `src/Brooks.Runtime.Storage.Cosmos`
+- `.csproj` rename: `src/Brooks.Runtime.Storage.Cosmos/EventSourcing.Brooks.Cosmos.csproj` -> `src/Brooks.Runtime.Storage.Cosmos/Brooks.Runtime.Storage.Cosmos.csproj`
+- `.slnx` updates: updated `mississippi.slnx` project path under `/Framework/EventSourcing/Brooks/`
+- `.csproj` `ProjectReference` updates:
+	- `src/Sdk.Silo/Sdk.Silo.csproj`
+	- `tests/EventSourcing.Brooks.Cosmos.L0Tests/EventSourcing.Brooks.Cosmos.L0Tests.csproj`
+	- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+	- `samples/Crescent/Crescent.L2Tests/Crescent.L2Tests.csproj`
+- Task-local stabilization (csproj-only): added `<AssemblyName>Mississippi.EventSourcing.Brooks.Cosmos</AssemblyName>` to preserve assembly identity until `T07`.
+
+### Files touched
+- `src/Brooks.Runtime.Storage.Cosmos/`
+- `mississippi.slnx`
+- `src/Sdk.Silo/Sdk.Silo.csproj`
+- `tests/EventSourcing.Brooks.Cosmos.L0Tests/EventSourcing.Brooks.Cosmos.L0Tests.csproj`
+- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+- `samples/Crescent/Crescent.L2Tests/Crescent.L2Tests.csproj`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task P07: rename EventSourcing.Brooks.Cosmos to Brooks.Runtime.Storage.Cosmos`
+
+### PR-ready notes
+- Business value: clarifies Brooks storage runtime naming and aligns package identity with target architecture.
+- How it works (high level): project folder/file rename with direct reference rewires across source, tests, and sample integration tests.
+- Risks / breaking surface: stale references and internals access regressions; mitigated by full gate runs and temporary assembly-name continuity.
+- Follow-up items (if any): execute `T07` immediately.

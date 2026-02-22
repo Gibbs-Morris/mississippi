@@ -11,7 +11,7 @@
     <ProjectReference Include="..\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
     <ProjectReference Include="..\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
-    <ProjectReference Include="..\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+    <ProjectReference Include="..\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />

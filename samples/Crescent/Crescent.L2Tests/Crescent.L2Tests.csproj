@@ -18,7 +18,7 @@
     <!-- Mississippi Event Sourcing Framework -->
     <ProjectReference Include="..\..\..\src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
     <ProjectReference Include="..\..\..\src\Brooks.Runtime\Brooks.Runtime.csproj" />
-    <ProjectReference Include="..\..\..\src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />

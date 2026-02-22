@@ -20,7 +20,7 @@
   <Folder Name="/Framework/EventSourcing/Brooks/">
     <Project Path="src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <Project Path="src\Brooks.Runtime\Brooks.Runtime.csproj" />
-    <Project Path="src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
+    <Project Path="src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Reducers/">
     <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
