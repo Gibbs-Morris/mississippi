@@ -5,7 +5,7 @@
 
     <!-- Reference all src projects to include them in architecture analysis -->
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Aqueduct\Aqueduct.csproj" />
+        <ProjectReference Include="..\..\src\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
         <ProjectReference Include="..\..\src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
         <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj" />

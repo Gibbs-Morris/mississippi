@@ -44,8 +44,8 @@ Copy this block for each task:
 - [ ] Cleanup: Samples passes
 - [ ] Tests: Mississippi passes
 - [ ] Tests: Samples passes
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Commit created for this task only
+- Commit SHA: `see git log (Task P01 commit)`
 - Notes: `<optional>`
 ```
 
@@ -55,7 +55,7 @@ Copy this block for each task:
 
 Use this ordered list as the real execution sequence. For each `P*` project task, run the matching `T*` test task immediately next.
 
-- [ ] `P01` Rename `Aqueduct` -> `Aqueduct.Gateway`
+- [x] `P01` Rename `Aqueduct` -> `Aqueduct.Gateway`
 - [ ] `T01` Rename mirrored tests: `Aqueduct.L0Tests` -> `Aqueduct.Gateway.L0Tests`; `Aqueduct.L2Tests` -> `Aqueduct.Gateway.L2Tests`; `Aqueduct.L2Tests.AppHost` -> `Aqueduct.Gateway.L2Tests.AppHost`
 
 - [ ] `P02` Rename `Aqueduct.Grains` -> `Aqueduct.Runtime`
@@ -157,18 +157,18 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - Do not change any `.cs` file in this stage.
 - After completing each task, append a task entry to `pr-description-wip.md` before starting the next task.
 
-### [ ] Task: Rename `Aqueduct` -> `Aqueduct.Gateway`
+### [x] Task: Rename `Aqueduct` -> `Aqueduct.Gateway`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Cleanup: Mississippi passes
+- [x] Cleanup: Samples passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
 - [ ] Commit created for this task only
 - Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- Notes: Added temporary `<AssemblyName>Mississippi.Aqueduct</AssemblyName>` in `Aqueduct.Gateway.csproj` so P01 passes before mirrored test rename task T01.
 
 ### [ ] Task: Rename `Aqueduct.Grains` -> `Aqueduct.Runtime`
 

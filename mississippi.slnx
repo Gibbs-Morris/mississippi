@@ -8,7 +8,7 @@
   </Folder>
   <Folder Name="/Framework/Aqueduct/">
     <Project Path="src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
-    <Project Path="src\Aqueduct\Aqueduct.csproj" />
+    <Project Path="src\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
     <Project Path="src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/" />

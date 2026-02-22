@@ -8,7 +8,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\src\Aqueduct.Grains\Aqueduct.Grains.csproj"/>
-        <ProjectReference Include="..\..\src\Aqueduct\Aqueduct.csproj"/>
+        <ProjectReference Include="..\..\src\Aqueduct.Gateway\Aqueduct.Gateway.csproj"/>
         <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj"/>
     </ItemGroup>
 </Project>

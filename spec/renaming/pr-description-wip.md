@@ -49,4 +49,47 @@ Use this file as the running source of truth for the final PR description.
 
 ## Entries
 
-Add one section per completed task.
+## Task 01: Aqueduct -> Aqueduct.Gateway
+
+- Task type: `ProjectRename`
+- Linked pair: `P01`
+
+### Summary
+- Renamed the Aqueduct gateway project folder and project file to align with the target naming plan while keeping code changes out of scope.
+
+### Changes made
+- Folder rename: `src/Aqueduct` -> `src/Aqueduct.Gateway`
+- `.csproj` rename: `src/Aqueduct.Gateway/Aqueduct.csproj` -> `src/Aqueduct.Gateway/Aqueduct.Gateway.csproj`
+- `.slnx` updates: updated `mississippi.slnx` project path to new project location
+- `.csproj` `ProjectReference` updates:
+	- `tests/Aqueduct.L0Tests/Aqueduct.L0Tests.csproj`
+	- `tests/Aqueduct.L2Tests/Aqueduct.L2Tests.csproj`
+	- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+	- `src/Inlet.Server/Inlet.Server.csproj`
+- Task-local stabilization (csproj-only): added `<AssemblyName>Mississippi.Aqueduct</AssemblyName>` in `src/Aqueduct.Gateway/Aqueduct.Gateway.csproj` so the task validates before `T01`.
+
+### Files touched
+- `src/Aqueduct.Gateway/`
+- `mississippi.slnx`
+- `src/Inlet.Server/Inlet.Server.csproj`
+- `tests/Aqueduct.L0Tests/Aqueduct.L0Tests.csproj`
+- `tests/Aqueduct.L2Tests/Aqueduct.L2Tests.csproj`
+- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Cleanup Mississippi: pass
+- Cleanup Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `see git log (Task P01 commit)`
+- Message: `Task P01: rename Aqueduct project to Aqueduct.Gateway`
+
+### PR-ready notes
+- Business value: aligns project identity and solution topology with the agreed naming model.
+- How it works (high level): project path/file rename plus explicit reference rewiring in solution and dependent projects.
+- Risks / breaking surface: assembly identity drift between project and test names; currently mitigated with temporary assembly-name stabilization until `T01`.
+- Follow-up items (if any): execute `T01` immediately next to rename mirrored Aqueduct test projects.
