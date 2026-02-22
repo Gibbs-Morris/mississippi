@@ -374,19 +374,19 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
-      "Mississippi.Aqueduct": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
-        }
-      },
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Aqueduct.Gateway": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Microsoft.Orleans.Streaming": "[10.0.1, )",
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Aqueduct.Grains": {

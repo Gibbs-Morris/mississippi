@@ -93,3 +93,43 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): project path/file rename plus explicit reference rewiring in solution and dependent projects.
 - Risks / breaking surface: assembly identity drift between project and test names; currently mitigated with temporary assembly-name stabilization until `T01`.
 - Follow-up items (if any): execute `T01` immediately next to rename mirrored Aqueduct test projects.
+
+## Task 02: Aqueduct.* test projects -> Aqueduct.Gateway.* test projects
+
+- Task type: `TestRename`
+- Linked pair: `T01`
+
+### Summary
+- Renamed the mirrored Aqueduct test projects to match the completed `P01` project rename and rewired solution and test-project references accordingly.
+
+### Changes made
+- Folder rename: `tests/Aqueduct.L0Tests` -> `tests/Aqueduct.Gateway.L0Tests`; `tests/Aqueduct.L2Tests` -> `tests/Aqueduct.Gateway.L2Tests`; `tests/Aqueduct.L2Tests.AppHost` -> `tests/Aqueduct.Gateway.L2Tests.AppHost`
+- `.csproj` rename: `Aqueduct.L0Tests.csproj` -> `Aqueduct.Gateway.L0Tests.csproj`; `Aqueduct.L2Tests.csproj` -> `Aqueduct.Gateway.L2Tests.csproj`; `Aqueduct.L2Tests.AppHost.csproj` -> `Aqueduct.Gateway.L2Tests.AppHost.csproj`
+- `.slnx` updates: updated `mississippi.slnx` test project paths to renamed test projects
+- `.csproj` `ProjectReference` updates:
+	- `tests/Aqueduct.Gateway.L2Tests/Aqueduct.Gateway.L2Tests.csproj` (AppHost project path)
+- Task-local stabilization (csproj-only): added `<AssemblyName>Mississippi.Aqueduct.L0Tests</AssemblyName>` in `tests/Aqueduct.Gateway.L0Tests/Aqueduct.Gateway.L0Tests.csproj` to preserve InternalsVisibleTo assembly identity during rename.
+
+### Files touched
+- `tests/Aqueduct.Gateway.L0Tests/`
+- `tests/Aqueduct.Gateway.L2Tests/`
+- `tests/Aqueduct.Gateway.L2Tests.AppHost/`
+- `mississippi.slnx`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Cleanup Mississippi: pass
+- Cleanup Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `see git log (Task T01 commit)`
+- Message: `Task T01: rename mirrored Aqueduct test projects to Aqueduct.Gateway.*`
+
+### PR-ready notes
+- Business value: keeps project and test naming topology aligned so future refactors and package identities remain predictable.
+- How it works (high level): mirrored folder/project renames, solution entry rewiring, and targeted test project reference updates.
+- Risks / breaking surface: test assembly identity can break `InternalsVisibleTo`; mitigated by preserving original L0 test assembly name in csproj.
+- Follow-up items (if any): continue with `P02` then `T02` in sequence.

@@ -92,9 +92,9 @@
   <Folder Name="/Tests/Aqueduct/">
     <Project Path="tests\Aqueduct.Abstractions.L0Tests\Aqueduct.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Aqueduct.Grains.L0Tests\Aqueduct.Grains.L0Tests.csproj" />
-    <Project Path="tests\Aqueduct.L0Tests\Aqueduct.L0Tests.csproj" />
-    <Project Path="tests\Aqueduct.L2Tests\Aqueduct.L2Tests.csproj" />
-    <Project Path="tests\Aqueduct.L2Tests.AppHost\Aqueduct.L2Tests.AppHost.csproj" />
+    <Project Path="tests\Aqueduct.Gateway.L0Tests\Aqueduct.Gateway.L0Tests.csproj" />
+    <Project Path="tests\Aqueduct.Gateway.L2Tests\Aqueduct.Gateway.L2Tests.csproj" />
+    <Project Path="tests\Aqueduct.Gateway.L2Tests.AppHost\Aqueduct.Gateway.L2Tests.AppHost.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/" />
   <Folder Name="/Tests/EventSourcing/Aggregates/">
