@@ -594,7 +594,7 @@ Use this file as the running source of truth for the final PR description.
 - Tests Samples: pass
 
 ### Commit
-- SHA: `<fill after commit>`
+- SHA: `c35a7993`
 - Message: `Task P07: rename EventSourcing.Brooks.Cosmos to Brooks.Runtime.Storage.Cosmos`
 
 ### PR-ready notes
@@ -602,3 +602,40 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): project folder/file rename with direct reference rewires across source, tests, and sample integration tests.
 - Risks / breaking surface: stale references and internals access regressions; mitigated by full gate runs and temporary assembly-name continuity.
 - Follow-up items (if any): execute `T07` immediately.
+
+## Task 14: EventSourcing.Brooks.Cosmos.L0Tests -> Brooks.Runtime.Storage.Cosmos.L0Tests
+
+- Task type: `TestRename`
+- Linked pair: `T07`
+
+### Summary
+- Renamed the mirrored Brooks Cosmos L0 test project to align with `P07`.
+
+### Changes made
+- Folder rename: `tests/EventSourcing.Brooks.Cosmos.L0Tests` -> `tests/Brooks.Runtime.Storage.Cosmos.L0Tests`
+- `.csproj` rename: `tests/Brooks.Runtime.Storage.Cosmos.L0Tests/EventSourcing.Brooks.Cosmos.L0Tests.csproj` -> `tests/Brooks.Runtime.Storage.Cosmos.L0Tests/Brooks.Runtime.Storage.Cosmos.L0Tests.csproj`
+- `.slnx` updates: updated `mississippi.slnx` test project path under `/Tests/EventSourcing/Brooks/`
+- `.csproj` updates:
+	- `tests/Brooks.Runtime.Storage.Cosmos.L0Tests/Brooks.Runtime.Storage.Cosmos.L0Tests.csproj` (added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.Cosmos.L0Tests</AssemblyName>`)
+
+### Files touched
+- `tests/Brooks.Runtime.Storage.Cosmos.L0Tests/`
+- `mississippi.slnx`
+- `spec/renaming/task-checklist.md`
+- `spec/renaming/pr-description-wip.md`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task T07: rename EventSourcing.Brooks.Cosmos.L0Tests to Brooks.Runtime.Storage.Cosmos.L0Tests`
+
+### PR-ready notes
+- Business value: keeps storage runtime test naming consistent with the renamed storage runtime project.
+- How it works (high level): test folder/project rename with solution path update and temporary assembly-name continuity.
+- Risks / breaking surface: stale solution path or internals access regressions; mitigated by full gate runs.
+- Follow-up items (if any): execute `P08` immediately.

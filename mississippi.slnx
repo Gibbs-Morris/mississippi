@@ -105,7 +105,7 @@
   <Folder Name="/Tests/EventSourcing/Brooks/">
     <Project Path="tests\Brooks.Abstractions.L0Tests\Brooks.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Brooks.Runtime.L0Tests\Brooks.Runtime.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Brooks.Cosmos.L0Tests\EventSourcing.Brooks.Cosmos.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Runtime.Storage.Cosmos.L0Tests\Brooks.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Reducers/">
     <Project Path="tests\EventSourcing.Reducers.Abstractions.L0Tests\EventSourcing.Reducers.Abstractions.L0Tests.csproj" />

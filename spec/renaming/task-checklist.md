@@ -69,7 +69,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `T06` Rename mirrored tests: `EventSourcing.Brooks.L0Tests` -> `Brooks.Runtime.L0Tests`
 
 - [x] `P07` Rename `EventSourcing.Brooks.Cosmos` -> `Brooks.Runtime.Storage.Cosmos`
-- [ ] `T07` Rename mirrored tests: `EventSourcing.Brooks.Cosmos.L0Tests` -> `Brooks.Runtime.Storage.Cosmos.L0Tests`
+- [x] `T07` Rename mirrored tests: `EventSourcing.Brooks.Cosmos.L0Tests` -> `Brooks.Runtime.Storage.Cosmos.L0Tests`
 
 - [ ] `P08` Rename `EventSourcing.Serialization.Abstractions` -> `Brooks.Serialization.Abstractions`
 - [ ] `T08` Rename mirrored tests: `EventSourcing.Serialization.L0Tests` -> `Brooks.Serialization.Abstractions.L0Tests`
@@ -280,9 +280,20 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] Build: `samples.slnx` passes
 - [x] Tests: Mississippi passes
 - [x] Tests: Samples passes
+- [x] Commit created for this task only
+- Commit SHA: `c35a7993`
+- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.Cosmos</AssemblyName>` in `Brooks.Runtime.Storage.Cosmos.csproj` so P07 validates before mirrored test rename task T07.
+
+### [x] Task: Rename `EventSourcing.Brooks.Cosmos.L0Tests` -> `Brooks.Runtime.Storage.Cosmos.L0Tests`
+
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
 - [ ] Commit created for this task only
 - Commit SHA: `<fill after commit>`
-- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.Cosmos</AssemblyName>` in `Brooks.Runtime.Storage.Cosmos.csproj` so P07 validates before mirrored test rename task T07.
+- Notes: Added temporary `<AssemblyName>Mississippi.EventSourcing.Brooks.Cosmos.L0Tests</AssemblyName>` in `Brooks.Runtime.Storage.Cosmos.L0Tests.csproj` to preserve internal-access compatibility during staged renames.
 
 ### [ ] Task: Rename `EventSourcing.Serialization.Abstractions` -> `Brooks.Serialization.Abstractions`
 

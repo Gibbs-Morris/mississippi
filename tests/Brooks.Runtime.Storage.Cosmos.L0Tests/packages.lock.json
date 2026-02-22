@@ -636,26 +636,7 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
-      "Mississippi.Common.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
-          "Microsoft.Orleans.Sdk": "[10.0.1, )"
-        }
-      },
-      "Mississippi.Common.Cosmos": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Azure.Cosmos": "[3.57.0, )",
-          "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
-          "Mississippi.Common.Cosmos.Abstractions": "[1.0.0, )",
-          "Newtonsoft.Json": "[13.0.4, )"
-        }
-      },
-      "Mississippi.Common.Cosmos.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.EventSourcing.Brooks.Abstractions": {
+      "Mississippi.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
@@ -667,16 +648,35 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.EventSourcing.Brooks.Cosmos": {
+      "Mississippi.Brooks.Runtime.Storage.Cosmos": {
         "type": "Project",
         "dependencies": {
           "Azure.Storage.Blobs": "[12.27.0, )",
           "Microsoft.Azure.Cosmos": "[3.57.0, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Options": "[10.0.3, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )",
-          "Mississippi.Common.Cosmos": "[1.0.0, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Runtime.Storage.Cosmos": "[1.0.0, )",
+          "Newtonsoft.Json": "[13.0.4, )"
+        }
+      },
+      "Mississippi.Common.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
+        }
+      },
+      "Mississippi.Common.Runtime.Storage.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Common.Runtime.Storage.Cosmos": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Azure.Cosmos": "[3.57.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
+          "Mississippi.Common.Runtime.Storage.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
         }
       },
