@@ -15,7 +15,7 @@
   <Folder Name="/Framework/EventSourcing/Aggregates/">
     <Project Path="src\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
     <Project Path="src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
-    <Project Path="src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+    <Project Path="src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Brooks/">
     <Project Path="src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
@@ -35,9 +35,6 @@
     <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
     <Project Path="src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
     <Project Path="src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
-  </Folder>
-  <Folder Name="/Framework/EventSourcing/UxProjections/">
-    <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Testing/">
     <Project Path="src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />

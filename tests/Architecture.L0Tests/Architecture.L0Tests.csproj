@@ -13,7 +13,7 @@
         <ProjectReference Include="..\..\src\Common.Runtime.Storage.Abstractions\Common.Runtime.Storage.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
         <ProjectReference Include="..\..\src\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+        <ProjectReference Include="..\..\src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Runtime\Brooks.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
@@ -24,7 +24,6 @@
         <ProjectReference Include="..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
         <ProjectReference Include="..\..\src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Runtime\Inlet.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Gateway\Inlet.Gateway.csproj" />

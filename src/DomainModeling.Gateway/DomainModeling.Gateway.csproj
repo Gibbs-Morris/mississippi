@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
@@ -8,6 +8,6 @@
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>HTTP API endpoints and integration for EventSourcing.UxProjections.</Description>
+    <Description>ASP.NET gateway exposing HTTP endpoints for aggregate commands and UX projection queries.</Description>
   </PropertyGroup>
 </Project>
