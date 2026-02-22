@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LightSpeed.Client\LightSpeed.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Reservoir\Reservoir.csproj" />
   </ItemGroup>
 
 </Project>
