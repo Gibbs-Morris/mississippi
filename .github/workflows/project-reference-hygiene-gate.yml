@@ -1,0 +1,82 @@
+name: "Project Reference Hygiene Gate"
+on:
+  workflow_dispatch:
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+      - topic/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CONFIGURATION: Release
+  REFERENCE_TRIMMER_VERSION: 3.4.5
+
+jobs:
+  project-reference-hygiene:
+    name: "Fail on Unused ProjectReference (RT0002)"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        solution: [ mississippi.slnx, samples.slnx ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Inject ReferenceTrimmer into all projects
+        shell: pwsh
+        run: |
+          $projects = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.csproj | Sort-Object FullName
+          if ($projects.Count -eq 0) {
+            throw "No .csproj files found."
+          }
+
+          foreach ($project in $projects) {
+            Write-Host "Adding ReferenceTrimmer to $($project.FullName)"
+            dotnet add "$($project.FullName)" package ReferenceTrimmer --version $env:REFERENCE_TRIMMER_VERSION --no-restore
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to add ReferenceTrimmer to $($project.FullName)."
+            }
+          }
+
+      - name: Restore solution
+        run: dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
+
+      - name: Build with ReferenceTrimmer and fail on RT0002
+        shell: pwsh
+        run: |
+          $solutionPath = Join-Path $env:GITHUB_WORKSPACE '${{ matrix.solution }}'
+          $logPath = Join-Path $env:RUNNER_TEMP ('rt0002-' + '${{ matrix.solution }}'.Replace('/', '_').Replace('.', '_') + '.log')
+
+          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -p:EnableReferenceTrimmer=true -p:GenerateDocumentationFile=true '-p:NoWarn=$(NoWarn);419;1570;1573;1574;1584;1591;SA1602' 2>&1 | Tee-Object -FilePath $logPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Build failed before RT0002 evaluation."
+          }
+
+          $matches = Select-String -Path $logPath -Pattern 'RT0002: ProjectReference .+ can be removed'
+          if ($matches) {
+            Write-Host "Unused ProjectReferences found (RT0002):"
+            $matches | ForEach-Object { Write-Host $_.Line }
+            throw "RT0002 findings detected."
+          }
+
+          Write-Host "No RT0002 findings for $solutionPath"
+
+      - name: Upload RT0002 logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rt0002-logs-${{ matrix.solution }}
+          path: ${{ runner.temp }}/rt0002-*.log
