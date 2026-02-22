@@ -45,11 +45,6 @@ jobs:
       - name: Inject ReferenceTrimmer into all projects
         shell: pwsh
         run: |
-          $projects = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.csproj | Sort-Object FullName
-          if ($projects.Count -eq 0) {
-            throw "No .csproj files found."
-          }
-
           $directoryPackagesPath = Join-Path $env:GITHUB_WORKSPACE 'Directory.Packages.props'
           $usesCpm = Test-Path $directoryPackagesPath
           if ($usesCpm) {
@@ -72,17 +67,35 @@ jobs:
             }
           }
 
-          foreach ($project in $projects) {
-            Write-Host "Adding ReferenceTrimmer to $($project.FullName)"
-            if ($usesCpm) {
-              dotnet add "$($project.FullName)" package ReferenceTrimmer --no-restore
+          $directoryBuildPath = Join-Path $env:GITHUB_WORKSPACE 'Directory.Build.props'
+          if (-not (Test-Path $directoryBuildPath)) {
+            throw "Directory.Build.props not found at repository root."
+          }
+
+          [xml]$directoryBuild = Get-Content -Path $directoryBuildPath
+          $buildRoot = $directoryBuild.Project
+          if ($null -eq $buildRoot) {
+            throw "Directory.Build.props does not contain a <Project> root element."
+          }
+
+          $existingInjection = $directoryBuild.SelectSingleNode("/Project/ItemGroup[@Label='ReferenceTrimmerCiInjection']")
+          if ($null -eq $existingInjection) {
+            $itemGroup = $directoryBuild.CreateElement('ItemGroup')
+            $itemGroup.SetAttribute('Label', 'ReferenceTrimmerCiInjection')
+            $itemGroup.SetAttribute('Condition', "'$(EnableReferenceTrimmer)' == 'true'")
+
+            $packageReference = $directoryBuild.CreateElement('PackageReference')
+            $packageReference.SetAttribute('Include', 'ReferenceTrimmer')
+            $packageReference.SetAttribute('PrivateAssets', 'all')
+
+            if (-not $usesCpm) {
+              $packageReference.SetAttribute('Version', $env:REFERENCE_TRIMMER_VERSION)
             }
-            else {
-              dotnet add "$($project.FullName)" package ReferenceTrimmer --version $env:REFERENCE_TRIMMER_VERSION --no-restore
-            }
-            if ($LASTEXITCODE -ne 0) {
-              throw "Failed to add ReferenceTrimmer to $($project.FullName)."
-            }
+
+            $itemGroup.AppendChild($packageReference) | Out-Null
+            $buildRoot.AppendChild($itemGroup) | Out-Null
+            $directoryBuild.Save($directoryBuildPath)
+            Write-Host "Injected ReferenceTrimmer PackageReference into Directory.Build.props"
           }
 
       - name: Restore solution
