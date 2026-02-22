@@ -17,6 +17,9 @@ namespace Spring.Domain.Projections.MoneyTransferStatus;
 [BrookName("SPRING", "BANKING", "TRANSFER")]
 [SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATUS")]
 [GenerateProjectionEndpoints]
+[GenerateMcpReadTool(
+    Title = "Get Money Transfer Status",
+    Description = "Retrieves the current status and phase of a money transfer saga.")]
 [GenerateSerializer]
 [GenerateSagaStatusReducers]
 [Alias("Spring.Domain.Projections.MoneyTransferStatus.MoneyTransferStatusProjection")]

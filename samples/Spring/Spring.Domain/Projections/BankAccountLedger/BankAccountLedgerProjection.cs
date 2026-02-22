@@ -23,6 +23,9 @@ namespace Spring.Domain.Projections.BankAccountLedger;
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTLEDGER")]
 [GenerateProjectionEndpoints]
+[GenerateMcpReadTool(
+    Title = "Get Bank Account Ledger",
+    Description = "Retrieves the transaction ledger for a bank account, showing recent deposits and withdrawals.")]
 [GenerateSerializer]
 [Alias("Spring.Domain.Projections.BankAccountLedger.BankAccountLedgerProjection")]
 public sealed record BankAccountLedgerProjection

@@ -587,6 +587,17 @@
           "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
         }
       },
+      "mississippi.eventsourcing.testing": {
+        "type": "Project",
+        "dependencies": {
+          "FluentAssertions": "[8.8.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
+          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
+          "Moq": "[4.20.72, )"
+        }
+      },
       "Mississippi.EventSourcing.UxProjections.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -601,18 +612,7 @@
       "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Mississippi.EventSourcing.Testing": {
-        "type": "Project",
-        "dependencies": {
-          "FluentAssertions": "[8.8.0, )",
-          "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
-          "Moq": "[4.20.72, )"
-        }
-      },
-      "spring.domain": {
+      "Mississippi.Spring.Domain": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Http": "[10.0.3, )",

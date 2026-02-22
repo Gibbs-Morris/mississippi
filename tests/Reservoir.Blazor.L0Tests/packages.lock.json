@@ -158,16 +158,6 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
-      "Mississippi.Mississippi.Reservoir.Testing": {
-        "type": "Project",
-        "dependencies": {
-          "FluentAssertions": "[8.8.0, )",
-          "Microsoft.Extensions.TimeProvider.Testing": "[10.3.0, )",
-          "Mississippi.Reservoir": "[1.0.0, )",
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
-          "Moq": "[4.20.72, )"
-        }
-      },
       "Mississippi.Reservoir": {
         "type": "Project",
         "dependencies": {
@@ -182,6 +172,16 @@
         "dependencies": {
           "Mississippi.Reservoir": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+        }
+      },
+      "mississippi.reservoir.testing": {
+        "type": "Project",
+        "dependencies": {
+          "FluentAssertions": "[8.8.0, )",
+          "Microsoft.Extensions.TimeProvider.Testing": "[10.3.0, )",
+          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Moq": "[4.20.72, )"
         }
       },
       "FluentAssertions": {

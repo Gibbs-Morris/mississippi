@@ -721,7 +721,7 @@
           "Mississippi.Inlet.Silo": "[1.0.0, )"
         }
       },
-      "spring.domain": {
+      "Mississippi.Spring.Domain": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",

@@ -22,6 +22,7 @@ using Scalar.AspNetCore;
 
 using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Server.Controllers.Mappers;
+using Spring.Server.McpTools;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -86,6 +87,10 @@ builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).A
 
 // Add generated domain mapper registrations
 builder.Services.AddSpringDomainServer();
+
+// Add MCP (Model Context Protocol) server with HTTP transport
+// Exposes banking domain operations as tools for AI agents via source-generated tool classes.
+builder.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringServerPingMcpTools>();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files
@@ -104,6 +109,12 @@ app.MapScalarApiReference(options =>
 
 // Map controllers before API endpoints
 app.MapControllers();
+
+// Map MCP endpoint for AI agent tool invocation (development only)
+if (app.Environment.IsDevelopment())
+{
+    app.MapMcp("/mcp");
+}
 
 // Map Inlet hub for real-time projection updates
 app.MapInletHub();

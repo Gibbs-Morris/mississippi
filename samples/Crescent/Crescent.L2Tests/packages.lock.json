@@ -1299,16 +1299,6 @@
         "resolved": "16.3.0",
         "contentHash": "SgMOdxbz8X65z8hraIs6hOEdnkH6hESTAIUa7viEngHOYaH+6q5XJmwr1+yb9vJpNQ19hCQY69xbFsLtXpobQA=="
       },
-      "Crescent.Crescent.AppHost": {
-        "type": "Project",
-        "dependencies": {
-          "Aspire.Dashboard.Sdk.win-x64": "[13.1.1, )",
-          "Aspire.Hosting.AppHost": "[13.1.1, )",
-          "Aspire.Hosting.Azure.CosmosDB": "[13.1.1, )",
-          "Aspire.Hosting.Azure.Storage": "[13.1.1, )",
-          "Aspire.Hosting.Orchestration.win-x64": "[13.1.1, )"
-        }
-      },
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -1327,6 +1317,16 @@
       },
       "Mississippi.Common.Cosmos.Abstractions": {
         "type": "Project"
+      },
+      "Mississippi.Crescent.AppHost": {
+        "type": "Project",
+        "dependencies": {
+          "Aspire.Dashboard.Sdk.win-x64": "[13.1.1, )",
+          "Aspire.Hosting.AppHost": "[13.1.1, )",
+          "Aspire.Hosting.Azure.CosmosDB": "[13.1.1, )",
+          "Aspire.Hosting.Azure.Storage": "[13.1.1, )",
+          "Aspire.Hosting.Orchestration.win-x64": "[13.1.1, )"
+        }
       },
       "Mississippi.EventSourcing.Aggregates": {
         "type": "Project",

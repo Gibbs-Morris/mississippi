@@ -56,6 +56,11 @@
         "resolved": "10.0.103",
         "contentHash": "QoiCMcPuxC6eqRQmrmF9zBY96ejIznXtve/lJJbonGD9I5Aygf2AUCOWslGiCEtBbfWRSuUnepBjuuVOdAl5ag=="
       },
+      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
+        "type": "Transitive",
+        "resolved": "10.0.103",
+        "contentHash": "tIq6T4oyBMjxxxllslJu2fOJqEj8SOW29IfWqHYxubreOVlFWnxPN2PjDMuwoHjkrOnPKyuqoNcVYh5YOZcs0Q=="
+      },
       "Microsoft.JSInterop.WebAssembly": {
         "type": "Transitive",
         "resolved": "10.0.3",
@@ -66,10 +71,11 @@
         "resolved": "10.0.103",
         "contentHash": "cMtGW5/r0ck72Jg2QwZcNTX59z+iB/B1kW84VMa/eX8L19DhHIuIcQjfK0pgLLBxd60Jl0Bj9GUolcM0MnJnZA=="
       },
-      "lightspeed.client": {
+      "Mississippi.LightSpeed.Client": {
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
+          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
           "Mississippi.Refraction": "[1.0.0, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
           "Mississippi.Refraction.Pages": "[1.0.0, )",

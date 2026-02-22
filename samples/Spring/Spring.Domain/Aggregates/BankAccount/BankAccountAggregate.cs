@@ -13,6 +13,7 @@ namespace Spring.Domain.Aggregates.BankAccount;
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
 [SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
 [GenerateAggregateEndpoints]
+[GenerateMcpTools]
 [GenerateSerializer]
 [Alias("Spring.Domain.BankAccount.BankAccountAggregate")]
 public sealed record BankAccountAggregate

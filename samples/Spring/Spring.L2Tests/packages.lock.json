@@ -1076,7 +1076,7 @@
         "resolved": "16.3.0",
         "contentHash": "SgMOdxbz8X65z8hraIs6hOEdnkH6hESTAIUa7viEngHOYaH+6q5XJmwr1+yb9vJpNQ19hCQY69xbFsLtXpobQA=="
       },
-      "spring.apphost": {
+      "Mississippi.Spring.AppHost": {
         "type": "Project",
         "dependencies": {
           "Aspire.Dashboard.Sdk.win-x64": "[13.1.1, )",

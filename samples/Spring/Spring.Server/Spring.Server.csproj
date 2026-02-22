@@ -18,6 +18,9 @@
     <!-- Blazor WebAssembly hosting -->
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
 
+    <!-- MCP (Model Context Protocol) server -->
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+
     <!-- OpenAPI documentation -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
