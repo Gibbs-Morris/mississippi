@@ -1,6 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>Mississippi.Aqueduct.Grains</AssemblyName>
     <Description>Orleans grain implementations and integrations for Aqueduct streams and processing.</Description>
   </PropertyGroup>
   <ItemGroup>

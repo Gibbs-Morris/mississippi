@@ -1,6 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>Mississippi.Aqueduct</AssemblyName>
     <Description>Core Aqueduct runtime for event flow and stream processing.</Description>
   </PropertyGroup>
   <ItemGroup>

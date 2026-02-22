@@ -1,7 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <AssemblyName>Mississippi.EventSourcing.Brooks.Abstractions.L0Tests</AssemblyName>
-  </PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />

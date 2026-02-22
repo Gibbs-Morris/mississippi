@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
-    <PropertyGroup>
-        <AssemblyName>Mississippi.Refraction.L0Tests</AssemblyName>
-        <RootNamespace>Mississippi.Refraction.L0Tests</RootNamespace>
-    </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="bunit" />
     </ItemGroup>

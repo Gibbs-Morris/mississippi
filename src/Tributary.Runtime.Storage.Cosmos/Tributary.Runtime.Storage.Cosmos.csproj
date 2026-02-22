@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
@@ -11,7 +11,6 @@
     <ProjectReference Include="..\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <AssemblyName>Mississippi.EventSourcing.Snapshots.Cosmos</AssemblyName>
     <Description>Azure Cosmos DB provider for EventSourcing.Snapshots storage.</Description>
   </PropertyGroup>
 </Project>

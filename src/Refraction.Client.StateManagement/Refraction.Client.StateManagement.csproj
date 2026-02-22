@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
   <!--
         Blazor-specific warning overrides:
         - BL0005: Allow setting component parameters outside of component (advanced composition patterns)
@@ -18,8 +18,6 @@
     <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <AssemblyName>Mississippi.Refraction.Pages</AssemblyName>
-    <RootNamespace>Mississippi.Refraction.Pages</RootNamespace>
     <Description>Page composition helpers for Refraction-powered applications.</Description>
   </PropertyGroup>
 </Project>

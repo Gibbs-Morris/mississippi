@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
@@ -9,7 +9,6 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
   </ItemGroup>
   <PropertyGroup>
-    <AssemblyName>Mississippi.EventSourcing.Brooks</AssemblyName>
     <Description>Brook runtime for appending, reading, and managing event streams.</Description>
   </PropertyGroup>
 </Project>

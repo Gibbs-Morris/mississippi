@@ -1,6 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>Mississippi.Inlet.Silo</AssemblyName>
     <Description>Orleans silo runtime integration for Inlet streams and projections.</Description>
   </PropertyGroup>
   <ItemGroup>

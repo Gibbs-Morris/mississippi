@@ -1,7 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <AssemblyName>Mississippi.EventSourcing.Snapshots.Cosmos.L0Tests</AssemblyName>
-  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
   </ItemGroup>

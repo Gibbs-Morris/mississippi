@@ -1,7 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Convenience SDK for integrating Mississippi in silo applications.</Description>
-    <AssemblyName>Mississippi.Sdk.Silo</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />

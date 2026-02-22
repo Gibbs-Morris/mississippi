@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Microsoft.Azure.Cosmos" />
@@ -12,7 +12,6 @@
     <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <AssemblyName>Mississippi.EventSourcing.Brooks.Cosmos</AssemblyName>
     <Description>Azure Cosmos DB provider for EventSourcing.Brooks storage.</Description>
   </PropertyGroup>
 </Project>

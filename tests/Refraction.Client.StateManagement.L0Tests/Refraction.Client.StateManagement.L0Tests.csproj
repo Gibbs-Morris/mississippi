@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <AssemblyName>Mississippi.Refraction.Pages.L0Tests</AssemblyName>
-    </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="bunit" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Web" />

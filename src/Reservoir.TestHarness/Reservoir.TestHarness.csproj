@@ -1,8 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Testing utilities and fixtures for Mississippi.Reservoir.</Description>
     <PackageTags>$(PackageTags);testing;xunit;fluent-assertions;reservoir;state-management</PackageTags>
-    <AssemblyName>Mississippi.Reservoir.Testing</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FluentAssertions" />

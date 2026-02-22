@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
   <!--
         Blazor-specific warning overrides:
         - BL0005: Allow setting component parameters outside of component (advanced composition patterns)
@@ -13,8 +13,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
   </ItemGroup>
   <PropertyGroup>
-    <AssemblyName>Mississippi.Refraction</AssemblyName>
-    <RootNamespace>Mississippi.Refraction</RootNamespace>
     <Description>Refraction runtime for projection-driven reactive application flows.</Description>
   </PropertyGroup>
 </Project>

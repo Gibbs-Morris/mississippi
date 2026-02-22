@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Sdk" />
   </ItemGroup>
@@ -6,7 +6,6 @@
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <AssemblyName>Mississippi.Inlet.Silo.Abstractions</AssemblyName>
     <Description>Public contracts and abstractions for Inlet.Silo.</Description>
   </PropertyGroup>
 </Project>
