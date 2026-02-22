@@ -64,7 +64,7 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `P03` Rename `Common.Cosmos.Abstractions` -> `Common.Runtime.Storage.Abstractions`
 - [x] `T03` Verify mirrored tests: no dedicated mirrored test project exists (record verification)
 
-- [ ] `P04` Rename `Common.Cosmos` -> `Common.Runtime.Storage.Cosmos`
+- [x] `P04` Rename `Common.Cosmos` -> `Common.Runtime.Storage.Cosmos`
 - [ ] `T04` Rename mirrored tests: `Common.Cosmos.L0Tests` -> `Common.Runtime.Storage.Cosmos.L0Tests`
 
 - [ ] `P05` Rename `EventSourcing.Brooks.Abstractions` -> `Brooks.Abstractions`
@@ -222,18 +222,18 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - Commit SHA: `<fill after commit>`
 - Notes: Verified no dedicated mirrored test project exists (no `Common.Cosmos.Abstractions.L0Tests` equivalent); recorded explicitly per sequence rule.
 
-### [ ] Task: Rename `Common.Cosmos` -> `Common.Runtime.Storage.Cosmos`
+### [x] Task: Rename `Common.Cosmos` -> `Common.Runtime.Storage.Cosmos`
 
-- [ ] Implement changes
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Cleanup: Mississippi passes
-- [ ] Cleanup: Samples passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
+- [x] Implement changes
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Cleanup: Mississippi passes
+- [x] Cleanup: Samples passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
 - [ ] Commit created for this task only
 - Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- Notes: Mirrored test-project rename `T04` follows immediately.
 
 ### [ ] Task: Rename `EventSourcing.Brooks.Abstractions` -> `Brooks.Abstractions`
 

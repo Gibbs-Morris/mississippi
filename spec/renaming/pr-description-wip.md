@@ -296,3 +296,47 @@ Use this file as the running source of truth for the final PR description.
 - How it works (high level): explicit repository search and path verification with recorded outcome.
 - Risks / breaking surface: low; documentation and task-tracking only.
 - Follow-up items (if any): continue to `P04` then `T04`.
+
+## Task 07: Common.Cosmos -> Common.Runtime.Storage.Cosmos
+
+- Task type: `ProjectRename`
+- Linked pair: `P04`
+
+### Summary
+- Renamed `Common.Cosmos` to `Common.Runtime.Storage.Cosmos` and rewired all direct source/test references.
+
+### Changes made
+- Folder rename: `src/Common.Cosmos` -> `src/Common.Runtime.Storage.Cosmos`
+- `.csproj` rename: `src/Common.Runtime.Storage.Cosmos/Common.Cosmos.csproj` -> `src/Common.Runtime.Storage.Cosmos/Common.Runtime.Storage.Cosmos.csproj`
+- `.slnx` updates: updated `mississippi.slnx` path for renamed source project
+- `.csproj` `ProjectReference` updates:
+	- `src/EventSourcing.Brooks.Cosmos/EventSourcing.Brooks.Cosmos.csproj`
+	- `src/EventSourcing.Snapshots.Cosmos/EventSourcing.Snapshots.Cosmos.csproj`
+	- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+	- `tests/Common.Cosmos.L0Tests/Common.Cosmos.L0Tests.csproj`
+
+### Files touched
+- `src/Common.Runtime.Storage.Cosmos/`
+- `mississippi.slnx`
+- `src/EventSourcing.Brooks.Cosmos/EventSourcing.Brooks.Cosmos.csproj`
+- `src/EventSourcing.Snapshots.Cosmos/EventSourcing.Snapshots.Cosmos.csproj`
+- `tests/Architecture.L0Tests/Architecture.L0Tests.csproj`
+- `tests/Common.Cosmos.L0Tests/Common.Cosmos.L0Tests.csproj`
+
+### Verification run
+- Build Mississippi: pass
+- Build Samples: pass
+- Cleanup Mississippi: pass
+- Cleanup Samples: pass
+- Tests Mississippi: pass
+- Tests Samples: pass
+
+### Commit
+- SHA: `<fill after commit>`
+- Message: `Task P04: rename Common.Cosmos to Common.Runtime.Storage.Cosmos`
+
+### PR-ready notes
+- Business value: clarifies storage-runtime boundary and aligns naming with the target package taxonomy.
+- How it works (high level): folder/project rename with direct reference rewires in dependent storage projects and architecture tests.
+- Risks / breaking surface: compile breaks from stale references; mitigated by updating all direct `ProjectReference` and solution entries.
+- Follow-up items (if any): execute `T04` next.

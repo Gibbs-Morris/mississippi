@@ -155,7 +155,7 @@
           "System.Drawing.Common": "6.0.0"
         }
       },
-      "Mississippi.Common.Cosmos.Abstractions": {
+      "Mississippi.Common.Runtime.Storage.Abstractions": {
         "type": "Project"
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {

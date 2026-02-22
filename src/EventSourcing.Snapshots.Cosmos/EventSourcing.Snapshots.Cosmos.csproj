@@ -7,7 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
-    <ProjectReference Include="..\Common.Cosmos\Common.Cosmos.csproj" />
+    <ProjectReference Include="..\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
