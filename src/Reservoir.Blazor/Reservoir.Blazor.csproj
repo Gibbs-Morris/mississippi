@@ -5,7 +5,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+    <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
     <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>

@@ -5,7 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Reservoir\Reservoir.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Testing\Mississippi.Reservoir.Testing.csproj" />
     </ItemGroup>

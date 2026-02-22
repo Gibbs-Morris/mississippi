@@ -5,7 +5,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Client\Inlet.Client.csproj" />
-    <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+    <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
     <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />
     <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />

@@ -54,7 +54,7 @@
   </Folder>
   <Folder Name="/Framework/Reservoir/">
     <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
-    <Project Path="src\Reservoir\Reservoir.csproj" />
+    <Project Path="src\Reservoir.Core\Reservoir.Core.csproj" />
     <Project Path="src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
     <Project Path="src\Reservoir.Testing\Mississippi.Reservoir.Testing.csproj" />
   </Folder>
@@ -136,7 +136,7 @@
   <Folder Name="/Tests/Reservoir/">
     <Project Path="tests\Reservoir.Abstractions.L0Tests\Reservoir.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Reservoir.Blazor.L0Tests\Reservoir.Blazor.L0Tests.csproj" />
-    <Project Path="tests\Reservoir.L0Tests\Reservoir.L0Tests.csproj" />
+    <Project Path="tests\Reservoir.Core.L0Tests\Reservoir.Core.L0Tests.csproj" />
     <Project Path="tests\Reservoir.Testing.L0Tests\Reservoir.Testing.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Inlet/">

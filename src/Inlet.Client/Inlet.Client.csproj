@@ -3,7 +3,7 @@
     <Description>Client runtime for consuming Inlet projection streams and APIs.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+    <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
     <ProjectReference Include="..\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
     <ProjectReference Include="..\Reservoir.Blazor\Reservoir.Blazor.csproj" />

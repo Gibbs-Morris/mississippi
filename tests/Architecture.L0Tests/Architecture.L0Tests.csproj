@@ -30,7 +30,7 @@
         <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Runtime\Inlet.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Gateway\Inlet.Gateway.csproj" />
-        <ProjectReference Include="..\..\src\Reservoir\Reservoir.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
     </ItemGroup>

@@ -15,7 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Refraction.Client\Refraction.Client.csproj" />
     <ProjectReference Include="..\Refraction.Abstractions\Refraction.Abstractions.csproj" />
-    <ProjectReference Include="..\Reservoir\Reservoir.csproj" />
+    <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <AssemblyName>Mississippi.Refraction.Pages</AssemblyName>
