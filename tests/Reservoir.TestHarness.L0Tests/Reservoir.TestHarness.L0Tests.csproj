@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AssemblyName>Mississippi.Reservoir.Testing.L0Tests</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
+    </ItemGroup>
+
+</Project>
