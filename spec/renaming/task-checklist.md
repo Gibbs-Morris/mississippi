@@ -16,6 +16,25 @@ Companion notes file for PR authoring: `pr-description-wip.md`.
   - Run tests for Samples solution
 - Cleanup is executed once at the end of the full rename run (not per task).
 
+## Process Review Notes (Current Run)
+
+Issues found and workarounds used so far:
+
+- Missed reference rewiring during `P05` caused a Mississippi build failure; fixed the remaining `ProjectReference` path and re-ran gates.
+- Temporary `AssemblyName` continuity was added for staged renames to preserve `InternalsVisibleTo` during P/T interleaving.
+- `packages.lock.json` churn was produced by build/test runs; restored out-of-scope lock files before committing.
+- Old-path directories from earlier rename steps were left behind (untracked stubs and deleted sources); removed stale stubs and added a cleanup commit to delete old paths.
+- Coverage aggregation logs reported transient generated-file missing warnings; treated as non-fatal after tests passed.
+
+## Speed vs Quality Adjustment (Interleaved Pairing)
+
+To reduce cycle time while keeping gates intact:
+
+- For an interleaved pair (`P##` then `T##`), apply both rename edits before running the four required gates.
+- Run the full gate set once after the `T##` rename; record the same gate run for both `P##` and `T##` entries.
+- Keep separate commits by staging `P##` changes first after gates, then staging and committing `T##` changes.
+- If a gate fails, fix and re-run the full gate set before committing either task.
+
 ## Required Command Set Per Task
 
 Run all commands below for each task:

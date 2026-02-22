@@ -8,6 +8,20 @@ Use this file as the running source of truth for the final PR description.
 - Keep entries factual and scoped to that single task/commit.
 - Capture enough detail to assemble PR sections later (business value, implementation, files changed, verification, risks).
 
+## Process Review Notes (Current Run)
+
+- Missed `ProjectReference` rewiring during `P05` initially broke the Mississippi build; fixed the remaining path and re-ran the full gate set.
+- Temporary `AssemblyName` continuity was used during staged renames to avoid `InternalsVisibleTo` regressions.
+- Build/test runs created out-of-scope `packages.lock.json` churn; restored the unrelated lock files before committing.
+- Old-path directories remained after earlier renames (stale untracked stubs and deleted sources); removed stubs and added a cleanup commit to delete old paths.
+- Coverage aggregation logged transient generated-file missing warnings; gates still passed and were treated as non-fatal noise.
+
+## Speed vs Quality Adjustment (Interleaved Pairing)
+
+- For each `P##`/`T##` pair, apply both renames before running gates, then run the four required gates once and reference the same run for both entries.
+- Keep separate commits by staging `P##` changes first after gates, then staging and committing `T##` changes.
+- If any gate fails, fix and re-run the full gate set before committing either task.
+
 ## Task Entry Template
 
 ```markdown
