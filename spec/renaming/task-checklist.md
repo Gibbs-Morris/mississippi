@@ -147,20 +147,20 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - [x] `P25` Merge `EventSourcing.Aggregates` + `EventSourcing.Sagas` + `EventSourcing.UxProjections` -> `DomainModeling.Runtime`
 - [x] `T25` Merge mirrored tests: `EventSourcing.Aggregates.L0Tests` + `EventSourcing.Sagas.L0Tests` + `EventSourcing.UxProjections.L0Tests` -> `DomainModeling.Runtime.L0Tests`
 
-- [ ] `P26` Merge `EventSourcing.Aggregates.Api` + `EventSourcing.UxProjections.Api` -> `DomainModeling.Gateway`
-- [ ] `T26` Merge mirrored tests: `EventSourcing.Aggregates.Api.L0Tests` + `EventSourcing.UxProjections.Api.L0Tests` -> `DomainModeling.Gateway.L0Tests`
+- [x] `P26` Merge `EventSourcing.Aggregates.Api` + `EventSourcing.UxProjections.Api` -> `DomainModeling.Gateway`
+- [x] `T26` Merge mirrored tests: `EventSourcing.Aggregates.Api.L0Tests` + `EventSourcing.UxProjections.Api.L0Tests` -> `DomainModeling.Gateway.L0Tests`
 
-- [ ] `P27` Merge `EventSourcing.Reducers.Abstractions` + `EventSourcing.Snapshots.Abstractions` -> `Tributary.Abstractions`
-- [ ] `T27` Merge mirrored tests: `EventSourcing.Reducers.Abstractions.L0Tests` + `EventSourcing.Snapshots.Abstractions.L0Tests` -> `Tributary.Abstractions.L0Tests`
+- [x] `P27` Merge `EventSourcing.Reducers.Abstractions` + `EventSourcing.Snapshots.Abstractions` -> `Tributary.Abstractions`
+- [x] `T27` Merge mirrored tests: `EventSourcing.Reducers.Abstractions.L0Tests` + `EventSourcing.Snapshots.Abstractions.L0Tests` -> `Tributary.Abstractions.L0Tests`
 
-- [ ] `P28` Merge `EventSourcing.Reducers` + `EventSourcing.Snapshots` -> `Tributary.Runtime`
-- [ ] `T28` Merge mirrored tests: `EventSourcing.Reducers.L0Tests` + `EventSourcing.Snapshots.L0Tests` -> `Tributary.Runtime.L0Tests`
+- [x] `P28` Merge `EventSourcing.Reducers` + `EventSourcing.Snapshots` -> `Tributary.Runtime`
+- [x] `T28` Merge mirrored tests: `EventSourcing.Reducers.L0Tests` + `EventSourcing.Snapshots.L0Tests` -> `Tributary.Runtime.L0Tests`
 
-- [ ] `P29` Extract `Brooks.Runtime.Storage.Abstractions` from `Brooks.Abstractions`
-- [ ] `T29` Extract mirrored tests from `Brooks.Abstractions.L0Tests` -> `Brooks.Runtime.Storage.Abstractions.L0Tests` (move only storage-abstraction test files)
+- [x] `P29` Extract `Brooks.Runtime.Storage.Abstractions` from `Brooks.Abstractions`
+- [x] `T29` Extract mirrored tests from `Brooks.Abstractions.L0Tests` -> `Brooks.Runtime.Storage.Abstractions.L0Tests` (move only storage-abstraction test files)
 
-- [ ] `P30` Extract `Tributary.Runtime.Storage.Abstractions` from `Tributary.Abstractions`
-- [ ] `T30` Extract mirrored tests from `Tributary.Abstractions.L0Tests` -> `Tributary.Runtime.Storage.Abstractions.L0Tests` (move only storage-abstraction test files)
+- [x] `P30` Extract `Tributary.Runtime.Storage.Abstractions` from `Tributary.Abstractions`
+- [x] `T30` Extract mirrored tests from `Tributary.Abstractions.L0Tests` -> `Tributary.Runtime.Storage.Abstractions.L0Tests` (move only storage-abstraction test files)
 
 ### Per-task rename scope (applies to every task below)
 
@@ -556,82 +556,82 @@ Use this ordered list as the real execution sequence. For each `P*` project task
 - Commit SHA: `32384a05` (P25), `4ae4d32a` (T25)
 - Notes: `<optional>`
 
-### [ ] Task: Merge `EventSourcing.Aggregates.Api` + `EventSourcing.UxProjections.Api` -> `DomainModeling.Gateway`
+### [x] Task: Merge `EventSourcing.Aggregates.Api` + `EventSourcing.UxProjections.Api` -> `DomainModeling.Gateway`
 
-- [ ] Create target project/folder (`DomainModeling.Gateway`)
-- [ ] Add target project to `.slnx`
-- [ ] Move all `.cs` files from all source projects into target
-- [ ] Update `ProjectReference` entries to target project
-- [ ] Delete old source `.csproj` files/folders
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] WIP notes appended to `pr-description-wip.md`
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Create target project/folder (`DomainModeling.Gateway`)
+- [x] Add target project to `.slnx`
+- [x] Move all `.cs` files from all source projects into target
+- [x] Update `ProjectReference` entries to target project
+- [x] Delete old source `.csproj` files/folders
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] WIP notes appended to `pr-description-wip.md`
+- [x] Commit created for this task only
+- Commit SHA: `40343256` (P26), `c636112a` (T26)
 - Notes: `<optional>`
 
-### [ ] Task: Merge `EventSourcing.Reducers.Abstractions` + `EventSourcing.Snapshots.Abstractions` -> `Tributary.Abstractions`
+### [x] Task: Merge `EventSourcing.Reducers.Abstractions` + `EventSourcing.Snapshots.Abstractions` -> `Tributary.Abstractions`
 
-- [ ] Create target project/folder (`Tributary.Abstractions`)
-- [ ] Add target project to `.slnx`
-- [ ] Move all `.cs` files from all source projects into target
-- [ ] Update `ProjectReference` entries to target project
-- [ ] Delete old source `.csproj` files/folders
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] WIP notes appended to `pr-description-wip.md`
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Create target project/folder (`Tributary.Abstractions`)
+- [x] Add target project to `.slnx`
+- [x] Move all `.cs` files from all source projects into target
+- [x] Update `ProjectReference` entries to target project
+- [x] Delete old source `.csproj` files/folders
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] WIP notes appended to `pr-description-wip.md`
+- [x] Commit created for this task only
+- Commit SHA: `cceedd41` (P27), `80ab71c0` (T27)
 - Notes: `<optional>`
 
-### [ ] Task: Merge `EventSourcing.Reducers` + `EventSourcing.Snapshots` -> `Tributary.Runtime`
+### [x] Task: Merge `EventSourcing.Reducers` + `EventSourcing.Snapshots` -> `Tributary.Runtime`
 
-- [ ] Create target project/folder (`Tributary.Runtime`)
-- [ ] Add target project to `.slnx`
-- [ ] Move all `.cs` files from all source projects into target
-- [ ] Update `ProjectReference` entries to target project
-- [ ] Delete old source `.csproj` files/folders
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] WIP notes appended to `pr-description-wip.md`
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
+- [x] Create target project/folder (`Tributary.Runtime`)
+- [x] Add target project to `.slnx`
+- [x] Move all `.cs` files from all source projects into target
+- [x] Update `ProjectReference` entries to target project
+- [x] Delete old source `.csproj` files/folders
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] WIP notes appended to `pr-description-wip.md`
+- [x] Commit created for this task only
+- Commit SHA: `8bc0177b` (P28), `a72a788c` (T28)
 - Notes: `<optional>`
 
 ## Extraction Tasks Required for Final Target Layout
 
-### [ ] Task: Extract `Brooks.Runtime.Storage.Abstractions` from `Brooks.Abstractions`
+### [x] Task: Extract `Brooks.Runtime.Storage.Abstractions` from `Brooks.Abstractions`
 
-- [ ] Create target project/folder (`Brooks.Runtime.Storage.Abstractions`)
-- [ ] Add target project to `.slnx`
-- [ ] Move storage abstraction `.cs` files from `Brooks.Abstractions`
-- [ ] Update `ProjectReference` entries to include new project
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] WIP notes appended to `pr-description-wip.md`
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- [x] Create target project/folder (`Brooks.Runtime.Storage.Abstractions`)
+- [x] Add target project to `.slnx`
+- [x] Move storage abstraction `.cs` files from `Brooks.Abstractions`
+- [x] Update `ProjectReference` entries to include new project
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] WIP notes appended to `pr-description-wip.md`
+- [x] Commit created for this task only
+- Commit SHA: `05358646` (P29), `46581050` (T29)
+- Notes: Files moved from `Brooks.Abstractions/Storage/` subdirectory. Brooks.Runtime and Brooks.Runtime.Storage.Cosmos updated to reference new project. Testing.Utilities also updated (fix commit `c6b1609f`).
 
-### [ ] Task: Extract `Tributary.Runtime.Storage.Abstractions` from `Tributary.Abstractions`
+### [x] Task: Extract `Tributary.Runtime.Storage.Abstractions` from `Tributary.Abstractions`
 
-- [ ] Create target project/folder (`Tributary.Runtime.Storage.Abstractions`)
-- [ ] Add target project to `.slnx`
-- [ ] Move storage abstraction `.cs` files from `Tributary.Abstractions`
-- [ ] Update `ProjectReference` entries to include new project
-- [ ] Build: `mississippi.slnx` passes
-- [ ] Build: `samples.slnx` passes
-- [ ] Tests: Mississippi passes
-- [ ] Tests: Samples passes
-- [ ] WIP notes appended to `pr-description-wip.md`
-- [ ] Commit created for this task only
-- Commit SHA: `<fill after commit>`
-- Notes: `<optional>`
+- [x] Create target project/folder (`Tributary.Runtime.Storage.Abstractions`)
+- [x] Add target project to `.slnx`
+- [x] Move storage abstraction `.cs` files from `Tributary.Abstractions`
+- [x] Update `ProjectReference` entries to include new project
+- [x] Build: `mississippi.slnx` passes
+- [x] Build: `samples.slnx` passes
+- [x] Tests: Mississippi passes
+- [x] Tests: Samples passes
+- [x] WIP notes appended to `pr-description-wip.md`
+- [x] Commit created for this task only
+- Commit SHA: `eeb0b67b` (P30), `be130471` (T30)
+- Notes: Files moved from `Tributary.Abstractions` root. Tributary.Runtime and Tributary.Runtime.Storage.Cosmos updated to reference new project. Also moved missed `SnapshotMetrics.cs` from deleted EventSourcing.Snapshots/Diagnostics to Tributary.Runtime (fix commit `c6b1609f`).
