@@ -50,9 +50,36 @@ jobs:
             throw "No .csproj files found."
           }
 
+          $directoryPackagesPath = Join-Path $env:GITHUB_WORKSPACE 'Directory.Packages.props'
+          $usesCpm = Test-Path $directoryPackagesPath
+          if ($usesCpm) {
+            [xml]$directoryPackages = Get-Content -Path $directoryPackagesPath
+            $root = $directoryPackages.Project
+            if ($null -eq $root) {
+              throw "Directory.Packages.props does not contain a <Project> root element."
+            }
+
+            $packageVersionNode = $directoryPackages.SelectSingleNode("/Project/ItemGroup/PackageVersion[@Include='ReferenceTrimmer']")
+            if ($null -eq $packageVersionNode) {
+              $itemGroup = $directoryPackages.CreateElement('ItemGroup')
+              $packageVersion = $directoryPackages.CreateElement('PackageVersion')
+              $packageVersion.SetAttribute('Include', 'ReferenceTrimmer')
+              $packageVersion.SetAttribute('Version', $env:REFERENCE_TRIMMER_VERSION)
+              $itemGroup.AppendChild($packageVersion) | Out-Null
+              $root.AppendChild($itemGroup) | Out-Null
+              $directoryPackages.Save($directoryPackagesPath)
+              Write-Host "Added PackageVersion(ReferenceTrimmer=$($env:REFERENCE_TRIMMER_VERSION)) to Directory.Packages.props"
+            }
+          }
+
           foreach ($project in $projects) {
             Write-Host "Adding ReferenceTrimmer to $($project.FullName)"
-            dotnet add "$($project.FullName)" package ReferenceTrimmer --version $env:REFERENCE_TRIMMER_VERSION --no-restore
+            if ($usesCpm) {
+              dotnet add "$($project.FullName)" package ReferenceTrimmer --no-restore
+            }
+            else {
+              dotnet add "$($project.FullName)" package ReferenceTrimmer --version $env:REFERENCE_TRIMMER_VERSION --no-restore
+            }
             if ($LASTEXITCODE -ne 0) {
               throw "Failed to add ReferenceTrimmer to $($project.FullName)."
             }
