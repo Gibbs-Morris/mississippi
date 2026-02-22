@@ -17,11 +17,10 @@
         <ProjectReference Include="..\..\src\Brooks.Runtime\Brooks.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+        <ProjectReference Include="..\..\src\Tributary.Runtime\Tributary.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Abstractions\Tributary.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
-        <ProjectReference Include="..\..\src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Client\Inlet.Client.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Runtime\Inlet.Runtime.csproj" />

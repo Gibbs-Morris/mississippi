@@ -5,7 +5,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
-    <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime\Tributary.Runtime.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
     <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
   </ItemGroup>

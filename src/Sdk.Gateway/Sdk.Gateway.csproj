@@ -9,8 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
     <ProjectReference Include="..\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
-    <ProjectReference Include="..\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
-    <ProjectReference Include="..\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime\Tributary.Runtime.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
     <ProjectReference Include="..\Inlet.Gateway\Inlet.Gateway.csproj" />
     <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
