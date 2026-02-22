@@ -73,14 +73,14 @@
     <Project Path="src\Sdk.Silo\Sdk.Silo.csproj" />
     <Project Path="src\Inlet.Client.Generators\Inlet.Client.Generators.csproj" />
     <Project Path="src\Inlet.Gateway.Generators\Inlet.Gateway.Generators.csproj" />
-    <Project Path="src\Inlet.Silo.Generators\Inlet.Silo.Generators.csproj" />
+    <Project Path="src\Inlet.Runtime.Generators\Inlet.Runtime.Generators.csproj" />
     <Project Path="src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <Project Path="src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
   </Folder>
   <Folder Name="/src/" />
   <Folder Name="/Tests/">
     <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />
-    <Project Path="tests/Inlet.Silo.Generators.L0Tests/Inlet.Silo.Generators.L0Tests.csproj" />
+    <Project Path="tests/Inlet.Runtime.Generators.L0Tests/Inlet.Runtime.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Tests/Core/">
