@@ -9,6 +9,6 @@
     <PackageReference Include="Microsoft.Orleans.Sdk" PrivateAssets="all" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Public contracts and abstractions for DomainModeling (aggregates, sagas, and ux projections).</Description>
+    <Description>Public contracts and abstractions for DomainModeling (aggregates, sagas, and UX projections).</Description>
   </PropertyGroup>
 </Project>
