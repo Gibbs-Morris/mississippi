@@ -357,7 +357,7 @@ public sealed class McpAggregateToolsGenerator : IIncrementalGenerator
         sb.AppendLine();
 
         // Mississippi usings
-        sb.AppendUsing("Mississippi.EventSourcing.Aggregates.Abstractions");
+        sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
         sb.AppendLine();
 
         // Domain usings

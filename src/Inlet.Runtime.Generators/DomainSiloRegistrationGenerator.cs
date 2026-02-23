@@ -21,7 +21,7 @@ namespace Mississippi.Inlet.Runtime.Generators;
 public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
 {
     private const string AggregateRegistrationsTypeFullName =
-        "Mississippi.EventSourcing.Aggregates.AggregateRegistrations";
+        "Mississippi.DomainModeling.Runtime.AggregateRegistrations";
 
     private const string GenerateAggregateEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
@@ -35,15 +35,14 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
-    private const string ReducerRegistrationsTypeFullName = "Mississippi.EventSourcing.Reducers.ReducerRegistrations";
+    private const string ReducerRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.ReducerRegistrations";
 
-    private const string SagaRegistrationsTypeFullName = "Mississippi.EventSourcing.Sagas.SagaRegistrations";
+    private const string SagaRegistrationsTypeFullName = "Mississippi.DomainModeling.Runtime.SagaRegistrations";
 
-    private const string SnapshotRegistrationsTypeFullName =
-        "Mississippi.EventSourcing.Snapshots.SnapshotRegistrations";
+    private const string SnapshotRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.SnapshotRegistrations";
 
     private const string UxProjectionRegistrationsTypeFullName =
-        "Mississippi.EventSourcing.UxProjections.UxProjectionRegistrations";
+        "Mississippi.DomainModeling.Runtime.UxProjectionRegistrations";
 
     private static void AddAggregateNameIfPresent(
         INamedTypeSymbol typeSymbol,

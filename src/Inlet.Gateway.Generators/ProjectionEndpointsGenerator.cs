@@ -207,8 +207,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.AspNetCore.Mvc");
         sb.AppendUsing("Microsoft.Extensions.Logging");
         sb.AppendUsing(MappingNamespace);
-        sb.AppendUsing("Mississippi.EventSourcing.UxProjections.Abstractions");
-        sb.AppendUsing("Mississippi.EventSourcing.UxProjections.Api");
+        sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
+        sb.AppendUsing("Mississippi.DomainModeling.Gateway");
         sb.AppendUsing(projection.Model.Namespace);
         sb.AppendFileScopedNamespace(projection.OutputNamespace);
         sb.AppendLine();

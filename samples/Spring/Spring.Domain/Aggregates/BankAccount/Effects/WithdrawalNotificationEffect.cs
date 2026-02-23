@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount.Events;
 using Spring.Domain.Services;

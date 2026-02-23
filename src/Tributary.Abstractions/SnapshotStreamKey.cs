@@ -11,7 +11,7 @@ namespace Mississippi.Tributary.Abstractions;
 ///     This key is used for operations that target all versions of a projection snapshot stream.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Snapshots.Abstractions.SnapshotStreamKey")]
+[Alias("Mississippi.Tributary.Abstractions.SnapshotStreamKey")]
 public readonly record struct SnapshotStreamKey
 {
     private const int MaxLength = 4192;

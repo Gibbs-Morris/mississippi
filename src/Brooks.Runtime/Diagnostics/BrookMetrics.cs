@@ -14,7 +14,7 @@ internal static class BrookMetrics
     /// <summary>
     ///     The meter name for brook metrics.
     /// </summary>
-    internal const string MeterName = "Mississippi.EventSourcing.Brooks";
+    internal const string MeterName = "Mississippi.Brooks.Runtime";
 
     private const string BrookNameTag = "brook.name";
 

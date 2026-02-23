@@ -18,7 +18,7 @@ namespace Mississippi.DomainModeling.Runtime.Subscriptions;
 ///     is not serializable. It is rehydrated when the grain activates by re-subscribing to the stream.
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.UxProjections.ActiveSubscription")]
+[Alias("Mississippi.DomainModeling.Runtime.Subscriptions.ActiveSubscription")]
 internal sealed class ActiveSubscription
 {
     /// <summary>

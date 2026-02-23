@@ -11,6 +11,6 @@
     <ProjectReference Include="..\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Azure Cosmos DB provider for EventSourcing.Snapshots storage.</Description>
+    <Description>Azure Cosmos DB provider for Tributary.Runtime storage.</Description>
   </PropertyGroup>
 </Project>

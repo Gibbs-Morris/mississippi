@@ -15,7 +15,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     <see cref="OperationResult.Fail" /> factory methods to create instances.
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Aggregates.OperationResult")]
+[Alias("Mississippi.DomainModeling.Abstractions.OperationResult")]
 public readonly record struct OperationResult
 {
     /// <summary>
@@ -116,7 +116,7 @@ public readonly record struct OperationResult
 ///     factory methods to create instances.
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Aggregates.OperationResult`1")]
+[Alias("Mississippi.DomainModeling.Abstractions.OperationResult`1")]
 public readonly record struct OperationResult<T>
 {
     /// <summary>

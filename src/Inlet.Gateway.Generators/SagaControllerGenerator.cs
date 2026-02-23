@@ -26,7 +26,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
-    private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
+    private const string SagaStateInterfaceFullName = "Mississippi.DomainModeling.Abstractions.ISagaState";
 
     private static void FindSagasInNamespace(
         INamespaceSymbol namespaceSymbol,
@@ -62,9 +62,8 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendUsing("System.Threading.Tasks");
         sb.AppendUsing("Microsoft.AspNetCore.Mvc");
         sb.AppendUsing("Microsoft.Extensions.Logging");
-        sb.AppendUsing("Mississippi.EventSourcing.Aggregates.Abstractions");
-        sb.AppendUsing("Mississippi.EventSourcing.Aggregates.Api");
-        sb.AppendUsing("Mississippi.EventSourcing.Sagas.Abstractions");
+        sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
+        sb.AppendUsing("Mississippi.DomainModeling.Gateway");
         sb.AppendUsing(saga.SagaNamespace);
         if (!string.Equals(saga.InputTypeNamespace, saga.SagaNamespace, StringComparison.Ordinal))
         {

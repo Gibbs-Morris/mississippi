@@ -146,7 +146,7 @@ public sealed class RootEventEffect<TAggregate> : IRootEventEffect<TAggregate>
         Type genericDef
     )
     {
-        const string expectedNamespace = "Mississippi.EventSourcing.Aggregates.Abstractions";
+        const string expectedNamespace = "Mississippi.DomainModeling.Abstractions";
         return (genericDef.Namespace == expectedNamespace) &&
                genericDef.Name is "EventEffectBase`2" or "SimpleEventEffectBase`2";
     }

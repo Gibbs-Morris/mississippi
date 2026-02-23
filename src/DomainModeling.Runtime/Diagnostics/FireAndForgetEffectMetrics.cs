@@ -12,7 +12,7 @@ internal static class FireAndForgetEffectMetrics
     /// <summary>
     ///     The meter name for fire-and-forget effect metrics.
     /// </summary>
-    internal const string MeterName = "Mississippi.EventSourcing.Aggregates.FireAndForgetEffects";
+    internal const string MeterName = "Mississippi.DomainModeling.Runtime.FireAndForgetEffects";
 
     private const string AggregateTypeTag = "aggregate.type";
 

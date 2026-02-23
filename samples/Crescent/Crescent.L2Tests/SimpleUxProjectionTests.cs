@@ -2,8 +2,7 @@ using Crescent.Crescent.L2Tests.Domain.Counter;
 using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
 using Crescent.Crescent.L2Tests.Domain.CounterSummary;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Xunit.Abstractions;
 

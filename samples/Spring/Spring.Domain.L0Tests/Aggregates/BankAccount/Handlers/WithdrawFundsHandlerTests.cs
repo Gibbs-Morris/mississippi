@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Commands;

@@ -4,12 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Mississippi.Refraction.Client.StateManagement.Infrastructure;
 
 /// <summary>
-///     Extension methods for registering Refraction.Pages services.
+///     Extension methods for registering Refraction.Client.StateManagement services.
 /// </summary>
 public static class RefractionPagesServiceCollectionExtensions
 {
     /// <summary>
-    ///     Adds Refraction.Pages services to the service collection.
+    ///     Adds Refraction.Client.StateManagement services to the service collection.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>

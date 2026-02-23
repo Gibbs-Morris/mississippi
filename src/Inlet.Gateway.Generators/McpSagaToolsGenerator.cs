@@ -46,7 +46,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
-    private const string SagaStateInterfaceFullName = "Mississippi.EventSourcing.Sagas.Abstractions.ISagaState";
+    private const string SagaStateInterfaceFullName = "Mississippi.DomainModeling.Abstractions.ISagaState";
 
     private static void AddDescriptionIfPresent(
         ISymbol symbol,
@@ -340,8 +340,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.AppendLine();
 
         // Mississippi usings
-        sb.AppendUsing("Mississippi.EventSourcing.Aggregates.Abstractions");
-        sb.AppendUsing("Mississippi.EventSourcing.Sagas.Abstractions");
+        sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
         sb.AppendLine();
 
         // Domain usings

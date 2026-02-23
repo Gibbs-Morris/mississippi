@@ -20,7 +20,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Aggregates.Abstractions.FireAndForgetEffectEnvelope`2")]
+[Alias("Mississippi.DomainModeling.Abstractions.FireAndForgetEffectEnvelope`2")]
 public sealed record FireAndForgetEffectEnvelope<TEvent, TAggregate>
     where TEvent : class
     where TAggregate : class

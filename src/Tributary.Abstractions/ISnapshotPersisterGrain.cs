@@ -22,7 +22,7 @@ namespace Mississippi.Tributary.Abstractions;
 ///         matching the cache grain's key for one-to-one correspondence.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.Snapshots.Abstractions.ISnapshotPersisterGrain")]
+[Alias("Mississippi.Tributary.Abstractions.ISnapshotPersisterGrain")]
 public interface ISnapshotPersisterGrain : IGrainWithStringKey
 {
     /// <summary>

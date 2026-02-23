@@ -31,7 +31,7 @@ public class AggregateSiloRegistrationGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Aggregates.Abstractions
+                                                 namespace Mississippi.DomainModeling.Abstractions
                                                  {
                                                      public abstract class CommandHandlerBase<TCommand, TAggregate>
                                                          where TAggregate : class
@@ -49,7 +49,7 @@ public class AggregateSiloRegistrationGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Reducers.Abstractions
+                                                 namespace Mississippi.Tributary.Abstractions
                                                  {
                                                      public abstract class EventReducerBase<TEvent, TAggregate>
                                                          where TAggregate : class
@@ -57,21 +57,21 @@ public class AggregateSiloRegistrationGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Aggregates
+                                                 namespace Mississippi.DomainModeling.Runtime
                                                  {
                                                      public static class AggregateRegistrations
                                                      {
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Reducers
+                                                 namespace Mississippi.Tributary.Runtime
                                                  {
                                                      public static class ReducerRegistrations
                                                      {
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Snapshots
+                                                 namespace Mississippi.Tributary.Runtime
                                                  {
                                                      public static class SnapshotRegistrations
                                                      {
@@ -132,8 +132,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -182,8 +182,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -232,8 +232,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -284,8 +284,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -334,8 +334,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -388,8 +388,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -441,8 +441,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -491,8 +491,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -541,8 +541,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -601,8 +601,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -653,8 +653,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -703,8 +703,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -760,8 +760,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -800,9 +800,9 @@ public class AggregateSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("using Microsoft.Extensions.DependencyInjection;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.EventSourcing.Aggregates;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.EventSourcing.Reducers;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.EventSourcing.Snapshots;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.DomainModeling.Runtime;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.Tributary.Runtime;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.Tributary.Runtime;", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -813,8 +813,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -866,8 +866,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -926,8 +926,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -976,8 +976,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1038,8 +1038,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1093,8 +1093,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1162,8 +1162,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1231,8 +1231,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1284,8 +1284,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1344,8 +1344,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1394,8 +1394,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1462,8 +1462,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1530,8 +1530,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1641,8 +1641,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {
@@ -1690,8 +1690,8 @@ public class AggregateSiloRegistrationGeneratorTests
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
-                                       using Mississippi.EventSourcing.Aggregates.Abstractions;
-                                       using Mississippi.EventSourcing.Reducers.Abstractions;
+                                       using Mississippi.DomainModeling.Abstractions;
+                                       using Mississippi.Tributary.Abstractions;
 
                                        namespace TestApp.Domain.Aggregates.Order
                                        {

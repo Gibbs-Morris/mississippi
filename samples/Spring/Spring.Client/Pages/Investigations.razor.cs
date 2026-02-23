@@ -1,4 +1,4 @@
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 
 using Spring.Client.Features.FlaggedTransactions.Dtos;
 

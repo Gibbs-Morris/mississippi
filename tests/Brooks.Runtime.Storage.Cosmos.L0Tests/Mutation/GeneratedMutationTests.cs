@@ -5,7 +5,7 @@ using System;
 using Xunit;
 
 
-namespace Company.EventSourcing.Cosmos.Tests.Mutation;
+namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Mutation;
 
 /// <summary>
 ///     Generated mutation test skeletons. Fill in Arrange/Act/Assert to kill survivors.
@@ -21,7 +21,7 @@ public static class GeneratedMutationTests
         {
             // Mutator: Equality mutation
             // Suggestion: Add or strengthen assertions that differentiate mutated behavior.
-            // File: src\EventSourcing.Cosmos\Batching\BatchSizeEstimator.cs (116..116)
+            // File: src\Brooks.Runtime.Storage.Cosmos\Batching\BatchSizeEstimator.cs (116..116)
             // Snippet:
             /*
                     long currentBatchSize = BatchOverheadBytes;

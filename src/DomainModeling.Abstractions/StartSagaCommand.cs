@@ -10,7 +10,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 /// </summary>
 /// <typeparam name="TInput">The input payload type.</typeparam>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Sagas.Abstractions.StartSagaCommand`1")]
+[Alias("Mississippi.DomainModeling.Abstractions.StartSagaCommand`1")]
 public sealed record StartSagaCommand<TInput>
 {
     /// <summary>

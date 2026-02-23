@@ -33,7 +33,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///         responsibility and maximize cache reuse.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.UxProjections.Abstractions.IUxProjectionGrain`1")]
+[Alias("Mississippi.DomainModeling.Abstractions.IUxProjectionGrain`1")]
 public interface IUxProjectionGrain<TProjection> : IGrainWithStringKey
 {
     /// <summary>

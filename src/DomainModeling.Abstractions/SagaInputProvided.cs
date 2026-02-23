@@ -12,7 +12,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 /// </summary>
 /// <typeparam name="TInput">The saga input type.</typeparam>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaInputProvided`1")]
+[Alias("Mississippi.DomainModeling.Abstractions.SagaInputProvided`1")]
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGAINPUTPROVIDED")]
 public sealed record SagaInputProvided<TInput>
 {

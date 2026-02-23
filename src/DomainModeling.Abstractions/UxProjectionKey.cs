@@ -18,7 +18,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.UxProjections.Abstractions.UxProjectionKey")]
+[Alias("Mississippi.DomainModeling.Abstractions.UxProjectionKey")]
 public readonly record struct UxProjectionKey
 {
     private const int MaxLength = 4192;

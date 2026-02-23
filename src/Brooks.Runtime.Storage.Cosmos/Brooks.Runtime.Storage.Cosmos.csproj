@@ -12,6 +12,6 @@
     <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Azure Cosmos DB provider for EventSourcing.Brooks storage.</Description>
+    <Description>Azure Cosmos DB provider for Brooks.Runtime storage.</Description>
   </PropertyGroup>
 </Project>

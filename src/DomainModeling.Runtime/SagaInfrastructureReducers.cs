@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Sagas;
+namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
 ///     Marker type for saga infrastructure reducers.

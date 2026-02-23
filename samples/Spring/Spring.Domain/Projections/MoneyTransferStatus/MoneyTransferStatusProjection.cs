@@ -1,7 +1,7 @@
 using System;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 

@@ -32,7 +32,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///         which wraps this grain with typed methods per command handler.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.Aggregates.IGenericAggregateGrain`1")]
+[Alias("Mississippi.DomainModeling.Abstractions.IGenericAggregateGrain`1")]
 public interface IGenericAggregateGrain<TAggregate> : IGrainWithStringKey
     where TAggregate : class
 {

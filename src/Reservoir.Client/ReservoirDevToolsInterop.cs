@@ -103,7 +103,7 @@ internal sealed class ReservoirDevToolsInterop : IAsyncDisposable
             return module;
         }
 
-        string assemblyName = typeof(ReservoirDevToolsInterop).Assembly.GetName().Name ?? "Reservoir.Blazor";
+        string assemblyName = typeof(ReservoirDevToolsInterop).Assembly.GetName().Name ?? "Reservoir.Client";
         string modulePath = $"./_content/{assemblyName}/mississippi.reservoir.devtools.js";
         module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", modulePath);
         return module;

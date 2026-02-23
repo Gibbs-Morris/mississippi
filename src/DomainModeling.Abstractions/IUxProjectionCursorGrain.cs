@@ -22,7 +22,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///         "brookName|entityId".
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.UxProjections.Abstractions.IUxProjectionCursorGrain")]
+[Alias("Mississippi.DomainModeling.Abstractions.IUxProjectionCursorGrain")]
 public interface IUxProjectionCursorGrain : IGrainWithStringKey
 {
     /// <summary>

@@ -34,7 +34,7 @@ namespace Mississippi.DomainModeling.Runtime.Subscriptions;
 ///         subscription state is ephemeral and tied to the active connection.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.UxProjections.UxProjectionSubscriptionGrain")]
+[Alias("Mississippi.DomainModeling.Runtime.Subscriptions.UxProjectionSubscriptionGrain")]
 internal sealed class UxProjectionSubscriptionGrain
     : IUxProjectionSubscriptionGrain,
       IGrainBase

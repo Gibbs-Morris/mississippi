@@ -11,7 +11,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     Event emitted when a saga fails.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaFailed")]
+[Alias("Mississippi.DomainModeling.Abstractions.SagaFailed")]
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGAFAILED")]
 public sealed record SagaFailed
 {

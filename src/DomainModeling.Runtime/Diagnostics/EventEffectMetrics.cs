@@ -12,7 +12,7 @@ internal static class EventEffectMetrics
     /// <summary>
     ///     The meter name for event effect metrics.
     /// </summary>
-    internal const string MeterName = "Mississippi.EventSourcing.Aggregates.Effects";
+    internal const string MeterName = "Mississippi.DomainModeling.Runtime.Effects";
 
     private const string AggregateTypeTag = "aggregate.type";
 

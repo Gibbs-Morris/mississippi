@@ -11,7 +11,7 @@ namespace Mississippi.Tributary.Abstractions;
 ///     reducers hash.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Snapshots.Abstractions.SnapshotKey")]
+[Alias("Mississippi.Tributary.Abstractions.SnapshotKey")]
 public readonly record struct SnapshotKey
 {
     private const char Separator = '|';

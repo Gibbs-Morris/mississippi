@@ -6,6 +6,6 @@
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>Public contracts and abstractions for Inlet.Silo.</Description>
+    <Description>Public contracts and abstractions for Inlet.Runtime.</Description>
   </PropertyGroup>
 </Project>

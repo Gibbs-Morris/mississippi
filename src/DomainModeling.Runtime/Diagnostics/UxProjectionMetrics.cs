@@ -12,7 +12,7 @@ internal static class UxProjectionMetrics
     /// <summary>
     ///     The meter name for UX projection metrics.
     /// </summary>
-    internal const string MeterName = "Mississippi.EventSourcing.UxProjections";
+    internal const string MeterName = "Mississippi.DomainModeling.Runtime.UxProjections";
 
     private const string ProjectionTypeTag = "projection.type";
 

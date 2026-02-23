@@ -1,4 +1,4 @@
-namespace Mississippi.EventSourcing.Sagas.Abstractions;
+namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
 ///     Marker type for saga event declarations.

@@ -46,7 +46,7 @@ namespace Mississippi.DomainModeling.Runtime;
 ///         If the attribute is missing, the grain will fail to activate with an exception.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.Aggregates.GenericAggregateGrain`1")]
+[Alias("Mississippi.DomainModeling.Runtime.GenericAggregateGrain`1")]
 internal sealed class GenericAggregateGrain<TAggregate>
     : IGenericAggregateGrain<TAggregate>,
       IGrainBase

@@ -22,7 +22,7 @@ namespace Mississippi.Brooks.Abstractions;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Brooks.Abstractions.BrookAsyncReaderKey")]
+[Alias("Mississippi.Brooks.Abstractions.BrookAsyncReaderKey")]
 public readonly record struct BrookAsyncReaderKey
 {
     private const char Separator = '|';

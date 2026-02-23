@@ -9,7 +9,7 @@ namespace Mississippi.Tributary.Abstractions;
 ///     Represents a serialized snapshot payload and its content type.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Snapshots.Abstractions.SnapshotEnvelope")]
+[Alias("Mississippi.Tributary.Abstractions.SnapshotEnvelope")]
 public sealed record SnapshotEnvelope
 {
     /// <summary>

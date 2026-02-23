@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.Inlet.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
 

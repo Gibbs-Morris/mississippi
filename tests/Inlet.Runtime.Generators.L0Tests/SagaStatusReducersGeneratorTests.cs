@@ -26,7 +26,7 @@ public sealed class SagaStatusReducersGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Reducers.Abstractions
+                                                 namespace Mississippi.Tributary.Abstractions
                                                  {
                                                      public abstract class EventReducerBase<TEvent, TProjection>
                                                          where TProjection : class
@@ -34,7 +34,7 @@ public sealed class SagaStatusReducersGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Sagas.Abstractions
+                                                 namespace Mississippi.DomainModeling.Abstractions
                                                  {
                                                      using System;
 
@@ -137,7 +137,7 @@ public sealed class SagaStatusReducersGeneratorTests
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.EventSourcing.Sagas.Abstractions;
+                                        using Mississippi.DomainModeling.Abstractions;
 
                                         namespace TestApp.Domain.Projections.SagaStatus
                                         {

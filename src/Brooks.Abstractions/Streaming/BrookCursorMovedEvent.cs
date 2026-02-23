@@ -10,7 +10,7 @@ namespace Mississippi.Brooks.Abstractions.Streaming;
 /// <param name="BrookKey">The key identifying the brook whose cursor moved.</param>
 /// <param name="NewPosition">The new position of the brook cursor after the move operation.</param>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Brooks.Abstractions.Streaming.BrookCursorMovedEvent")]
+[Alias("Mississippi.Brooks.Abstractions.Streaming.BrookCursorMovedEvent")]
 public sealed record BrookCursorMovedEvent(
     [property: Id(0)] string BrookKey,
     [property: Id(1)] BrookPosition NewPosition

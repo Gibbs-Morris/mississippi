@@ -42,7 +42,7 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Reducers.Abstractions
+                                                 namespace Mississippi.Tributary.Abstractions
                                                  {
                                                      public abstract class EventReducerBase<TEvent, TProjection>
                                                          where TProjection : class
@@ -50,21 +50,21 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Reducers
+                                                 namespace Mississippi.Tributary.Runtime
                                                  {
                                                      public static class ReducerRegistrations
                                                      {
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.Snapshots
+                                                 namespace Mississippi.Tributary.Runtime
                                                  {
                                                      public static class SnapshotRegistrations
                                                      {
                                                      }
                                                  }
 
-                                                 namespace Mississippi.EventSourcing.UxProjections
+                                                 namespace Mississippi.DomainModeling.Runtime
                                                  {
                                                      public static class UxProjectionRegistrations
                                                      {
@@ -126,7 +126,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -168,7 +168,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -210,7 +210,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -249,7 +249,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -290,7 +290,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -329,7 +329,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -372,7 +372,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -414,7 +414,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -453,7 +453,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -494,7 +494,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -547,7 +547,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -575,9 +575,9 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("using Microsoft.Extensions.DependencyInjection;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.EventSourcing.Reducers;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.EventSourcing.Snapshots;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.EventSourcing.UxProjections;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.Tributary.Runtime;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.Tributary.Runtime;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.DomainModeling.Runtime;", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -589,7 +589,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -631,7 +631,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -715,7 +715,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {
@@ -753,7 +753,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
                                         using Mississippi.Inlet.Abstractions;
-                                        using Mississippi.EventSourcing.Reducers.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
 
                                         namespace TestApp.Domain.Projections.AccountBalance
                                         {

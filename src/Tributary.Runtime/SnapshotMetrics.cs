@@ -12,7 +12,7 @@ internal static class SnapshotMetrics
     /// <summary>
     ///     The meter name for snapshot metrics.
     /// </summary>
-    internal const string MeterName = "Mississippi.EventSourcing.Snapshots";
+    internal const string MeterName = "Mississippi.Tributary.Runtime";
 
     private const string SnapshotTypeTag = "snapshot.type";
 

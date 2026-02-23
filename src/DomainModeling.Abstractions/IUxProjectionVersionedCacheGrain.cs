@@ -27,7 +27,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///         on activation and caches it for the lifetime of the grain instance.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.UxProjections.Abstractions.IUxProjectionVersionedCacheGrain`1")]
+[Alias("Mississippi.DomainModeling.Abstractions.IUxProjectionVersionedCacheGrain`1")]
 public interface IUxProjectionVersionedCacheGrain<TProjection> : IGrainWithStringKey
 {
     /// <summary>

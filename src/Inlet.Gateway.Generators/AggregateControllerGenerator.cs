@@ -213,8 +213,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.AspNetCore.Mvc");
         sb.AppendUsing("Microsoft.Extensions.Logging");
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
-        sb.AppendUsing("Mississippi.EventSourcing.Aggregates.Abstractions");
-        sb.AppendUsing("Mississippi.EventSourcing.Aggregates.Api");
+        sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
+        sb.AppendUsing("Mississippi.DomainModeling.Gateway");
         sb.AppendUsing(aggregate.Model.Namespace);
 
         // Add using for commands namespace

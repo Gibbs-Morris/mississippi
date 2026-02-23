@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Time.Testing;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Effects;

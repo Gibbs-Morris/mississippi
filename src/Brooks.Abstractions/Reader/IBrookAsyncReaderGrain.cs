@@ -28,7 +28,7 @@ namespace Mississippi.Brooks.Abstractions.Reader;
 ///         <c>[StatelessWorker]</c> and provides parallel batch access.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.Brooks.Abstractions.Reader.IBrookAsyncReaderGrain")]
+[Alias("Mississippi.Brooks.Abstractions.Reader.IBrookAsyncReaderGrain")]
 public interface IBrookAsyncReaderGrain : IGrainWithStringKey
 {
     /// <summary>

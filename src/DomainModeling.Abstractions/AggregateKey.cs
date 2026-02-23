@@ -18,7 +18,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Aggregates.Abstractions.AggregateKey")]
+[Alias("Mississippi.DomainModeling.Abstractions.AggregateKey")]
 public readonly record struct AggregateKey
 {
     private const int MaxLength = 4192;

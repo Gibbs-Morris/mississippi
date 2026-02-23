@@ -27,7 +27,7 @@ namespace Mississippi.Tributary.Abstractions;
 ///         to persist the snapshot asynchronously without blocking the caller.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.Snapshots.Abstractions.ISnapshotCacheGrain`1")]
+[Alias("Mississippi.Tributary.Abstractions.ISnapshotCacheGrain`1")]
 public interface ISnapshotCacheGrain<TSnapshot> : IGrainWithStringKey
 {
     /// <summary>

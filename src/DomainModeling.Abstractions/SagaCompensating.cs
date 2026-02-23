@@ -9,7 +9,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     Event emitted when a saga begins compensation.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaCompensating")]
+[Alias("Mississippi.DomainModeling.Abstractions.SagaCompensating")]
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGACOMPENSATING")]
 public sealed record SagaCompensating
 {

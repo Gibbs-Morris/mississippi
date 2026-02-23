@@ -6,7 +6,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <Description>Source generators for Inlet.Server to reduce boilerplate.</Description>
+    <Description>Source generators for Inlet.Gateway to reduce boilerplate.</Description>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />

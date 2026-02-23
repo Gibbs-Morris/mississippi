@@ -6,6 +6,6 @@
     <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Description>JSON serialization implementation for EventSourcing.Serialization.</Description>
+    <Description>JSON serialization implementation for Brooks.Serialization.</Description>
   </PropertyGroup>
 </Project>

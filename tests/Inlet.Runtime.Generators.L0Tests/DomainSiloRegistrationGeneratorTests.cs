@@ -36,35 +36,35 @@ public sealed class DomainSiloRegistrationGeneratorTests
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Aggregates
+                                          namespace Mississippi.DomainModeling.Runtime
                                           {
                                               public static class AggregateRegistrations
                                               {
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Reducers
+                                          namespace Mississippi.Tributary.Runtime
                                           {
                                               public static class ReducerRegistrations
                                               {
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Snapshots
+                                          namespace Mississippi.Tributary.Runtime
                                           {
                                               public static class SnapshotRegistrations
                                               {
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.UxProjections
+                                          namespace Mississippi.DomainModeling.Runtime
                                           {
                                               public static class UxProjectionRegistrations
                                               {
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Sagas
+                                          namespace Mississippi.DomainModeling.Runtime
                                           {
                                               public static class SagaRegistrations
                                               {

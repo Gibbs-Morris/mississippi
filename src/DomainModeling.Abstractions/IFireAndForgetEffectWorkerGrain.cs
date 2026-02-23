@@ -22,7 +22,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 /// </remarks>
 /// <typeparam name="TEvent">The event type.</typeparam>
 /// <typeparam name="TAggregate">The aggregate state type.</typeparam>
-[Alias("Mississippi.EventSourcing.Aggregates.Abstractions.IFireAndForgetEffectWorkerGrain`2")]
+[Alias("Mississippi.DomainModeling.Abstractions.IFireAndForgetEffectWorkerGrain`2")]
 public interface IFireAndForgetEffectWorkerGrain<TEvent, TAggregate> : IGrainWithStringKey
     where TEvent : class
     where TAggregate : class

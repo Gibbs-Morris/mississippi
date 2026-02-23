@@ -11,7 +11,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     Event emitted when a saga starts.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaStartedEvent")]
+[Alias("Mississippi.DomainModeling.Abstractions.SagaStartedEvent")]
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTARTED")]
 public sealed record SagaStartedEvent
 {

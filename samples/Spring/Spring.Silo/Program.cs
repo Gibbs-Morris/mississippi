@@ -6,14 +6,14 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Mississippi.Aqueduct.Grains;
+using Mississippi.Aqueduct.Runtime;
+using Mississippi.Brooks.Runtime;
+using Mississippi.Brooks.Runtime.Storage.Cosmos;
+using Mississippi.Brooks.Serialization.Json;
 using Mississippi.Common.Abstractions;
-using Mississippi.EventSourcing.Brooks;
-using Mississippi.EventSourcing.Brooks.Cosmos;
-using Mississippi.EventSourcing.Serialization.Json;
-using Mississippi.EventSourcing.Snapshots;
-using Mississippi.EventSourcing.Snapshots.Cosmos;
-using Mississippi.Inlet.Silo;
+using Mississippi.Inlet.Runtime;
+using Mississippi.Tributary.Runtime;
+using Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -48,9 +48,9 @@ builder.Services.AddOpenTelemetry()
         .AddRuntimeInstrumentation()
 
         // Mississippi framework meters
-        .AddMeter("Mississippi.EventSourcing.Brooks")
-        .AddMeter("Mississippi.EventSourcing.Aggregates")
-        .AddMeter("Mississippi.EventSourcing.Snapshots")
+        .AddMeter("Mississippi.Brooks.Runtime")
+        .AddMeter("Mississippi.DomainModeling.Runtime")
+        .AddMeter("Mississippi.Tributary.Runtime")
         .AddMeter("Mississippi.Storage.Cosmos")
         .AddMeter("Mississippi.Storage.Snapshots")
         .AddMeter("Mississippi.Storage.Locking")

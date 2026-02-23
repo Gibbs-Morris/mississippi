@@ -1,1 +1,1 @@
-global using Mississippi.EventSourcing.Sagas.Abstractions;
+global using Mississippi.DomainModeling.Abstractions;

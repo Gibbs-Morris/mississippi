@@ -32,7 +32,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Sagas.Abstractions
+                                          namespace Mississippi.DomainModeling.Abstractions
                                           {
                                               using System;
 
@@ -63,28 +63,28 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Reducers.Abstractions
+                                          namespace Mississippi.Tributary.Abstractions
                                           {
                                               public abstract class EventReducerBase<TEvent, TSaga>
                                               {
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Reducers
+                                          namespace Mississippi.Tributary.Runtime
                                           {
                                               public static class ReducerRegistrations
                                               {
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Sagas
+                                          namespace Mississippi.DomainModeling.Runtime
                                           {
                                               public static class SagaRegistrations
                                               {
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Snapshots
+                                          namespace Mississippi.Tributary.Runtime
                                           {
                                               public static class SnapshotRegistrations
                                               {
@@ -176,8 +176,8 @@ public sealed class SagaSiloRegistrationGeneratorTests
     public void GeneratesRegistrationWithStepsAndReducers()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
-                                  using Mississippi.EventSourcing.Reducers.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Tributary.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -244,7 +244,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
     public void IgnoresStepWithoutSagaTypeOrInterface()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -280,7 +280,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
     public void OmitsStepInfoWhenNoSteps()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -311,8 +311,8 @@ public sealed class SagaSiloRegistrationGeneratorTests
     public void SagaRegistrationAccessorsAreReadable()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
-                                  using Mississippi.EventSourcing.Reducers.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Tributary.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -381,7 +381,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                             }
                                         }
 
-                                        namespace Mississippi.EventSourcing.Sagas.Abstractions
+                                        namespace Mississippi.DomainModeling.Abstractions
                                         {
                                             public interface ISagaState
                                             {
@@ -389,7 +389,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                         }
                                         """;
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -417,7 +417,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
     public void SkipsSagaWithoutInputType()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas

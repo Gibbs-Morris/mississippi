@@ -11,7 +11,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///     Event emitted when a saga step completes successfully.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.EventSourcing.Sagas.Abstractions.SagaStepCompleted")]
+[Alias("Mississippi.DomainModeling.Abstractions.SagaStepCompleted")]
 [EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPCOMPLETED")]
 public sealed record SagaStepCompleted
 {

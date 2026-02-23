@@ -17,7 +17,7 @@ namespace Mississippi.Brooks.Abstractions.Writer;
 ///     <see cref="BrookKey" />, ensuring writes are scoped
 ///     to the correct Mississippi brook.
 /// </remarks>
-[Alias("Mississippi.EventSourcing.Brooks.Abstractions.Writer.IBrookWriterGrain")]
+[Alias("Mississippi.Brooks.Abstractions.Writer.IBrookWriterGrain")]
 public interface IBrookWriterGrain : IGrainWithStringKey
 {
     /// <summary>

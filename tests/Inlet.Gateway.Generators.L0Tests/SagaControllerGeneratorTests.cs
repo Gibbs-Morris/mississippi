@@ -33,7 +33,7 @@ public sealed class SagaControllerGeneratorTests
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Sagas.Abstractions
+                                          namespace Mississippi.DomainModeling.Abstractions
                                           {
                                               public interface ISagaState
                                               {
@@ -120,7 +120,7 @@ public sealed class SagaControllerGeneratorTests
     public void GeneratesControllerAndDtoForPropertyInput()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -161,7 +161,7 @@ public sealed class SagaControllerGeneratorTests
     public void GeneratesControllerWithInputNamespaceImport()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Inputs
@@ -198,7 +198,7 @@ public sealed class SagaControllerGeneratorTests
     public void GeneratesDtoWithRequiredAndNullableProperties()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -233,7 +233,7 @@ public sealed class SagaControllerGeneratorTests
     public void GeneratesPositionalInputMapping()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -265,7 +265,7 @@ public sealed class SagaControllerGeneratorTests
     public void SagaInfoAccessorsAreReadable()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -296,7 +296,7 @@ public sealed class SagaControllerGeneratorTests
     public void SkipsSagaWhenAttributeTypeMissing()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -323,7 +323,7 @@ public sealed class SagaControllerGeneratorTests
     public void SkipsSagaWithoutInputType()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -373,7 +373,7 @@ public sealed class SagaControllerGeneratorTests
     public void UsesExplicitRoutePrefix()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas

@@ -256,8 +256,8 @@ public sealed class McpProjectionToolsGenerator : IIncrementalGenerator
         sb.AppendLine();
 
         // Mississippi usings
-        sb.AppendUsing("Mississippi.EventSourcing.Brooks.Abstractions");
-        sb.AppendUsing("Mississippi.EventSourcing.UxProjections.Abstractions");
+        sb.AppendUsing("Mississippi.Brooks.Abstractions");
+        sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
         sb.AppendLine();
 
         // Domain usings

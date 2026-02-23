@@ -20,7 +20,7 @@ namespace Mississippi.Inlet.Gateway;
 ///     <para>
 ///         Use these extensions on ASP.NET Core hosts that serve SignalR hubs.
 ///         For silo hosts, use <see cref="InletSiloRegistrations" />
-///         from the <c>Inlet.Silo</c> package directly.
+///         from the <c>Inlet.Runtime</c> package directly.
 ///     </para>
 /// </remarks>
 public static class InletServerRegistrations

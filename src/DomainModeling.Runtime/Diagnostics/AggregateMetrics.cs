@@ -12,7 +12,7 @@ internal static class AggregateMetrics
     /// <summary>
     ///     The meter name for aggregate metrics.
     /// </summary>
-    internal const string MeterName = "Mississippi.EventSourcing.Aggregates";
+    internal const string MeterName = "Mississippi.DomainModeling.Runtime";
 
     private const string AggregateTypeTag = "aggregate.type";
 

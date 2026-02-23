@@ -16,7 +16,7 @@ namespace Mississippi.Brooks.Runtime.Reader;
 ///     Keeps a portion of the brook in memory rather than loading millions of events at once.
 ///     Used internally by the main brook reader grain to handle large event streams.
 /// </summary>
-[Alias("Mississippi.EventSourcing.Brooks.Reader.IBrookSliceReaderGrain")]
+[Alias("Mississippi.Brooks.Runtime.Reader.IBrookSliceReaderGrain")]
 public interface IBrookSliceReaderGrain : IGrainWithStringKey
 {
     /// <summary>

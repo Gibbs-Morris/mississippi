@@ -23,7 +23,7 @@ namespace Mississippi.Brooks.Abstractions.Reader;
 ///         <c>[StatelessWorker]</c> routing.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.EventSourcing.Brooks.Abstractions.Reader.IBrookReaderGrain")]
+[Alias("Mississippi.Brooks.Abstractions.Reader.IBrookReaderGrain")]
 public interface IBrookReaderGrain : IGrainWithStringKey
 {
     /// <summary>

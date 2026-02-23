@@ -17,7 +17,7 @@ namespace Mississippi.Inlet.Runtime;
 /// <remarks>
 ///     <para>
 ///         Use these extensions on Orleans silo hosts. For ASP.NET Core hosts
-///         that serve SignalR hubs, use the extensions from <c>Inlet.Server</c>.
+///         that serve SignalR hubs, use the extensions from <c>Inlet.Gateway</c>.
 ///     </para>
 /// </remarks>
 public static class InletSiloRegistrations

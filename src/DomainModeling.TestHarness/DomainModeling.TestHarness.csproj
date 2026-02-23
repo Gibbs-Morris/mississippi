@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Description>Testing utilities and fixtures for Mississippi.EventSourcing.</Description>
+    <Description>Testing utilities and fixtures for Mississippi.DomainModeling.</Description>
     <PackageTags>$(PackageTags);testing;xunit;fluent-assertions</PackageTags>
   </PropertyGroup>
   <ItemGroup>
