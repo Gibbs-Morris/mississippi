@@ -90,7 +90,7 @@ internal sealed class BrookWriterGrain
         IAsyncStream<BrookCursorMovedEvent> stream = this
             .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
             .GetStream<BrookCursorMovedEvent>(
-                StreamId.Create(EventSourcingOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
+                StreamId.Create(BrooksRuntimeOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
         await stream.OnNextAsync(new(this.GetPrimaryKeyString(), newPosition));
         Logger.CursorMovedEventPublished(key, newPosition.Value);
         return newPosition;

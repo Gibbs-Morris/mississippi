@@ -1,9 +1,9 @@
 namespace Mississippi.Brooks.Runtime;
 
 /// <summary>
-///     Contains constant stream names used for Orleans event sourcing cursor updates.
+///     Contains constant stream names used for Brooks runtime cursor updates.
 /// </summary>
-public static class EventSourcingOrleansStreamNames
+public static class BrooksRuntimeOrleansStreamNames
 {
     /// <summary>
     ///     The stream name used for brook cursor position update notifications in Orleans.

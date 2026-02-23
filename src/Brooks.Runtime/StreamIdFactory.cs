@@ -21,5 +21,5 @@ internal sealed class StreamIdFactory : IStreamIdFactory
     public StreamId Create(
         BrookKey brookKey
     ) =>
-        StreamId.Create(EventSourcingOrleansStreamNames.CursorUpdateStreamName, brookKey);
+        StreamId.Create(BrooksRuntimeOrleansStreamNames.CursorUpdateStreamName, brookKey);
 }

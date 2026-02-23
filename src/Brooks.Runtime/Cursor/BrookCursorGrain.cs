@@ -21,7 +21,7 @@ namespace Mississippi.Brooks.Runtime.Cursor;
 /// <summary>
 ///     Orleans grain implementation that observes and maintains the cursor position of a Mississippi brook.
 /// </summary>
-[ImplicitStreamSubscription(EventSourcingOrleansStreamNames.CursorUpdateStreamName)]
+[ImplicitStreamSubscription(BrooksRuntimeOrleansStreamNames.CursorUpdateStreamName)]
 internal sealed class BrookCursorGrain
     : IBrookCursorGrain,
       IAsyncObserver<BrookCursorMovedEvent>,
