@@ -34,7 +34,7 @@ namespace Mississippi.Aqueduct.Runtime.Grains;
 ///         <see cref="ISignalRClientGrain" /> instances.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.Aqueduct.SignalRGroupGrain")]
+[Alias("Mississippi.Aqueduct.Runtime.Grains.SignalRGroupGrain")]
 internal sealed class SignalRGroupGrain
     : ISignalRGroupGrain,
       IGrainBase

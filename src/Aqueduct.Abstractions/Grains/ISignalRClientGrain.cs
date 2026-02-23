@@ -20,7 +20,7 @@ namespace Mississippi.Aqueduct.Abstractions.Grains;
 ///         state helps with graceful cleanup and recovery.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.Aqueduct.ISignalRClientGrain")]
+[Alias("Mississippi.Aqueduct.Abstractions.Grains.ISignalRClientGrain")]
 public interface ISignalRClientGrain : IGrainWithStringKey
 {
     /// <summary>

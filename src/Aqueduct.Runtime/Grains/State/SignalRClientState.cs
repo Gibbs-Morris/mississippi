@@ -15,7 +15,7 @@ namespace Mississippi.Aqueduct.Runtime.Grains.State;
 ///     and connection timestamp.
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Aqueduct.SignalRClientState")]
+[Alias("Mississippi.Aqueduct.Runtime.Grains.State.SignalRClientState")]
 public sealed record SignalRClientState
 {
     /// <summary>

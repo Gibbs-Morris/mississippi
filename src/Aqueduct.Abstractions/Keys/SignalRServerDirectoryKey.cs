@@ -14,7 +14,7 @@ namespace Mississippi.Aqueduct.Abstractions.Keys;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Aqueduct.SignalRServerDirectoryKey")]
+[Alias("Mississippi.Aqueduct.Abstractions.Keys.SignalRServerDirectoryKey")]
 public readonly record struct SignalRServerDirectoryKey
 {
     private const int MaxLength = 4192;

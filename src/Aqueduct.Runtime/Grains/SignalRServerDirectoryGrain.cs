@@ -34,7 +34,7 @@ namespace Mississippi.Aqueduct.Runtime.Grains;
 ///         and send periodic heartbeats.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.Aqueduct.SignalRServerDirectoryGrain")]
+[Alias("Mississippi.Aqueduct.Runtime.Grains.SignalRServerDirectoryGrain")]
 internal sealed class SignalRServerDirectoryGrain
     : ISignalRServerDirectoryGrain,
       IGrainBase

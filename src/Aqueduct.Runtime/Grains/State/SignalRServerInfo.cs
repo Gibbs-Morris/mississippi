@@ -9,7 +9,7 @@ namespace Mississippi.Aqueduct.Runtime.Grains.State;
 ///     Information about a SignalR server registered in the directory.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.Aqueduct.SignalRServerInfo")]
+[Alias("Mississippi.Aqueduct.Runtime.Grains.State.SignalRServerInfo")]
 public sealed record SignalRServerInfo
 {
     /// <summary>

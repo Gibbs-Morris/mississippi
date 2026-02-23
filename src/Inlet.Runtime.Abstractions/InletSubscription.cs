@@ -10,7 +10,7 @@ namespace Mississippi.Inlet.Runtime.Abstractions;
 /// <param name="Path">The projection path (e.g., "chat/channels").</param>
 /// <param name="EntityId">The entity identifier.</param>
 [GenerateSerializer]
-[Alias("Mississippi.Inlet.Abstractions.InletSubscription")]
+[Alias("Mississippi.Inlet.Runtime.Abstractions.InletSubscription")]
 public sealed record InletSubscription(
     [property: Id(0)] string SubscriptionId,
     [property: Id(1)] string Path,

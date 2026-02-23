@@ -14,7 +14,7 @@ namespace Mississippi.Aqueduct.Runtime.Grains.State;
 ///     Tracks group membership including the hub name and set of connection identifiers.
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Aqueduct.SignalRGroupState")]
+[Alias("Mississippi.Aqueduct.Runtime.Grains.State.SignalRGroupState")]
 public sealed record SignalRGroupState
 {
     /// <summary>

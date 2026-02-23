@@ -20,7 +20,7 @@ namespace Mississippi.Aqueduct.Abstractions.Grains;
 ///         <see cref="ISignalRClientGrain" /> instances for each connection.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.Aqueduct.ISignalRGroupGrain")]
+[Alias("Mississippi.Aqueduct.Abstractions.Grains.ISignalRGroupGrain")]
 public interface ISignalRGroupGrain : IGrainWithStringKey
 {
     /// <summary>

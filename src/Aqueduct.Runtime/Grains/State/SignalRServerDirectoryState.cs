@@ -14,7 +14,7 @@ namespace Mississippi.Aqueduct.Runtime.Grains.State;
 ///     Tracks all active SignalR servers and their heartbeat information.
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Aqueduct.SignalRServerDirectoryState")]
+[Alias("Mississippi.Aqueduct.Runtime.Grains.State.SignalRServerDirectoryState")]
 public sealed record SignalRServerDirectoryState
 {
     /// <summary>
