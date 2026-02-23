@@ -1,7 +1,6 @@
 ---
 description: Manages Copilot rules - creates new rules, ensures consistency, resolves conflicts across all rule files
 name: Rules Manager
-model: "Claude Opus 4.5"
 ---
 
 # Rules Manager Agent
