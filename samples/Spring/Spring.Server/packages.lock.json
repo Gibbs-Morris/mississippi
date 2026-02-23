@@ -154,9 +154,9 @@
       },
       "Scalar.AspNetCore": {
         "type": "Direct",
-        "requested": "[2.12.44, )",
-        "resolved": "2.12.44",
-        "contentHash": "wrGzgmRvBE41O79GgiC1HI/w59xWf0dw8V/yOb5KgIeXZ94rWaM/Gg9yEGh761n2tZUlEK4+IxfEIJcvWyeIjA=="
+        "requested": "[2.12.46, )",
+        "resolved": "2.12.46",
+        "contentHash": "8euCVn9hH/FnElhN6zXsbVkZZCbC39sTKLKjd+jcdjHHdF9IZoAKMVDqWLZNTwlGJjrk0VMoVgUcoYtD2hwjpw=="
       },
       "SonarAnalyzer.CSharp": {
         "type": "Direct",
@@ -238,8 +238,8 @@
       },
       "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
         "type": "Transitive",
-        "resolved": "10.0.103",
-        "contentHash": "tIq6T4oyBMjxxxllslJu2fOJqEj8SOW29IfWqHYxubreOVlFWnxPN2PjDMuwoHjkrOnPKyuqoNcVYh5YOZcs0Q=="
+        "resolved": "10.0.102",
+        "contentHash": "Y8Xq5gLe6l3bW82uGJODzom5Z7pn+Y71BHObnmWF0LqbKFqfOOVDg76a2vyJnRLHn0X1LmsXSec/QdCWFOPl4A=="
       },
       "Microsoft.Extensions.AI.Abstractions": {
         "type": "Transitive",
@@ -536,7 +536,6 @@
       "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
@@ -659,7 +658,7 @@
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.3, )",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
+          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.102, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
           "Mississippi.Spring.Domain": "[1.0.0, )"
         }
@@ -689,7 +688,6 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Brooks.Runtime": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
-          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
         }
