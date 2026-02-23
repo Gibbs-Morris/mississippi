@@ -76,41 +76,41 @@
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
-          "Mississippi.Refraction": "[1.0.0, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
-          "Mississippi.Refraction.Pages": "[1.0.0, )",
-          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Refraction.Client": "[1.0.0, )",
+          "Mississippi.Refraction.Client.StateManagement": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+          "Mississippi.Reservoir.Client": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
-      },
-      "Mississippi.Refraction": {
-        "type": "Project"
       },
       "Mississippi.Refraction.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Refraction.Pages": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Refraction": "[1.0.0, )",
-          "Mississippi.Refraction.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir": "[1.0.0, )"
-        }
+      "Mississippi.Refraction.Client": {
+        "type": "Project"
       },
-      "Mississippi.Reservoir": {
+      "Mississippi.Refraction.Client.StateManagement": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )",
+          "Mississippi.Refraction.Client": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Reservoir.Blazor": {
+      "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.Core": {
+        "type": "Project",
+        "dependencies": {
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },

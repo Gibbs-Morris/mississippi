@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Orleans silo runtime integration for Inlet streams and projections.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+    <PackageReference Include="Microsoft.Orleans.Streaming" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
+    <ProjectReference Include="..\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
+    <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;

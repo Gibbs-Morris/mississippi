@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 using Microsoft.Extensions.Time.Testing;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Spring.Domain.Aggregates.TransactionInvestigationQueue;
 using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;

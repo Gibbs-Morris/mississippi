@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Convenience SDK for integrating Mississippi in silo applications.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Inlet.Runtime.Generators\Inlet.Runtime.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
+    <ProjectReference Include="..\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
+    <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
+    <ProjectReference Include="..\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime\Tributary.Runtime.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
+    <ProjectReference Include="..\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
+    <ProjectReference Include="..\Inlet.Runtime\Inlet.Runtime.csproj" />
+    <ProjectReference Include="..\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
+  </ItemGroup>
+</Project>

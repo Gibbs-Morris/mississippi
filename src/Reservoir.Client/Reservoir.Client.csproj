@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
+    <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Blazor integration for Reservoir state, actions, reducers, and effects.</Description>
+  </PropertyGroup>
+</Project>

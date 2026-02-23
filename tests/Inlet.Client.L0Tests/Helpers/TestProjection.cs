@@ -1,4 +1,4 @@
-namespace Mississippi.Inlet.Client.L0Tests;
+namespace Mississippi.Inlet.Client.L0Tests.Helpers;
 
 /// <summary>
 ///     Dummy projection type for testing.

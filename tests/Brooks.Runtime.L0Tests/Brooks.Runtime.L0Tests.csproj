@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Orleans.TestingHost" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Brooks.Runtime\Brooks.Runtime.csproj" />
+      <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
+    </ItemGroup>
+</Project>

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using Mississippi.EventSourcing.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Attributes;
 
 using Orleans;
 

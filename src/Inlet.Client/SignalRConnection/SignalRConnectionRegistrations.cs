@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Reservoir;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client.SignalRConnection;

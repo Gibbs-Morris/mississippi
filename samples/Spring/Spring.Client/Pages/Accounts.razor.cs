@@ -3,7 +3,7 @@ using System.Globalization;
 
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.SignalRConnection;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Selectors;

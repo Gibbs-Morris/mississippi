@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Components;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Reservoir.Abstractions.Actions;
-using Mississippi.Reservoir.Blazor.BuiltIn.Navigation.Actions;
+using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 
 using Spring.Client.Features.BankAccountAggregate.Actions;
 using Spring.Client.Features.BankAccountAggregate.Selectors;

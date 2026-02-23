@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Public contracts and abstractions for common runtime storage providers.</Description>
+  </PropertyGroup>
+</Project>

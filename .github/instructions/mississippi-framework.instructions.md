@@ -153,7 +153,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
 ### Framework Attributes Reference
 
-Contributors **SHOULD** review all custom attributes under `src/` (particularly in `Inlet.Generators.Abstractions/` and `EventSourcing.Brooks.Abstractions/Attributes/`) to understand their behavior.
+Contributors **SHOULD** review all custom attributes under `src/` (particularly in `Inlet.Generators.Abstractions/` and `Brooks.Abstractions/Attributes/`) to understand their behavior.
 
 | Attribute | Purpose | When to Use | Relates To |
 |-----------|---------|-------------|------------|

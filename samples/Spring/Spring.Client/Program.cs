@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client;
-using Mississippi.Reservoir.Blazor;
-using Mississippi.Reservoir.Blazor.BuiltIn;
+using Mississippi.Reservoir.Client;
+using Mississippi.Reservoir.Client.BuiltIn;
 
 using Spring.Client;
 using Spring.Client.Features;

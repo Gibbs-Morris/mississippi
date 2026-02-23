@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Orleans.Sdk" PrivateAssets="all" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Public contracts and abstractions for DomainModeling (aggregates, sagas, and UX projections).</Description>
+  </PropertyGroup>
+</Project>

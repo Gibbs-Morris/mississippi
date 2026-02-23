@@ -6,14 +6,13 @@ using Crescent.Crescent.L2Tests.Domain.Counter;
 
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Brooks.Runtime;
+using Mississippi.Brooks.Runtime.Storage.Cosmos;
+using Mississippi.Brooks.Serialization.Json;
 using Mississippi.Common.Abstractions;
-using Mississippi.EventSourcing.Aggregates.Abstractions;
-using Mississippi.EventSourcing.Brooks;
-using Mississippi.EventSourcing.Brooks.Cosmos;
-using Mississippi.EventSourcing.Serialization.Json;
-using Mississippi.EventSourcing.Snapshots;
-using Mississippi.EventSourcing.Snapshots.Cosmos;
-using Mississippi.EventSourcing.UxProjections.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Tributary.Runtime;
+using Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 using Orleans;
 using Orleans.Configuration;

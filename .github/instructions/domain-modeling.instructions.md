@@ -6,7 +6,7 @@ applyTo: '**/*.cs'
 
 Governing thought: Use consistent, attribute-driven domain modeling with immutable aggregates, typed handlers, and projection reducers following the Mississippi framework patterns.
 
-> Drift check: Review `src/EventSourcing.Aggregates.Abstractions` and `src/EventSourcing.Reducers.Abstractions` for base class signatures before implementing handlers or reducers.
+> Drift check: Review `src/DomainModeling.Abstractions` and `src/Tributary.Abstractions` for base class signatures before implementing handlers or reducers.
 
 ## Rules (RFC 2119)
 

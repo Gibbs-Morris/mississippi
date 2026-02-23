@@ -5,12 +5,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Mississippi.Aqueduct;
-using Mississippi.EventSourcing.Aggregates;
-using Mississippi.EventSourcing.Serialization.Json;
-using Mississippi.EventSourcing.UxProjections;
-using Mississippi.Inlet.Server;
-using Mississippi.Inlet.Silo;
+using Mississippi.Aqueduct.Gateway;
+using Mississippi.Brooks.Serialization.Json;
+using Mississippi.DomainModeling.Runtime;
+using Mississippi.Inlet.Gateway;
+using Mississippi.Inlet.Runtime;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;

@@ -73,7 +73,7 @@ public sealed class CommandClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendUsing("Microsoft.Extensions.DependencyInjection");
         sb.AppendLine();
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
-        sb.AppendUsing("Mississippi.Reservoir");
+        sb.AppendUsing("Mississippi.Reservoir.Core");
         sb.AppendLine();
         sb.AppendLine($"using {aggregate.ActionsNamespace};");
         sb.AppendLine($"using {aggregate.DtosNamespace};");

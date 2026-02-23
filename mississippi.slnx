@@ -3,155 +3,138 @@
 
   <Folder Name="/Framework/Core/">
     <Project Path="src\Common.Abstractions\Common.Abstractions.csproj" />
-    <Project Path="src\Common.Cosmos.Abstractions\Common.Cosmos.Abstractions.csproj" />
-    <Project Path="src\Common.Cosmos\Common.Cosmos.csproj" />
+    <Project Path="src\Common.Runtime.Storage.Abstractions\Common.Runtime.Storage.Abstractions.csproj" />
+    <Project Path="src\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/Aqueduct/">
     <Project Path="src\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
-    <Project Path="src\Aqueduct\Aqueduct.csproj" />
-    <Project Path="src\Aqueduct.Grains\Aqueduct.Grains.csproj" />
+    <Project Path="src\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
+    <Project Path="src\Aqueduct.Runtime\Aqueduct.Runtime.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/" />
   <Folder Name="/Framework/EventSourcing/Aggregates/">
-    <Project Path="src\EventSourcing.Aggregates.Abstractions\EventSourcing.Aggregates.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.Aggregates\EventSourcing.Aggregates.csproj" />
-    <Project Path="src\EventSourcing.Aggregates.Api\EventSourcing.Aggregates.Api.csproj" />
+    <Project Path="src\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
+    <Project Path="src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
+    <Project Path="src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Brooks/">
-    <Project Path="src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.Brooks\EventSourcing.Brooks.csproj" />
-    <Project Path="src\EventSourcing.Brooks.Cosmos\EventSourcing.Brooks.Cosmos.csproj" />
-  </Folder>
-  <Folder Name="/Framework/EventSourcing/Reducers/">
-    <Project Path="src\EventSourcing.Reducers.Abstractions\EventSourcing.Reducers.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.Reducers\EventSourcing.Reducers.csproj" />
-  </Folder>
-  <Folder Name="/Framework/EventSourcing/Sagas/">
-    <Project Path="src\EventSourcing.Sagas.Abstractions\EventSourcing.Sagas.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.Sagas\EventSourcing.Sagas.csproj" />
+    <Project Path="src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    <Project Path="src\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
+    <Project Path="src\Brooks.Runtime\Brooks.Runtime.csproj" />
+    <Project Path="src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Serialization/">
-    <Project Path="src\EventSourcing.Serialization.Abstractions\EventSourcing.Serialization.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.Serialization.Json\EventSourcing.Serialization.Json.csproj" />
+    <Project Path="src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
+    <Project Path="src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Snapshots/">
-    <Project Path="src\EventSourcing.Snapshots.Abstractions\EventSourcing.Snapshots.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.Snapshots\EventSourcing.Snapshots.csproj" />
-    <Project Path="src\EventSourcing.Snapshots.Cosmos\EventSourcing.Snapshots.Cosmos.csproj" />
+    <Project Path="src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
   </Folder>
-  <Folder Name="/Framework/EventSourcing/UxProjections/">
-    <Project Path="src\EventSourcing.UxProjections.Abstractions\EventSourcing.UxProjections.Abstractions.csproj" />
-    <Project Path="src\EventSourcing.UxProjections\EventSourcing.UxProjections.csproj" />
-    <Project Path="src\EventSourcing.UxProjections.Api\EventSourcing.UxProjections.Api.csproj" />
+  <Folder Name="/Framework/EventSourcing/Tributary/">
+    <Project Path="src\Tributary.Abstractions\Tributary.Abstractions.csproj" />
+    <Project Path="src\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
+    <Project Path="src\Tributary.Runtime\Tributary.Runtime.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Testing/">
-    <Project Path="src\EventSourcing.Testing\Mississippi.EventSourcing.Testing.csproj" />
+    <Project Path="src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />
   </Folder>
   <Folder Name="/Framework/Refraction/">
     <Project Path="src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
-    <Project Path="src\Refraction\Refraction.csproj" />
-    <Project Path="src\Refraction.Pages\Refraction.Pages.csproj" />
+    <Project Path="src\Refraction.Client\Refraction.Client.csproj" />
+    <Project Path="src\Refraction.Client.StateManagement\Refraction.Client.StateManagement.csproj" />
   </Folder>
   <Folder Name="/Framework/Reservoir/">
     <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
-    <Project Path="src\Reservoir\Reservoir.csproj" />
-    <Project Path="src\Reservoir.Blazor\Reservoir.Blazor.csproj" />
-    <Project Path="src\Reservoir.Testing\Mississippi.Reservoir.Testing.csproj" />
+    <Project Path="src\Reservoir.Core\Reservoir.Core.csproj" />
+    <Project Path="src\Reservoir.Client\Reservoir.Client.csproj" />
+    <Project Path="src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
   </Folder>
   <Folder Name="/Framework/Inlet/">
     <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <Project Path="src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
-    <Project Path="src\Inlet.Server.Abstractions\Inlet.Server.Abstractions.csproj" />
-    <Project Path="src\Inlet.Silo.Abstractions\Inlet.Silo.Abstractions.csproj" />
+    <Project Path="src\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
+    <Project Path="src\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
     <Project Path="src\Inlet.Client\Inlet.Client.csproj" />
-    <Project Path="src\Inlet.Server\Inlet.Server.csproj" />
-    <Project Path="src\Inlet.Silo\Inlet.Silo.csproj" />
+    <Project Path="src\Inlet.Gateway\Inlet.Gateway.csproj" />
+    <Project Path="src\Inlet.Runtime\Inlet.Runtime.csproj" />
   </Folder>
   <Folder Name="/Framework/SDK/">
     <Project Path="src\Sdk.Client\Sdk.Client.csproj" />
-    <Project Path="src\Sdk.Server\Sdk.Server.csproj" />
-    <Project Path="src\Sdk.Silo\Sdk.Silo.csproj" />
+    <Project Path="src\Sdk.Gateway\Sdk.Gateway.csproj" />
+    <Project Path="src\Sdk.Runtime\Sdk.Runtime.csproj" />
     <Project Path="src\Inlet.Client.Generators\Inlet.Client.Generators.csproj" />
-    <Project Path="src\Inlet.Server.Generators\Inlet.Server.Generators.csproj" />
-    <Project Path="src\Inlet.Silo.Generators\Inlet.Silo.Generators.csproj" />
+    <Project Path="src\Inlet.Gateway.Generators\Inlet.Gateway.Generators.csproj" />
+    <Project Path="src\Inlet.Runtime.Generators\Inlet.Runtime.Generators.csproj" />
     <Project Path="src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <Project Path="src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
   </Folder>
   <Folder Name="/src/" />
   <Folder Name="/Tests/">
     <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />
-    <Project Path="tests/Inlet.Silo.Generators.L0Tests/Inlet.Silo.Generators.L0Tests.csproj" />
+    <Project Path="tests/Inlet.Runtime.Generators.L0Tests/Inlet.Runtime.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Tests/Core/">
     <Project Path="tests\Architecture.L0Tests\Architecture.L0Tests.csproj" />
     <Project Path="tests\Common.Abstractions.L0Tests\Common.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Common.Cosmos.L0Tests\Common.Cosmos.L0Tests.csproj" />
+    <Project Path="tests\Common.Runtime.Storage.Cosmos.L0Tests\Common.Runtime.Storage.Cosmos.L0Tests.csproj" />
     <Project Path="tests\Testing.Utilities\Testing.Utilities.csproj" />
   </Folder>
   <Folder Name="/Tests/Aqueduct/">
     <Project Path="tests\Aqueduct.Abstractions.L0Tests\Aqueduct.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Aqueduct.Grains.L0Tests\Aqueduct.Grains.L0Tests.csproj" />
-    <Project Path="tests\Aqueduct.L0Tests\Aqueduct.L0Tests.csproj" />
-    <Project Path="tests\Aqueduct.L2Tests\Aqueduct.L2Tests.csproj" />
-    <Project Path="tests\Aqueduct.L2Tests.AppHost\Aqueduct.L2Tests.AppHost.csproj" />
+    <Project Path="tests\Aqueduct.Runtime.L0Tests\Aqueduct.Runtime.L0Tests.csproj" />
+    <Project Path="tests\Aqueduct.Gateway.L0Tests\Aqueduct.Gateway.L0Tests.csproj" />
+    <Project Path="tests\Aqueduct.Gateway.L2Tests\Aqueduct.Gateway.L2Tests.csproj" />
+    <Project Path="tests\Aqueduct.Gateway.L2Tests.AppHost\Aqueduct.Gateway.L2Tests.AppHost.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/" />
   <Folder Name="/Tests/EventSourcing/Aggregates/">
-    <Project Path="tests\EventSourcing.Aggregates.Abstractions.L0Tests\EventSourcing.Aggregates.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Aggregates.Api.L0Tests\EventSourcing.Aggregates.Api.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Aggregates.L0Tests\EventSourcing.Aggregates.L0Tests.csproj" />
+    <Project Path="tests\DomainModeling.Abstractions.L0Tests\DomainModeling.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\DomainModeling.Runtime.L0Tests\DomainModeling.Runtime.L0Tests.csproj" />
+    <Project Path="tests\DomainModeling.Gateway.L0Tests\DomainModeling.Gateway.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Brooks/">
-    <Project Path="tests\EventSourcing.Brooks.Abstractions.L0Tests\EventSourcing.Brooks.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Brooks.L0Tests\EventSourcing.Brooks.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Brooks.Cosmos.L0Tests\EventSourcing.Brooks.Cosmos.L0Tests.csproj" />
-  </Folder>
-  <Folder Name="/Tests/EventSourcing/Reducers/">
-    <Project Path="tests\EventSourcing.Reducers.Abstractions.L0Tests\EventSourcing.Reducers.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Reducers.L0Tests\EventSourcing.Reducers.L0Tests.csproj" />
-  </Folder>
-  <Folder Name="/Tests/EventSourcing/Sagas/">
-    <Project Path="tests\EventSourcing.Sagas.L0Tests\EventSourcing.Sagas.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Abstractions.L0Tests\Brooks.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Runtime.Storage.Abstractions.L0Tests\Brooks.Runtime.Storage.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Runtime.L0Tests\Brooks.Runtime.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Runtime.Storage.Cosmos.L0Tests\Brooks.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Serialization/">
-    <Project Path="tests\EventSourcing.Serialization.L0Tests\EventSourcing.Serialization.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Serialization.Json.L0Tests\EventSourcing.Serialization.Json.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Serialization.Abstractions.L0Tests\Brooks.Serialization.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Serialization.Json.L0Tests\Brooks.Serialization.Json.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Snapshots/">
-    <Project Path="tests\EventSourcing.Snapshots.Abstractions.L0Tests\EventSourcing.Snapshots.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Snapshots.L0Tests\EventSourcing.Snapshots.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.Snapshots.Cosmos.L0Tests\EventSourcing.Snapshots.Cosmos.L0Tests.csproj" />
+    <Project Path="tests\Tributary.Runtime.Storage.Cosmos.L0Tests\Tributary.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
-  <Folder Name="/Tests/EventSourcing/UxProjections/">
-    <Project Path="tests\EventSourcing.UxProjections.Abstractions.L0Tests\EventSourcing.UxProjections.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.UxProjections.L0Tests\EventSourcing.UxProjections.L0Tests.csproj" />
-    <Project Path="tests\EventSourcing.UxProjections.Api.L0Tests\EventSourcing.UxProjections.Api.L0Tests.csproj" />
+  <Folder Name="/Tests/EventSourcing/Tributary/">
+    <Project Path="tests\Tributary.Abstractions.L0Tests\Tributary.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Tributary.Runtime.Storage.Abstractions.L0Tests\Tributary.Runtime.Storage.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\Tributary.Runtime.L0Tests\Tributary.Runtime.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Refraction/">
     <Project Path="tests\Refraction.Abstractions.L0Tests\Refraction.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Refraction.L0Tests\Refraction.L0Tests.csproj" />
-    <Project Path="tests\Refraction.Pages.L0Tests\Refraction.Pages.L0Tests.csproj" />
+    <Project Path="tests\Refraction.Client.L0Tests\Refraction.Client.L0Tests.csproj" />
+    <Project Path="tests\Refraction.Client.StateManagement.L0Tests\Refraction.Client.StateManagement.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Reservoir/">
     <Project Path="tests\Reservoir.Abstractions.L0Tests\Reservoir.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Reservoir.Blazor.L0Tests\Reservoir.Blazor.L0Tests.csproj" />
-    <Project Path="tests\Reservoir.L0Tests\Reservoir.L0Tests.csproj" />
-    <Project Path="tests\Reservoir.Testing.L0Tests\Reservoir.Testing.L0Tests.csproj" />
+    <Project Path="tests\Reservoir.Client.L0Tests\Reservoir.Client.L0Tests.csproj" />
+    <Project Path="tests\Reservoir.Core.L0Tests\Reservoir.Core.L0Tests.csproj" />
+    <Project Path="tests\Reservoir.TestHarness.L0Tests\Reservoir.TestHarness.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Inlet/">
     <Project Path="tests\Inlet.Abstractions.L0Tests\Inlet.Abstractions.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Blazor.Server.L0Tests\Inlet.Blazor.Server.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Gateway.Abstractions.L0Tests\Inlet.Gateway.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Inlet.Client.L0Tests\Inlet.Client.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Silo.L0Tests\Inlet.Silo.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Server.L0Tests\Inlet.Server.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Runtime.L0Tests\Inlet.Runtime.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Gateway.L0Tests\Inlet.Gateway.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/SDK/">
     <Project Path="tests\Sdk.Client.L0Tests\Sdk.Client.L0Tests.csproj" />
-    <Project Path="tests\Sdk.Server.L0Tests\Sdk.Server.L0Tests.csproj" />
-    <Project Path="tests\Sdk.Silo.L0Tests\Sdk.Silo.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Gateway.L0Tests\Sdk.Gateway.L0Tests.csproj" />
+    <Project Path="tests\Sdk.Runtime.L0Tests\Sdk.Runtime.L0Tests.csproj" />
     <Project Path="tests\Inlet.Client.Generators.L0Tests\Inlet.Client.Generators.L0Tests.csproj" />
-    <Project Path="tests\Inlet.Server.Generators.L0Tests\Inlet.Server.Generators.L0Tests.csproj" />
+    <Project Path="tests\Inlet.Gateway.Generators.L0Tests\Inlet.Gateway.Generators.L0Tests.csproj" />
   </Folder>
 
   <Folder Name="/Workflows/">
