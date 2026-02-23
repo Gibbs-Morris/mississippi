@@ -5,6 +5,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.DomainModeling.Abstractions;
 

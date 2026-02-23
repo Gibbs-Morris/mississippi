@@ -5,7 +5,6 @@
     <PackageReference Include="Microsoft.Orleans.Sdk" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
     <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
     <ProjectReference Include="..\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />

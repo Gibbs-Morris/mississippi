@@ -2,10 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-using Mississippi.Brooks.Abstractions;
-
-
-namespace Mississippi.DomainModeling.Abstractions;
+namespace Mississippi.Brooks.Abstractions;
 
 /// <summary>
 ///     Provides bidirectional conversion between domain events and <see cref="BrookEvent" /> storage format.
@@ -17,7 +14,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 ///         domain events during aggregate hydration or projection processing.
 ///     </para>
 ///     <para>
-///         The converter uses <see cref="IEventTypeRegistry" /> for stable event type name resolution
+///         Implementations typically use an event type registry for stable event type name resolution
 ///         and a serialization provider for payload encoding/decoding.
 ///     </para>
 /// </remarks>
