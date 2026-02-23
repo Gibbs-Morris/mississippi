@@ -686,10 +686,7 @@ public class AggregateControllerGeneratorTests
         Assert.Contains("using Microsoft.AspNetCore.Mvc;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Microsoft.Extensions.Logging;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Mississippi.Common.Abstractions.Mapping;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains(
-            "using Mississippi.DomainModeling.Abstractions;",
-            generatedCode,
-            StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.DomainModeling.Abstractions;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using Mississippi.DomainModeling.Gateway;", generatedCode, StringComparison.Ordinal);
     }
 
