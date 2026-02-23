@@ -109,6 +109,30 @@ module-event-sourcing:
       - all-globs-to-any-file:
           - "tests/EventSourcing*/**"
           - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "src/Brooks*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Brooks*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "src/Tributary*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Tributary*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "src/DomainModeling*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/DomainModeling*/**"
+          - "!**/*.lock.json"
 
 module-inlet:
   - any:
