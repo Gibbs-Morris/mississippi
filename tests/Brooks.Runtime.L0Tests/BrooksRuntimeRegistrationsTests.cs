@@ -14,9 +14,9 @@ using Mississippi.Common.Abstractions;
 namespace Mississippi.Brooks.Runtime.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="EventSourcingRegistrations" /> extension methods.
+///     Tests for <see cref="BrooksRuntimeRegistrations" /> extension methods.
 /// </summary>
-public sealed class EventSourcingRegistrationsTests
+public sealed class BrooksRuntimeRegistrationsTests
 {
     /// <summary>
     ///     Verifies that <c>AddEventSourcingByService</c> uses default stream provider name.

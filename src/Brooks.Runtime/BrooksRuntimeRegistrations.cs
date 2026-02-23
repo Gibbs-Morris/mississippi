@@ -14,12 +14,12 @@ using Orleans.Hosting;
 namespace Mississippi.Brooks.Runtime;
 
 /// <summary>
-///     Extension methods for registering EventSourcing services in dependency injection.
+///     Extension methods for registering Brooks runtime services in dependency injection.
 /// </summary>
-public static class EventSourcingRegistrations
+public static class BrooksRuntimeRegistrations
 {
     /// <summary>
-    ///     Configures Orleans silo to support event sourcing grains.
+    ///     Configures Orleans silo to support Brooks runtime grains.
     /// </summary>
     /// <param name="builder">The Orleans silo builder.</param>
     /// <param name="configureOptions">
@@ -58,8 +58,8 @@ public static class EventSourcingRegistrations
     }
 
     /// <summary>
-    ///     Adds event sourcing services to the host application builder.
-    ///     This is a convenience method that adds event sourcing to both the service collection
+    ///     Adds Brooks runtime services to the host application builder.
+    ///     This is a convenience method that adds Brooks runtime services to both the service collection
     ///     and configures the Orleans silo.
     /// </summary>
     /// <param name="builder">The host application builder.</param>
@@ -91,8 +91,8 @@ public static class EventSourcingRegistrations
     }
 
     /// <summary>
-    ///     Adds the core event sourcing services to the service collection.
-    ///     This registers the Orleans grain factory and reader options needed for event sourcing.
+    ///     Adds the core Brooks runtime services to the service collection.
+    ///     This registers the Orleans grain factory and reader options needed for Brooks runtime.
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
     /// <returns>The modified service collection for chaining.</returns>
