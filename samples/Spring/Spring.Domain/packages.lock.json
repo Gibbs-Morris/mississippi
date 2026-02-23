@@ -476,22 +476,7 @@
         "resolved": "10.0.0",
         "contentHash": "r+m+05b+TndDQIN6/yMkotk7wNsUPpYgLKOac8QR9DdU9gcPTJIU1RoyXY8otCqPxH55XF4hewEt6lJu0lSz3Q=="
       },
-      "Mississippi.Common.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
-          "Microsoft.Orleans.Sdk": "[10.0.1, )"
-        }
-      },
-      "Mississippi.EventSourcing.Aggregates.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.Options": "[10.0.3, )",
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.Brooks.Abstractions": {
+      "Mississippi.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
@@ -503,22 +488,20 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.EventSourcing.Reducers.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.EventSourcing.Sagas.Abstractions": {
+      "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
-      "Mississippi.EventSourcing.UxProjections.Abstractions": {
+      "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
+          "Microsoft.Extensions.Options": "[10.0.3, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
@@ -527,6 +510,13 @@
       },
       "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
+      },
+      "Mississippi.Tributary.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+        }
       },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",

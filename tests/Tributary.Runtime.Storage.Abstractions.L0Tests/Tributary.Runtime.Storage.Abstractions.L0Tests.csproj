@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

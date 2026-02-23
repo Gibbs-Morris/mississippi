@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
+    <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
+    <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Tributary runtime providing reducer and snapshot implementations.</Description>
+  </PropertyGroup>
+</Project>

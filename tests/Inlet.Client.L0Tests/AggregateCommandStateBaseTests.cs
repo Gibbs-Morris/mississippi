@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 
 using Mississippi.Inlet.Client.Abstractions.Commands;
+using Mississippi.Inlet.Client.L0Tests.Helpers;
 
 
 namespace Mississippi.Inlet.Client.L0Tests;

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Sdk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Public contracts and abstractions for the Tributary subsystem (reducers and snapshots).</Description>
+  </PropertyGroup>
+</Project>

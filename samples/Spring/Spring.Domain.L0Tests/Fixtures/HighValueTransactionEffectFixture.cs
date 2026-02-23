@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount;
 using Spring.Domain.Aggregates.BankAccount.Effects;

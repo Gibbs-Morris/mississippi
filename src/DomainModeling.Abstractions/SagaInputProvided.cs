@@ -1,0 +1,30 @@
+using System;
+
+using Mississippi.Brooks.Abstractions.Attributes;
+
+using Orleans;
+
+
+namespace Mississippi.DomainModeling.Abstractions;
+
+/// <summary>
+///     Event emitted when a saga input payload is captured.
+/// </summary>
+/// <typeparam name="TInput">The saga input type.</typeparam>
+[GenerateSerializer]
+[Alias("Mississippi.DomainModeling.Abstractions.SagaInputProvided`1")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGAINPUTPROVIDED")]
+public sealed record SagaInputProvided<TInput>
+{
+    /// <summary>
+    ///     Gets the saga input payload.
+    /// </summary>
+    [Id(1)]
+    public required TInput Input { get; init; }
+
+    /// <summary>
+    ///     Gets the saga identifier.
+    /// </summary>
+    [Id(0)]
+    public required Guid SagaId { get; init; }
+}

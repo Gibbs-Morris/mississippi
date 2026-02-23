@@ -1,4 +1,4 @@
-using Mississippi.Inlet.Server.Abstractions;
+using Mississippi.Inlet.Gateway.Abstractions;
 
 
 namespace Mississippi.Inlet.Abstractions.L0Tests;

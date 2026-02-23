@@ -1,7 +1,7 @@
 using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
 using Crescent.Crescent.L2Tests.Domain.Counter.Events;
 
-using Mississippi.EventSourcing.Aggregates.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 
 namespace Crescent.Crescent.L2Tests.Domain.Counter.Handlers;

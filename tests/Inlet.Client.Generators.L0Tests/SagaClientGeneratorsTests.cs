@@ -29,7 +29,7 @@ public sealed class SagaClientGeneratorsTests
                                               }
                                           }
 
-                                          namespace Mississippi.EventSourcing.Sagas.Abstractions
+                                          namespace Mississippi.DomainModeling.Abstractions
                                           {
                                               public interface ISagaState
                                               {
@@ -107,7 +107,7 @@ public sealed class SagaClientGeneratorsTests
     public void ActionEffectsGeneratorProducesActionEffect()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -142,7 +142,7 @@ public sealed class SagaClientGeneratorsTests
     public void ActionEffectsGeneratorUsesExplicitRoutePrefix()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -173,7 +173,7 @@ public sealed class SagaClientGeneratorsTests
     public void ActionsGeneratorProducesStartSagaActions()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -209,7 +209,7 @@ public sealed class SagaClientGeneratorsTests
     public void DtoGeneratorProducesStartSagaDto()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -246,7 +246,7 @@ public sealed class SagaClientGeneratorsTests
     public void GeneratorDefaultsRoutePrefixAndFeatureKey()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -283,7 +283,7 @@ public sealed class SagaClientGeneratorsTests
     public void GeneratorSkipsSagaWithoutInputType()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -337,7 +337,7 @@ public sealed class SagaClientGeneratorsTests
     public void HelperProvidesSagaMetadataAccessors()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -392,7 +392,7 @@ public sealed class SagaClientGeneratorsTests
     public void HelperUsesSagaNamespaceWhenTargetRootNamespaceEmpty()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -422,7 +422,7 @@ public sealed class SagaClientGeneratorsTests
     public void MapperGeneratorProducesMapper()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -458,7 +458,7 @@ public sealed class SagaClientGeneratorsTests
     public void ReducersGeneratorProducesReducers()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -493,7 +493,7 @@ public sealed class SagaClientGeneratorsTests
     public void RegistrationGeneratorProducesFeatureRegistration()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas
@@ -526,7 +526,7 @@ public sealed class SagaClientGeneratorsTests
     public void StateGeneratorUsesExplicitFeatureKey()
     {
         const string sagaSource = """
-                                  using Mississippi.EventSourcing.Sagas.Abstractions;
+                                  using Mississippi.DomainModeling.Abstractions;
                                   using Mississippi.Inlet.Generators.Abstractions;
 
                                   namespace TestApp.Domain.Sagas

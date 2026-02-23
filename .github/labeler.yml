@@ -99,15 +99,37 @@ module-common:
           - "tests/Common*/**"
           - "!**/*.lock.json"
 
-module-event-sourcing:
+module-domain-modeling:
   - any:
     - changed-files:
       - all-globs-to-any-file:
-          - "src/EventSourcing*/**"
+          - "src/DomainModeling*/**"
           - "!**/*.lock.json"
     - changed-files:
       - all-globs-to-any-file:
-          - "tests/EventSourcing*/**"
+          - "tests/DomainModeling*/**"
+          - "!**/*.lock.json"
+
+module-brooks:
+  - any:
+    - changed-files:
+      - all-globs-to-any-file:
+          - "src/Brooks*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Brooks*/**"
+          - "!**/*.lock.json"
+
+module-tributary:
+  - any:
+    - changed-files:
+      - all-globs-to-any-file:
+          - "src/Tributary*/**"
+          - "!**/*.lock.json"
+    - changed-files:
+      - all-globs-to-any-file:
+          - "tests/Tributary*/**"
           - "!**/*.lock.json"
 
 module-inlet:

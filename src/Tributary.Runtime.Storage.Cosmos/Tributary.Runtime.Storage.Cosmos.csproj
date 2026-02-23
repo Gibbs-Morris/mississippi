@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Azure Cosmos DB provider for Tributary.Runtime storage.</Description>
+  </PropertyGroup>
+</Project>

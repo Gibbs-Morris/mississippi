@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="CloudNative.CloudEvents"/>
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj"/>
+    </ItemGroup>
+</Project>

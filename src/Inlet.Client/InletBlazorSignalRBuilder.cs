@@ -11,7 +11,7 @@ using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.SignalRConnection;
-using Mississippi.Reservoir;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client;

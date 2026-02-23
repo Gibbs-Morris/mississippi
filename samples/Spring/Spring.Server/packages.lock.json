@@ -479,14 +479,6 @@
         "resolved": "4.5.0",
         "contentHash": "wLBKzFnDCxP12VL9ANydSYhk59fC4cvOr9ypYQLPnAj48NQIhqnjdD2yhP8yEKyBJEjERWS9DisKL7rX5eU25Q=="
       },
-      "Mississippi.Aqueduct": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
-        }
-      },
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -494,45 +486,15 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Common.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )"
-        }
-      },
-      "Mississippi.EventSourcing.Aggregates": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
-          "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
-          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.Aggregates.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.Aggregates.Api": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.Brooks": {
+      "Mississippi.Aqueduct.Gateway": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.EventSourcing.Brooks.Abstractions": {
+      "Mississippi.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
@@ -541,81 +503,61 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.EventSourcing.Reducers": {
+      "Mississippi.Brooks.Runtime": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Microsoft.Orleans.Streaming": "[10.0.1, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.EventSourcing.Reducers.Abstractions": {
+      "Mississippi.Brooks.Runtime.Storage.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Brooks.Serialization.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.EventSourcing.Sagas": {
+      "Mississippi.Brooks.Serialization.Json": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
-          "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
-          "Mississippi.EventSourcing.Sagas.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.EventSourcing.Sagas.Abstractions": {
+      "Mississippi.Common.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
+        }
+      },
+      "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.Serialization.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.EventSourcing.Serialization.Json": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.Snapshots": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
-          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Serialization.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.Snapshots.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.UxProjections": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks": "[1.0.0, )",
-          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Snapshots.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.EventSourcing.UxProjections.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.EventSourcing.UxProjections.Api": {
+      "Mississippi.DomainModeling.Gateway": {
         "type": "Project",
         "dependencies": {
           "Mississippi.Common.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
+          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.DomainModeling.Runtime": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Mississippi.Brooks.Runtime": "[1.0.0, )",
+          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Runtime": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Abstractions": {
@@ -628,9 +570,9 @@
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.3, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Client.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir": "[1.0.0, )",
-          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+          "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Client": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Client.Abstractions": {
@@ -640,54 +582,54 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
+      "Mississippi.Inlet.Gateway": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Aqueduct.Gateway": "[1.0.0, )",
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Runtime": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Inlet.Gateway.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Inlet.Server": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Aqueduct": "[1.0.0, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Silo": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Inlet.Server.Abstractions": {
-        "type": "Project"
-      },
-      "Mississippi.Inlet.Silo": {
+      "Mississippi.Inlet.Runtime": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Sagas": "[1.0.0, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Server.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Silo.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
+          "Mississippi.Inlet.Runtime.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Silo.Abstractions": {
+      "Mississippi.Inlet.Runtime.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Reservoir": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
-        }
-      },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
-      "Mississippi.Reservoir.Blazor": {
+      "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Reservoir": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.Core": {
+        "type": "Project",
+        "dependencies": {
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
@@ -697,22 +639,19 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Client": "[1.0.0, )",
           "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir": "[1.0.0, )",
-          "Mississippi.Reservoir.Blazor": "[1.0.0, )"
+          "Mississippi.Reservoir.Client": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
-      "Mississippi.Sdk.Server": {
+      "Mississippi.Sdk.Gateway": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.EventSourcing.Aggregates": "[1.0.0, )",
-          "Mississippi.EventSourcing.Aggregates.Api": "[1.0.0, )",
-          "Mississippi.EventSourcing.Reducers": "[1.0.0, )",
-          "Mississippi.EventSourcing.Serialization.Json": "[1.0.0, )",
-          "Mississippi.EventSourcing.Snapshots": "[1.0.0, )",
-          "Mississippi.EventSourcing.UxProjections": "[1.0.0, )",
-          "Mississippi.EventSourcing.UxProjections.Api": "[1.0.0, )",
+          "Mississippi.Brooks.Serialization.Json": "[1.0.0, )",
+          "Mississippi.DomainModeling.Gateway": "[1.0.0, )",
+          "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
+          "Mississippi.Inlet.Gateway": "[1.0.0, )",
           "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Server": "[1.0.0, )"
+          "Mississippi.Tributary.Runtime": "[1.0.0, )"
         }
       },
       "Mississippi.Spring.Client": {
@@ -729,14 +668,36 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Aggregates.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Reducers.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.Sagas.Abstractions": "[1.0.0, )",
-          "Mississippi.EventSourcing.UxProjections.Abstractions": "[1.0.0, )",
+          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )"
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Tributary.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Tributary.Runtime": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Mississippi.Brooks.Runtime": "[1.0.0, )",
+          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Tributary.Runtime.Storage.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Tributary.Abstractions": "[1.0.0, )"
         }
       },
       "CloudNative.CloudEvents": {

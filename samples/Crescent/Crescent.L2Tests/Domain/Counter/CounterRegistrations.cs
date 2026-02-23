@@ -5,10 +5,8 @@ using Crescent.Crescent.L2Tests.Domain.Counter.Reducers;
 using Crescent.Crescent.L2Tests.Domain.CounterSummary;
 using Crescent.Crescent.L2Tests.Domain.CounterSummary.Reducers;
 
-using Mississippi.EventSourcing.Aggregates;
-using Mississippi.EventSourcing.Reducers;
-using Mississippi.EventSourcing.Snapshots;
-using Mississippi.EventSourcing.UxProjections;
+using Mississippi.DomainModeling.Runtime;
+using Mississippi.Tributary.Runtime;
 
 
 namespace Crescent.Crescent.L2Tests.Domain.Counter;

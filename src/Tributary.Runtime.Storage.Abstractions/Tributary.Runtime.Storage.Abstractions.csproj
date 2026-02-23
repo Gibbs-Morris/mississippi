@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Interfaces for snapshot storage providers: ISnapshotStorageProvider, ISnapshotStorageReader, and ISnapshotStorageWriter.</Description>
+  </PropertyGroup>
+</Project>

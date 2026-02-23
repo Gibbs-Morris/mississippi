@@ -16,7 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\EventSourcing.Brooks.Abstractions\EventSourcing.Brooks.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

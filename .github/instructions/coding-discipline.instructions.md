@@ -6,7 +6,7 @@ applyTo: 'samples/**'
 
 Governing thought: Sample applications follow strict architectural patterns—Redux on client, aggregates/projections on server, schema-first generation throughout. Deviations are refused.
 
-> Drift check: Review `samples/Spring/` for reference patterns; `src/Reservoir/` for client state; `src/EventSourcing.Aggregates/` for server patterns.
+> Drift check: Review `samples/Spring/` for reference patterns; `src/Reservoir/` for client state; `src/DomainModeling.Runtime/` for server patterns.
 
 ## Rules (RFC 2119)
 

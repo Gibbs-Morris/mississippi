@@ -2,7 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount.Events;
 

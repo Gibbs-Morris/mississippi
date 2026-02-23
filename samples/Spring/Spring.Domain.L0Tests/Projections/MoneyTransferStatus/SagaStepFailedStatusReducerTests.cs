@@ -1,4 +1,4 @@
-using Mississippi.EventSourcing.Sagas.Abstractions;
+using Mississippi.DomainModeling.Abstractions;
 
 using Spring.Domain.Projections.MoneyTransferStatus;
 using Spring.Domain.Projections.MoneyTransferStatus.Reducers;

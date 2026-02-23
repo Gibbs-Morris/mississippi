@@ -3,8 +3,8 @@ using LightSpeed.Client;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
-using Mississippi.Reservoir;
-using Mississippi.Reservoir.Blazor;
+using Mississippi.Reservoir.Client;
+using Mississippi.Reservoir.Core;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);

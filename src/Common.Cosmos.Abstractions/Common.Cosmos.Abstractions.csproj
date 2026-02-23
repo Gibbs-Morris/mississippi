@@ -1,5 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <Description>Public contracts and abstractions for Common.Cosmos.</Description>
-  </PropertyGroup>
-</Project>

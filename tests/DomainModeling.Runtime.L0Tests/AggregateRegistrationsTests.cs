@@ -1,0 +1,593 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Microsoft.Extensions.DependencyInjection;
+
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.DomainModeling.Abstractions;
+
+
+namespace Mississippi.DomainModeling.Runtime.L0Tests;
+
+/// <summary>
+///     Tests for <see cref="AggregateRegistrations" />.
+/// </summary>
+public class AggregateRegistrationsTests
+{
+    /// <summary>
+    ///     Test command record.
+    /// </summary>
+    /// <param name="Value">The command value.</param>
+    private sealed record TestCommand(string Value);
+
+    /// <summary>
+    ///     Test command handler.
+    /// </summary>
+    private sealed class TestCommandHandler : ICommandHandler<TestCommand, TestState>
+    {
+        /// <inheritdoc />
+        public OperationResult<IReadOnlyList<object>> Handle(
+            TestCommand command,
+            TestState? state
+        ) =>
+            OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>());
+
+        /// <inheritdoc />
+        public bool TryHandle(
+            object command,
+            TestState? state,
+            out OperationResult<IReadOnlyList<object>> result
+        )
+        {
+            if (command is TestCommand typedCommand)
+            {
+                result = Handle(typedCommand, state);
+                return true;
+            }
+
+            result = default!;
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     Test event class.
+    /// </summary>
+    [EventStorageName("TEST", "APP", "TESTEVENT")]
+    private sealed class TestEvent;
+
+    /// <summary>
+    ///     Test event effect implementation.
+    /// </summary>
+    private sealed class TestEventEffect : EventEffectBase<TestEvent, TestState>
+    {
+        /// <inheritdoc />
+        public override IAsyncEnumerable<object> HandleAsync(
+            TestEvent eventData,
+            TestState currentState,
+            string brookKey,
+            long eventPosition,
+            CancellationToken cancellationToken
+        ) =>
+            AsyncEnumerable.Empty<object>();
+    }
+
+    /// <summary>
+    ///     Test fire-and-forget event effect implementation.
+    /// </summary>
+    private sealed class TestFireAndForgetEffect : IFireAndForgetEventEffect<TestEvent, TestState>
+    {
+        /// <inheritdoc />
+        public Task HandleAsync(
+            TestEvent eventData,
+            TestState aggregateState,
+            string brookKey,
+            long eventPosition,
+            CancellationToken cancellationToken
+        ) =>
+            Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///     Test snapshot class.
+    /// </summary>
+    [SnapshotStorageName("TEST", "APP", "TESTSNAPSHOT")]
+    private sealed class TestSnapshot;
+
+    /// <summary>
+    ///     Test state record.
+    /// </summary>
+    /// <param name="Count">The state count.</param>
+    private sealed record TestState(int Count);
+
+    /// <summary>
+    ///     AddAggregateSupport should register IEventTypeRegistry.
+    /// </summary>
+    [Fact]
+    public void AddAggregateSupportRegistersEventTypeRegistry()
+    {
+        ServiceCollection services = new();
+        services.AddAggregateSupport();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
+        Assert.NotNull(registry);
+        Assert.IsType<EventTypeRegistry>(registry);
+    }
+
+    /// <summary>
+    ///     AddAggregateSupport should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void AddAggregateSupportReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.AddAggregateSupport();
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddAggregateSupport should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddAggregateSupportThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() => services!.AddAggregateSupport());
+    }
+
+    /// <summary>
+    ///     AddCommandHandler with class should register the handler.
+    /// </summary>
+    [Fact]
+    public void AddCommandHandlerWithClassRegistersHandler()
+    {
+        ServiceCollection services = new();
+        services.AddCommandHandler<TestCommand, TestState, TestCommandHandler>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ICommandHandler<TestCommand, TestState>? handler =
+            provider.GetService<ICommandHandler<TestCommand, TestState>>();
+        Assert.NotNull(handler);
+        Assert.IsType<TestCommandHandler>(handler);
+    }
+
+    /// <summary>
+    ///     AddCommandHandler with class should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddCommandHandlerWithClassThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() =>
+            services!.AddCommandHandler<TestCommand, TestState, TestCommandHandler>());
+    }
+
+    /// <summary>
+    ///     AddCommandHandler with delegate should register the handler.
+    /// </summary>
+    [Fact]
+    public void AddCommandHandlerWithDelegateRegistersHandler()
+    {
+        ServiceCollection services = new();
+        bool delegateCalled = false;
+        services.AddCommandHandler<TestCommand, TestState>((
+            _,
+            _
+        ) =>
+        {
+            delegateCalled = true;
+            return OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>());
+        });
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ICommandHandler<TestCommand, TestState>? handler =
+            provider.GetService<ICommandHandler<TestCommand, TestState>>();
+        Assert.NotNull(handler);
+        handler.Handle(new("test"), null);
+        Assert.True(delegateCalled);
+    }
+
+    /// <summary>
+    ///     AddCommandHandler with delegate should throw when handler is null.
+    /// </summary>
+    [Fact]
+    public void AddCommandHandlerWithDelegateThrowsWhenHandlerIsNull()
+    {
+        ServiceCollection services = new();
+        Assert.Throws<ArgumentNullException>(() => services.AddCommandHandler<TestCommand, TestState>(null!));
+    }
+
+    /// <summary>
+    ///     AddCommandHandler with delegate should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddCommandHandlerWithDelegateThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() => services!.AddCommandHandler<TestCommand, TestState>((
+            _,
+            _
+        ) => OperationResult.Ok<IReadOnlyList<object>>(Array.Empty<object>())));
+    }
+
+    /// <summary>
+    ///     AddEventEffect should register the effect in DI.
+    /// </summary>
+    [Fact]
+    public void AddEventEffectRegistersEffectInDI()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddEventEffect<TestEventEffect, TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEnumerable<IEventEffect<TestState>> effects = provider.GetServices<IEventEffect<TestState>>();
+
+        // Assert
+        Assert.Single(effects);
+        Assert.IsType<TestEventEffect>(effects.First());
+    }
+
+    /// <summary>
+    ///     AddEventEffect should register root event effect.
+    /// </summary>
+    [Fact]
+    public void AddEventEffectRegistersRootEventEffect()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddEventEffect<TestEventEffect, TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IRootEventEffect<TestState>? rootEffect = provider.GetService<IRootEventEffect<TestState>>();
+
+        // Assert
+        Assert.NotNull(rootEffect);
+        Assert.IsType<RootEventEffect<TestState>>(rootEffect);
+    }
+
+    /// <summary>
+    ///     AddEventEffect should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddEventEffectThrowsWhenServicesIsNull()
+    {
+        // Arrange
+        IServiceCollection? services = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => services!.AddEventEffect<TestEventEffect, TestState>());
+    }
+
+    /// <summary>
+    ///     AddEventType should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.AddEventType<TestEvent>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     AddEventType should register the event with the registry.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeRegistersEventWithRegistry()
+    {
+        ServiceCollection services = new();
+        services.AddEventType<TestEvent>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
+        string eventName = EventStorageNameHelper.GetStorageName<TestEvent>();
+        Assert.Equal(typeof(TestEvent), registry.ResolveType(eventName));
+    }
+
+    /// <summary>
+    ///     AddEventType should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.AddEventType<TestEvent>();
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddEventType should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddEventTypeThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() => services!.AddEventType<TestEvent>());
+    }
+
+    /// <summary>
+    ///     AddFireAndForgetEventEffect should register the effect in DI.
+    /// </summary>
+    [Fact]
+    public void AddFireAndForgetEventEffectRegistersEffectInDI()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IFireAndForgetEventEffect<TestEvent, TestState>? effect =
+            provider.GetService<IFireAndForgetEventEffect<TestEvent, TestState>>();
+
+        // Assert
+        Assert.NotNull(effect);
+        Assert.IsType<TestFireAndForgetEffect>(effect);
+    }
+
+    /// <summary>
+    ///     AddFireAndForgetEventEffect should register the effect registration for grain discovery.
+    /// </summary>
+    [Fact]
+    public void AddFireAndForgetEventEffectRegistersEffectRegistration()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEnumerable<IFireAndForgetEffectRegistration<TestState>> registrations =
+            provider.GetServices<IFireAndForgetEffectRegistration<TestState>>();
+
+        // Assert
+        IFireAndForgetEffectRegistration<TestState>? registration = registrations.SingleOrDefault();
+        Assert.NotNull(registration);
+        Assert.Equal(typeof(TestEvent), registration.EventType);
+        Assert.Equal(typeof(TestFireAndForgetEffect).FullName, registration.EffectTypeName);
+    }
+
+    /// <summary>
+    ///     AddFireAndForgetEventEffect should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void AddFireAndForgetEventEffectReturnsServiceCollection()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        IServiceCollection result =
+            services.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>();
+
+        // Assert
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddFireAndForgetEventEffect should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddFireAndForgetEventEffectThrowsWhenServicesIsNull()
+    {
+        // Arrange
+        IServiceCollection? services = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() =>
+            services!.AddFireAndForgetEventEffect<TestFireAndForgetEffect, TestEvent, TestState>());
+    }
+
+    /// <summary>
+    ///     AddRootCommandHandler should register the handler.
+    /// </summary>
+    [Fact]
+    public void AddRootCommandHandlerRegistersHandler()
+    {
+        ServiceCollection services = new();
+        services.AddAggregateSupport();
+        services.AddRootCommandHandler<TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IRootCommandHandler<TestState>? handler = provider.GetService<IRootCommandHandler<TestState>>();
+        Assert.NotNull(handler);
+    }
+
+    /// <summary>
+    ///     AddRootEventEffect should register root event effect.
+    /// </summary>
+    [Fact]
+    public void AddRootEventEffectRegistersRootEventEffect()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddRootEventEffect<TestState>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IRootEventEffect<TestState>? rootEffect = provider.GetService<IRootEventEffect<TestState>>();
+
+        // Assert
+        Assert.NotNull(rootEffect);
+    }
+
+    /// <summary>
+    ///     AddRootEventEffect should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddRootEventEffectThrowsWhenServicesIsNull()
+    {
+        // Arrange
+        IServiceCollection? services = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => services!.AddRootEventEffect<TestState>());
+    }
+
+    /// <summary>
+    ///     AddSnapshotType should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotTypeRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.AddSnapshotType<TestSnapshot>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     AddSnapshotType should register the snapshot with the registry.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotTypeRegistersSnapshotWithRegistry()
+    {
+        ServiceCollection services = new();
+        services.AddSnapshotType<TestSnapshot>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotTypeRegistry registry = provider.GetRequiredService<ISnapshotTypeRegistry>();
+        string snapshotName = SnapshotStorageNameHelper.GetStorageName<TestSnapshot>();
+        Assert.Equal(typeof(TestSnapshot), registry.ResolveType(snapshotName));
+    }
+
+    /// <summary>
+    ///     AddSnapshotType should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotTypeReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.AddSnapshotType<TestSnapshot>();
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     AddSnapshotType should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void AddSnapshotTypeThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() => services!.AddSnapshotType<TestSnapshot>());
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly);
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes should throw when assembly is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesThrowsWhenAssemblyIsNull()
+    {
+        ServiceCollection services = new();
+        Assert.Throws<ArgumentNullException>(() => services.ScanAssemblyForEventTypes(null!));
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() => services!.ScanAssemblyForEventTypes(typeof(TestEvent).Assembly));
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForEventTypes with marker type should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForEventTypesWithMarkerRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.ScanAssemblyForEventTypes<TestEvent>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry? registry = provider.GetService<IEventTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes should return the service collection for chaining.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesReturnsServiceCollection()
+    {
+        ServiceCollection services = new();
+        IServiceCollection result = services.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly);
+        Assert.Same(services, result);
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes should throw when assembly is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesThrowsWhenAssemblyIsNull()
+    {
+        ServiceCollection services = new();
+        Assert.Throws<ArgumentNullException>(() => services.ScanAssemblyForSnapshotTypes(null!));
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes should throw when services is null.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesThrowsWhenServicesIsNull()
+    {
+        IServiceCollection? services = null;
+        Assert.Throws<ArgumentNullException>(() =>
+            services!.ScanAssemblyForSnapshotTypes(typeof(TestSnapshot).Assembly));
+    }
+
+    /// <summary>
+    ///     ScanAssemblyForSnapshotTypes with marker type should register aggregate support.
+    /// </summary>
+    [Fact]
+    public void ScanAssemblyForSnapshotTypesWithMarkerRegistersAggregateSupport()
+    {
+        ServiceCollection services = new();
+        services.ScanAssemblyForSnapshotTypes<TestSnapshot>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotTypeRegistry? registry = provider.GetService<ISnapshotTypeRegistry>();
+        Assert.NotNull(registry);
+    }
+}

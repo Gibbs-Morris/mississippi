@@ -1,4 +1,4 @@
-using Mississippi.Inlet.Silo.Abstractions;
+using Mississippi.Inlet.Runtime.Abstractions;
 
 
 namespace Mississippi.Inlet.Abstractions.L0Tests;

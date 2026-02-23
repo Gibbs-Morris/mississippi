@@ -1,6 +1,6 @@
 using System;
 
-using Mississippi.EventSourcing.Reducers.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 using Spring.Domain.Aggregates.BankAccount.Events;
 
