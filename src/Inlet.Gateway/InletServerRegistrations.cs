@@ -1,10 +1,12 @@
 using System;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Gateway;
@@ -47,6 +49,8 @@ public static class InletServerRegistrations
         services.AddInletSilo();
         services.AddSignalR();
         services.Configure(configureOptions ?? (_ => { }));
+        services.TryAddEnumerable(
+            ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, GeneratedApiAuthorizationMvcOptionsSetup>());
 
         // Register Aqueduct backplane specifically for InletHub
         // This must be a closed generic registration because AddSignalR() already registers

@@ -92,6 +92,91 @@ Source:
 - [Spring.Server Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs)
 - [Spring.Silo Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Silo/Program.cs)
 
+## Generated API Authorization
+
+Use generation attributes to emit standard ASP.NET authorization metadata on generated aggregate, command,
+projection, and saga HTTP APIs.
+
+### Generation Attributes
+
+| Attribute | Applies to | Generated metadata |
+|---|---|---|
+| `GenerateAuthorization` | Aggregate, command, projection, saga state | `[Authorize]` with optional policy/roles/schemes |
+| `GenerateAllowAnonymous` | Aggregate, command, projection, saga state | `[AllowAnonymous]` |
+
+Example:
+
+```csharp
+[GenerateAggregateEndpoints]
+[GenerateAuthorization(Policy = "spring.write")]
+public sealed record BankAccountAggregate;
+
+[GenerateCommand(Route = "deposit")]
+[GenerateAuthorization(Roles = "banking-operator")]
+public sealed record DepositFunds;
+
+[GenerateProjectionEndpoints]
+[ProjectionPath("bank-account-balance")]
+[GenerateAllowAnonymous]
+public sealed record BankAccountBalanceProjection;
+```
+
+### Global Force Mode
+
+Configure generated API force-auth in `AddInletServer`:
+
+```csharp
+builder.Services.AddInletServer(options =>
+{
+        options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+        options.GeneratedApiAuthorization.DefaultRoles = "api-user";
+        options.GeneratedApiAuthorization.DefaultAuthenticationSchemes = "Bearer";
+        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+});
+```
+
+### Behavior Matrix
+
+| Scenario | Result |
+|---|---|
+| No force mode, no generation auth attributes | Generated endpoints remain auth-neutral |
+| No force mode, `GenerateAuthorization` present | Generator emits `[Authorize(...)]` |
+| Force mode enabled, no generation auth attributes | Generated endpoints require authorization via global defaults |
+| Force mode enabled, `GenerateAuthorization` present | Global defaults plus generated metadata compose using ASP.NET behavior |
+| Force mode enabled, `GenerateAllowAnonymous` present and opt-out enabled | Generated endpoint stays anonymous |
+
+### Precedence and Composition
+
+- Multiple `[Authorize]` declarations compose.
+- `[AllowAnonymous]` bypasses authorization when opt-out is enabled.
+- When `AllowAnonymousOptOut` is `false`, global force mode removes allow-anonymous metadata from generated
+    endpoint models.
+
+### Host Setup Checklist
+
+Generated auth metadata requires host middleware configuration:
+
+1. `services.AddAuthentication(...)`
+2. `services.AddAuthorization(...)`
+3. `services.AddInletServer(options => options.GeneratedApiAuthorization...)`
+4. `app.UseAuthentication()`
+5. `app.UseAuthorization()`
+6. `app.MapControllers()`
+
+### CQRS Policy Examples
+
+- **Write model (aggregates, command actions, saga start):** `Policy = "spring.write"` or role-gated operations.
+- **Read model (projection controllers):** `Policy = "spring.read"` or explicit `GenerateAllowAnonymous` for
+    public query surfaces.
+
+### Release Note Checklist
+
+- `Inlet.Generators.Abstractions`: added `GenerateAuthorization` and `GenerateAllowAnonymous` attributes.
+- `Inlet.Gateway.Generators`: aggregate/projection/saga generators emit auth metadata and diagnostics.
+- `Inlet.Gateway`: added generated API force-auth options and global authorization convention.
+
 ## Summary
 
 - Domain registration generators reduce per-feature startup wiring.

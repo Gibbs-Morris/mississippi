@@ -31,6 +31,19 @@ public sealed class SagaControllerGeneratorTests
                                                   public string? FeatureKey { get; set; }
                                                   public string? RoutePrefix { get; set; }
                                               }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAuthorizationAttribute : Attribute
+                                              {
+                                                  public string? Policy { get; set; }
+                                                  public string? Roles { get; set; }
+                                                  public string? AuthenticationSchemes { get; set; }
+                                              }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAllowAnonymousAttribute : Attribute
+                                              {
+                                              }
                                           }
 
                                           namespace Mississippi.DomainModeling.Abstractions
@@ -111,6 +124,97 @@ public sealed class SagaControllerGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated saga analysis should warn for allow-anonymous metadata on mutating saga endpoints.
+    /// </summary>
+    [Fact]
+    public void GeneratedSagaAnalysisWarnsForAllowAnonymousOnMutatingEndpoint()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput(string AccountId);
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      [GenerateAllowAnonymous]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        Assert.Contains(
+            runResult.Diagnostics,
+            diagnostic => (diagnostic.Id == "INLETAUTH002") && (diagnostic.Severity == DiagnosticSeverity.Warning));
+    }
+
+    /// <summary>
+    ///     Generated saga controller should include allow-anonymous metadata when configured.
+    /// </summary>
+    [Fact]
+    public void GeneratedSagaControllerIncludesAllowAnonymousMetadataWhenConfigured()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput(string AccountId);
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      [GenerateAllowAnonymous]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        string controllerCode = runResult.GeneratedTrees.First(tree =>
+                tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains("[AllowAnonymous]", controllerCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated saga controller should include authorize metadata when configured.
+    /// </summary>
+    [Fact]
+    public void GeneratedSagaControllerIncludesAuthorizeMetadataWhenConfigured()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput(string AccountId);
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      [GenerateAuthorization(Policy = "saga-policy", Roles = "operator")]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        string controllerCode = runResult.GeneratedTrees.First(tree =>
+                tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains(
+            "[Authorize(Policy = \"saga-policy\", Roles = \"operator\")]",
+            controllerCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>

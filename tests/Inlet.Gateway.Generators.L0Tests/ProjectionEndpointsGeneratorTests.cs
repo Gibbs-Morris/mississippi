@@ -25,6 +25,19 @@ public class ProjectionEndpointsGeneratorTests
 
                                               [AttributeUsage(AttributeTargets.Class, Inherited = false)]
                                               public sealed class GenerateProjectionEndpointsAttribute : Attribute { }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAuthorizationAttribute : Attribute
+                                              {
+                                                  public string? Policy { get; set; }
+                                                  public string? Roles { get; set; }
+                                                  public string? AuthenticationSchemes { get; set; }
+                                              }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAllowAnonymousAttribute : Attribute
+                                              {
+                                              }
                                           }
 
                                           namespace Mississippi.Inlet.Abstractions
@@ -883,6 +896,133 @@ public class ProjectionEndpointsGeneratorTests
             "AddMapper<AccountBalanceProjection, AccountBalanceDto, AccountBalanceProjectionMapper>",
             registrationsSource,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated projection analysis should warn when authentication schemes metadata contains empty entries.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionAnalysisWarnsForMalformedAuthenticationSchemesMetadata()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            [GenerateAuthorization(AuthenticationSchemes = "Bearer,,ApiKey")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Contains(
+            runResult.Diagnostics,
+            diagnostic => (diagnostic.Id == "INLETAUTH001") && (diagnostic.Severity == DiagnosticSeverity.Warning));
+    }
+
+    /// <summary>
+    ///     Generated projection controller should include allow-anonymous metadata when configured.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionControllerIncludesAllowAnonymousMetadataWhenConfigured()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            [GenerateAllowAnonymous]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
+                !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(controllerSource);
+        Assert.Contains("[AllowAnonymous]", controllerSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated projection controller should include authorize metadata when configured.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionControllerIncludesAuthorizeMetadataWhenConfigured()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            [GenerateAuthorization(Policy = "projection-read", Roles = "reader")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
+                !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(controllerSource);
+        Assert.Contains(
+            "[Authorize(Policy = \"projection-read\", Roles = \"reader\")]",
+            controllerSource,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated projection controller should remain auth-neutral by default.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionControllerRemainsAuthNeutralByDefault()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
+                !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(controllerSource);
+        Assert.DoesNotContain("[Authorize", controllerSource, StringComparison.Ordinal);
+        Assert.DoesNotContain("[AllowAnonymous]", controllerSource, StringComparison.Ordinal);
     }
 
     /// <summary>

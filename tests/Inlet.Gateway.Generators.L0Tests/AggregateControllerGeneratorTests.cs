@@ -36,6 +36,19 @@ public class AggregateControllerGeneratorTests
                                                   public string HttpMethod { get; set; } = "POST";
                                                   public string Route { get; set; } = "";
                                               }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAuthorizationAttribute : Attribute
+                                              {
+                                                  public string? Policy { get; set; }
+                                                  public string? Roles { get; set; }
+                                                  public string? AuthenticationSchemes { get; set; }
+                                              }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class GenerateAllowAnonymousAttribute : Attribute
+                                              {
+                                              }
                                           }
                                           """;
 
@@ -829,6 +842,67 @@ public class AggregateControllerGeneratorTests
     }
 
     /// <summary>
+    ///     Generator should emit allow-anonymous metadata for command actions.
+    /// </summary>
+    [Fact]
+    public void GeneratorEmitsAllowAnonymousMetadataForCommandAction()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+
+                                       namespace TestApp.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate;
+                                       }
+
+                                       namespace TestApp.Aggregates.Order.Commands
+                                       {
+                                           [GenerateCommand(Route = "create")]
+                                           [GenerateAllowAnonymous]
+                                           public sealed record CreateOrder;
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, aggregateSource);
+        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        Assert.Contains("[AllowAnonymous]", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generator should emit controller and action authorization metadata when configured.
+    /// </summary>
+    [Fact]
+    public void GeneratorEmitsControllerAndActionAuthorizationMetadata()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+
+                                       namespace TestApp.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           [GenerateAuthorization(Policy = "aggregate-policy")]
+                                           public sealed record OrderAggregate;
+                                       }
+
+                                       namespace TestApp.Aggregates.Order.Commands
+                                       {
+                                           [GenerateCommand(Route = "create")]
+                                           [GenerateAuthorization(Roles = "admin,operator", AuthenticationSchemes = "Bearer")]
+                                           public sealed record CreateOrder;
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, aggregateSource);
+        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        Assert.Contains("[Authorize(Policy = \"aggregate-policy\")]", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "[Authorize(Roles = \"admin,operator\", AuthenticationSchemes = \"Bearer\")]",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generator should handle multiple aggregates in same compilation.
     /// </summary>
     [Fact]
@@ -879,6 +953,34 @@ public class AggregateControllerGeneratorTests
         List<string> generatedFileNames = runResult.Results[0].GeneratedSources.Select(s => s.HintName).ToList();
         Assert.Contains("OrderController.g.cs", generatedFileNames);
         Assert.Contains("CustomerController.g.cs", generatedFileNames);
+    }
+
+    /// <summary>
+    ///     Generator should keep default output auth-neutral when no authorization attributes are present.
+    /// </summary>
+    [Fact]
+    public void GeneratorKeepsDefaultOutputAuthNeutralWhenNoAuthorizationAttributesPresent()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+
+                                       namespace TestApp.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate;
+                                       }
+
+                                       namespace TestApp.Aggregates.Order.Commands
+                                       {
+                                           [GenerateCommand(Route = "create")]
+                                           public sealed record CreateOrder;
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, aggregateSource);
+        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        Assert.DoesNotContain("[Authorize", generatedCode, StringComparison.Ordinal);
+        Assert.DoesNotContain("[AllowAnonymous]", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -957,5 +1059,63 @@ public class AggregateControllerGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         Assert.Empty(runResult.GeneratedTrees);
+    }
+
+    /// <summary>
+    ///     Generator should warn when allow-anonymous metadata is applied to mutating command endpoints.
+    /// </summary>
+    [Fact]
+    public void GeneratorWarnsWhenAllowAnonymousIsAppliedToMutatingCommandEndpoint()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+
+                                       namespace TestApp.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate;
+                                       }
+
+                                       namespace TestApp.Aggregates.Order.Commands
+                                       {
+                                           [GenerateCommand(Route = "create")]
+                                           [GenerateAllowAnonymous]
+                                           public sealed record CreateOrder;
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, aggregateSource);
+        Assert.Contains(
+            runResult.Diagnostics,
+            diagnostic => (diagnostic.Id == "INLETAUTH002") && (diagnostic.Severity == DiagnosticSeverity.Warning));
+    }
+
+    /// <summary>
+    ///     Generator should warn when roles metadata contains empty entries.
+    /// </summary>
+    [Fact]
+    public void GeneratorWarnsWhenRolesMetadataContainsEmptyEntries()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+
+                                       namespace TestApp.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate;
+                                       }
+
+                                       namespace TestApp.Aggregates.Order.Commands
+                                       {
+                                           [GenerateCommand(Route = "create")]
+                                           [GenerateAuthorization(Roles = "admin,,operator")]
+                                           public sealed record CreateOrder;
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, aggregateSource);
+        Assert.Contains(
+            runResult.Diagnostics,
+            diagnostic => (diagnostic.Id == "INLETAUTH001") && (diagnostic.Severity == DiagnosticSeverity.Warning));
     }
 }

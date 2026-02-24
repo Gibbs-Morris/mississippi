@@ -1,7 +1,9 @@
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -20,11 +22,30 @@ using Orleans.Hosting;
 using Scalar.AspNetCore;
 
 using Spring.Domain.Projections.BankAccountBalance;
+using Spring.Server;
 using Spring.Server.Controllers.Mappers;
 using Spring.Server.McpTools;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+SpringAuthOptions springAuthOptions = builder.Configuration.GetSection("SpringAuth").Get<SpringAuthOptions>() ?? new();
+if (springAuthOptions.Enabled)
+{
+    builder.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
+    builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = springAuthOptions.Scheme;
+            options.DefaultChallengeScheme = springAuthOptions.Scheme;
+        })
+        .AddScheme<AuthenticationSchemeOptions, SpringLocalDevAuthenticationHandler>(
+            springAuthOptions.Scheme,
+            _ => { });
+    builder.Services.AddAuthorizationBuilder()
+        .AddPolicy("spring.generated-api", policy => policy.RequireAuthenticatedUser())
+        .AddPolicy("spring.write", policy => policy.RequireRole("banking-operator"))
+        .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"));
+}
+
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
@@ -81,7 +102,21 @@ builder.Services.AddAqueduct<InletHub>(options =>
 });
 
 // Add Inlet Server services for real-time projection updates
-builder.Services.AddInletServer();
+if (springAuthOptions.Enabled)
+{
+    builder.Services.AddInletServer(options =>
+    {
+        options.GeneratedApiAuthorization.Mode =
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+    });
+}
+else
+{
+    builder.Services.AddInletServer();
+}
+
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add generated domain mapper registrations
@@ -96,6 +131,11 @@ WebApplication app = builder.Build();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseRouting();
+if (springAuthOptions.Enabled)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 
 // OpenAPI documentation endpoints
 app.MapOpenApi();

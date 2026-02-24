@@ -20,6 +20,12 @@ namespace Mississippi.Inlet.Gateway.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaControllerGenerator : IIncrementalGenerator
 {
+    private const string GenerateAllowAnonymousAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateAllowAnonymousAttribute";
+
+    private const string GenerateAuthorizationAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateAuthorizationAttribute";
+
     private const string GenerateSagaEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute";
 
@@ -33,12 +39,20 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         INamedTypeSymbol? sagaAttrSymbol,
         INamedTypeSymbol? sagaAttrGenericSymbol,
         INamedTypeSymbol sagaStateSymbol,
+        INamedTypeSymbol? generateAuthorizationAttribute,
+        INamedTypeSymbol? generateAllowAnonymousAttribute,
         List<SagaInfo> sagas
     )
     {
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
         {
-            SagaInfo? info = TryGetSagaInfo(typeSymbol, sagaAttrSymbol, sagaAttrGenericSymbol, sagaStateSymbol);
+            SagaInfo? info = TryGetSagaInfo(
+                typeSymbol,
+                sagaAttrSymbol,
+                sagaAttrGenericSymbol,
+                sagaStateSymbol,
+                generateAuthorizationAttribute,
+                generateAllowAnonymousAttribute);
             if (info is not null)
             {
                 sagas.Add(info);
@@ -47,7 +61,14 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindSagasInNamespace(childNs, sagaAttrSymbol, sagaAttrGenericSymbol, sagaStateSymbol, sagas);
+            FindSagasInNamespace(
+                childNs,
+                sagaAttrSymbol,
+                sagaAttrGenericSymbol,
+                sagaStateSymbol,
+                generateAuthorizationAttribute,
+                generateAllowAnonymousAttribute,
+                sagas);
         }
     }
 
@@ -60,6 +81,11 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendUsing("System");
         sb.AppendUsing("System.Threading");
         sb.AppendUsing("System.Threading.Tasks");
+        if (saga.Authorization.HasAnyAuthorizationMetadata)
+        {
+            sb.AppendUsing("Microsoft.AspNetCore.Authorization");
+        }
+
         sb.AppendUsing("Microsoft.AspNetCore.Mvc");
         sb.AppendUsing("Microsoft.Extensions.Logging");
         sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
@@ -75,6 +101,7 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendSummary($"Controller for {saga.SagaName} saga operations.");
         sb.AppendGeneratedCodeAttribute("SagaControllerGenerator");
+        GeneratedApiAuthorizationAnalysis.AppendAuthorizationAttributes(sb, saga.Authorization);
         sb.AppendLine($"[Route(\"api/sagas/{saga.RoutePrefix}/{{sagaId}}\")]");
         sb.AppendLine(
             $"public sealed class {saga.ControllerTypeName} : AggregateControllerBase<{saga.SagaStateTypeName}>");
@@ -263,6 +290,10 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         INamedTypeSymbol? sagaAttrGenericSymbol =
             compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
         INamedTypeSymbol? sagaStateSymbol = compilation.GetTypeByMetadataName(SagaStateInterfaceFullName);
+        INamedTypeSymbol? generateAuthorizationAttribute =
+            compilation.GetTypeByMetadataName(GenerateAuthorizationAttributeFullName);
+        INamedTypeSymbol? generateAllowAnonymousAttribute =
+            compilation.GetTypeByMetadataName(GenerateAllowAnonymousAttributeFullName);
         if ((sagaAttrSymbol is null && sagaAttrGenericSymbol is null) || sagaStateSymbol is null)
         {
             return sagas;
@@ -275,6 +306,8 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
                 sagaAttrSymbol,
                 sagaAttrGenericSymbol,
                 sagaStateSymbol,
+                generateAuthorizationAttribute,
+                generateAllowAnonymousAttribute,
                 sagas);
         }
 
@@ -333,7 +366,9 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? sagaAttrSymbol,
         INamedTypeSymbol? sagaAttrGenericSymbol,
-        INamedTypeSymbol sagaStateSymbol
+        INamedTypeSymbol sagaStateSymbol,
+        INamedTypeSymbol? generateAuthorizationAttribute,
+        INamedTypeSymbol? generateAllowAnonymousAttribute
     )
     {
         if (sagaAttrSymbol is null && sagaAttrGenericSymbol is null)
@@ -372,7 +407,12 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             featureKey = NamingConventions.ToCamelCase(RemoveSagaSuffix(typeSymbol.Name));
         }
 
-        return new(typeSymbol, inputType, routePrefix!, featureKey!);
+        GeneratedApiAuthorizationModel authorization = GeneratedApiAuthorizationAnalysis.Analyze(
+            typeSymbol,
+            generateAuthorizationAttribute,
+            generateAllowAnonymousAttribute,
+            true);
+        return new(typeSymbol, inputType, routePrefix!, featureKey!, authorization, authorization.Diagnostics);
     }
 
     /// <inheritdoc />
@@ -394,6 +434,11 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             {
                 foreach (SagaInfo saga in sagas)
                 {
+                    foreach (Diagnostic diagnostic in saga.Diagnostics)
+                    {
+                        spc.ReportDiagnostic(diagnostic);
+                    }
+
                     string dtoSource = GenerateStartDto(saga);
                     spc.AddSource($"{saga.StartDtoTypeName}.g.cs", SourceText.From(dtoSource, Encoding.UTF8));
                     string controllerSource = GenerateController(saga);
@@ -408,13 +453,17 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
             INamedTypeSymbol sagaStateType,
             INamedTypeSymbol inputType,
             string routePrefix,
-            string featureKey
+            string featureKey,
+            GeneratedApiAuthorizationModel authorization,
+            ImmutableArray<Diagnostic> diagnostics
         )
         {
             SagaStateType = sagaStateType;
             InputType = inputType;
             RoutePrefix = routePrefix;
             FeatureKey = featureKey;
+            Authorization = authorization;
+            Diagnostics = diagnostics;
             SagaStateTypeName = sagaStateType.Name;
             InputTypeName = inputType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
             InputTypeNamespace = TypeAnalyzer.GetFullNamespace(inputType);
@@ -436,9 +485,13 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
                 .ToImmutableArray();
         }
 
+        public GeneratedApiAuthorizationModel Authorization { get; }
+
         public string ControllerNamespace { get; }
 
         public string ControllerTypeName { get; }
+
+        public ImmutableArray<Diagnostic> Diagnostics { get; }
 
         public string FeatureKey { get; }
 
