@@ -140,6 +140,14 @@ The `AddSpringDomainServer()` call registers all source-generated API controller
 
 ([Spring.Server/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs))
 
+## Development Auth-Proof Mode
+
+Focus: Public API / Developer Experience.
+
+Spring includes an opt-in development mode that proves generated endpoint authorization behavior.
+
+The complete setup, endpoint matrix (`200`/`401`/`403`), and troubleshooting guidance are documented on [Spring Auth-Proof Mode](./auth-proof-mode.md).
+
 ### What the Server Owns
 
 The server has no domain-specific code files. Its `Program.cs` configures middleware and infrastructure. The API controllers that accept commands and return projections are **entirely source-generated** from the domain annotations.

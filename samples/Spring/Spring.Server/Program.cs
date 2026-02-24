@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
@@ -31,6 +32,12 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 SpringAuthOptions springAuthOptions = builder.Configuration.GetSection("SpringAuth").Get<SpringAuthOptions>() ?? new();
 if (springAuthOptions.Enabled)
 {
+    if (!builder.Environment.IsDevelopment())
+    {
+        throw new InvalidOperationException(
+            "Spring local development authentication can only be enabled in Development.");
+    }
+
     builder.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
     builder.Services.AddAuthentication(options =>
         {
@@ -43,7 +50,8 @@ if (springAuthOptions.Enabled)
     builder.Services.AddAuthorizationBuilder()
         .AddPolicy("spring.generated-api", policy => policy.RequireAuthenticatedUser())
         .AddPolicy("spring.write", policy => policy.RequireRole("banking-operator"))
-        .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"));
+        .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"))
+        .AddPolicy("spring.auth-proof.claim", policy => policy.RequireClaim("spring.permission", "auth-proof"));
 }
 
 builder.Services.AddOpenTelemetry()

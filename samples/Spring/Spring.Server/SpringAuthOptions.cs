@@ -6,6 +6,23 @@ namespace Spring.Server;
 public sealed class SpringAuthOptions
 {
     /// <summary>
+    ///     Gets or sets the header used to force anonymous requests in development.
+    /// </summary>
+    public string AnonymousHeader { get; set; } = "X-Spring-Anonymous";
+
+    /// <summary>
+    ///     Gets or sets the header used to override user claims for local requests.
+    ///     Claims use the format <c>type=value</c> and are delimited by commas or semicolons.
+    /// </summary>
+    public string ClaimsHeader { get; set; } = "X-Spring-Claims";
+
+    /// <summary>
+    ///     Gets or sets default claims when no claims header is provided.
+    ///     Claims use the format <c>type=value</c> and are delimited by commas or semicolons.
+    /// </summary>
+    public string DefaultClaims { get; set; } = string.Empty;
+
+    /// <summary>
     ///     Gets or sets the default roles when no roles header is provided.
     ///     Roles are comma-separated.
     /// </summary>

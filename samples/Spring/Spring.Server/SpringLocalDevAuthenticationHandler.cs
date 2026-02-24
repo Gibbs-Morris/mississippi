@@ -38,6 +38,45 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
 
     private IOptionsMonitor<SpringAuthOptions> SpringAuthOptions { get; }
 
+    private static bool IsTrue(
+        string? value
+    ) =>
+        bool.TryParse(value, out bool parsed) && parsed;
+
+    private static List<Claim> ParseClaims(
+        string? claims
+    )
+    {
+        if (string.IsNullOrWhiteSpace(claims))
+        {
+            return [];
+        }
+
+        string[] rawClaims = claims.Split(
+            [';', ','],
+            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        List<Claim> parsedClaims = [];
+        foreach (string rawClaim in rawClaims)
+        {
+            string[] parts = rawClaim.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length != 2)
+            {
+                continue;
+            }
+
+            string claimType = parts[0];
+            string claimValue = parts[1];
+            if (string.IsNullOrWhiteSpace(claimType) || string.IsNullOrWhiteSpace(claimValue))
+            {
+                continue;
+            }
+
+            parsedClaims.Add(new(claimType, claimValue));
+        }
+
+        return parsedClaims;
+    }
+
     private static string[] ParseCommaSeparatedRoles(
         string? roles
     )
@@ -54,6 +93,11 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         SpringAuthOptions options = SpringAuthOptions.CurrentValue;
+        if (IsAnonymousRequest(options))
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
         string userId = Request.Headers[options.UserHeader].FirstOrDefault() ?? options.DefaultUserId;
         string[] roles = ParseRoles(options);
         List<Claim> claims =
@@ -62,10 +106,24 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
             new(ClaimTypes.Name, userId),
         ];
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        claims.AddRange(ParseClaims(ParseClaimSource(options)));
         ClaimsIdentity identity = new(claims, Scheme.Name);
         ClaimsPrincipal principal = new(identity);
         AuthenticationTicket ticket = new(principal, Scheme.Name);
         return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+
+    private bool IsAnonymousRequest(
+        SpringAuthOptions options
+    ) =>
+        IsTrue(Request.Headers[options.AnonymousHeader].FirstOrDefault());
+
+    private string? ParseClaimSource(
+        SpringAuthOptions options
+    )
+    {
+        string? rawClaims = Request.Headers[options.ClaimsHeader].FirstOrDefault();
+        return string.IsNullOrWhiteSpace(rawClaims) ? options.DefaultClaims : rawClaims;
     }
 
     private string[] ParseRoles(
@@ -76,6 +134,11 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
         if (string.IsNullOrWhiteSpace(rawRoles))
         {
             return ParseCommaSeparatedRoles(options.DefaultRoles);
+        }
+
+        if (string.Equals(rawRoles, "none", StringComparison.OrdinalIgnoreCase))
+        {
+            return [];
         }
 
         string[] parsedRoles = rawRoles.Split(

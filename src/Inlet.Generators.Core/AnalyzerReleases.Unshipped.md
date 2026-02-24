@@ -1,5 +1,4 @@
-# New Rules
-
+### New Rules
 Rule ID | Category | Severity | Notes
 --------|----------|----------|--------------------
 INLETAUTH001 | Inlet.Gateway.Generators | Warning | Malformed generated authorization list metadata
