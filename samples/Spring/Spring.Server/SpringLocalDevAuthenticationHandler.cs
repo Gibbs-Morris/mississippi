@@ -93,6 +93,11 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         SpringAuthOptions options = SpringAuthOptions.CurrentValue;
+        if (!options.Enabled)
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
         if (IsAnonymousRequest(options))
         {
             return Task.FromResult(AuthenticateResult.NoResult());

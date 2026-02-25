@@ -30,30 +30,23 @@ using Spring.Server.McpTools;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 SpringAuthOptions springAuthOptions = builder.Configuration.GetSection("SpringAuth").Get<SpringAuthOptions>() ?? new();
-if (springAuthOptions.Enabled)
+builder.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
+if (springAuthOptions.Enabled && !builder.Environment.IsDevelopment())
 {
-    if (!builder.Environment.IsDevelopment())
-    {
-        throw new InvalidOperationException(
-            "Spring local development authentication can only be enabled in Development.");
-    }
-
-    builder.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
-    builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = springAuthOptions.Scheme;
-            options.DefaultChallengeScheme = springAuthOptions.Scheme;
-        })
-        .AddScheme<AuthenticationSchemeOptions, SpringLocalDevAuthenticationHandler>(
-            springAuthOptions.Scheme,
-            _ => { });
-    builder.Services.AddAuthorizationBuilder()
-        .AddPolicy("spring.generated-api", policy => policy.RequireAuthenticatedUser())
-        .AddPolicy("spring.write", policy => policy.RequireRole("banking-operator"))
-        .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"))
-        .AddPolicy("spring.auth-proof.claim", policy => policy.RequireClaim("spring.permission", "auth-proof"));
+    throw new InvalidOperationException("Spring local development authentication can only be enabled in Development.");
 }
 
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = springAuthOptions.Scheme;
+        options.DefaultChallengeScheme = springAuthOptions.Scheme;
+    })
+    .AddScheme<AuthenticationSchemeOptions, SpringLocalDevAuthenticationHandler>(springAuthOptions.Scheme, _ => { });
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("spring.generated-api", policy => policy.RequireAuthenticatedUser())
+    .AddPolicy("spring.write", policy => policy.RequireRole("banking-operator"))
+    .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"))
+    .AddPolicy("spring.auth-proof.claim", policy => policy.RequireClaim("spring.permission", "auth-proof"));
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
@@ -139,11 +132,8 @@ WebApplication app = builder.Build();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseRouting();
-if (springAuthOptions.Enabled)
-{
-    app.UseAuthentication();
-    app.UseAuthorization();
-}
+app.UseAuthentication();
+app.UseAuthorization();
 
 // OpenAPI documentation endpoints
 app.MapOpenApi();

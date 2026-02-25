@@ -1,5 +1,6 @@
 using System;
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -62,6 +63,15 @@ internal sealed class GeneratedApiAuthorizationConvention : IApplicationModelCon
         ActionModel action
     )
     {
+        if (action.Attributes is IList<object> actionAttributes)
+        {
+            object[] allowAnonymousAttributes = actionAttributes.OfType<IAllowAnonymous>().Cast<object>().ToArray();
+            foreach (object allowAnonymousAttribute in allowAnonymousAttributes)
+            {
+                actionAttributes.Remove(allowAnonymousAttribute);
+            }
+        }
+
         IAllowAnonymousFilter[] allowAnonymousFilters = action.Filters.OfType<IAllowAnonymousFilter>().ToArray();
         foreach (IAllowAnonymousFilter allowAnonymousFilter in allowAnonymousFilters)
         {
@@ -73,6 +83,15 @@ internal sealed class GeneratedApiAuthorizationConvention : IApplicationModelCon
         ControllerModel controller
     )
     {
+        if (controller.Attributes is IList<object> controllerAttributes)
+        {
+            object[] allowAnonymousAttributes = controllerAttributes.OfType<IAllowAnonymous>().Cast<object>().ToArray();
+            foreach (object allowAnonymousAttribute in allowAnonymousAttributes)
+            {
+                controllerAttributes.Remove(allowAnonymousAttribute);
+            }
+        }
+
         IAllowAnonymousFilter[] allowAnonymousFilters = controller.Filters.OfType<IAllowAnonymousFilter>().ToArray();
         foreach (IAllowAnonymousFilter allowAnonymousFilter in allowAnonymousFilters)
         {
