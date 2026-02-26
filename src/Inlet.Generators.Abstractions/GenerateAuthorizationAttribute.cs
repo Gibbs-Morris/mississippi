@@ -4,12 +4,16 @@ using System;
 namespace Mississippi.Inlet.Generators.Abstractions;
 
 /// <summary>
-///     Emits an ASP.NET Core <c>[Authorize]</c> attribute on generated HTTP APIs.
+///     Emits ASP.NET Core <c>[Authorize]</c> metadata for generated HTTP APIs and projection subscriptions.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         Apply this attribute to aggregate, command, projection, or saga types that participate
 ///         in source-generated HTTP API surfaces.
+///     </para>
+///     <para>
+///         Projection types are also consumed at runtime by Inlet projection assembly scanning to
+///         enforce subscription authorization for SignalR-based projection subscriptions.
 ///     </para>
 ///     <para>
 ///         Generated output uses standard ASP.NET Core authorization metadata and runtime behavior.
