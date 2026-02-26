@@ -1,5 +1,6 @@
 using System;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -87,12 +88,56 @@ public static class InletServerRegistrations
     /// <param name="endpoints">The endpoint route builder.</param>
     /// <param name="pattern">The URL pattern for the hub (default: "/hubs/inlet").</param>
     /// <returns>The hub endpoint convention builder for additional configuration.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         When generated API authorization mode is
+    ///         <see cref="GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints" />,
+    ///         the mapped hub endpoint requires authorization using default generated API
+    ///         authorization options.
+    ///     </para>
+    /// </remarks>
     public static HubEndpointConventionBuilder MapInletHub(
         this IEndpointRouteBuilder endpoints,
         string pattern = "/hubs/inlet"
     )
     {
         ArgumentNullException.ThrowIfNull(endpoints);
-        return endpoints.MapHub<InletHub>(pattern);
+        HubEndpointConventionBuilder hubEndpointBuilder = endpoints.MapHub<InletHub>(pattern);
+
+        IOptions<InletServerOptions>? options = endpoints.ServiceProvider.GetService<IOptions<InletServerOptions>>();
+        GeneratedApiAuthorizationOptions generatedApiAuthorization = options?.Value.GeneratedApiAuthorization ??
+                                                                     new GeneratedApiAuthorizationOptions();
+
+        if (generatedApiAuthorization.Mode != GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints)
+        {
+            return hubEndpointBuilder;
+        }
+
+        AuthorizeAttribute authorizeAttribute = new();
+        if (!string.IsNullOrWhiteSpace(generatedApiAuthorization.DefaultPolicy))
+        {
+            authorizeAttribute.Policy = generatedApiAuthorization.DefaultPolicy;
+        }
+
+        if (!string.IsNullOrWhiteSpace(generatedApiAuthorization.DefaultRoles))
+        {
+            authorizeAttribute.Roles = generatedApiAuthorization.DefaultRoles;
+        }
+
+        if (!string.IsNullOrWhiteSpace(generatedApiAuthorization.DefaultAuthenticationSchemes))
+        {
+            authorizeAttribute.AuthenticationSchemes = generatedApiAuthorization.DefaultAuthenticationSchemes;
+        }
+
+        if (string.IsNullOrWhiteSpace(authorizeAttribute.Policy) &&
+            string.IsNullOrWhiteSpace(authorizeAttribute.Roles) &&
+            string.IsNullOrWhiteSpace(authorizeAttribute.AuthenticationSchemes))
+        {
+            hubEndpointBuilder.RequireAuthorization();
+            return hubEndpointBuilder;
+        }
+
+        hubEndpointBuilder.RequireAuthorization(authorizeAttribute);
+        return hubEndpointBuilder;
     }
 }

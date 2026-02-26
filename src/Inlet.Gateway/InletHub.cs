@@ -1,9 +1,14 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
+using Mississippi.Inlet.Gateway.Abstractions;
+using Mississippi.Inlet.Runtime.Abstractions;
 using Mississippi.Inlet.Runtime.Grains;
 
 using Orleans;
@@ -34,19 +39,41 @@ public sealed class InletHub : Hub<IInletHubClient>
     ///     Initializes a new instance of the <see cref="InletHub" /> class.
     /// </summary>
     /// <param name="grainFactory">Factory for creating grain references.</param>
+    /// <param name="projectionAuthorizationRegistry">Registry of projection authorization metadata.</param>
+    /// <param name="authorizationService">Authorization service for evaluating projection subscription policies.</param>
+    /// <param name="authorizationPolicyProvider">Authorization policy provider for resolving named policies.</param>
+    /// <param name="inletServerOptions">The current Inlet server options.</param>
     /// <param name="logger">Logger instance for hub operations.</param>
     public InletHub(
         IGrainFactory grainFactory,
+        IProjectionAuthorizationRegistry projectionAuthorizationRegistry,
+        IAuthorizationService authorizationService,
+        IAuthorizationPolicyProvider authorizationPolicyProvider,
+        IOptions<InletServerOptions> inletServerOptions,
         ILogger<InletHub> logger
     )
     {
         GrainFactory = grainFactory ?? throw new ArgumentNullException(nameof(grainFactory));
+        ProjectionAuthorizationRegistry = projectionAuthorizationRegistry ??
+                                          throw new ArgumentNullException(nameof(projectionAuthorizationRegistry));
+        AuthorizationService = authorizationService ?? throw new ArgumentNullException(nameof(authorizationService));
+        AuthorizationPolicyProvider = authorizationPolicyProvider ??
+                                      throw new ArgumentNullException(nameof(authorizationPolicyProvider));
+        InletServerOptions = inletServerOptions?.Value ?? throw new ArgumentNullException(nameof(inletServerOptions));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    private IAuthorizationPolicyProvider AuthorizationPolicyProvider { get; }
+
+    private IAuthorizationService AuthorizationService { get; }
+
     private IGrainFactory GrainFactory { get; }
 
+    private InletServerOptions InletServerOptions { get; }
+
     private ILogger<InletHub> Logger { get; }
+
+    private IProjectionAuthorizationRegistry ProjectionAuthorizationRegistry { get; }
 
     /// <inheritdoc />
     public override Task OnConnectedAsync()
@@ -88,6 +115,7 @@ public sealed class InletHub : Hub<IInletHubClient>
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentException.ThrowIfNullOrEmpty(entityId);
+        await AuthorizeSubscriptionAsync(path, entityId);
         Logger.SubscribingToProjection(Context.ConnectionId, path, entityId);
         IInletSubscriptionGrain subscriptionGrain =
             GrainFactory.GetGrain<IInletSubscriptionGrain>(Context.ConnectionId);
@@ -118,6 +146,119 @@ public sealed class InletHub : Hub<IInletHubClient>
         await subscriptionGrain.UnsubscribeAsync(subscriptionId);
         Logger.UnsubscribedFromProjection(Context.ConnectionId, subscriptionId);
     }
+
+    private async Task AuthorizeSubscriptionAsync(
+        string path,
+        string entityId
+    )
+    {
+        GeneratedApiAuthorizationOptions authorizationOptions = InletServerOptions.GeneratedApiAuthorization;
+        ProjectionAuthorizationMetadata? metadata = ProjectionAuthorizationRegistry.GetAuthorizationMetadata(path);
+
+        if (metadata is not null && metadata.HasAllowAnonymous && authorizationOptions.AllowAnonymousOptOut)
+        {
+            Logger.SubscriptionAuthorizationSkipped(Context.ConnectionId, path, entityId, "AllowAnonymous");
+            return;
+        }
+
+        if (metadata is not null && metadata.HasAuthorize)
+        {
+            await AuthorizeWithPolicyAsync(
+                await BuildAuthorizationPolicyAsync(metadata.Policy, metadata.Roles, metadata.AuthenticationSchemes),
+                path,
+                entityId,
+                metadata.Policy);
+            return;
+        }
+
+        if (authorizationOptions.Mode != GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints)
+        {
+            Logger.SubscriptionAuthorizationSkipped(Context.ConnectionId, path, entityId, "AuthorizationModeDisabled");
+            return;
+        }
+
+        await AuthorizeWithPolicyAsync(
+            await BuildAuthorizationPolicyAsync(
+                authorizationOptions.DefaultPolicy,
+                authorizationOptions.DefaultRoles,
+                authorizationOptions.DefaultAuthenticationSchemes),
+            path,
+            entityId,
+            authorizationOptions.DefaultPolicy);
+    }
+
+    private async Task<AuthorizationPolicy> BuildAuthorizationPolicyAsync(
+        string? policy,
+        string? roles,
+        string? authenticationSchemes
+    )
+    {
+        AuthorizationPolicyBuilder builder = new();
+        bool hasRequirements = false;
+
+        if (!string.IsNullOrWhiteSpace(policy))
+        {
+            AuthorizationPolicy? namedPolicy = await AuthorizationPolicyProvider.GetPolicyAsync(policy);
+            if (namedPolicy is null)
+            {
+                return new AuthorizationPolicyBuilder().RequireAssertion(static _ => false).Build();
+            }
+
+            builder.Combine(namedPolicy);
+            hasRequirements = namedPolicy.Requirements.Count > 0;
+        }
+
+        if (!string.IsNullOrWhiteSpace(authenticationSchemes))
+        {
+            foreach (string scheme in authenticationSchemes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            {
+                builder.AuthenticationSchemes.Add(scheme);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(roles))
+        {
+            string[] splitRoles = roles.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (splitRoles.Length > 0)
+            {
+                builder.RequireRole(splitRoles);
+                hasRequirements = true;
+            }
+        }
+
+        if (!hasRequirements)
+        {
+            builder.RequireAuthenticatedUser();
+        }
+
+        return builder.Build();
+    }
+
+    private async Task AuthorizeWithPolicyAsync(
+        AuthorizationPolicy policy,
+        string path,
+        string entityId,
+        string? policyName
+    )
+    {
+        AuthorizationResult authorizationResult = await AuthorizationService.AuthorizeAsync(
+            Context.User,
+            resource: null,
+            policy.Requirements);
+
+        if (authorizationResult.Succeeded)
+        {
+            Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId());
+            return;
+        }
+
+        Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(), policyName);
+        throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
+    }
+
+    private string? GetUserId() =>
+        Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+        Context.User?.Identity?.Name;
 }
 
 /// <summary>
