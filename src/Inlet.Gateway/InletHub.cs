@@ -154,7 +154,6 @@ public sealed class InletHub : Hub<IInletHubClient>
     {
         GeneratedApiAuthorizationOptions authorizationOptions = InletServerOptions.GeneratedApiAuthorization;
         ProjectionAuthorizationMetadata? metadata = ProjectionAuthorizationRegistry.GetAuthorizationMetadata(path);
-
         if (metadata is not null && metadata.HasAllowAnonymous && authorizationOptions.AllowAnonymousOptOut)
         {
             Logger.SubscriptionAuthorizationSkipped(Context.ConnectionId, path, entityId, "AllowAnonymous");
@@ -187,6 +186,28 @@ public sealed class InletHub : Hub<IInletHubClient>
             authorizationOptions.DefaultPolicy);
     }
 
+    private async Task AuthorizeWithPolicyAsync(
+        AuthorizationPolicy policy,
+        string path,
+        string entityId,
+        string? policyName
+    )
+    {
+        ClaimsPrincipal user = Context.User ?? new ClaimsPrincipal(new ClaimsIdentity());
+        AuthorizationResult authorizationResult = await AuthorizationService.AuthorizeAsync(
+            user,
+            null,
+            policy.Requirements);
+        if (authorizationResult.Succeeded)
+        {
+            Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId());
+            return;
+        }
+
+        Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(), policyName);
+        throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
+    }
+
     private async Task<AuthorizationPolicy> BuildAuthorizationPolicyAsync(
         string? policy,
         string? roles,
@@ -195,7 +216,6 @@ public sealed class InletHub : Hub<IInletHubClient>
     {
         AuthorizationPolicyBuilder builder = new();
         bool hasRequirements = false;
-
         if (!string.IsNullOrWhiteSpace(policy))
         {
             AuthorizationPolicy? namedPolicy = await AuthorizationPolicyProvider.GetPolicyAsync(policy);
@@ -210,7 +230,9 @@ public sealed class InletHub : Hub<IInletHubClient>
 
         if (!string.IsNullOrWhiteSpace(authenticationSchemes))
         {
-            foreach (string scheme in authenticationSchemes.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            foreach (string scheme in authenticationSchemes.Split(
+                         ',',
+                         StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
             {
                 builder.AuthenticationSchemes.Add(scheme);
             }
@@ -218,7 +240,9 @@ public sealed class InletHub : Hub<IInletHubClient>
 
         if (!string.IsNullOrWhiteSpace(roles))
         {
-            string[] splitRoles = roles.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            string[] splitRoles = roles.Split(
+                ',',
+                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             if (splitRoles.Length > 0)
             {
                 builder.RequireRole(splitRoles);
@@ -234,31 +258,8 @@ public sealed class InletHub : Hub<IInletHubClient>
         return builder.Build();
     }
 
-    private async Task AuthorizeWithPolicyAsync(
-        AuthorizationPolicy policy,
-        string path,
-        string entityId,
-        string? policyName
-    )
-    {
-        AuthorizationResult authorizationResult = await AuthorizationService.AuthorizeAsync(
-            Context.User,
-            resource: null,
-            policy.Requirements);
-
-        if (authorizationResult.Succeeded)
-        {
-            Logger.SubscriptionAuthorizationSucceeded(Context.ConnectionId, path, entityId, GetUserId());
-            return;
-        }
-
-        Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(), policyName);
-        throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
-    }
-
     private string? GetUserId() =>
-        Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
-        Context.User?.Identity?.Name;
+        Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? Context.User?.Identity?.Name;
 }
 
 /// <summary>

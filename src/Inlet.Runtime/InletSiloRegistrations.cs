@@ -92,11 +92,10 @@ public static class InletSiloRegistrations
                 BrookNameAttribute? brookAttr = type.GetCustomAttribute<BrookNameAttribute>();
                 string brookName = brookAttr?.BrookName ?? pathAttr.Path;
                 registry.Register(pathAttr.Path, brookName);
-
-                GenerateAuthorizationAttribute? authorizeAttr = type.GetCustomAttribute<GenerateAuthorizationAttribute>();
+                GenerateAuthorizationAttribute? authorizeAttr =
+                    type.GetCustomAttribute<GenerateAuthorizationAttribute>();
                 bool hasAuthorize = authorizeAttr is not null;
                 bool hasAllowAnonymous = type.GetCustomAttribute<GenerateAllowAnonymousAttribute>() is not null;
-
                 if (!hasAuthorize && !hasAllowAnonymous)
                 {
                     continue;

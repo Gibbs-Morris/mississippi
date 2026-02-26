@@ -61,25 +61,15 @@ public sealed class ProjectionAuthorizationRegistryTests : IDisposable
     }
 
     /// <summary>
-    ///     Register should store and return metadata for the path.
+    ///     GetAuthorizationMetadata should throw when path is null.
     /// </summary>
     [Fact]
-    public void RegisterStoresMetadata()
+    public void GetAuthorizationMetadataThrowsWhenPathNull()
     {
-        // Arrange
-        ProjectionAuthorizationMetadata expected = new(
-            Policy: "projection.read",
-            Roles: "reader",
-            AuthenticationSchemes: "Bearer",
-            HasAuthorize: true,
-            HasAllowAnonymous: false);
-
-        // Act
-        registry.Register("/api/accounts", expected);
-        ProjectionAuthorizationMetadata? actual = registry.GetAuthorizationMetadata("/api/accounts");
-
-        // Assert
-        Assert.Equal(expected, actual);
+        // Act & Assert
+        ArgumentNullException exception =
+            Assert.Throws<ArgumentNullException>(() => registry.GetAuthorizationMetadata(null!));
+        Assert.Equal("path", exception.ParamName);
     }
 
     /// <summary>
@@ -89,16 +79,8 @@ public sealed class ProjectionAuthorizationRegistryTests : IDisposable
     public void RegisterOverwritesExistingMetadata()
     {
         // Arrange
-        registry.Register(
-            "/api/accounts",
-            new ProjectionAuthorizationMetadata("first", null, null, true, false));
-
-        ProjectionAuthorizationMetadata replacement = new(
-            Policy: "second",
-            Roles: "admin",
-            AuthenticationSchemes: "Bearer",
-            HasAuthorize: true,
-            HasAllowAnonymous: false);
+        registry.Register("/api/accounts", new("first", null, null, true, false));
+        ProjectionAuthorizationMetadata replacement = new("second", "admin", "Bearer", true, false);
 
         // Act
         registry.Register("/api/accounts", replacement);
@@ -109,15 +91,20 @@ public sealed class ProjectionAuthorizationRegistryTests : IDisposable
     }
 
     /// <summary>
-    ///     Register should throw when path is null.
+    ///     Register should store and return metadata for the path.
     /// </summary>
     [Fact]
-    public void RegisterThrowsWhenPathNull()
+    public void RegisterStoresMetadata()
     {
-        // Act & Assert
-        ArgumentNullException exception =
-            Assert.Throws<ArgumentNullException>(() => registry.Register(null!, new(null, null, null, false, false)));
-        Assert.Equal("path", exception.ParamName);
+        // Arrange
+        ProjectionAuthorizationMetadata expected = new("projection.read", "reader", "Bearer", true, false);
+
+        // Act
+        registry.Register("/api/accounts", expected);
+        ProjectionAuthorizationMetadata? actual = registry.GetAuthorizationMetadata("/api/accounts");
+
+        // Assert
+        Assert.Equal(expected, actual);
     }
 
     /// <summary>
@@ -133,14 +120,14 @@ public sealed class ProjectionAuthorizationRegistryTests : IDisposable
     }
 
     /// <summary>
-    ///     GetAuthorizationMetadata should throw when path is null.
+    ///     Register should throw when path is null.
     /// </summary>
     [Fact]
-    public void GetAuthorizationMetadataThrowsWhenPathNull()
+    public void RegisterThrowsWhenPathNull()
     {
         // Act & Assert
         ArgumentNullException exception =
-            Assert.Throws<ArgumentNullException>(() => registry.GetAuthorizationMetadata(null!));
+            Assert.Throws<ArgumentNullException>(() => registry.Register(null!, new(null, null, null, false, false)));
         Assert.Equal("path", exception.ParamName);
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 using Mississippi.Inlet.Runtime.Abstractions;
 
@@ -16,7 +17,7 @@ internal sealed class ProjectionAuthorizationRegistry : IProjectionAuthorization
         new(StringComparer.Ordinal);
 
     /// <inheritdoc />
-    public IEnumerable<string> GetAllPaths() => PathToAuthorizationMetadata.Keys;
+    public IReadOnlyCollection<string> GetAllPaths() => PathToAuthorizationMetadata.Keys.ToArray();
 
     /// <inheritdoc />
     public ProjectionAuthorizationMetadata? GetAuthorizationMetadata(
@@ -24,7 +25,9 @@ internal sealed class ProjectionAuthorizationRegistry : IProjectionAuthorization
     )
     {
         ArgumentNullException.ThrowIfNull(path);
-        return PathToAuthorizationMetadata.TryGetValue(path, out ProjectionAuthorizationMetadata? metadata) ? metadata : null;
+        return PathToAuthorizationMetadata.TryGetValue(path, out ProjectionAuthorizationMetadata? metadata)
+            ? metadata
+            : null;
     }
 
     /// <inheritdoc />

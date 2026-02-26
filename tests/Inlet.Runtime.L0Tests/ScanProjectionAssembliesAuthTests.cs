@@ -14,56 +14,6 @@ namespace Mississippi.Inlet.Runtime.L0Tests;
 public sealed class ScanProjectionAssembliesAuthTests
 {
     /// <summary>
-    ///     ScanProjectionAssemblies should register authorization metadata for decorated projections.
-    /// </summary>
-    [Fact]
-    public void ScanProjectionAssembliesRegistersAuthorizationMetadataForDecoratedProjection()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        Assembly testAssembly = typeof(AuthorizedProjection).Assembly;
-
-        // Act
-        services.ScanProjectionAssemblies(testAssembly);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IProjectionAuthorizationRegistry registry = provider.GetRequiredService<IProjectionAuthorizationRegistry>();
-        ProjectionAuthorizationMetadata? metadata = registry.GetAuthorizationMetadata("/api/authorized-projection");
-
-        // Assert
-        Assert.NotNull(metadata);
-        Assert.Equal("runtime.tests.policy", metadata.Policy);
-        Assert.Equal("reader", metadata.Roles);
-        Assert.Equal("Bearer", metadata.AuthenticationSchemes);
-        Assert.True(metadata.HasAuthorize);
-        Assert.False(metadata.HasAllowAnonymous);
-    }
-
-    /// <summary>
-    ///     ScanProjectionAssemblies should register allow-anonymous metadata for decorated projections.
-    /// </summary>
-    [Fact]
-    public void ScanProjectionAssembliesRegistersAllowAnonymousMetadataForDecoratedProjection()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        Assembly testAssembly = typeof(AllowAnonymousProjection).Assembly;
-
-        // Act
-        services.ScanProjectionAssemblies(testAssembly);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IProjectionAuthorizationRegistry registry = provider.GetRequiredService<IProjectionAuthorizationRegistry>();
-        ProjectionAuthorizationMetadata? metadata = registry.GetAuthorizationMetadata("/api/anonymous-projection");
-
-        // Assert
-        Assert.NotNull(metadata);
-        Assert.Null(metadata.Policy);
-        Assert.Null(metadata.Roles);
-        Assert.Null(metadata.AuthenticationSchemes);
-        Assert.False(metadata.HasAuthorize);
-        Assert.True(metadata.HasAllowAnonymous);
-    }
-
-    /// <summary>
     ///     ScanProjectionAssemblies should not register authorization metadata for projection without auth attributes.
     /// </summary>
     [Fact]
@@ -101,5 +51,55 @@ public sealed class ScanProjectionAssembliesAuthTests
         // Assert
         ProjectionAuthorizationMetadata? metadata = registry.GetAuthorizationMetadata("/api/no-projection-path");
         Assert.Null(metadata);
+    }
+
+    /// <summary>
+    ///     ScanProjectionAssemblies should register allow-anonymous metadata for decorated projections.
+    /// </summary>
+    [Fact]
+    public void ScanProjectionAssembliesRegistersAllowAnonymousMetadataForDecoratedProjection()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        Assembly testAssembly = typeof(AllowAnonymousProjection).Assembly;
+
+        // Act
+        services.ScanProjectionAssemblies(testAssembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IProjectionAuthorizationRegistry registry = provider.GetRequiredService<IProjectionAuthorizationRegistry>();
+        ProjectionAuthorizationMetadata? metadata = registry.GetAuthorizationMetadata("/api/anonymous-projection");
+
+        // Assert
+        Assert.NotNull(metadata);
+        Assert.Null(metadata.Policy);
+        Assert.Null(metadata.Roles);
+        Assert.Null(metadata.AuthenticationSchemes);
+        Assert.False(metadata.HasAuthorize);
+        Assert.True(metadata.HasAllowAnonymous);
+    }
+
+    /// <summary>
+    ///     ScanProjectionAssemblies should register authorization metadata for decorated projections.
+    /// </summary>
+    [Fact]
+    public void ScanProjectionAssembliesRegistersAuthorizationMetadataForDecoratedProjection()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        Assembly testAssembly = typeof(AuthorizedProjection).Assembly;
+
+        // Act
+        services.ScanProjectionAssemblies(testAssembly);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IProjectionAuthorizationRegistry registry = provider.GetRequiredService<IProjectionAuthorizationRegistry>();
+        ProjectionAuthorizationMetadata? metadata = registry.GetAuthorizationMetadata("/api/authorized-projection");
+
+        // Assert
+        Assert.NotNull(metadata);
+        Assert.Equal("runtime.tests.policy", metadata.Policy);
+        Assert.Equal("reader", metadata.Roles);
+        Assert.Equal("Bearer", metadata.AuthenticationSchemes);
+        Assert.True(metadata.HasAuthorize);
+        Assert.False(metadata.HasAllowAnonymous);
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 
@@ -13,7 +12,7 @@ public interface IProjectionAuthorizationRegistry
     ///     Gets all registered projection paths that have authorization metadata.
     /// </summary>
     /// <returns>An enumerable of all registered projection paths.</returns>
-    IEnumerable<string> GetAllPaths();
+    IReadOnlyCollection<string> GetAllPaths();
 
     /// <summary>
     ///     Gets authorization metadata for the projection path.

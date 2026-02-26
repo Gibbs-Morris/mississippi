@@ -48,42 +48,6 @@ internal static partial class InletHubLoggerExtensions
     );
 
     [LoggerMessage(
-        EventId = 6,
-        Level = LogLevel.Information,
-        Message = "Client {ConnectionId} unsubscribed with subscriptionId {SubscriptionId}")]
-    public static partial void UnsubscribedFromProjection(
-        this ILogger logger,
-        string connectionId,
-        string subscriptionId
-    );
-
-    [LoggerMessage(
-        EventId = 5,
-        Level = LogLevel.Debug,
-        Message =
-            "Client {ConnectionId} unsubscribing from projection {Path}/{EntityId} with subscriptionId {SubscriptionId}")]
-    public static partial void UnsubscribingFromProjection(
-        this ILogger logger,
-        string connectionId,
-        string subscriptionId,
-        string path,
-        string entityId
-    );
-
-    [LoggerMessage(
-        EventId = 7,
-        Level = LogLevel.Debug,
-        Message =
-            "Subscription authorization succeeded for connection {ConnectionId} path {Path}/{EntityId} user {UserId}")]
-    public static partial void SubscriptionAuthorizationSucceeded(
-        this ILogger logger,
-        string connectionId,
-        string path,
-        string entityId,
-        string? userId
-    );
-
-    [LoggerMessage(
         EventId = 8,
         Level = LogLevel.Warning,
         Message =
@@ -108,5 +72,41 @@ internal static partial class InletHubLoggerExtensions
         string path,
         string entityId,
         string reason
+    );
+
+    [LoggerMessage(
+        EventId = 7,
+        Level = LogLevel.Debug,
+        Message =
+            "Subscription authorization succeeded for connection {ConnectionId} path {Path}/{EntityId} user {UserId}")]
+    public static partial void SubscriptionAuthorizationSucceeded(
+        this ILogger logger,
+        string connectionId,
+        string path,
+        string entityId,
+        string? userId
+    );
+
+    [LoggerMessage(
+        EventId = 6,
+        Level = LogLevel.Information,
+        Message = "Client {ConnectionId} unsubscribed with subscriptionId {SubscriptionId}")]
+    public static partial void UnsubscribedFromProjection(
+        this ILogger logger,
+        string connectionId,
+        string subscriptionId
+    );
+
+    [LoggerMessage(
+        EventId = 5,
+        Level = LogLevel.Debug,
+        Message =
+            "Client {ConnectionId} unsubscribing from projection {Path}/{EntityId} with subscriptionId {SubscriptionId}")]
+    public static partial void UnsubscribingFromProjection(
+        this ILogger logger,
+        string connectionId,
+        string subscriptionId,
+        string path,
+        string entityId
     );
 }

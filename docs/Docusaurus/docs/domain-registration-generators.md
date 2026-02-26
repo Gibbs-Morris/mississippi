@@ -177,6 +177,14 @@ Generated auth metadata requires host middleware configuration:
 - `Inlet.Gateway.Generators`: aggregate/projection/saga generators emit auth metadata and diagnostics.
 - `Inlet.Gateway`: added generated API force-auth options and global authorization convention.
 
+### Migration Note: SignalR Subscription Authorization Parity
+
+- Projection SignalR subscriptions now honor the same authorization contract as generated HTTP endpoints.
+- When `GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints` is enabled, `MapInletHub()` requires authorization at the hub endpoint.
+- Projection subscriptions enforce `GenerateAuthorization` and `GenerateAllowAnonymous` metadata discovered during projection assembly scanning.
+- Auth failures return a generic hub error (`Subscription denied.`) and do not leak path or policy details to clients.
+- Aggregate, projection, and saga generated HTTP authorization semantics remain unchanged.
+
 ## Summary
 
 - Domain registration generators reduce per-feature startup wiring.

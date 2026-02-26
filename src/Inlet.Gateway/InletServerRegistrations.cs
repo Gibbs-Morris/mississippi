@@ -103,12 +103,11 @@ public static class InletServerRegistrations
     {
         ArgumentNullException.ThrowIfNull(endpoints);
         HubEndpointConventionBuilder hubEndpointBuilder = endpoints.MapHub<InletHub>(pattern);
-
         IOptions<InletServerOptions>? options = endpoints.ServiceProvider.GetService<IOptions<InletServerOptions>>();
         GeneratedApiAuthorizationOptions generatedApiAuthorization = options?.Value.GeneratedApiAuthorization ??
                                                                      new GeneratedApiAuthorizationOptions();
-
-        if (generatedApiAuthorization.Mode != GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints)
+        if (generatedApiAuthorization.Mode !=
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints)
         {
             return hubEndpointBuilder;
         }

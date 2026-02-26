@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -28,13 +28,13 @@ public sealed class InletHubAuthorizationTests
     /// </summary>
     /// <returns>An authenticated test principal.</returns>
     private static ClaimsPrincipal CreateAuthenticatedUser() =>
-        new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuthType"));
+        new(new ClaimsIdentity([new(ClaimTypes.NameIdentifier, "user-1")], "TestAuthType"));
 
     /// <summary>
     ///     Creates an <see cref="InletHub" /> with configurable authorization collaborators.
     /// </summary>
     /// <returns>A configured <see cref="InletHub" /> test instance.</returns>
-    private static InletHub CreateHub(
+    private static AuthorizationDependencies CreateAuthorizationDependencies(
         GeneratedApiAuthorizationMode mode,
         ProjectionAuthorizationMetadata? metadata,
         AuthorizationResult authorizationResult,
@@ -43,19 +43,17 @@ public sealed class InletHubAuthorizationTests
     )
     {
         IGrainFactory grainFactory = Substitute.For<IGrainFactory>();
-        IProjectionAuthorizationRegistry projectionAuthorizationRegistry = Substitute.For<IProjectionAuthorizationRegistry>();
+        IProjectionAuthorizationRegistry projectionAuthorizationRegistry =
+            Substitute.For<IProjectionAuthorizationRegistry>();
         IAuthorizationService authorizationService = Substitute.For<IAuthorizationService>();
         IAuthorizationPolicyProvider authorizationPolicyProvider = Substitute.For<IAuthorizationPolicyProvider>();
         ILogger<InletHub> logger = Substitute.For<ILogger<InletHub>>();
-
         projectionAuthorizationRegistry.GetAuthorizationMetadata(Arg.Any<string>()).Returns(metadata);
-        authorizationService
-            .AuthorizeAsync(
+        authorizationService.AuthorizeAsync(
                 Arg.Any<ClaimsPrincipal>(),
                 Arg.Any<object?>(),
-                Arg.Any<System.Collections.Generic.IEnumerable<IAuthorizationRequirement>>())
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>())
             .Returns(authorizationResult);
-
         authorizationPolicyProvider.GetPolicyAsync(Arg.Any<string>())
             .Returns(callInfo =>
             {
@@ -64,29 +62,40 @@ public sealed class InletHubAuthorizationTests
                     ? null
                     : new AuthorizationPolicyBuilder().RequireClaim(policyName).Build();
             });
-
         InletServerOptions options = new()
         {
-            GeneratedApiAuthorization = new GeneratedApiAuthorizationOptions
+            GeneratedApiAuthorization = new()
             {
                 Mode = mode,
                 DefaultPolicy = defaultPolicy,
                 AllowAnonymousOptOut = allowAnonymousOptOut,
             },
         };
-
-        InletHub hub = new(
+        HubCallerContext context = Substitute.For<HubCallerContext>();
+        context.ConnectionId.Returns("connection-1");
+        context.User.Returns(CreateAuthenticatedUser());
+        return new(
             grainFactory,
             projectionAuthorizationRegistry,
             authorizationService,
             authorizationPolicyProvider,
             Options.Create(options),
-            logger);
+            logger,
+            context);
+    }
 
-        HubCallerContext context = Substitute.For<HubCallerContext>();
-        context.ConnectionId.Returns("connection-1");
-        context.User.Returns(CreateAuthenticatedUser());
-        hub.Context = context;
+    private static InletHub CreateHub(
+        AuthorizationDependencies dependencies
+    )
+    {
+        InletHub hub = new(
+            dependencies.GrainFactory,
+            dependencies.ProjectionAuthorizationRegistry,
+            dependencies.AuthorizationService,
+            dependencies.AuthorizationPolicyProvider,
+            dependencies.InletServerOptions,
+            dependencies.Logger);
+        hub.Context = dependencies.Context;
         return hub;
     }
 
@@ -103,47 +112,47 @@ public sealed class InletHubAuthorizationTests
         MethodInfo method = typeof(InletHub).GetMethod(
             "AuthorizeSubscriptionAsync",
             BindingFlags.Instance | BindingFlags.NonPublic)!;
-
         Task authorizationTask = (Task)method.Invoke(hub, [path, entityId])!;
         await authorizationTask;
     }
 
+    private sealed record AuthorizationDependencies(
+        IGrainFactory GrainFactory,
+        IProjectionAuthorizationRegistry ProjectionAuthorizationRegistry,
+        IAuthorizationService AuthorizationService,
+        IAuthorizationPolicyProvider AuthorizationPolicyProvider,
+        IOptions<InletServerOptions> InletServerOptions,
+        ILogger<InletHub> Logger,
+        HubCallerContext Context
+    );
+
     /// <summary>
-    ///     Mode disabled with no metadata should skip authorization checks.
+    ///     AllowAnonymous metadata should not bypass authorization when opt-out is disabled.
     /// </summary>
     /// <returns>A task that completes when the assertion has been verified.</returns>
     [Fact]
-    public async Task AuthorizeSubscriptionSkipsWhenModeDisabledAndNoMetadata()
+    public async Task AuthorizeSubscriptionAppliesDefaultPolicyWhenAllowAnonymousOptOutDisabled()
     {
         // Arrange
-        using InletHub hub = CreateHub(GeneratedApiAuthorizationMode.Disabled, null, AuthorizationResult.Success());
-
-        // Act
-        await InvokeAuthorizeSubscriptionAsync(hub);
-
-        // Assert
-        Assert.True(true);
-    }
-
-    /// <summary>
-    ///     Force mode with no metadata should use default policy and allow when authorized.
-    /// </summary>
-    /// <returns>A task that completes when the assertion has been verified.</returns>
-    [Fact]
-    public async Task AuthorizeSubscriptionUsesDefaultPolicyWhenForceModeEnabled()
-    {
-        // Arrange
-        using InletHub hub = CreateHub(
+        ProjectionAuthorizationMetadata metadata = new(null, null, null, false, true);
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
             GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
-            metadata: null,
-            authorizationResult: AuthorizationResult.Success(),
-            defaultPolicy: "generated-default");
+            metadata,
+            AuthorizationResult.Success(),
+            "generated-default",
+            false);
+        using InletHub hub = CreateHub(dependencies);
 
         // Act
         await InvokeAuthorizeSubscriptionAsync(hub);
 
         // Assert
-        Assert.True(true);
+        await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("generated-default");
+        await dependencies.AuthorizationService.Received(1)
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
     }
 
     /// <summary>
@@ -155,12 +164,33 @@ public sealed class InletHubAuthorizationTests
     {
         // Arrange
         ProjectionAuthorizationMetadata metadata = new(null, null, null, false, true);
-        using InletHub hub = CreateHub(
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
             GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
             metadata,
             AuthorizationResult.Failed(),
-            defaultPolicy: "generated-default",
-            allowAnonymousOptOut: true);
+            "generated-default");
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        await InvokeAuthorizeSubscriptionAsync(hub);
+
+        // Assert
+        Assert.True(true);
+    }
+
+    /// <summary>
+    ///     Mode disabled with no metadata should skip authorization checks.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionSkipsWhenModeDisabledAndNoMetadata()
+    {
+        // Arrange
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.Disabled,
+            null,
+            AuthorizationResult.Success());
+        using InletHub hub = CreateHub(dependencies);
 
         // Act
         await InvokeAuthorizeSubscriptionAsync(hub);
@@ -178,15 +208,85 @@ public sealed class InletHubAuthorizationTests
     {
         // Arrange
         ProjectionAuthorizationMetadata metadata = new("projection.read", null, null, true, false);
-        using InletHub hub = CreateHub(
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
             GeneratedApiAuthorizationMode.Disabled,
             metadata,
             AuthorizationResult.Failed());
+        using InletHub hub = CreateHub(dependencies);
 
         // Act
         HubException exception = await Assert.ThrowsAsync<HubException>(() => InvokeAuthorizeSubscriptionAsync(hub));
 
         // Assert
         Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+    }
+
+    /// <summary>
+    ///     Force mode with no projection metadata should deny when default policy evaluation fails.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionThrowsWhenForceModeDefaultPolicyFails()
+    {
+        // Arrange
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            null,
+            AuthorizationResult.Failed(),
+            "generated-default");
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        HubException exception = await Assert.ThrowsAsync<HubException>(() => InvokeAuthorizeSubscriptionAsync(hub));
+
+        // Assert
+        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+        await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("generated-default");
+    }
+
+    /// <summary>
+    ///     Force mode with no metadata should use default policy and allow when authorized.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionUsesDefaultPolicyWhenForceModeEnabled()
+    {
+        // Arrange
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            null,
+            AuthorizationResult.Success(),
+            "generated-default");
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        await InvokeAuthorizeSubscriptionAsync(hub);
+
+        // Assert
+        Assert.True(true);
+    }
+
+    /// <summary>
+    ///     GenerateAuthorization metadata should use the projection policy when force mode is enabled.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionUsesProjectionPolicyInsteadOfDefaultWhenMetadataPresent()
+    {
+        // Arrange
+        ProjectionAuthorizationMetadata metadata = new("projection.read", null, null, true, false);
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            metadata,
+            AuthorizationResult.Success(),
+            "generated-default");
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        await InvokeAuthorizeSubscriptionAsync(hub);
+
+        // Assert
+        await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("projection.read");
+        await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync("generated-default");
     }
 }

@@ -33,11 +33,6 @@ public static class InletHubConstants
     public const string SubscribeMethod = "SubscribeAsync";
 
     /// <summary>
-    ///     The hub method name for unsubscribing from projection updates.
-    /// </summary>
-    public const string UnsubscribeMethod = "UnsubscribeAsync";
-
-    /// <summary>
     ///     Generic client-safe message for denied subscription attempts.
     /// </summary>
     /// <remarks>
@@ -45,4 +40,9 @@ public static class InletHubConstants
     ///     or other authorization details.
     /// </remarks>
     public const string SubscriptionDeniedMessage = "Subscription denied.";
+
+    /// <summary>
+    ///     The hub method name for unsubscribing from projection updates.
+    /// </summary>
+    public const string UnsubscribeMethod = "UnsubscribeAsync";
 }

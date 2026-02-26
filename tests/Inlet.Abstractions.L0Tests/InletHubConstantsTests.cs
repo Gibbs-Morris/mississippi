@@ -39,16 +39,6 @@ public sealed class InletHubConstantsTests
     }
 
     /// <summary>
-    ///     UnsubscribeMethod should have expected value.
-    /// </summary>
-    [Fact]
-    public void UnsubscribeMethodHasExpectedValue()
-    {
-        // Assert
-        Assert.Equal("UnsubscribeAsync", InletHubConstants.UnsubscribeMethod);
-    }
-
-    /// <summary>
     ///     SubscriptionDeniedMessage should have expected value.
     /// </summary>
     [Fact]
@@ -56,5 +46,15 @@ public sealed class InletHubConstantsTests
     {
         // Assert
         Assert.Equal("Subscription denied.", InletHubConstants.SubscriptionDeniedMessage);
+    }
+
+    /// <summary>
+    ///     UnsubscribeMethod should have expected value.
+    /// </summary>
+    [Fact]
+    public void UnsubscribeMethodHasExpectedValue()
+    {
+        // Assert
+        Assert.Equal("UnsubscribeAsync", InletHubConstants.UnsubscribeMethod);
     }
 }

@@ -1,6 +1,3 @@
-using System;
-
-
 namespace Mississippi.Inlet.Runtime.Abstractions;
 
 /// <summary>
@@ -20,7 +17,7 @@ public sealed record ProjectionAuthorizationMetadata(
 )
 {
     /// <summary>
-    ///     True when any authorization metadata was discovered for the projection.
+    ///     Gets a value indicating whether any authorization metadata was discovered for the projection.
     /// </summary>
     public bool HasAnyAuthorizationMetadata => HasAuthorize || HasAllowAnonymous;
 }
