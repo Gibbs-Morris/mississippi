@@ -22,6 +22,18 @@ Auth-proof mode is a local development aid that uses header-based identity emula
 
 Set `Spring__AuthProofMode=true` before launching `Spring.AppHost`.
 
+When using the repository helper script, use:
+
+```powershell
+./run-spring.ps1 -LocalAuth On
+```
+
+To run Spring with local auth handling disabled (default demo mode), use:
+
+```powershell
+./run-spring.ps1 -LocalAuth Off
+```
+
 When enabled, AppHost sets `SpringAuth__Enabled=true` for `spring-server`.
 
 When not set (or set to `false`), Spring still wires authentication and authorization middleware, but the local dev authentication handler returns `NoResult` and does not establish a principal. Endpoints decorated with generated authorization metadata therefore return `401`/`403` based on normal ASP.NET authorization behavior.

@@ -9,7 +9,9 @@ using Mississippi.Reservoir.Client;
 using Mississippi.Reservoir.Client.BuiltIn;
 
 using Spring.Client;
+using Spring.Client.AuthSimulation;
 using Spring.Client.Features;
+using Spring.Client.Features.AuthSimulation;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 using Spring.Client.Features.DemoAccounts;
 using Spring.Client.Features.DualEntitySelection;
@@ -20,10 +22,16 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure HttpClient to call the API (base address is the host origin)
+builder.Services.AddScoped<AuthSimulationHeadersHandler>();
 #pragma warning disable IDISP014 // Blazor WASM DI manages HttpClient lifecycle
-builder.Services.AddScoped(_ => new HttpClient
+builder.Services.AddScoped(sp =>
 {
-    BaseAddress = new(builder.HostEnvironment.BaseAddress),
+    AuthSimulationHeadersHandler authSimulationHeadersHandler = sp.GetRequiredService<AuthSimulationHeadersHandler>();
+    authSimulationHeadersHandler.InnerHandler = new HttpClientHandler();
+    return new HttpClient(authSimulationHeadersHandler)
+    {
+        BaseAddress = new(builder.HostEnvironment.BaseAddress),
+    };
 });
 #pragma warning restore IDISP014
 
@@ -34,6 +42,7 @@ builder.Services.AddSpringDomainClient();
 // Navigation/UI: entity selection
 builder.Services.AddDualEntitySelectionFeature();
 builder.Services.AddDemoAccountsFeature();
+builder.Services.AddAuthSimulationFeature();
 
 // Built-in Reservoir features: navigation, lifecycle
 builder.Services.AddReservoirBlazorBuiltIns();
