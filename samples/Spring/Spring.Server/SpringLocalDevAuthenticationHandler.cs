@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -98,6 +99,11 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
+        if (!IsLocalRequest())
+        {
+            return Task.FromResult(AuthenticateResult.Fail("Spring local development authentication only allows local requests."));
+        }
+
         if (IsAnonymousRequest(options))
         {
             return Task.FromResult(AuthenticateResult.NoResult());
@@ -122,6 +128,12 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
         SpringAuthOptions options
     ) =>
         IsTrue(Request.Headers[options.AnonymousHeader].FirstOrDefault());
+
+    private bool IsLocalRequest()
+    {
+        IPAddress? remoteAddress = Context.Connection.RemoteIpAddress;
+        return remoteAddress is null || IPAddress.IsLoopback(remoteAddress);
+    }
 
     private string? ParseClaimSource(
         SpringAuthOptions options

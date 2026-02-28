@@ -91,9 +91,11 @@ public static class InletServerRegistrations
     /// <remarks>
     ///     <para>
     ///         When generated API authorization mode is
-    ///         <see cref="GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints" />,
-    ///         the mapped hub endpoint requires authorization using default generated API
-    ///         authorization options.
+    ///         <see cref="GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints" /> and
+    ///         <c>AllowAnonymousOptOut</c> is disabled, the mapped hub endpoint requires
+    ///         authorization using default generated API authorization options.
+    ///         When <c>AllowAnonymousOptOut</c> is enabled, authorization is evaluated per
+    ///         subscription using projection metadata.
     ///     </para>
     /// </remarks>
     public static HubEndpointConventionBuilder MapInletHub(
@@ -108,6 +110,11 @@ public static class InletServerRegistrations
                                                                      new GeneratedApiAuthorizationOptions();
         if (generatedApiAuthorization.Mode !=
             GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints)
+        {
+            return hubEndpointBuilder;
+        }
+
+        if (generatedApiAuthorization.AllowAnonymousOptOut)
         {
             return hubEndpointBuilder;
         }

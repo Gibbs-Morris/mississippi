@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading;
 
 
 namespace Spring.L2Tests;
@@ -46,7 +47,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
     private static async Task<HttpResponseMessage> GetAuthProofProjectionAsync(
         HttpClient client,
         string aggregateId,
-        IReadOnlyDictionary<string, string>? headers = null
+        IReadOnlyDictionary<string, string>? headers = null,
+        CancellationToken cancellationToken = default
     )
     {
         using HttpRequestMessage request = new(HttpMethod.Get, BuildProjectionUri(aggregateId));
@@ -59,7 +61,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
             }
         }
 
-        return await client.SendAsync(request);
+        return await client.SendAsync(request, cancellationToken);
     }
 
     private static async Task<HttpResponseMessage> GetAuthProofSagaStatusAsync(
@@ -138,21 +140,33 @@ public sealed class AuthProofAuthorizationIntegrationTests
         HttpClient client,
         string aggregateId,
         IReadOnlyDictionary<string, string> headers,
-        HttpStatusCode expectedStatusCode
+        HttpStatusCode expectedStatusCode,
+        CancellationToken cancellationToken = default
     )
     {
-        DateTime deadline = DateTime.UtcNow.Add(EventualConsistencyTimeout);
+        using CancellationTokenSource timeoutSource =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(EventualConsistencyTimeout);
+        CancellationToken timeoutToken = timeoutSource.Token;
         HttpStatusCode lastStatusCode = HttpStatusCode.NotFound;
-        while (DateTime.UtcNow < deadline)
+        try
         {
-            using HttpResponseMessage response = await GetAuthProofProjectionAsync(client, aggregateId, headers);
-            lastStatusCode = response.StatusCode;
-            if (response.StatusCode == expectedStatusCode)
+            while (!timeoutToken.IsCancellationRequested)
             {
-                return response.StatusCode;
-            }
+                using HttpResponseMessage response =
+                    await GetAuthProofProjectionAsync(client, aggregateId, headers, timeoutToken);
+                lastStatusCode = response.StatusCode;
+                if (response.StatusCode == expectedStatusCode)
+                {
+                    return response.StatusCode;
+                }
 
-            await Task.Delay(PollingInterval);
+                await Task.Delay(PollingInterval, timeoutToken);
+            }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return lastStatusCode;
         }
 
         return lastStatusCode;

@@ -114,6 +114,8 @@ Generated endpoints use one deterministic rule set:
 
 This keeps generated MVC endpoints and projection SignalR subscription checks aligned.
 
+In force mode, hub endpoint-level authorization is only applied when `AllowAnonymousOptOut = false`. When `AllowAnonymousOptOut = true`, hub authorization is enforced per subscription from projection metadata so allow-anonymous projections remain reachable.
+
 Example:
 
 ```csharp

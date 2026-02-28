@@ -64,6 +64,7 @@ public sealed class MapInletHubAuthTests
         {
             options.GeneratedApiAuthorization.Mode =
                 GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = false;
             options.GeneratedApiAuthorization.DefaultPolicy = "generated-policy";
             options.GeneratedApiAuthorization.DefaultRoles = "admin";
             options.GeneratedApiAuthorization.DefaultAuthenticationSchemes = "Bearer";
@@ -115,6 +116,7 @@ public sealed class MapInletHubAuthTests
         {
             options.GeneratedApiAuthorization.Mode =
                 GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = false;
             options.GeneratedApiAuthorization.DefaultPolicy = "generated-policy";
         });
         using WebApplication app = builder.Build();
@@ -125,5 +127,31 @@ public sealed class MapInletHubAuthTests
 
         // Assert
         Assert.Contains(endpoint.Metadata, metadata => metadata is IAuthorizeData);
+    }
+
+    /// <summary>
+    ///     MapInletHub should allow anonymous hub connections in force mode when allow-anonymous opt-out is enabled.
+    /// </summary>
+    [Fact]
+    public void MapInletHubDoesNotRequireAuthorizationWhenModeForcedAndAllowAnonymousOptOutEnabled()
+    {
+        // Arrange
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        RegisterRequiredAqueductServices(builder.Services);
+        builder.Services.AddInletServer(options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+            options.GeneratedApiAuthorization.DefaultPolicy = "generated-policy";
+        });
+        using WebApplication app = builder.Build();
+
+        // Act
+        app.MapInletHub();
+        RouteEndpoint endpoint = GetInletHubEndpoint(app);
+
+        // Assert
+        Assert.DoesNotContain(endpoint.Metadata, metadata => metadata is IAuthorizeData);
     }
 }

@@ -362,4 +362,31 @@ public sealed class InletHubAuthorizationTests
         await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("projection.read");
         await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync("generated-default");
     }
+
+    /// <summary>
+    ///     Authentication schemes should be enforced for projection metadata authorization.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionDeniesWhenAuthenticationSchemeDoesNotMatch()
+    {
+        // Arrange
+        ProjectionAuthorizationMetadata metadata = new(null, null, "Bearer", true, false);
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.Disabled,
+            metadata,
+            AuthorizationResult.Success());
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        HubException exception = await Assert.ThrowsAsync<HubException>(() => InvokeAuthorizeSubscriptionAsync(hub));
+
+        // Assert
+        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+        await dependencies.AuthorizationService.DidNotReceive()
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
+    }
 }

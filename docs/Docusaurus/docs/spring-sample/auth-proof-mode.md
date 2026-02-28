@@ -53,6 +53,8 @@ When local dev auth is enabled, `Spring.Server` reads these headers:
 
 Header precedence is `request header` over configured defaults.
 
+When local dev auth is enabled, Spring only honors these override headers for local loopback requests.
+
 Source:
 
 - [Spring.AppHost Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.AppHost/Program.cs)
