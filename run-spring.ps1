@@ -119,6 +119,8 @@ $parsedDashboardLoginUrl = $null
 $dotnetExitCode = $LASTEXITCODE
 
 if (-not [string]::IsNullOrWhiteSpace($parsedDashboardLoginUrl)) {
+    Write-Output "DEV ONLY: dashboard login token output is enabled for local engineering workflows."
+
     try {
         $parsedDashboardUri = [System.Uri]$parsedDashboardLoginUrl
         $redactedLoginUrl = "{0}{1}" -f $parsedDashboardUri.GetLeftPart([System.UriPartial]::Path), '?t=<redacted>'
