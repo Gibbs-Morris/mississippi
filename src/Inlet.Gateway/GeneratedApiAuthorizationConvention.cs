@@ -45,6 +45,18 @@ internal sealed class GeneratedApiAuthorizationConvention : IApplicationModelCon
         controller.Attributes.OfType<IAllowAnonymous>().Any() ||
         controller.Filters.OfType<IAllowAnonymousFilter>().Any();
 
+    private static bool HasAuthorize(
+        ActionModel action
+    ) =>
+        action.Attributes.OfType<IAuthorizeData>().Any() ||
+        action.Filters.OfType<AuthorizeFilter>().Any();
+
+    private static bool HasAuthorize(
+        ControllerModel controller
+    ) =>
+        controller.Attributes.OfType<IAuthorizeData>().Any() ||
+        controller.Filters.OfType<AuthorizeFilter>().Any();
+
     private static bool IsGeneratedApiController(
         ControllerModel controller
     )
@@ -119,7 +131,8 @@ internal sealed class GeneratedApiAuthorizationConvention : IApplicationModelCon
                 hasControllerAllowAnonymous = false;
             }
 
-            if (!hasControllerAllowAnonymous)
+            bool hasExplicitAuthorize = HasAuthorize(controller) || controller.Actions.Any(HasAuthorize);
+            if (!hasControllerAllowAnonymous && !hasExplicitAuthorize)
             {
                 controller.Filters.Add(CreateDefaultAuthorizeFilter());
             }
