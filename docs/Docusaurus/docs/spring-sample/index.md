@@ -75,5 +75,5 @@ When learning Spring, start with the domain pages first (`Aggregate` → `Saga` 
 - [Building a Saga](./building-a-saga.md) — Multi-step money transfer with compensation
 - [Building Projections](./building-projections.md) — Read-optimized views from event streams
 - [Host Applications](./host-applications.md) — How Silo, Server, and Client stay minimal
-- [Auth-Proof Mode](./auth-proof-mode.md) — Dev-only generated endpoint authorization matrix (`200`/`401`/`403`)
+- [Auth-Proof Mode](./auth-proof-mode.md) — Dev-only generated HTTP and SignalR subscription authorization proof (`200`/`401`/`403` + `Subscription denied.`)
 - [MCP in VS Code](./mcp-server-vscode-testing.md) — Configure VS Code to call Spring MCP tools for local testing

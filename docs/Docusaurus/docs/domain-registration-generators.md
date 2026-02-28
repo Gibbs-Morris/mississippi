@@ -27,8 +27,8 @@ Three generators emit host-specific extension classes and methods:
 Source:
 
 - [DomainClientRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/DomainClientRegistrationGenerator.cs)
-- [DomainServerRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Server.Generators/DomainServerRegistrationGenerator.cs)
-- [DomainSiloRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Silo.Generators/DomainSiloRegistrationGenerator.cs)
+- [DomainServerRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Generators/DomainServerRegistrationGenerator.cs)
+- [DomainSiloRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime.Generators/DomainSiloRegistrationGenerator.cs)
 
 ### Composition Flow
 
@@ -116,6 +116,13 @@ This keeps generated MVC endpoints and projection SignalR subscription checks al
 
 In force mode, hub endpoint-level authorization is only applied when `AllowAnonymousOptOut = false`. When `AllowAnonymousOptOut = true`, hub authorization is enforced per subscription from projection metadata so allow-anonymous projections remain reachable.
 
+Source:
+
+- [GeneratedApiAuthorizationConvention](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/GeneratedApiAuthorizationConvention.cs)
+- [MapInletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletServerRegistrations.cs)
+- [InletHub AuthorizeSubscriptionAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletHub.cs)
+- [InletSiloRegistrations ScanProjectionAssemblies](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime/InletSiloRegistrations.cs)
+
 Example:
 
 ```csharp
@@ -160,6 +167,26 @@ builder.Services.AddInletServer(options =>
 | Force mode enabled, `GenerateAuthorization` present | Global defaults plus generated metadata compose using ASP.NET behavior |
 | Force mode enabled, `GenerateAllowAnonymous` present and opt-out enabled | Generated endpoint stays anonymous |
 
+### SignalR Subscription Authorization Semantics
+
+Projection subscriptions use metadata discovered by `ScanProjectionAssemblies(...)` and evaluated by `InletHub.SubscribeAsync(...)`:
+
+| Runtime condition | Subscription authorization behavior |
+|---|---|
+| Projection metadata includes `GenerateAllowAnonymous` and `AllowAnonymousOptOut = true` | Authorization is skipped for that subscription |
+| Projection metadata includes `GenerateAuthorization(...)` | Inlet evaluates policy/roles/schemes for that subscription |
+| No projection metadata and force mode disabled | Subscription is allowed without auth evaluation |
+| No projection metadata and force mode enabled | Inlet evaluates global defaults from `GeneratedApiAuthorizationOptions` |
+
+When authorization fails, clients receive the generic hub error message `Subscription denied.`.
+
+Source:
+
+- [InletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletHub.cs)
+- [InletHubConstants](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Abstractions/InletHubConstants.cs)
+- [InletHubAuthorizationTests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Gateway.L0Tests/InletHubAuthorizationTests.cs)
+- [MapInletHubAuthTests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Gateway.L0Tests/MapInletHubAuthTests.cs)
+
 ### Precedence and Composition
 
 - Multiple `[Authorize]` declarations compose.
@@ -193,7 +220,8 @@ Generated auth metadata requires host middleware configuration:
 ### Migration Note: SignalR Subscription Authorization Parity
 
 - Projection SignalR subscriptions now honor the same authorization contract as generated HTTP endpoints.
-- When `GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints` is enabled, `MapInletHub()` requires authorization at the hub endpoint.
+- `MapInletHub()` requires authorization metadata at the hub endpoint only when force mode is enabled and `AllowAnonymousOptOut = false`.
+- When force mode is enabled and `AllowAnonymousOptOut = true`, hub-level authorization is deferred to per-subscription projection metadata checks.
 - Projection subscriptions enforce `GenerateAuthorization` and `GenerateAllowAnonymous` metadata discovered during projection assembly scanning.
 - Auth failures return a generic hub error (`Subscription denied.`) and do not leak path or policy details to clients.
 - Aggregate, projection, and saga generated HTTP authorization semantics remain unchanged.

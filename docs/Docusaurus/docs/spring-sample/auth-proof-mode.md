@@ -84,6 +84,22 @@ Source:
 - [AuthProofSagaState](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/AuthProof/AuthProofSagaState.cs)
 - [AuthProofProjection](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/AuthProof/AuthProofProjection.cs)
 
+## SignalR Subscription Behavior
+
+Auth-proof mode also exercises projection subscription authorization through `InletHub`.
+
+- Projection authorization metadata comes from projection type attributes discovered during `ScanProjectionAssemblies(...)`.
+- With Spring auth-proof mode enabled, the server uses generated API force mode and keeps `AllowAnonymousOptOut = true`.
+- In this configuration, `MapInletHub()` does not require hub-level authorization metadata; authorization is evaluated per `SubscribeAsync(...)` call.
+- Subscription denials return a generic client-safe `HubException` message: `Subscription denied.`.
+
+Source:
+
+- [Spring.Server Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs)
+- [InletServerRegistrations MapInletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletServerRegistrations.cs)
+- [InletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletHub.cs)
+- [InletHubConstants](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Abstractions/InletHubConstants.cs)
+
 ## Verify with L2 Tests
 
 Run the auth-proof matrix tests:
@@ -109,6 +125,7 @@ Source:
 | `401 Unauthorized` | No authenticated principal was established | Ensure `X-Spring-Anonymous` is absent or `false`; for local header identity, ensure `SpringAuth__Enabled=true` |
 | `403 Forbidden` | Principal authenticated but missing required role/claim | Verify `X-Spring-Roles` and `X-Spring-Claims` match endpoint requirements |
 | `401` when auth-proof mode is off | Local dev handler did not create an identity | Confirm `Spring__AuthProofMode=true` before startup |
+| `Subscription denied.` during projection subscribe | Projection metadata requires auth and current identity does not satisfy policy/roles/schemes | Verify simulated persona headers and projection auth attributes |
 | Dashboard token in script output is missing | Aspire startup line was not parsed in current run | Open the dashboard URL and use the login token printed by Aspire (`Login to the dashboard at ...`) |
 
 ## Summary

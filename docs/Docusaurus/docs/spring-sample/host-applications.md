@@ -110,6 +110,23 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 builder.UseOrleansClient(clientBuilder =>
     clientBuilder.AddActivityPropagation());
 
+SpringAuthOptions springAuthOptions =
+    builder.Configuration.GetSection("SpringAuth").Get<SpringAuthOptions>() ?? new();
+builder.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = springAuthOptions.Scheme;
+        options.DefaultChallengeScheme = springAuthOptions.Scheme;
+    })
+    .AddScheme<AuthenticationSchemeOptions, SpringLocalDevAuthenticationHandler>(
+        springAuthOptions.Scheme,
+        _ => { });
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("spring.generated-api", policy => policy.RequireAuthenticatedUser())
+    .AddPolicy("spring.write", policy => policy.RequireRole("banking-operator"))
+    .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"))
+    .AddPolicy("spring.auth-proof.claim", policy => policy.RequireClaim("spring.permission", "auth-proof"));
+
 // ASP.NET and Mississippi infrastructure
 builder.Services.AddControllers();
 builder.Services.AddOpenApi(/* ... */);
@@ -119,7 +136,20 @@ builder.Services.AddUxProjections();
 builder.Services.AddSignalR();
 builder.Services.AddAqueduct<InletHub>(options =>
     options.StreamProviderName = "StreamProvider");
-builder.Services.AddInletServer();
+if (springAuthOptions.Enabled)
+{
+    builder.Services.AddInletServer(options =>
+    {
+        options.GeneratedApiAuthorization.Mode =
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+    });
+}
+else
+{
+    builder.Services.AddInletServer();
+}
 builder.Services.ScanProjectionAssemblies(
     typeof(BankAccountBalanceProjection).Assembly);
 
@@ -127,6 +157,8 @@ WebApplication app = builder.Build();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapOpenApi();
 app.MapScalarApiReference(/* ... */);
 app.MapControllers();
@@ -139,6 +171,14 @@ await app.RunAsync();
 The `AddSpringDomainServer()` call registers all source-generated API controller mappers and feature registrations for the server host. The server does not contain `CommandHandler` code, `EventReducer` code, or domain-specific types — it maps HTTP requests to Orleans grain calls.
 
 ([Spring.Server/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs))
+
+When `SpringAuth:Enabled` is true, the server enables generated API force mode with:
+
+- `GeneratedApiAuthorization.Mode = RequireAuthorizationForAllGeneratedEndpoints`
+- `GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api"`
+- `GeneratedApiAuthorization.AllowAnonymousOptOut = true`
+
+This applies a default authenticated policy to generated HTTP APIs while preserving explicit `GenerateAllowAnonymous` opt-outs.
 
 ## Development Auth-Proof Mode
 
