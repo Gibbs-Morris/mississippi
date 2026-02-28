@@ -76,6 +76,25 @@ public sealed class InletHub : Hub<IInletHubClient>
 
     private IProjectionAuthorizationRegistry ProjectionAuthorizationRegistry { get; }
 
+    private static bool HasMatchingAuthenticationScheme(
+        ClaimsPrincipal user,
+        AuthorizationPolicy policy
+    )
+    {
+        if (policy.AuthenticationSchemes.Count == 0)
+        {
+            return true;
+        }
+
+        return user.Identities.Any(identity => identity is not null &&
+                                               identity.IsAuthenticated &&
+                                               !string.IsNullOrWhiteSpace(identity.AuthenticationType) &&
+                                               policy.AuthenticationSchemes.Any(scheme => string.Equals(
+                                                   scheme,
+                                                   identity.AuthenticationType,
+                                                   StringComparison.OrdinalIgnoreCase)));
+    }
+
     /// <inheritdoc />
     public override Task OnConnectedAsync()
     {
@@ -213,24 +232,6 @@ public sealed class InletHub : Hub<IInletHubClient>
 
         Logger.SubscriptionAuthorizationDenied(Context.ConnectionId, path, entityId, GetUserId(), policyName);
         throw new HubException(InletHubConstants.SubscriptionDeniedMessage);
-    }
-
-    private static bool HasMatchingAuthenticationScheme(
-        ClaimsPrincipal user,
-        AuthorizationPolicy policy
-    )
-    {
-        if (policy.AuthenticationSchemes.Count == 0)
-        {
-            return true;
-        }
-
-        return user.Identities.Any(identity =>
-            identity is not null &&
-            identity.IsAuthenticated &&
-            !string.IsNullOrWhiteSpace(identity.AuthenticationType) &&
-            policy.AuthenticationSchemes.Any(scheme =>
-                string.Equals(scheme, identity.AuthenticationType, StringComparison.OrdinalIgnoreCase)));
     }
 
     private async Task<AuthorizationPolicy> BuildAuthorizationPolicyAsync(

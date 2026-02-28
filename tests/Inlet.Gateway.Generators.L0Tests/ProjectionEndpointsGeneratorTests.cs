@@ -927,6 +927,42 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Generated projection controller should include both allow-anonymous and authorize metadata when both are
+    ///     configured.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionControllerIncludesAllowAnonymousAndAuthorizeWhenBothConfigured()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            [GenerateAuthorization(Policy = "projection-read")]
+                                            [GenerateAllowAnonymous]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public decimal Balance { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
+                !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(controllerSource);
+        Assert.Contains("[AllowAnonymous]", controllerSource, StringComparison.Ordinal);
+        Assert.Contains("[Authorize(Policy = \"projection-read\")]", controllerSource, StringComparison.Ordinal);
+        Assert.DoesNotContain(runResult.Diagnostics, diagnostic => diagnostic.Id == "INLETAUTH003");
+    }
+
+    /// <summary>
     ///     Generated projection controller should include allow-anonymous metadata when configured.
     /// </summary>
     [Fact]
@@ -991,44 +1027,6 @@ public class ProjectionEndpointsGeneratorTests
             "[Authorize(Policy = \"projection-read\", Roles = \"reader\")]",
             controllerSource,
             StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated projection controller should include both allow-anonymous and authorize metadata when both are configured.
-    /// </summary>
-    [Fact]
-    public void GeneratedProjectionControllerIncludesAllowAnonymousAndAuthorizeWhenBothConfigured()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.Inlet.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.AccountBalance
-                                        {
-                                            [GenerateProjectionEndpoints]
-                                            [ProjectionPath("account-balance")]
-                                            [GenerateAuthorization(Policy = "projection-read")]
-                                            [GenerateAllowAnonymous]
-                                            public sealed record AccountBalanceProjection
-                                            {
-                                                public decimal Balance { get; init; }
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, projectionSource);
-        string? controllerSource = runResult.GeneratedTrees.FirstOrDefault(t =>
-                t.FilePath.Contains("Controller", StringComparison.Ordinal) &&
-                !t.FilePath.Contains("Mapper", StringComparison.Ordinal))
-            ?.GetText()
-            .ToString();
-        Assert.NotNull(controllerSource);
-
-        Assert.Contains("[AllowAnonymous]", controllerSource, StringComparison.Ordinal);
-        Assert.Contains("[Authorize(Policy = \"projection-read\")]", controllerSource, StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            runResult.Diagnostics,
-            diagnostic => diagnostic.Id == "INLETAUTH003");
     }
 
     /// <summary>

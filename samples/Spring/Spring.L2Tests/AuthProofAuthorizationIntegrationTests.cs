@@ -153,8 +153,11 @@ public sealed class AuthProofAuthorizationIntegrationTests
         {
             while (!timeoutToken.IsCancellationRequested)
             {
-                using HttpResponseMessage response =
-                    await GetAuthProofProjectionAsync(client, aggregateId, headers, timeoutToken);
+                using HttpResponseMessage response = await GetAuthProofProjectionAsync(
+                    client,
+                    aggregateId,
+                    headers,
+                    timeoutToken);
                 lastStatusCode = response.StatusCode;
                 if (response.StatusCode == expectedStatusCode)
                 {

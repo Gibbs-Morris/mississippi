@@ -156,6 +156,33 @@ public sealed class InletHubAuthorizationTests
     }
 
     /// <summary>
+    ///     Authentication schemes should be enforced for projection metadata authorization.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionDeniesWhenAuthenticationSchemeDoesNotMatch()
+    {
+        // Arrange
+        ProjectionAuthorizationMetadata metadata = new(null, null, "Bearer", true, false);
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.Disabled,
+            metadata,
+            AuthorizationResult.Success());
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        HubException exception = await Assert.ThrowsAsync<HubException>(() => InvokeAuthorizeSubscriptionAsync(hub));
+
+        // Assert
+        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
+        await dependencies.AuthorizationService.DidNotReceive()
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
+    }
+
+    /// <summary>
     ///     AllowAnonymous metadata should skip authorization when opt-out is enabled.
     /// </summary>
     /// <returns>A task that completes when the assertion has been verified.</returns>
@@ -168,6 +195,35 @@ public sealed class InletHubAuthorizationTests
             GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
             metadata,
             AuthorizationResult.Failed(),
+            "generated-default");
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        await InvokeAuthorizeSubscriptionAsync(hub);
+
+        // Assert
+        await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync(Arg.Any<string>());
+        await dependencies.AuthorizationService.DidNotReceive()
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
+    }
+
+    /// <summary>
+    ///     Conflicting metadata should follow ASP.NET precedence and skip authorization when allow-anonymous opt-out is
+    ///     enabled.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionSkipsWhenMetadataConflictsAndAllowAnonymousOptOutEnabled()
+    {
+        // Arrange
+        ProjectionAuthorizationMetadata metadata = new("projection.read", null, null, true, true);
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            metadata,
+            AuthorizationResult.Success(),
             "generated-default");
         using InletHub hub = CreateHub(dependencies);
 
@@ -255,61 +311,6 @@ public sealed class InletHubAuthorizationTests
     }
 
     /// <summary>
-    ///     Force mode with no metadata should use default policy and allow when authorized.
-    /// </summary>
-    /// <returns>A task that completes when the assertion has been verified.</returns>
-    [Fact]
-    public async Task AuthorizeSubscriptionUsesDefaultPolicyWhenForceModeEnabled()
-    {
-        // Arrange
-        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
-            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
-            null,
-            AuthorizationResult.Success(),
-            "generated-default");
-        using InletHub hub = CreateHub(dependencies);
-
-        // Act
-        await InvokeAuthorizeSubscriptionAsync(hub);
-
-        // Assert
-        await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("generated-default");
-        await dependencies.AuthorizationService.Received(1)
-            .AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(),
-                Arg.Any<object?>(),
-                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
-    }
-
-    /// <summary>
-    ///     Conflicting metadata should follow ASP.NET precedence and skip authorization when allow-anonymous opt-out is enabled.
-    /// </summary>
-    /// <returns>A task that completes when the assertion has been verified.</returns>
-    [Fact]
-    public async Task AuthorizeSubscriptionSkipsWhenMetadataConflictsAndAllowAnonymousOptOutEnabled()
-    {
-        // Arrange
-        ProjectionAuthorizationMetadata metadata = new("projection.read", null, null, true, true);
-        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
-            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
-            metadata,
-            AuthorizationResult.Success(),
-            "generated-default");
-        using InletHub hub = CreateHub(dependencies);
-
-        // Act
-        await InvokeAuthorizeSubscriptionAsync(hub);
-
-        // Assert
-        await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync(Arg.Any<string>());
-        await dependencies.AuthorizationService.DidNotReceive()
-            .AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(),
-                Arg.Any<object?>(),
-                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
-    }
-
-    /// <summary>
     ///     Conflicting metadata should evaluate authorize metadata when allow-anonymous opt-out is disabled.
     /// </summary>
     /// <returns>A task that completes when the assertion has been verified.</returns>
@@ -340,6 +341,33 @@ public sealed class InletHubAuthorizationTests
     }
 
     /// <summary>
+    ///     Force mode with no metadata should use default policy and allow when authorized.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionUsesDefaultPolicyWhenForceModeEnabled()
+    {
+        // Arrange
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            null,
+            AuthorizationResult.Success(),
+            "generated-default");
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        await InvokeAuthorizeSubscriptionAsync(hub);
+
+        // Assert
+        await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("generated-default");
+        await dependencies.AuthorizationService.Received(1)
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
+    }
+
+    /// <summary>
     ///     GenerateAuthorization metadata should use the projection policy when force mode is enabled.
     /// </summary>
     /// <returns>A task that completes when the assertion has been verified.</returns>
@@ -361,32 +389,5 @@ public sealed class InletHubAuthorizationTests
         // Assert
         await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("projection.read");
         await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync("generated-default");
-    }
-
-    /// <summary>
-    ///     Authentication schemes should be enforced for projection metadata authorization.
-    /// </summary>
-    /// <returns>A task that completes when the assertion has been verified.</returns>
-    [Fact]
-    public async Task AuthorizeSubscriptionDeniesWhenAuthenticationSchemeDoesNotMatch()
-    {
-        // Arrange
-        ProjectionAuthorizationMetadata metadata = new(null, null, "Bearer", true, false);
-        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
-            GeneratedApiAuthorizationMode.Disabled,
-            metadata,
-            AuthorizationResult.Success());
-        using InletHub hub = CreateHub(dependencies);
-
-        // Act
-        HubException exception = await Assert.ThrowsAsync<HubException>(() => InvokeAuthorizeSubscriptionAsync(hub));
-
-        // Assert
-        Assert.Equal(InletHubConstants.SubscriptionDeniedMessage, exception.Message);
-        await dependencies.AuthorizationService.DidNotReceive()
-            .AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(),
-                Arg.Any<object?>(),
-                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
     }
 }

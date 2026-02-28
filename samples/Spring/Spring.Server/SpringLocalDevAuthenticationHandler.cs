@@ -101,7 +101,8 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
 
         if (!IsLocalRequest())
         {
-            return Task.FromResult(AuthenticateResult.Fail("Spring local development authentication only allows local requests."));
+            return Task.FromResult(
+                AuthenticateResult.Fail("Spring local development authentication only allows local requests."));
         }
 
         if (IsAnonymousRequest(options))
