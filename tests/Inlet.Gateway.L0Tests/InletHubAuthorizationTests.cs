@@ -62,6 +62,8 @@ public sealed class InletHubAuthorizationTests
                     ? null
                     : new AuthorizationPolicyBuilder().RequireClaim(policyName).Build();
             });
+        authorizationPolicyProvider.GetDefaultPolicyAsync()
+            .Returns(new AuthorizationPolicyBuilder().RequireClaim("default-policy").Build());
         InletServerOptions options = new()
         {
             GeneratedApiAuthorization = new()
@@ -389,5 +391,32 @@ public sealed class InletHubAuthorizationTests
         // Assert
         await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("projection.read");
         await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync("generated-default");
+    }
+
+    /// <summary>
+    ///     GenerateAuthorization metadata without explicit policy should use the configured ASP.NET default policy.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionUsesAspNetDefaultPolicyWhenMetadataHasAuthorizeWithoutPolicy()
+    {
+        // Arrange
+        ProjectionAuthorizationMetadata metadata = new(null, null, null, true, false);
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.Disabled,
+            metadata,
+            AuthorizationResult.Success());
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        await InvokeAuthorizeSubscriptionAsync(hub);
+
+        // Assert
+        await dependencies.AuthorizationPolicyProvider.Received(1).GetDefaultPolicyAsync();
+        await dependencies.AuthorizationService.Received(1)
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
     }
 }

@@ -100,7 +100,7 @@ public sealed partial class AuthProofPage
         if (value is IEnumerable enumerable && value is not string)
         {
             int count = 0;
-            foreach (object? item in enumerable)
+            foreach (object? _ in enumerable)
             {
                 count++;
             }

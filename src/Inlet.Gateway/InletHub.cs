@@ -278,7 +278,15 @@ public sealed class InletHub : Hub<IInletHubClient>
 
         if (!hasRequirements)
         {
-            builder.RequireAuthenticatedUser();
+            AuthorizationPolicy? defaultPolicy = await AuthorizationPolicyProvider.GetDefaultPolicyAsync();
+            if (defaultPolicy is not null)
+            {
+                builder.Combine(defaultPolicy);
+            }
+            else
+            {
+                builder.RequireAuthenticatedUser();
+            }
         }
 
         return builder.Build();

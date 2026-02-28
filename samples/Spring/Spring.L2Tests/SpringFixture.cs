@@ -26,7 +26,7 @@ public sealed class SpringFixture
       IDisposable
 {
     /// <summary>
-    ///     Timeout to accommodate Azurite emulator startup.
+    ///     Environment variable that enables Spring auth-proof mode during L2 test runs.
     /// </summary>
     private const string AuthProofModeEnvironmentVariable = "Spring__AuthProofMode";
 

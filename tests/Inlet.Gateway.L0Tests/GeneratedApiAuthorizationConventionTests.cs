@@ -22,11 +22,11 @@ public sealed class GeneratedApiAuthorizationConventionTests
     {
         object[] controllerAttributes = includeControllerAllowAnonymous ? [new AllowAnonymousAttribute()] : [];
         ControllerModel controller = new(typeof(GeneratedController).GetTypeInfo(), controllerAttributes);
-        object[] actionAttributes = includeActionAllowAnonymous switch
+        object[] actionAttributes = (includeActionAllowAnonymous, includeActionAuthorize) switch
         {
-            true when includeActionAuthorize => [new AllowAnonymousAttribute(), new AuthorizeAttribute()],
-            true => [new AllowAnonymousAttribute()],
-            false when includeActionAuthorize => [new AuthorizeAttribute()],
+            (true, true) => [new AllowAnonymousAttribute(), new AuthorizeAttribute()],
+            (true, false) => [new AllowAnonymousAttribute()],
+            (false, true) => [new AuthorizeAttribute()],
             var _ => [],
         };
         ActionModel action = new(
