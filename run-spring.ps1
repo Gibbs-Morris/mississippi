@@ -14,13 +14,19 @@
 
 .EXAMPLE
     ./run-spring.ps1 -LocalAuth Off
+
+.EXAMPLE
+    ./run-spring.ps1 -LocalAuth On -ShowDashboardToken
 #>
 
 [CmdletBinding()]
 param(
     [Parameter()]
     [ValidateSet('On', 'Off')]
-    [string]$LocalAuth = 'Off'
+    [string]$LocalAuth = 'Off',
+
+    [Parameter()]
+    [switch]$ShowDashboardToken
 )
 
 Set-StrictMode -Version Latest
@@ -113,7 +119,11 @@ if (-not [string]::IsNullOrWhiteSpace($parsedDashboardLoginUrl)) {
     Write-Output "Aspire dashboard login URL: $parsedDashboardLoginUrl"
 
     if ($parsedDashboardLoginUrl -match '[?&]t=([^&\s]+)') {
-        Write-Output "Aspire dashboard token: $($matches[1])"
+        if ($ShowDashboardToken.IsPresent) {
+            Write-Output "Aspire dashboard token: $($matches[1])"
+        } else {
+            Write-Output "Aspire dashboard token detected (hidden by default). Re-run with -ShowDashboardToken to print it."
+        }
     }
 } elseif (-not [string]::IsNullOrWhiteSpace($aspireDashboardUrl)) {
     Write-Output "Aspire dashboard login URL was not detected from runtime output. Open $aspireDashboardUrl and use the login token printed by Aspire."
