@@ -175,7 +175,12 @@ public sealed class InletHubAuthorizationTests
         await InvokeAuthorizeSubscriptionAsync(hub);
 
         // Assert
-        Assert.True(true);
+        await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync(Arg.Any<string>());
+        await dependencies.AuthorizationService.DidNotReceive()
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
     }
 
     /// <summary>
@@ -196,7 +201,12 @@ public sealed class InletHubAuthorizationTests
         await InvokeAuthorizeSubscriptionAsync(hub);
 
         // Assert
-        Assert.True(true);
+        await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync(Arg.Any<string>());
+        await dependencies.AuthorizationService.DidNotReceive()
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
     }
 
     /// <summary>
@@ -263,7 +273,70 @@ public sealed class InletHubAuthorizationTests
         await InvokeAuthorizeSubscriptionAsync(hub);
 
         // Assert
-        Assert.True(true);
+        await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("generated-default");
+        await dependencies.AuthorizationService.Received(1)
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
+    }
+
+    /// <summary>
+    ///     Conflicting metadata should follow ASP.NET precedence and skip authorization when allow-anonymous opt-out is enabled.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionSkipsWhenMetadataConflictsAndAllowAnonymousOptOutEnabled()
+    {
+        // Arrange
+        ProjectionAuthorizationMetadata metadata = new("projection.read", null, null, true, true);
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            metadata,
+            AuthorizationResult.Success(),
+            "generated-default");
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        await InvokeAuthorizeSubscriptionAsync(hub);
+
+        // Assert
+        await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync(Arg.Any<string>());
+        await dependencies.AuthorizationService.DidNotReceive()
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
+    }
+
+    /// <summary>
+    ///     Conflicting metadata should evaluate authorize metadata when allow-anonymous opt-out is disabled.
+    /// </summary>
+    /// <returns>A task that completes when the assertion has been verified.</returns>
+    [Fact]
+    public async Task AuthorizeSubscriptionUsesAuthorizeWhenMetadataConflictsAndAllowAnonymousOptOutDisabled()
+    {
+        // Arrange
+        ProjectionAuthorizationMetadata metadata = new("projection.read", null, null, true, true);
+        AuthorizationDependencies dependencies = CreateAuthorizationDependencies(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            metadata,
+            AuthorizationResult.Success(),
+            "generated-default",
+            false);
+        using InletHub hub = CreateHub(dependencies);
+
+        // Act
+        await InvokeAuthorizeSubscriptionAsync(hub);
+
+        // Assert
+        await dependencies.AuthorizationPolicyProvider.Received(1).GetPolicyAsync("projection.read");
+        await dependencies.AuthorizationPolicyProvider.DidNotReceive().GetPolicyAsync("generated-default");
+        await dependencies.AuthorizationService.Received(1)
+            .AuthorizeAsync(
+                Arg.Any<ClaimsPrincipal>(),
+                Arg.Any<object?>(),
+                Arg.Any<IEnumerable<IAuthorizationRequirement>>());
     }
 
     /// <summary>

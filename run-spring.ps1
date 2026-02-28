@@ -77,8 +77,6 @@ if ([string]::IsNullOrWhiteSpace($aspireDashboardUrl)) {
     $aspireDashboardUrl = $applicationUrls | Select-Object -First 1
 }
 
-$dashboardBrowserToken = [guid]::NewGuid().ToString('N')
-
 $env:ASPNETCORE_ENVIRONMENT = 'Development'
 $env:DOTNET_ENVIRONMENT = 'Development'
 $env:Logging__LogLevel__Default = 'Warning'
@@ -90,20 +88,40 @@ $env:Logging__LogLevel__Microsoft__AspNetCore = 'Warning'
 $env:Logging__LogLevel__Orleans = 'Warning'
 $env:Logging__LogLevel__Mississippi = 'Debug'
 $env:Spring__AuthProofMode = if ($LocalAuth -eq 'On') { 'true' } else { 'false' }
-$env:Dashboard__Frontend__BrowserToken = $dashboardBrowserToken
 
 if (-not [string]::IsNullOrWhiteSpace($aspireDashboardUrl)) {
     $aspireDashboardBase = $aspireDashboardUrl.TrimEnd('/')
     Write-Output "Aspire dashboard URL: $aspireDashboardBase"
-    Write-Output "Aspire dashboard token: $dashboardBrowserToken"
-    Write-Output "Direct login URL: $aspireDashboardBase/login?t=$dashboardBrowserToken"
 }
 
-dotnet run --project $appHostProject --no-build --launch-profile https
+$parsedDashboardLoginUrl = $null
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Spring AppHost exited with code $LASTEXITCODE"
-    exit $LASTEXITCODE
+& dotnet run --project $appHostProject --no-build --launch-profile https 2>&1 |
+    ForEach-Object {
+        $line = $_.ToString()
+        Write-Output $line
+
+        if ([string]::IsNullOrWhiteSpace($parsedDashboardLoginUrl) -and
+            ($line -match 'Login to the dashboard at\s+(https?://\S+)')) {
+            $parsedDashboardLoginUrl = $matches[1].TrimEnd('.')
+        }
+    }
+
+$dotnetExitCode = $LASTEXITCODE
+
+if (-not [string]::IsNullOrWhiteSpace($parsedDashboardLoginUrl)) {
+    Write-Output "Aspire dashboard login URL: $parsedDashboardLoginUrl"
+
+    if ($parsedDashboardLoginUrl -match '[?&]t=([^&\s]+)') {
+        Write-Output "Aspire dashboard token: $($matches[1])"
+    }
+} elseif (-not [string]::IsNullOrWhiteSpace($aspireDashboardUrl)) {
+    Write-Output "Aspire dashboard login URL was not detected from runtime output. Open $aspireDashboardUrl and use the login token printed by Aspire."
+}
+
+if ($dotnetExitCode -ne 0) {
+    Write-Error "Spring AppHost exited with code $dotnetExitCode"
+    exit $dotnetExitCode
 }
 
 exit 0

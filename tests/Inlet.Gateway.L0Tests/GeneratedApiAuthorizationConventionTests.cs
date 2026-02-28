@@ -16,12 +16,20 @@ public sealed class GeneratedApiAuthorizationConventionTests
 {
     private static ApplicationModel CreateApplicationModel(
         bool includeControllerAllowAnonymous,
-        bool includeActionAllowAnonymous
+        bool includeActionAllowAnonymous,
+        bool includeActionAuthorize = false
     )
     {
         object[] controllerAttributes = includeControllerAllowAnonymous ? [new AllowAnonymousAttribute()] : [];
         ControllerModel controller = new(typeof(GeneratedController).GetTypeInfo(), controllerAttributes);
-        object[] actionAttributes = includeActionAllowAnonymous ? [new AllowAnonymousAttribute()] : [];
+        object[] actionAttributes =
+            includeActionAllowAnonymous switch
+            {
+                true when includeActionAuthorize => [new AllowAnonymousAttribute(), new AuthorizeAttribute()],
+                true => [new AllowAnonymousAttribute()],
+                false when includeActionAuthorize => [new AuthorizeAttribute()],
+                _ => [],
+            };
         ActionModel action = new(
             typeof(GeneratedController).GetMethod(nameof(GeneratedController.Get))!,
             actionAttributes);
@@ -91,5 +99,31 @@ public sealed class GeneratedApiAuthorizationConventionTests
         Assert.DoesNotContain(controller.Filters, filter => filter is IAllowAnonymousFilter);
         Assert.DoesNotContain(action.Filters, filter => filter is IAllowAnonymousFilter);
         Assert.Contains(controller.Filters, filter => filter is AuthorizeFilter);
+    }
+
+    /// <summary>
+    ///     Apply preserves ASP.NET behavior where controller-level allow-anonymous bypasses action-level authorize metadata when opt-out is enabled.
+    /// </summary>
+    [Fact]
+    public void ApplyPreservesControllerAllowAnonymousOverActionAuthorizeWhenOptOutEnabled()
+    {
+        // Arrange
+        GeneratedApiAuthorizationOptions options = new()
+        {
+            Mode = GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            AllowAnonymousOptOut = true,
+        };
+        GeneratedApiAuthorizationConvention convention = new(options);
+        ApplicationModel application = CreateApplicationModel(true, false, includeActionAuthorize: true);
+
+        // Act
+        convention.Apply(application);
+
+        // Assert
+        ControllerModel controller = application.Controllers.Single();
+        ActionModel action = controller.Actions.Single();
+        Assert.Contains(controller.Attributes, attribute => attribute is IAllowAnonymous);
+        Assert.Contains(action.Attributes, attribute => attribute is IAuthorizeData);
+        Assert.DoesNotContain(controller.Filters, filter => filter is AuthorizeFilter);
     }
 }

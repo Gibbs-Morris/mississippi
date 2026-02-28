@@ -104,6 +104,16 @@ projection, and saga HTTP APIs.
 | `GenerateAuthorization` | Aggregate, command, projection, saga state | `[Authorize]` with optional policy/roles/schemes |
 | `GenerateAllowAnonymous` | Aggregate, command, projection, saga state | `[AllowAnonymous]` |
 
+### Effective Authorization Rule
+
+Generated endpoints use one deterministic rule set:
+
+1. `GenerateAllowAnonymous` bypasses authorization checks when `AllowAnonymousOptOut = true` (ASP.NET precedence).
+2. `GenerateAuthorization` applies when allow-anonymous is not effective for the endpoint.
+3. No generated auth metadata + force mode: endpoint uses global defaults from `GeneratedApiAuthorizationOptions`.
+
+This keeps generated MVC endpoints and projection SignalR subscription checks aligned.
+
 Example:
 
 ```csharp
@@ -141,6 +151,7 @@ builder.Services.AddInletServer(options =>
 
 | Scenario | Result |
 |---|---|
+| `GenerateAuthorization` + `GenerateAllowAnonymous` on same generated surface | `AllowAnonymous` is effective when opt-out is enabled (ASP.NET precedence) |
 | No force mode, no generation auth attributes | Generated endpoints remain auth-neutral |
 | No force mode, `GenerateAuthorization` present | Generator emits `[Authorize(...)]` |
 | Force mode enabled, no generation auth attributes | Generated endpoints require authorization via global defaults |

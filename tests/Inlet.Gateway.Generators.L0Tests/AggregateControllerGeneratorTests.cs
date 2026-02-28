@@ -1118,4 +1118,38 @@ public class AggregateControllerGeneratorTests
             runResult.Diagnostics,
             diagnostic => (diagnostic.Id == "INLETAUTH001") && (diagnostic.Severity == DiagnosticSeverity.Warning));
     }
+
+    /// <summary>
+    ///     Generator should emit both allow-anonymous and authorize metadata when both are configured.
+    /// </summary>
+    [Fact]
+    public void GeneratorEmitsAllowAnonymousAndAuthorizeWhenBothAreConfigured()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+
+                                       namespace TestApp.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate;
+                                       }
+
+                                       namespace TestApp.Aggregates.Order.Commands
+                                       {
+                                           [GenerateCommand(Route = "create")]
+                                           [GenerateAuthorization(Policy = "orders.write")]
+                                           [GenerateAllowAnonymous]
+                                           public sealed record CreateOrder;
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, aggregateSource);
+        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+
+        Assert.Contains("[AllowAnonymous]", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("[Authorize(Policy = \"orders.write\")]", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            runResult.Diagnostics,
+            diagnostic => (diagnostic.Id == "INLETAUTH002") && (diagnostic.Severity == DiagnosticSeverity.Warning));
+    }
 }

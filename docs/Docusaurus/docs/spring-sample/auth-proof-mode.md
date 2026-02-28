@@ -28,6 +28,8 @@ When using the repository helper script, use:
 ./run-spring.ps1 -LocalAuth On
 ```
 
+The script now reads Aspire startup output and prints the runtime login URL/token only when detected from Aspire logs. It no longer prints a synthetic token.
+
 To run Spring with local auth handling disabled (default demo mode), use:
 
 ```powershell
@@ -105,6 +107,7 @@ Source:
 | `401 Unauthorized` | No authenticated principal was established | Ensure `X-Spring-Anonymous` is absent or `false`; for local header identity, ensure `SpringAuth__Enabled=true` |
 | `403 Forbidden` | Principal authenticated but missing required role/claim | Verify `X-Spring-Roles` and `X-Spring-Claims` match endpoint requirements |
 | `401` when auth-proof mode is off | Local dev handler did not create an identity | Confirm `Spring__AuthProofMode=true` before startup |
+| Dashboard token in script output is missing | Aspire startup line was not parsed in current run | Open the dashboard URL and use the login token printed by Aspire (`Login to the dashboard at ...`) |
 
 ## Summary
 

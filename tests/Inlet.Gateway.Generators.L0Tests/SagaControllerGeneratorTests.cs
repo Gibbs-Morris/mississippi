@@ -218,6 +218,42 @@ public sealed class SagaControllerGeneratorTests
     }
 
     /// <summary>
+    ///     Generated saga controller should include both allow-anonymous and authorize metadata when both are configured.
+    /// </summary>
+    [Fact]
+    public void GeneratedSagaControllerIncludesAllowAnonymousAndAuthorizeWhenBothConfigured()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput(string AccountId);
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      [GenerateAuthorization(Policy = "saga-policy")]
+                                      [GenerateAllowAnonymous]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        string controllerCode = runResult.GeneratedTrees.First(tree =>
+                tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+
+        Assert.Contains("[AllowAnonymous]", controllerCode, StringComparison.Ordinal);
+        Assert.Contains("[Authorize(Policy = \"saga-policy\")]", controllerCode, StringComparison.Ordinal);
+        Assert.Contains(
+            runResult.Diagnostics,
+            diagnostic => (diagnostic.Id == "INLETAUTH002") && (diagnostic.Severity == DiagnosticSeverity.Warning));
+    }
+
+    /// <summary>
     ///     Verifies controller and DTO generation for property-based inputs.
     /// </summary>
     [Fact]
