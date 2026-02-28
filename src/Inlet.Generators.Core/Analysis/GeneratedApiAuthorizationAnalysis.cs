@@ -154,7 +154,19 @@ public static class GeneratedApiAuthorizationAnalysis
         string propertyName,
         string? value
     ) =>
-        string.IsNullOrWhiteSpace(value) ? string.Empty : propertyName + " = \"" + value + "\"";
+        string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : propertyName + " = \"" + EscapeForCSharpStringLiteral(value!) + "\"";
+
+    private static string EscapeForCSharpStringLiteral(
+        string value
+    ) =>
+        value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n")
+            .Replace("\t", "\\t");
 
     private static Location GetLocation(
         AttributeData attribute
