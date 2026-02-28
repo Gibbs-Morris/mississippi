@@ -13,7 +13,7 @@ namespace Spring.Domain.Aggregates.AuthProof;
 [SnapshotStorageName("SPRING", "AUTHPROOF", "FLOWSTATE")]
 [GenerateAggregateEndpoints]
 [GenerateSerializer]
-[Alias("Spring.Domain.AuthProof.AuthProofAggregate")]
+[Alias("Spring.Domain.Aggregates.AuthProof.AuthProofAggregate")]
 public sealed record AuthProofAggregate
 {
     /// <summary>

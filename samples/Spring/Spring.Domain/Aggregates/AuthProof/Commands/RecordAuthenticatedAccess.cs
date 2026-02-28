@@ -11,5 +11,5 @@ namespace Spring.Domain.Aggregates.AuthProof.Commands;
 [GenerateCommand(Route = "authenticated")]
 [GenerateAuthorization]
 [GenerateSerializer]
-[Alias("Spring.Domain.AuthProof.Commands.RecordAuthenticatedAccess")]
+[Alias("Spring.Domain.Aggregates.AuthProof.Commands.RecordAuthenticatedAccess")]
 public sealed record RecordAuthenticatedAccess;

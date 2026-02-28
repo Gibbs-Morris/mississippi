@@ -7,7 +7,7 @@ namespace Spring.Domain.Aggregates.AuthProof;
 ///     Input used to start the auth-proof saga endpoint surface.
 /// </summary>
 [GenerateSerializer]
-[Alias("Spring.Domain.AuthProof.StartAuthProofSagaInput")]
+[Alias("Spring.Domain.Aggregates.AuthProof.StartAuthProofSagaInput")]
 public sealed record StartAuthProofSagaInput
 {
     /// <summary>

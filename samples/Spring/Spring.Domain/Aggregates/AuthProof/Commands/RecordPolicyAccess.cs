@@ -11,5 +11,5 @@ namespace Spring.Domain.Aggregates.AuthProof.Commands;
 [GenerateCommand(Route = "policy")]
 [GenerateAuthorization(Policy = "spring.auth-proof.claim")]
 [GenerateSerializer]
-[Alias("Spring.Domain.AuthProof.Commands.RecordPolicyAccess")]
+[Alias("Spring.Domain.Aggregates.AuthProof.Commands.RecordPolicyAccess")]
 public sealed record RecordPolicyAccess;

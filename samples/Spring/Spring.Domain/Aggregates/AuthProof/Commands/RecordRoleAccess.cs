@@ -11,5 +11,5 @@ namespace Spring.Domain.Aggregates.AuthProof.Commands;
 [GenerateCommand(Route = "role")]
 [GenerateAuthorization(Roles = "auth-proof-operator")]
 [GenerateSerializer]
-[Alias("Spring.Domain.AuthProof.Commands.RecordRoleAccess")]
+[Alias("Spring.Domain.Aggregates.AuthProof.Commands.RecordRoleAccess")]
 public sealed record RecordRoleAccess;

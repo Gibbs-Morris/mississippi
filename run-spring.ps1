@@ -124,7 +124,13 @@ $parsedDashboardLoginUrl = $null
 $dotnetExitCode = $LASTEXITCODE
 
 if (-not [string]::IsNullOrWhiteSpace($parsedDashboardLoginUrl)) {
-    Write-Output "Aspire dashboard login URL: $parsedDashboardLoginUrl"
+    try {
+        $parsedDashboardUri = [System.Uri]$parsedDashboardLoginUrl
+        $redactedLoginUrl = "{0}{1}" -f $parsedDashboardUri.GetLeftPart([System.UriPartial]::Path), '?t=<redacted>'
+        Write-Output "Aspire dashboard login URL (token redacted): $redactedLoginUrl"
+    } catch {
+        Write-Output "Aspire dashboard login URL detected (token redacted)."
+    }
 
     if ($parsedDashboardLoginUrl -match '[?&]t=([^&\s]+)') {
         if ($ShowDashboardToken.IsPresent) {
