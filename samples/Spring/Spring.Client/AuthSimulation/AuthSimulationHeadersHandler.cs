@@ -30,20 +30,25 @@ public sealed class AuthSimulationHeadersHandler : DelegatingHandler
 
     private const string RolesHeaderName = "X-Spring-Roles";
 
+    private AuthSimulationProfileSnapshot currentProfile = new(
+        false,
+        "banking-operator,transfer-operator,auth-proof-operator",
+        "spring.permission=auth-proof");
+
     /// <summary>
     ///     Gets the claims header value applied to outgoing requests.
     /// </summary>
-    public string? Claims { get; private set; } = "spring.permission=auth-proof";
+    public string? Claims => Volatile.Read(ref currentProfile).Claims;
 
     /// <summary>
     ///     Gets a value indicating whether outgoing requests should force anonymous identity.
     /// </summary>
-    public bool IsAnonymous { get; private set; }
+    public bool IsAnonymous => Volatile.Read(ref currentProfile).IsAnonymous;
 
     /// <summary>
     ///     Gets the roles header value applied to outgoing requests.
     /// </summary>
-    public string? Roles { get; private set; } = "banking-operator,transfer-operator,auth-proof-operator";
+    public string? Roles => Volatile.Read(ref currentProfile).Roles;
 
     /// <summary>
     ///     Updates the auth simulation profile applied to subsequent outgoing requests.
@@ -57,9 +62,7 @@ public sealed class AuthSimulationHeadersHandler : DelegatingHandler
         string? claims
     )
     {
-        IsAnonymous = isAnonymous;
-        Roles = roles;
-        Claims = claims;
+        Interlocked.Exchange(ref currentProfile, new(isAnonymous, roles, claims));
     }
 
     /// <inheritdoc />
@@ -77,23 +80,26 @@ public sealed class AuthSimulationHeadersHandler : DelegatingHandler
         HttpRequestMessage request
     )
     {
+        AuthSimulationProfileSnapshot profile = Volatile.Read(ref currentProfile);
         request.Headers.Remove(AnonymousHeaderName);
         request.Headers.Remove(RolesHeaderName);
         request.Headers.Remove(ClaimsHeaderName);
-        if (IsAnonymous)
+        if (profile.IsAnonymous)
         {
             request.Headers.Add(AnonymousHeaderName, "true");
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(Roles))
+        if (!string.IsNullOrWhiteSpace(profile.Roles))
         {
-            request.Headers.Add(RolesHeaderName, Roles);
+            request.Headers.Add(RolesHeaderName, profile.Roles);
         }
 
-        if (!string.IsNullOrWhiteSpace(Claims))
+        if (!string.IsNullOrWhiteSpace(profile.Claims))
         {
-            request.Headers.Add(ClaimsHeaderName, Claims);
+            request.Headers.Add(ClaimsHeaderName, profile.Claims);
         }
     }
+
+    private sealed record AuthSimulationProfileSnapshot(bool IsAnonymous, string? Roles, string? Claims);
 }

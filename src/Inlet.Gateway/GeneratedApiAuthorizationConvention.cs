@@ -48,14 +48,12 @@ internal sealed class GeneratedApiAuthorizationConvention : IApplicationModelCon
     private static bool HasAuthorize(
         ActionModel action
     ) =>
-        action.Attributes.OfType<IAuthorizeData>().Any() ||
-        action.Filters.OfType<AuthorizeFilter>().Any();
+        action.Attributes.OfType<IAuthorizeData>().Any() || action.Filters.OfType<AuthorizeFilter>().Any();
 
     private static bool HasAuthorize(
         ControllerModel controller
     ) =>
-        controller.Attributes.OfType<IAuthorizeData>().Any() ||
-        controller.Filters.OfType<AuthorizeFilter>().Any();
+        controller.Attributes.OfType<IAuthorizeData>().Any() || controller.Filters.OfType<AuthorizeFilter>().Any();
 
     private static bool IsGeneratedApiController(
         ControllerModel controller

@@ -936,6 +936,34 @@ public class AggregateControllerGeneratorTests
     }
 
     /// <summary>
+    ///     Generator should escape authorization metadata values when emitting attribute literals.
+    /// </summary>
+    [Fact]
+    public void GeneratorEscapesAuthorizationMetadataValuesInGeneratedAttributes()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+
+                                       namespace TestApp.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate;
+                                       }
+
+                                       namespace TestApp.Aggregates.Order.Commands
+                                       {
+                                           [GenerateCommand(Route = "create")]
+                                           [GenerateAuthorization(Policy = "quote\"slash\\name")]
+                                           public sealed record CreateOrder;
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, aggregateSource);
+        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        Assert.Contains("[Authorize(Policy = \"quote\\\"slash\\\\name\")]", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generator should handle multiple aggregates in same compilation.
     /// </summary>
     [Fact]
@@ -1150,37 +1178,5 @@ public class AggregateControllerGeneratorTests
         Assert.Contains(
             runResult.Diagnostics,
             diagnostic => (diagnostic.Id == "INLETAUTH001") && (diagnostic.Severity == DiagnosticSeverity.Warning));
-    }
-
-    /// <summary>
-    ///     Generator should escape authorization metadata values when emitting attribute literals.
-    /// </summary>
-    [Fact]
-    public void GeneratorEscapesAuthorizationMetadataValuesInGeneratedAttributes()
-    {
-        const string aggregateSource = """
-                                       using Mississippi.Inlet.Generators.Abstractions;
-
-                                       namespace TestApp.Aggregates.Order
-                                       {
-                                           [GenerateAggregateEndpoints]
-                                           public sealed record OrderAggregate;
-                                       }
-
-                                       namespace TestApp.Aggregates.Order.Commands
-                                       {
-                                           [GenerateCommand(Route = "create")]
-                                           [GenerateAuthorization(Policy = "quote\"slash\\name")]
-                                           public sealed record CreateOrder;
-                                       }
-                                       """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
-
-        Assert.Contains(
-            "[Authorize(Policy = \"quote\\\"slash\\\\name\")]",
-            generatedCode,
-            StringComparison.Ordinal);
     }
 }

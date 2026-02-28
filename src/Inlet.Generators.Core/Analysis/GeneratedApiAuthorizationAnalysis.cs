@@ -161,8 +161,7 @@ public static class GeneratedApiAuthorizationAnalysis
     private static string EscapeForCSharpStringLiteral(
         string value
     ) =>
-        value
-            .Replace("\\", "\\\\")
+        value.Replace("\\", "\\\\")
             .Replace("\"", "\\\"")
             .Replace("\r", "\\r")
             .Replace("\n", "\\n")

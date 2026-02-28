@@ -201,9 +201,15 @@ WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped(_ => new HttpClient
+builder.Services.AddScoped<AuthSimulationHeadersHandler>();
+builder.Services.AddScoped(sp =>
 {
-    BaseAddress = new(builder.HostEnvironment.BaseAddress),
+    AuthSimulationHeadersHandler authSimulationHeadersHandler = sp.GetRequiredService<AuthSimulationHeadersHandler>();
+    authSimulationHeadersHandler.InnerHandler = new HttpClientHandler();
+    return new HttpClient(authSimulationHeadersHandler)
+    {
+        BaseAddress = new(builder.HostEnvironment.BaseAddress),
+    };
 });
 
 // One call registers all client-side generated features (dispatchers and state wiring)
@@ -212,6 +218,7 @@ builder.Services.AddSpringDomainClient();
 // UI features
 builder.Services.AddDualEntitySelectionFeature();
 builder.Services.AddDemoAccountsFeature();
+builder.Services.AddAuthSimulationFeature();
 builder.Services.AddReservoirBlazorBuiltIns();
 builder.Services.AddReservoirDevTools(options =>
 {

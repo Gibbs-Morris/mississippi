@@ -1,3 +1,4 @@
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Runs the Spring Aspire AppHost for local development and testing.
@@ -26,7 +27,10 @@ param(
     [string]$LocalAuth = 'Off',
 
     [Parameter()]
-    [switch]$ShowDashboardToken
+    [switch]$ShowDashboardToken,
+
+    [Parameter()]
+    [switch]$ForceCleanup
 )
 
 Set-StrictMode -Version Latest
@@ -54,8 +58,12 @@ if (-not (Test-Path $launchSettingsPath)) {
 $staleProcessNames = @('Spring.AppHost', 'Spring.Silo', 'Spring.Server')
 $staleProcesses = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in $staleProcessNames }
 if ($staleProcesses) {
-    Write-Host "Stopping stale Spring processes..." -ForegroundColor Yellow
-    $staleProcesses | Stop-Process -Force
+    if ($ForceCleanup.IsPresent) {
+        Write-Host "Stopping stale Spring processes..." -ForegroundColor Yellow
+        $staleProcesses | Stop-Process -Force
+    } else {
+        Write-Warning "Detected existing Spring processes. Re-run with -ForceCleanup to stop them automatically."
+    }
 }
 
 Write-Host "Building Samples solution..." -ForegroundColor Cyan

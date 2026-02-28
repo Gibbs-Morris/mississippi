@@ -96,17 +96,20 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
         SpringAuthOptions options = SpringAuthOptions.CurrentValue;
         if (!options.Enabled)
         {
+            Logger.LocalDevAuthDisabled(Scheme.Name);
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
         if (!IsLocalRequest())
         {
+            Logger.LocalDevAuthRejectedNonLocalRequest(Scheme.Name);
             return Task.FromResult(
                 AuthenticateResult.Fail("Spring local development authentication only allows local requests."));
         }
 
         if (IsAnonymousRequest(options))
         {
+            Logger.LocalDevAuthAnonymousRequest(Scheme.Name);
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
@@ -122,6 +125,7 @@ public sealed class SpringLocalDevAuthenticationHandler : AuthenticationHandler<
         ClaimsIdentity identity = new(claims, Scheme.Name);
         ClaimsPrincipal principal = new(identity);
         AuthenticationTicket ticket = new(principal, Scheme.Name);
+        Logger.LocalDevAuthSucceeded(Scheme.Name, userId, roles.Length, claims.Count);
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 

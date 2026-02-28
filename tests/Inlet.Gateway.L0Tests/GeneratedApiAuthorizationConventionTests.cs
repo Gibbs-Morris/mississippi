@@ -47,6 +47,32 @@ public sealed class GeneratedApiAuthorizationConventionTests
     }
 
     /// <summary>
+    ///     Apply should not add default authorization filter when explicit action authorize metadata already exists.
+    /// </summary>
+    [Fact]
+    public void ApplyDoesNotLayerDefaultFilterWhenActionAuthorizeExists()
+    {
+        // Arrange
+        GeneratedApiAuthorizationOptions options = new()
+        {
+            Mode = GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            AllowAnonymousOptOut = true,
+            DefaultPolicy = "generated-default",
+        };
+        GeneratedApiAuthorizationConvention convention = new(options);
+        ApplicationModel application = CreateApplicationModel(false, false, true);
+
+        // Act
+        convention.Apply(application);
+
+        // Assert
+        ControllerModel controller = application.Controllers.Single();
+        ActionModel action = controller.Actions.Single();
+        Assert.Contains(action.Attributes, attribute => attribute is IAuthorizeData);
+        Assert.DoesNotContain(controller.Filters, filter => filter is AuthorizeFilter);
+    }
+
+    /// <summary>
     ///     Apply preserves AllowAnonymous metadata when opt-out is enabled.
     /// </summary>
     [Fact]
@@ -95,32 +121,6 @@ public sealed class GeneratedApiAuthorizationConventionTests
         ControllerModel controller = application.Controllers.Single();
         ActionModel action = controller.Actions.Single();
         Assert.Contains(controller.Attributes, attribute => attribute is IAllowAnonymous);
-        Assert.Contains(action.Attributes, attribute => attribute is IAuthorizeData);
-        Assert.DoesNotContain(controller.Filters, filter => filter is AuthorizeFilter);
-    }
-
-    /// <summary>
-    ///     Apply should not add default authorization filter when explicit action authorize metadata already exists.
-    /// </summary>
-    [Fact]
-    public void ApplyDoesNotLayerDefaultFilterWhenActionAuthorizeExists()
-    {
-        // Arrange
-        GeneratedApiAuthorizationOptions options = new()
-        {
-            Mode = GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
-            AllowAnonymousOptOut = true,
-            DefaultPolicy = "generated-default",
-        };
-        GeneratedApiAuthorizationConvention convention = new(options);
-        ApplicationModel application = CreateApplicationModel(false, false, true);
-
-        // Act
-        convention.Apply(application);
-
-        // Assert
-        ControllerModel controller = application.Controllers.Single();
-        ActionModel action = controller.Actions.Single();
         Assert.Contains(action.Attributes, attribute => attribute is IAuthorizeData);
         Assert.DoesNotContain(controller.Filters, filter => filter is AuthorizeFilter);
     }
