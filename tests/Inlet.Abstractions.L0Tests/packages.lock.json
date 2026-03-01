@@ -521,14 +521,14 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Gateway.Abstractions": {
+      "Mississippi.Inlet.Server.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )"
         }
       },
-      "Mississippi.Inlet.Runtime.Abstractions": {
+      "Mississippi.Inlet.Silo.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
