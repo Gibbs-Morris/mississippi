@@ -32,6 +32,7 @@ public sealed class InletSiloRegistrationsTests
         Assert.Same(services, result);
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.NotNull(provider.GetRequiredService<IProjectionBrookRegistry>());
+        Assert.NotNull(provider.GetRequiredService<IProjectionAuthorizationRegistry>());
     }
 
     /// <summary>
@@ -48,9 +49,14 @@ public sealed class InletSiloRegistrationsTests
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionBrookRegistry registry1 = provider.GetRequiredService<IProjectionBrookRegistry>();
         IProjectionBrookRegistry registry2 = provider.GetRequiredService<IProjectionBrookRegistry>();
+        IProjectionAuthorizationRegistry authorizationRegistry1 =
+            provider.GetRequiredService<IProjectionAuthorizationRegistry>();
+        IProjectionAuthorizationRegistry authorizationRegistry2 =
+            provider.GetRequiredService<IProjectionAuthorizationRegistry>();
 
         // Assert
         Assert.Same(registry1, registry2);
+        Assert.Same(authorizationRegistry1, authorizationRegistry2);
     }
 
     /// <summary>
@@ -66,9 +72,12 @@ public sealed class InletSiloRegistrationsTests
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionBrookRegistry registry = provider.GetRequiredService<IProjectionBrookRegistry>();
+        IProjectionAuthorizationRegistry authorizationRegistry =
+            provider.GetRequiredService<IProjectionAuthorizationRegistry>();
 
         // Assert
         Assert.NotNull(registry);
+        Assert.NotNull(authorizationRegistry);
     }
 
     /// <summary>

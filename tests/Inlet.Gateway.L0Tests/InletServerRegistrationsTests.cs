@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -54,6 +55,66 @@ public sealed class InletServerRegistrationsTests
 
         // Assert
         Assert.Equal(customNamespace, options.Value.AllClientsStreamNamespace);
+    }
+
+    /// <summary>
+    ///     AddInletServer should apply generated API authorization configuration options.
+    /// </summary>
+    [Fact]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "Test method verifies configuration.")]
+    public void AddInletServerAppliesGeneratedApiAuthorizationOptions()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddInletServer(options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.DefaultPolicy = "generated-policy";
+            options.GeneratedApiAuthorization.DefaultRoles = "admin";
+            options.GeneratedApiAuthorization.DefaultAuthenticationSchemes = "Bearer";
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = false;
+        });
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IOptions<InletServerOptions> options = provider.GetRequiredService<IOptions<InletServerOptions>>();
+
+        // Assert
+        Assert.Equal(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            options.Value.GeneratedApiAuthorization.Mode);
+        Assert.Equal("generated-policy", options.Value.GeneratedApiAuthorization.DefaultPolicy);
+        Assert.Equal("admin", options.Value.GeneratedApiAuthorization.DefaultRoles);
+        Assert.Equal("Bearer", options.Value.GeneratedApiAuthorization.DefaultAuthenticationSchemes);
+        Assert.False(options.Value.GeneratedApiAuthorization.AllowAnonymousOptOut);
+    }
+
+    /// <summary>
+    ///     AddInletServer should register MVC options setup for generated API authorization convention.
+    /// </summary>
+    [Fact]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "Test method verifies registration.")]
+    public void AddInletServerRegistersGeneratedApiAuthorizationMvcOptionsSetup()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddInletServer();
+
+        // Assert
+        Assert.Contains(
+            services,
+            descriptor => (descriptor.ServiceType == typeof(IConfigureOptions<MvcOptions>)) &&
+                          (descriptor.ImplementationType == typeof(GeneratedApiAuthorizationMvcOptionsSetup)));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IConfigureOptions<MvcOptions>));
     }
 
     /// <summary>

@@ -1,0 +1,142 @@
+@page "/auth-proof"
+@inherits InletComponent
+
+<main>
+    <nav>
+        <button type="button" @onclick="NavigateToIndex">Back to Bank Account</button>
+    </nav>
+
+    <header>
+        <h1>Auth Proof</h1>
+        <p>Trigger authenticated, policy, and role proof flows and inspect projection/state updates.</p>
+    </header>
+
+    <section>
+        <h2>Target Entity</h2>
+        <label>
+            Entity Id
+            <input @bind="entityIdInput"/>
+        </label>
+        <p>Current entity: <strong>@ProjectionEntityIdDisplay</strong></p>
+    </section>
+
+    <section>
+        <h2>Local Auth Simulation Persona</h2>
+        <p>
+            These buttons control request headers used by generated aggregate/saga/projection HTTP calls.
+            Use <strong>run-spring.ps1 -LocalAuth On</strong> to enable local auth simulation on the server.
+            With <strong>LocalAuth Off</strong>, protected endpoints are expected to return 401 regardless of persona.
+        </p>
+        <div>
+            <button type="button" @onclick="UseUnauthenticatedPersona">Unauthenticated</button>
+            <button type="button" @onclick="UseOperatorOnlyPersona">Operator Roles</button>
+            <button type="button" @onclick="UseAuthProofRolePersona">AuthProof Role</button>
+            <button type="button" @onclick="UseAuthProofClaimPersona">AuthProof Claim</button>
+            <button type="button" @onclick="UseFullAccessPersona">Full Access</button>
+        </div>
+        <p>Active persona: <strong>@ActivePersonaName</strong></p>
+        <p>@ActivePersonaDescription</p>
+    </section>
+
+    <section>
+        <h2>Aggregate Commands</h2>
+        <p>These commands hit aggregate endpoints that are authorized differently in auth-proof mode.</p>
+        <div>
+            <button type="button" @onclick="RecordAuthenticatedAccess">Record Authenticated Access</button>
+            <button type="button" @onclick="RecordPolicyAccess">Record Policy Access</button>
+            <button type="button" @onclick="RecordRoleAccess">Record Role Access</button>
+        </div>
+    </section>
+
+    <section>
+        <h2>Saga Start</h2>
+        <p>Starts the auth-proof saga for the current entity using a generated saga identifier.</p>
+        <button type="button" @onclick="StartAuthProofSaga">Start AuthProof Saga</button>
+        <p>Last saga id: @LastSagaIdDisplay</p>
+        <p>Last correlation id: @LastCorrelationIdDisplay</p>
+    </section>
+
+    <section>
+        <h2>Projection Snapshot</h2>
+        @if (ProjectionSnapshotRows.Count > 0)
+        {
+            <table>
+                <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach ((string Name, string Value) in ProjectionSnapshotRows)
+                {
+                    <tr>
+                        <td>@Name</td>
+                        <td>@Value</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No auth-proof projection loaded yet for this entity.</p>
+        }
+    </section>
+
+    <section>
+        <h2>Aggregate State Snapshot</h2>
+        @if (AggregateStateRows.Count > 0)
+        {
+            <table>
+                <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach ((string Name, string Value) in AggregateStateRows)
+                {
+                    <tr>
+                        <td>@Name</td>
+                        <td>@Value</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>Aggregate state is not available.</p>
+        }
+    </section>
+
+    <section>
+        <h2>Saga State Snapshot</h2>
+        @if (SagaStateRows.Count > 0)
+        {
+            <table>
+                <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach ((string Name, string Value) in SagaStateRows)
+                {
+                    <tr>
+                        <td>@Name</td>
+                        <td>@Value</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>Saga state is not available.</p>
+        }
+    </section>
+</main>
