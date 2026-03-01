@@ -1,16 +1,10 @@
 name: "Project Reference Hygiene Gate"
 on:
   workflow_dispatch:
-  merge_group:
-  pull_request:
-    branches:
-      - main
-      - feature/**
-      - topic/**
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
