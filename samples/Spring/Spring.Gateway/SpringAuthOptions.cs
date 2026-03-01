@@ -1,4 +1,4 @@
-namespace Spring.Server;
+namespace Spring.Gateway;
 
 /// <summary>
 ///     Configuration options for optional Spring sample authentication.

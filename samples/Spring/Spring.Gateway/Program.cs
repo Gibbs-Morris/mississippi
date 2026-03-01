@@ -23,9 +23,9 @@ using Orleans.Hosting;
 using Scalar.AspNetCore;
 
 using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Server;
-using Spring.Server.Controllers.Mappers;
-using Spring.Server.McpTools;
+using Spring.Gateway;
+using Spring.Gateway.Controllers.Mappers;
+using Spring.Gateway.McpTools;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -102,7 +102,7 @@ builder.Services.AddAqueduct<InletHub>(options =>
     options.StreamProviderName = "StreamProvider";
 });
 
-// Add Inlet Server services for real-time projection updates
+// Add Inlet Gateway services for real-time projection updates
 if (springAuthOptions.Enabled)
 {
     builder.Services.AddInletServer(options =>
@@ -125,7 +125,7 @@ builder.Services.AddSpringDomainServer();
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.
-builder.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringServerPingMcpTools>();
+builder.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringGatewayPingMcpTools>();
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files

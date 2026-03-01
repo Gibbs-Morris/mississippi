@@ -12,15 +12,15 @@
     <Folder Name="/Samples/Spring/">
         <Project Path="samples\Spring\Spring.Domain\Spring.Domain.csproj" />
         <Project Path="samples\Spring\Spring.Client\Spring.Client.csproj" />
-        <Project Path="samples\Spring\Spring.Server\Spring.Server.csproj" />
-        <Project Path="samples\Spring\Spring.Silo\Spring.Silo.csproj" />
+        <Project Path="samples\Spring\Spring.Gateway\Spring.Gateway.csproj" />
+        <Project Path="samples\Spring\Spring.Runtime\Spring.Runtime.csproj" />
         <Project Path="samples\Spring\Spring.AppHost\Spring.AppHost.csproj" />
         <Project Path="samples\Spring\Spring.Domain.L0Tests\Spring.Domain.L0Tests.csproj" />
         <Project Path="samples\Spring\Spring.L2Tests\Spring.L2Tests.csproj" />
     </Folder>
     <Folder Name="/Samples/LightSpeed/">
         <Project Path="samples\LightSpeed\LightSpeed.Client\LightSpeed.Client.csproj" />
-        <Project Path="samples\LightSpeed\LightSpeed.Server\LightSpeed.Server.csproj" />
+        <Project Path="samples\LightSpeed\LightSpeed.Gateway\LightSpeed.Gateway.csproj" />
         <Project Path="samples\LightSpeed\LightSpeed.AppHost\LightSpeed.AppHost.csproj" />
     </Folder>
     <Folder Name="/Tests/Spring/">

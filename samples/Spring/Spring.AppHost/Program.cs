@@ -42,10 +42,10 @@ OrleansService orleans = builder.AddOrleans("default")
     .WithMemoryGrainStorage("PubSubStore")
     .WithMemoryStreaming("StreamProvider");
 
-// Add Spring.Silo - Orleans server that hosts grains
+// Add Spring.Runtime - business runtime host (runs in an Orleans silo)
 // WithReference cosmos/blobs for event sourcing storage (Brooks + Snapshots)
-// WithHealthCheck ensures the silo is fully ready before dependents start
-IResourceBuilder<ProjectResource> silo = builder.AddProject<Spring_Silo>("spring-silo")
+// WithHealthCheck ensures the runtime host is fully ready before dependents start
+IResourceBuilder<ProjectResource> springRuntime = builder.AddProject<Spring_Runtime>("spring-runtime")
     .WithReference(orleans)
     .WithReference(cosmos)
     .WithReference(blobs)
@@ -53,17 +53,17 @@ IResourceBuilder<ProjectResource> silo = builder.AddProject<Spring_Silo>("spring
     .WaitFor(cosmos)
     .WithHttpHealthCheck("/health");
 
-// Add Spring.Server with resource references
-// This is an Orleans client that connects to the silo
-// WaitFor ensures the server doesn't start until dependencies are ready
-IResourceBuilder<ProjectResource> springServer = builder.AddProject<Spring_Server>("spring-server")
+// Add Spring.Gateway with resource references
+// This host is an Orleans client that connects to the runtime host's Orleans silo
+// WaitFor ensures the gateway doesn't start until dependencies are ready
+IResourceBuilder<ProjectResource> springGateway = builder.AddProject<Spring_Gateway>("spring-gateway")
     .WithReference(orleans.AsClient())
     .WaitFor(storage)
-    .WaitFor(silo)
+    .WaitFor(springRuntime)
     .WithExternalHttpEndpoints();
 if (springAuthProofModeEnabled)
 {
-    springServer.WithEnvironment("SpringAuth__Enabled", "true");
+    springGateway.WithEnvironment("SpringAuth__Enabled", "true");
 }
 
 await builder.Build().RunAsync();

@@ -50,7 +50,7 @@ if (-not (Test-Path $launchSettingsPath)) {
     exit 1
 }
 
-$staleProcessNames = @('Spring.AppHost', 'Spring.Silo', 'Spring.Server')
+$staleProcessNames = @('Spring.AppHost', 'Spring.Runtime', 'Spring.Gateway')
 $staleProcesses = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in $staleProcessNames }
 if ($staleProcesses) {
     if ($ForceCleanup.IsPresent) {
