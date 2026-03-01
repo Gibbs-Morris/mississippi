@@ -21,16 +21,26 @@ public class SnapshotTypeRegistryTests
     private sealed record TestState(int Value = 0);
 
     /// <summary>
-    ///     Register should not overwrite existing registration with same name.
+    ///     Register should throw InvalidOperationException when same name is registered with a different type.
     /// </summary>
     [Fact]
     public void RegisterDoesNotOverwriteExisting()
     {
         SnapshotTypeRegistry registry = new();
         registry.Register("TestState", typeof(TestState));
-        registry.Register("TestState", typeof(AnotherState));
-        Type? resolved = registry.ResolveType("TestState");
-        Assert.Equal(typeof(TestState), resolved);
+        Assert.Throws<InvalidOperationException>(() => registry.Register("TestState", typeof(AnotherState)));
+    }
+
+    /// <summary>
+    ///     Register should not throw when the same name and same type are registered more than once.
+    /// </summary>
+    [Fact]
+    public void RegisterSameNameAndTypeTwiceDoesNotThrow()
+    {
+        SnapshotTypeRegistry registry = new();
+        registry.Register("TestState", typeof(TestState));
+        registry.Register("TestState", typeof(TestState));
+        Assert.Equal(typeof(TestState), registry.ResolveType("TestState"));
     }
 
     /// <summary>

@@ -9,6 +9,16 @@ namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 public sealed class UxProjectionKeyTests
 {
     /// <summary>
+    ///     Default UxProjectionKey should return string.Empty for EntityId.
+    /// </summary>
+    [Fact]
+    public void DefaultEntityIdReturnsStringEmpty()
+    {
+        UxProjectionKey key = default;
+        Assert.Equal(string.Empty, key.EntityId);
+    }
+
+    /// <summary>
     ///     Constructor should create key with valid entity ID.
     /// </summary>
     [Fact]

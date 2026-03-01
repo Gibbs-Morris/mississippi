@@ -42,11 +42,14 @@ internal sealed class EventTypeRegistry : IEventTypeRegistry
         ArgumentException.ThrowIfNullOrWhiteSpace(eventName);
         ArgumentNullException.ThrowIfNull(eventType);
 
-        // Use TryAdd to avoid overwriting - first registration wins
-        if (nameToType.TryAdd(eventName, eventType))
+        Type registeredType = nameToType.GetOrAdd(eventName, eventType);
+        if (registeredType != eventType)
         {
-            typeToName.TryAdd(eventType, eventName);
+            throw new InvalidOperationException(
+                $"Event name '{eventName}' is already registered to type '{registeredType.FullName}'. Cannot register different type '{eventType.FullName}'.");
         }
+
+        typeToName.TryAdd(eventType, eventName);
     }
 
     /// <inheritdoc />

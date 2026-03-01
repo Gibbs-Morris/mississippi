@@ -19,16 +19,26 @@ public class EventTypeRegistryTests
     private sealed record TestEvent;
 
     /// <summary>
-    ///     Register should not overwrite existing registration with same name.
+    ///     Register should throw InvalidOperationException when same name is registered with a different type.
     /// </summary>
     [Fact]
     public void RegisterDoesNotOverwriteExisting()
     {
         EventTypeRegistry registry = new();
         registry.Register("TestEvent", typeof(TestEvent));
-        registry.Register("TestEvent", typeof(AnotherEvent));
-        Type? resolved = registry.ResolveType("TestEvent");
-        Assert.Equal(typeof(TestEvent), resolved);
+        Assert.Throws<InvalidOperationException>(() => registry.Register("TestEvent", typeof(AnotherEvent)));
+    }
+
+    /// <summary>
+    ///     Register should not throw when the same name and same type are registered more than once.
+    /// </summary>
+    [Fact]
+    public void RegisterSameNameAndTypeTwiceDoesNotThrow()
+    {
+        EventTypeRegistry registry = new();
+        registry.Register("TestEvent", typeof(TestEvent));
+        registry.Register("TestEvent", typeof(TestEvent));
+        Assert.Equal(typeof(TestEvent), registry.ResolveType("TestEvent"));
     }
 
     /// <summary>

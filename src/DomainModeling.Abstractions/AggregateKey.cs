@@ -43,10 +43,10 @@ public readonly record struct AggregateKey
     }
 
     /// <summary>
-    ///     Gets the entity identifier.
+    ///     Gets the entity identifier. Returns <see cref="string.Empty" /> when the struct is default-initialized.
     /// </summary>
     [Id(0)]
-    public string EntityId { get; }
+    public string EntityId { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Creates an <see cref="AggregateKey" /> from its string representation.

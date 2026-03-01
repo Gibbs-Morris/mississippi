@@ -261,4 +261,15 @@ public sealed class UxProjectionCursorKeyTests
         Assert.Equal("TestBrook", key.BrookName);
         Assert.Equal("entity-1", key.EntityId);
     }
+
+    /// <summary>
+    ///     Default UxProjectionCursorKey should return string.Empty for BrookName and EntityId.
+    /// </summary>
+    [Fact]
+    public void DefaultBrookNameAndEntityIdReturnStringEmpty()
+    {
+        UxProjectionCursorKey key = default;
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.EntityId);
+    }
 }

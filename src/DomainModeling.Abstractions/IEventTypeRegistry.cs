@@ -33,6 +33,10 @@ public interface IEventTypeRegistry
     /// </summary>
     /// <param name="eventName">The event name as defined by <see cref="EventStorageNameAttribute" />.</param>
     /// <param name="eventType">The CLR type of the event.</param>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when <paramref name="eventName" /> is already registered to a different CLR type.
+    ///     Registering the same name and type combination more than once is silently ignored.
+    /// </exception>
     void Register(
         string eventName,
         Type eventType

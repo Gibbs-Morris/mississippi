@@ -56,16 +56,16 @@ public readonly record struct UxProjectionCursorKey
     }
 
     /// <summary>
-    ///     Gets the name of the brook (event stream type).
+    ///     Gets the name of the brook (event stream type). Returns <see cref="string.Empty" /> when the struct is default-initialized.
     /// </summary>
     [Id(0)]
-    public string BrookName { get; }
+    public string BrookName { get => field ?? string.Empty; }
 
     /// <summary>
-    ///     Gets the identifier of the entity within the brook.
+    ///     Gets the identifier of the entity within the brook. Returns <see cref="string.Empty" /> when the struct is default-initialized.
     /// </summary>
     [Id(1)]
-    public string EntityId { get; }
+    public string EntityId { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Creates a <see cref="UxProjectionCursorKey" /> from a <see cref="BrookKey" />.

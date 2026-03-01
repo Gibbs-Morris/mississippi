@@ -333,4 +333,15 @@ public sealed class UxProjectionVersionedCacheKeyTests
         UxProjectionVersionedCacheKey key = new("TestBrook", "entity-1", version);
         Assert.Equal(0, key.Version.Value);
     }
+
+    /// <summary>
+    ///     Default UxProjectionVersionedCacheKey should return string.Empty for BrookName and EntityId.
+    /// </summary>
+    [Fact]
+    public void DefaultBrookNameAndEntityIdReturnStringEmpty()
+    {
+        UxProjectionVersionedCacheKey key = default;
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.EntityId);
+    }
 }

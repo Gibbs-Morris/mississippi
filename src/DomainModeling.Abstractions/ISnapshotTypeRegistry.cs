@@ -33,6 +33,10 @@ public interface ISnapshotTypeRegistry
     /// </summary>
     /// <param name="snapshotName">The snapshot name as defined by <see cref="SnapshotStorageNameAttribute" />.</param>
     /// <param name="snapshotType">The CLR type of the snapshot.</param>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when <paramref name="snapshotName" /> is already registered to a different CLR type.
+    ///     Registering the same name and type combination more than once is silently ignored.
+    /// </exception>
     void Register(
         string snapshotName,
         Type snapshotType

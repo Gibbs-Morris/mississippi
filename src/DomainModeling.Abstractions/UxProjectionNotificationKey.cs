@@ -87,10 +87,10 @@ public readonly record struct UxProjectionNotificationKey
     public string EntityId => BrookKey.EntityId;
 
     /// <summary>
-    ///     Gets the name of the projection type.
+    ///     Gets the name of the projection type. Returns <see cref="string.Empty" /> when the struct is default-initialized.
     /// </summary>
     [Id(0)]
-    public string ProjectionTypeName { get; }
+    public string ProjectionTypeName { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Creates a notification key from its string representation.

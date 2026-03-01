@@ -184,4 +184,14 @@ public sealed class UxProjectionNotificationKeyTests
         UxProjectionNotificationKey key = new("TestProjection", brookKey);
         Assert.Equal("TestProjection|TestBrook|entity-1", key.ToString());
     }
+
+    /// <summary>
+    ///     Default UxProjectionNotificationKey should return string.Empty for ProjectionTypeName.
+    /// </summary>
+    [Fact]
+    public void DefaultProjectionTypeNameReturnsStringEmpty()
+    {
+        UxProjectionNotificationKey key = default;
+        Assert.Equal(string.Empty, key.ProjectionTypeName);
+    }
 }

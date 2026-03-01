@@ -9,6 +9,16 @@ namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 public class AggregateKeyTests
 {
     /// <summary>
+    ///     Default AggregateKey should return string.Empty for EntityId.
+    /// </summary>
+    [Fact]
+    public void DefaultEntityIdReturnsStringEmpty()
+    {
+        AggregateKey key = default;
+        Assert.Equal(string.Empty, key.EntityId);
+    }
+
+    /// <summary>
     ///     Constructor should succeed with valid entity ID.
     /// </summary>
     [Fact]

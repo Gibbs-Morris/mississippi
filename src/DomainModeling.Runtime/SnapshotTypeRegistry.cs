@@ -42,11 +42,14 @@ internal sealed class SnapshotTypeRegistry : ISnapshotTypeRegistry
         ArgumentException.ThrowIfNullOrWhiteSpace(snapshotName);
         ArgumentNullException.ThrowIfNull(snapshotType);
 
-        // Use TryAdd to avoid overwriting - first registration wins
-        if (nameToType.TryAdd(snapshotName, snapshotType))
+        Type registeredType = nameToType.GetOrAdd(snapshotName, snapshotType);
+        if (registeredType != snapshotType)
         {
-            typeToName.TryAdd(snapshotType, snapshotName);
+            throw new InvalidOperationException(
+                $"Snapshot name '{snapshotName}' is already registered to type '{registeredType.FullName}'. Cannot register different type '{snapshotType.FullName}'.");
         }
+
+        typeToName.TryAdd(snapshotType, snapshotName);
     }
 
     /// <inheritdoc />

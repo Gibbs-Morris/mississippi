@@ -118,4 +118,14 @@ public class OperationResultOfTTests
         OperationResult result = typedResult.ToResult();
         Assert.True(result.Success);
     }
+
+    /// <summary>
+    ///     Default OperationResult of T should have Success equal to false (stored bool, not computed).
+    /// </summary>
+    [Fact]
+    public void DefaultSuccessIsFalse()
+    {
+        OperationResult<int> result = default;
+        Assert.False(result.Success);
+    }
 }

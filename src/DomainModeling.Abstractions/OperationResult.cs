@@ -21,16 +21,13 @@ public readonly record struct OperationResult
     /// <summary>
     ///     Initializes a new instance of the <see cref="OperationResult" /> struct.
     /// </summary>
-    /// <param name="success">Whether the operation succeeded.</param>
-    /// <param name="errorCode">The error code if the operation failed.</param>
-    /// <param name="errorMessage">The error message if the operation failed.</param>
+    /// <param name="errorCode">The error code if the operation failed; <see langword="null" /> for success.</param>
+    /// <param name="errorMessage">The error message if the operation failed; <see langword="null" /> for success.</param>
     private OperationResult(
-        bool success,
         string? errorCode,
         string? errorMessage
     )
     {
-        Success = success;
         ErrorCode = errorCode;
         ErrorMessage = errorMessage;
     }
@@ -49,11 +46,12 @@ public readonly record struct OperationResult
 
     /// <summary>
     ///     Gets a value indicating whether the operation succeeded.
+    ///     <see langword="true" /> when <see cref="ErrorCode" /> is <see langword="null" />, including
+    ///     when the struct is default-initialized (<c>default(OperationResult).Success == true</c>).
     /// </summary>
-    [Id(0)]
     [MemberNotNullWhen(false, nameof(ErrorCode))]
     [MemberNotNullWhen(false, nameof(ErrorMessage))]
-    public bool Success { get; }
+    public bool Success { get => ErrorCode is null; }
 
     /// <summary>
     ///     Creates a failed operation result with the specified error details.
@@ -68,7 +66,7 @@ public readonly record struct OperationResult
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(errorCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(errorMessage);
-        return new(false, errorCode, errorMessage);
+        return new(errorCode, errorMessage);
     }
 
     /// <summary>
@@ -92,7 +90,7 @@ public readonly record struct OperationResult
     ///     Creates a successful operation result.
     /// </summary>
     /// <returns>A successful <see cref="OperationResult" />.</returns>
-    public static OperationResult Ok() => new(true, null, null);
+    public static OperationResult Ok() => new(null, null);
 
     /// <summary>
     ///     Creates a successful operation result with the specified value.
@@ -114,6 +112,13 @@ public readonly record struct OperationResult
 ///     This is a discriminated union type that carries either a success value
 ///     or an error code with message. Use the static <c>Ok</c> and <c>Fail</c>
 ///     factory methods to create instances.
+///     <para>
+///         <b>Warning:</b> <c>default(OperationResult&lt;T&gt;)</c> is not a valid result.
+///         Its <see cref="Success" /> property returns <see langword="false" /> and
+///         <see cref="Value" /> is <see langword="null" /> with no error information.
+///         Always use <see cref="OperationResult.Ok{T}" /> or <see cref="OperationResult.Fail{T}" />
+///         to create instances.
+///     </para>
 /// </remarks>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.OperationResult`1")]

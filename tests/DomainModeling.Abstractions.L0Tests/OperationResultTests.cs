@@ -77,4 +77,14 @@ public class OperationResultTests
         Assert.Null(result.ErrorCode);
         Assert.Null(result.ErrorMessage);
     }
+
+    /// <summary>
+    ///     Default OperationResult should have Success equal to true.
+    /// </summary>
+    [Fact]
+    public void DefaultSuccessIsTrue()
+    {
+        OperationResult result = default;
+        Assert.True(result.Success);
+    }
 }
