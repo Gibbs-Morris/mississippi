@@ -121,15 +121,15 @@ When a sub-plan path is provided:
 ### 3. Verify PR 1 is merged (universal prerequisite)
 
 * PR 1 (the plan commit) **must** be merged before any sub-plan can be executed.
-* Check: the plan folder exists on `main` (if you can read it from the filesystem, PR 1 is merged).
-* If unclear, verify via MCP: search for the plan branch PR and confirm it is merged.
+* Verify via MCP (`mcp_github_search_pull_requests` or `mcp_github_get_file_contents` on `main`) that the plan folder exists on `main` remotely. Do **not** rely on local filesystem presence—the current branch may already contain the plan folder before PR 1 is merged.
+* If the plan folder is not present on `main`, STOP and report that PR 1 must be merged first.
 
 ### 4. Verify dependency sub-plans are complete
 
 For each sub-plan ID listed in the `dependsOn` field:
 
-* **Fast path**: Check if `sub-plans/<dep-id>-<slug>.complete.json` exists on the filesystem (on `main`).
-* **Fallback**: If no marker found, check via MCP (`mcp_github_search_pull_requests`) using the branch name from `dependencies.json` to verify the PR is merged.
+* **Primary**: Verify via MCP (`mcp_github_get_file_contents` on branch `main`) that `sub-plans/<dep-id>-<slug>.complete.json` exists on the remote `main` branch. Do **not** rely on local filesystem markers—the current branch may contain unmerged markers.
+* **Fallback**: If the MCP file-contents check is unavailable, use `mcp_github_search_pull_requests` with the branch name from `dependencies.json` to confirm the dependency PR is merged to `main`.
 
 ### 5. If any dependency is unmet: STOP
 

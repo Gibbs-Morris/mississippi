@@ -176,7 +176,7 @@ Each sub-plan file (`sub-plans/<id>-<slug>.md`) must follow this template:
 
 After all sub-plans are written, perform all 12 persona reviews per sub-plan (per the shared methodology). Each review acts as if it only reads the sub-plan + the repo. Create a synthesis per sub-plan.
 
-Sub-plan reviews are stored in: `audit/sub-plan-reviews/<id>/review-*.md`
+Sub-plan reviews are stored in: `audit/sub-plan-reviews/<id>/audit-review-*.md`
 
 ---
 
@@ -325,8 +325,8 @@ Each `epic Builder` writes a completion marker file (`<id>-<slug>.complete.json`
 Get-ChildItem -Path plan/YYYY-MM-DD/<name>/sub-plans -Filter *.complete.json
 
 # List incomplete sub-plans
-$plans = Get-ChildItem -Filter *.md | ForEach-Object { $_.BaseName }
-$done = Get-ChildItem -Filter *.complete.json | ForEach-Object { $_.BaseName -replace '\.complete$' }
+$plans = Get-ChildItem -Path plan/YYYY-MM-DD/<name>/sub-plans -Filter *.md | ForEach-Object { $_.BaseName }
+$done = Get-ChildItem -Path plan/YYYY-MM-DD/<name>/sub-plans -Filter *.complete.json | ForEach-Object { $_.BaseName -replace '\.complete$' }
 $plans | Where-Object { $_ -notin $done }
 ```
 
