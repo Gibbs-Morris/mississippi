@@ -50,6 +50,10 @@ internal sealed class StoreEventSubject<T>
     ///     Publishes a value to all subscribers.
     /// </summary>
     /// <param name="value">The value to publish.</param>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Observers are responsible for their own error handling; subject must remain stable")]
     public void OnNext(
         T value
     )
@@ -67,7 +71,23 @@ internal sealed class StoreEventSubject<T>
 
         foreach (IObserver<T> observer in snapshot)
         {
-            observer.OnNext(value);
+            try
+            {
+                observer.OnNext(value);
+            }
+            catch (Exception ex)
+            {
+                // Match Reactive Extensions pattern: notify observer of error
+                // without breaking other observers.
+                try
+                {
+                    observer.OnError(ex);
+                }
+                catch (Exception)
+                {
+                    // Observer.OnError itself threw — nothing more we can do.
+                }
+            }
         }
     }
 

@@ -781,4 +781,25 @@ public sealed class StoreTests : IDisposable
         // Assert
         Assert.Equal(1, callCount);
     }
+
+    /// <summary>
+    ///     A throwing listener should not prevent subsequent listeners from executing.
+    /// </summary>
+    [Fact]
+    public void ThrowingListenerDoesNotPreventSubsequentListenersFromExecuting()
+    {
+        // Arrange
+        bool firstCalled = false;
+        bool thirdCalled = false;
+        using IDisposable first = sut.Subscribe(() => firstCalled = true);
+        using IDisposable second = sut.Subscribe(() => throw new InvalidOperationException("Listener failure"));
+        using IDisposable third = sut.Subscribe(() => thirdCalled = true);
+
+        // Act
+        sut.Dispatch(new IncrementAction());
+
+        // Assert
+        Assert.True(firstCalled);
+        Assert.True(thirdCalled);
+    }
 }

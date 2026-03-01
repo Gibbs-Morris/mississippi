@@ -335,6 +335,10 @@ public class Store : IStore
         }
     }
 
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Listeners are responsible for their own error handling; store must remain stable")]
     private void NotifyListeners()
     {
         List<Action> snapshot;
@@ -345,7 +349,15 @@ public class Store : IStore
 
         foreach (Action listener in snapshot)
         {
-            listener();
+            try
+            {
+                listener();
+            }
+            catch (Exception)
+            {
+                // Isolate listener failures to prevent one buggy listener
+                // from breaking the entire notification chain.
+            }
         }
     }
 
