@@ -3,7 +3,7 @@ id: domain-registration-generators
 title: Domain Registration Generators
 sidebar_label: Domain Registrations
 sidebar_position: 6
-description: Use generated domain-level registration methods to compose client, server, and silo feature registrations per domain.
+description: Use generated domain-level registration methods to compose client, gateway, and runtime host feature registrations per domain.
 ---
 
 # Domain Registration Generators

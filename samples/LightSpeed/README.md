@@ -20,7 +20,7 @@ From the repository root:
 dotnet run --project samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj
 ```
 
-This launches the Aspire AppHost, which orchestrates the Blazor WebAssembly client and its host server.
+This launches the Aspire AppHost, which orchestrates the Blazor WebAssembly client and its gateway host.
 
 ## Structure
 
@@ -33,7 +33,7 @@ This launches the Aspire AppHost, which orchestrates the Blazor WebAssembly clie
 | Feature | Spring | LightSpeed |
 |---------|--------|------------|
 | Domain model | ✅ Full event-sourced aggregates | ❌ None |
-| Orleans grains | ✅ Silo with distributed actors | ❌ None |
+| Orleans grains | ✅ Runtime host (Orleans silo) with distributed actors | ❌ None |
 | Event sourcing | ✅ Commands, events, projections | ❌ None |
 | Real-time updates | ✅ SignalR with Inlet | ❌ None |
 | Refraction controls | ❌ Not focused | ✅ Primary focus |

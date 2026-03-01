@@ -17,7 +17,7 @@ Spring has three host applications. Each is a thin shell that wires infrastructu
 | Host | Role | References |
 |------|------|-----------|
 | `Spring.Runtime` | Orleans silo — runs grains, event sourcing, sagas | `Spring.Domain` + Mississippi Silo SDK |
-| `Spring.Gateway` | ASP.NET API + Blazor host — serves endpoints and static files | `Spring.Domain` + Mississippi Server SDK |
+| `Spring.Gateway` | ASP.NET API + Blazor host — serves endpoints and static files | `Spring.Domain` + Mississippi Gateway SDK |
 | `Spring.Client` | Blazor WebAssembly — UI shell with state management | `Spring.Domain` (compile-only) + Mississippi Client SDK |
 
 ```mermaid
@@ -94,7 +94,7 @@ These files are infrastructure/support concerns rather than domain business logi
 
 ## Spring.Gateway: The API Host
 
-The server hosts ASP.NET controllers, serves the Blazor WebAssembly client, and connects to the Orleans silo as a client.
+The gateway host serves ASP.NET controllers and static client files, and connects to the Orleans silo as a client.
 
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -168,11 +168,11 @@ app.MapFallbackToFile("index.html");
 await app.RunAsync();
 ```
 
-The `AddSpringDomainServer()` call registers all source-generated API controller mappers and feature registrations for the server host. The server does not contain `CommandHandler` code, `EventReducer` code, or domain-specific types — it maps HTTP requests to Orleans grain calls.
+The `AddSpringDomainServer()` call registers all source-generated API controller mappers and feature registrations for the gateway host. The gateway does not contain `CommandHandler` code, `EventReducer` code, or domain-specific types — it maps HTTP requests to Orleans grain calls.
 
 ([Spring.Gateway/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs))
 
-When `SpringAuth:Enabled` is true, the server enables generated API force mode with:
+When `SpringAuth:Enabled` is true, the gateway enables generated API force mode with:
 
 - `GeneratedApiAuthorization.Mode = RequireAuthorizationForAllGeneratedEndpoints`
 - `GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api"`
@@ -188,9 +188,9 @@ Spring includes an opt-in development mode that proves generated endpoint author
 
 The complete setup, endpoint matrix (`200`/`401`/`403`), and troubleshooting guidance are documented on [Spring Auth-Proof Mode](./auth-proof-mode.md).
 
-### What the Server Owns
+### What the Gateway Owns
 
-The server has no domain-specific code files. Its `Program.cs` configures middleware and infrastructure. The API controllers that accept commands and return projections are **entirely source-generated** from the domain annotations.
+The gateway has no domain-specific code files. Its `Program.cs` configures middleware and infrastructure. The API controllers that accept commands and return projections are **entirely source-generated** from the domain annotations.
 
 ## Spring.Client: The Blazor UI
 
@@ -258,8 +258,8 @@ Mississippi's Inlet generators produce three domain-level registration methods f
 
 | Method | Host | What It Registers |
 |--------|------|-------------------|
-| `AddSpringDomainSilo()` | Silo | Aggregate grains, saga grains, `CommandHandler`s, `EventReducer`s, effects, projection grains |
-| `AddSpringDomainServer()` | Server | API controller mappers, command route mappings |
+| `AddSpringDomainSilo()` | Runtime | Aggregate grains, saga grains, `CommandHandler`s, `EventReducer`s, effects, projection grains |
+| `AddSpringDomainServer()` | Gateway | API controller mappers, command route mappings |
 | `AddSpringDomainClient()` | Client | Command dispatchers, projection DTOs, and client feature state wiring |
 
 Each method name follows the pattern `Add{DomainProject}Domain{HostType}()`. The generator derives the name from the assembly name (`Spring.Domain`) and the host target.
@@ -277,7 +277,7 @@ Compare the domain project to the host projects:
 | Infrastructure wiring | None | Compact host setup in `Program.cs` | Compact host setup in `Program.cs` | Compact host setup in `Program.cs` |
 | External dependencies | Primarily Mississippi abstractions, plus minimal framework/build dependencies (`Microsoft.Orleans.Sdk`, `Microsoft.Extensions.Http`) | Azure Storage, Cosmos, Orleans, OpenTelemetry | Orleans Client, ASP.NET, Blazor hosting | Blazor WASM, SignalR |
 
-The hosts are replaceable shells. The domain is the permanent asset. You could swap Cosmos for PostgreSQL by changing only the silo's storage configuration. You could replace Blazor with React by writing a new client that calls the same generated API. The business logic in `Spring.Domain` would not change.
+The hosts are replaceable shells. The domain is the permanent asset. You could swap Cosmos for PostgreSQL by changing only the runtime host's storage configuration. You could replace Blazor with React by writing a new client that calls the same generated API. The business logic in `Spring.Domain` would not change.
 
 ## Summary
 
