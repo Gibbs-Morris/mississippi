@@ -29,6 +29,10 @@ Take a look at [`samples/Spring/Spring.Domain`](samples/Spring/Spring.Domain) to
 
 Mississippi is a sophisticated .NET framework designed to streamline distributed application development. It provides a robust foundation for building scalable, maintainable .NET applications with built-in support for event sourcing, CQRS, distributed computing via Orleans, cloud storage integration, and real-time UI updates.
 
+## Design Principles
+
+- **API familiarity first** — New/refactored APIs align with primary .NET behaviors/patterns; when ambiguous, follow widely used .NET conventions; Orleans-grain APIs match Orleans developer expectations to minimize context switching and strengthen DX.
+
 ## Technology Stack
 
 - **.NET 10.0** - Latest .NET runtime with C# 14.0
