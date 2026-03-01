@@ -133,4 +133,49 @@ public sealed class SnapshotStreamKeyTests
         SnapshotStreamKey parsed = "TEST.BROOK|type|id|hash";
         Assert.Equal(key, parsed);
     }
+
+    /// <summary>
+    ///     Verifies that default(SnapshotStreamKey).BrookName returns string.Empty.
+    /// </summary>
+    [Fact]
+    public void DefaultBrookNameShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SnapshotStreamKey).BrookName);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SnapshotStreamKey).EntityId returns string.Empty.
+    /// </summary>
+    [Fact]
+    public void DefaultEntityIdShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SnapshotStreamKey).EntityId);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SnapshotStreamKey).ReducersHash returns string.Empty.
+    /// </summary>
+    [Fact]
+    public void DefaultReducersHashShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SnapshotStreamKey).ReducersHash);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SnapshotStreamKey).SnapshotStorageName returns string.Empty.
+    /// </summary>
+    [Fact]
+    public void DefaultSnapshotStorageNameShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SnapshotStreamKey).SnapshotStorageName);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SnapshotStreamKey).ToString() returns a non-null value.
+    /// </summary>
+    [Fact]
+    public void DefaultToStringShouldReturnNonNull()
+    {
+        Assert.NotNull(default(SnapshotStreamKey).ToString());
+    }
 }

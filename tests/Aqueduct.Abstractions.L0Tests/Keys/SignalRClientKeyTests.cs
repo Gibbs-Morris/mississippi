@@ -178,4 +178,31 @@ public sealed class SignalRClientKeyTests
         // Assert
         Assert.Equal("TestHub:conn123", result);
     }
+
+    /// <summary>
+    ///     Verifies that default(SignalRClientKey).ConnectionId returns string.Empty.
+    /// </summary>
+    [Fact(DisplayName = "Default ConnectionId Returns Empty String")]
+    public void DefaultConnectionIdShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SignalRClientKey).ConnectionId);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SignalRClientKey).HubName returns string.Empty.
+    /// </summary>
+    [Fact(DisplayName = "Default HubName Returns Empty String")]
+    public void DefaultHubNameShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SignalRClientKey).HubName);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SignalRClientKey).ToString() returns a non-null value.
+    /// </summary>
+    [Fact(DisplayName = "Default ToString Returns Non-Null")]
+    public void DefaultToStringShouldReturnNonNull()
+    {
+        Assert.NotNull(default(SignalRClientKey).ToString());
+    }
 }

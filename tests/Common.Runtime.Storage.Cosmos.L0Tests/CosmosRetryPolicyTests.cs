@@ -158,4 +158,24 @@ public sealed class CosmosRetryPolicyTests
             policy.ExecuteAsync<int>(() => throw new TaskCanceledException("Simulated timeout")));
         Assert.Contains("canceled", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    ///     Verifies that a negative maxRetries value throws ArgumentOutOfRangeException.
+    /// </summary>
+    [Fact]
+    public void ConstructorThrowsWhenMaxRetriesIsNegative()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new CosmosRetryPolicy(NullLogger<CosmosRetryPolicy>.Instance, -1));
+    }
+
+    /// <summary>
+    ///     Verifies that maxRetries of zero is valid (try once, no retries).
+    /// </summary>
+    [Fact]
+    public void ConstructorDoesNotThrowWhenMaxRetriesIsZero()
+    {
+        CosmosRetryPolicy policy = new(NullLogger<CosmosRetryPolicy>.Instance, 0);
+        Assert.NotNull(policy);
+    }
 }

@@ -47,7 +47,7 @@ public readonly record struct SignalRServerDirectoryKey
     ///     Gets the key value.
     /// </summary>
     [Id(0)]
-    public string Value { get; }
+    public string Value { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Parses a string into a <see cref="SignalRServerDirectoryKey" />.

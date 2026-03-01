@@ -178,4 +178,31 @@ public sealed class SignalRGroupKeyTests
         // Assert
         Assert.Equal("TestHub:group1", result);
     }
+
+    /// <summary>
+    ///     Verifies that default(SignalRGroupKey).GroupName returns string.Empty.
+    /// </summary>
+    [Fact(DisplayName = "Default GroupName Returns Empty String")]
+    public void DefaultGroupNameShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SignalRGroupKey).GroupName);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SignalRGroupKey).HubName returns string.Empty.
+    /// </summary>
+    [Fact(DisplayName = "Default HubName Returns Empty String")]
+    public void DefaultHubNameShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SignalRGroupKey).HubName);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SignalRGroupKey).ToString() returns a non-null value.
+    /// </summary>
+    [Fact(DisplayName = "Default ToString Returns Non-Null")]
+    public void DefaultToStringShouldReturnNonNull()
+    {
+        Assert.NotNull(default(SignalRGroupKey).ToString());
+    }
 }

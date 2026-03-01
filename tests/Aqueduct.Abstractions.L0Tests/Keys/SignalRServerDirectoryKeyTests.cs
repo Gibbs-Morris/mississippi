@@ -166,4 +166,22 @@ public sealed class SignalRServerDirectoryKeyTests
         // Assert
         Assert.Equal("custom", result);
     }
+
+    /// <summary>
+    ///     Verifies that default(SignalRServerDirectoryKey).Value returns string.Empty.
+    /// </summary>
+    [Fact(DisplayName = "Default Value Returns Empty String")]
+    public void DefaultValueShouldReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(SignalRServerDirectoryKey).Value);
+    }
+
+    /// <summary>
+    ///     Verifies that default(SignalRServerDirectoryKey).ToString() returns a non-null value.
+    /// </summary>
+    [Fact(DisplayName = "Default ToString Returns Non-Null")]
+    public void DefaultToStringShouldReturnNonNull()
+    {
+        Assert.NotNull(default(SignalRServerDirectoryKey).ToString());
+    }
 }
