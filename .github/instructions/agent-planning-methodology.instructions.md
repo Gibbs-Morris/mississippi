@@ -27,7 +27,7 @@ All planning agents (`flow Planner`, `epic Planner`) and building agents (`flow 
 
 - Apply CoV loop on every significant claim: hypothesize → question → evidence → triangulate → conclude.
 - Produce artifacts in order: intake → repo findings → clarifying questions → decisions → draft plan → 12 reviews → synthesis → final PLAN.md.
-- Move all non-`PLAN.md` artifacts into `audit/` with `audit-` prefix at finalization.
+- At finalization, move the remaining audit trail artifacts into `audit/` with the `audit-` prefix, keeping only `PLAN.md` plus any epic-specific execution artifacts (currently `sub-plans/` and `dependencies.json` required by `epic-planner.agent.md`) at the plan root.
 
 ## Chain-of-Verification (CoV) Loop
 
@@ -51,9 +51,9 @@ For each step and each important claim, run and record:
 | 5 | `04-draft-plan.md` | Full solution-level plan (architecture, contracts, work breakdown, testing, observability, rollout) |
 | 6 | `review-01` to `review-12` | Twelve persona reviews (see roster below) |
 | 7 | `review-13-synthesis.md` | Deduplicated feedback: Must / Should / Could / Won't |
-| 8 | `PLAN.md` | Standalone final plan (only file at folder root after finalization) |
+| 8 | `PLAN.md` | Standalone final plan (root-level artifact alongside any required epic root files such as `sub-plans/` and `dependencies.json`) |
 
-At finalization, all files except `PLAN.md` move to `audit/` with `audit-` prefix.
+At finalization, all non-root-required artifacts move to `audit/` with `audit-` prefix: for `flow` plans this means everything except `PLAN.md`; for `epic` plans, `sub-plans/`, `dependencies.json`, and other required epic execution artifacts remain at the folder root.
 
 ## Persona Review Roster
 
