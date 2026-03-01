@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Spring.Server" />
+    <InternalsVisibleTo Include="Spring.Gateway" />
   </ItemGroup>
 
   <ItemGroup>

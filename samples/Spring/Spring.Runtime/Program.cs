@@ -24,8 +24,8 @@ using Orleans.Runtime;
 
 using Spring.Domain.Projections.BankAccountBalance;
 using Spring.Domain.Services;
-using Spring.Silo.Registrations;
-using Spring.Silo.Services;
+using Spring.Runtime.Registrations;
+using Spring.Runtime.Services;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -152,7 +152,7 @@ app.MapGet(
                 new
                 {
                     Status = "Healthy",
-                    Service = "Spring.Silo",
+                    Service = "Spring.Runtime",
                     Orleans = status.ToString(),
                 })
             : Results.StatusCode(503);

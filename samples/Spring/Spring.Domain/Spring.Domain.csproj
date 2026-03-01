@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Spring.Server" />
-    <InternalsVisibleTo Include="Spring.Silo" />
+    <InternalsVisibleTo Include="Spring.Gateway" />
+    <InternalsVisibleTo Include="Spring.Runtime" />
   </ItemGroup>
 
   <ItemGroup>

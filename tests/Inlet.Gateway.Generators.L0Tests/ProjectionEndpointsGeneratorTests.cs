@@ -643,9 +643,9 @@ public class ProjectionEndpointsGeneratorTests
             .ToString();
         Assert.NotNull(controllerSource);
 
-        // Domain → Server.Controllers.Projections
+        // Output namespace is derived from the compilation target root namespace.
         Assert.Contains(
-            "namespace TestApp.Server.Controllers.Projections;",
+            "namespace TestAssembly.Controllers.Projections;",
             controllerSource,
             StringComparison.Ordinal);
     }
@@ -1330,7 +1330,7 @@ public class ProjectionEndpointsGeneratorTests
             .ToString();
         Assert.NotNull(mapperSource);
         Assert.Contains(
-            "namespace TestApp.Server.Controllers.Projections.Mappers;",
+            "namespace TestAssembly.Controllers.Projections.Mappers;",
             mapperSource,
             StringComparison.Ordinal);
     }

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Spring.Domain.Services;
 
 
-namespace Spring.Silo.Services;
+namespace Spring.Runtime.Services;
 
 /// <summary>
 ///     Stub implementation of <see cref="INotificationService" /> for demonstration.

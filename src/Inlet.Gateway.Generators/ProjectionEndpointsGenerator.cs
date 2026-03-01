@@ -5,10 +5,12 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 using Mississippi.Inlet.Generators.Core.Analysis;
 using Mississippi.Inlet.Generators.Core.Emit;
+using Mississippi.Inlet.Generators.Core.Naming;
 
 
 namespace Mississippi.Inlet.Gateway.Generators;
@@ -59,27 +61,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     ///     Derives the output namespace from the projection namespace.
     /// </summary>
     private static string DeriveOutputNamespace(
-        string projectionNamespace
-    )
-    {
-        // Convert e.g. "Contoso.Domain.Projections.BankAccountBalance"
-        // to "Contoso.Server.Controllers.Projections"
-        // This is a simplified derivation - in practice the consuming project defines this
-        string[] parts = projectionNamespace.Split('.');
-        if (parts.Length >= 2)
-        {
-            // Replace "Domain" with "Server.Controllers" if present
-            int domainIndex = Array.FindIndex(parts, p => p == "Domain");
-            if (domainIndex >= 0)
-            {
-                string[] serverPath = { "Server", "Controllers", "Projections" };
-                return string.Join(".", parts.Take(domainIndex).Concat(serverPath));
-            }
-        }
-
-        // Fallback: append Controllers.Projections
-        return projectionNamespace + ".Controllers.Projections";
-    }
+        string targetRootNamespace
+    ) =>
+        targetRootNamespace + ".Controllers.Projections";
 
     /// <summary>
     ///     Recursively finds projections in a namespace.
@@ -90,6 +74,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         INamedTypeSymbol projectionPathAttrSymbol,
         INamedTypeSymbol? generateAuthorizationAttribute,
         INamedTypeSymbol? generateAllowAnonymousAttribute,
+        string targetRootNamespace,
         List<ProjectionInfo> projections
     )
     {
@@ -101,7 +86,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 generateAttrSymbol,
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
-                generateAllowAnonymousAttribute);
+                generateAllowAnonymousAttribute,
+                targetRootNamespace);
             if (info is not null)
             {
                 projections.Add(info);
@@ -117,6 +103,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
                 generateAllowAnonymousAttribute,
+                targetRootNamespace,
                 projections);
         }
     }
@@ -764,7 +751,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     ///     Gets projection information from the compilation, including referenced assemblies.
     /// </summary>
     private static List<ProjectionInfo> GetProjectionsFromCompilation(
-        Compilation compilation
+        Compilation compilation,
+        string targetRootNamespace
     )
     {
         List<ProjectionInfo> projections = new();
@@ -791,6 +779,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 projectionPathAttrSymbol,
                 generateAuthorizationAttribute,
                 generateAllowAnonymousAttribute,
+                targetRootNamespace,
                 projections);
         }
 
@@ -851,7 +840,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         INamedTypeSymbol generateAttrSymbol,
         INamedTypeSymbol projectionPathAttrSymbol,
         INamedTypeSymbol? generateAuthorizationAttribute,
-        INamedTypeSymbol? generateAllowAnonymousAttribute
+        INamedTypeSymbol? generateAllowAnonymousAttribute,
+        string targetRootNamespace
     )
     {
         // Check for [GenerateProjectionEndpoints] attribute
@@ -885,9 +875,7 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             generateAuthorizationAttribute,
             generateAllowAnonymousAttribute,
             false);
-
-        // Determine output namespace (replace Domain with Server, add Controllers.Projections)
-        string outputNamespace = DeriveOutputNamespace(model.Namespace);
+        string outputNamespace = DeriveOutputNamespace(targetRootNamespace);
         return new(model, outputNamespace, authorization, authorization.Diagnostics);
     }
 
@@ -912,11 +900,25 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        // Use the compilation provider to scan both current and referenced types
-        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider = context.CompilationProvider.Select((
-            compilation,
+        IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
+            compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
+        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider = compilationAndOptions.Select((
+            source,
             _
-        ) => GetProjectionsFromCompilation(compilation));
+        ) =>
+        {
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
+            return GetProjectionsFromCompilation(source.Compilation, targetRootNamespace);
+        });
 
         // Register source output
         context.RegisterSourceOutput(

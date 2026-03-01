@@ -12,14 +12,14 @@ description: A banking domain sample that demonstrates how Mississippi keeps all
 
 Focus: Public API / Developer Experience.
 
-Spring is a full-stack event-sourced banking application built with the Mississippi framework. It demonstrates a core architectural principle: **all business logic lives in one domain project** (`Spring.Domain`), while the host applications (`Spring.Silo`, `Spring.Server`, `Spring.Client`) contain only infrastructure wiring.
+Spring is a full-stack event-sourced banking application built with the Mississippi framework. It demonstrates a core architectural principle: **all business logic lives in one domain project** (`Spring.Domain`), while the host applications (`Spring.Runtime`, `Spring.Gateway`, `Spring.Client`) contain only infrastructure wiring.
 
 The sample models a banking domain with accounts, deposits, withdrawals, money transfers, and compliance flagging. Every feature is built using Mississippi's event-sourcing patterns — `Command`s, `CommandHandler`s, events, `EventReducer`s, effects, sagas, and projections — all defined inside `Spring.Domain`.
 
 ```mermaid
 flowchart LR
-    Domain["Spring.Domain\n(All Business Logic)"] --> Silo["Spring.Silo\n(Orleans Host)"]
-    Domain --> Server["Spring.Server\n(API + Blazor Host)"]
+    Domain["Spring.Domain\n(All Business Logic)"] --> Silo["Spring.Runtime\n(Orleans Host)"]
+    Domain --> Server["Spring.Gateway\n(API + Blazor Host)"]
     Domain --> Client["Spring.Client\n(Blazor WASM)"]
 ```
 
@@ -40,8 +40,8 @@ Spring lives under [`samples/Spring/`](https://github.com/Gibbs-Morris/mississip
 | Project | Purpose | Host Surface |
 |---------|---------|--------------|
 | `Spring.Domain` | `Command`s, `CommandHandler`s, events, `EventReducer`s, effects, sagas, projections | Domain logic lives here |
-| `Spring.Silo` | Orleans silo host — infrastructure wiring only | Compact `Program.cs` wiring |
-| `Spring.Server` | ASP.NET API host + Blazor static files | Compact `Program.cs` wiring |
+| `Spring.Runtime` | Orleans silo host — infrastructure wiring only | Compact `Program.cs` wiring |
+| `Spring.Gateway` | ASP.NET API host + Blazor static files | Compact `Program.cs` wiring |
 | `Spring.Client` | Blazor WebAssembly — UI shell and feature registration | Compact `Program.cs` wiring |
 | `Spring.AppHost` | .NET Aspire orchestration for local development | Configuration only |
 | `Spring.Domain.L0Tests` | Unit tests for domain logic | Test code |
@@ -62,7 +62,7 @@ Mississippi enforces a strict separation:
 | What side effects run | `Spring.Domain` (effects) | Reactions to events, still domain-owned |
 | How workflows coordinate | `Spring.Domain` (sagas) | Multi-step orchestration with compensation |
 | What read models exist | `Spring.Domain` (projections) | Read-optimized views of event streams |
-| How the system hosts | `Spring.Silo`, `Spring.Server`, `Spring.Client` | Infrastructure wiring only |
+| How the system hosts | `Spring.Runtime`, `Spring.Gateway`, `Spring.Client` | Infrastructure wiring only |
 
 This pattern means you can change hosting (swap Cosmos for PostgreSQL, replace SignalR with gRPC) without touching business logic. You can test all domain behavior in isolation with no infrastructure dependencies.
 

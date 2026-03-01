@@ -25,7 +25,7 @@ This launches the Aspire AppHost, which orchestrates the Blazor WebAssembly clie
 ## Structure
 
 - **LightSpeed.Client** - Blazor WebAssembly application with Refraction controls
-- **LightSpeed.Server** - ASP.NET Core host for the Blazor WebAssembly app
+- **LightSpeed.Gateway** - ASP.NET Core host for the Blazor WebAssembly app
 - **LightSpeed.AppHost** - Aspire orchestration for local development
 
 ## Comparison with Spring

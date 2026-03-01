@@ -79,18 +79,18 @@ The Spring sample now uses one domain-level call per host:
 // Spring.Client
 builder.Services.AddSpringDomainClient();
 
-// Spring.Server
+// Spring.Gateway
 builder.Services.AddSpringDomainServer();
 
-// Spring.Silo
+// Spring.Runtime
 builder.Services.AddSpringDomainSilo();
 ```
 
 Source:
 
 - [Spring.Client Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs)
-- [Spring.Server Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs)
-- [Spring.Silo Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Silo/Program.cs)
+- [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
+- [Spring.Runtime Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs)
 
 ## Generated API Authorization
 

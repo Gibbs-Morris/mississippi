@@ -3,7 +3,7 @@ id: spring-mcp-server-vscode-testing
 title: Test Spring MCP Server with VS Code
 sidebar_label: MCP in VS Code
 sidebar_position: 7
-description: Configure VS Code to connect to Spring.Server as an MCP server and validate generated MCP tools.
+description: Configure VS Code to connect to Spring.Gateway as an MCP server and validate generated MCP tools.
 ---
 
 # Test Spring MCP Server with VS Code
@@ -14,12 +14,12 @@ Focus: Public API / Developer Experience.
 
 This page shows how to connect VS Code to the Spring sample MCP server so you can test source-generated MCP tools (for example, `open_account`, `deposit_funds`, and projection read tools) from chat.
 
-Spring exposes MCP in `Spring.Server` with:
+Spring exposes MCP in `Spring.Gateway` with:
 
 - `builder.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringServerPingMcpTools>();`
 - `app.MapMcp("/mcp");` (mapped in Development environment only)
 
-Reference: [Spring.Server Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs)
+Reference: [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
 
 ## Prerequisites
 
@@ -39,9 +39,9 @@ This script builds `samples.slnx` and starts `samples/Spring/Spring.AppHost/Spri
 
 When Spring is running from `run-spring.ps1`, Spring uses these default endpoints from launch settings:
 
-- `Spring.Server` HTTP: `http://localhost:5101`
-- `Spring.Server` HTTPS: `https://localhost:7101`
-- `Spring.Silo` HTTP health: `http://localhost:5300/health`
+- `Spring.Gateway` HTTP: `http://localhost:5101`
+- `Spring.Gateway` HTTPS: `https://localhost:7101`
+- `Spring.Runtime` HTTP health: `http://localhost:5300/health`
 - Aspire dashboard: `https://localhost:17272`
 
 For MCP over HTTP, use `http://localhost:5101/mcp`.
@@ -64,7 +64,7 @@ Open (or create) `.vscode/mcp.json` in the workspace root and add a server entry
 Notes:
 
 - Keep the server name in camelCase (`springBank`).
-- If you change launch settings, update this URL to match your `Spring.Server` HTTP port.
+- If you change launch settings, update this URL to match your `Spring.Gateway` HTTP port.
 - MCP client behavior and UI workflows can change across VS Code releases; use the official MCP documentation linked in [References](#references).
 
 ## Validate Tool Discovery in Chat
@@ -86,13 +86,13 @@ Use the springBank tools to fetch the balance projection for that account.
 1. Ask a quick connectivity prompt for the manually registered ping tool:
 
 ```text
-Use the springBank tools to call spring_server_ping.
+Use the springBank tools to call spring_gateway_ping.
 ```
 
 ## Troubleshooting
 
 - **Server not listed or not starting**: verify `.vscode/mcp.json` is valid JSON and the URL is reachable.
-- **No tools discovered**: confirm Spring is running and that `/mcp` is mapped in `Spring.Server`.
+- **No tools discovered**: confirm Spring is running and that `/mcp` is mapped in `Spring.Gateway`.
 - **Tools mismatch after code changes**: restart Spring with `pwsh ./run-spring.ps1` so regenerated tools are loaded.
 
 ## See Also
@@ -103,7 +103,7 @@ Use the springBank tools to call spring_server_ping.
 
 ## Summary
 
-Spring exposes MCP tools at `http://localhost:5101/mcp` in Development, with both generated domain tools and a manual `spring_server_ping` tool.
+Spring exposes MCP tools at `http://localhost:5101/mcp` in Development, with both generated domain tools and a manual `spring_gateway_ping` tool.
 
 ## Next Steps
 
@@ -114,5 +114,5 @@ Spring exposes MCP tools at `http://localhost:5101/mcp` in Development, with bot
 ## References
 
 - [Use MCP servers in VS Code](https://code.visualstudio.com/docs/copilot/customization/mcp-servers)
-- [Spring.Server Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs)
+- [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
 - [run-spring.ps1](https://github.com/Gibbs-Morris/mississippi/blob/main/run-spring.ps1)

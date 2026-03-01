@@ -424,18 +424,18 @@
           "Microsoft.AspNetCore.Components.Web": "[10.0.3, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
           "Mississippi.Refraction.Client": "[1.0.0, )",
-          "Mississippi.Reservoir": "[1.0.0, )"
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
-      "Mississippi.Reservoir": {
+      "Mississippi.Reservoir.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Reservoir.Core": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
-      },
-      "Mississippi.Reservoir.Abstractions": {
-        "type": "Project"
       },
       "Microsoft.AspNetCore.Components": {
         "type": "CentralTransitive",
