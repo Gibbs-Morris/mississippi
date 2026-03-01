@@ -31,7 +31,10 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 ## Design Principles
 
-- **API familiarity first** — New/refactored APIs align with primary .NET behaviors/patterns; when ambiguous, follow widely used .NET conventions; Orleans-grain APIs match Orleans developer expectations to minimize context switching and strengthen DX.
+- **API familiarity first**
+  - New/refactored APIs align with primary .NET behaviors and patterns.
+  - When design is ambiguous, follow widely used .NET conventions.
+  - Orleans-grain APIs match Orleans developer expectations to minimize context switching and strengthen Developer Experience (DX).
 
 ## Technology Stack
 
