@@ -80,11 +80,13 @@ public readonly record struct BrookAsyncReaderKey
     /// </summary>
     /// <param name="key">The string representation of the key.</param>
     /// <returns>The parsed async reader key.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key" /> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the string is not a valid async reader key format.</exception>
     public static BrookAsyncReaderKey Parse(
         string key
     )
     {
+        ArgumentNullException.ThrowIfNull(key);
         ReadOnlySpan<char> span = key.AsSpan();
         int firstSep = span.IndexOf(Separator);
         if (firstSep < 0)

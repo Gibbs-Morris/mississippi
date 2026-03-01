@@ -71,4 +71,20 @@ public sealed class BrookPositionTests
         Assert.False(left.IsNewerThan(right));
         Assert.False(right.IsNewerThan(left));
     }
+
+    /// <summary>
+    ///     <c>default(BrookPosition)</c> has Value == 0 (a valid position, not the "not set" sentinel).
+    ///     <c>new BrookPosition()</c> has Value == -1 (the "not set" sentinel).
+    /// </summary>
+    [Fact]
+    public void DefaultVsParameterlessConstructorBehavior()
+    {
+        BrookPosition viaDefault = default;
+        Assert.Equal(0L, viaDefault.Value);
+        Assert.False(viaDefault.NotSet);
+
+        BrookPosition viaNew = new BrookPosition();
+        Assert.Equal(-1L, viaNew.Value);
+        Assert.True(viaNew.NotSet);
+    }
 }

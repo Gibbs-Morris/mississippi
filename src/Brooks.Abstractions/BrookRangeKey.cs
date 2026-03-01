@@ -64,8 +64,12 @@ public readonly record struct BrookRangeKey
     /// <summary>
     ///     Gets the brook name component of the brook range key.
     /// </summary>
+    /// <remarks>
+    ///     Returns <see cref="string.Empty" /> when accessed on a <c>default(BrookRangeKey)</c> instance (i.e., when the
+    ///     backing field has not been set by a constructor).
+    /// </remarks>
     [Id(0)]
-    public string BrookName { get; }
+    public string BrookName { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Gets the count component of the brook range key.
@@ -81,8 +85,12 @@ public readonly record struct BrookRangeKey
     /// <summary>
     ///     Gets the entity id component of the brook range key.
     /// </summary>
+    /// <remarks>
+    ///     Returns <see cref="string.Empty" /> when accessed on a <c>default(BrookRangeKey)</c> instance (i.e., when the
+    ///     backing field has not been set by a constructor).
+    /// </remarks>
     [Id(1)]
-    public string EntityId { get; }
+    public string EntityId { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Gets the starting position of the range.

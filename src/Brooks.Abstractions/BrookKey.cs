@@ -45,14 +45,22 @@ public readonly record struct BrookKey
     /// <summary>
     ///     Gets the brook name component of the brook key.
     /// </summary>
+    /// <remarks>
+    ///     Returns <see cref="string.Empty" /> when accessed on a <c>default(BrookKey)</c> instance (i.e., when the
+    ///     backing field has not been set by a constructor).
+    /// </remarks>
     [Id(0)]
-    public string BrookName { get; }
+    public string BrookName { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Gets the entity id component of the brook key.
     /// </summary>
+    /// <remarks>
+    ///     Returns <see cref="string.Empty" /> when accessed on a <c>default(BrookKey)</c> instance (i.e., when the
+    ///     backing field has not been set by a constructor).
+    /// </remarks>
     [Id(1)]
-    public string EntityId { get; }
+    public string EntityId { get => field ?? string.Empty; }
 
     /// <summary>
     ///     Creates a brook key from a grain type decorated with <see cref="Attributes.BrookNameAttribute" />

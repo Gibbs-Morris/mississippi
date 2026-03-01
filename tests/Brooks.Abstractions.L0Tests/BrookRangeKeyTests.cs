@@ -197,4 +197,15 @@ public sealed class BrookRangeKeyTests
         BrookRangeKey rk = new("t", "i", 5, 10);
         Assert.Equal("t|i|5|10", rk.ToString());
     }
+
+    /// <summary>
+    ///     Default-initialized BrookRangeKey should return string.Empty for both string properties.
+    /// </summary>
+    [Fact]
+    public void DefaultInstanceReturnsEmptyStrings()
+    {
+        BrookRangeKey key = default;
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.EntityId);
+    }
 }

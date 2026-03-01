@@ -213,4 +213,13 @@ public sealed class BrookAsyncReaderKeyTests
         string result = key.ToString();
         Assert.Equal($"type|id|{instanceId:N}", result);
     }
+
+    /// <summary>
+    ///     Parse(null) should throw ArgumentNullException.
+    /// </summary>
+    [Fact]
+    public void ParseNullThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => BrookAsyncReaderKey.Parse(null!));
+    }
 }

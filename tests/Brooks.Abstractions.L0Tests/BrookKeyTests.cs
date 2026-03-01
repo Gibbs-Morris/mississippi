@@ -148,4 +148,16 @@ public sealed class BrookKeyTests
         BrookKey k = new("X", "Y");
         Assert.Equal("X|Y", k.ToString());
     }
+
+    /// <summary>
+    ///     Default-initialized BrookKey should return string.Empty for both string properties and a non-null ToString.
+    /// </summary>
+    [Fact]
+    public void DefaultInstanceReturnsEmptyStrings()
+    {
+        BrookKey key = default;
+        Assert.Equal(string.Empty, key.BrookName);
+        Assert.Equal(string.Empty, key.EntityId);
+        Assert.NotNull(key.ToString());
+    }
 }
