@@ -1,0 +1,157 @@
+using System;
+using System.Linq;
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+
+using Mississippi.Aqueduct.Abstractions;
+using Mississippi.Aqueduct.Gateway;
+
+using NSubstitute;
+
+using Orleans;
+
+
+namespace Mississippi.Inlet.Gateway.L0Tests;
+
+/// <summary>
+///     Tests authorization metadata behavior for <see cref="InletServerRegistrations.MapInletHub" />.
+/// </summary>
+public sealed class MapInletHubAuthTests
+{
+    private static RouteEndpoint GetInletHubEndpoint(
+        WebApplication app
+    )
+    {
+        IEndpointRouteBuilder endpointRouteBuilder = app;
+        return endpointRouteBuilder.DataSources.SelectMany(endpointDataSource => endpointDataSource.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Single(routeEndpoint =>
+            {
+                string? rawText = routeEndpoint.RoutePattern.RawText;
+                return rawText is not null &&
+                       rawText.StartsWith("/hubs/inlet", StringComparison.Ordinal) &&
+                       !rawText.Contains("negotiate", StringComparison.Ordinal);
+            });
+    }
+
+    private static void RegisterRequiredAqueductServices(
+        IServiceCollection services
+    )
+    {
+        IServerIdProvider serverIdProvider = Substitute.For<IServerIdProvider>();
+        serverIdProvider.ServerId.Returns("server-1");
+        services.AddSingleton(serverIdProvider);
+        services.AddSingleton(Substitute.For<IGrainFactory>());
+        services.AddSingleton(Substitute.For<IConnectionRegistry>());
+        services.AddSingleton(Substitute.For<ILocalMessageSender>());
+        services.AddSingleton(Substitute.For<IHeartbeatManager>());
+        services.AddSingleton(Substitute.For<IStreamSubscriptionManager>());
+    }
+
+    /// <summary>
+    ///     MapInletHub should apply default policy, roles, and authentication schemes in force mode.
+    /// </summary>
+    [Fact]
+    public void MapInletHubAppliesDefaultAuthorizationMetadataWhenModeForced()
+    {
+        // Arrange
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        RegisterRequiredAqueductServices(builder.Services);
+        builder.Services.AddInletServer(options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = false;
+            options.GeneratedApiAuthorization.DefaultPolicy = "generated-policy";
+            options.GeneratedApiAuthorization.DefaultRoles = "admin";
+            options.GeneratedApiAuthorization.DefaultAuthenticationSchemes = "Bearer";
+        });
+        using WebApplication app = builder.Build();
+
+        // Act
+        app.MapInletHub();
+        RouteEndpoint endpoint = GetInletHubEndpoint(app);
+        AuthorizeAttribute authorizeData = Assert.Single(endpoint.Metadata.OfType<AuthorizeAttribute>());
+
+        // Assert
+        Assert.Equal("generated-policy", authorizeData.Policy);
+        Assert.Equal("admin", authorizeData.Roles);
+        Assert.Equal("Bearer", authorizeData.AuthenticationSchemes);
+    }
+
+    /// <summary>
+    ///     MapInletHub should not require authorization when generated authorization mode is disabled.
+    /// </summary>
+    [Fact]
+    public void MapInletHubDoesNotRequireAuthorizationWhenModeDisabled()
+    {
+        // Arrange
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        RegisterRequiredAqueductServices(builder.Services);
+        builder.Services.AddInletServer(options =>
+            options.GeneratedApiAuthorization.Mode = GeneratedApiAuthorizationMode.Disabled);
+        using WebApplication app = builder.Build();
+
+        // Act
+        app.MapInletHub();
+        RouteEndpoint endpoint = GetInletHubEndpoint(app);
+
+        // Assert
+        Assert.DoesNotContain(endpoint.Metadata, metadata => metadata is IAuthorizeData);
+    }
+
+    /// <summary>
+    ///     MapInletHub should allow anonymous hub connections in force mode when allow-anonymous opt-out is enabled.
+    /// </summary>
+    [Fact]
+    public void MapInletHubDoesNotRequireAuthorizationWhenModeForcedAndAllowAnonymousOptOutEnabled()
+    {
+        // Arrange
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        RegisterRequiredAqueductServices(builder.Services);
+        builder.Services.AddInletServer(options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+            options.GeneratedApiAuthorization.DefaultPolicy = "generated-policy";
+        });
+        using WebApplication app = builder.Build();
+
+        // Act
+        app.MapInletHub();
+        RouteEndpoint endpoint = GetInletHubEndpoint(app);
+
+        // Assert
+        Assert.DoesNotContain(endpoint.Metadata, metadata => metadata is IAuthorizeData);
+    }
+
+    /// <summary>
+    ///     MapInletHub should require authorization when generated authorization mode is forced.
+    /// </summary>
+    [Fact]
+    public void MapInletHubRequiresAuthorizationWhenModeForced()
+    {
+        // Arrange
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        RegisterRequiredAqueductServices(builder.Services);
+        builder.Services.AddInletServer(options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = false;
+            options.GeneratedApiAuthorization.DefaultPolicy = "generated-policy";
+        });
+        using WebApplication app = builder.Build();
+
+        // Act
+        app.MapInletHub();
+        RouteEndpoint endpoint = GetInletHubEndpoint(app);
+
+        // Assert
+        Assert.Contains(endpoint.Metadata, metadata => metadata is IAuthorizeData);
+    }
+}

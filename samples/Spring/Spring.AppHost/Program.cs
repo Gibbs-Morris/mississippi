@@ -4,10 +4,13 @@ using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
 using Aspire.Hosting.Orleans;
 
+using Microsoft.Extensions.Configuration;
+
 using Projects;
 
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
+bool springAuthProofModeEnabled = builder.Configuration.GetValue("Spring:AuthProofMode", false);
 
 // Add Azure Storage (Azurite emulator)
 IResourceBuilder<AzureStorageResource> storage = builder.AddAzureStorage("storage").RunAsEmulator();
@@ -53,9 +56,14 @@ IResourceBuilder<ProjectResource> silo = builder.AddProject<Spring_Silo>("spring
 // Add Spring.Server with resource references
 // This is an Orleans client that connects to the silo
 // WaitFor ensures the server doesn't start until dependencies are ready
-builder.AddProject<Spring_Server>("spring-server")
+IResourceBuilder<ProjectResource> springServer = builder.AddProject<Spring_Server>("spring-server")
     .WithReference(orleans.AsClient())
     .WaitFor(storage)
     .WaitFor(silo)
     .WithExternalHttpEndpoints();
+if (springAuthProofModeEnabled)
+{
+    springServer.WithEnvironment("SpringAuth__Enabled", "true");
+}
+
 await builder.Build().RunAsync();

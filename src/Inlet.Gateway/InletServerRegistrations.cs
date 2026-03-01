@@ -1,10 +1,13 @@
 using System;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Gateway;
@@ -47,6 +50,8 @@ public static class InletServerRegistrations
         services.AddInletSilo();
         services.AddSignalR();
         services.Configure(configureOptions ?? (_ => { }));
+        services.TryAddEnumerable(
+            ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, GeneratedApiAuthorizationMvcOptionsSetup>());
 
         // Register Aqueduct backplane specifically for InletHub
         // This must be a closed generic registration because AddSignalR() already registers
@@ -83,12 +88,62 @@ public static class InletServerRegistrations
     /// <param name="endpoints">The endpoint route builder.</param>
     /// <param name="pattern">The URL pattern for the hub (default: "/hubs/inlet").</param>
     /// <returns>The hub endpoint convention builder for additional configuration.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         When generated API authorization mode is
+    ///         <see cref="GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints" /> and
+    ///         <c>AllowAnonymousOptOut</c> is disabled, the mapped hub endpoint requires
+    ///         authorization using default generated API authorization options.
+    ///         When <c>AllowAnonymousOptOut</c> is enabled, authorization is evaluated per
+    ///         subscription using projection metadata.
+    ///     </para>
+    /// </remarks>
     public static HubEndpointConventionBuilder MapInletHub(
         this IEndpointRouteBuilder endpoints,
         string pattern = "/hubs/inlet"
     )
     {
         ArgumentNullException.ThrowIfNull(endpoints);
-        return endpoints.MapHub<InletHub>(pattern);
+        HubEndpointConventionBuilder hubEndpointBuilder = endpoints.MapHub<InletHub>(pattern);
+        IOptions<InletServerOptions>? options = endpoints.ServiceProvider.GetService<IOptions<InletServerOptions>>();
+        GeneratedApiAuthorizationOptions generatedApiAuthorization = options?.Value.GeneratedApiAuthorization ??
+                                                                     new GeneratedApiAuthorizationOptions();
+        if (generatedApiAuthorization.Mode !=
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints)
+        {
+            return hubEndpointBuilder;
+        }
+
+        if (generatedApiAuthorization.AllowAnonymousOptOut)
+        {
+            return hubEndpointBuilder;
+        }
+
+        AuthorizeAttribute authorizeAttribute = new();
+        if (!string.IsNullOrWhiteSpace(generatedApiAuthorization.DefaultPolicy))
+        {
+            authorizeAttribute.Policy = generatedApiAuthorization.DefaultPolicy;
+        }
+
+        if (!string.IsNullOrWhiteSpace(generatedApiAuthorization.DefaultRoles))
+        {
+            authorizeAttribute.Roles = generatedApiAuthorization.DefaultRoles;
+        }
+
+        if (!string.IsNullOrWhiteSpace(generatedApiAuthorization.DefaultAuthenticationSchemes))
+        {
+            authorizeAttribute.AuthenticationSchemes = generatedApiAuthorization.DefaultAuthenticationSchemes;
+        }
+
+        if (string.IsNullOrWhiteSpace(authorizeAttribute.Policy) &&
+            string.IsNullOrWhiteSpace(authorizeAttribute.Roles) &&
+            string.IsNullOrWhiteSpace(authorizeAttribute.AuthenticationSchemes))
+        {
+            hubEndpointBuilder.RequireAuthorization();
+            return hubEndpointBuilder;
+        }
+
+        hubEndpointBuilder.RequireAuthorization(authorizeAttribute);
+        return hubEndpointBuilder;
     }
 }

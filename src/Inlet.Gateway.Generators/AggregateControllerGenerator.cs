@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
@@ -35,6 +36,12 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
     private const string GenerateAggregateEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
 
+    private const string GenerateAllowAnonymousAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateAllowAnonymousAttribute";
+
+    private const string GenerateAuthorizationAttributeFullName =
+        "Mississippi.Inlet.Generators.Abstractions.GenerateAuthorizationAttribute";
+
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
 
@@ -45,6 +52,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol aggregateAttrSymbol,
         INamedTypeSymbol commandAttrSymbol,
+        INamedTypeSymbol? generateAuthorizationAttribute,
+        INamedTypeSymbol? generateAllowAnonymousAttribute,
         List<AggregateInfo> aggregates,
         string targetRootNamespace
     )
@@ -56,6 +65,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
                 typeSymbol,
                 aggregateAttrSymbol,
                 commandAttrSymbol,
+                generateAuthorizationAttribute,
+                generateAllowAnonymousAttribute,
                 targetRootNamespace);
             if (info is not null)
             {
@@ -66,19 +77,29 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Recurse into nested namespaces
         foreach (INamespaceSymbol childNs in namespaceSymbol.GetNamespaceMembers())
         {
-            FindAggregatesInNamespace(childNs, aggregateAttrSymbol, commandAttrSymbol, aggregates, targetRootNamespace);
+            FindAggregatesInNamespace(
+                childNs,
+                aggregateAttrSymbol,
+                commandAttrSymbol,
+                generateAuthorizationAttribute,
+                generateAllowAnonymousAttribute,
+                aggregates,
+                targetRootNamespace);
         }
     }
 
     /// <summary>
     ///     Finds commands in the Commands sub-namespace of an aggregate.
     /// </summary>
-    private static List<CommandModel> FindCommandsForAggregate(
+    private static List<CommandInfo> FindCommandsForAggregate(
         INamespaceSymbol aggregateNamespace,
-        INamedTypeSymbol commandAttrSymbol
+        INamedTypeSymbol commandAttrSymbol,
+        INamedTypeSymbol? generateAuthorizationAttribute,
+        INamedTypeSymbol? generateAllowAnonymousAttribute,
+        List<Diagnostic> diagnostics
     )
     {
-        List<CommandModel> commands = [];
+        List<CommandInfo> commands = [];
 
         // Look for Commands sub-namespace
         INamespaceSymbol? commandsNs = aggregateNamespace.GetNamespaceMembers()
@@ -110,7 +131,14 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
                                     .FirstOrDefault(kvp => kvp.Key == "HttpMethod")
                                     .Value.Value?.ToString() ??
                                 "POST";
-            commands.Add(new(typeSymbol, route!, httpMethod));
+            CommandModel commandModel = new(typeSymbol, route!, httpMethod);
+            GeneratedApiAuthorizationModel authorization = GeneratedApiAuthorizationAnalysis.Analyze(
+                typeSymbol,
+                generateAuthorizationAttribute,
+                generateAllowAnonymousAttribute,
+                true);
+            diagnostics.AddRange(authorization.Diagnostics);
+            commands.Add(new(commandModel, authorization));
         }
 
         return commands;
@@ -121,11 +149,11 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
     /// </summary>
     private static void GenerateActionMethod(
         SourceBuilder sb,
-        CommandModel command
+        CommandInfo command
     )
     {
-        string methodName = command.TypeName + "Async";
-        string httpAttribute = command.HttpMethod.ToUpperInvariant() switch
+        string methodName = command.Model.TypeName + "Async";
+        string httpAttribute = command.Model.HttpMethod.ToUpperInvariant() switch
         {
             "GET" => "HttpGet",
             "PUT" => "HttpPut",
@@ -133,23 +161,24 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
             "PATCH" => "HttpPatch",
             var _ => "HttpPost",
         };
-        sb.AppendSummary($"Executes the {command.TypeName} command.");
+        sb.AppendSummary($"Executes the {command.Model.TypeName} command.");
         sb.AppendLine("/// <param name=\"entityId\">The entity identifier.</param>");
         sb.AppendLine("/// <param name=\"request\">The command request.</param>");
         sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
         sb.AppendLine("/// <returns>The operation result.</returns>");
-        sb.AppendLine($"[{httpAttribute}(\"{command.Route}\")]");
+        GeneratedApiAuthorizationAnalysis.AppendAuthorizationAttributes(sb, command.Authorization);
+        sb.AppendLine($"[{httpAttribute}(\"{command.Model.Route}\")]");
         sb.AppendLine($"public Task<ActionResult<OperationResult>> {methodName}(");
         sb.IncreaseIndent();
         sb.AppendLine("[FromRoute] string entityId,");
-        sb.AppendLine($"[FromBody] {command.DtoTypeName} request,");
+        sb.AppendLine($"[FromBody] {command.Model.DtoTypeName} request,");
         sb.AppendLine("CancellationToken cancellationToken = default");
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
         sb.AppendLine("ArgumentNullException.ThrowIfNull(request);");
         sb.AppendLine(
-            $"return ExecuteAsync(entityId, {command.TypeName}Mapper.Map(request), ExecuteCommandAsync, cancellationToken);");
+            $"return ExecuteAsync(entityId, {command.Model.TypeName}Mapper.Map(request), ExecuteCommandAsync, cancellationToken);");
         sb.CloseBrace();
     }
 
@@ -167,8 +196,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         aggregate.Commands.ToList()
             .ForEach(command =>
             {
-                string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
-                sb.AppendLine($"/// <param name=\"{paramName}\">Mapper for {command.TypeName} DTOs.</param>");
+                string paramName = NamingConventions.ToCamelCase(command.Model.TypeName) + "Mapper";
+                sb.AppendLine($"/// <param name=\"{paramName}\">Mapper for {command.Model.TypeName} DTOs.</param>");
             });
         sb.AppendLine("/// <param name=\"logger\">The logger for diagnostic output.</param>");
         sb.AppendLine($"public {aggregate.Model.ControllerTypeName}(");
@@ -177,8 +206,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         aggregate.Commands.ToList()
             .ForEach(command =>
             {
-                string mapperType = $"IMapper<{command.DtoTypeName}, {command.TypeName}>";
-                string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
+                string mapperType = $"IMapper<{command.Model.DtoTypeName}, {command.Model.TypeName}>";
+                string paramName = NamingConventions.ToCamelCase(command.Model.TypeName) + "Mapper";
                 sb.AppendLine($"{mapperType} {paramName},");
             });
         sb.AppendLine($"ILogger<{aggregate.Model.ControllerTypeName}> logger");
@@ -192,8 +221,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         aggregate.Commands.ToList()
             .ForEach(command =>
             {
-                string paramName = NamingConventions.ToCamelCase(command.TypeName) + "Mapper";
-                sb.AppendLine($"{command.TypeName}Mapper = {paramName};");
+                string paramName = NamingConventions.ToCamelCase(command.Model.TypeName) + "Mapper";
+                sb.AppendLine($"{command.Model.TypeName}Mapper = {paramName};");
             });
         sb.CloseBrace();
     }
@@ -210,6 +239,12 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         sb.AppendUsing("System");
         sb.AppendUsing("System.Threading");
         sb.AppendUsing("System.Threading.Tasks");
+        if (aggregate.Authorization.HasAnyAuthorizationMetadata ||
+            aggregate.Commands.Any(command => command.Authorization.HasAnyAuthorizationMetadata))
+        {
+            sb.AppendUsing("Microsoft.AspNetCore.Authorization");
+        }
+
         sb.AppendUsing("Microsoft.AspNetCore.Mvc");
         sb.AppendUsing("Microsoft.Extensions.Logging");
         sb.AppendUsing("Mississippi.Common.Abstractions.Mapping");
@@ -226,6 +261,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Controller class
         sb.AppendSummary($"Controller for {aggregate.Model.AggregateName} aggregate commands.");
         sb.AppendGeneratedCodeAttribute("AggregateControllerGenerator");
+        GeneratedApiAuthorizationAnalysis.AppendAuthorizationAttributes(sb, aggregate.Authorization);
         sb.AppendLine($"[Route(\"api/aggregates/{aggregate.Model.RoutePrefix}/{{entityId}}\")]");
         sb.AppendLine(
             $"public sealed class {aggregate.Model.ControllerTypeName} : AggregateControllerBase<{aggregate.Model.TypeName}>");
@@ -238,7 +274,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Properties for dependencies
         sb.AppendLine("private IAggregateGrainFactory AggregateGrainFactory { get; }");
         sb.AppendLine();
-        foreach (CommandModel command in aggregate.Commands)
+        foreach (CommandModel command in aggregate.Commands.Select(command => command.Model))
         {
             string mapperType = $"IMapper<{command.DtoTypeName}, {command.TypeName}>";
             sb.AppendLine($"private {mapperType} {command.TypeName}Mapper {{ get; }}");
@@ -246,7 +282,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         }
 
         // Action methods for each command
-        foreach (CommandModel command in aggregate.Commands)
+        foreach (CommandInfo command in aggregate.Commands)
         {
             GenerateActionMethod(sb, command);
             sb.AppendLine();
@@ -299,6 +335,10 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         INamedTypeSymbol? aggregateAttrSymbol =
             compilation.GetTypeByMetadataName(GenerateAggregateEndpointsAttributeFullName);
         INamedTypeSymbol? commandAttrSymbol = compilation.GetTypeByMetadataName(GenerateCommandAttributeFullName);
+        INamedTypeSymbol? generateAuthorizationAttribute =
+            compilation.GetTypeByMetadataName(GenerateAuthorizationAttributeFullName);
+        INamedTypeSymbol? generateAllowAnonymousAttribute =
+            compilation.GetTypeByMetadataName(GenerateAllowAnonymousAttributeFullName);
         if (aggregateAttrSymbol is null || commandAttrSymbol is null)
         {
             return aggregates;
@@ -311,6 +351,8 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
                 referencedAssembly.GlobalNamespace,
                 aggregateAttrSymbol,
                 commandAttrSymbol,
+                generateAuthorizationAttribute,
+                generateAllowAnonymousAttribute,
                 aggregates,
                 targetRootNamespace);
         }
@@ -345,9 +387,13 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol aggregateAttrSymbol,
         INamedTypeSymbol commandAttrSymbol,
+        INamedTypeSymbol? generateAuthorizationAttribute,
+        INamedTypeSymbol? generateAllowAnonymousAttribute,
         string targetRootNamespace
     )
     {
+        List<Diagnostic> diagnostics = [];
+
         // Check for [GenerateAggregateEndpoints] attribute
         AttributeData? attr = typeSymbol.GetAttributes()
             .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, aggregateAttrSymbol));
@@ -377,11 +423,22 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
 
         // Build aggregate model
         AggregateModel model = new(typeSymbol, routePrefix!, featureKey);
+        GeneratedApiAuthorizationModel aggregateAuthorization = GeneratedApiAuthorizationAnalysis.Analyze(
+            typeSymbol,
+            generateAuthorizationAttribute,
+            generateAllowAnonymousAttribute,
+            true);
+        diagnostics.AddRange(aggregateAuthorization.Diagnostics);
 
         // Find commands in the Commands sub-namespace
         INamespaceSymbol? containingNs = typeSymbol.ContainingNamespace;
-        List<CommandModel> commands = containingNs is not null
-            ? FindCommandsForAggregate(containingNs, commandAttrSymbol)
+        List<CommandInfo> commands = containingNs is not null
+            ? FindCommandsForAggregate(
+                containingNs,
+                commandAttrSymbol,
+                generateAuthorizationAttribute,
+                generateAllowAnonymousAttribute,
+                diagnostics)
             : [];
 
         // Only generate controller if there are commands
@@ -393,7 +450,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Use the Commands namespace to derive output namespace (same as DTOs)
         string commandsNamespace = model.Namespace + ".Commands";
         string outputNamespace = NamingConventions.GetServerCommandDtoNamespace(commandsNamespace, targetRootNamespace);
-        return new(model, commands, outputNamespace);
+        return new(model, commands, outputNamespace, aggregateAuthorization, diagnostics.ToImmutableArray());
     }
 
     /// <summary>
@@ -437,6 +494,11 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
             {
                 foreach (AggregateInfo aggregate in aggregates)
                 {
+                    foreach (Diagnostic diagnostic in aggregate.Diagnostics)
+                    {
+                        spc.ReportDiagnostic(diagnostic);
+                    }
+
                     string controllerSource = GenerateController(aggregate);
                     spc.AddSource(
                         $"{aggregate.Model.ControllerTypeName}.g.cs",
@@ -452,19 +514,43 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
     {
         public AggregateInfo(
             AggregateModel model,
-            List<CommandModel> commands,
-            string outputNamespace
+            List<CommandInfo> commands,
+            string outputNamespace,
+            GeneratedApiAuthorizationModel authorization,
+            ImmutableArray<Diagnostic> diagnostics
         )
         {
             Model = model;
             Commands = commands;
             OutputNamespace = outputNamespace;
+            Authorization = authorization;
+            Diagnostics = diagnostics;
         }
 
-        public List<CommandModel> Commands { get; }
+        public GeneratedApiAuthorizationModel Authorization { get; }
+
+        public List<CommandInfo> Commands { get; }
+
+        public ImmutableArray<Diagnostic> Diagnostics { get; }
 
         public AggregateModel Model { get; }
 
         public string OutputNamespace { get; }
+    }
+
+    private sealed class CommandInfo
+    {
+        public CommandInfo(
+            CommandModel model,
+            GeneratedApiAuthorizationModel authorization
+        )
+        {
+            Model = model;
+            Authorization = authorization;
+        }
+
+        public GeneratedApiAuthorizationModel Authorization { get; }
+
+        public CommandModel Model { get; }
     }
 }

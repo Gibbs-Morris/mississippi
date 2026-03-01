@@ -15,6 +15,11 @@ public sealed class InletServerOptions
     public string AllClientsStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.AllClients;
 
     /// <summary>
+    ///     Gets or sets authorization settings for source-generated HTTP APIs.
+    /// </summary>
+    public GeneratedApiAuthorizationOptions GeneratedApiAuthorization { get; set; } = new();
+
+    /// <summary>
     ///     Gets or sets the interval in minutes between server heartbeats.
     /// </summary>
     /// <value>Defaults to 1 minute.</value>
