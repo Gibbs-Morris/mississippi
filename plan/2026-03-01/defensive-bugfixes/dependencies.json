@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "planName": "defensive-bugfixes",
+  "planDate": "2026-03-01",
+  "masterPlanPR": null,
+  "subPlans": [
+    {
+      "id": "01",
+      "slug": "brooks-abstractions-fixes",
+      "title": "BrookKey, BrookRangeKey, BrookAsyncReaderKey null-safety + Parse guard + BrookPosition docs",
+      "file": "sub-plans/01-brooks-abstractions-fixes.md",
+      "dependsOn": [],
+      "parallelGroup": "A",
+      "branch": "epic/defensive-bugfixes/01-brooks-abstractions-fixes",
+      "semver": "fix"
+    },
+    {
+      "id": "02",
+      "slug": "domain-modeling-fixes",
+      "title": "AggregateKey + UxProjection keys null-safety + OperationResult default + Registry conflicts",
+      "file": "sub-plans/02-domain-modeling-fixes.md",
+      "dependsOn": [],
+      "parallelGroup": "A",
+      "branch": "epic/defensive-bugfixes/02-domain-modeling-fixes",
+      "semver": "fix"
+    },
+    {
+      "id": "03",
+      "slug": "aqueduct-tributary-cosmos-fixes",
+      "title": "SignalR + Snapshot key null-safety + CosmosRetryPolicy validation",
+      "file": "sub-plans/03-aqueduct-tributary-cosmos-fixes.md",
+      "dependsOn": [],
+      "parallelGroup": "A",
+      "branch": "epic/defensive-bugfixes/03-aqueduct-tributary-cosmos-fixes",
+      "semver": "fix"
+    },
+    {
+      "id": "04",
+      "slug": "reservoir-listener-isolation",
+      "title": "Store.NotifyListeners + StoreEventSubject.OnNext exception isolation",
+      "file": "sub-plans/04-reservoir-listener-isolation.md",
+      "dependsOn": [],
+      "parallelGroup": "A",
+      "branch": "epic/defensive-bugfixes/04-reservoir-listener-isolation",
+      "semver": "fix"
+    }
+  ]
+}
