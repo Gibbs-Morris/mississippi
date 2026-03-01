@@ -72,7 +72,7 @@ docs/
 | **Entry** | `{feature}.md` | 1 | Introduction, key concepts, getting started, "Learn More" links | Yes |
 | **Topic** | `{topic}.md` | 2–9 | Deep dive on specific capability (DX-focused) | As needed |
 | **Configuration** | `configuration.md` | 10 | All options, defaults, environment-specific setup | When configurable |
-| **Testing** | `testing.md` | 11 | Mocking, test utilities, test patterns, `EventSourcing.Testing` usage | When testing support exists |
+| **Testing** | `testing.md` | 11 | Mocking, test utilities, test patterns, `DomainModeling.TestHarness` usage | When testing support exists |
 | **Samples** | `samples.md` | 12 | Links to `/samples` projects, extended code walkthroughs | When samples exist |
 | **Public APIs** | `public-apis.md` | 13 | Interface tables, contract reference, extension points | When rich API surface |
 | **Best Practices** | `best-practices.md` | 14 | Performance tips, recommended patterns, anti-patterns | When complex |
