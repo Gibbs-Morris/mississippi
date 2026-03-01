@@ -1,6 +1,15 @@
 ---
 name: "epic Builder"
 description: "Sub-plan execution agent that implements a single sub-plan from an epic Planner master plan. Verifies dependency prerequisites, creates a branch from main, implements the sub-plan end-to-end, runs quality gates, and auto-creates a PR via GitHub MCP with a full description. Works on exactly one sub-plan producing one small PR."
+handoffs:
+  - label: Execute Next Sub-Plan
+    agent: epic-builder
+    prompt: "Execute the next sub-plan at: /plan/"
+    send: false
+  - label: Plan Update Needed
+    agent: epic-planner
+    prompt: "The sub-plan implementation revealed issues requiring plan revision: "
+    send: false
 metadata:
   family: epic
   role: builder

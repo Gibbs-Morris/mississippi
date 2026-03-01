@@ -1,6 +1,11 @@
 ---
 name: "epic Planner"
 description: "Orchestrating planner that decomposes large tasks into small, independently executable sub-plans with dependency graphs. Produces a master plan + numbered vertical sub-plans, extracts new rules into instruction files, optionally creates GitHub issues, and commits everything as PR 1. Each sub-plan is designed for a single epic Builder invocation producing one small PR."
+handoffs:
+  - label: Execute Sub-Plan
+    agent: epic-builder
+    prompt: "Execute the sub-plan at: /plan/"
+    send: false
 metadata:
   family: epic
   role: planner
