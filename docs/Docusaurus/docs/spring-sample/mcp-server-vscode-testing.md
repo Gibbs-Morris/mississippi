@@ -16,7 +16,7 @@ This page shows how to connect VS Code to the Spring sample MCP server so you ca
 
 Spring exposes MCP in `Spring.Gateway` with:
 
-- `builder.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringServerPingMcpTools>();`
+- `builder.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringGatewayPingMcpTools>();`
 - `app.MapMcp("/mcp");` (mapped in Development environment only)
 
 Reference: [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
