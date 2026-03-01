@@ -58,8 +58,9 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
     private const string SystemNamespace = "System";
 
     /// <summary>
-    ///     Derives the output namespace from the projection namespace.
+    ///     Derives the output namespace from the compilation target root namespace.
     /// </summary>
+    /// <param name="targetRootNamespace">The target root namespace resolved from analyzer config and compilation context.</param>
     private static string DeriveOutputNamespace(
         string targetRootNamespace
     ) =>
