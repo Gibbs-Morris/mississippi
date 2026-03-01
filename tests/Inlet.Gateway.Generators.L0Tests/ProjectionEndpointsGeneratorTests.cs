@@ -644,10 +644,7 @@ public class ProjectionEndpointsGeneratorTests
         Assert.NotNull(controllerSource);
 
         // Output namespace is derived from the compilation target root namespace.
-        Assert.Contains(
-            "namespace TestAssembly.Controllers.Projections;",
-            controllerSource,
-            StringComparison.Ordinal);
+        Assert.Contains("namespace TestAssembly.Controllers.Projections;", controllerSource, StringComparison.Ordinal);
     }
 
     /// <summary>
