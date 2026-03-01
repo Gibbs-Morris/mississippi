@@ -16,7 +16,7 @@ Spring has three host applications. Each is a thin shell that wires infrastructu
 
 | Host | Role | References |
 |------|------|-----------|
-| `Spring.Runtime` | Orleans silo — runs grains, event sourcing, sagas | `Spring.Domain` + Mississippi Silo SDK |
+| `Spring.Runtime` | Orleans silo — runs grains, event sourcing, sagas | `Spring.Domain` + Mississippi Runtime SDK |
 | `Spring.Gateway` | ASP.NET API + Blazor host — serves endpoints and static files | `Spring.Domain` + Mississippi Gateway SDK |
 | `Spring.Client` | Blazor WebAssembly — UI shell with state management | `Spring.Domain` (compile-only) + Mississippi Client SDK |
 
