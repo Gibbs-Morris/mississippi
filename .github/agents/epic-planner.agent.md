@@ -259,9 +259,12 @@ After sub-plans are finalized, ask the user:
 If yes:
 - Create one issue per sub-plan via `mcp_github_issue_write`
 - Issue title: `[epic/<name>] Sub-plan <ID>: <Title>`
-- Issue body: full sub-plan markdown content (self-contained)
+- Issue body must include:
+  - A machine-parseable HTML comment at the top: `<!-- sub-plan-path: /plan/YYYY-MM-DD/<name>/sub-plans/<id>-<slug>.md -->` — this enables the **epic Builder** to resolve a GitHub issue reference to a sub-plan path automatically.
+  - Full sub-plan markdown content (self-contained)
 - Labels: `epic/<name>`, `sub-plan`
 - Reference the master plan path and dependency graph in each issue
+- Assign the issue to the user (or leave unassigned for agent pickup)
 
 If no, skip this step.
 
