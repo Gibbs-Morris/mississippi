@@ -125,7 +125,7 @@ services.AddInletSilo();
 
 For domain-level composition across generated aggregates, sagas, and projections, use domain registration methods such as `AddSpringDomainSilo()`.
 
-([GenerateSagaEndpointsAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs), [SagaSiloRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Silo.Generators/SagaSiloRegistrationGenerator.cs))
+([GenerateSagaEndpointsAttribute](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs), [SagaSiloRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime.Generators/SagaSiloRegistrationGenerator.cs))
 
 If you want a projection that tracks saga status, mark it with `[GenerateSagaStatusReducers]`:
 
