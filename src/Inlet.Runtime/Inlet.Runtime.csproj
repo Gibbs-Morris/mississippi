@@ -11,6 +11,8 @@
     <ProjectReference Include="..\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+    <!-- Referenced at runtime for projection authorization attribute discovery during assembly scanning. -->
+    <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
   </ItemGroup>

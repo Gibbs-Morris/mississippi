@@ -27,8 +27,8 @@ Three generators emit host-specific extension classes and methods:
 Source:
 
 - [DomainClientRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/DomainClientRegistrationGenerator.cs)
-- [DomainServerRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Server.Generators/DomainServerRegistrationGenerator.cs)
-- [DomainSiloRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Silo.Generators/DomainSiloRegistrationGenerator.cs)
+- [DomainServerRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Generators/DomainServerRegistrationGenerator.cs)
+- [DomainSiloRegistrationGenerator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime.Generators/DomainSiloRegistrationGenerator.cs)
 
 ### Composition Flow
 
@@ -91,6 +91,140 @@ Source:
 - [Spring.Client Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs)
 - [Spring.Server Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs)
 - [Spring.Silo Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Silo/Program.cs)
+
+## Generated API Authorization
+
+Use generation attributes to emit standard ASP.NET authorization metadata on generated aggregate, command,
+projection, and saga HTTP APIs.
+
+### Generation Attributes
+
+| Attribute | Applies to | Generated metadata |
+|---|---|---|
+| `GenerateAuthorization` | Aggregate, command, projection, saga state | `[Authorize]` with optional policy/roles/schemes |
+| `GenerateAllowAnonymous` | Aggregate, command, projection, saga state | `[AllowAnonymous]` |
+
+### Effective Authorization Rule
+
+Generated endpoints use one deterministic rule set:
+
+1. `GenerateAllowAnonymous` bypasses authorization checks when `AllowAnonymousOptOut = true` (ASP.NET precedence).
+2. `GenerateAuthorization` applies when allow-anonymous is not effective for the endpoint.
+3. No generated auth metadata + force mode: endpoint uses global defaults from `GeneratedApiAuthorizationOptions`.
+
+This keeps generated MVC endpoints and projection SignalR subscription checks aligned.
+
+In force mode, hub endpoint-level authorization is only applied when `AllowAnonymousOptOut = false`. When `AllowAnonymousOptOut = true`, hub authorization is enforced per subscription from projection metadata so allow-anonymous projections remain reachable.
+
+Source:
+
+- [GeneratedApiAuthorizationConvention](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/GeneratedApiAuthorizationConvention.cs)
+- [MapInletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletServerRegistrations.cs)
+- [InletHub AuthorizeSubscriptionAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletHub.cs)
+- [InletSiloRegistrations ScanProjectionAssemblies](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime/InletSiloRegistrations.cs)
+
+Example:
+
+```csharp
+[GenerateAggregateEndpoints]
+[GenerateAuthorization(Policy = "spring.write")]
+public sealed record BankAccountAggregate;
+
+[GenerateCommand(Route = "deposit")]
+[GenerateAuthorization(Roles = "banking-operator")]
+public sealed record DepositFunds;
+
+[GenerateProjectionEndpoints]
+[ProjectionPath("bank-account-balance")]
+[GenerateAllowAnonymous]
+public sealed record BankAccountBalanceProjection;
+```
+
+### Global Force Mode
+
+Configure generated API force-auth in `AddInletServer`:
+
+```csharp
+builder.Services.AddInletServer(options =>
+{
+        options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+        options.GeneratedApiAuthorization.DefaultRoles = "api-user";
+        options.GeneratedApiAuthorization.DefaultAuthenticationSchemes = "Bearer";
+        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+});
+```
+
+### Behavior Matrix
+
+| Scenario | Result |
+|---|---|
+| `GenerateAuthorization` + `GenerateAllowAnonymous` on same generated surface | `AllowAnonymous` is effective when opt-out is enabled (ASP.NET precedence) |
+| No force mode, no generation auth attributes | Generated endpoints remain auth-neutral |
+| No force mode, `GenerateAuthorization` present | Generator emits `[Authorize(...)]` |
+| Force mode enabled, no generation auth attributes | Generated endpoints require authorization via global defaults |
+| Force mode enabled, `GenerateAuthorization` present | Global defaults plus generated metadata compose using ASP.NET behavior |
+| Force mode enabled, `GenerateAllowAnonymous` present and opt-out enabled | Generated endpoint stays anonymous |
+
+### SignalR Subscription Authorization Semantics
+
+Projection subscriptions use metadata discovered by `ScanProjectionAssemblies(...)` and evaluated by `InletHub.SubscribeAsync(...)`:
+
+| Runtime condition | Subscription authorization behavior |
+|---|---|
+| Projection metadata includes `GenerateAllowAnonymous` and `AllowAnonymousOptOut = true` | Authorization is skipped for that subscription |
+| Projection metadata includes `GenerateAuthorization(...)` | Inlet evaluates policy/roles/schemes for that subscription |
+| No projection metadata and force mode disabled | Subscription is allowed without auth evaluation |
+| No projection metadata and force mode enabled | Inlet evaluates global defaults from `GeneratedApiAuthorizationOptions` |
+
+When authorization fails, clients receive the generic hub error message `Subscription denied.`.
+
+Source:
+
+- [InletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletHub.cs)
+- [InletHubConstants](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Abstractions/InletHubConstants.cs)
+- [InletHubAuthorizationTests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Gateway.L0Tests/InletHubAuthorizationTests.cs)
+- [MapInletHubAuthTests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Inlet.Gateway.L0Tests/MapInletHubAuthTests.cs)
+
+### Precedence and Composition
+
+- Multiple `[Authorize]` declarations compose.
+- `[AllowAnonymous]` bypasses authorization when opt-out is enabled.
+- When `AllowAnonymousOptOut` is `false`, global force mode removes allow-anonymous metadata from generated
+    endpoint models.
+
+### Host Setup Checklist
+
+Generated auth metadata requires host middleware configuration:
+
+1. `services.AddAuthentication(...)`
+2. `services.AddAuthorization(...)`
+3. `services.AddInletServer(options => options.GeneratedApiAuthorization...)`
+4. `app.UseAuthentication()`
+5. `app.UseAuthorization()`
+6. `app.MapControllers()`
+
+### CQRS Policy Examples
+
+- **Write model (aggregates, command actions, saga start):** `Policy = "spring.write"` or role-gated operations.
+- **Read model (projection controllers):** `Policy = "spring.read"` or explicit `GenerateAllowAnonymous` for
+    public query surfaces.
+
+### Release Note Checklist
+
+- `Inlet.Generators.Abstractions`: added `GenerateAuthorization` and `GenerateAllowAnonymous` attributes.
+- `Inlet.Gateway.Generators`: aggregate/projection/saga generators emit auth metadata and diagnostics.
+- `Inlet.Gateway`: added generated API force-auth options and global authorization convention.
+
+### Migration Note: SignalR Subscription Authorization Parity
+
+- Projection SignalR subscriptions now honor the same authorization contract as generated HTTP endpoints.
+- `MapInletHub()` requires authorization metadata at the hub endpoint only when force mode is enabled and `AllowAnonymousOptOut = false`.
+- When force mode is enabled and `AllowAnonymousOptOut = true`, hub-level authorization is deferred to per-subscription projection metadata checks.
+- Projection subscriptions enforce `GenerateAuthorization` and `GenerateAllowAnonymous` metadata discovered during projection assembly scanning.
+- Auth failures return a generic hub error (`Subscription denied.`) and do not leak path or policy details to clients.
+- Aggregate, projection, and saga generated HTTP authorization semantics remain unchanged.
 
 ## Summary
 

@@ -26,14 +26,16 @@ public sealed class SpringFixture
       IDisposable
 {
     /// <summary>
+    ///     Environment variable that enables Spring auth-proof mode during L2 test runs.
+    /// </summary>
+    private const string AuthProofModeEnvironmentVariable = "Spring__AuthProofMode";
+
+    /// <summary>
     ///     Default timeout for Playwright operations (in milliseconds).
     ///     Set to 1 minute which is generous for page operations while still failing fast.
     /// </summary>
     private const float PlaywrightTimeoutMs = 60_000;
 
-    /// <summary>
-    ///     Timeout to accommodate Azurite emulator startup.
-    /// </summary>
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(2);
 
     private DistributedApplication? app;
@@ -43,6 +45,8 @@ public sealed class SpringFixture
     private bool disposed;
 
     private IPlaywright? playwright;
+
+    private string? previousAuthProofModeValue;
 
     /// <summary>
     ///     Gets the initialization error if the fixture failed to start.
@@ -106,6 +110,7 @@ public sealed class SpringFixture
 #pragma warning restore VSTHRD002
         playwright?.Dispose();
         app?.Dispose();
+        Environment.SetEnvironmentVariable(AuthProofModeEnvironmentVariable, previousAuthProofModeValue);
     }
 
     /// <inheritdoc />
@@ -127,6 +132,8 @@ public sealed class SpringFixture
         {
             await app.DisposeAsync();
         }
+
+        Environment.SetEnvironmentVariable(AuthProofModeEnvironmentVariable, previousAuthProofModeValue);
     }
 
     /// <inheritdoc />
@@ -135,6 +142,9 @@ public sealed class SpringFixture
     {
         try
         {
+            previousAuthProofModeValue = Environment.GetEnvironmentVariable(AuthProofModeEnvironmentVariable);
+            Environment.SetEnvironmentVariable(AuthProofModeEnvironmentVariable, "true");
+
             // Start the Spring AppHost with Azurite emulator
             IDistributedApplicationTestingBuilder builder =
                 await DistributedApplicationTestingBuilder.CreateAsync<Spring_AppHost>();

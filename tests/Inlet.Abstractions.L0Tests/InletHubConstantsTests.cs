@@ -39,6 +39,16 @@ public sealed class InletHubConstantsTests
     }
 
     /// <summary>
+    ///     SubscriptionDeniedMessage should have expected value.
+    /// </summary>
+    [Fact]
+    public void SubscriptionDeniedMessageHasExpectedValue()
+    {
+        // Assert
+        Assert.Equal("Subscription denied.", InletHubConstants.SubscriptionDeniedMessage);
+    }
+
+    /// <summary>
     ///     UnsubscribeMethod should have expected value.
     /// </summary>
     [Fact]

@@ -48,6 +48,46 @@ internal static partial class InletHubLoggerExtensions
     );
 
     [LoggerMessage(
+        EventId = 8,
+        Level = LogLevel.Warning,
+        Message =
+            "Subscription authorization denied for connection {ConnectionId} path {Path}/{EntityId} user {UserId} policy {PolicyName}")]
+    public static partial void SubscriptionAuthorizationDenied(
+        this ILogger logger,
+        string connectionId,
+        string path,
+        string entityId,
+        string? userId,
+        string? policyName
+    );
+
+    [LoggerMessage(
+        EventId = 9,
+        Level = LogLevel.Debug,
+        Message =
+            "Subscription authorization skipped for connection {ConnectionId} path {Path}/{EntityId} reason {Reason}")]
+    public static partial void SubscriptionAuthorizationSkipped(
+        this ILogger logger,
+        string connectionId,
+        string path,
+        string entityId,
+        string reason
+    );
+
+    [LoggerMessage(
+        EventId = 7,
+        Level = LogLevel.Debug,
+        Message =
+            "Subscription authorization succeeded for connection {ConnectionId} path {Path}/{EntityId} user {UserId}")]
+    public static partial void SubscriptionAuthorizationSucceeded(
+        this ILogger logger,
+        string connectionId,
+        string path,
+        string entityId,
+        string? userId
+    );
+
+    [LoggerMessage(
         EventId = 6,
         Level = LogLevel.Information,
         Message = "Client {ConnectionId} unsubscribed with subscriptionId {SubscriptionId}")]
