@@ -18,13 +18,9 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///     <para>
 ///         Use this class to build readable test scenarios that establish state via events (Given),
 ///         apply a new event (When), and verify the resulting projection (Then).
+///         For usage examples, refer to the test projects in the repository that demonstrate
+///         the Given/When/Then pattern with projection reducers.
 ///     </para>
-///     <code>
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p =&gt; p.Balance.Should().Be(150m));
-///     </code>
 /// </remarks>
 public sealed class ProjectionScenario<TProjection>
     where TProjection : new()
