@@ -26,6 +26,11 @@ public sealed class RuntimeBuilder : IRuntimeBuilder
     public IServiceCollection Services { get; }
 
     /// <summary>
+    ///     Gets a value indicating whether runtime silo configuration was applied.
+    /// </summary>
+    public bool SiloConfigurationApplied { get; private set; }
+
+    /// <summary>
     ///     Creates a new runtime builder instance.
     /// </summary>
     /// <returns>A new <see cref="RuntimeBuilder" /> instance.</returns>
@@ -37,6 +42,7 @@ public sealed class RuntimeBuilder : IRuntimeBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
+        SiloConfigurationApplied = true;
         return this;
     }
 

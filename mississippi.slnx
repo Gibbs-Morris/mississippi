@@ -80,6 +80,7 @@
   <Folder Name="/Tests/">
     <Project Path="tests/Common.Builders.Client.L0Tests/Common.Builders.Client.L0Tests.csproj" />
     <Project Path="tests/Common.Builders.Gateway.L0Tests/Common.Builders.Gateway.L0Tests.csproj" />
+    <Project Path="tests/Common.Builders.Runtime.L0Tests/Common.Builders.Runtime.L0Tests.csproj" />
     <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />
     <Project Path="tests/Inlet.Runtime.Generators.L0Tests/Inlet.Runtime.Generators.L0Tests.csproj" />
   </Folder>
