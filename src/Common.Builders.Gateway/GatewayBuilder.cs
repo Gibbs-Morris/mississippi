@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Builders.Abstractions;
 using Mississippi.Common.Builders.Gateway.Abstractions;
 
 
@@ -51,5 +53,29 @@ public sealed class GatewayBuilder : IGatewayBuilder
     {
         AuthorizationConfigured = true;
         return this;
+    }
+
+    /// <summary>
+    ///     Validates gateway authorization requirements.
+    /// </summary>
+    /// <exception cref="BuilderValidationException">Thrown when gateway authorization is not configured.</exception>
+    public void EnsureAuthorizationConfigured()
+    {
+        if (AuthorizationConfigured || AnonymousExplicitlyAllowed)
+        {
+            return;
+        }
+
+        IReadOnlyList<BuilderDiagnostic> diagnostics =
+        [
+            new(
+                "Gateway.AuthorizationNotConfigured",
+                "Security",
+                "Gateway authorization is not configured.",
+                "Call ConfigureAuthorization() or AllowAnonymousExplicitly() before terminal host attachment."),
+        ];
+        throw new BuilderValidationException(
+            "Gateway authorization is required before terminal host attachment.",
+            diagnostics);
     }
 }
