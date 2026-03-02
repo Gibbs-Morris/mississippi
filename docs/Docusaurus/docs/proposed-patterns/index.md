@@ -1,5 +1,7 @@
 ---
+id: proposed-patterns
 title: Proposed Patterns
+sidebar_label: Proposed Patterns
 description: Non-live design proposals and migration guidance.
 ---
 
