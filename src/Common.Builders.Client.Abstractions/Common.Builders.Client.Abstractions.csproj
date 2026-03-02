@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Common.Builders.Abstractions\Common.Builders.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Client host builder contracts for Mississippi.</Description>
+  </PropertyGroup>
+</Project>
