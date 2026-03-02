@@ -37,6 +37,20 @@ public sealed class RuntimeBuilder : IRuntimeBuilder
     public static RuntimeBuilder Create() => new(new ServiceCollection());
 
     /// <inheritdoc />
+    public IAggregateBuilder<TSnapshot> AddAggregate<TSnapshot>() => new AggregateBuilder<TSnapshot>(Services);
+
+    /// <inheritdoc />
+    public IFeatureStateBuilder<TFeatureState> AddFeatureState<TFeatureState>() =>
+        new FeatureStateBuilder<TFeatureState>(Services);
+
+    /// <inheritdoc />
+    public ISagaBuilder<TSagaState> AddSaga<TSagaState>() => new SagaBuilder<TSagaState>(Services);
+
+    /// <inheritdoc />
+    public IUxProjectionBuilder<TProjectionState> AddUxProjection<TProjectionState>() =>
+        new UxProjectionBuilder<TProjectionState>(Services);
+
+    /// <inheritdoc />
     public IRuntimeBuilder ApplyToSilo(
         ISiloBuilder siloBuilder
     )

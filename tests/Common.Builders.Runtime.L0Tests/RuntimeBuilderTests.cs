@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -17,6 +18,60 @@ namespace Mississippi.Common.Builders.Runtime.L0Tests;
 /// </summary>
 public sealed class RuntimeBuilderTests
 {
+    private sealed class TestFeatureState;
+
+    private sealed class TestProjectionState;
+
+    private sealed class TestSagaState;
+
+    private sealed class TestSnapshot;
+
+    private sealed class TestSnapshotConverter;
+
+    [Fact]
+    public void AddAggregateShouldReturnTypedAggregateBuilder()
+    {
+        RuntimeBuilder builder = RuntimeBuilder.Create();
+        IAggregateBuilder<TestSnapshot> aggregateBuilder = builder.AddAggregate<TestSnapshot>();
+        Assert.NotNull(aggregateBuilder);
+    }
+
+    [Fact]
+    public void AddFeatureStateShouldReturnTypedFeatureStateBuilder()
+    {
+        RuntimeBuilder builder = RuntimeBuilder.Create();
+        IFeatureStateBuilder<TestFeatureState> featureStateBuilder = builder.AddFeatureState<TestFeatureState>();
+        Assert.NotNull(featureStateBuilder);
+    }
+
+    [Fact]
+    public void AddSagaShouldReturnTypedSagaBuilder()
+    {
+        RuntimeBuilder builder = RuntimeBuilder.Create();
+        ISagaBuilder<TestSagaState> sagaBuilder = builder.AddSaga<TestSagaState>();
+        Assert.NotNull(sagaBuilder);
+    }
+
+    [Fact]
+    public void AddSnapshotStateConverterShouldRegisterConverterAsTransient()
+    {
+        RuntimeBuilder builder = RuntimeBuilder.Create();
+        IAggregateBuilder<TestSnapshot> aggregateBuilder = builder.AddAggregate<TestSnapshot>();
+        aggregateBuilder.AddSnapshotStateConverter<TestSnapshotConverter>();
+        ServiceDescriptor descriptor = Assert.Single(
+            builder.Services.Where(serviceDescriptor =>
+                serviceDescriptor.ServiceType == typeof(TestSnapshotConverter)));
+        Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
+    }
+
+    [Fact]
+    public void AddUxProjectionShouldReturnTypedProjectionBuilder()
+    {
+        RuntimeBuilder builder = RuntimeBuilder.Create();
+        IUxProjectionBuilder<TestProjectionState> projectionBuilder = builder.AddUxProjection<TestProjectionState>();
+        Assert.NotNull(projectionBuilder);
+    }
+
     [Fact]
     public void ApplyToSiloShouldReturnSameBuilderAndTrackInvocation()
     {
