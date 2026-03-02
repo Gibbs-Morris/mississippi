@@ -73,6 +73,7 @@
     <Project Path="src/Common.Builders.Client.Abstractions/Common.Builders.Client.Abstractions.csproj" />
     <Project Path="src/Common.Builders.Client/Common.Builders.Client.csproj" />
     <Project Path="src/Common.Builders.Gateway.Abstractions/Common.Builders.Gateway.Abstractions.csproj" />
+    <Project Path="src/Common.Builders.Gateway/Common.Builders.Gateway.csproj" />
     <Project Path="src/Common.Builders.Runtime.Abstractions/Common.Builders.Runtime.Abstractions.csproj" />
   </Folder>
   <Folder Name="/Tests/">
