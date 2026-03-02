@@ -592,6 +592,27 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )"
+        }
+      },
+      "Mississippi.Common.Builders.Client": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection": "[10.0.3, )",
+          "Microsoft.Extensions.Options": "[10.0.3, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Client.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {

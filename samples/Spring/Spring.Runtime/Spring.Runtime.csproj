@@ -26,6 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Common.Builders.Core\Common.Builders.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Common.Builders.Runtime\Common.Builders.Runtime.csproj" />
     <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
     <ProjectReference Include="..\..\..\src\Sdk.Runtime\Sdk.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Builders.Client;
 using Mississippi.Inlet.Client;
 using Mississippi.Reservoir.Client;
 using Mississippi.Reservoir.Client.BuiltIn;
@@ -20,11 +21,12 @@ using Spring.Client.Features.DualEntitySelection;
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+ClientBuilder client = ClientBuilder.Create();
 
 // Configure HttpClient to call the API (base address is the host origin)
-builder.Services.AddScoped<AuthSimulationHeadersHandler>();
+client.Services.AddScoped<AuthSimulationHeadersHandler>();
 #pragma warning disable IDISP014 // Blazor WASM DI manages HttpClient lifecycle
-builder.Services.AddScoped(sp =>
+client.Services.AddScoped(sp =>
 {
     AuthSimulationHeadersHandler authSimulationHeadersHandler = sp.GetRequiredService<AuthSimulationHeadersHandler>();
     authSimulationHeadersHandler.InnerHandler = new HttpClientHandler();
@@ -37,18 +39,18 @@ builder.Services.AddScoped(sp =>
 
 // Register features (one line per feature - scales cleanly)
 // Write side + projection feature registrations
-builder.Services.AddSpringDomainClient();
+client.Services.AddSpringDomainClient();
 
 // Navigation/UI: entity selection
-builder.Services.AddDualEntitySelectionFeature();
-builder.Services.AddDemoAccountsFeature();
-builder.Services.AddAuthSimulationFeature();
+client.Services.AddDualEntitySelectionFeature();
+client.Services.AddDemoAccountsFeature();
+client.Services.AddAuthSimulationFeature();
 
 // Built-in Reservoir features: navigation, lifecycle
-builder.Services.AddReservoirBlazorBuiltIns();
+client.Services.AddReservoirBlazorBuiltIns();
 
 // DevTools integration: enable Redux DevTools in development
-builder.Services.AddReservoirDevTools(options =>
+client.Services.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.Always;
     options.Name = "Spring Sample";
@@ -57,8 +59,13 @@ builder.Services.AddReservoirDevTools(options =>
 
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
-builder.Services.AddInletClient();
-builder.Services.AddInletBlazorSignalR(signalR => signalR
+client.Services.AddInletClient();
+client.Services.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+foreach (ServiceDescriptor descriptor in client.Services)
+{
+    builder.Services.Add(descriptor);
+}
+
 await builder.Build().RunAsync();

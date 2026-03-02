@@ -533,6 +533,53 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Common.Builders.Client": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Client.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Core": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Gateway": "[1.0.0, )",
+          "Mississippi.Common.Builders.Gateway.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Gateway": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Gateway.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Gateway.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Runtime.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Microsoft.Orleans.Server": "[10.0.1, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -660,6 +707,7 @@
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.3, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
+          "Mississippi.Common.Builders.Client": "[1.0.0, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
           "Mississippi.Spring.Domain": "[1.0.0, )"
         }
@@ -745,6 +793,24 @@
           "System.Composition": "9.0.0"
         }
       },
+      "Microsoft.Orleans.Persistence.Memory": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.0, )",
+        "resolved": "10.0.1",
+        "contentHash": "P8UsWbe123I7nna0H7yLwWgQLIAlNFPhVowRek7MHBdynHpUVjXAfDg9XspfGQlDFGbek6izn8vYvaGR2vWcNQ==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "5.0.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.0",
+          "Microsoft.Orleans.Analyzers": "10.0.1",
+          "Microsoft.Orleans.CodeGenerator": "10.0.1",
+          "Microsoft.Orleans.Runtime": "10.0.1",
+          "Newtonsoft.Json": "13.0.4",
+          "System.IO.Hashing": "10.0.0",
+          "System.Memory.Data": "10.0.0"
+        }
+      },
       "Microsoft.Orleans.Sdk": {
         "type": "CentralTransitive",
         "requested": "[10.0.1, )",
@@ -768,6 +834,24 @@
         "requested": "[10.0.0, )",
         "resolved": "10.0.1",
         "contentHash": "2diyHF3jIHRvSmdVH7E0OxLIAUyYzVWcK2LWqKxshKMnPmqlYKZQBUOKKfODTha89DdP9prasF5BmDH5rot7zg=="
+      },
+      "Microsoft.Orleans.Server": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.1, )",
+        "resolved": "10.0.1",
+        "contentHash": "eCZfFSCErvXL3M/hF2xTHb34NXkGMcoeQJo9I6MwIDQOwaIf8EXbvDy5U2GJPJP+wnB/wbBMrOJkmGK+lHX12Q==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "5.0.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.0",
+          "Microsoft.Orleans.Persistence.Memory": "10.0.1",
+          "Microsoft.Orleans.Runtime": "10.0.1",
+          "Microsoft.Orleans.Sdk": "10.0.1",
+          "Newtonsoft.Json": "13.0.4",
+          "System.IO.Hashing": "10.0.0",
+          "System.Memory.Data": "10.0.0"
+        }
       },
       "Microsoft.Orleans.Streaming": {
         "type": "CentralTransitive",
