@@ -38,7 +38,7 @@ public sealed class BankAccountE2ETests
     {
         // Navigate to accounts page and initialize demo accounts
         AccountsPage accountsPage = new(page);
-        await accountsPage.NavigateAsync(fixture.ServerBaseUri);
+        await accountsPage.NavigateAsync(fixture.GatewayBaseUri);
         await accountsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
         await accountsPage.ClickInitializeDemoAccountsAsync();
         await accountsPage.WaitForDemoAccountsInitializedAsync(ProjectionTimeout);
@@ -65,7 +65,7 @@ public sealed class BankAccountE2ETests
             AccountsPage accountsPage = new(page);
 
             // Act
-            await accountsPage.NavigateAsync(fixture.ServerBaseUri);
+            await accountsPage.NavigateAsync(fixture.GatewayBaseUri);
             await accountsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
             string? title = await page.Locator("h1").TextContentAsync();
 
@@ -172,7 +172,7 @@ public sealed class BankAccountE2ETests
         // Assert
         fixture.IsInitialized.Should().BeTrue("the Spring AppHost should start successfully");
         fixture.InitializationError.Should().BeNull("there should be no initialization errors");
-        fixture.ServerBaseUri.Should().NotBe(new Uri("about:blank"), "the server should have a valid URL");
+        fixture.GatewayBaseUri.Should().NotBe(new Uri("about:blank"), "the gateway should have a valid URL");
     }
 
     /// <summary>

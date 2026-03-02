@@ -36,13 +36,13 @@ To run Spring with local auth handling disabled (default demo mode), use:
 ./run-spring.ps1 -LocalAuth Off
 ```
 
-When enabled, AppHost sets `SpringAuth__Enabled=true` for `spring-server`.
+When enabled, AppHost sets `SpringAuth__Enabled=true` for `spring-gateway`.
 
 When not set (or set to `false`), Spring still wires authentication and authorization middleware, but the local dev authentication handler returns `NoResult` and does not establish a principal. Endpoints decorated with generated authorization metadata therefore return `401`/`403` based on normal ASP.NET authorization behavior.
 
 ## Identity Override Headers
 
-When local dev auth is enabled, `Spring.Server` reads these headers:
+When local dev auth is enabled, `Spring.Gateway` reads these headers:
 
 | Header | Purpose | Example |
 | --- | --- | --- |
@@ -58,8 +58,8 @@ When local dev auth is enabled, Spring only honors these override headers for lo
 Source:
 
 - [Spring.AppHost Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.AppHost/Program.cs)
-- [Spring.Server Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs)
-- [SpringLocalDevAuthenticationHandler](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/SpringLocalDevAuthenticationHandler.cs)
+- [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
+- [SpringLocalDevAuthenticationHandler](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/SpringLocalDevAuthenticationHandler.cs)
 
 ## Generated Endpoint Matrix
 
@@ -95,7 +95,7 @@ Auth-proof mode also exercises projection subscription authorization through `In
 
 Source:
 
-- [Spring.Server Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Server/Program.cs)
+- [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
 - [InletServerRegistrations MapInletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletServerRegistrations.cs)
 - [InletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletHub.cs)
 - [InletHubConstants](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Abstractions/InletHubConstants.cs)

@@ -380,7 +380,7 @@ internal sealed class WithdrawalNotificationEffect
 }
 ```
 
-The `INotificationService` is an interface defined in `Spring.Domain`. The implementation (`StubNotificationService` that logs instead of sending) lives in `Spring.Silo`. This demonstrates how domain logic depends only on abstractions.
+The `INotificationService` is an interface defined in `Spring.Domain`. The implementation (`StubNotificationService` that logs instead of sending) lives in `Spring.Runtime`. This demonstrates how domain logic depends only on abstractions.
 
 ([HighValueTransactionEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/HighValueTransactionEffect.cs) |
 [WithdrawalNotificationEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/WithdrawalNotificationEffect.cs) |

@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Spring.Server\Spring.Server.csproj" />
-    <ProjectReference Include="..\Spring.Silo\Spring.Silo.csproj" />
+    <ProjectReference Include="..\Spring.Gateway\Spring.Gateway.csproj" />
+    <ProjectReference Include="..\Spring.Runtime\Spring.Runtime.csproj" />
   </ItemGroup>
 </Project>
