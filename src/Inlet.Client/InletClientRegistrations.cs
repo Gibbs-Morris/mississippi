@@ -15,6 +15,7 @@ namespace Mississippi.Inlet.Client;
 /// <summary>
 ///     Extension methods for registering Inlet services.
 /// </summary>
+[Obsolete("Use ClientBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class InletClientRegistrations
 {
     /// <summary>

@@ -11,6 +11,7 @@ namespace Mississippi.Reservoir.Client;
 /// </summary>
 /// <remarks>
 ///     Justification: public to provide opt-in registration from application startup.
+[Obsolete("Use ClientBuilder.Create() instead. This API will be removed in a future major version.")]
 /// </remarks>
 public static class ReservoirDevToolsRegistrations
 {

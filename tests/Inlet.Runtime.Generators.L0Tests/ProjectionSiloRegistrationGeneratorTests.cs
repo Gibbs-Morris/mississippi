@@ -72,6 +72,15 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                  }
                                                  """;
 
+    private const string BuilderStubs = """
+                                        namespace Mississippi.Common.Builders.Runtime.Abstractions
+                                        {
+                                            public interface IUxProjectionBuilder<TProjectionState>
+                                            {
+                                            }
+                                        }
+                                        """;
+
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
     /// </summary>
@@ -359,6 +368,47 @@ public class ProjectionSiloRegistrationGeneratorTests
         Assert.Contains("/// <summary>", generatedCode, StringComparison.Ordinal);
         Assert.Contains(
             "Extension methods for registering AccountBalance projection services.",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GeneratedProjectionRegistrationsAddObsoleteAttributeWhenProjectionBuilderIsAvailable()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Abstractions;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection;
+                                        }
+
+                                        namespace TestApp.Domain.Projections.AccountBalance.Events
+                                        {
+                                            public sealed record BalanceUpdated;
+                                        }
+
+                                        namespace TestApp.Domain.Projections.AccountBalance.Reducers
+                                        {
+                                            public sealed class BalanceUpdatedReducer : EventReducerBase<TestApp.Domain.Projections.AccountBalance.Events.BalanceUpdated, TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>
+                                            {
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) = RunGenerator(
+            AttributeAndBaseStubs,
+            BuilderStubs,
+            projectionSource);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("AccountBalanceProjectionRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains(
+            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]",
             generatedCode,
             StringComparison.Ordinal);
     }

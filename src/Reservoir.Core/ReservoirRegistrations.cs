@@ -14,6 +14,7 @@ namespace Mississippi.Reservoir.Core;
 /// <summary>
 ///     Provides extension methods for registering Reservoir components in the dependency injection container.
 /// </summary>
+[Obsolete("Use ClientBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class ReservoirRegistrations
 {
     /// <summary>

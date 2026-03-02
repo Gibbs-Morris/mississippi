@@ -28,6 +28,9 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerator
 {
+    private const string ClientBuilderInterfaceTypeFullName =
+        "Mississippi.Common.Builders.Client.Abstractions.IClientBuilder";
+
     private const string ProjectionPathAttributeFullName = "Mississippi.Inlet.Abstractions.ProjectionPathAttribute";
 
     /// <summary>
@@ -62,7 +65,8 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
     private static void GenerateRegistration(
         SourceProductionContext context,
         List<ProjectionDtoInfo> projectionDtos,
-        string targetRootNamespace
+        string targetRootNamespace,
+        bool emitObsoleteAttribute
     )
     {
         if (projectionDtos.Count == 0)
@@ -114,6 +118,12 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
         sb.AppendLine("///     </para>");
         sb.AppendLine("/// </remarks>");
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"ProjectionClientRegistrationGenerator\", \"1.0.0\")]");
+        if (emitObsoleteAttribute)
+        {
+            sb.AppendLine(
+                "[System.Obsolete(\"Use ClientBuilder.Create() instead. This API will be removed in a future major version.\")]");
+        }
+
         sb.AppendLine("public static class ProjectionsFeatureRegistration");
         sb.AppendLine("{");
 
@@ -184,6 +194,11 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
         return projectionDtos;
     }
 
+    private static bool ShouldEmitObsoleteAttribute(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(ClientBuilderInterfaceTypeFullName) is not null;
+
     /// <summary>
     ///     Tries to get projection DTO info from a type symbol.
     /// </summary>
@@ -224,25 +239,26 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to find projection DTOs
-        IncrementalValueProvider<(List<ProjectionDtoInfo> ProjectionDtos, string TargetRootNamespace)>
-            projectionsProvider = compilationAndOptions.Select((
-                source,
-                _
-            ) =>
-            {
-                List<ProjectionDtoInfo> projectionDtos = GetProjectionDtosFromCompilation(source.Compilation);
-                source.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.RootNamespaceProperty,
-                    out string? rootNamespace);
-                source.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.AssemblyNameProperty,
-                    out string? assemblyName);
-                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                    rootNamespace,
-                    assemblyName,
-                    source.Compilation);
-                return (projectionDtos, targetRootNamespace);
-            });
+        IncrementalValueProvider<(List<ProjectionDtoInfo> ProjectionDtos, string TargetRootNamespace, bool
+            EmitObsoleteAttribute)> projectionsProvider = compilationAndOptions.Select((
+            source,
+            _
+        ) =>
+        {
+            List<ProjectionDtoInfo> projectionDtos = GetProjectionDtosFromCompilation(source.Compilation);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
+            bool emitObsoleteAttribute = ShouldEmitObsoleteAttribute(source.Compilation);
+            return (projectionDtos, targetRootNamespace, emitObsoleteAttribute);
+        });
 
         // Register source output
         context.RegisterSourceOutput(
@@ -250,7 +266,7 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
             static (
                 spc,
                 data
-            ) => GenerateRegistration(spc, data.ProjectionDtos, data.TargetRootNamespace));
+            ) => GenerateRegistration(spc, data.ProjectionDtos, data.TargetRootNamespace, data.EmitObsoleteAttribute));
     }
 
     /// <summary>

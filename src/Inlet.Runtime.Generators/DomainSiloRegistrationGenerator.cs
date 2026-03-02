@@ -37,6 +37,9 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
 
     private const string ReducerRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.ReducerRegistrations";
 
+    private const string RuntimeBuilderInterfaceTypeFullName =
+        "Mississippi.Common.Builders.Runtime.Abstractions.IRuntimeBuilder";
+
     private const string SagaRegistrationsTypeFullName = "Mississippi.DomainModeling.Runtime.SagaRegistrations";
 
     private const string SnapshotRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.SnapshotRegistrations";
@@ -156,7 +159,8 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
 
     private static string GenerateRegistrationsSource(
         IReadOnlyList<DomainRegistrationModel> models,
-        string targetRootNamespace
+        string targetRootNamespace,
+        bool emitObsoleteAttribute
     )
     {
         StringBuilder sb = new();
@@ -175,6 +179,12 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("///     Extension methods for registering complete silo domain feature sets.");
         sb.AppendLine("/// </summary>");
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"DomainSiloRegistrationGenerator\", \"1.0.0\")]");
+        if (emitObsoleteAttribute)
+        {
+            sb.AppendLine(
+                "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]");
+        }
+
         sb.AppendLine("public static class DomainSiloRegistrations");
         sb.AppendLine("{");
         foreach (DomainRegistrationModel model in models.OrderBy(m => m.DomainMethodName, StringComparer.Ordinal))
@@ -323,6 +333,11 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
             sagaNamesByDomain);
     }
 
+    private static bool ShouldEmitObsoleteAttribute(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(RuntimeBuilderInterfaceTypeFullName) is not null;
+
     /// <inheritdoc />
     public void Initialize(
         IncrementalGeneratorInitializationContext context
@@ -330,30 +345,31 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<(IReadOnlyList<DomainRegistrationModel> Domains, string TargetRootNamespace)>
-            domainsProvider = compilationAndOptions.Select((
-                source,
-                _
-            ) =>
+        IncrementalValueProvider<(IReadOnlyList<DomainRegistrationModel> Domains, string TargetRootNamespace, bool
+            EmitObsoleteAttribute)> domainsProvider = compilationAndOptions.Select((
+            source,
+            _
+        ) =>
+        {
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
+            bool emitObsoleteAttribute = ShouldEmitObsoleteAttribute(source.Compilation);
+            if (!HasRegistrationDependencies(source.Compilation))
             {
-                source.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.RootNamespaceProperty,
-                    out string? rootNamespace);
-                source.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.AssemblyNameProperty,
-                    out string? assemblyName);
-                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                    rootNamespace,
-                    assemblyName,
-                    source.Compilation);
-                if (!HasRegistrationDependencies(source.Compilation))
-                {
-                    return ((IReadOnlyList<DomainRegistrationModel>)[], targetRootNamespace);
-                }
+                return ((IReadOnlyList<DomainRegistrationModel>)[], targetRootNamespace, emitObsoleteAttribute);
+            }
 
-                IReadOnlyList<DomainRegistrationModel> domains = GetDomainRegistrations(source.Compilation);
-                return (domains, targetRootNamespace);
-            });
+            IReadOnlyList<DomainRegistrationModel> domains = GetDomainRegistrations(source.Compilation);
+            return (domains, targetRootNamespace, emitObsoleteAttribute);
+        });
         context.RegisterSourceOutput(
             domainsProvider,
             static (
@@ -366,7 +382,10 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                     return;
                 }
 
-                string source = GenerateRegistrationsSource(result.Domains, result.TargetRootNamespace);
+                string source = GenerateRegistrationsSource(
+                    result.Domains,
+                    result.TargetRootNamespace,
+                    result.EmitObsoleteAttribute);
                 spc.AddSource("DomainSiloRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
             });
     }

@@ -16,6 +16,7 @@ namespace Mississippi.Brooks.Runtime;
 /// <summary>
 ///     Extension methods for registering Brooks runtime services in dependency injection.
 /// </summary>
+[Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class BrooksRuntimeRegistrations
 {
     /// <summary>

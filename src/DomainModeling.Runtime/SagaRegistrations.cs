@@ -11,6 +11,7 @@ namespace Mississippi.DomainModeling.Runtime;
 /// <summary>
 ///     Provides extension methods for registering saga orchestration components.
 /// </summary>
+[Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class SagaRegistrations
 {
     /// <summary>

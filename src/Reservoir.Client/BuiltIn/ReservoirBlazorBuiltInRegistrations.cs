@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
@@ -9,6 +11,7 @@ namespace Mississippi.Reservoir.Client.BuiltIn;
 /// <summary>
 ///     Extension methods for registering all built-in Reservoir Blazor features.
 /// </summary>
+[Obsolete("Use ClientBuilder.Create() instead. This API will be removed in a future major version.")]
 /// <remarks>
 ///     <para>
 ///         This provides a convenient way to register all built-in features at once.

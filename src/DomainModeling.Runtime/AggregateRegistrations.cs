@@ -15,6 +15,7 @@ namespace Mississippi.DomainModeling.Runtime;
 /// <summary>
 ///     Provides extension methods for registering aggregate components in the dependency injection container.
 /// </summary>
+[Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class AggregateRegistrations
 {
     /// <summary>

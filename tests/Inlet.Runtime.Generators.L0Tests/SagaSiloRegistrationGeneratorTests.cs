@@ -92,6 +92,15 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                           }
                                           """;
 
+    private const string BuilderStubs = """
+                                        namespace Mississippi.Common.Builders.Runtime.Abstractions
+                                        {
+                                            public interface ISagaBuilder<TSagaState>
+                                            {
+                                            }
+                                        }
+                                        """;
+
     private static CSharpCompilation CreateCompilation(
         params string[] sources
     )
@@ -167,6 +176,45 @@ public sealed class SagaSiloRegistrationGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    [Fact]
+    public void GeneratedSagaRegistrationAddsObsoleteAttributeWhenSagaBuilderIsAvailable()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+                                  using Mississippi.Tributary.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput;
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState;
+
+                                      [SagaStep<TransferSagaState>(0)]
+                                      public sealed class DebitStep : ISagaStep<TransferSagaState>
+                                      {
+                                      }
+
+                                      public sealed class TransferStarted;
+
+                                      public sealed class TransferStartedReducer : EventReducerBase<TransferStarted, TransferSagaState>
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, BuilderStubs, sagaSource);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("TransferSagaRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains(
+            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>

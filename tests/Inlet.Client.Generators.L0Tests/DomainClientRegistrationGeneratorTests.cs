@@ -37,6 +37,15 @@ public sealed class DomainClientRegistrationGeneratorTests
                                           }
                                           """;
 
+    private const string BuilderStubs = """
+                                        namespace Mississippi.Common.Builders.Client.Abstractions
+                                        {
+                                            public interface IClientBuilder
+                                            {
+                                            }
+                                        }
+                                        """;
+
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
         RunResult) RunGenerator(
             params string[] sources
@@ -78,6 +87,30 @@ public sealed class DomainClientRegistrationGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    [Fact]
+    public void GeneratedDomainRegistrationAddsObsoleteAttributeWhenClientBuilderIsAvailable()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Aggregates.Order.Commands
+                              {
+                                  [GenerateCommand]
+                                  public sealed record PlaceOrder;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, BuilderStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainFeatureRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains(
+            "[System.Obsolete(\"Use ClientBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>

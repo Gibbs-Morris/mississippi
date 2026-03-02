@@ -21,6 +21,7 @@ namespace Mississippi.Inlet.Runtime;
 ///         that serve SignalR hubs, use the extensions from <c>Inlet.Gateway</c>.
 ///     </para>
 /// </remarks>
+[Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class InletSiloRegistrations
 {
     /// <summary>

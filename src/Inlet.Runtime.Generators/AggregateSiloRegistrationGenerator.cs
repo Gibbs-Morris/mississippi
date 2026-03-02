@@ -34,6 +34,9 @@ namespace Mississippi.Inlet.Runtime.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
 {
+    private const string AggregateBuilderInterfaceTypeFullName =
+        "Mississippi.Common.Builders.Runtime.Abstractions.IAggregateBuilder`1";
+
     private const string AggregateRegistrationsTypeFullName =
         "Mississippi.DomainModeling.Runtime.AggregateRegistrations";
 
@@ -243,7 +246,8 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
     ///     Generates the registration extension method for an aggregate.
     /// </summary>
     private static string GenerateRegistration(
-        AggregateRegistrationInfo aggregate
+        AggregateRegistrationInfo aggregate,
+        bool emitObsoleteAttribute
     )
     {
         SourceBuilder sb = new();
@@ -283,6 +287,12 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         string registrationsName = $"{aggregate.Model.AggregateName}AggregateRegistrations";
         sb.AppendSummary($"Extension methods for registering {aggregate.Model.AggregateName} aggregate services.");
         sb.AppendGeneratedCodeAttribute("AggregateSiloRegistrationGenerator");
+        if (emitObsoleteAttribute)
+        {
+            sb.AppendLine(
+                "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]");
+        }
+
         sb.AppendLine($"public static class {registrationsName}");
         sb.OpenBrace();
         sb.AppendSummary($"Adds the {aggregate.Model.AggregateName} aggregate services to the service collection.");
@@ -504,6 +514,11 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
                (constructedFrom.ContainingNamespace.ToDisplayString() == "Mississippi.DomainModeling.Abstractions");
     }
 
+    private static bool ShouldEmitObsoleteAttribute(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(AggregateBuilderInterfaceTypeFullName) is not null;
+
     /// <summary>
     ///     Attempts to create an EffectInfo from a type symbol if it's a valid event effect.
     /// </summary>
@@ -702,40 +717,45 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<AggregateRegistrationInfo>> aggregatesProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            if (!HasRegistrationDependencies(source.Compilation))
+        IncrementalValueProvider<(List<AggregateRegistrationInfo> Aggregates, bool EmitObsoleteAttribute)>
+            aggregatesProvider = compilationAndOptions.Select((
+                source,
+                _
+            ) =>
             {
-                return [];
-            }
+                bool emitObsoleteAttribute = ShouldEmitObsoleteAttribute(source.Compilation);
+                if (!HasRegistrationDependencies(source.Compilation))
+                {
+                    return ([], emitObsoleteAttribute);
+                }
 
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
-        });
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                List<AggregateRegistrationInfo> aggregates = GetAggregatesFromCompilation(
+                    source.Compilation,
+                    targetRootNamespace);
+                return (aggregates, emitObsoleteAttribute);
+            });
 
         // Register source output
         context.RegisterSourceOutput(
             aggregatesProvider,
             static (
                 spc,
-                aggregates
+                result
             ) =>
             {
-                foreach (AggregateRegistrationInfo aggregate in aggregates)
+                foreach (AggregateRegistrationInfo aggregate in result.Aggregates)
                 {
-                    string registrationSource = GenerateRegistration(aggregate);
+                    string registrationSource = GenerateRegistration(aggregate, result.EmitObsoleteAttribute);
                     spc.AddSource(
                         $"{aggregate.Model.AggregateName}AggregateRegistrations.g.cs",
                         SourceText.From(registrationSource, Encoding.UTF8));

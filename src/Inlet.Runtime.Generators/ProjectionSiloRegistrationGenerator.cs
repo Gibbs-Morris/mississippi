@@ -39,6 +39,9 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
 
     private const string SnapshotRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.SnapshotRegistrations";
 
+    private const string UxProjectionBuilderInterfaceTypeFullName =
+        "Mississippi.Common.Builders.Runtime.Abstractions.IUxProjectionBuilder`1";
+
     private const string UxProjectionRegistrationsTypeFullName =
         "Mississippi.DomainModeling.Runtime.UxProjectionRegistrations";
 
@@ -145,7 +148,8 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
     ///     Generates the registration extension method for a projection.
     /// </summary>
     private static string GenerateRegistration(
-        ProjectionRegistrationInfo projection
+        ProjectionRegistrationInfo projection,
+        bool emitObsoleteAttribute
     )
     {
         SourceBuilder sb = new();
@@ -175,6 +179,12 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         string registrationsName = $"{projection.Model.ProjectionName}ProjectionRegistrations";
         sb.AppendSummary($"Extension methods for registering {projection.Model.ProjectionName} projection services.");
         sb.AppendGeneratedCodeAttribute("ProjectionSiloRegistrationGenerator");
+        if (emitObsoleteAttribute)
+        {
+            sb.AppendLine(
+                "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]");
+        }
+
         sb.AppendLine($"public static class {registrationsName}");
         sb.OpenBrace();
         sb.AppendSummary($"Adds the {projection.Model.ProjectionName} projection services to the service collection.");
@@ -273,6 +283,11 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null &&
         compilation.GetTypeByMetadataName(UxProjectionRegistrationsTypeFullName) is not null;
 
+    private static bool ShouldEmitObsoleteAttribute(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(UxProjectionBuilderInterfaceTypeFullName) is not null;
+
     /// <summary>
     ///     Tries to get projection info from a type symbol.
     /// </summary>
@@ -324,40 +339,45 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<ProjectionRegistrationInfo>> projectionsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            if (!HasRegistrationDependencies(source.Compilation))
+        IncrementalValueProvider<(List<ProjectionRegistrationInfo> Projections, bool EmitObsoleteAttribute)>
+            projectionsProvider = compilationAndOptions.Select((
+                source,
+                _
+            ) =>
             {
-                return [];
-            }
+                bool emitObsoleteAttribute = ShouldEmitObsoleteAttribute(source.Compilation);
+                if (!HasRegistrationDependencies(source.Compilation))
+                {
+                    return ([], emitObsoleteAttribute);
+                }
 
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetProjectionsFromCompilation(source.Compilation, targetRootNamespace);
-        });
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                List<ProjectionRegistrationInfo> projections = GetProjectionsFromCompilation(
+                    source.Compilation,
+                    targetRootNamespace);
+                return (projections, emitObsoleteAttribute);
+            });
 
         // Register source output
         context.RegisterSourceOutput(
             projectionsProvider,
             static (
                 spc,
-                projections
+                result
             ) =>
             {
-                foreach (ProjectionRegistrationInfo projection in projections)
+                foreach (ProjectionRegistrationInfo projection in result.Projections)
                 {
-                    string registrationSource = GenerateRegistration(projection);
+                    string registrationSource = GenerateRegistration(projection, result.EmitObsoleteAttribute);
                     spc.AddSource(
                         $"{projection.Model.ProjectionName}ProjectionRegistrations.g.cs",
                         SourceText.From(registrationSource, Encoding.UTF8));

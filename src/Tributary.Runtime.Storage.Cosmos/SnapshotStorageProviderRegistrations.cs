@@ -27,6 +27,7 @@ namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 /// </summary>
 public static class SnapshotStorageProviderRegistrations
 {
+    [Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
     /// <summary>
     ///     Registers Cosmos snapshot storage provider services using an externally provided <see cref="CosmosClient" /> and
     ///     previously configured <see cref="SnapshotStorageOptions" />; ensures the container initializer runs at startup.

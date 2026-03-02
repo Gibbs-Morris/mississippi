@@ -19,6 +19,9 @@ namespace Mississippi.Inlet.Gateway.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
 {
+    private const string GatewayBuilderInterfaceTypeFullName =
+        "Mississippi.Common.Builders.Gateway.Abstractions.IGatewayBuilder";
+
     private const string GenerateCommandAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateCommandAttribute";
 
@@ -115,7 +118,8 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
 
     private static string GenerateRegistrationsSource(
         IReadOnlyList<DomainRegistrationModel> models,
-        string targetRootNamespace
+        string targetRootNamespace,
+        bool emitObsoleteAttribute
     )
     {
         StringBuilder sb = new();
@@ -149,6 +153,12 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("///     Extension methods for registering complete server domain mapping feature sets.");
         sb.AppendLine("/// </summary>");
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"DomainServerRegistrationGenerator\", \"1.0.0\")]");
+        if (emitObsoleteAttribute)
+        {
+            sb.AppendLine(
+                "[System.Obsolete(\"Use GatewayBuilder.Create() instead. This API will be removed in a future major version.\")]");
+        }
+
         sb.AppendLine("public static class DomainServerRegistrations");
         sb.AppendLine("{");
         foreach (DomainRegistrationModel model in models.OrderBy(m => m.DomainMethodName, StringComparer.Ordinal))
@@ -268,6 +278,11 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             projectionNamesByDomain);
     }
 
+    private static bool ShouldEmitObsoleteAttribute(
+        Compilation compilation
+    ) =>
+        compilation.GetTypeByMetadataName(GatewayBuilderInterfaceTypeFullName) is not null;
+
     /// <inheritdoc />
     public void Initialize(
         IncrementalGeneratorInitializationContext context
@@ -275,25 +290,26 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<(IReadOnlyList<DomainRegistrationModel> Domains, string TargetRootNamespace)>
-            domainsProvider = compilationAndOptions.Select((
-                source,
-                _
-            ) =>
-            {
-                source.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.RootNamespaceProperty,
-                    out string? rootNamespace);
-                source.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.AssemblyNameProperty,
-                    out string? assemblyName);
-                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                    rootNamespace,
-                    assemblyName,
-                    source.Compilation);
-                IReadOnlyList<DomainRegistrationModel> domains = GetDomainRegistrations(source.Compilation);
-                return (domains, targetRootNamespace);
-            });
+        IncrementalValueProvider<(IReadOnlyList<DomainRegistrationModel> Domains, string TargetRootNamespace, bool
+            EmitObsoleteAttribute)> domainsProvider = compilationAndOptions.Select((
+            source,
+            _
+        ) =>
+        {
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNamespace);
+            source.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? assemblyName);
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                source.Compilation);
+            bool emitObsoleteAttribute = ShouldEmitObsoleteAttribute(source.Compilation);
+            IReadOnlyList<DomainRegistrationModel> domains = GetDomainRegistrations(source.Compilation);
+            return (domains, targetRootNamespace, emitObsoleteAttribute);
+        });
         context.RegisterSourceOutput(
             domainsProvider,
             static (
@@ -306,7 +322,10 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                     return;
                 }
 
-                string source = GenerateRegistrationsSource(result.Domains, result.TargetRootNamespace);
+                string source = GenerateRegistrationsSource(
+                    result.Domains,
+                    result.TargetRootNamespace,
+                    result.EmitObsoleteAttribute);
                 spc.AddSource("DomainServerRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
             });
     }

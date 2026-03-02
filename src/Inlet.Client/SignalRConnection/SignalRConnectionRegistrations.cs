@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Core;
@@ -10,6 +12,7 @@ namespace Mississippi.Inlet.Client.SignalRConnection;
 /// </summary>
 public static class SignalRConnectionRegistrations
 {
+    [Obsolete("Use ClientBuilder.Create() instead. This API will be removed in a future major version.")]
     /// <summary>
     ///     Adds the SignalR connection feature to the service collection.
     /// </summary>

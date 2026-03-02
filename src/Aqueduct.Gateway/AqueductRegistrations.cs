@@ -14,6 +14,7 @@ namespace Mississippi.Aqueduct.Gateway;
 /// </summary>
 public static class AqueductRegistrations
 {
+    [Obsolete("Use GatewayBuilder.Create() instead. This API will be removed in a future major version.")]
     /// <summary>
     ///     Adds the Aqueduct backplane for the specified hub type.
     /// </summary>

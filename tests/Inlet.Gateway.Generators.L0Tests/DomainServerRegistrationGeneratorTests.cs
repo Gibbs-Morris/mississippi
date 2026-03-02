@@ -45,6 +45,15 @@ public sealed class DomainServerRegistrationGeneratorTests
                                           }
                                           """;
 
+    private const string BuilderStubs = """
+                                        namespace Mississippi.Common.Builders.Gateway.Abstractions
+                                        {
+                                            public interface IGatewayBuilder
+                                            {
+                                            }
+                                        }
+                                        """;
+
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
         RunResult) RunGenerator(
             params string[] sources
@@ -86,6 +95,30 @@ public sealed class DomainServerRegistrationGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    [Fact]
+    public void GeneratedDomainRegistrationAddsObsoleteAttributeWhenGatewayBuilderIsAvailable()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Aggregates.Order.Commands
+                              {
+                                  [GenerateCommand]
+                                  public sealed record PlaceOrder;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, BuilderStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains(
+            "[System.Obsolete(\"Use GatewayBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
