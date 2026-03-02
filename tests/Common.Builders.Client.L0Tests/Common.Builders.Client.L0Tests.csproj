@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Common.Builders.Client.Abstractions\Common.Builders.Client.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Common.Builders.Client\Common.Builders.Client.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>L0 tests for Mississippi client builder composition.</Description>
+  </PropertyGroup>
+</Project>

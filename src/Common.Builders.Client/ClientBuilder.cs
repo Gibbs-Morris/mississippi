@@ -28,4 +28,14 @@ public sealed class ClientBuilder : IClientBuilder
     /// </summary>
     /// <returns>A new <see cref="ClientBuilder" /> instance.</returns>
     public static ClientBuilder Create() => new(new ServiceCollection());
+
+    /// <inheritdoc />
+    public IClientBuilder ConfigureClient(
+        Action<ClientBuilderOptions> configure
+    )
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        Services.Configure(configure);
+        return this;
+    }
 }
