@@ -18,7 +18,7 @@ jobs:
       statuses: write
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v4.1.7
 
       - name: PR Metrics
         uses: microsoft/PR-Metrics@9090a19be52120bc685f529b0b4848ac24575c2c # v1.7.11
