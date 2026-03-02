@@ -39,6 +39,7 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_MARKDOWN: true
           VALIDATE_MARKDOWN_PRETTIER: false
+          FILTER_REGEX_EXCLUDE: '(\.github/agents/.*|.*/AnalyzerReleases\.(Shipped|Unshipped)\.md$)'
 
       - name: Markdown lint passed
         if: success()
