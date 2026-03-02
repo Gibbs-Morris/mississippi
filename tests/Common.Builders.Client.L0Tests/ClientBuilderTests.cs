@@ -16,7 +16,7 @@ public sealed class ClientBuilderTests
     [Fact]
     public void ConfigureClientShouldConfigureOptions()
     {
-        IClientBuilder builder = ClientBuilder.Create();
+        ClientBuilder builder = ClientBuilder.Create();
         builder.ConfigureClient(options => { options.RoutePrefix = "/api/projections"; });
         ServiceProvider provider = builder.Services.BuildServiceProvider();
         IOptions<ClientBuilderOptions> options = provider.GetRequiredService<IOptions<ClientBuilderOptions>>();
@@ -26,7 +26,7 @@ public sealed class ClientBuilderTests
     [Fact]
     public void ConfigureClientShouldReturnSameBuilderInstance()
     {
-        IClientBuilder builder = ClientBuilder.Create();
+        ClientBuilder builder = ClientBuilder.Create();
         IClientBuilder result = builder.ConfigureClient(_ => { });
         Assert.Same(builder, result);
     }
@@ -34,7 +34,7 @@ public sealed class ClientBuilderTests
     [Fact]
     public void ConfigureClientShouldThrowWhenConfigureIsNull()
     {
-        IClientBuilder builder = ClientBuilder.Create();
+        ClientBuilder builder = ClientBuilder.Create();
         Action<ClientBuilderOptions>? configure = null;
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(() => builder.ConfigureClient(configure!));
@@ -44,7 +44,7 @@ public sealed class ClientBuilderTests
     [Fact]
     public void CreateShouldProvideServiceCollection()
     {
-        IClientBuilder builder = ClientBuilder.Create();
+        ClientBuilder builder = ClientBuilder.Create();
         Assert.NotNull(builder.Services);
     }
 }

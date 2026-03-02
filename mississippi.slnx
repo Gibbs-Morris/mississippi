@@ -72,6 +72,7 @@
     <Project Path="src/Common.Builders.Abstractions/Common.Builders.Abstractions.csproj" />
     <Project Path="src/Common.Builders.Client.Abstractions/Common.Builders.Client.Abstractions.csproj" />
     <Project Path="src/Common.Builders.Client/Common.Builders.Client.csproj" />
+    <Project Path="src/Common.Builders.Core/Common.Builders.Core.csproj" />
     <Project Path="src/Common.Builders.Gateway.Abstractions/Common.Builders.Gateway.Abstractions.csproj" />
     <Project Path="src/Common.Builders.Gateway/Common.Builders.Gateway.csproj" />
     <Project Path="src/Common.Builders.Runtime.Abstractions/Common.Builders.Runtime.Abstractions.csproj" />
@@ -79,6 +80,7 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="tests/Common.Builders.Client.L0Tests/Common.Builders.Client.L0Tests.csproj" />
+    <Project Path="tests/Common.Builders.Core.L0Tests/Common.Builders.Core.L0Tests.csproj" />
     <Project Path="tests/Common.Builders.Gateway.L0Tests/Common.Builders.Gateway.L0Tests.csproj" />
     <Project Path="tests/Common.Builders.Runtime.L0Tests/Common.Builders.Runtime.L0Tests.csproj" />
     <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />

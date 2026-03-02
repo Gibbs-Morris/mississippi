@@ -30,7 +30,7 @@ public sealed class RuntimeBuilderTests
     [Fact]
     public void ApplyToSiloShouldThrowWhenSiloBuilderIsNull()
     {
-        IRuntimeBuilder builder = RuntimeBuilder.Create();
+        RuntimeBuilder builder = RuntimeBuilder.Create();
         ISiloBuilder? siloBuilder = null;
         ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => builder.ApplyToSilo(siloBuilder!));
         Assert.Equal("siloBuilder", exception.ParamName);
@@ -39,7 +39,7 @@ public sealed class RuntimeBuilderTests
     [Fact]
     public void ConfigureSnapshotRetentionShouldConfigureOptions()
     {
-        IRuntimeBuilder builder = RuntimeBuilder.Create();
+        RuntimeBuilder builder = RuntimeBuilder.Create();
         builder.ConfigureSnapshotRetention(options =>
         {
             options.MaxSnapshotsToRetain = 3;
@@ -54,7 +54,7 @@ public sealed class RuntimeBuilderTests
     [Fact]
     public void ConfigureSnapshotRetentionShouldThrowWhenConfigureIsNull()
     {
-        IRuntimeBuilder builder = RuntimeBuilder.Create();
+        RuntimeBuilder builder = RuntimeBuilder.Create();
         Action<SnapshotRetentionOptions>? configure = null;
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(() => builder.ConfigureSnapshotRetention(configure!));
