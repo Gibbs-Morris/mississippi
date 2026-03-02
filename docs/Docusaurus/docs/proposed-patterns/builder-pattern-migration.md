@@ -17,7 +17,7 @@ The framework is moving from direct `Add*`/`Use*` registration helpers toward ho
 - `GatewayBuilder.Create()`
 - `RuntimeBuilder.Create()`
 
-Legacy registration classes remain available for migration periods, but are marked with `[Obsolete("Use {BuilderType}.{Method}() instead. This API will be removed in a future major version.")]`.
+Legacy registration classes remain available for migration periods, but are marked with `[Obsolete("Use {BuilderType}.Create() instead. Remove in v1.0.")]`.
 
 ## Startup migration (before/after)
 
