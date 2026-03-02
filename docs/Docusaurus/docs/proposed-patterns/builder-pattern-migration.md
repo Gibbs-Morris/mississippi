@@ -1,5 +1,7 @@
 ---
+id: builder-pattern-migration
 title: Builder Pattern Migration Matrix
+sidebar_label: Builder Pattern Migration
 description: Proposed migration guidance from legacy registration APIs to builder-first APIs.
 ---
 
