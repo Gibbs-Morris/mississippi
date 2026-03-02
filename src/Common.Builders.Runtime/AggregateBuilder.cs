@@ -13,8 +13,6 @@ namespace Mississippi.Common.Builders.Runtime;
 /// <typeparam name="TSnapshot">Snapshot type.</typeparam>
 public sealed class AggregateBuilder<TSnapshot> : IAggregateBuilder<TSnapshot>
 {
-    private readonly IServiceCollection services;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="AggregateBuilder{TSnapshot}" /> class.
     /// </summary>
@@ -24,14 +22,16 @@ public sealed class AggregateBuilder<TSnapshot> : IAggregateBuilder<TSnapshot>
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        this.services = services;
+        Services = services;
     }
+
+    private IServiceCollection Services { get; }
 
     /// <inheritdoc />
     public IAggregateBuilder<TSnapshot> AddSnapshotStateConverter<TConverter>()
         where TConverter : class
     {
-        services.AddTransient<TConverter>();
+        Services.AddTransient<TConverter>();
         return this;
     }
 }
