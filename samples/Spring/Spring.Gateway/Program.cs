@@ -70,7 +70,11 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 builder.UseOrleansClient(clientBuilder => { clientBuilder.AddActivityPropagation(); });
 
 // Add controllers for aggregate API endpoints
-gateway.Services.AddControllers();
+// Must stay on builder.Services (not gateway.Services) because AddControllers()
+// internally uses IWebHostEnvironment.ApplicationName to discover controllers via
+// ApplicationPartManager. The gateway builder's standalone ServiceCollection lacks
+// IWebHostEnvironment, causing controller discovery to fail in hosted environments.
+builder.Services.AddControllers();
 
 // Add OpenAPI documentation
 gateway.Services.AddOpenApi(options =>
