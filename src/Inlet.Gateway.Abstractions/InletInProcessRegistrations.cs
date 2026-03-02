@@ -11,7 +11,6 @@ namespace Mississippi.Inlet.Gateway.Abstractions;
 /// </summary>
 public static class InletInProcessRegistrations
 {
-    [Obsolete("Use GatewayBuilder.Create() instead. This API will be removed in a future major version.")]
     /// <summary>
     ///     Adds Inlet in-process server services to the service collection.
     /// </summary>

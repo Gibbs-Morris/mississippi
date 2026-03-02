@@ -181,8 +181,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"DomainSiloRegistrationGenerator\", \"1.0.0\")]");
         if (emitObsoleteAttribute)
         {
-            sb.AppendLine(
-                "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]");
+            sb.AppendLine("[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]");
         }
 
         sb.AppendLine("public static class DomainSiloRegistrations");

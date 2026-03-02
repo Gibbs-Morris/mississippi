@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -18,16 +17,34 @@ namespace Mississippi.Common.Builders.Runtime.L0Tests;
 /// </summary>
 public sealed class RuntimeBuilderTests
 {
-    private sealed class TestFeatureState;
+    private sealed class TestFeatureState
+    {
+        public override string ToString() => nameof(TestFeatureState);
+    }
 
-    private sealed class TestProjectionState;
+    private sealed class TestProjectionState
+    {
+        public override string ToString() => nameof(TestProjectionState);
+    }
 
-    private sealed class TestSagaState;
+    private sealed class TestSagaState
+    {
+        public override string ToString() => nameof(TestSagaState);
+    }
 
-    private sealed class TestSnapshot;
+    private sealed class TestSnapshot
+    {
+        public override string ToString() => nameof(TestSnapshot);
+    }
 
-    private sealed class TestSnapshotConverter;
+    private sealed class TestSnapshotConverter
+    {
+        public override string ToString() => nameof(TestSnapshotConverter);
+    }
 
+    /// <summary>
+    ///     AddAggregate returns a typed aggregate builder.
+    /// </summary>
     [Fact]
     public void AddAggregateShouldReturnTypedAggregateBuilder()
     {
@@ -36,6 +53,9 @@ public sealed class RuntimeBuilderTests
         Assert.NotNull(aggregateBuilder);
     }
 
+    /// <summary>
+    ///     AddFeatureState returns a typed feature state builder.
+    /// </summary>
     [Fact]
     public void AddFeatureStateShouldReturnTypedFeatureStateBuilder()
     {
@@ -44,6 +64,9 @@ public sealed class RuntimeBuilderTests
         Assert.NotNull(featureStateBuilder);
     }
 
+    /// <summary>
+    ///     AddSaga returns a typed saga builder.
+    /// </summary>
     [Fact]
     public void AddSagaShouldReturnTypedSagaBuilder()
     {
@@ -52,6 +75,9 @@ public sealed class RuntimeBuilderTests
         Assert.NotNull(sagaBuilder);
     }
 
+    /// <summary>
+    ///     AddSnapshotStateConverter registers the converter as transient.
+    /// </summary>
     [Fact]
     public void AddSnapshotStateConverterShouldRegisterConverterAsTransient()
     {
@@ -59,11 +85,14 @@ public sealed class RuntimeBuilderTests
         IAggregateBuilder<TestSnapshot> aggregateBuilder = builder.AddAggregate<TestSnapshot>();
         aggregateBuilder.AddSnapshotStateConverter<TestSnapshotConverter>();
         ServiceDescriptor descriptor = Assert.Single(
-            builder.Services.Where(serviceDescriptor =>
-                serviceDescriptor.ServiceType == typeof(TestSnapshotConverter)));
+            builder.Services,
+            serviceDescriptor => serviceDescriptor.ServiceType == typeof(TestSnapshotConverter));
         Assert.Equal(ServiceLifetime.Transient, descriptor.Lifetime);
     }
 
+    /// <summary>
+    ///     AddUxProjection returns a typed projection builder.
+    /// </summary>
     [Fact]
     public void AddUxProjectionShouldReturnTypedProjectionBuilder()
     {
@@ -72,6 +101,9 @@ public sealed class RuntimeBuilderTests
         Assert.NotNull(projectionBuilder);
     }
 
+    /// <summary>
+    ///     ApplyToSilo returns the same builder and tracks invocation.
+    /// </summary>
     [Fact]
     public void ApplyToSiloShouldReturnSameBuilderAndTrackInvocation()
     {
@@ -82,6 +114,9 @@ public sealed class RuntimeBuilderTests
         Assert.True(builder.SiloConfigurationApplied);
     }
 
+    /// <summary>
+    ///     ApplyToSilo throws when siloBuilder is null.
+    /// </summary>
     [Fact]
     public void ApplyToSiloShouldThrowWhenSiloBuilderIsNull()
     {
@@ -91,6 +126,9 @@ public sealed class RuntimeBuilderTests
         Assert.Equal("siloBuilder", exception.ParamName);
     }
 
+    /// <summary>
+    ///     ConfigureSnapshotRetention applies options configuration.
+    /// </summary>
     [Fact]
     public void ConfigureSnapshotRetentionShouldConfigureOptions()
     {
@@ -100,12 +138,15 @@ public sealed class RuntimeBuilderTests
             options.MaxSnapshotsToRetain = 3;
             options.SnapshotEveryNEvents = 50;
         });
-        ServiceProvider provider = builder.Services.BuildServiceProvider();
+        using ServiceProvider provider = builder.Services.BuildServiceProvider();
         IOptions<SnapshotRetentionOptions> options = provider.GetRequiredService<IOptions<SnapshotRetentionOptions>>();
         Assert.Equal(3, options.Value.MaxSnapshotsToRetain);
         Assert.Equal(50, options.Value.SnapshotEveryNEvents);
     }
 
+    /// <summary>
+    ///     ConfigureSnapshotRetention throws when configure delegate is null.
+    /// </summary>
     [Fact]
     public void ConfigureSnapshotRetentionShouldThrowWhenConfigureIsNull()
     {

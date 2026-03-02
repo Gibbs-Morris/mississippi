@@ -162,6 +162,6 @@ public sealed class InletBlazorSignalRBuilder
         Services.AddActionEffect<InletConnectionState, InletSignalRActionEffect>();
 
         // Register the SignalR connection feature (state, reducers, and lifecycle effect)
-        Services.AddSignalRConnectionFeature();
+        SignalRConnectionRegistrations.AddSignalRConnectionFeatureCore(Services);
     }
 }

@@ -23,4 +23,7 @@ public sealed class SagaBuilder<TSagaState> : ISagaBuilder<TSagaState>
     {
         ArgumentNullException.ThrowIfNull(services);
     }
+
+    /// <inheritdoc />
+    public TSagaState? SagaStateMarker => default;
 }

@@ -17,8 +17,14 @@ namespace Mississippi.Common.Builders.Core.L0Tests;
 /// </summary>
 public sealed class MississippiBuilderHostExtensionsTests
 {
-    private sealed class TestClientService;
+    private sealed class TestClientService
+    {
+        public override string ToString() => nameof(TestClientService);
+    }
 
+    /// <summary>
+    ///     UseMississippi merges services from a client builder into the host.
+    /// </summary>
     [Fact]
     public void UseMississippiShouldMergeClientBuilderServices()
     {
@@ -31,6 +37,9 @@ public sealed class MississippiBuilderHostExtensionsTests
         Assert.True(containsService);
     }
 
+    /// <summary>
+    ///     UseMississippi returns the same host builder for runtime builders.
+    /// </summary>
     [Fact]
     public void UseMississippiShouldSucceedForRuntimeBuilder()
     {
@@ -40,6 +49,9 @@ public sealed class MississippiBuilderHostExtensionsTests
         Assert.Same(hostBuilder, result);
     }
 
+    /// <summary>
+    ///     UseMississippi succeeds when gateway authorization is configured.
+    /// </summary>
     [Fact]
     public void UseMississippiShouldSucceedWhenGatewayAuthorizationConfigured()
     {
@@ -50,6 +62,9 @@ public sealed class MississippiBuilderHostExtensionsTests
         Assert.Same(hostBuilder, result);
     }
 
+    /// <summary>
+    ///     UseMississippi throws when attaching a second builder instance.
+    /// </summary>
     [Fact]
     public void UseMississippiShouldThrowOnSecondAttachment()
     {
@@ -59,6 +74,9 @@ public sealed class MississippiBuilderHostExtensionsTests
         Assert.Throws<InvalidOperationException>(() => hostBuilder.UseMississippi(builder));
     }
 
+    /// <summary>
+    ///     UseMississippi throws when gateway authorization is not configured.
+    /// </summary>
     [Fact]
     public void UseMississippiShouldThrowWhenGatewayAuthorizationNotConfigured()
     {
@@ -70,11 +88,16 @@ public sealed class MississippiBuilderHostExtensionsTests
         Assert.Equal("Gateway.AuthorizationNotConfigured", diagnostic.ErrorCode);
     }
 
+    /// <summary>
+    ///     UseMississippi throws when hostBuilder is null.
+    /// </summary>
     [Fact]
     public void UseMississippiShouldThrowWhenHostBuilderIsNull()
     {
         HostApplicationBuilder? hostBuilder = null;
         ClientBuilder builder = ClientBuilder.Create();
-        Assert.Throws<ArgumentNullException>(() => hostBuilder!.UseMississippi(builder));
+        ArgumentNullException exception =
+            Assert.Throws<ArgumentNullException>(() => hostBuilder!.UseMississippi(builder));
+        Assert.Equal("hostBuilder", exception.ParamName);
     }
 }

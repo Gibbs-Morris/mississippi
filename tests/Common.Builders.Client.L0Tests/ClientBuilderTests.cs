@@ -13,16 +13,22 @@ namespace Mississippi.Common.Builders.Client.L0Tests;
 /// </summary>
 public sealed class ClientBuilderTests
 {
+    /// <summary>
+    ///     ConfigureClient applies the provided options action.
+    /// </summary>
     [Fact]
     public void ConfigureClientShouldConfigureOptions()
     {
         ClientBuilder builder = ClientBuilder.Create();
         builder.ConfigureClient(options => { options.RoutePrefix = "/api/projections"; });
-        ServiceProvider provider = builder.Services.BuildServiceProvider();
+        using ServiceProvider provider = builder.Services.BuildServiceProvider();
         IOptions<ClientBuilderOptions> options = provider.GetRequiredService<IOptions<ClientBuilderOptions>>();
         Assert.Equal("/api/projections", options.Value.RoutePrefix);
     }
 
+    /// <summary>
+    ///     ConfigureClient returns the same builder instance.
+    /// </summary>
     [Fact]
     public void ConfigureClientShouldReturnSameBuilderInstance()
     {
@@ -31,6 +37,9 @@ public sealed class ClientBuilderTests
         Assert.Same(builder, result);
     }
 
+    /// <summary>
+    ///     ConfigureClient throws when configure is null.
+    /// </summary>
     [Fact]
     public void ConfigureClientShouldThrowWhenConfigureIsNull()
     {
@@ -41,6 +50,9 @@ public sealed class ClientBuilderTests
         Assert.Equal("configure", exception.ParamName);
     }
 
+    /// <summary>
+    ///     Create initializes a service collection.
+    /// </summary>
     [Fact]
     public void CreateShouldProvideServiceCollection()
     {

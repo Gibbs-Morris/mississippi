@@ -124,6 +124,9 @@ public sealed class DomainSiloRegistrationGeneratorTests
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
+    /// <summary>
+    ///     Generated domain registration includes obsolete attribute when runtime builder is available.
+    /// </summary>
     [Fact]
     public void GeneratedDomainRegistrationAddsObsoleteAttributeWhenRuntimeBuilderIsAvailable()
     {
@@ -143,7 +146,7 @@ public sealed class DomainSiloRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]",
             generatedCode,
             StringComparison.Ordinal);
     }

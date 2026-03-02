@@ -31,7 +31,7 @@ public sealed class AggregateBuilder<TSnapshot> : IAggregateBuilder<TSnapshot>
     public IAggregateBuilder<TSnapshot> AddSnapshotStateConverter<TConverter>()
         where TConverter : class
     {
-        services.AddTransient(typeof(TConverter));
+        services.AddTransient<TConverter>();
         return this;
     }
 }

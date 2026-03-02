@@ -372,6 +372,9 @@ public class ProjectionSiloRegistrationGeneratorTests
             StringComparison.Ordinal);
     }
 
+    /// <summary>
+    ///     Generated projection registrations include obsolete attribute when projection builder is available.
+    /// </summary>
     [Fact]
     public void GeneratedProjectionRegistrationsAddObsoleteAttributeWhenProjectionBuilderIsAvailable()
     {
@@ -408,7 +411,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]",
             generatedCode,
             StringComparison.Ordinal);
     }

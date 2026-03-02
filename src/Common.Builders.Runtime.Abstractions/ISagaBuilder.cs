@@ -4,6 +4,10 @@ namespace Mississippi.Common.Builders.Runtime.Abstractions;
 ///     Typed saga composition contract.
 /// </summary>
 /// <typeparam name="TSagaState">Saga state type.</typeparam>
-public interface ISagaBuilder<TSagaState>
+public interface ISagaBuilder<out TSagaState>
 {
+    /// <summary>
+    ///     Gets the saga state type marker.
+    /// </summary>
+    TSagaState? SagaStateMarker { get; }
 }

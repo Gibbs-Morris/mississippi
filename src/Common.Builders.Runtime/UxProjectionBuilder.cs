@@ -23,4 +23,7 @@ public sealed class UxProjectionBuilder<TProjectionState> : IUxProjectionBuilder
     {
         ArgumentNullException.ThrowIfNull(services);
     }
+
+    /// <inheritdoc />
+    public TProjectionState? ProjectionStateMarker => default;
 }

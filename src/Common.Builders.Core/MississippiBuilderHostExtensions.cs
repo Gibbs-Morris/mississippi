@@ -170,5 +170,8 @@ public static class MississippiBuilderHostExtensions
         }
     }
 
-    private sealed class MississippiBuilderAttachmentMarker;
+    private sealed class MississippiBuilderAttachmentMarker
+    {
+        public override string ToString() => nameof(MississippiBuilderAttachmentMarker);
+    }
 }

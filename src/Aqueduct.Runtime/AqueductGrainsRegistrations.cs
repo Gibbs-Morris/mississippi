@@ -14,7 +14,6 @@ namespace Mississippi.Aqueduct.Runtime;
 /// <summary>
 ///     Extension methods for configuring Aqueduct on Orleans silos.
 /// </summary>
-[Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class AqueductGrainsRegistrations
 {
     /// <summary>

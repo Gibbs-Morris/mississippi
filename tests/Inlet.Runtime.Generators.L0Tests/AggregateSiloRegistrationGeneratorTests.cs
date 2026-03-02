@@ -133,6 +133,9 @@ public class AggregateSiloRegistrationGeneratorTests
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
+    /// <summary>
+    ///     Generated aggregate registrations include obsolete attribute when aggregate builder is available.
+    /// </summary>
     [Fact]
     public void GeneratedAggregateRegistrationsAddObsoleteAttributeWhenAggregateBuilderIsAvailable()
     {
@@ -178,7 +181,7 @@ public class AggregateSiloRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]",
             generatedCode,
             StringComparison.Ordinal);
     }

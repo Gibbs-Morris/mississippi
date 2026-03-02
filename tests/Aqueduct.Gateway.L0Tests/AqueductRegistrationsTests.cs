@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,50 @@ namespace Mississippi.Aqueduct.Gateway.L0Tests;
 /// </summary>
 public sealed class AqueductRegistrationsTests
 {
+    private static readonly MethodInfo AddAqueductWithOptionsMethod = typeof(AqueductRegistrations)
+        .GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .Single(method => (method.Name == nameof(AqueductRegistrations.AddAqueduct)) &&
+                          method.IsGenericMethodDefinition &&
+                          (method.GetParameters().Length == 2));
+
+    private static readonly MethodInfo AddAqueductWithoutOptionsMethod = typeof(AqueductRegistrations)
+        .GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .Single(method => (method.Name == nameof(AqueductRegistrations.AddAqueduct)) &&
+                          method.IsGenericMethodDefinition &&
+                          (method.GetParameters().Length == 1));
+
+    private static IServiceCollection InvokeAddAqueduct(
+        IServiceCollection services
+    ) =>
+        InvokeAddAqueductInternal(services, null);
+
+    private static void InvokeAddAqueduct(
+        IServiceCollection services,
+        Action<AqueductOptions> configure
+    )
+    {
+        _ = InvokeAddAqueductInternal(services, configure);
+    }
+
+    private static IServiceCollection InvokeAddAqueductInternal(
+        IServiceCollection services,
+        Action<AqueductOptions>? configure
+    )
+    {
+        try
+        {
+            MethodInfo method = configure is null
+                ? AddAqueductWithoutOptionsMethod.MakeGenericMethod(typeof(TestHub))
+                : AddAqueductWithOptionsMethod.MakeGenericMethod(typeof(TestHub));
+            object?[] arguments = configure is null ? [services] : [services, configure];
+            return (IServiceCollection)method.Invoke(null, arguments)!;
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw exception.InnerException;
+        }
+    }
+
     private sealed class TestHub : Hub;
 
     /// <summary>
@@ -89,7 +134,7 @@ public sealed class AqueductRegistrationsTests
         ServiceCollection services = new();
 
         // Act
-        services.AddAqueduct<TestHub>();
+        InvokeAddAqueduct(services);
 
         // Assert
         ServiceDescriptor? descriptor =
@@ -109,7 +154,7 @@ public sealed class AqueductRegistrationsTests
         ServiceCollection services = new();
 
         // Act
-        IServiceCollection result = services.AddAqueduct<TestHub>();
+        IServiceCollection result = InvokeAddAqueduct(services);
 
         // Assert
         Assert.Same(services, result);
@@ -121,7 +166,7 @@ public sealed class AqueductRegistrationsTests
     [Fact(DisplayName = "AddAqueduct Throws When Services Is Null")]
     public void AddAqueductShouldThrowWhenServicesIsNull()
     {
-        Assert.Throws<ArgumentNullException>(() => AqueductRegistrations.AddAqueduct<TestHub>(null!));
+        Assert.Throws<ArgumentNullException>(() => InvokeAddAqueduct(null!));
     }
 
     /// <summary>
@@ -134,8 +179,8 @@ public sealed class AqueductRegistrationsTests
         ServiceCollection services = new();
 
         // Act - add twice
-        services.AddAqueduct<TestHub>();
-        services.AddAqueduct<TestHub>();
+        InvokeAddAqueduct(services);
+        InvokeAddAqueduct(services);
 
         // Assert - should only have one registration
         int count = services.Count(d => d.ServiceType == typeof(HubLifetimeManager<TestHub>));
@@ -152,7 +197,7 @@ public sealed class AqueductRegistrationsTests
         ServiceCollection services = new();
 
         // Act
-        services.AddAqueduct<TestHub>(options => { options.StreamProviderName = "CustomProvider"; });
+        InvokeAddAqueduct(services, options => { options.StreamProviderName = "CustomProvider"; });
 
         // Build provider and resolve options to trigger configuration
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -173,7 +218,7 @@ public sealed class AqueductRegistrationsTests
         ServiceCollection services = new();
 
         // Act
-        services.AddAqueduct<TestHub>(options => options.StreamProviderName = "CustomProvider");
+        InvokeAddAqueduct(services, options => options.StreamProviderName = "CustomProvider");
 
         // Assert
         ServiceDescriptor? descriptor =

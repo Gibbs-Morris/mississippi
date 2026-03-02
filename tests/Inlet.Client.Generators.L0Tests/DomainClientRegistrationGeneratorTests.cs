@@ -89,6 +89,9 @@ public sealed class DomainClientRegistrationGeneratorTests
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
+    /// <summary>
+    ///     Generated client domain registration includes obsolete attribute when client builder is available.
+    /// </summary>
     [Fact]
     public void GeneratedDomainRegistrationAddsObsoleteAttributeWhenClientBuilderIsAvailable()
     {
@@ -108,7 +111,7 @@ public sealed class DomainClientRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use ClientBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            "[System.Obsolete(\"Use ClientBuilder.Create() instead. Remove in v1.0.\")]",
             generatedCode,
             StringComparison.Ordinal);
     }

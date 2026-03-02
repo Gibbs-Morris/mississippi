@@ -178,6 +178,9 @@ public sealed class SagaSiloRegistrationGeneratorTests
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
+    /// <summary>
+    ///     Generated saga registrations include obsolete attribute when saga builder is available.
+    /// </summary>
     [Fact]
     public void GeneratedSagaRegistrationAddsObsoleteAttributeWhenSagaBuilderIsAvailable()
     {
@@ -212,7 +215,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]",
             generatedCode,
             StringComparison.Ordinal);
     }

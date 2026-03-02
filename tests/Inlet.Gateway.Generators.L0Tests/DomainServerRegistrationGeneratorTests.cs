@@ -97,6 +97,9 @@ public sealed class DomainServerRegistrationGeneratorTests
         return (outputCompilation, diagnostics, driver.GetRunResult());
     }
 
+    /// <summary>
+    ///     Generated gateway domain registration includes obsolete attribute when gateway builder is available.
+    /// </summary>
     [Fact]
     public void GeneratedDomainRegistrationAddsObsoleteAttributeWhenGatewayBuilderIsAvailable()
     {
@@ -116,7 +119,7 @@ public sealed class DomainServerRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use GatewayBuilder.Create() instead. This API will be removed in a future major version.\")]",
+            "[System.Obsolete(\"Use GatewayBuilder.Create() instead. Remove in v1.0.\")]",
             generatedCode,
             StringComparison.Ordinal);
     }

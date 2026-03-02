@@ -1,5 +1,3 @@
-using System;
-
 using Microsoft.Extensions.DependencyInjection;
 
 
@@ -8,7 +6,6 @@ namespace Mississippi.Common.Abstractions.Mapping;
 /// <summary>
 ///     Provides extension methods for registering mappers in the dependency injection container.
 /// </summary>
-[Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class MappingRegistrations
 {
     /// <summary>

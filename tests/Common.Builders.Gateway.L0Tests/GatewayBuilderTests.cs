@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.Common.Builders.Abstractions;
 using Mississippi.Common.Builders.Gateway.Abstractions;
 
@@ -9,6 +11,9 @@ namespace Mississippi.Common.Builders.Gateway.L0Tests;
 /// </summary>
 public sealed class GatewayBuilderTests
 {
+    /// <summary>
+    ///     AllowAnonymousExplicitly sets the anonymous flag and returns the same builder.
+    /// </summary>
     [Fact]
     public void AllowAnonymousExplicitlyShouldEnableAnonymousFlag()
     {
@@ -18,6 +23,9 @@ public sealed class GatewayBuilderTests
         Assert.Same(builder, result);
     }
 
+    /// <summary>
+    ///     ConfigureAuthorization sets the authorization flag and returns the same builder.
+    /// </summary>
     [Fact]
     public void ConfigureAuthorizationShouldEnableAuthorizationFlag()
     {
@@ -27,22 +35,33 @@ public sealed class GatewayBuilderTests
         Assert.Same(builder, result);
     }
 
+    /// <summary>
+    ///     EnsureAuthorizationConfigured does not throw when anonymous access is explicitly enabled.
+    /// </summary>
     [Fact]
     public void EnsureAuthorizationConfiguredShouldNotThrowWhenAnonymousIsExplicitlyAllowed()
     {
         GatewayBuilder builder = GatewayBuilder.Create();
         builder.AllowAnonymousExplicitly();
-        builder.EnsureAuthorizationConfigured();
+        Exception? exception = Record.Exception(builder.EnsureAuthorizationConfigured);
+        Assert.Null(exception);
     }
 
+    /// <summary>
+    ///     EnsureAuthorizationConfigured does not throw when authorization is configured.
+    /// </summary>
     [Fact]
     public void EnsureAuthorizationConfiguredShouldNotThrowWhenAuthorizationConfigured()
     {
         GatewayBuilder builder = GatewayBuilder.Create();
         builder.ConfigureAuthorization();
-        builder.EnsureAuthorizationConfigured();
+        Exception? exception = Record.Exception(builder.EnsureAuthorizationConfigured);
+        Assert.Null(exception);
     }
 
+    /// <summary>
+    ///     EnsureAuthorizationConfigured throws with expected diagnostic when neither mode is configured.
+    /// </summary>
     [Fact]
     public void EnsureAuthorizationConfiguredShouldThrowWhenNeitherAuthNorAnonymousConfigured()
     {

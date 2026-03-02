@@ -1,5 +1,3 @@
-using System;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Core;
@@ -12,7 +10,6 @@ namespace Mississippi.Inlet.Client.SignalRConnection;
 /// </summary>
 public static class SignalRConnectionRegistrations
 {
-    [Obsolete("Use ClientBuilder.Create() instead. This API will be removed in a future major version.")]
     /// <summary>
     ///     Adds the SignalR connection feature to the service collection.
     /// </summary>
@@ -33,6 +30,16 @@ public static class SignalRConnectionRegistrations
     /// </remarks>
     public static IServiceCollection AddSignalRConnectionFeature(
         this IServiceCollection services
+    ) =>
+        AddSignalRConnectionFeatureCore(services);
+
+    /// <summary>
+    ///     Adds the SignalR connection feature without legacy API metadata.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    internal static IServiceCollection AddSignalRConnectionFeatureCore(
+        IServiceCollection services
     )
     {
         // Register reducers for each action

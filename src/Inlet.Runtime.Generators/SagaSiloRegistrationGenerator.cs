@@ -229,8 +229,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendGeneratedCodeAttribute("SagaSiloRegistrationGenerator");
         if (emitObsoleteAttribute)
         {
-            sb.AppendLine(
-                "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.\")]");
+            sb.AppendLine("[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]");
         }
 
         sb.AppendLine($"public static class {saga.SagaName}SagaRegistrations");

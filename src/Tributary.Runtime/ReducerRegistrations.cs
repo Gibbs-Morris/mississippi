@@ -12,7 +12,6 @@ namespace Mississippi.Tributary.Runtime;
 /// <summary>
 ///     Provides extension methods for registering reducers in the dependency injection container.
 /// </summary>
-[Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class ReducerRegistrations
 {
     /// <summary>

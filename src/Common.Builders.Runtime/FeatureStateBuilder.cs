@@ -23,4 +23,7 @@ public sealed class FeatureStateBuilder<TFeatureState> : IFeatureStateBuilder<TF
     {
         ArgumentNullException.ThrowIfNull(services);
     }
+
+    /// <inheritdoc />
+    public TFeatureState? FeatureStateMarker => default;
 }

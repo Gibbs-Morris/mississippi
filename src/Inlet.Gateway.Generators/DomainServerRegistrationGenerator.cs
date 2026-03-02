@@ -155,8 +155,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"DomainServerRegistrationGenerator\", \"1.0.0\")]");
         if (emitObsoleteAttribute)
         {
-            sb.AppendLine(
-                "[System.Obsolete(\"Use GatewayBuilder.Create() instead. This API will be removed in a future major version.\")]");
+            sb.AppendLine("[System.Obsolete(\"Use GatewayBuilder.Create() instead. Remove in v1.0.\")]");
         }
 
         sb.AppendLine("public static class DomainServerRegistrations");

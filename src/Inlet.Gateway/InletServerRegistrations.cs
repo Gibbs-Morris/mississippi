@@ -26,7 +26,6 @@ namespace Mississippi.Inlet.Gateway;
 ///         from the <c>Inlet.Runtime</c> package directly.
 ///     </para>
 /// </remarks>
-[Obsolete("Use GatewayBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class InletServerRegistrations
 {
     /// <summary>

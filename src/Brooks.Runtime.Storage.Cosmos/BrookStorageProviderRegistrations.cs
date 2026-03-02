@@ -32,7 +32,6 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos;
 /// </summary>
 public static class BrookStorageProviderRegistrations
 {
-    [Obsolete("Use RuntimeBuilder.Create() instead. This API will be removed in a future major version.")]
     /// <summary>
     ///     Adds Cosmos DB brook storage provider services to the service collection.
     /// </summary>

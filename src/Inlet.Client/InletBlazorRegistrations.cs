@@ -10,7 +10,6 @@ namespace Mississippi.Inlet.Client;
 /// <summary>
 ///     Extension methods for adding Inlet Blazor services.
 /// </summary>
-[Obsolete("Use ClientBuilder.Create() instead. This API will be removed in a future major version.")]
 public static class InletBlazorRegistrations
 {
     /// <summary>
