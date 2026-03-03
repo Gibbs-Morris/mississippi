@@ -4,6 +4,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Builders.Abstractions\Common.Builders.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <Description>Public contracts and abstractions for the Tributary subsystem (reducers and snapshots).</Description>

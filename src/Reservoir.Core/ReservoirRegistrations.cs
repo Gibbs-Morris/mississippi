@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using Mississippi.Common.Builders.Abstractions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Abstractions.State;
@@ -146,6 +148,42 @@ public static class ReservoirRegistrations
             sp.GetServices<IFeatureStateRegistration>(),
             sp.GetServices<IMiddleware>(),
             sp.GetRequiredService<TimeProvider>()));
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds Reservoir store infrastructure with builder-based configuration.
+    ///     Must be called exactly once per service collection (reducers are not idempotent).
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">
+    ///     Optional configuration delegate. When <c>null</c>, validation is skipped.
+    /// </param>
+    /// <returns>The updated service collection.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="services" /> is null.
+    /// </exception>
+    /// <exception cref="BuilderValidationException">
+    ///     Thrown when the builder is configured but no features are registered.
+    /// </exception>
+    public static IServiceCollection AddReservoir(
+        this IServiceCollection services,
+        Action<IReservoirBuilder>? configure
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddReservoir();
+        if (configure is not null)
+        {
+            ReservoirBuilder builder = new(services);
+            configure(builder);
+            IReadOnlyList<BuilderDiagnostic> diagnostics = builder.Validate();
+            if (diagnostics.Count > 0)
+            {
+                throw new BuilderValidationException("Reservoir builder validation failed.", diagnostics);
+            }
+        }
+
         return services;
     }
 

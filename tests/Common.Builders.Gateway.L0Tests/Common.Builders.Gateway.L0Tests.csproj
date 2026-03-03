@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Common.Builders.Abstractions\Common.Builders.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Common.Builders.Gateway.Abstractions\Common.Builders.Gateway.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Common.Builders.Gateway\Common.Builders.Gateway.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>L0 tests for Mississippi gateway builder composition and validation.</Description>
+  </PropertyGroup>
+</Project>

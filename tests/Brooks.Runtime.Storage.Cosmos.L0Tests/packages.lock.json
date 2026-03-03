@@ -645,7 +645,8 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime.Storage.Abstractions": {
@@ -664,6 +665,7 @@
           "Microsoft.Azure.Cosmos": "[3.57.0, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Options": "[10.0.3, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Common.Runtime.Storage.Cosmos": "[1.0.0, )",
@@ -675,6 +677,12 @@
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
+        }
+      },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )"
         }
       },
       "Mississippi.Common.Runtime.Storage.Abstractions": {

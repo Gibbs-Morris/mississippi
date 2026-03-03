@@ -9,5 +9,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Builders.Runtime.Abstractions\Common.Builders.Runtime.Abstractions.csproj" />
   </ItemGroup>
 </Project>

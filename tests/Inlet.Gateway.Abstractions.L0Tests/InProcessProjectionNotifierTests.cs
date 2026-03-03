@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +12,12 @@ namespace Mississippi.Inlet.Gateway.Abstractions.L0Tests;
 /// </summary>
 public sealed class InProcessProjectionNotifierTests : IDisposable
 {
+    private static readonly MethodInfo AddInletInProcessMethod =
+        typeof(InletInProcessRegistrations).GetMethod(
+            nameof(InletInProcessRegistrations.AddInletInProcess),
+            [typeof(IServiceCollection)]) ??
+        throw new InvalidOperationException("Could not locate AddInletInProcess registration method.");
+
     private readonly IServerProjectionNotifier notifier;
 
     private readonly ServiceProvider serviceProvider;
@@ -22,7 +29,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        InvokeAddInletInProcess(services);
         serviceProvider = services.BuildServiceProvider();
         notifier = serviceProvider.GetRequiredService<IServerProjectionNotifier>();
     }
@@ -31,6 +38,20 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     public void Dispose()
     {
         serviceProvider.Dispose();
+    }
+
+    private static void InvokeAddInletInProcess(
+        IServiceCollection services
+    )
+    {
+        try
+        {
+            _ = (IServiceCollection)AddInletInProcessMethod.Invoke(null, [services])!;
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw exception.InnerException;
+        }
     }
 
     /// <summary>

@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Builders.Client;
 using Mississippi.Inlet.Client;
+using Mississippi.Reservoir.Builder;
 using Mississippi.Reservoir.Client;
-using Mississippi.Reservoir.Client.BuiltIn;
 
 using Spring.Client;
 using Spring.Client.AuthSimulation;
@@ -20,11 +21,12 @@ using Spring.Client.Features.DualEntitySelection;
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+ClientBuilder client = ClientBuilder.Create();
 
 // Configure HttpClient to call the API (base address is the host origin)
-builder.Services.AddScoped<AuthSimulationHeadersHandler>();
+client.Services.AddScoped<AuthSimulationHeadersHandler>();
 #pragma warning disable IDISP014 // Blazor WASM DI manages HttpClient lifecycle
-builder.Services.AddScoped(sp =>
+client.Services.AddScoped(sp =>
 {
     AuthSimulationHeadersHandler authSimulationHeadersHandler = sp.GetRequiredService<AuthSimulationHeadersHandler>();
     authSimulationHeadersHandler.InnerHandler = new HttpClientHandler();
@@ -35,30 +37,34 @@ builder.Services.AddScoped(sp =>
 });
 #pragma warning restore IDISP014
 
-// Register features (one line per feature - scales cleanly)
 // Write side + projection feature registrations
-builder.Services.AddSpringDomainClient();
+client.AddSpringDomain();
 
-// Navigation/UI: entity selection
-builder.Services.AddDualEntitySelectionFeature();
-builder.Services.AddDemoAccountsFeature();
-builder.Services.AddAuthSimulationFeature();
-
-// Built-in Reservoir features: navigation, lifecycle
-builder.Services.AddReservoirBlazorBuiltIns();
-
-// DevTools integration: enable Redux DevTools in development
-builder.Services.AddReservoirDevTools(options =>
+// Reservoir state management: features, built-ins, and DevTools
+client.AddReservoir(reservoir =>
 {
-    options.Enablement = ReservoirDevToolsEnablement.Always;
-    options.Name = "Spring Sample";
-    options.IsStrictStateRehydrationEnabled = true;
+    // Navigation/UI features
+    reservoir.AddDualEntitySelectionFeature();
+    reservoir.AddDemoAccountsFeature();
+    reservoir.AddAuthSimulationFeature();
+
+    // Built-in Reservoir features: navigation, lifecycle
+    reservoir.AddBuiltIns();
+
+    // DevTools integration: enable Redux DevTools in development
+    reservoir.AddDevTools(options =>
+    {
+        options.Enablement = ReservoirDevToolsEnablement.Always;
+        options.Name = "Spring Sample";
+        options.IsStrictStateRehydrationEnabled = true;
+    });
 });
 
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
-builder.Services.AddInletClient();
-builder.Services.AddInletBlazorSignalR(signalR => signalR
+client.AddInlet();
+client.AddInletSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+builder.UseMississippi(client);
 await builder.Build().RunAsync();

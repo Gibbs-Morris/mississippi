@@ -45,6 +45,15 @@ public sealed class DomainServerRegistrationGeneratorTests
                                           }
                                           """;
 
+    private const string BuilderStubs = """
+                                        namespace Mississippi.Common.Builders.Gateway.Abstractions
+                                        {
+                                            public interface IGatewayBuilder
+                                            {
+                                            }
+                                        }
+                                        """;
+
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
         RunResult) RunGenerator(
             params string[] sources
@@ -86,6 +95,34 @@ public sealed class DomainServerRegistrationGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated gateway domain registration includes gateway builder extension when gateway builder is available.
+    /// </summary>
+    [Fact]
+    public void GeneratedDomainRegistrationAddsGatewayBuilderExtensionWhenGatewayBuilderIsAvailable()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Aggregates.Order.Commands
+                              {
+                                  [GenerateCommand]
+                                  public sealed record PlaceOrder;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, BuilderStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains(
+            "public static IGatewayBuilder AddTestAppDomain(this IGatewayBuilder builder)",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("builder.Services.AddTestAppDomainServer();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

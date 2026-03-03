@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +11,26 @@ namespace Mississippi.Inlet.Gateway.Abstractions.L0Tests;
 /// </summary>
 public sealed class InletInProcessRegistrationsTests
 {
+    private static readonly MethodInfo AddInletInProcessMethod =
+        typeof(InletInProcessRegistrations).GetMethod(
+            nameof(InletInProcessRegistrations.AddInletInProcess),
+            [typeof(IServiceCollection)]) ??
+        throw new InvalidOperationException("Could not locate AddInletInProcess registration method.");
+
+    private static IServiceCollection InvokeAddInletInProcess(
+        IServiceCollection services
+    )
+    {
+        try
+        {
+            return (IServiceCollection)AddInletInProcessMethod.Invoke(null, [services])!;
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is not null)
+        {
+            throw exception.InnerException;
+        }
+    }
+
     /// <summary>
     ///     AddInletInProcess can be called multiple times without error.
     /// </summary>
@@ -21,8 +42,8 @@ public sealed class InletInProcessRegistrationsTests
         services.AddLogging();
 
         // Act
-        services.AddInletInProcess();
-        IServiceCollection result = services.AddInletInProcess();
+        InvokeAddInletInProcess(services);
+        IServiceCollection result = InvokeAddInletInProcess(services);
 
         // Assert
         Assert.Same(services, result);
@@ -39,7 +60,7 @@ public sealed class InletInProcessRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        InvokeAddInletInProcess(services);
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -59,7 +80,7 @@ public sealed class InletInProcessRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        InvokeAddInletInProcess(services);
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -79,7 +100,7 @@ public sealed class InletInProcessRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        IServiceCollection result = services.AddInletInProcess();
+        IServiceCollection result = InvokeAddInletInProcess(services);
 
         // Assert
         Assert.Same(services, result);
@@ -95,7 +116,7 @@ public sealed class InletInProcessRegistrationsTests
         IServiceCollection services = null!;
 
         // Act & Assert
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => services.AddInletInProcess());
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => InvokeAddInletInProcess(services));
         Assert.Equal("services", exception.ParamName);
     }
 }

@@ -37,6 +37,15 @@ public sealed class DomainClientRegistrationGeneratorTests
                                           }
                                           """;
 
+    private const string BuilderStubs = """
+                                        namespace Mississippi.Common.Builders.Client.Abstractions
+                                        {
+                                            public interface IClientBuilder
+                                            {
+                                            }
+                                        }
+                                        """;
+
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
         RunResult) RunGenerator(
             params string[] sources
@@ -78,6 +87,34 @@ public sealed class DomainClientRegistrationGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated client domain registration includes client builder extension when client builder is available.
+    /// </summary>
+    [Fact]
+    public void GeneratedDomainRegistrationAddsClientBuilderExtensionWhenClientBuilderIsAvailable()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Aggregates.Order.Commands
+                              {
+                                  [GenerateCommand]
+                                  public sealed record PlaceOrder;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, BuilderStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainFeatureRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains(
+            "public static IClientBuilder AddTestAppDomain(this IClientBuilder builder)",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("builder.Services.AddTestAppDomainClient();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common.Builders.Abstractions\Common.Builders.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Builders.Gateway.Abstractions\Common.Builders.Gateway.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Gateway builder implementation for Mississippi host composition.</Description>
+  </PropertyGroup>
+</Project>

@@ -164,6 +164,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
+        sb.AppendLine("using Mississippi.Common.Builders.Runtime.Abstractions;");
         sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
         sb.AppendLine();
         string outputNamespace = targetRootNamespace.EndsWith(".Registrations", StringComparison.Ordinal)
@@ -179,6 +180,9 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("{");
         foreach (DomainRegistrationModel model in models.OrderBy(m => m.DomainMethodName, StringComparer.Ordinal))
         {
+            string builderMethodName = model.DomainMethodName.EndsWith("Silo", StringComparison.Ordinal)
+                ? model.DomainMethodName.Substring(0, model.DomainMethodName.Length - "Silo".Length)
+                : model.DomainMethodName;
             sb.AppendLine("    /// <summary>");
             sb.AppendLine($"    ///     Adds all generated silo registrations for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
@@ -204,6 +208,19 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
             }
 
             sb.AppendLine("        return services;");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine(
+                $"    ///     Adds all generated silo registrations for the {model.DomainRoot} domain using a runtime builder.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <param name=\"builder\">The runtime builder.</param>");
+            sb.AppendLine("    /// <returns>The runtime builder for chaining.</returns>");
+            sb.AppendLine($"    public static IRuntimeBuilder {builderMethodName}(this IRuntimeBuilder builder)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(builder);");
+            sb.AppendLine($"        builder.Services.{model.DomainMethodName}();");
+            sb.AppendLine("        return builder;");
             sb.AppendLine("    }");
             sb.AppendLine();
         }

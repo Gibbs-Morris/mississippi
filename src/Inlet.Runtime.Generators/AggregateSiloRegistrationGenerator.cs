@@ -295,11 +295,6 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine(")");
         sb.OpenBrace();
 
-        // Add aggregate infrastructure
-        sb.AppendLine("// Add aggregate infrastructure");
-        sb.AppendLine("services.AddAggregateSupport();");
-        sb.AppendLine();
-
         // Register event types for hydration
         sb.AppendLine("// Register event types for hydration");
         HashSet<string> seenEventTypes = new();
@@ -722,7 +717,10 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
                 rootNamespace,
                 assemblyName,
                 source.Compilation);
-            return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
+            List<AggregateRegistrationInfo> aggregates = GetAggregatesFromCompilation(
+                source.Compilation,
+                targetRootNamespace);
+            return aggregates;
         });
 
         // Register source output
@@ -730,10 +728,10 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             aggregatesProvider,
             static (
                 spc,
-                aggregates
+                result
             ) =>
             {
-                foreach (AggregateRegistrationInfo aggregate in aggregates)
+                foreach (AggregateRegistrationInfo aggregate in result)
                 {
                     string registrationSource = GenerateRegistration(aggregate);
                     spc.AddSource(

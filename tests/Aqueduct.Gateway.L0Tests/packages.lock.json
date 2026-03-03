@@ -386,7 +386,8 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Gateway.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Aqueduct.Runtime": {
@@ -395,7 +396,8 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Server": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Abstractions": {
@@ -404,7 +406,8 @@
           "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime.Storage.Abstractions": {
@@ -417,6 +420,23 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
+        }
+      },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Common.Builders.Gateway.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Runtime.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Microsoft.Orleans.Server": "[10.0.1, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Testing.Utilities": {

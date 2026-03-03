@@ -15,75 +15,6 @@ namespace Mississippi.Aqueduct.Gateway;
 public static class AqueductRegistrations
 {
     /// <summary>
-    ///     Adds the Aqueduct backplane for the specified hub type.
-    /// </summary>
-    /// <typeparam name="THub">The type of hub to configure.</typeparam>
-    /// <param name="services">The service collection to configure.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <remarks>
-    ///     <para>
-    ///         This method registers <see cref="AqueductHubLifetimeManager{THub}" /> as the
-    ///         <see cref="HubLifetimeManager{THub}" /> implementation for the specified hub.
-    ///         The lifetime manager uses Orleans grains for distributed message routing.
-    ///     </para>
-    ///     <para>
-    ///         Prerequisites:
-    ///         <list type="bullet">
-    ///             <item>Orleans client must be configured and available in DI.</item>
-    ///             <item>Stream provider must be configured matching <see cref="AqueductOptions.StreamProviderName" />.</item>
-    ///         </list>
-    ///     </para>
-    /// </remarks>
-    public static IServiceCollection AddAqueduct<THub>(
-        this IServiceCollection services
-    )
-        where THub : Hub
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
-        services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
-        services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
-        services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
-        services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
-        services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
-        services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
-        return services;
-    }
-
-    /// <summary>
-    ///     Adds the Aqueduct backplane for the specified hub type with custom options.
-    /// </summary>
-    /// <typeparam name="THub">The type of hub to configure.</typeparam>
-    /// <param name="services">The service collection to configure.</param>
-    /// <param name="configureOptions">An action to configure <see cref="AqueductOptions" />.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <remarks>
-    ///     <para>
-    ///         This method registers <see cref="AqueductHubLifetimeManager{THub}" /> and configures
-    ///         the backplane options. Use this overload to customize stream provider names,
-    ///         heartbeat intervals, or stream namespaces.
-    ///     </para>
-    /// </remarks>
-    public static IServiceCollection AddAqueduct<THub>(
-        this IServiceCollection services,
-        Action<AqueductOptions> configureOptions
-    )
-        where THub : Hub
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configureOptions);
-        services.Configure(configureOptions);
-        services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
-        services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
-        services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
-        services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
-        services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
-        services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
-        services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
-        return services;
-    }
-
-    /// <summary>
     ///     Adds the <see cref="IAqueductGrainFactory" /> implementation for resolving
     ///     SignalR grains by strongly-typed keys.
     /// </summary>
@@ -129,6 +60,75 @@ public static class AqueductRegistrations
         ArgumentNullException.ThrowIfNull(services);
         services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
         services.TryAddSingleton<IAqueductNotifier, AqueductNotifier>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the Aqueduct backplane for the specified hub type.
+    /// </summary>
+    /// <typeparam name="THub">The type of hub to configure.</typeparam>
+    /// <param name="services">The service collection to configure.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         This method registers <see cref="AqueductHubLifetimeManager{THub}" /> as the
+    ///         <see cref="HubLifetimeManager{THub}" /> implementation for the specified hub.
+    ///         The lifetime manager uses Orleans grains for distributed message routing.
+    ///     </para>
+    ///     <para>
+    ///         Prerequisites:
+    ///         <list type="bullet">
+    ///             <item>Orleans client must be configured and available in DI.</item>
+    ///             <item>Stream provider must be configured matching <see cref="AqueductOptions.StreamProviderName" />.</item>
+    ///         </list>
+    ///     </para>
+    /// </remarks>
+    internal static IServiceCollection AddAqueduct<THub>(
+        this IServiceCollection services
+    )
+        where THub : Hub
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
+        services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
+        services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
+        services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
+        services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
+        services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
+        services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
+        return services;
+    }
+
+    /// <summary>
+    ///     Adds the Aqueduct backplane for the specified hub type with custom options.
+    /// </summary>
+    /// <typeparam name="THub">The type of hub to configure.</typeparam>
+    /// <param name="services">The service collection to configure.</param>
+    /// <param name="configureOptions">An action to configure <see cref="AqueductOptions" />.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         This method registers <see cref="AqueductHubLifetimeManager{THub}" /> and configures
+    ///         the backplane options. Use this overload to customize stream provider names,
+    ///         heartbeat intervals, or stream namespaces.
+    ///     </para>
+    /// </remarks>
+    internal static IServiceCollection AddAqueduct<THub>(
+        this IServiceCollection services,
+        Action<AqueductOptions> configureOptions
+    )
+        where THub : Hub
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configureOptions);
+        services.Configure(configureOptions);
+        services.TryAddSingleton<IServerIdProvider, ServerIdProvider>();
+        services.TryAddSingleton<IAqueductGrainFactory, AqueductGrainFactory>();
+        services.TryAddSingleton<IConnectionRegistry, ConnectionRegistry>();
+        services.TryAddSingleton<ILocalMessageSender, LocalMessageSender>();
+        services.TryAddSingleton<IHeartbeatManager, HeartbeatManager>();
+        services.TryAddSingleton<IStreamSubscriptionManager, StreamSubscriptionManager>();
+        services.TryAddSingleton<HubLifetimeManager<THub>, AqueductHubLifetimeManager<THub>>();
         return services;
     }
 }

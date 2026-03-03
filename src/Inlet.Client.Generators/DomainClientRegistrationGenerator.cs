@@ -146,6 +146,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
+        sb.AppendLine("using Mississippi.Common.Builders.Client.Abstractions;");
         sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
         sb.AppendLine();
         string[] usingNamespaces = models
@@ -177,6 +178,9 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("{");
         foreach (DomainRegistrationModel model in models.OrderBy(m => m.DomainMethodName, StringComparer.Ordinal))
         {
+            string builderMethodName = model.DomainMethodName.EndsWith("Client", StringComparison.Ordinal)
+                ? model.DomainMethodName.Substring(0, model.DomainMethodName.Length - "Client".Length)
+                : model.DomainMethodName;
             sb.AppendLine("    /// <summary>");
             sb.AppendLine($"    ///     Adds all generated client features for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
@@ -202,6 +206,19 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             }
 
             sb.AppendLine("        return services;");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine(
+                $"    ///     Adds all generated client features for the {model.DomainRoot} domain using a client builder.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <param name=\"builder\">The client builder.</param>");
+            sb.AppendLine("    /// <returns>The client builder for chaining.</returns>");
+            sb.AppendLine($"    public static IClientBuilder {builderMethodName}(this IClientBuilder builder)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(builder);");
+            sb.AppendLine($"        builder.Services.{model.DomainMethodName}();");
+            sb.AppendLine("        return builder;");
             sb.AppendLine("    }");
             sb.AppendLine();
         }

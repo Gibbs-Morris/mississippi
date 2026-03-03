@@ -14,6 +14,7 @@ Governing thought: Keep `.csproj` files minimal, CPM-driven, and free of duplica
 - Package versions **MUST** stay in `Directory.Packages.props`; `PackageReference` items **MUST NOT** include `Version`. Why: Central Package Management compliance.
 - Project files **MUST** stay minimal: only project-specific properties/items belong in each `.csproj`. Why: Reduces drift and review noise.
 - Automatic assembly/root namespace naming **MUST NOT** be overridden without explicit justification. Why: Preserves naming consistency.
+- SDK aggregation projects (`Sdk.Client`, `Sdk.Gateway`, `Sdk.Runtime`) **MUST** remain code-empty packaging entrypoints (project/package references and metadata only); production/service-registration/builder implementation code **MUST NOT** be added there. Why: SDK projects are single-purpose NuGet aggregation surfaces, not implementation layers.
 - Project changes **MUST** be validated by a clean build with zero warnings. Why: Aligns with repository quality gates.
 
 ## Scope and Audience

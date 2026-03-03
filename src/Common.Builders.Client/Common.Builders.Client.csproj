@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common.Builders.Abstractions\Common.Builders.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Builders.Client.Abstractions\Common.Builders.Client.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Client builder implementation for Mississippi host composition.</Description>
+  </PropertyGroup>
+</Project>

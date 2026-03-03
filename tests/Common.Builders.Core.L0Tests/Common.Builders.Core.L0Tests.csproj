@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Common.Builders.Abstractions\Common.Builders.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Common.Builders.Client\Common.Builders.Client.csproj" />
+    <ProjectReference Include="..\..\src\Common.Builders.Core\Common.Builders.Core.csproj" />
+    <ProjectReference Include="..\..\src\Common.Builders.Gateway\Common.Builders.Gateway.csproj" />
+    <ProjectReference Include="..\..\src\Common.Builders.Runtime\Common.Builders.Runtime.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>L0 tests for Mississippi shared host adapter extensions.</Description>
+  </PropertyGroup>
+</Project>

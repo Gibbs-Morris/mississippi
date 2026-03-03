@@ -9,10 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Aqueduct.Gateway;
-using Mississippi.Brooks.Serialization.Json;
+using Mississippi.Common.Builders.Core;
+using Mississippi.Common.Builders.Gateway;
 using Mississippi.DomainModeling.Runtime;
 using Mississippi.Inlet.Gateway;
-using Mississippi.Inlet.Runtime;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -29,25 +29,26 @@ using Spring.Gateway.McpTools;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+GatewayBuilder gateway = GatewayBuilder.Create();
 SpringAuthOptions springAuthOptions = builder.Configuration.GetSection("SpringAuth").Get<SpringAuthOptions>() ?? new();
-builder.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
+gateway.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
 if (springAuthOptions.Enabled && !builder.Environment.IsDevelopment())
 {
     throw new InvalidOperationException("Spring local development authentication can only be enabled in Development.");
 }
 
-builder.Services.AddAuthentication(options =>
+gateway.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = springAuthOptions.Scheme;
         options.DefaultChallengeScheme = springAuthOptions.Scheme;
     })
     .AddScheme<AuthenticationSchemeOptions, SpringLocalDevAuthenticationHandler>(springAuthOptions.Scheme, _ => { });
-builder.Services.AddAuthorizationBuilder()
+gateway.Services.AddAuthorizationBuilder()
     .AddPolicy("spring.generated-api", policy => policy.RequireAuthenticatedUser())
     .AddPolicy("spring.write", policy => policy.RequireRole("banking-operator"))
     .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"))
     .AddPolicy("spring.auth-proof.claim", policy => policy.RequireClaim("spring.permission", "auth-proof"));
-builder.Services.AddOpenTelemetry()
+gateway.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddSource("Microsoft.Orleans.Runtime")
@@ -67,10 +68,14 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 builder.UseOrleansClient(clientBuilder => { clientBuilder.AddActivityPropagation(); });
 
 // Add controllers for aggregate API endpoints
+// Must stay on builder.Services (not gateway.Services) because AddControllers()
+// internally uses IWebHostEnvironment.ApplicationName to discover controllers via
+// ApplicationPartManager. The gateway builder's standalone ServiceCollection lacks
+// IWebHostEnvironment, causing controller discovery to fail in hosted environments.
 builder.Services.AddControllers();
 
 // Add OpenAPI documentation
-builder.Services.AddOpenApi(options =>
+gateway.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((
         document,
@@ -84,19 +89,11 @@ builder.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
-
-// Add JSON serialization provider (required by aggregate infrastructure)
-builder.Services.AddJsonSerialization();
-
-// Add aggregate infrastructure support (IAggregateGrainFactory, IBrookEventConverter, etc.)
-builder.Services.AddAggregateSupport();
-
-// Add UX projection infrastructure support (IUxProjectionGrainFactory)
-builder.Services.AddUxProjections();
+gateway.AddDomainModeling();
 
 // Add Aqueduct backplane for InletHub (registers IServerIdProvider and other dependencies)
-builder.Services.AddSignalR();
-builder.Services.AddAqueduct<InletHub>(options =>
+gateway.Services.AddSignalR();
+gateway.AddAqueduct<InletHub>(options =>
 {
     // Use the same stream provider configured by Aspire's WithMemoryStreaming
     options.StreamProviderName = "StreamProvider";
@@ -105,27 +102,30 @@ builder.Services.AddAqueduct<InletHub>(options =>
 // Add Inlet Gateway services for real-time projection updates
 if (springAuthOptions.Enabled)
 {
-    builder.Services.AddInletServer(options =>
-    {
-        options.GeneratedApiAuthorization.Mode =
-            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
-        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
-        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
-    });
+    gateway.ConfigureAuthorization();
+    gateway.AddInlet(
+        options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+        },
+        typeof(BankAccountBalanceProjection).Assembly);
 }
 else
 {
-    builder.Services.AddInletServer();
+    gateway.AllowAnonymousExplicitly();
+    gateway.AddInlet(null, typeof(BankAccountBalanceProjection).Assembly);
 }
 
-builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-
 // Add generated domain mapper registrations
-builder.Services.AddSpringDomainServer();
+gateway.AddSpringDomain();
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.
-builder.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringGatewayPingMcpTools>();
+gateway.Services.AddMcpServer().WithHttpTransport().WithGeneratedMcpTools().WithTools<SpringGatewayPingMcpTools>();
+builder.UseMississippi(gateway);
 WebApplication app = builder.Build();
 
 // Serve Blazor WebAssembly static files

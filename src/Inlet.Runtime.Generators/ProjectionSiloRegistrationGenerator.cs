@@ -187,11 +187,6 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine(")");
         sb.OpenBrace();
 
-        // Add UX projection infrastructure
-        sb.AppendLine("// Add UX projection infrastructure");
-        sb.AppendLine("services.AddUxProjections();");
-        sb.AppendLine();
-
         // Register reducers
         sb.AppendLine($"// Register reducers for {projection.Model.TypeName}");
         foreach (ReducerInfo reducer in projection.Reducers)
@@ -344,7 +339,10 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
                 rootNamespace,
                 assemblyName,
                 source.Compilation);
-            return GetProjectionsFromCompilation(source.Compilation, targetRootNamespace);
+            List<ProjectionRegistrationInfo> projections = GetProjectionsFromCompilation(
+                source.Compilation,
+                targetRootNamespace);
+            return projections;
         });
 
         // Register source output
@@ -352,10 +350,10 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             projectionsProvider,
             static (
                 spc,
-                projections
+                result
             ) =>
             {
-                foreach (ProjectionRegistrationInfo projection in projections)
+                foreach (ProjectionRegistrationInfo projection in result)
                 {
                     string registrationSource = GenerateRegistration(projection);
                     spc.AddSource(

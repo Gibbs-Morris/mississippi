@@ -72,6 +72,15 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                  }
                                                  """;
 
+    private const string BuilderStubs = """
+                                        namespace Mississippi.Common.Builders.Runtime.Abstractions
+                                        {
+                                            public interface IUxProjectionBuilder<TProjectionState>
+                                            {
+                                            }
+                                        }
+                                        """;
+
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
     /// </summary>
@@ -364,6 +373,47 @@ public class ProjectionSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Generated projection registrations do not include obsolete attribute when projection builder is available.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionRegistrationsDoNotAddObsoleteAttributeWhenProjectionBuilderIsAvailable()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Abstractions;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Tributary.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection;
+                                        }
+
+                                        namespace TestApp.Domain.Projections.AccountBalance.Events
+                                        {
+                                            public sealed record BalanceUpdated;
+                                        }
+
+                                        namespace TestApp.Domain.Projections.AccountBalance.Reducers
+                                        {
+                                            public sealed class BalanceUpdatedReducer : EventReducerBase<TestApp.Domain.Projections.AccountBalance.Events.BalanceUpdated, TestApp.Domain.Projections.AccountBalance.AccountBalanceProjection>
+                                            {
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) = RunGenerator(
+            AttributeAndBaseStubs,
+            BuilderStubs,
+            projectionSource);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("AccountBalanceProjectionRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.DoesNotContain("[System.Obsolete", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated registrations should add snapshot state converter.
     /// </summary>
     [Fact]
@@ -441,7 +491,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("services.AddUxProjections();", generatedCode, StringComparison.Ordinal);
+        Assert.DoesNotContain("services.AddUxProjections();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -79,6 +79,15 @@ public class AggregateSiloRegistrationGeneratorTests
                                                  }
                                                  """;
 
+    private const string BuilderStubs = """
+                                        namespace Mississippi.Common.Builders.Runtime.Abstractions
+                                        {
+                                            public interface IAggregateBuilder<TSnapshot>
+                                            {
+                                            }
+                                        }
+                                        """;
+
     /// <summary>
     ///     Creates a Roslyn compilation from the provided source code and runs the generator.
     /// </summary>
@@ -122,6 +131,56 @@ public class AggregateSiloRegistrationGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated aggregate registrations do not include obsolete attribute when aggregate builder is available.
+    /// </summary>
+    [Fact]
+    public void GeneratedAggregateRegistrationsDoNotAddObsoleteAttributeWhenAggregateBuilderIsAvailable()
+    {
+        const string aggregateSource = """
+                                       using Mississippi.Inlet.Generators.Abstractions;
+
+                                       namespace TestApp.Domain.Aggregates.Order
+                                       {
+                                           [GenerateAggregateEndpoints]
+                                           public sealed record OrderAggregate;
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Commands
+                                       {
+                                           public sealed record PlaceOrder;
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Events
+                                       {
+                                           public sealed record OrderPlaced;
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Handlers
+                                       {
+                                           public sealed class PlaceOrderHandler : Mississippi.DomainModeling.Abstractions.CommandHandlerBase<TestApp.Domain.Aggregates.Order.Commands.PlaceOrder, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+
+                                       namespace TestApp.Domain.Aggregates.Order.Reducers
+                                       {
+                                           public sealed class OrderPlacedReducer : Mississippi.Tributary.Abstractions.EventReducerBase<TestApp.Domain.Aggregates.Order.Events.OrderPlaced, TestApp.Domain.Aggregates.Order.OrderAggregate>
+                                           {
+                                           }
+                                       }
+                                       """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) = RunGenerator(
+            AttributeAndBaseStubs,
+            BuilderStubs,
+            aggregateSource);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("OrderAggregateRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.DoesNotContain("[System.Obsolete", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -480,7 +539,7 @@ public class AggregateSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("services.AddAggregateSupport();", generatedCode, StringComparison.Ordinal);
+        Assert.DoesNotContain("services.AddAggregateSupport();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

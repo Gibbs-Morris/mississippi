@@ -18,7 +18,11 @@ MD025: false
 # MD060: Table column style - disabled due to inconsistent compact/aligned requirements
 MD060: false
 
-# Ignore bundled dependencies
+# Ignore bundled dependencies and special-format files
 ignores:
+  - ".scratchpad/**"
+  - ".github/agents/**"
   - "docs/Docusaurus/node_modules/**"
   - "**/node_modules/**"
+  - "**/AnalyzerReleases.Shipped.md"
+  - "**/AnalyzerReleases.Unshipped.md"

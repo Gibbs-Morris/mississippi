@@ -2,6 +2,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Builders.Runtime.Abstractions\Common.Builders.Runtime.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Builders.Runtime\Common.Builders.Runtime.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Sdk" />

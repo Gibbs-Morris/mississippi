@@ -18,6 +18,7 @@ Governing thought: Keep `.csproj` files minimal, CPM-driven, and free of duplica
 - Package versions **MUST** stay in `Directory.Packages.props`; agents **MUST** remove any `Version` attributes they encounter. Why: Prevents drift.
 - Clean builds with zero warnings **MUST** validate project changes. Why: Aligns with quality gates.
 - Automatic assembly/root namespace naming **MUST NOT** be overridden without justification. Why: Keeps naming consistent.
+- SDK aggregation projects (`Sdk.Client`, `Sdk.Gateway`, `Sdk.Runtime`) **MUST** remain code-empty packaging entrypoints (project/package references and metadata only); production/service-registration/builder implementation code **MUST NOT** be added there. Why: SDK projects are single-purpose NuGet aggregation surfaces, not implementation layers.
 - The correct SDK (`Microsoft.NET.Sdk` / `.Web`, etc.) **SHOULD** be chosen for the project type; only project-specific properties **SHOULD** appear in the file. Why: Minimizes file size and confusion.
 
 ## Scope and Audience

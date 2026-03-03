@@ -697,7 +697,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 rootNamespace,
                 assemblyName,
                 pair.Compilation);
-            return GetSagasWithDiagnostics(pair.Compilation, targetRootNamespace);
+            SagaGenerationResult result = GetSagasWithDiagnostics(pair.Compilation, targetRootNamespace);
+            return result;
         });
         context.RegisterSourceOutput(
             sagasProvider,

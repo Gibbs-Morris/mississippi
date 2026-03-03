@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Aqueduct.Abstractions\Aqueduct.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Builders.Gateway.Abstractions\Common.Builders.Gateway.Abstractions.csproj" />
   </ItemGroup>
 </Project>

@@ -27,6 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Common.Builders.Core\Common.Builders.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Common.Builders.Gateway\Common.Builders.Gateway.csproj" />
     <ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj" />
     <ProjectReference Include="..\Spring.Client\Spring.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Sdk.Gateway\Sdk.Gateway.csproj" />

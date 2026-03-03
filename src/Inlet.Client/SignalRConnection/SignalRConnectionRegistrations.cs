@@ -30,6 +30,16 @@ public static class SignalRConnectionRegistrations
     /// </remarks>
     public static IServiceCollection AddSignalRConnectionFeature(
         this IServiceCollection services
+    ) =>
+        AddSignalRConnectionFeatureCore(services);
+
+    /// <summary>
+    ///     Adds the SignalR connection feature without legacy API metadata.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    internal static IServiceCollection AddSignalRConnectionFeatureCore(
+        IServiceCollection services
     )
     {
         // Register reducers for each action

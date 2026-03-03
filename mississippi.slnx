@@ -44,8 +44,7 @@
     <Project Path="src\Refraction.Client.StateManagement\Refraction.Client.StateManagement.csproj" />
   </Folder>
   <Folder Name="/Framework/Reservoir/">
-    <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
-    <Project Path="src\Reservoir.Core\Reservoir.Core.csproj" />
+    <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />    <Project Path="src/Reservoir.Builder/Reservoir.Builder.csproj" />    <Project Path="src\Reservoir.Core\Reservoir.Core.csproj" />
     <Project Path="src\Reservoir.Client\Reservoir.Client.csproj" />
     <Project Path="src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
   </Folder>
@@ -68,8 +67,21 @@
     <Project Path="src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <Project Path="src\Inlet.Generators.Core\Inlet.Generators.Core.csproj" />
   </Folder>
-  <Folder Name="/src/" />
+  <Folder Name="/src/">
+    <Project Path="src/Common.Builders.Abstractions/Common.Builders.Abstractions.csproj" />
+    <Project Path="src/Common.Builders.Client.Abstractions/Common.Builders.Client.Abstractions.csproj" />
+    <Project Path="src/Common.Builders.Client/Common.Builders.Client.csproj" />
+    <Project Path="src/Common.Builders.Core/Common.Builders.Core.csproj" />
+    <Project Path="src/Common.Builders.Gateway.Abstractions/Common.Builders.Gateway.Abstractions.csproj" />
+    <Project Path="src/Common.Builders.Gateway/Common.Builders.Gateway.csproj" />
+    <Project Path="src/Common.Builders.Runtime.Abstractions/Common.Builders.Runtime.Abstractions.csproj" />
+    <Project Path="src/Common.Builders.Runtime/Common.Builders.Runtime.csproj" />
+  </Folder>
   <Folder Name="/Tests/">
+    <Project Path="tests/Common.Builders.Client.L0Tests/Common.Builders.Client.L0Tests.csproj" />
+    <Project Path="tests/Common.Builders.Core.L0Tests/Common.Builders.Core.L0Tests.csproj" />
+    <Project Path="tests/Common.Builders.Gateway.L0Tests/Common.Builders.Gateway.L0Tests.csproj" />
+    <Project Path="tests/Common.Builders.Runtime.L0Tests/Common.Builders.Runtime.L0Tests.csproj" />
     <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />
     <Project Path="tests/Inlet.Runtime.Generators.L0Tests/Inlet.Runtime.Generators.L0Tests.csproj" />
   </Folder>

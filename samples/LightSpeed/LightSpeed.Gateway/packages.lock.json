@@ -71,11 +71,29 @@
         "resolved": "10.0.103",
         "contentHash": "cMtGW5/r0ck72Jg2QwZcNTX59z+iB/B1kW84VMa/eX8L19DhHIuIcQjfK0pgLLBxd60Jl0Bj9GUolcM0MnJnZA=="
       },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Common.Builders.Client": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Client.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.LightSpeed.Client": {
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.103, )",
+          "Mississippi.Common.Builders.Client": "[1.0.0, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
           "Mississippi.Refraction.Client": "[1.0.0, )",
           "Mississippi.Refraction.Client.StateManagement": "[1.0.0, )",
@@ -101,16 +119,26 @@
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Reservoir.Builder": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
+      },
       "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Builder": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir.Core": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },

@@ -45,7 +45,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClient.Object);
         services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
-        services.AddCosmosSnapshotStorageProvider();
+        services.AddCosmosSnapshotStorageProvider(_ => { });
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.NotNull(provider.GetRequiredService<ISnapshotContainerOperations>());
         Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
@@ -172,7 +172,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "new-db";
             o.ContainerId = "new-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        services.AddCosmosSnapshotStorageProvider(_ => { });
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -230,7 +230,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "existing-db";
             o.ContainerId = "existing-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        services.AddCosmosSnapshotStorageProvider(_ => { });
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -290,7 +290,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "test-db";
             o.ContainerId = "test-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        services.AddCosmosSnapshotStorageProvider(_ => { });
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -358,7 +358,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
             cosmosClientMock.Object);
         services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
-        services.AddCosmosSnapshotStorageProvider();
+        services.AddCosmosSnapshotStorageProvider(_ => { });
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
