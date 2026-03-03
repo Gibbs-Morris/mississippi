@@ -98,10 +98,10 @@ public sealed class DomainServerRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generated gateway domain registration includes obsolete attribute when gateway builder is available.
+    ///     Generated gateway domain registration includes gateway builder extension when gateway builder is available.
     /// </summary>
     [Fact]
-    public void GeneratedDomainRegistrationAddsObsoleteAttributeWhenGatewayBuilderIsAvailable()
+    public void GeneratedDomainRegistrationAddsGatewayBuilderExtensionWhenGatewayBuilderIsAvailable()
     {
         const string source = """
                               using Mississippi.Inlet.Generators.Abstractions;
@@ -119,9 +119,10 @@ public sealed class DomainServerRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use GatewayBuilder.Create() instead. Remove in v1.0.\")]",
+            "public static IGatewayBuilder AddTestAppDomain(this IGatewayBuilder builder)",
             generatedCode,
             StringComparison.Ordinal);
+        Assert.Contains("builder.Services.AddTestAppDomainServer();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

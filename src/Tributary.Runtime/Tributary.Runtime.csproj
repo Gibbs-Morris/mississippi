@@ -6,6 +6,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
+    <ProjectReference Include="..\Common.Builders.Runtime.Abstractions\Common.Builders.Runtime.Abstractions.csproj" />
     <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
     <ProjectReference Include="..\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />

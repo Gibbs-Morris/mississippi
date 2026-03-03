@@ -13,6 +13,7 @@ using Mississippi.Brooks.Serialization.Json;
 using Mississippi.Common.Abstractions;
 using Mississippi.Common.Builders.Core;
 using Mississippi.Common.Builders.Runtime;
+using Mississippi.DomainModeling.Runtime;
 using Mississippi.Inlet.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
@@ -40,7 +41,7 @@ runtime.Services.AddHttpClient();
 runtime.Services.AddSingleton<INotificationService, StubNotificationService>();
 
 // Register Spring domain aggregates
-runtime.Services.AddSpringDomainSilo();
+runtime.AddSpringDomain();
 runtime.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
@@ -101,45 +102,35 @@ runtime.Services.AddKeyedSingleton(
     ) => sp.GetRequiredService<CosmosClient>());
 
 // Add Inlet Silo services for projection subscription management
-runtime.Services.AddInletSilo();
-runtime.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+runtime.AddInlet(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add event sourcing infrastructure
-runtime.Services.AddJsonSerialization();
-runtime.Services.AddEventSourcingByService();
-runtime.Services.AddSnapshotCaching();
-
-// Configure Cosmos storage for Brooks (event streams)
-runtime.Services.AddCosmosBrookStorageProvider(options =>
-{
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "events";
-    options.QueryBatchSize = 50;
-    options.MaxEventsPerBatch = 50;
-});
-
-// Configure Cosmos storage for Snapshots
-runtime.Services.AddCosmosSnapshotStorageProvider(options =>
-{
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "snapshots";
-    options.QueryBatchSize = 100;
-});
+runtime.AddBrooks(brooks => brooks.UseJsonSerialization()
+    .UseCosmosStorage(options =>
+    {
+        options.CosmosClientServiceKey = sharedCosmosKey;
+        options.DatabaseId = "spring-db";
+        options.ContainerId = "events";
+        options.QueryBatchSize = 50;
+        options.MaxEventsPerBatch = 50;
+    })
+    .ConfigureStreaming(options => options.OrleansStreamProviderName = "StreamProvider"));
+runtime.AddTributary(tributary => tributary.EnableSnapshotCaching()
+    .UseCosmosSnapshotStorage(options =>
+    {
+        options.CosmosClientServiceKey = sharedCosmosKey;
+        options.DatabaseId = "spring-db";
+        options.ContainerId = "snapshots";
+        options.QueryBatchSize = 100;
+    }));
+runtime.AddDomainModeling();
+runtime.AddAqueduct(options => options.StreamProviderName = "StreamProvider");
 
 // Configure Orleans silo - Aspire injects clustering config via environment variables
 builder.UseOrleans(siloBuilder =>
 {
     runtime.ApplyToSilo(siloBuilder);
     siloBuilder.AddActivityPropagation();
-
-    // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane
-    siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
-
-    // Configure event sourcing to use the Aspire-configured stream provider
-    // Must match the stream provider name configured in AppHost via WithMemoryStreaming
-    siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
 });
 builder.UseMississippi(runtime);
 WebApplication app = builder.Build();

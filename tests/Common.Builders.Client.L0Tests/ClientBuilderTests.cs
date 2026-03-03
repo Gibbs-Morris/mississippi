@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Builders.Abstractions;
 using Mississippi.Common.Builders.Client.Abstractions;
 
 
@@ -58,5 +60,16 @@ public sealed class ClientBuilderTests
     {
         ClientBuilder builder = ClientBuilder.Create();
         Assert.NotNull(builder.Services);
+    }
+
+    /// <summary>
+    ///     Validate returns no diagnostics for client builders.
+    /// </summary>
+    [Fact]
+    public void ValidateShouldReturnNoDiagnostics()
+    {
+        ClientBuilder builder = ClientBuilder.Create();
+        IReadOnlyList<BuilderDiagnostic> diagnostics = builder.Validate();
+        Assert.Empty(diagnostics);
     }
 }

@@ -477,7 +477,8 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime": {
@@ -487,7 +488,9 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime.Storage.Abstractions": {
@@ -507,6 +510,14 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )"
         }
       },
+      "Mississippi.Brooks.Serialization.Json": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -514,12 +525,41 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )"
+        }
+      },
+      "Mississippi.Common.Builders.Gateway.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Runtime": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection": "[10.0.3, )",
+          "Microsoft.Extensions.Options": "[10.0.3, )",
+          "Microsoft.Orleans.Server": "[10.0.1, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Runtime.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Microsoft.Orleans.Server": "[10.0.1, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Options": "[10.0.3, )",
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
@@ -531,7 +571,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Tributary.Runtime": {
@@ -542,7 +583,7 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Brooks.Runtime": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
-          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
         }
@@ -604,10 +645,10 @@
       "Microsoft.Extensions.DependencyInjection": {
         "type": "CentralTransitive",
         "requested": "[10.0.3, )",
-        "resolved": "10.0.0",
-        "contentHash": "f0RBabswJq+gRu5a+hWIobrLWiUYPKMhCD9WO3sYBAdSy3FFH14LMvLVFZc2kPSCimBLxSuitUhsd6tb0TAY6A==",
+        "resolved": "10.0.3",
+        "contentHash": "2DLOmC0EkB2smVK8lPP1PIKEgL1arE3CMp9XSIQB/Y7ev5nnnyuM/PizKJ6QfLD08QCYoopSC9SFdbYglDomYg==",
         "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0"
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.3"
         }
       },
       "Microsoft.Extensions.Features": {
@@ -702,6 +743,40 @@
           "Microsoft.Extensions.Primitives": "10.0.3"
         }
       },
+      "Microsoft.Orleans.Persistence.Memory": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.0, )",
+        "resolved": "10.0.1",
+        "contentHash": "P8UsWbe123I7nna0H7yLwWgQLIAlNFPhVowRek7MHBdynHpUVjXAfDg9XspfGQlDFGbek6izn8vYvaGR2vWcNQ==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Connections.Abstractions": "10.0.0",
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "5.0.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
+          "Microsoft.Extensions.Configuration": "10.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.0",
+          "Microsoft.Extensions.Configuration.Json": "10.0.0",
+          "Microsoft.Extensions.DependencyInjection": "10.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.0",
+          "Microsoft.Extensions.Hosting": "10.0.0",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Logging": "10.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Logging.Console": "10.0.0",
+          "Microsoft.Extensions.Logging.Debug": "10.0.0",
+          "Microsoft.Extensions.ObjectPool": "10.0.0",
+          "Microsoft.Extensions.Options": "10.0.0",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "10.0.0",
+          "Microsoft.Orleans.Analyzers": "10.0.1",
+          "Microsoft.Orleans.CodeGenerator": "10.0.1",
+          "Microsoft.Orleans.Runtime": "10.0.1",
+          "Newtonsoft.Json": "13.0.4",
+          "System.IO.Hashing": "10.0.0",
+          "System.Memory.Data": "10.0.0"
+        }
+      },
       "Microsoft.Orleans.Serialization.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[10.0.0, )",
@@ -709,6 +784,40 @@
         "contentHash": "2diyHF3jIHRvSmdVH7E0OxLIAUyYzVWcK2LWqKxshKMnPmqlYKZQBUOKKfODTha89DdP9prasF5BmDH5rot7zg==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0"
+        }
+      },
+      "Microsoft.Orleans.Server": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.1, )",
+        "resolved": "10.0.1",
+        "contentHash": "eCZfFSCErvXL3M/hF2xTHb34NXkGMcoeQJo9I6MwIDQOwaIf8EXbvDy5U2GJPJP+wnB/wbBMrOJkmGK+lHX12Q==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Connections.Abstractions": "10.0.0",
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "5.0.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
+          "Microsoft.Extensions.Configuration": "10.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.0",
+          "Microsoft.Extensions.Configuration.Json": "10.0.0",
+          "Microsoft.Extensions.DependencyInjection": "10.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.0",
+          "Microsoft.Extensions.Hosting": "10.0.0",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Logging": "10.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Logging.Console": "10.0.0",
+          "Microsoft.Extensions.Logging.Debug": "10.0.0",
+          "Microsoft.Extensions.ObjectPool": "10.0.0",
+          "Microsoft.Extensions.Options": "10.0.0",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "10.0.0",
+          "Microsoft.Orleans.Persistence.Memory": "10.0.1",
+          "Microsoft.Orleans.Runtime": "10.0.1",
+          "Microsoft.Orleans.Sdk": "10.0.1",
+          "Newtonsoft.Json": "13.0.4",
+          "System.IO.Hashing": "10.0.0",
+          "System.Memory.Data": "10.0.0"
         }
       },
       "Microsoft.Orleans.Streaming": {

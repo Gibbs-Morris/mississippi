@@ -19,9 +19,6 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
 {
-    private const string ClientBuilderInterfaceTypeFullName =
-        "Mississippi.Common.Builders.Client.Abstractions.IClientBuilder";
-
     private const string FeaturesSuffix = ".Features";
 
     private const string GenerateCommandAttributeFullName =
@@ -141,8 +138,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
 
     private static string GenerateRegistrationsSource(
         IReadOnlyList<DomainRegistrationModel> models,
-        string targetRootNamespace,
-        bool emitObsoleteAttribute
+        string targetRootNamespace
     )
     {
         StringBuilder sb = new();
@@ -150,6 +146,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
+        sb.AppendLine("using Mississippi.Common.Builders.Client.Abstractions;");
         sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
         sb.AppendLine();
         string[] usingNamespaces = models
@@ -177,15 +174,13 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("///     Extension methods for registering complete client domain feature sets.");
         sb.AppendLine("/// </summary>");
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"DomainClientRegistrationGenerator\", \"1.0.0\")]");
-        if (emitObsoleteAttribute)
-        {
-            sb.AppendLine("[System.Obsolete(\"Use ClientBuilder.Create() instead. Remove in v1.0.\")]");
-        }
-
         sb.AppendLine("public static class DomainFeatureRegistrations");
         sb.AppendLine("{");
         foreach (DomainRegistrationModel model in models.OrderBy(m => m.DomainMethodName, StringComparer.Ordinal))
         {
+            string builderMethodName = model.DomainMethodName.EndsWith("Client", StringComparison.Ordinal)
+                ? model.DomainMethodName.Substring(0, model.DomainMethodName.Length - "Client".Length)
+                : model.DomainMethodName;
             sb.AppendLine("    /// <summary>");
             sb.AppendLine($"    ///     Adds all generated client features for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
@@ -211,6 +206,19 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             }
 
             sb.AppendLine("        return services;");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine(
+                $"    ///     Adds all generated client features for the {model.DomainRoot} domain using a client builder.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <param name=\"builder\">The client builder.</param>");
+            sb.AppendLine("    /// <returns>The client builder for chaining.</returns>");
+            sb.AppendLine($"    public static IClientBuilder {builderMethodName}(this IClientBuilder builder)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(builder);");
+            sb.AppendLine($"        builder.Services.{model.DomainMethodName}();");
+            sb.AppendLine("        return builder;");
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -327,11 +335,6 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         AddProjectionDomainIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, domainsWithProjections);
     }
 
-    private static bool ShouldEmitObsoleteAttribute(
-        Compilation compilation
-    ) =>
-        compilation.GetTypeByMetadataName(ClientBuilderInterfaceTypeFullName) is not null;
-
     /// <inheritdoc />
     public void Initialize(
         IncrementalGeneratorInitializationContext context
@@ -339,28 +342,27 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<(IReadOnlyList<DomainRegistrationModel> Domains, string TargetRootNamespace, bool
-            EmitObsoleteAttribute)> domainsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            bool emitObsoleteAttribute = ShouldEmitObsoleteAttribute(source.Compilation);
-            IReadOnlyList<DomainRegistrationModel> domains = GetDomainRegistrations(
-                source.Compilation,
-                targetRootNamespace);
-            return (domains, targetRootNamespace, emitObsoleteAttribute);
-        });
+        IncrementalValueProvider<(IReadOnlyList<DomainRegistrationModel> Domains, string TargetRootNamespace)>
+            domainsProvider = compilationAndOptions.Select((
+                source,
+                _
+            ) =>
+            {
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                IReadOnlyList<DomainRegistrationModel> domains = GetDomainRegistrations(
+                    source.Compilation,
+                    targetRootNamespace);
+                return (domains, targetRootNamespace);
+            });
         context.RegisterSourceOutput(
             domainsProvider,
             static (
@@ -373,10 +375,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
                     return;
                 }
 
-                string source = GenerateRegistrationsSource(
-                    result.Domains,
-                    result.TargetRootNamespace,
-                    result.EmitObsoleteAttribute);
+                string source = GenerateRegistrationsSource(result.Domains, result.TargetRootNamespace);
                 spc.AddSource("DomainFeatureRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
             });
     }

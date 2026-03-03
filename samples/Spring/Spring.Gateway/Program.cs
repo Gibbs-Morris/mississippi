@@ -9,12 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Aqueduct.Gateway;
-using Mississippi.Brooks.Serialization.Json;
 using Mississippi.Common.Builders.Core;
 using Mississippi.Common.Builders.Gateway;
 using Mississippi.DomainModeling.Runtime;
 using Mississippi.Inlet.Gateway;
-using Mississippi.Inlet.Runtime;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -91,19 +89,11 @@ gateway.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
-
-// Add JSON serialization provider (required by aggregate infrastructure)
-gateway.Services.AddJsonSerialization();
-
-// Add aggregate infrastructure support (IAggregateGrainFactory, IBrookEventConverter, etc.)
-gateway.Services.AddAggregateSupport();
-
-// Add UX projection infrastructure support (IUxProjectionGrainFactory)
-gateway.Services.AddUxProjections();
+gateway.AddDomainModeling();
 
 // Add Aqueduct backplane for InletHub (registers IServerIdProvider and other dependencies)
 gateway.Services.AddSignalR();
-gateway.Services.AddAqueduct<InletHub>(options =>
+gateway.AddAqueduct<InletHub>(options =>
 {
     // Use the same stream provider configured by Aspire's WithMemoryStreaming
     options.StreamProviderName = "StreamProvider";
@@ -113,24 +103,24 @@ gateway.Services.AddAqueduct<InletHub>(options =>
 if (springAuthOptions.Enabled)
 {
     gateway.ConfigureAuthorization();
-    gateway.Services.AddInletServer(options =>
-    {
-        options.GeneratedApiAuthorization.Mode =
-            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
-        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
-        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
-    });
+    gateway.AddInlet(
+        options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+        },
+        typeof(BankAccountBalanceProjection).Assembly);
 }
 else
 {
     gateway.AllowAnonymousExplicitly();
-    gateway.Services.AddInletServer();
+    gateway.AddInlet(null, typeof(BankAccountBalanceProjection).Assembly);
 }
 
-gateway.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-
 // Add generated domain mapper registrations
-gateway.Services.AddSpringDomainServer();
+gateway.AddSpringDomain();
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.

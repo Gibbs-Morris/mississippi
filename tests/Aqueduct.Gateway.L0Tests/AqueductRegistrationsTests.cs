@@ -17,13 +17,13 @@ namespace Mississippi.Aqueduct.Gateway.L0Tests;
 public sealed class AqueductRegistrationsTests
 {
     private static readonly MethodInfo AddAqueductWithOptionsMethod = typeof(AqueductRegistrations)
-        .GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
         .Single(method => (method.Name == nameof(AqueductRegistrations.AddAqueduct)) &&
                           method.IsGenericMethodDefinition &&
                           (method.GetParameters().Length == 2));
 
     private static readonly MethodInfo AddAqueductWithoutOptionsMethod = typeof(AqueductRegistrations)
-        .GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static)
         .Single(method => (method.Name == nameof(AqueductRegistrations.AddAqueduct)) &&
                           method.IsGenericMethodDefinition &&
                           (method.GetParameters().Length == 1));

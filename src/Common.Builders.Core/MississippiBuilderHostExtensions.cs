@@ -1,12 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Common.Builders.Abstractions;
 using Mississippi.Common.Builders.Client.Abstractions;
-using Mississippi.Common.Builders.Gateway;
 using Mississippi.Common.Builders.Gateway.Abstractions;
 using Mississippi.Common.Builders.Runtime.Abstractions;
 
@@ -31,6 +32,7 @@ public static class MississippiBuilderHostExtensions
     {
         ArgumentNullException.ThrowIfNull(hostBuilder);
         ArgumentNullException.ThrowIfNull(builder);
+        EnsureValid(builder);
         EnsureNotAlreadyAttached(hostBuilder.Services);
         MergeServices(hostBuilder.Services, builder.Services);
         MarkAttached(hostBuilder.Services);
@@ -50,11 +52,7 @@ public static class MississippiBuilderHostExtensions
     {
         ArgumentNullException.ThrowIfNull(hostBuilder);
         ArgumentNullException.ThrowIfNull(builder);
-        if (builder is GatewayBuilder gatewayBuilder)
-        {
-            gatewayBuilder.EnsureAuthorizationConfigured();
-        }
-
+        EnsureValid(builder);
         EnsureNotAlreadyAttached(hostBuilder.Services);
         MergeServices(hostBuilder.Services, builder.Services);
         MarkAttached(hostBuilder.Services);
@@ -74,6 +72,7 @@ public static class MississippiBuilderHostExtensions
     {
         ArgumentNullException.ThrowIfNull(hostBuilder);
         ArgumentNullException.ThrowIfNull(builder);
+        EnsureValid(builder);
         EnsureNotAlreadyAttached(hostBuilder.Services);
         MergeServices(hostBuilder.Services, builder.Services);
         MarkAttached(hostBuilder.Services);
@@ -93,6 +92,7 @@ public static class MississippiBuilderHostExtensions
     {
         ArgumentNullException.ThrowIfNull(webBuilder);
         ArgumentNullException.ThrowIfNull(builder);
+        EnsureValid(builder);
         EnsureNotAlreadyAttached(webBuilder.Services);
         MergeServices(webBuilder.Services, builder.Services);
         MarkAttached(webBuilder.Services);
@@ -112,11 +112,7 @@ public static class MississippiBuilderHostExtensions
     {
         ArgumentNullException.ThrowIfNull(webBuilder);
         ArgumentNullException.ThrowIfNull(builder);
-        if (builder is GatewayBuilder gatewayBuilder)
-        {
-            gatewayBuilder.EnsureAuthorizationConfigured();
-        }
-
+        EnsureValid(builder);
         EnsureNotAlreadyAttached(webBuilder.Services);
         MergeServices(webBuilder.Services, builder.Services);
         MarkAttached(webBuilder.Services);
@@ -136,6 +132,7 @@ public static class MississippiBuilderHostExtensions
     {
         ArgumentNullException.ThrowIfNull(webBuilder);
         ArgumentNullException.ThrowIfNull(builder);
+        EnsureValid(builder);
         EnsureNotAlreadyAttached(webBuilder.Services);
         MergeServices(webBuilder.Services, builder.Services);
         MarkAttached(webBuilder.Services);
@@ -150,6 +147,19 @@ public static class MississippiBuilderHostExtensions
         {
             throw new InvalidOperationException("UseMississippi() can only be called once per host builder.");
         }
+    }
+
+    private static void EnsureValid(
+        IMississippiBuilder builder
+    )
+    {
+        IReadOnlyList<BuilderDiagnostic> diagnostics = builder.Validate();
+        if (diagnostics.Count == 0)
+        {
+            return;
+        }
+
+        throw new BuilderValidationException("Builder validation failed before terminal host attachment.", diagnostics);
     }
 
     private static void MarkAttached(

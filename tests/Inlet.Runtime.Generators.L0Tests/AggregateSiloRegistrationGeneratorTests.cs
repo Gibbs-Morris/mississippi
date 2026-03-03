@@ -134,10 +134,10 @@ public class AggregateSiloRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generated aggregate registrations include obsolete attribute when aggregate builder is available.
+    ///     Generated aggregate registrations do not include obsolete attribute when aggregate builder is available.
     /// </summary>
     [Fact]
-    public void GeneratedAggregateRegistrationsAddObsoleteAttributeWhenAggregateBuilderIsAvailable()
+    public void GeneratedAggregateRegistrationsDoNotAddObsoleteAttributeWhenAggregateBuilderIsAvailable()
     {
         const string aggregateSource = """
                                        using Mississippi.Inlet.Generators.Abstractions;
@@ -180,10 +180,7 @@ public class AggregateSiloRegistrationGeneratorTests
             .First(tree => tree.FilePath.Contains("OrderAggregateRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains(
-            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]",
-            generatedCode,
-            StringComparison.Ordinal);
+        Assert.DoesNotContain("[System.Obsolete", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -542,7 +539,7 @@ public class AggregateSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, aggregateSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("services.AddAggregateSupport();", generatedCode, StringComparison.Ordinal);
+        Assert.DoesNotContain("services.AddAggregateSupport();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -6,8 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Common.Builders.Client;
 using Mississippi.Inlet.Client;
+using Mississippi.Reservoir.Builder;
 using Mississippi.Reservoir.Client;
-using Mississippi.Reservoir.Client.BuiltIn;
 
 using Spring.Client;
 using Spring.Client.AuthSimulation;
@@ -37,35 +37,34 @@ client.Services.AddScoped(sp =>
 });
 #pragma warning restore IDISP014
 
-// Register features (one line per feature - scales cleanly)
 // Write side + projection feature registrations
-client.Services.AddSpringDomainClient();
+client.AddSpringDomain();
 
-// Navigation/UI: entity selection
-client.Services.AddDualEntitySelectionFeature();
-client.Services.AddDemoAccountsFeature();
-client.Services.AddAuthSimulationFeature();
-
-// Built-in Reservoir features: navigation, lifecycle
-client.Services.AddReservoirBlazorBuiltIns();
-
-// DevTools integration: enable Redux DevTools in development
-client.Services.AddReservoirDevTools(options =>
+// Reservoir state management: features, built-ins, and DevTools
+client.AddReservoir(reservoir =>
 {
-    options.Enablement = ReservoirDevToolsEnablement.Always;
-    options.Name = "Spring Sample";
-    options.IsStrictStateRehydrationEnabled = true;
+    // Navigation/UI features
+    reservoir.AddDualEntitySelectionFeature();
+    reservoir.AddDemoAccountsFeature();
+    reservoir.AddAuthSimulationFeature();
+
+    // Built-in Reservoir features: navigation, lifecycle
+    reservoir.AddBuiltIns();
+
+    // DevTools integration: enable Redux DevTools in development
+    reservoir.AddDevTools(options =>
+    {
+        options.Enablement = ReservoirDevToolsEnablement.Always;
+        options.Name = "Spring Sample";
+        options.IsStrictStateRehydrationEnabled = true;
+    });
 });
 
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
-client.Services.AddInletClient();
-client.Services.AddInletBlazorSignalR(signalR => signalR
+client.AddInlet();
+client.AddInletSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
-foreach (ServiceDescriptor descriptor in client.Services)
-{
-    builder.Services.Add(descriptor);
-}
-
+builder.UseMississippi(client);
 await builder.Build().RunAsync();

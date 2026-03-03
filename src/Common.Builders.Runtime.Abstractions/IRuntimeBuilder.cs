@@ -20,18 +20,21 @@ public interface IRuntimeBuilder : IMississippiBuilder
     IAggregateBuilder<TSnapshot> AddAggregate<TSnapshot>();
 
     /// <summary>
-    ///     Starts typed feature-state composition.
-    /// </summary>
-    /// <typeparam name="TFeatureState">Feature state type.</typeparam>
-    /// <returns>Feature-state composition builder.</returns>
-    IFeatureStateBuilder<TFeatureState> AddFeatureState<TFeatureState>();
-
-    /// <summary>
     ///     Starts typed saga composition.
     /// </summary>
     /// <typeparam name="TSagaState">Saga state type.</typeparam>
     /// <returns>Saga composition builder.</returns>
     ISagaBuilder<TSagaState> AddSaga<TSagaState>();
+
+    /// <summary>
+    ///     Adds runtime-specific Orleans silo configuration that will be replayed during <see cref="ApplyToSilo" />.
+    /// </summary>
+    /// <param name="configure">Silo configuration delegate.</param>
+    /// <returns>The same runtime builder instance for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="configure" /> is null.</exception>
+    IRuntimeBuilder AddSiloConfiguration(
+        Action<ISiloBuilder> configure
+    );
 
     /// <summary>
     ///     Starts typed UX projection composition.
@@ -58,5 +61,24 @@ public interface IRuntimeBuilder : IMississippiBuilder
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="configure" /> is null.</exception>
     IRuntimeBuilder ConfigureSnapshotRetention(
         Action<SnapshotRetentionOptions> configure
+    );
+
+    /// <summary>
+    ///     Gets whether a named runtime feature has been configured.
+    /// </summary>
+    /// <param name="featureName">Feature key.</param>
+    /// <returns><c>true</c> when configured; otherwise <c>false</c>.</returns>
+    bool IsFeatureConfigured(
+        string featureName
+    );
+
+    /// <summary>
+    ///     Marks a named runtime feature as configured for validation.
+    /// </summary>
+    /// <param name="featureName">Feature key.</param>
+    /// <returns>The same runtime builder instance for fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="featureName" /> is null.</exception>
+    IRuntimeBuilder MarkFeatureConfigured(
+        string featureName
     );
 }

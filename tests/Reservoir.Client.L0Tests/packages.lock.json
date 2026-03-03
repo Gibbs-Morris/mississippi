@@ -158,19 +158,38 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Common.Builders.Client.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
+      },
+      "Mississippi.Reservoir.Builder": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
       },
       "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Builder": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir.Core": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },

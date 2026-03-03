@@ -7,6 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Aqueduct.Gateway\Aqueduct.Gateway.csproj" />
+    <ProjectReference Include="..\Common.Builders.Gateway.Abstractions\Common.Builders.Gateway.Abstractions.csproj" />
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Runtime\Inlet.Runtime.csproj" />
     <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />

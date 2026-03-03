@@ -373,10 +373,10 @@ public class ProjectionSiloRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generated projection registrations include obsolete attribute when projection builder is available.
+    ///     Generated projection registrations do not include obsolete attribute when projection builder is available.
     /// </summary>
     [Fact]
-    public void GeneratedProjectionRegistrationsAddObsoleteAttributeWhenProjectionBuilderIsAvailable()
+    public void GeneratedProjectionRegistrationsDoNotAddObsoleteAttributeWhenProjectionBuilderIsAvailable()
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Abstractions;
@@ -410,10 +410,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             .First(tree => tree.FilePath.Contains("AccountBalanceProjectionRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains(
-            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]",
-            generatedCode,
-            StringComparison.Ordinal);
+        Assert.DoesNotContain("[System.Obsolete", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -494,7 +491,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("services.AddUxProjections();", generatedCode, StringComparison.Ordinal);
+        Assert.DoesNotContain("services.AddUxProjections();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

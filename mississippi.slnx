@@ -44,8 +44,7 @@
     <Project Path="src\Refraction.Client.StateManagement\Refraction.Client.StateManagement.csproj" />
   </Folder>
   <Folder Name="/Framework/Reservoir/">
-    <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
-    <Project Path="src\Reservoir.Core\Reservoir.Core.csproj" />
+    <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />    <Project Path="src/Reservoir.Builder/Reservoir.Builder.csproj" />    <Project Path="src\Reservoir.Core\Reservoir.Core.csproj" />
     <Project Path="src\Reservoir.Client\Reservoir.Client.csproj" />
     <Project Path="src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
   </Folder>

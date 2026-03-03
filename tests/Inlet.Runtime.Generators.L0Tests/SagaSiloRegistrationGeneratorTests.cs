@@ -179,10 +179,10 @@ public sealed class SagaSiloRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generated saga registrations include obsolete attribute when saga builder is available.
+    ///     Generated saga registrations do not include obsolete attribute when saga builder is available.
     /// </summary>
     [Fact]
-    public void GeneratedSagaRegistrationAddsObsoleteAttributeWhenSagaBuilderIsAvailable()
+    public void GeneratedSagaRegistrationDoesNotAddObsoleteAttributeWhenSagaBuilderIsAvailable()
     {
         const string sagaSource = """
                                   using Mississippi.DomainModeling.Abstractions;
@@ -214,10 +214,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
             .First(tree => tree.FilePath.Contains("TransferSagaRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains(
-            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]",
-            generatedCode,
-            StringComparison.Ordinal);
+        Assert.DoesNotContain("[System.Obsolete", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

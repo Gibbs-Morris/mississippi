@@ -582,7 +582,8 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Common.Abstractions": {
@@ -601,6 +602,7 @@
       "Mississippi.Common.Builders.Client": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.3, )",
           "Microsoft.Extensions.Options": "[10.0.3, )",
           "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
@@ -632,6 +634,7 @@
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.3, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Options": "[10.0.3, )",
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
@@ -659,13 +662,22 @@
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Reservoir.Builder": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
+      },
       "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components": "[10.0.3, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.3, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[10.0.3, )",
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Builder": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
@@ -673,6 +685,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
@@ -682,6 +695,7 @@
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Client": "[1.0.0, )",
           "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Builder": "[1.0.0, )",
           "Mississippi.Reservoir.Client": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
@@ -703,7 +717,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "CloudNative.CloudEvents": {

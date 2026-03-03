@@ -537,6 +537,12 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )"
+        }
+      },
       "Microsoft.CodeAnalysis.Common": {
         "type": "CentralTransitive",
         "requested": "[5.0.0, )",

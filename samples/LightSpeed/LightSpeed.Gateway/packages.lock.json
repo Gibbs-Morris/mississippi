@@ -77,6 +77,7 @@
       "Mississippi.Common.Builders.Client": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.3, )",
           "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
           "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )"
         }
@@ -118,16 +119,26 @@
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Reservoir.Builder": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
+      },
       "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Common.Builders.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Builder": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir.Core": {
         "type": "Project",
         "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },

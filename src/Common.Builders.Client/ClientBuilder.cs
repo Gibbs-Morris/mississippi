@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Common.Builders.Abstractions;
 using Mississippi.Common.Builders.Client.Abstractions;
 
 
@@ -38,4 +40,7 @@ public sealed class ClientBuilder : IClientBuilder
         Services.Configure(configure);
         return this;
     }
+
+    /// <inheritdoc />
+    public IReadOnlyList<BuilderDiagnostic> Validate() => [];
 }

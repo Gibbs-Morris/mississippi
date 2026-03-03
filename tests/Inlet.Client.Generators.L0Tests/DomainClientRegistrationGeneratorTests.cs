@@ -90,10 +90,10 @@ public sealed class DomainClientRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generated client domain registration includes obsolete attribute when client builder is available.
+    ///     Generated client domain registration includes client builder extension when client builder is available.
     /// </summary>
     [Fact]
-    public void GeneratedDomainRegistrationAddsObsoleteAttributeWhenClientBuilderIsAvailable()
+    public void GeneratedDomainRegistrationAddsClientBuilderExtensionWhenClientBuilderIsAvailable()
     {
         const string source = """
                               using Mississippi.Inlet.Generators.Abstractions;
@@ -111,9 +111,10 @@ public sealed class DomainClientRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use ClientBuilder.Create() instead. Remove in v1.0.\")]",
+            "public static IClientBuilder AddTestAppDomain(this IClientBuilder builder)",
             generatedCode,
             StringComparison.Ordinal);
+        Assert.Contains("builder.Services.AddTestAppDomainClient();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

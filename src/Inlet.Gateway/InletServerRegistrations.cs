@@ -29,40 +29,6 @@ namespace Mississippi.Inlet.Gateway;
 public static class InletServerRegistrations
 {
     /// <summary>
-    ///     Adds Inlet Orleans services with SignalR and the Orleans backplane.
-    /// </summary>
-    /// <param name="services">The service collection to add services to.</param>
-    /// <param name="configureOptions">Optional action to configure Inlet Orleans options.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <remarks>
-    ///     <para>
-    ///         This method registers SignalR with a custom Orleans-based backplane
-    ///         that uses grains for connection tracking, group management, and
-    ///         cross-server message routing.
-    ///     </para>
-    /// </remarks>
-    public static IServiceCollection AddInletServer(
-        this IServiceCollection services,
-        Action<InletServerOptions>? configureOptions = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        services.AddInletSilo();
-        services.AddSignalR();
-        services.Configure(configureOptions ?? (_ => { }));
-        services.TryAddEnumerable(
-            ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, GeneratedApiAuthorizationMvcOptionsSetup>());
-
-        // Register Aqueduct backplane specifically for InletHub
-        // This must be a closed generic registration because AddSignalR() already registers
-        // DefaultHubLifetimeManager<> as the open generic fallback. TryAddSingleton for open
-        // generics would be a no-op if called after AddSignalR().
-        services.TryAddSingleton<HubLifetimeManager<InletHub>, AqueductHubLifetimeManager<InletHub>>();
-        services.AddAqueductGrainFactory();
-        return services;
-    }
-
-    /// <summary>
     ///     Adds the <see cref="IAqueductNotifier" /> for ASP.NET-hosted services.
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
@@ -145,5 +111,39 @@ public static class InletServerRegistrations
 
         hubEndpointBuilder.RequireAuthorization(authorizeAttribute);
         return hubEndpointBuilder;
+    }
+
+    /// <summary>
+    ///     Adds Inlet Orleans services with SignalR and the Orleans backplane.
+    /// </summary>
+    /// <param name="services">The service collection to add services to.</param>
+    /// <param name="configureOptions">Optional action to configure Inlet Orleans options.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <remarks>
+    ///     <para>
+    ///         This method registers SignalR with a custom Orleans-based backplane
+    ///         that uses grains for connection tracking, group management, and
+    ///         cross-server message routing.
+    ///     </para>
+    /// </remarks>
+    internal static IServiceCollection AddInletServer(
+        this IServiceCollection services,
+        Action<InletServerOptions>? configureOptions = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddInletSilo();
+        services.AddSignalR();
+        services.Configure(configureOptions ?? (_ => { }));
+        services.TryAddEnumerable(
+            ServiceDescriptor.Transient<IConfigureOptions<MvcOptions>, GeneratedApiAuthorizationMvcOptionsSetup>());
+
+        // Register Aqueduct backplane specifically for InletHub
+        // This must be a closed generic registration because AddSignalR() already registers
+        // DefaultHubLifetimeManager<> as the open generic fallback. TryAddSingleton for open
+        // generics would be a no-op if called after AddSignalR().
+        services.TryAddSingleton<HubLifetimeManager<InletHub>, AqueductHubLifetimeManager<InletHub>>();
+        services.AddAqueductGrainFactory();
+        return services;
     }
 }

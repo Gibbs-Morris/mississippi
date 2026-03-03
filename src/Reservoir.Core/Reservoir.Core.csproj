@@ -3,6 +3,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common.Builders.Abstractions\Common.Builders.Abstractions.csproj" />
     <ProjectReference Include="..\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>

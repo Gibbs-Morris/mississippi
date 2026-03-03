@@ -125,10 +125,10 @@ public sealed class DomainSiloRegistrationGeneratorTests
     }
 
     /// <summary>
-    ///     Generated domain registration includes obsolete attribute when runtime builder is available.
+    ///     Generated domain registration includes runtime builder extension when runtime builder is available.
     /// </summary>
     [Fact]
-    public void GeneratedDomainRegistrationAddsObsoleteAttributeWhenRuntimeBuilderIsAvailable()
+    public void GeneratedDomainRegistrationAddsRuntimeBuilderExtensionWhenRuntimeBuilderIsAvailable()
     {
         const string source = """
                               using Mississippi.Inlet.Generators.Abstractions;
@@ -146,9 +146,10 @@ public sealed class DomainSiloRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains(
-            "[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]",
+            "public static IRuntimeBuilder AddTestAppDomain(this IRuntimeBuilder builder)",
             generatedCode,
             StringComparison.Ordinal);
+        Assert.Contains("builder.Services.AddTestAppDomainSilo();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

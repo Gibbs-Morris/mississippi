@@ -21,7 +21,7 @@ public static class InletBlazorRegistrations
     /// <remarks>
     ///     This must be called after <c>AddInlet()</c>.
     /// </remarks>
-    public static IServiceCollection AddInletBlazor(
+    internal static IServiceCollection AddInletBlazor(
         this IServiceCollection services
     )
     {
@@ -46,7 +46,7 @@ public static class InletBlazorRegistrations
     ///         Use the builder to configure the hub path and register projection fetchers.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInletBlazorSignalR(
+    internal static IServiceCollection AddInletBlazorSignalR(
         this IServiceCollection services,
         Action<InletBlazorSignalRBuilder>? configure = null
     )

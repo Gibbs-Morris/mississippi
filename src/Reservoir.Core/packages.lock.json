@@ -58,6 +58,18 @@
         "resolved": "10.0.103",
         "contentHash": "cMtGW5/r0ck72Jg2QwZcNTX59z+iB/B1kW84VMa/eX8L19DhHIuIcQjfK0pgLLBxd60Jl0Bj9GUolcM0MnJnZA=="
       },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )"
+        }
+      },
+      "Mississippi.Common.Builders.Client.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Reservoir.Abstractions": {
         "type": "Project"
       }

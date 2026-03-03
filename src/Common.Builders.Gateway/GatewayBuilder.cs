@@ -61,12 +61,26 @@ public sealed class GatewayBuilder : IGatewayBuilder
     /// <exception cref="BuilderValidationException">Thrown when gateway authorization is not configured.</exception>
     public void EnsureAuthorizationConfigured()
     {
-        if (AuthorizationConfigured || AnonymousExplicitlyAllowed)
+        IReadOnlyList<BuilderDiagnostic> diagnostics = Validate();
+        if (diagnostics.Count == 0)
         {
             return;
         }
 
-        IReadOnlyList<BuilderDiagnostic> diagnostics =
+        throw new BuilderValidationException(
+            "Gateway authorization is required before terminal host attachment.",
+            diagnostics);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<BuilderDiagnostic> Validate()
+    {
+        if (AuthorizationConfigured || AnonymousExplicitlyAllowed)
+        {
+            return [];
+        }
+
+        return
         [
             new(
                 "Gateway.AuthorizationNotConfigured",
@@ -74,8 +88,5 @@ public sealed class GatewayBuilder : IGatewayBuilder
                 "Gateway authorization is not configured.",
                 "Call ConfigureAuthorization() or AllowAnonymousExplicitly() before terminal host attachment."),
         ];
-        throw new BuilderValidationException(
-            "Gateway authorization is required before terminal host attachment.",
-            diagnostics);
     }
 }

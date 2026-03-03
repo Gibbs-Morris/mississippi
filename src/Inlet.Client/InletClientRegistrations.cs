@@ -18,6 +18,28 @@ namespace Mississippi.Inlet.Client;
 public static class InletClientRegistrations
 {
     /// <summary>
+    ///     Registers a projection path.
+    /// </summary>
+    /// <typeparam name="T">The projection type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="path">The projection path.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <exception cref="ArgumentNullException">
+    ///     Thrown when <paramref name="services" /> or <paramref name="path" /> is null.
+    /// </exception>
+    public static IServiceCollection AddProjectionPath<T>(
+        this IServiceCollection services,
+        string path
+    )
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(path);
+        services.AddSingleton<IConfigureProjectionRegistry>(new ProjectionPathRegistration<T>(path));
+        return services;
+    }
+
+    /// <summary>
     ///     Adds Inlet services to the service collection.
     /// </summary>
     /// <param name="services">The service collection.</param>
@@ -43,7 +65,7 @@ public static class InletClientRegistrations
     ///         Redux pattern. Access via <c>store.GetState&lt;ProjectionsFeatureState&gt;()</c>.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInletClient(
+    internal static IServiceCollection AddInletClient(
         this IServiceCollection services
     )
     {
@@ -65,28 +87,6 @@ public static class InletClientRegistrations
 
         // Register the projection notifier for dispatching updates
         services.TryAddScoped<IProjectionUpdateNotifier>(sp => new ProjectionNotifier(sp.GetRequiredService<IStore>()));
-        return services;
-    }
-
-    /// <summary>
-    ///     Registers a projection path.
-    /// </summary>
-    /// <typeparam name="T">The projection type.</typeparam>
-    /// <param name="services">The service collection.</param>
-    /// <param name="path">The projection path.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="services" /> or <paramref name="path" /> is null.
-    /// </exception>
-    public static IServiceCollection AddProjectionPath<T>(
-        this IServiceCollection services,
-        string path
-    )
-        where T : class
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(path);
-        services.AddSingleton<IConfigureProjectionRegistry>(new ProjectionPathRegistration<T>(path));
         return services;
     }
 }

@@ -386,7 +386,8 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )"
+          "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Gateway.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Abstractions": {
@@ -395,7 +396,8 @@
           "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime": {
@@ -404,7 +406,9 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime.Storage.Abstractions": {
@@ -416,10 +420,42 @@
       "Mississippi.Brooks.Serialization.Abstractions": {
         "type": "Project"
       },
+      "Mississippi.Brooks.Serialization.Json": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )"
+        }
+      },
       "Mississippi.Common.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
+        }
+      },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project"
+      },
+      "Mississippi.Common.Builders.Gateway.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Runtime": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Server": "[10.0.1, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Common.Builders.Runtime.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Microsoft.Orleans.Server": "[10.0.1, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.DomainModeling.Abstractions": {
@@ -435,6 +471,10 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Brooks.Runtime": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.Brooks.Serialization.Json": "[1.0.0, )",
+          "Mississippi.Common.Builders.Gateway.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )",
           "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime": "[1.0.0, )"
@@ -448,6 +488,7 @@
         "dependencies": {
           "Mississippi.Aqueduct.Gateway": "[1.0.0, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Gateway.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Runtime": "[1.0.0, )"
         }
@@ -465,6 +506,7 @@
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )",
           "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
@@ -493,7 +535,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Tributary.Runtime": {
@@ -502,6 +545,7 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Brooks.Runtime": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Runtime.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
         }
@@ -580,6 +624,24 @@
         "requested": "[10.0.0, )",
         "resolved": "10.0.1",
         "contentHash": "2diyHF3jIHRvSmdVH7E0OxLIAUyYzVWcK2LWqKxshKMnPmqlYKZQBUOKKfODTha89DdP9prasF5BmDH5rot7zg=="
+      },
+      "Microsoft.Orleans.Server": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.1, )",
+        "resolved": "10.0.1",
+        "contentHash": "eCZfFSCErvXL3M/hF2xTHb34NXkGMcoeQJo9I6MwIDQOwaIf8EXbvDy5U2GJPJP+wnB/wbBMrOJkmGK+lHX12Q==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "5.0.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.0",
+          "Microsoft.Orleans.Persistence.Memory": "10.0.1",
+          "Microsoft.Orleans.Runtime": "10.0.1",
+          "Microsoft.Orleans.Sdk": "10.0.1",
+          "Newtonsoft.Json": "13.0.4",
+          "System.IO.Hashing": "10.0.0",
+          "System.Memory.Data": "10.0.0"
+        }
       },
       "Microsoft.Orleans.Streaming": {
         "type": "CentralTransitive",

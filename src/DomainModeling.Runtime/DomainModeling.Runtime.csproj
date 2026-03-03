@@ -3,8 +3,12 @@
     <Compile Remove="SagaInfrastructureReducers.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common.Builders.Gateway.Abstractions\Common.Builders.Gateway.Abstractions.csproj" />
+    <ProjectReference Include="..\Common.Builders.Runtime\Common.Builders.Runtime.csproj" />
+    <ProjectReference Include="..\Common.Builders.Runtime.Abstractions\Common.Builders.Runtime.Abstractions.csproj" />
     <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
+    <ProjectReference Include="..\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
     <ProjectReference Include="..\Tributary.Runtime\Tributary.Runtime.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
     <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />

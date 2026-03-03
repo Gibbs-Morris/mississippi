@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Common.Builders.Abstractions;
 using Mississippi.Common.Builders.Runtime.Abstractions;
 
 using Moq;
@@ -17,11 +19,6 @@ namespace Mississippi.Common.Builders.Runtime.L0Tests;
 /// </summary>
 public sealed class RuntimeBuilderTests
 {
-    private sealed class TestFeatureState
-    {
-        public override string ToString() => nameof(TestFeatureState);
-    }
-
     private sealed class TestProjectionState
     {
         public override string ToString() => nameof(TestProjectionState);
@@ -54,17 +51,6 @@ public sealed class RuntimeBuilderTests
     }
 
     /// <summary>
-    ///     AddFeatureState returns a typed feature state builder.
-    /// </summary>
-    [Fact]
-    public void AddFeatureStateShouldReturnTypedFeatureStateBuilder()
-    {
-        RuntimeBuilder builder = RuntimeBuilder.Create();
-        IFeatureStateBuilder<TestFeatureState> featureStateBuilder = builder.AddFeatureState<TestFeatureState>();
-        Assert.NotNull(featureStateBuilder);
-    }
-
-    /// <summary>
     ///     AddSaga returns a typed saga builder.
     /// </summary>
     [Fact]
@@ -73,6 +59,21 @@ public sealed class RuntimeBuilderTests
         RuntimeBuilder builder = RuntimeBuilder.Create();
         ISagaBuilder<TestSagaState> sagaBuilder = builder.AddSaga<TestSagaState>();
         Assert.NotNull(sagaBuilder);
+    }
+
+    /// <summary>
+    ///     AddSiloConfiguration replays all configured silo actions during ApplyToSilo.
+    /// </summary>
+    [Fact]
+    public void AddSiloConfigurationShouldReplayActionsDuringApplyToSilo()
+    {
+        RuntimeBuilder builder = RuntimeBuilder.Create();
+        int calls = 0;
+        builder.AddSiloConfiguration(_ => calls++);
+        builder.AddSiloConfiguration(_ => calls++);
+        Mock<ISiloBuilder> siloBuilder = new();
+        _ = builder.ApplyToSilo(siloBuilder.Object);
+        Assert.Equal(2, calls);
     }
 
     /// <summary>
@@ -155,5 +156,31 @@ public sealed class RuntimeBuilderTests
         ArgumentNullException exception =
             Assert.Throws<ArgumentNullException>(() => builder.ConfigureSnapshotRetention(configure!));
         Assert.Equal("configure", exception.ParamName);
+    }
+
+    /// <summary>
+    ///     Validate returns no diagnostics for runtime builders.
+    /// </summary>
+    [Fact]
+    public void ValidateShouldReturnNoDiagnostics()
+    {
+        RuntimeBuilder builder = RuntimeBuilder.Create();
+        builder.MarkFeatureConfigured("Runtime.Brooks");
+        builder.MarkFeatureConfigured("Runtime.DomainModeling");
+        IReadOnlyList<BuilderDiagnostic> diagnostics = builder.Validate();
+        Assert.Empty(diagnostics);
+    }
+
+    /// <summary>
+    ///     Validate returns required-feature diagnostics when runtime features are missing.
+    /// </summary>
+    [Fact]
+    public void ValidateShouldReturnRequiredFeatureDiagnosticsWhenMissing()
+    {
+        RuntimeBuilder builder = RuntimeBuilder.Create();
+        IReadOnlyList<BuilderDiagnostic> diagnostics = builder.Validate();
+        Assert.Equal(2, diagnostics.Count);
+        Assert.Contains(diagnostics, diagnostic => diagnostic.ErrorCode == "Runtime.BrooksNotConfigured");
+        Assert.Contains(diagnostics, diagnostic => diagnostic.ErrorCode == "Runtime.DomainModelingNotConfigured");
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Mississippi.Common.Builders.Abstractions;
 using Mississippi.Common.Builders.Gateway.Abstractions;
@@ -70,5 +71,29 @@ public sealed class GatewayBuilderTests
             Assert.Throws<BuilderValidationException>(() => builder.EnsureAuthorizationConfigured());
         BuilderDiagnostic diagnostic = Assert.Single(exception.Diagnostics);
         Assert.Equal("Gateway.AuthorizationNotConfigured", diagnostic.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Validate returns a gateway authorization diagnostic when auth is not configured.
+    /// </summary>
+    [Fact]
+    public void ValidateShouldReturnAuthorizationDiagnosticWhenNotConfigured()
+    {
+        GatewayBuilder builder = GatewayBuilder.Create();
+        IReadOnlyList<BuilderDiagnostic> diagnostics = builder.Validate();
+        BuilderDiagnostic diagnostic = Assert.Single(diagnostics);
+        Assert.Equal("Gateway.AuthorizationNotConfigured", diagnostic.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Validate returns no diagnostics when authorization is configured.
+    /// </summary>
+    [Fact]
+    public void ValidateShouldReturnNoDiagnosticsWhenAuthorizationConfigured()
+    {
+        GatewayBuilder builder = GatewayBuilder.Create();
+        builder.ConfigureAuthorization();
+        IReadOnlyList<BuilderDiagnostic> diagnostics = builder.Validate();
+        Assert.Empty(diagnostics);
     }
 }

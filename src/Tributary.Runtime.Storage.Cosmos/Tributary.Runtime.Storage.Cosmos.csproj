@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />
+    <ProjectReference Include="..\Tributary.Abstractions\Tributary.Abstractions.csproj" />
     <ProjectReference Include="..\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>

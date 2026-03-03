@@ -330,7 +330,8 @@
           "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Mississippi.Common.Abstractions": "[1.0.0, )",
+          "Mississippi.Common.Builders.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Brooks.Runtime.Storage.Abstractions": {
@@ -344,6 +345,9 @@
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
+      },
+      "Mississippi.Common.Builders.Abstractions": {
+        "type": "Project"
       },
       "CloudNative.CloudEvents": {
         "type": "CentralTransitive",

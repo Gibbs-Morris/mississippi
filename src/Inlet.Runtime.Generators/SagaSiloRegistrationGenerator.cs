@@ -33,9 +33,6 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
     private const string ReducerRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.ReducerRegistrations";
 
-    private const string SagaBuilderInterfaceTypeFullName =
-        "Mississippi.Common.Builders.Runtime.Abstractions.ISagaBuilder`1";
-
     private const string SagaRegistrationsTypeFullName = "Mississippi.DomainModeling.Runtime.SagaRegistrations";
 
     private const string SagaStateInterfaceFullName = "Mississippi.DomainModeling.Abstractions.ISagaState";
@@ -211,8 +208,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     }
 
     private static string GenerateRegistration(
-        SagaRegistrationInfo saga,
-        bool emitObsoleteAttribute
+        SagaRegistrationInfo saga
     )
     {
         SourceBuilder sb = new();
@@ -227,11 +223,6 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendSummary($"Registrations for the {saga.SagaName} saga.");
         sb.AppendGeneratedCodeAttribute("SagaSiloRegistrationGenerator");
-        if (emitObsoleteAttribute)
-        {
-            sb.AppendLine("[System.Obsolete(\"Use RuntimeBuilder.Create() instead. Remove in v1.0.\")]");
-        }
-
         sb.AppendLine($"public static class {saga.SagaName}SagaRegistrations");
         sb.OpenBrace();
         sb.AppendSummary($"Adds the {saga.SagaName} saga registrations.");
@@ -420,11 +411,6 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                     stepResult.Step.SagaStateSymbol.Name));
         }
     }
-
-    private static bool ShouldEmitObsoleteAttribute(
-        Compilation compilation
-    ) =>
-        compilation.GetTypeByMetadataName(SagaBuilderInterfaceTypeFullName) is not null;
 
     private static SagaSymbolContext? TryBuildSymbolContext(
         Compilation compilation
@@ -687,35 +673,33 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)> source =
             context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<(SagaGenerationResult Result, bool EmitObsoleteAttribute)> sagasProvider =
-            source.Select((
-                pair,
-                _
-            ) =>
+        IncrementalValueProvider<SagaGenerationResult> sagasProvider = source.Select((
+            pair,
+            _
+        ) =>
+        {
+            if (!HasRegistrationDependencies(pair.Compilation))
             {
-                bool emitObsoleteAttribute = ShouldEmitObsoleteAttribute(pair.Compilation);
-                if (!HasRegistrationDependencies(pair.Compilation))
-                {
-                    return (new SagaGenerationResult([], []), emitObsoleteAttribute);
-                }
+                return new([], []);
+            }
 
-                string? rootNamespace = pair.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.RootNamespaceProperty,
-                    out string? rootNs)
-                    ? rootNs
-                    : null;
-                string? assemblyName = pair.Options.GlobalOptions.TryGetValue(
-                    TargetNamespaceResolver.AssemblyNameProperty,
-                    out string? asmName)
-                    ? asmName
-                    : null;
-                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                    rootNamespace,
-                    assemblyName,
-                    pair.Compilation);
-                SagaGenerationResult result = GetSagasWithDiagnostics(pair.Compilation, targetRootNamespace);
-                return (result, emitObsoleteAttribute);
-            });
+            string? rootNamespace = pair.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.RootNamespaceProperty,
+                out string? rootNs)
+                ? rootNs
+                : null;
+            string? assemblyName = pair.Options.GlobalOptions.TryGetValue(
+                TargetNamespaceResolver.AssemblyNameProperty,
+                out string? asmName)
+                ? asmName
+                : null;
+            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                rootNamespace,
+                assemblyName,
+                pair.Compilation);
+            SagaGenerationResult result = GetSagasWithDiagnostics(pair.Compilation, targetRootNamespace);
+            return result;
+        });
         context.RegisterSourceOutput(
             sagasProvider,
             (
@@ -723,14 +707,14 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 result
             ) =>
             {
-                foreach (Diagnostic diagnostic in result.Result.Diagnostics)
+                foreach (Diagnostic diagnostic in result.Diagnostics)
                 {
                     spc.ReportDiagnostic(diagnostic);
                 }
 
-                foreach (SagaRegistrationInfo saga in result.Result.Sagas)
+                foreach (SagaRegistrationInfo saga in result.Sagas)
                 {
-                    string sourceText = GenerateRegistration(saga, result.EmitObsoleteAttribute);
+                    string sourceText = GenerateRegistration(saga);
                     spc.AddSource($"{saga.SagaName}SagaRegistrations.g.cs", SourceText.From(sourceText, Encoding.UTF8));
                 }
             });

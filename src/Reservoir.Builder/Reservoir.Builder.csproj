@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
+    <ProjectReference Include="..\Common.Builders.Client.Abstractions\Common.Builders.Client.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Bridges Mississippi IClientBuilder to Reservoir state management configuration.</Description>
+  </PropertyGroup>
+</Project>

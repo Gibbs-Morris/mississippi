@@ -45,6 +45,8 @@ public sealed class MississippiBuilderHostExtensionsTests
     {
         HostApplicationBuilder hostBuilder = Host.CreateApplicationBuilder();
         RuntimeBuilder builder = RuntimeBuilder.Create();
+        builder.MarkFeatureConfigured("Runtime.Brooks");
+        builder.MarkFeatureConfigured("Runtime.DomainModeling");
         HostApplicationBuilder result = hostBuilder.UseMississippi(builder);
         Assert.Same(hostBuilder, result);
     }
