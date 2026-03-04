@@ -8,7 +8,6 @@ using Microsoft.Extensions.Options;
 using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime.Reader;
-using Mississippi.Common.Abstractions;
 
 
 namespace Mississippi.Brooks.Runtime.L0Tests;
@@ -28,7 +27,7 @@ public sealed class BrooksRuntimeRegistrationsTests
         services.AddEventSourcingByService();
         using ServiceProvider provider = services.BuildServiceProvider();
         BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
-        Assert.Equal(MississippiDefaults.StreamProviderName, options.OrleansStreamProviderName);
+        Assert.Equal(BrookStreamingDefaults.OrleansStreamProviderName, options.OrleansStreamProviderName);
     }
 
     /// <summary>

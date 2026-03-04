@@ -1,6 +1,6 @@
 using System;
 
-using Mississippi.Common.Abstractions;
+using Mississippi.Aqueduct.Abstractions;
 
 using Orleans.Hosting;
 
@@ -34,9 +34,9 @@ public sealed class AqueductSiloOptions
     ///     Gets or sets the stream namespace for broadcasting to all clients.
     /// </summary>
     /// <value>
-    ///     The all-clients stream namespace. Defaults to <see cref="MississippiDefaults.StreamNamespaces.AllClients" />.
+    ///     The all-clients stream namespace. Defaults to <see cref="AqueductStreamDefaults.AllClientsStreamNamespace" />.
     /// </value>
-    public string AllClientsStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.AllClients;
+    public string AllClientsStreamNamespace { get; set; } = AqueductStreamDefaults.AllClientsStreamNamespace;
 
     /// <summary>
     ///     Gets or sets the timeout multiplier for considering a server dead.
@@ -58,17 +58,17 @@ public sealed class AqueductSiloOptions
     ///     Gets or sets the stream namespace for server-targeted messages.
     /// </summary>
     /// <value>
-    ///     The server stream namespace. Defaults to <see cref="MississippiDefaults.StreamNamespaces.Server" />.
+    ///     The server stream namespace. Defaults to <see cref="AqueductStreamDefaults.ServerStreamNamespace" />.
     /// </value>
-    public string ServerStreamNamespace { get; set; } = MississippiDefaults.StreamNamespaces.Server;
+    public string ServerStreamNamespace { get; set; } = AqueductStreamDefaults.ServerStreamNamespace;
 
     /// <summary>
     ///     Gets or sets the name of the Orleans stream provider to use for SignalR message delivery.
     /// </summary>
     /// <value>
-    ///     The stream provider name. Defaults to <see cref="MississippiDefaults.StreamProviderName" />.
+    ///     The stream provider name. Defaults to <see cref="AqueductStreamDefaults.StreamProviderName" />.
     /// </value>
-    public string StreamProviderName { get; set; } = MississippiDefaults.StreamProviderName;
+    public string StreamProviderName { get; set; } = AqueductStreamDefaults.StreamProviderName;
 
     /// <summary>
     ///     Configures in-memory streams for development and testing scenarios.

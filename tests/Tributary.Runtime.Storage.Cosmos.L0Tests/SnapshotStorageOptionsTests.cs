@@ -1,6 +1,3 @@
-using Mississippi.Common.Abstractions;
-
-
 namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
@@ -51,7 +48,7 @@ public sealed class SnapshotStorageOptionsTests
     public void DatabaseIdShouldReturnDefaultValue()
     {
         SnapshotStorageOptions options = new();
-        Assert.Equal(MississippiDefaults.DatabaseId, options.DatabaseId);
+        Assert.Equal(SnapshotCosmosDefaults.DatabaseId, options.DatabaseId);
     }
 
     /// <summary>
@@ -75,5 +72,17 @@ public sealed class SnapshotStorageOptionsTests
     {
         SnapshotStorageOptions options = new();
         Assert.Equal(100, options.QueryBatchSize);
+    }
+
+    /// <summary>
+    ///     Verifies public snapshot Cosmos defaults constants retain expected contract values.
+    /// </summary>
+    [Fact]
+    public void SnapshotCosmosDefaultsShouldMatchExpectedContractValues()
+    {
+        Assert.Equal("mississippi", SnapshotCosmosDefaults.DatabaseId);
+        Assert.Equal("snapshots", SnapshotCosmosDefaults.ContainerId);
+        Assert.Equal("mississippi-cosmos-snapshots", SnapshotCosmosDefaults.CosmosContainerServiceKey);
+        Assert.Equal("mississippi-cosmos-snapshots-client", SnapshotCosmosDefaults.CosmosClientServiceKey);
     }
 }

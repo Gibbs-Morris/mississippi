@@ -295,7 +295,7 @@ The framework uses keyed DI services for storage, enabling enterprise deployment
 - Brooks events can write to one Cosmos account
 - Snapshots can persist to another
 - Locking can use a dedicated blob storage account
-- Each service uses only the resources it's configured for via `MississippiDefaults.ServiceKeys`
+- Each service uses only the resources it's configured for via module-owned keyed service defaults
 
 This enables wide enterprise solutions where different teams or tenants can have isolated storage while sharing the same application infrastructure. See `.github/instructions/keyed-services.instructions.md` for registration patterns and naming conventions.
 

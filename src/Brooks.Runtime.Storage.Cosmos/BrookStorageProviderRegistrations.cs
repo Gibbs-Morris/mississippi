@@ -19,7 +19,6 @@ using Mississippi.Brooks.Runtime.Storage.Cosmos.Brooks;
 using Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 using Mississippi.Brooks.Runtime.Storage.Cosmos.Mapping;
 using Mississippi.Brooks.Runtime.Storage.Cosmos.Storage;
-using Mississippi.Common.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 using Mississippi.Common.Runtime.Storage.Cosmos.Retry;
@@ -47,7 +46,7 @@ public static class BrookStorageProviderRegistrations
         services.AddSingleton<IEventBrookWriter, EventBrookWriter>();
         services.AddSingleton<ICosmosRepository, CosmosRepository>();
 
-        // BlobDistributedLockManager uses [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)] for BlobServiceClient
+        // BlobDistributedLockManager uses [FromKeyedServices(BrookCosmosDefaults.BlobLockingServiceKey)] for BlobServiceClient
         // Caller must register a keyed BlobServiceClient with that key
         services.AddSingleton<IDistributedLockManager, BlobDistributedLockManager>();
         services.AddSingleton<IBlobLeaseClientFactory, BlobLeaseClientFactory>();
@@ -65,9 +64,9 @@ public static class BrookStorageProviderRegistrations
         services.AddHostedService<CosmosContainerInitializer>();
 
         // Configure Cosmos DB Container factory using keyed services to avoid conflicts with other Cosmos providers
-        // Uses CosmosClientServiceKey from options (defaults to MississippiDefaults.ServiceKeys.CosmosBrooksClient)
+        // Uses CosmosClientServiceKey from options (defaults to BrookCosmosDefaults.CosmosClientServiceKey)
         services.AddKeyedSingleton<Container>(
-            MississippiDefaults.ServiceKeys.CosmosBrooks,
+            BrookCosmosDefaults.CosmosContainerServiceKey,
             (
                 provider,
                 _
@@ -101,7 +100,7 @@ public static class BrookStorageProviderRegistrations
     {
         // Register keyed CosmosClient for Brooks storage
         services.AddKeyedSingleton<CosmosClient>(
-            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
+            BrookCosmosDefaults.CosmosClientServiceKey,
             (
                 _,
                 _
@@ -109,7 +108,7 @@ public static class BrookStorageProviderRegistrations
 
         // Register keyed BlobServiceClient for distributed locking
         services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.BlobLocking,
+            BrookCosmosDefaults.BlobLockingServiceKey,
             (
                 _,
                 _
@@ -156,7 +155,7 @@ public static class BrookStorageProviderRegistrations
     {
         // Register keyed CosmosClient for Brooks storage
         services.AddKeyedSingleton<CosmosClient>(
-            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
+            BrookCosmosDefaults.CosmosClientServiceKey,
             (
                 _,
                 _
@@ -164,7 +163,7 @@ public static class BrookStorageProviderRegistrations
 
         // Register keyed BlobServiceClient for distributed locking
         services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.BlobLocking,
+            BrookCosmosDefaults.BlobLockingServiceKey,
             (
                 _,
                 _

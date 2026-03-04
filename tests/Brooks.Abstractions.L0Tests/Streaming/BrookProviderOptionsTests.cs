@@ -1,5 +1,4 @@
 using Mississippi.Brooks.Abstractions.Streaming;
-using Mississippi.Common.Abstractions;
 
 
 namespace Mississippi.Brooks.Abstractions.L0Tests.Streaming;
@@ -27,15 +26,15 @@ public sealed class BrookProviderOptionsTests
     }
 
     /// <summary>
-    ///     OrleansStreamProviderName should default to MississippiDefaults.StreamProviderName.
+    ///     OrleansStreamProviderName should default to BrookStreamingDefaults.OrleansStreamProviderName.
     /// </summary>
     [Fact]
-    public void OrleansStreamProviderNameDefaultsToMississippiDefaultsStreamProviderName()
+    public void OrleansStreamProviderNameDefaultsToBrookStreamingDefaults()
     {
         // Arrange & Act
         BrookProviderOptions sut = new();
 
         // Assert
-        Assert.Equal(MississippiDefaults.StreamProviderName, sut.OrleansStreamProviderName);
+        Assert.Equal(BrookStreamingDefaults.OrleansStreamProviderName, sut.OrleansStreamProviderName);
     }
 }

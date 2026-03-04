@@ -6,10 +6,10 @@ using Crescent.Crescent.L2Tests.Domain.Counter;
 
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
-using Mississippi.Common.Abstractions;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
@@ -126,9 +126,9 @@ public sealed class CrescentFixture
         // Pre-register CosmosClient as keyed service with Gateway mode for Aspire emulator compatibility
         // IMPORTANT: Must be registered BEFORE UseOrleans() so Orleans grains can resolve them
         // See: https://github.com/dotnet/aspire/issues/5364
-        // Brooks expects it as a keyed service with key MississippiDefaults.ServiceKeys.CosmosBrooksClient
+        // Brooks expects it as a keyed service with key BrookCosmosDefaults.CosmosClientServiceKey
         builder.Services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.CosmosBrooksClient,
+            BrookCosmosDefaults.CosmosClientServiceKey,
             (
                 _,
                 _
@@ -142,7 +142,7 @@ public sealed class CrescentFixture
 
         // Snapshots also need a keyed CosmosClient
         builder.Services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.CosmosSnapshotsClient,
+            SnapshotCosmosDefaults.CosmosClientServiceKey,
             (
                 _,
                 _
@@ -155,9 +155,9 @@ public sealed class CrescentFixture
                 }));
 
         // Pre-register BlobServiceClient as keyed service for distributed locking
-        // BlobDistributedLockManager uses [FromKeyedServices(MississippiDefaults.ServiceKeys.BlobLocking)]
+        // BlobDistributedLockManager uses [FromKeyedServices(BrookCosmosDefaults.BlobLockingServiceKey)]
         builder.Services.AddKeyedSingleton(
-            MississippiDefaults.ServiceKeys.BlobLocking,
+            BrookCosmosDefaults.BlobLockingServiceKey,
             (
                 _,
                 _
@@ -167,7 +167,7 @@ public sealed class CrescentFixture
         // Use the overload without connection strings since we pre-registered the clients
         builder.Services.AddCosmosBrookStorageProvider(o =>
         {
-            o.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosBrooksClient;
+            o.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
             o.DatabaseId = "aspire-l2tests";
             o.QueryBatchSize = 50;
             o.MaxEventsPerBatch = 50;
@@ -176,7 +176,7 @@ public sealed class CrescentFixture
         // Configure Cosmos DB storage for snapshots
         builder.Services.AddCosmosSnapshotStorageProvider(options =>
         {
-            options.CosmosClientServiceKey = MississippiDefaults.ServiceKeys.CosmosSnapshotsClient;
+            options.CosmosClientServiceKey = SnapshotCosmosDefaults.CosmosClientServiceKey;
             options.DatabaseId = "aspire-l2tests";
             options.ContainerId = "snapshots";
             options.QueryBatchSize = 100;
@@ -197,7 +197,7 @@ public sealed class CrescentFixture
                 });
 
             // Host configures stream infrastructure
-            silo.AddMemoryStreams(MississippiDefaults.StreamProviderName);
+            silo.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
             silo.AddMemoryGrainStorage("PubSubStore");
 
             // Tell Brooks which stream provider to use

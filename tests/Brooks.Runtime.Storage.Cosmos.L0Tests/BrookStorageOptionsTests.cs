@@ -1,6 +1,3 @@
-using Mississippi.Common.Abstractions;
-
-
 namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
@@ -9,15 +6,29 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests;
 public sealed class BrookStorageOptionsTests
 {
     /// <summary>
+    ///     Verifies public Brooks Cosmos defaults constants retain expected contract values.
+    /// </summary>
+    [Fact]
+    public void BrookCosmosDefaultsShouldMatchExpectedContractValues()
+    {
+        Assert.Equal("mississippi", BrookCosmosDefaults.DatabaseId);
+        Assert.Equal("brooks", BrookCosmosDefaults.ContainerId);
+        Assert.Equal("locks", BrookCosmosDefaults.LockContainerId);
+        Assert.Equal("mississippi-cosmos-brooks", BrookCosmosDefaults.CosmosContainerServiceKey);
+        Assert.Equal("mississippi-cosmos-brooks-client", BrookCosmosDefaults.CosmosClientServiceKey);
+        Assert.Equal("mississippi-blob-locking", BrookCosmosDefaults.BlobLockingServiceKey);
+    }
+
+    /// <summary>
     ///     Verifies default values are sensible.
     /// </summary>
     [Fact]
     public void DefaultsShouldBeSensible()
     {
         BrookStorageOptions options = new();
-        Assert.Equal(MississippiDefaults.DatabaseId, options.DatabaseId);
-        Assert.Equal(MississippiDefaults.ContainerIds.Brooks, options.ContainerId);
-        Assert.Equal(MississippiDefaults.ContainerIds.Locks, options.LockContainerName);
+        Assert.Equal(BrookCosmosDefaults.DatabaseId, options.DatabaseId);
+        Assert.Equal(BrookCosmosDefaults.ContainerId, options.ContainerId);
+        Assert.Equal(BrookCosmosDefaults.LockContainerId, options.LockContainerName);
         Assert.Equal(100, options.QueryBatchSize);
         Assert.Equal(90, options.MaxEventsPerBatch);
         Assert.Equal(60, options.LeaseDurationSeconds);
@@ -48,6 +59,8 @@ public sealed class BrookStorageOptionsTests
         Assert.Equal(120, options.LeaseDurationSeconds);
         Assert.Equal(1_000_000, options.MaxRequestSizeBytes);
         Assert.Equal(15, options.LeaseRenewalThresholdSeconds);
-        Assert.Equal(MississippiDefaults.ContainerIds.Brooks, options.ContainerId); // get-only default
+        Assert.Equal(
+            BrookCosmosDefaults.ContainerId,
+            options.ContainerId); // default retained because ContainerId was not assigned
     }
 }
