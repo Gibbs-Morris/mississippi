@@ -10,7 +10,6 @@ using Mississippi.Aqueduct.Runtime;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
-using Mississippi.Common.Abstractions;
 using Mississippi.Inlet.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
@@ -81,7 +80,7 @@ builder.AddKeyedAzureBlobServiceClient("blobs");
 
 // Forward the Aspire-registered blob client to the Brooks key used by BlobDistributedLockManager
 builder.Services.AddKeyedSingleton(
-    MississippiDefaults.ServiceKeys.BlobLocking,
+    BrookCosmosDefaults.BlobLockingServiceKey,
     (
         sp,
         _

@@ -10,7 +10,6 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Brooks.Abstractions;
-using Mississippi.Common.Abstractions;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
@@ -34,7 +33,7 @@ internal sealed class CosmosRepository : ICosmosRepository
     /// <param name="cursorDocumentMapper">The mapper for cursor documents.</param>
     /// <param name="eventDocumentMapper">The mapper for event documents.</param>
     public CosmosRepository(
-        [FromKeyedServices(MississippiDefaults.ServiceKeys.CosmosBrooks)]
+        [FromKeyedServices(BrookCosmosDefaults.CosmosContainerServiceKey)]
         Container container,
         IRetryPolicy retryPolicy,
         IMapper<CursorDocument, CursorStorageModel> cursorDocumentMapper,

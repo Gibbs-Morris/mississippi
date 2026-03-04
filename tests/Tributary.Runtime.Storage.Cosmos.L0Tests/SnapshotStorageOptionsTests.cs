@@ -1,6 +1,3 @@
-using Mississippi.Common.Abstractions;
-
-
 namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests;
 
 /// <summary>
@@ -51,7 +48,7 @@ public sealed class SnapshotStorageOptionsTests
     public void DatabaseIdShouldReturnDefaultValue()
     {
         SnapshotStorageOptions options = new();
-        Assert.Equal(MississippiDefaults.DatabaseId, options.DatabaseId);
+        Assert.Equal(SnapshotCosmosDefaults.DatabaseId, options.DatabaseId);
     }
 
     /// <summary>
