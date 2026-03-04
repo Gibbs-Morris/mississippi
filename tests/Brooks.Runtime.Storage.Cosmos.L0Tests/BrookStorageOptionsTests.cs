@@ -59,6 +59,6 @@ public sealed class BrookStorageOptionsTests
         Assert.Equal(120, options.LeaseDurationSeconds);
         Assert.Equal(1_000_000, options.MaxRequestSizeBytes);
         Assert.Equal(15, options.LeaseRenewalThresholdSeconds);
-        Assert.Equal(BrookCosmosDefaults.ContainerId, options.ContainerId); // get-only default
+        Assert.Equal(BrookCosmosDefaults.ContainerId, options.ContainerId); // default retained because ContainerId was not assigned
     }
 }
