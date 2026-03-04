@@ -222,4 +222,4 @@ Each extension delegates registrations into `builder.Services`, and some extensi
 
 ## See also
 
-- [Proposed Patterns](./index)
+- [Proposed Patterns](./index.md)

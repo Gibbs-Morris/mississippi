@@ -9,4 +9,4 @@ description: Proposed architecture patterns and migration guidance under active 
 
 This section captures proposed patterns derived from validated prototypes, including the builder-pattern migration path.
 
-- [Builder Pattern Migration Matrix](./builder-pattern-migration)
+- [Builder Pattern Migration Matrix](./builder-pattern-migration.md)
