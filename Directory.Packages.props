@@ -57,7 +57,7 @@
     <PackageVersion Include="Aspire.Hosting.Azure.CosmosDB" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.1" />
     <PackageVersion Include="Aspire.Hosting.Orleans" Version="13.1.1" />
-    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.1.1" />
+    <PackageVersion Include="Aspire.Azure.Storage.Blobs" Version="13.1.2" />
     <PackageVersion Include="Aspire.Azure.Storage.Queues" Version="13.1.0" />
     <PackageVersion Include="Aspire.Azure.Data.Tables" Version="13.1.1" />
     <PackageVersion Include="Aspire.Microsoft.Azure.Cosmos" Version="13.1.1" />
