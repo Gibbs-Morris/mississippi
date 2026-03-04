@@ -1,6 +1,3 @@
-using Mississippi.Common.Abstractions;
-
-
 namespace Mississippi.Aqueduct.Abstractions.L0Tests;
 
 /// <summary>
@@ -18,7 +15,7 @@ public sealed class AqueductOptionsTests
         AqueductOptions options = new();
 
         // Assert
-        Assert.Equal(MississippiDefaults.StreamNamespaces.AllClients, options.AllClientsStreamNamespace);
+        Assert.Equal(AqueductStreamDefaults.AllClientsStreamNamespace, options.AllClientsStreamNamespace);
     }
 
     /// <summary>
@@ -95,7 +92,7 @@ public sealed class AqueductOptionsTests
         AqueductOptions options = new();
 
         // Assert
-        Assert.Equal(MississippiDefaults.StreamNamespaces.Server, options.ServerStreamNamespace);
+        Assert.Equal(AqueductStreamDefaults.ServerStreamNamespace, options.ServerStreamNamespace);
     }
 
     /// <summary>
@@ -108,6 +105,6 @@ public sealed class AqueductOptionsTests
         AqueductOptions options = new();
 
         // Assert
-        Assert.Equal(MississippiDefaults.StreamProviderName, options.StreamProviderName);
+        Assert.Equal(AqueductStreamDefaults.StreamProviderName, options.StreamProviderName);
     }
 }

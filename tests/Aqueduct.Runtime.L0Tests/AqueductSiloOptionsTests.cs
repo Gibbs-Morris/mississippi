@@ -1,6 +1,6 @@
 using System;
 
-using Mississippi.Common.Abstractions;
+using Mississippi.Aqueduct.Abstractions;
 
 using NSubstitute;
 
@@ -40,9 +40,9 @@ public sealed class AqueductSiloOptionsTests
         AqueductSiloOptions options = new(siloBuilder);
 
         // Assert
-        Assert.Equal(MississippiDefaults.StreamProviderName, options.StreamProviderName);
-        Assert.Equal(MississippiDefaults.StreamNamespaces.AllClients, options.AllClientsStreamNamespace);
-        Assert.Equal(MississippiDefaults.StreamNamespaces.Server, options.ServerStreamNamespace);
+        Assert.Equal(AqueductStreamDefaults.StreamProviderName, options.StreamProviderName);
+        Assert.Equal(AqueductStreamDefaults.AllClientsStreamNamespace, options.AllClientsStreamNamespace);
+        Assert.Equal(AqueductStreamDefaults.ServerStreamNamespace, options.ServerStreamNamespace);
         Assert.Equal(1, options.HeartbeatIntervalMinutes);
         Assert.Equal(3, options.DeadServerTimeoutMultiplier);
     }

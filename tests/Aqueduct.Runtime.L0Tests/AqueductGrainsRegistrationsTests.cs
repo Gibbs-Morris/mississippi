@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Abstractions;
-using Mississippi.Common.Abstractions;
 
 using NSubstitute;
 
@@ -138,10 +137,10 @@ public sealed class AqueductGrainsRegistrationsTests
     }
 
     /// <summary>
-    ///     UseAqueduct with default options should use MississippiDefaults.
+    ///     UseAqueduct with default options should use Aqueduct stream defaults.
     /// </summary>
     [Fact]
-    public void UseAqueductWithDefaultOptionsUsesMississippiDefaults()
+    public void UseAqueductWithDefaultOptionsUsesAqueductStreamDefaults()
     {
         // Arrange
         ServiceCollection services = [];
@@ -154,9 +153,9 @@ public sealed class AqueductGrainsRegistrationsTests
         // Assert
         using ServiceProvider provider = services.BuildServiceProvider();
         IOptions<AqueductOptions> options = provider.GetRequiredService<IOptions<AqueductOptions>>();
-        Assert.Equal(MississippiDefaults.StreamProviderName, options.Value.StreamProviderName);
-        Assert.Equal(MississippiDefaults.StreamNamespaces.Server, options.Value.ServerStreamNamespace);
-        Assert.Equal(MississippiDefaults.StreamNamespaces.AllClients, options.Value.AllClientsStreamNamespace);
+        Assert.Equal(AqueductStreamDefaults.StreamProviderName, options.Value.StreamProviderName);
+        Assert.Equal(AqueductStreamDefaults.ServerStreamNamespace, options.Value.ServerStreamNamespace);
+        Assert.Equal(AqueductStreamDefaults.AllClientsStreamNamespace, options.Value.AllClientsStreamNamespace);
         Assert.Equal(1, options.Value.HeartbeatIntervalMinutes);
         Assert.Equal(3, options.Value.DeadServerTimeoutMultiplier);
     }
