@@ -1,6 +1,6 @@
+using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Runtime;
-using Mississippi.Aqueduct.Abstractions;
 
 
 namespace Mississippi.Aqueduct.Gateway.L2Tests;

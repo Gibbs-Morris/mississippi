@@ -79,7 +79,8 @@ public static class AqueductGrainsRegistrations
     /// <remarks>
     ///     <para>
     ///         This overload uses default <see cref="AqueductOptions" /> values.
-    ///         You must configure the stream provider separately using <see cref="AqueductStreamDefaults.StreamProviderName" />.
+    ///         You must configure the stream provider separately using
+    ///         <see cref="AqueductStreamDefaults.StreamProviderName" />.
     ///     </para>
     /// </remarks>
     public static ISiloBuilder UseAqueduct(

@@ -9,6 +9,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using Mississippi.Common.Runtime.Storage.Abstractions.Retry;
 
 using Newtonsoft.Json;

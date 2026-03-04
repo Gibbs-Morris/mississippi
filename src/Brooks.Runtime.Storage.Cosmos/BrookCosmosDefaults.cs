@@ -6,9 +6,9 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos;
 public static class BrookCosmosDefaults
 {
     /// <summary>
-    ///     The default Cosmos DB database identifier for Brooks storage.
+    ///     The keyed DI service key for the blob client used by distributed locking.
     /// </summary>
-    public const string DatabaseId = "mississippi";
+    public const string BlobLockingServiceKey = "mississippi-blob-locking";
 
     /// <summary>
     ///     The default Cosmos DB container identifier for Brooks event streams.
@@ -16,9 +16,9 @@ public static class BrookCosmosDefaults
     public const string ContainerId = "brooks";
 
     /// <summary>
-    ///     The default Blob Storage container identifier for distributed locks.
+    ///     The keyed DI service key for the Brooks Cosmos client.
     /// </summary>
-    public const string LockContainerId = "locks";
+    public const string CosmosClientServiceKey = "mississippi-cosmos-brooks-client";
 
     /// <summary>
     ///     The keyed DI service key for the Brooks Cosmos container.
@@ -26,12 +26,12 @@ public static class BrookCosmosDefaults
     public const string CosmosContainerServiceKey = "mississippi-cosmos-brooks";
 
     /// <summary>
-    ///     The keyed DI service key for the Brooks Cosmos client.
+    ///     The default Cosmos DB database identifier for Brooks storage.
     /// </summary>
-    public const string CosmosClientServiceKey = "mississippi-cosmos-brooks-client";
+    public const string DatabaseId = "mississippi";
 
     /// <summary>
-    ///     The keyed DI service key for the blob client used by distributed locking.
+    ///     The default Blob Storage container identifier for distributed locks.
     /// </summary>
-    public const string BlobLockingServiceKey = "mississippi-blob-locking";
+    public const string LockContainerId = "locks";
 }

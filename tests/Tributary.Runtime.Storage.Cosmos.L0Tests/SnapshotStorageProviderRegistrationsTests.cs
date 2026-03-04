@@ -40,9 +40,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         cosmosClient.Setup(c => c.GetDatabase("db")).Returns(database.Object);
         ServiceCollection services = new();
         services.AddLogging();
-        services.AddKeyedSingleton<CosmosClient>(
-            SnapshotCosmosDefaults.CosmosClientServiceKey,
-            cosmosClient.Object);
+        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
         services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
         services.AddCosmosSnapshotStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -79,9 +77,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             .Build();
         ServiceCollection services = new();
         services.AddLogging();
-        services.AddKeyedSingleton<CosmosClient>(
-            SnapshotCosmosDefaults.CosmosClientServiceKey,
-            cosmosClient.Object);
+        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
         services.AddCosmosSnapshotStorageProvider(configuration);
         using ServiceProvider provider = services.BuildServiceProvider();
         SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
@@ -102,9 +98,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
         cosmosClient.Setup(c => c.GetDatabase("custom-db")).Returns(database.Object);
         ServiceCollection services = new();
         services.AddLogging();
-        services.AddKeyedSingleton<CosmosClient>(
-            SnapshotCosmosDefaults.CosmosClientServiceKey,
-            cosmosClient.Object);
+        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
         services.AddCosmosSnapshotStorageProvider(o => o.DatabaseId = "custom-db");
         using ServiceProvider provider = services.BuildServiceProvider();
         SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;

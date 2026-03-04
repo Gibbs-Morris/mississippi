@@ -1,8 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Abstractions;
-using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Testing.Utilities.Storage;
 
 using Orleans.Hosting;
