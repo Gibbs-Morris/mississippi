@@ -6,6 +6,20 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests;
 public sealed class BrookStorageOptionsTests
 {
     /// <summary>
+    ///     Verifies public Brooks Cosmos defaults constants retain expected contract values.
+    /// </summary>
+    [Fact]
+    public void BrookCosmosDefaultsShouldMatchExpectedContractValues()
+    {
+        Assert.Equal("mississippi", BrookCosmosDefaults.DatabaseId);
+        Assert.Equal("brooks", BrookCosmosDefaults.ContainerId);
+        Assert.Equal("locks", BrookCosmosDefaults.LockContainerId);
+        Assert.Equal("mississippi-cosmos-brooks", BrookCosmosDefaults.CosmosContainerServiceKey);
+        Assert.Equal("mississippi-cosmos-brooks-client", BrookCosmosDefaults.CosmosClientServiceKey);
+        Assert.Equal("mississippi-blob-locking", BrookCosmosDefaults.BlobLockingServiceKey);
+    }
+
+    /// <summary>
     ///     Verifies default values are sensible.
     /// </summary>
     [Fact]
