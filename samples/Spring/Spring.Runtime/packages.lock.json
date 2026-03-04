@@ -4,9 +4,9 @@
     "net10.0": {
       "Aspire.Azure.Data.Tables": {
         "type": "Direct",
-        "requested": "[13.1.1, )",
-        "resolved": "13.1.1",
-        "contentHash": "zM8daOM0QeDFX5CbKXGKZYJ7PT9YdcXZ3ez9OGs5x5kXFJPes1f1YXKfzalPfm546rQcJj9e4BbSzGqKRsvj4w==",
+        "requested": "[13.1.2, )",
+        "resolved": "13.1.2",
+        "contentHash": "IM5Rfy4R9LLXj5kc00YMZed2ywnShis+GcU4Nm1qSs8jPWeJB50I0PWhU/6BcJhZXeScB+H3X+BUrxbO4zbiDA==",
         "dependencies": {
           "AspNetCore.HealthChecks.Azure.Data.Tables": "9.0.0",
           "Azure.Core": "1.50.0",
@@ -514,8 +514,7 @@
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
       "Mississippi.Aqueduct.Runtime": {
@@ -532,8 +531,7 @@
         "dependencies": {
           "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Streaming": "[10.0.1, )"
         }
       },
       "Mississippi.Brooks.Runtime": {
