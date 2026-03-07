@@ -1,6 +1,6 @@
 ---
 name: "issue Refiner"
-description: "Issue-only refinement agent that converts a GitHub issue into a repository-grounded implementation specification using evidence-based analysis and a Chain-of-Verification (CoV) loop. It follows the same core process as flow Planner, but it starts from a GitHub issue only, drives much deeper clarification, produces a local spec audit trail under ./spec/<task>/, and then updates the original GitHub issue with a clean, implementation-ready specification containing decisions, design, constraints, and success outcomes without leaking workflow/process details. It never writes implementation code."
+description: "Turns a GitHub issue into a repo-grounded, build-ready specification and updated issue body. Use when an issue needs deeper clarification before planning or implementation."
 ---
 
 # issue Refiner
@@ -264,6 +264,9 @@ Create `review-17-synthesis.md`:
 - Deduplicate feedback.
 - Categorize: Must / Should / Could / Won’t.
 - For each item: Accept/Reject + rationale + required edits + evidence.
+- If a proposed change materially improves the specification or the eventual implementation and is genuinely within task scope, accept it and update the spec accordingly.
+- Do not reject an in-scope improvement just to move faster, preserve a shortcut, or keep the refinement artificially shallow.
+- Reject only when the proposal is truly out of scope, contradicts stronger evidence, conflicts with repo rules, or introduces unjustified risk.
 Then update the spec accordingly.
 
 ## Finalize outputs
