@@ -7,7 +7,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 ///     Command to decrement the counter by a specified amount.
 /// </summary>
 [GenerateSerializer]
-[Alias("Crescent.L2Tests.Domain.Counter.Commands.DecrementCounter")]
+[Alias("MississippiSamples.Crescent.L2Tests.DecrementCounter")]
 internal sealed record DecrementCounter
 {
     /// <summary>

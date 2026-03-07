@@ -7,7 +7,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 ///     Command to increment the counter by a specified amount.
 /// </summary>
 [GenerateSerializer]
-[Alias("Crescent.L2Tests.Domain.Counter.Commands.IncrementCounter")]
+[Alias("MississippiSamples.Crescent.L2Tests.IncrementCounter")]
 internal sealed record IncrementCounter
 {
     /// <summary>

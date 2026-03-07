@@ -10,7 +10,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 /// </summary>
 [EventStorageName("CRESCENT", "SAMPLE", "COUNTERDECREMENTED")]
 [GenerateSerializer]
-[Alias("Crescent.L2Tests.Domain.Counter.Events.CounterDecremented")]
+[Alias("MississippiSamples.Crescent.L2Tests.CounterDecremented")]
 internal sealed record CounterDecremented
 {
     /// <summary>

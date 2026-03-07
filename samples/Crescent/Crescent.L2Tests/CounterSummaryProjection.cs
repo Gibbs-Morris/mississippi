@@ -33,7 +33,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 [BrookName("CRESCENT", "SAMPLE", "COUNTER")]
 [SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSUMMARY")]
 [GenerateSerializer]
-[Alias("Crescent.L2Tests.Domain.CounterSummary.CounterSummaryProjection")]
+[Alias("MississippiSamples.Crescent.L2Tests.CounterSummaryProjection")]
 internal sealed record CounterSummaryProjection
 {
     /// <summary>
