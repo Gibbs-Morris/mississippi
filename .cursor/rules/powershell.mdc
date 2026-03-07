@@ -4,8 +4,9 @@ globs: ["**/*.ps*"]
 alwaysApply: false
 ---
 # PowerShell Scripting
-**Source:** .github/instructions/powershell.instructions.md
 
+**Source:** .github/instructions/powershell.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # PowerShell Scripting
 

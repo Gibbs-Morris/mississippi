@@ -124,9 +124,18 @@ function New-MdcFrontMatter {
         if ($applyTo -eq '**') { $alwaysApply = $true }
         elseif ($applyTo -match '\*\.cs') { $globs = '["**/*.cs"]' }
         else {
-            # Convert basic patterns to globs array (best-effort)
-            $applyToPattern = $applyTo.Replace('"', '')
-            $globs = ('["' + $applyToPattern + '"]')
+            # Convert comma-separated applyTo patterns to an MDC globs array.
+            $applyToPatterns = @(
+                $applyTo.Split(',') |
+                    ForEach-Object { $_.Trim() } |
+                    Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                    ForEach-Object { $_.Replace('"', '') }
+            )
+
+            if ($applyToPatterns.Count -gt 0) {
+                $quotedPatterns = $applyToPatterns | ForEach-Object { '"' + $_ + '"' }
+                $globs = ('[' + ($quotedPatterns -join ', ') + ']')
+            }
         }
     }
 
@@ -165,19 +174,29 @@ foreach ($file in $instructionFiles) {
         $mdcPath = Join-Path $MdcDir (Get-MdcFileName -InstructionFileName $file.Name)
 
         $sourceLine = "**Source:** .github/instructions/$($file.Name)"
+        $contentWithoutLeadingH1 = $contentBody
+
+        if ($title) {
+            $leadingH1Regex = [regex]'^[ \t]*#\s+.+(?:\r?\n)+'
+            $contentWithoutLeadingH1 = $leadingH1Regex.Replace($contentBody, '', 1).TrimStart()
+        }
 
         $body = @()
         $body += $frontMatter
-        # Inject metadata lines before the rest of the content
-        if ($title) { $body += ("# $title") }
-        $body += $sourceLine
-        $body += ''
-        $body += $contentBody
+        # Emit a single top-level heading, then sync metadata, then the remaining body.
+        if ($title) {
+            $body += ("# $title")
+            $body += ''
+        }
 
-        # Avoid duplicate top-level H1 if contentBody already starts with it
-        if ($title -and $contentBody -match '^[ \t]*#\s+') {
-            # Remove the inserted title, keep contentBody's original
-            $body = @($frontMatter, $sourceLine, $syncedLine, '', $contentBody)
+        $body += $sourceLine
+        $body += $syncedLine
+        $body += ''
+
+        if ($title) {
+            $body += $contentWithoutLeadingH1
+        } else {
+            $body += $contentBody
         }
 
         if ($DryRun) {

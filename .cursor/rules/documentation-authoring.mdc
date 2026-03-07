@@ -1,86 +1,102 @@
 ---
 description: Documentation Authoring
-globs: ["docs/**/*.md"]
+globs: ["docs/Docusaurus/docs/**/*.{md", "mdx}"]
 alwaysApply: false
 ---
 # Documentation Authoring
-**Source:** .github/instructions/documentation-authoring.instructions.md
 
+**Source:** .github/instructions/documentation-authoring.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Documentation Authoring
 
-Governing thought: Every documentation page exists to enable a decision or action through clear structure, consistent tone, and predictable navigation.
+Governing thought: Mississippi documentation exists to help engineers make correct decisions and complete real work without invented behavior, blurred guarantees, or navigation debt.
 
-> Drift check: This file defines documentation standards for `docs/Docusaurus/`; update as documentation patterns evolve.
+> Drift check: The public authoring model lives under `docs/Docusaurus/docs/contributing/`; update the Docusaurus guidance and matching Cursor rules with this file.
 
 ## Rules (RFC 2119)
 
-- Authors **MUST** define the goal and target audience (administrator, developer, architect, executive) before writing. Why: Documentation without clear purpose creates confusion.
-- Authors **MUST** use active voice and present tense; marketing language and unexplained jargon **MUST NOT** appear. Why: Clarity enables action.
-- Authors **MUST** use RFC 2119 keywords ("MUST," "SHOULD," "MAY") consistently in rules sections only. Why: Prevents ambiguity in normative statements.
-- Every page **MUST** include YAML front matter with `id`, `title`, and `sidebar_label`; filenames **MUST** use kebab-case. Why: Ensures consistent metadata and URLs.
-- Pages **MUST** follow: title/summary (H1), body sections (H2/H3 max), related links, and references. Why: Predictable layout aids navigation.
-- Documentation **MUST** comply with markdownlint rules per `.github/instructions/markdown.instructions.md`. Why: Ensures consistent, accessible Markdown.
-- Each page **MUST** cover a single cohesive concept or procedure; pages exceeding 5–10 minutes reading time **SHOULD** be split. Why: Focused content is easier to maintain and consume.
-- Sidebar nesting **MUST NOT** exceed two levels; deeper structures **MUST** be flattened with cross-links. Why: Deep hierarchies obscure the whole.
-- Content **MUST** start with overview then deepen detail in later sections. Why: Readers can stop when they have enough context.
-- Authors **MUST** link concepts, features, and commands to their descriptions on first mention. Why: Enables bottom-up navigation.
-- Code samples **MUST** be minimal but complete, placed in fenced blocks with language identifiers. Why: Working examples accelerate understanding.
-- Diagrams and flowcharts **SHOULD** be used for architecture, processes, and data relationships; all images **MUST** include alt text. Why: Accessibility and comprehension.
-- Mermaid diagrams **MUST** use `flowchart LR` (left-to-right) by default; `flowchart TB` (top-to-bottom) **MUST NOT** be used unless the diagram explicitly represents a vertical hierarchy. Why: Mobile screens display LR diagrams without horizontal scrolling.
-- Authors **MUST** update docs when features, performance characteristics, or components change; authors **MUST NOT** add "last updated" or timestamp fields because Git history is the source of truth. Why: Prevents drift and conflicting metadata.
+- Authors **MUST** optimize for correctness, clarity, navigability, and maintainability; authors **MUST NOT** optimize for marketing tone. Why: Mississippi docs are engineering guidance, not promotional copy.
+- Authors **MUST NOT** invent APIs, configuration keys, defaults, guarantees, limits, exception types, or runtime behavior. Why: Documentation is a contract surface.
+- Claims **MUST** be backed by source code, tests, verified samples, design docs, ADRs, or runtime evidence; if a claim cannot be verified, it **MUST NOT** be published as fact. Why: Truthfulness is non-negotiable.
+- Authors **MUST** distinguish guaranteed behavior, default behavior, typical behavior, implementation detail, unsupported behavior, and future intent. Why: Readers need to know what Mississippi actually promises.
+- Each page **MUST** answer one primary question and **MUST** use exactly one page type. Why: Mixed page types produce confusing documents.
+- Every public page **MUST** include `title`, `description`, and `sidebar_position` in frontmatter; authors **MAY** add `sidebar_label`, `pagination_label`, `slug`, `tags`, `draft`, and `id` when needed. Why: Core metadata keeps pages navigable while allowing repo-compatible stability fields.
+- Authors **MUST** use `.md` unless the page genuinely needs MDX components. Why: Plain Markdown is easier to maintain.
+- Internal doc links **MUST** use relative Markdown links. Why: Relative links survive route and branch changes more reliably.
+- Tabs **MUST** be used only for true parallel variants such as operating system, language, or hosting mode. Why: Tabs hide information and should be reserved for real alternatives.
+- Admonitions **MUST** be used only when the note materially changes user behavior, and blank lines **MUST** be left inside them. Why: Admonitions should be high-signal and robust under formatters.
+- Mermaid **SHOULD** be preferred over screenshots for diagrams, and every diagram **MUST** include an introductory sentence and a clear main point. Why: Source diagrams are reviewable and easier to maintain.
+- Runnable code examples **MUST** come from verified samples, newly verified samples, or executable verification tied to tests or builds. Why: Sample drift is worse than no sample.
+- Authors **MUST** make prerequisites explicit, use plain language, avoid hype, and end pages with relevant next steps or related links. Why: Readers need clear action, not filler.
+- The distributed-systems checklist **MUST** be applied when a page describes runtime semantics, lifecycle, persistence, messaging, deployment, or failure behavior. Why: Those topics are where under-specified docs cause the most damage.
+- A documentation change **MUST NOT** be considered complete until frontmatter is complete, links resolve, the Docusaurus site builds, examples are verified, terminology is repo-consistent, and adjacent content is linked. Why: Documentation quality is part of the build contract.
 
 ## Scope and Audience
 
-All contributors writing or updating documentation in `docs/Docusaurus/`.
+All contributors and agents writing or updating public docs under `docs/Docusaurus/docs/`.
 
 ## At-a-Glance Quick-Start
 
-- Define purpose and audience before writing.
-- Use YAML front matter: `id`, `title`, `sidebar_label`, optional `description`/`keywords`.
-- Structure: H1 title/summary → body sections (H2/H3) → related links → references.
-- Keep pages focused (one topic, 5–10 minutes), sidebar shallow (max two levels).
-- Link concepts on first mention; provide working code examples.
-- Add alt text to images; use consistent terminology.
-- Verify markdownlint passes before committing.
+- Classify the page type before writing.
+- Verify all technical claims from repo evidence.
+- Use `title`, `description`, and `sidebar_position` frontmatter at minimum.
+- Write one page for one primary question.
+- Use Mermaid for diagrams and verified examples for runnable code.
+- Validate links and the Docusaurus build before considering the work complete.
+
+## Canonical Page Types
+
+- `getting-started`
+- `tutorials`
+- `how-to`
+- `concepts`
+- `reference`
+- `operations`
+- `troubleshooting`
+- `migration`
+- `release-notes`
 
 ## Core Principles
 
-- **Predictable Structure**: Readers orient quickly when pages follow the same layout.
-- **Progressive Disclosure**: Start broad, deepen gradually; readers stop when satisfied.
-- **Single Source of Truth**: Link instead of duplicating; maintain one authoritative page per concept.
-- **Accessibility**: Alt text, clear language, and semantic HTML aid all readers.
+- **Truth Before Style**: Verified content matters more than polished prose.
+- **Single Question Per Page**: Readers should know immediately whether they are in the right place.
+- **Page Type Is The Contract**: Physical location may migrate, but page type still governs structure and content.
+- **Evidence And Adjacency**: Every page should say what is true, what is not guaranteed, and where the reader goes next.
 
-## Procedures
+## Distributed-Systems Checklist
 
-### Creating a New Documentation Page
+Apply the relevant subset of these topics when the page describes runtime behavior:
 
-1. Define purpose and target audience.
-2. Add YAML front matter with required fields (`id`, `title`, `sidebar_label`).
-3. Write H1 title and one-sentence summary.
-4. Draft body sections (H2/H3); keep each section focused.
-5. Add "See also" links and references at bottom.
-6. Place file in correct section; verify sidebar depth stays ≤2 levels.
-7. Run markdownlint and fix findings.
-8. Review checklist before committing.
+- activation or lifecycle boundaries
+- concurrency or scheduling assumptions
+- ordering guarantees and non-guarantees
+- retry behavior and timeout behavior
+- persistence or durability semantics
+- failure handling and recovery implications
+- serialization and version compatibility implications
+- deployment or cluster assumptions
+- diagnostics or telemetry needed to validate behavior
+- security constraints
+- unsupported or dangerous patterns
 
-### Writing Checklist
+## Definition of Done
 
-Before publishing:
+Before publishing, confirm that:
 
-- Purpose and audience clearly defined.
-- YAML front matter complete: `id`, `title`, `sidebar_label`, optional `description`/`keywords`.
-- Structure complete: title, summary, body sections (H2/H3 max), related links, references.
-- Language concise; terminology consistent; active voice.
-- Inline links connect concepts on first mention.
-- Code examples minimal but complete with language identifiers.
-- Visuals accurate, alt text present.
-- Sidebar remains shallow (max two levels).
-- Markdownlint passes with no warnings.
+- the page type is correct
+- the page scope is narrow and coherent
+- frontmatter is complete
+- internal links resolve
+- the Docusaurus site builds successfully
+- code examples are verified
+- claims about defaults, guarantees, and failure modes are evidenced
+- terminology matches the codebase
+- the page links to adjacent content
+- the page does not overclaim what Mississippi guarantees
 
 ## References
 
+- Public guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
 - Markdown standards: `.github/instructions/markdown.instructions.md`
-- Instruction authoring template: `.github/instructions/authoring.instructions.md`
-- RFC 2119 keywords: `.github/instructions/rfc2119.instructions.md`
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`

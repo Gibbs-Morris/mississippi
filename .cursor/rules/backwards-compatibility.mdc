@@ -3,8 +3,9 @@ description: Backwards Compatibility Policy
 alwaysApply: true
 ---
 # Backwards Compatibility Policy
-**Source:** .github/instructions/backwards-compatibility.instructions.md
 
+**Source:** .github/instructions/backwards-compatibility.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Backwards Compatibility Policy
 

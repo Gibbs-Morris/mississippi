@@ -4,8 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Logging (LoggerExtensions) Standard
-**Source:** .github/instructions/logging-rules.instructions.md
 
+**Source:** .github/instructions/logging-rules.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Logging (LoggerExtensions) Standard
 

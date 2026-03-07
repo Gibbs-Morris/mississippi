@@ -3,8 +3,9 @@ description: Instruction ↔ Cursor MDC Sync
 alwaysApply: true
 ---
 # Instruction ↔ Cursor MDC Sync
-**Source:** .github/instructions/instruction-mdc-sync.instructions.md
 
+**Source:** .github/instructions/instruction-mdc-sync.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Instruction ↔ Cursor MDC Sync
 

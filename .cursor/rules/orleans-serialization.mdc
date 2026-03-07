@@ -4,8 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Orleans Serialization
-**Source:** .github/instructions/orleans-serialization.instructions.md
 
+**Source:** .github/instructions/orleans-serialization.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Orleans Serialization
 

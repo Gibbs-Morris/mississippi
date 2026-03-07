@@ -4,8 +4,9 @@ globs: ["samples/**"]
 alwaysApply: false
 ---
 # Mississippi Framework Usage
-**Source:** .github/instructions/mississippi-framework.instructions.md
 
+**Source:** .github/instructions/mississippi-framework.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Mississippi Framework Usage
 
@@ -25,22 +26,22 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Source generation **SHOULD** be used for all supported concerns (DTOs, actions, action effects, endpoints, mappers) when a generator exists; manual implementations **MAY** be used only when no generator supports the scenario. Why: Reduces boilerplate and ensures consistency while preserving escape hatches.
 - Generators consume Domain project types (aggregates, commands, events, projections) and emit Client artifacts (actions, action effects, feature registrations, DTOs); see the Generator Inputs table below and Inlet and Client-Server Integration. Why: Centralizes the source of truth in Domain while producing artifacts for all targets.
 - Types marked with `[PendingSourceGenerator]` (defined in `src/Inlet.Generators.Abstractions/`) **MUST** be treated as reference implementations for generator validation only; they exist to enable test comparisons between generated and expected code and **MUST NOT** be used as patterns for new development. Why: Scoped to generator testing infrastructure.
-- Contributors **SHOULD** review `src/Inlet.Client.Generators/` and `src/Inlet.Server.Generators/` for generator implementations, `src/Inlet.Generators.Abstractions/` for attribute definitions, and `src/Reservoir/` for state management. Why: Understanding the framework internals aids correct usage; abstractions define the attribute surface while generator projects contain the logic.
+- Contributors **SHOULD** review `src/Inlet.Client.Generators/` and `src/Inlet.Gateway.Generators/` for generator implementations, `src/Inlet.Generators.Abstractions/` for attribute definitions, and `src/Reservoir/` for state management. Why: Understanding the framework internals aids correct usage; abstractions define the attribute surface while generator projects contain the logic.
 
 #### Generator Inputs by Project
 
 | Input Project | Generator Input | Output Artifacts |
 |---------------|-----------------|------------------|
-| Domain | Aggregates with `[GenerateAggregateEndpoints]` | Silo registration, Server controller, Client feature/state/reducers, feature registration (`Add{Aggregate}Feature()`) |
+| Domain | Aggregates with `[GenerateAggregateEndpoints]` | Runtime registration, Gateway controller, Client feature/state/reducers, feature registration (`Add{Aggregate}Feature()`) |
 | Domain | Commands with `[GenerateCommand]` | DTOs, mappers, HTTP endpoints, client actions, action effects, command state |
-| Domain | Projections with `[GenerateProjectionEndpoints]` | Server controller, Client subscription, DTOs |
-| Domain | Event effects extending `EventEffectBase` or `SimpleEventEffectBase` | Silo registration (`AddEventEffect<TEffect, TAggregate>()`) |
+| Domain | Projections with `[GenerateProjectionEndpoints]` | Gateway controller, Client subscription, DTOs |
+| Domain | Event effects extending `EventEffectBase` or `SimpleEventEffectBase` | Runtime registration (`AddEventEffect<TEffect, TAggregate>()`) |
 
 ### Solution Structure
 
-- New sample applications in this repository **MUST** follow the four-project structure: Orleans Silo, ASP.NET Server, Blazor WebAssembly Client, and Domain (see Scope and Audience). Why: Separates concerns and enables source generation.
+- New sample applications in this repository **MUST** follow the four-project structure: Runtime host (running in an Orleans silo), ASP.NET Gateway, Blazor WebAssembly Client, and Domain (see Scope and Audience). Why: Separates concerns and enables source generation.
 - An Aspire AppHost project **SHOULD** be included for local development orchestration. Why: Simplifies emulator setup for Cosmos, Azure Storage, and Orleans.
-- Orleans Silo and ASP.NET Server projects **MUST** contain only configuration, options, dependency wiring, and framework registration—not domain logic. Why: Keeps host projects thin.
+- Runtime and Gateway host projects **MUST** contain only configuration, options, dependency wiring, and framework registration—not domain logic. Why: Keeps host projects thin.
 - The Domain project **MUST** contain all server-side domain state (aggregates, projections, commands, events, handlers, reducers). Why: Centralizes domain logic for source generation.
 - The WebAssembly Client project **MUST** contain all front-end code including UX, UI, and local state management. Why: Separates client concerns from server domain.
 
@@ -78,7 +79,7 @@ Governing thought: Build applications using the Mississippi framework with sourc
   **Failure path:** Command validation failures return an error code; no events are produced and projections are unchanged.
 
   See Consistency Model Separation for the async/eventual nature of projection updates.
-- Client features **MUST** be registered via generated `Add{Aggregate}Feature()` extension methods; silo and server projects use `Add{Aggregate}()` (following `.github/instructions/service-registration.instructions.md` conventions). Why: Enables clean, scalable feature registration consistent with repo patterns while distinguishing client from server registrations.
+- Client features **MUST** be registered via generated `Add{Aggregate}Feature()` extension methods; runtime and gateway projects use `Add{Aggregate}()` (following `.github/instructions/service-registration.instructions.md` conventions). Why: Enables clean, scalable feature registration consistent with repo patterns while distinguishing client from host registrations.
 
 ### Projection Subscriptions
 
@@ -154,18 +155,18 @@ Governing thought: Build applications using the Mississippi framework with sourc
 - Custom storage providers **MAY** be implemented when Cosmos is not suitable; the framework's storage abstractions allow pluggable backends. Why: Preserves flexibility for different deployment scenarios.
 - New projects **SHOULD** use Aspire to set up local development with emulators. Why: Enables consistent local development experience.
 - The Spring sample demonstrates this setup using Cosmos for event sourcing and Azure Storage for Orleans clustering/grain state. Why: Provides reference implementation for storage configuration.
-- Storage client registrations **MUST** use keyed services following the patterns in `Spring.Silo/Program.cs`. Why: Enables multiple storage accounts for different purposes.
+- Storage client registrations **MUST** use keyed services following the patterns in `Spring.Runtime/Program.cs`. Why: Enables multiple storage accounts for different purposes.
 
 ### Framework Attributes Reference
 
-Contributors **SHOULD** review all custom attributes under `src/` (particularly in `Inlet.Generators.Abstractions/` and `EventSourcing.Brooks.Abstractions/Attributes/`) to understand their behavior.
+Contributors **SHOULD** review all custom attributes under `src/` (particularly in `Inlet.Generators.Abstractions/` and `Brooks.Abstractions/Attributes/`) to understand their behavior.
 
 | Attribute | Purpose | When to Use | Relates To |
 |-----------|---------|-------------|------------|
 | `[BrookName]` | Identifies the event stream via hierarchical name `(APP, MODULE, NAME)` | Required on all aggregates and projections that share an event stream | Event stream alignment; projections and aggregates with matching brook names share events; names are immutable once deployed—use uppercase alphanumeric segments (see `.github/instructions/storage-type-naming.instructions.md`) |
 | `[SnapshotStorageName]` | Stable snapshot storage identity with versioning `(APP, MODULE, NAME, version)` | Required on aggregates and projections to persist state | Snapshot naming and storage; version enables schema evolution; names are immutable once deployed |
 | `[EventStorageName]` | Stable event storage identity with versioning `(APP, MODULE, NAME, version)` | Required on all event types | Event versioning; enables safe refactoring without breaking stored events; names are immutable once deployed |
-| `[GenerateAggregateEndpoints]` | Generates silo registration, server controller, and client feature code | Required on aggregate records exposed via API | Endpoint generation; creates `Add{Aggregate}()` extension methods |
+| `[GenerateAggregateEndpoints]` | Generates runtime registration, gateway controller, and client feature code | Required on aggregate records exposed via API | Endpoint generation; creates `Add{Aggregate}()` extension methods |
 | `[GenerateProjectionEndpoints]` | Generates read-only GET endpoint and SignalR subscription code | Required on projections exposed to clients | Endpoint generation; creates projection controller and client subscription |
 | `[GenerateCommand]` | Exposes command as HTTP POST endpoint with generated client action | Required on commands that should be callable from UX | Command exposure; `Route` property controls endpoint path |
 | `[ProjectionPath]` | Defines subscription and API path for projections | Required on server projections and matching client DTOs | Subscription routing; path must match between server and client |
@@ -180,14 +181,14 @@ Applies to all contributors building sample applications or new features using t
 
 ### Project Structure
 
-Contributors write domain logic (aggregates, commands, events, projections) **in the Domain project** and UI components, custom actions, and action effects **in the Client project**. Source generators produce client artifacts (actions, DTOs, feature registrations) from Domain types; silo registrations and server endpoints are also generated.
+Contributors write domain logic (aggregates, commands, events, projections) **in the Domain project** and UI components, custom actions, and action effects **in the Client project**. Source generators produce client artifacts (actions, DTOs, feature registrations) from Domain types; runtime registrations and gateway endpoints are also generated.
 
 ```text
 {Sample}/
 ├── {Sample}.AppHost/           # Aspire orchestration (local dev)
-├── {Sample}.Silo/              # Orleans silo (thin host)
+├── {Sample}.Runtime/           # Runtime host (runs in Orleans silo)
 │   └── Program.cs              # Configuration and framework registration
-├── {Sample}.Server/            # ASP.NET API (thin host)
+├── {Sample}.Gateway/           # ASP.NET API host (thin)
 │   └── Program.cs              # Configuration and framework registration
 ├── {Sample}.Client/            # Blazor WebAssembly
 │   └── Program.cs              # Feature registration and Inlet setup
@@ -217,13 +218,13 @@ Contributors only write code in the **Domain project**; client-side actions, eff
 5. Implement aggregate reducers extending `EventReducerBase`
 6. Define projections with `[ProjectionPath]` and `[GenerateProjectionEndpoints]` (if exposed to clients)
 7. Implement projection reducers
-8. **Build** — source generators create silo registrations, server controllers, and client features
+8. **Build** — source generators create runtime registrations, gateway controllers, and client features
 9. Client subscribes via Inlet; dispatches generated actions to trigger commands
 
 ## Core Principles
 
 - **Source generation first**: Rely on generators for boilerplate; manual code for advanced cases only.
-- **Thin hosts, rich domain**: Silo/Server contain config; Domain contains behavior.
+- **Thin hosts, rich domain**: Runtime/Gateway contain config; Domain contains behavior.
 - **Redux-style state**: All client state flows through Reservoir with actions/reducers.
 - **Small projections**: Many focused projections over one monolithic view.
 - **Event immutability**: Events are facts; never modify, only version.
@@ -300,7 +301,7 @@ The framework uses keyed DI services for storage, enabling enterprise deployment
 - Brooks events can write to one Cosmos account
 - Snapshots can persist to another
 - Locking can use a dedicated blob storage account
-- Each service uses only the resources it's configured for via `MississippiDefaults.ServiceKeys`
+- Each service uses only the resources it's configured for via module-owned keyed service defaults
 
 This enables wide enterprise solutions where different teams or tenants can have isolated storage while sharing the same application infrastructure. See `.github/instructions/keyed-services.instructions.md` for registration patterns and naming conventions.
 

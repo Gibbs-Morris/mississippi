@@ -4,8 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Aspire Integration Testing
-**Source:** .github/instructions/aspire.instructions.md
 
+**Source:** .github/instructions/aspire.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Aspire Integration Testing
 

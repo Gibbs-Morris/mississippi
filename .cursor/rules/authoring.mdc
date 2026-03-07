@@ -4,8 +4,9 @@ globs: ["**/*.instructions.md"]
 alwaysApply: false
 ---
 # Instruction Authoring Guide
-**Source:** .github/instructions/authoring.instructions.md
 
+**Source:** .github/instructions/authoring.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Instruction Authoring Guide
 

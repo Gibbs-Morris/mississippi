@@ -4,14 +4,15 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Domain Modeling with Mississippi Event Sourcing
-**Source:** .github/instructions/domain-modeling.instructions.md
 
+**Source:** .github/instructions/domain-modeling.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Domain Modeling with Mississippi Event Sourcing
 
 Governing thought: Use consistent, attribute-driven domain modeling with immutable aggregates, typed handlers, and projection reducers following the Mississippi framework patterns.
 
-> Drift check: Review `src/EventSourcing.Aggregates.Abstractions` and `src/EventSourcing.Reducers.Abstractions` for base class signatures before implementing handlers or reducers.
+> Drift check: Review `src/DomainModeling.Abstractions` and `src/Tributary.Abstractions` for base class signatures before implementing handlers or reducers.
 
 ## Rules (RFC 2119)
 

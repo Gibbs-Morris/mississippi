@@ -3,8 +3,9 @@ description: Legacy Test Improvement Loop
 alwaysApply: true
 ---
 # Legacy Test Improvement Loop
-**Source:** .github/instructions/test-improvement.instructions.md
 
+**Source:** .github/instructions/test-improvement.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Legacy Test Improvement Loop
 

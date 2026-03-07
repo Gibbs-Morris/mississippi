@@ -1,106 +1,61 @@
 ---
 description: Feature Documentation Pattern
-globs: ["docs/**/event-sourcing-*.md"]
+globs: ["docs/Docusaurus/docs/**/event-sourcing-*.md"]
 alwaysApply: false
 ---
 # Feature Documentation Pattern
-**Source:** .github/instructions/feature-docs-pattern.instructions.md
 
+**Source:** .github/instructions/feature-docs-pattern.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Feature Documentation Pattern
 
-Governing thought: Feature docs for components with Inlet source generators teach concepts first, then branch into source-generated (recommended) and manual registration paths so readers understand both the easy path and the underlying mechanics.
+Governing thought: Mississippi features that support both source-generated and manual registration paths need a subordinate documentation pattern, not a parallel taxonomy.
 
-> Drift check: Align with `docs/Docusaurus/docs/contributing/documentation-guide.md`; update both when patterns evolve.
+> Drift check: Keep this file aligned with `docs/Docusaurus/docs/contributing/documentation-guide.md` and the page-type-specific authoring pages.
 
 ## When This Pattern Applies
 
-This pattern applies to documentation for Mississippi features that have **both** Inlet source generation and manual registration options:
+Use this pattern only when the page already has a valid primary page type and the topic includes both source-generated and manual registration paths.
 
-- Sagas (`[GenerateSagaEndpoints]`)
-- Aggregates (`[GenerateAggregateEndpoints]`)
-- UX Projections (`[GenerateUxProjectionEndpoints]`)
-- Other Inlet-generated features
+Common examples include:
 
-This pattern does **not** apply to:
+- sagas
+- aggregates
+- UX projections
+- other Inlet-generated features with a real manual alternative
 
-- API reference pages (use standard reference structure)
-- Client-state-management docs (Reservoir has no source gen)
-- Contributing/authoring guides
-- Index/landing pages
+This pattern does not replace page-type rules. It refines them.
 
 ## Rules (RFC 2119)
 
-- Feature docs with source generation options **MUST** follow the structure: Overview → Key Concepts → Implementation (with branching) → Summary → Next Steps. Why: Predictable structure aids navigation and learning.
-- The Implementation section **MUST** start with shared steps (define types, configure state) before branching. Why: Teaches core concepts before diverging.
-- After shared steps, docs **MUST** branch into "Using Source Generation (Recommended)" and "Manual Registration" subsections. Why: Provides both the easy path and the explicit path.
-- The source-generation path **MUST** appear first and be marked as recommended. Why: Guides users toward the simpler, less error-prone approach.
-- Both paths **MUST** result in equivalent runtime behavior and **MUST** explain what each approach does. Why: Users need to understand trade-offs.
-- Shared steps **SHOULD** use numbered headings (Step 1, Step 2) to show progression. Why: Makes the implementation sequence explicit.
-- A `:::tip Registration Options` callout **SHOULD** introduce the branching point. Why: Signals the divergence clearly.
-- Code samples **MUST** be minimal, complete, and compile in isolation. Why: Enables copy-paste usage.
+- Pages using this pattern **MUST** still choose one primary page type before applying the branching structure. Why: The source-generation pattern is subordinate guidance.
+- Shared setup **MUST** appear before the source-generated versus manual branching point. Why: Readers should learn common mechanics once.
+- The source-generated path **MUST** appear first and **MUST** be marked as recommended when it is the preferred repo path. Why: Readers should see the least error-prone path first.
+- Manual registration **MUST** explain why a reader would choose it and what it makes explicit. Why: Manual branches are for understanding or customization, not noise.
+- Both branches **MUST** describe equivalent runtime intent and **MUST NOT** imply different guarantees unless the evidence shows real behavioral differences. Why: Readers need accurate trade-offs.
+- A branching callout such as `:::tip Registration Options` **SHOULD** introduce the divergence. Why: Readers need a clear signal when the document splits.
+- This pattern **MUST NOT** be used to stuff concept, tutorial, and reference content into one giant feature page. Why: It is a local refinement, not a license to mix page types.
 
 ## Scope and Audience
 
-Authors documenting Mississippi features that have both source-generated and manual registration options (sagas, aggregates, reducers, brooks, projections).
+Authors documenting Mississippi features that expose both source-generated and manual registration paths.
 
 ## At-a-Glance Quick-Start
 
-Use this structure for feature docs:
-
-```markdown
-# Feature Title
-
-## Overview
-One paragraph: what is this feature and why use it.
-
-## Key Concepts
-Explain core abstractions/types. Use a table for quick reference.
-
-## Implementation
-
-### Step 1: Define the State/Entity
-Show the type definition with required interfaces.
-
-### Step 2: Define Behavior (Steps/Reducers/Effects)
-Show behavior implementations.
-
-### Step 3: Register
-
-:::tip Registration Options
-Mississippi supports two registration paths:
-- **Source Generation (Recommended)**: Generators emit registration code; less boilerplate.
-- **Manual Registration**: Explicit DI calls; useful for understanding or customization.
-:::
-
-#### Using Source Generation (Recommended)
-
-Show the generator attribute and what it produces.
-
-#### Manual Registration
-
-Show explicit DI registration calls.
-
-## Summary
-Bullet list of key points.
-
-## Next Steps
-Links to related pages.
-```
+- Choose the page type first.
+- Teach shared setup before branching.
+- Show the recommended generated path first.
+- Explain the manual path only when it adds real value.
 
 ## Core Principles
 
-- **Concepts before code**: Teach the model before showing implementation.
-- **Recommended path first**: Guide users toward the simpler approach.
-- **Both paths explained**: Users understand what happens under the hood.
-- **Shared steps reduce duplication**: Common setup appears once, before branching.
-
-## Example: Saga Documentation
-
-The saga docs at `docs/Docusaurus/docs/event-sourcing-sagas.md` serve as the canonical implementation of this pattern.
+- **Subordinate Pattern**: Page type remains the top-level contract.
+- **Shared Before Split**: Avoid duplicated setup.
+- **Trade-Off Honesty**: Explain both paths without inventing differences.
 
 ## References
 
 - Documentation guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
 - Documentation authoring: `.github/instructions/documentation-authoring.instructions.md`
-- Markdown standards: `.github/instructions/markdown.instructions.md`
+- Documentation page focus: `.github/instructions/documentation-page-focus.instructions.md`

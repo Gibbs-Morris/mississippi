@@ -3,8 +3,9 @@ description: Pull Request Review Guide
 alwaysApply: true
 ---
 # Pull Request Review Guide
-**Source:** .github/instructions/pull-request-reviews.instructions.md
 
+**Source:** .github/instructions/pull-request-reviews.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Pull Request Review Guide
 
@@ -42,4 +43,4 @@ PR reviewers in this repository.
 
 - Testing: `.github/instructions/testing.instructions.md`
 - Logging/DI guardrails: `.github/instructions/logging-rules.instructions.md`, `.github/instructions/shared-policies.instructions.md`
-- Documentation agent: `.github/agents/CoV-mississippi-docs.agent.md`
+- Documentation agent: `.github/agents/technical-writer.agent.md`

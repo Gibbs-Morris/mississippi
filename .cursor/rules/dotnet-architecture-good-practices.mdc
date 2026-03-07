@@ -4,8 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # DDD and Architecture Checklist
-**Source:** .github/instructions/dotnet-architecture-good-practices.instructions.md
 
+**Source:** .github/instructions/dotnet-architecture-good-practices.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # DDD and Architecture Checklist
 

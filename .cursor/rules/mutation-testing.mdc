@@ -3,8 +3,9 @@ description: Mutation Testing Playbook (Mississippi)
 alwaysApply: true
 ---
 # Mutation Testing Playbook (Mississippi)
-**Source:** .github/instructions/mutation-testing.instructions.md
 
+**Source:** .github/instructions/mutation-testing.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Mutation Testing Playbook (Mississippi)
 

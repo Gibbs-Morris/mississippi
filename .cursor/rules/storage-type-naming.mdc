@@ -4,8 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Storage Type Naming with Attributes
-**Source:** .github/instructions/storage-type-naming.instructions.md
 
+**Source:** .github/instructions/storage-type-naming.instructions.md
+**Last synced:** 2026-03-07 (commit 57cafc82)
 
 # Storage Type Naming with Attributes
 
