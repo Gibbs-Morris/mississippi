@@ -19,7 +19,7 @@ using Orleans.Hosting;
 using Projects;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     xUnit fixture that starts the Crescent AppHost with Cosmos DB and Azure Storage emulators.

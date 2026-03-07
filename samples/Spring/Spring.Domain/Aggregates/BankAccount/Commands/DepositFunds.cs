@@ -3,7 +3,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.BankAccount.Commands;
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
 
 /// <summary>
 ///     Command to deposit funds into a bank account.
@@ -17,7 +17,7 @@ namespace Spring.Domain.Aggregates.BankAccount.Commands;
     ReadOnly = false,
     OpenWorld = false)]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Commands.DepositFunds")]
+[Alias("MississippiSamples.Spring.Domain.BankAccount.Commands.DepositFunds")]
 public sealed record DepositFunds
 {
     /// <summary>

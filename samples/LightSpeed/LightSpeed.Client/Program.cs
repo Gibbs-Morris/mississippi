@@ -1,10 +1,9 @@
-using LightSpeed.Client;
-
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 using Mississippi.Reservoir.Client;
 using Mississippi.Reservoir.Core;
+using MississippiSamples.LightSpeed.Client;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);

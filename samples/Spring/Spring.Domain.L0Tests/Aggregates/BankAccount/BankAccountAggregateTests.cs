@@ -2,14 +2,14 @@ using System.Linq;
 
 using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Commands;
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Aggregates.BankAccount.Handlers;
-using Spring.Domain.Aggregates.BankAccount.Reducers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Handlers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Aggregates.BankAccount;
+namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.BankAccount;
 
 /// <summary>
 ///     Integration tests for the BankAccount aggregate using full command/event scenarios.

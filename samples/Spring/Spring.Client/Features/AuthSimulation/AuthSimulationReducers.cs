@@ -1,4 +1,4 @@
-namespace Spring.Client.Features.AuthSimulation;
+namespace MississippiSamples.Spring.Client.Features.AuthSimulation;
 
 /// <summary>
 ///     Reducers for auth simulation feature state.

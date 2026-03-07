@@ -1,7 +1,7 @@
 using Mississippi.Tributary.Abstractions;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Reducer for <see cref="CounterInitialized" /> events.

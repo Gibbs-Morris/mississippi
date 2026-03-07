@@ -1,9 +1,9 @@
 using System;
 
-using Spring.Client.Features.BankAccountAggregate.State;
+using MississippiSamples.Spring.Client.Features.BankAccountAggregate.State;
 
 
-namespace Spring.Client.Features.BankAccountAggregate.Selectors;
+namespace MississippiSamples.Spring.Client.Features.BankAccountAggregate.Selectors;
 
 /// <summary>
 ///     Selectors for deriving values from <see cref="BankAccountAggregateState" />.

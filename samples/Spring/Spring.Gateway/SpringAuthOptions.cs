@@ -1,4 +1,4 @@
-namespace Spring.Gateway;
+namespace MississippiSamples.Spring.Gateway;
 
 /// <summary>
 ///     Configuration options for optional Spring sample authentication.

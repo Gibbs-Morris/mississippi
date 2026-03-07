@@ -2,11 +2,11 @@ using System;
 
 using Mississippi.Inlet.Client.Abstractions.State;
 
-using Spring.Client.Features.BankAccountAggregate.State;
-using Spring.Client.Features.BankAccountBalance.Dtos;
+using MississippiSamples.Spring.Client.Features.BankAccountAggregate.State;
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
 
 
-namespace Spring.Client.Features.BankAccountAggregate.Selectors;
+namespace MississippiSamples.Spring.Client.Features.BankAccountAggregate.Selectors;
 
 /// <summary>
 ///     Composite selectors that derive values from multiple feature states.

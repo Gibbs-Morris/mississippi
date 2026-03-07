@@ -4,7 +4,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.BankAccount;
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount;
 
 /// <summary>
 ///     Internal aggregate state for the bank account.
@@ -15,7 +15,7 @@ namespace Spring.Domain.Aggregates.BankAccount;
 [GenerateAggregateEndpoints]
 [GenerateMcpTools]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.BankAccountAggregate")]
+[Alias("MississippiSamples.Spring.Domain.BankAccount.BankAccountAggregate")]
 public sealed record BankAccountAggregate
 {
     /// <summary>

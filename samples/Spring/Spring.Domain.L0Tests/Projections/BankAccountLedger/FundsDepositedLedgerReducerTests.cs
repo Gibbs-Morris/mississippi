@@ -1,12 +1,12 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Projections.BankAccountLedger;
-using Spring.Domain.Projections.BankAccountLedger.Reducers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Projections.BankAccountLedger;
+using MississippiSamples.Spring.Domain.Projections.BankAccountLedger.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Projections.BankAccountLedger;
+namespace MississippiSamples.Spring.Domain.L0Tests.Projections.BankAccountLedger;
 
 /// <summary>
 ///     Tests for <see cref="FundsDepositedLedgerReducer" />.

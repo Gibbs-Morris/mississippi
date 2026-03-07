@@ -13,6 +13,11 @@ using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Runtime;
 using Mississippi.Inlet.Gateway;
 using Mississippi.Inlet.Runtime;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
+using MississippiSamples.Spring.Gateway;
+using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Projections.Mappers;
+using MississippiSamples.Spring.Gateway.McpTools;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -21,12 +26,6 @@ using OpenTelemetry.Trace;
 using Orleans.Hosting;
 
 using Scalar.AspNetCore;
-
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Gateway;
-using Spring.Gateway.Controllers.Aggregates.Mappers;
-using Spring.Gateway.Controllers.Projections.Mappers;
-using Spring.Gateway.McpTools;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);

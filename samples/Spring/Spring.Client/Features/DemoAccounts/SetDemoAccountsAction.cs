@@ -1,7 +1,7 @@
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Spring.Client.Features.DemoAccounts;
+namespace MississippiSamples.Spring.Client.Features.DemoAccounts;
 
 /// <summary>
 ///     Action dispatched to set the demo account identifiers and names.

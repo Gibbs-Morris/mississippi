@@ -1,7 +1,7 @@
 using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Command handler for incrementing a counter.

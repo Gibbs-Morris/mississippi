@@ -3,7 +3,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.BankAccount.Commands;
+namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
 
 /// <summary>
 ///     Command to open a new bank account.
@@ -19,7 +19,7 @@ namespace Spring.Domain.Aggregates.BankAccount.Commands;
     ReadOnly = false,
     OpenWorld = false)]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Commands.OpenAccount")]
+[Alias("MississippiSamples.Spring.Domain.BankAccount.Commands.OpenAccount")]
 public sealed record OpenAccount(
     [property: Id(0)]
     [GenerateMcpParameterDescription("The full name of the account holder.")]

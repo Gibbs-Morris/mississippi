@@ -4,10 +4,10 @@ using System.Linq;
 
 using Mississippi.Tributary.Abstractions;
 
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 
 
-namespace Spring.Domain.Projections.FlaggedTransactions.Reducers;
+namespace MississippiSamples.Spring.Domain.Projections.FlaggedTransactions.Reducers;
 
 /// <summary>
 ///     Reduces the <see cref="TransactionFlagged" /> event to add

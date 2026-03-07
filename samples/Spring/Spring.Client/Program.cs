@@ -8,18 +8,18 @@ using Mississippi.Inlet.Client;
 using Mississippi.Reservoir.Client;
 using Mississippi.Reservoir.Client.BuiltIn;
 
-using Spring.Client;
-using Spring.Client.AuthSimulation;
-using Spring.Client.Features;
-using Spring.Client.Features.AuthProofAggregate;
-using Spring.Client.Features.AuthProofSaga;
-using Spring.Client.Features.AuthSimulation;
-using Spring.Client.Features.BankAccountAggregate;
-using Spring.Client.Features.BankAccountBalance.Dtos;
-using Spring.Client.Features.DemoAccounts;
-using Spring.Client.Features.DualEntitySelection;
-using Spring.Client.Features.MoneyTransferSaga;
-using Spring.Client.Features.MoneyTransferSagaAggregate;
+using MississippiSamples.Spring.Client;
+using MississippiSamples.Spring.Client.AuthSimulation;
+using MississippiSamples.Spring.Client.Features;
+using MississippiSamples.Spring.Client.Features.AuthProofAggregate;
+using MississippiSamples.Spring.Client.Features.AuthProofSaga;
+using MississippiSamples.Spring.Client.Features.AuthSimulation;
+using MississippiSamples.Spring.Client.Features.BankAccountAggregate;
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
+using MississippiSamples.Spring.Client.Features.DemoAccounts;
+using MississippiSamples.Spring.Client.Features.DualEntitySelection;
+using MississippiSamples.Spring.Client.Features.MoneyTransferSaga;
+using MississippiSamples.Spring.Client.Features.MoneyTransferSagaAggregate;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);

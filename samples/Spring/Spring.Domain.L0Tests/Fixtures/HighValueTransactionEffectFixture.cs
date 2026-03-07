@@ -3,13 +3,13 @@ using System.Threading.Tasks;
 
 using Mississippi.DomainModeling.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Effects;
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Effects;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue;
 
 
-namespace Spring.Domain.L0Tests.Fixtures;
+namespace MississippiSamples.Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Simplified fixture for testing HighValueTransactionEffect with minimal boilerplate.

@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Command to initialize a counter with a specific value.

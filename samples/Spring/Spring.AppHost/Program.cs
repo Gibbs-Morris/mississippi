@@ -42,7 +42,7 @@ OrleansService orleans = builder.AddOrleans("default")
     .WithMemoryGrainStorage("PubSubStore")
     .WithMemoryStreaming("StreamProvider");
 
-// Add Spring.Runtime - business runtime host (runs in an Orleans silo)
+// Add MississippiSamples.Spring.Runtime - business runtime host (runs in an Orleans silo)
 // WithReference cosmos/blobs for event sourcing storage (Brooks + Snapshots)
 // WithHealthCheck ensures the runtime host is fully ready before dependents start
 IResourceBuilder<ProjectResource> springRuntime = builder.AddProject<Spring_Runtime>("spring-runtime")
@@ -53,7 +53,7 @@ IResourceBuilder<ProjectResource> springRuntime = builder.AddProject<Spring_Runt
     .WaitFor(cosmos)
     .WithHttpHealthCheck("/health");
 
-// Add Spring.Gateway with resource references
+// Add MississippiSamples.Spring.Gateway with resource references
 // This host is an Orleans client that connects to the runtime host's Orleans silo
 // WaitFor ensures the gateway doesn't start until dependencies are ready
 IResourceBuilder<ProjectResource> springGateway = builder.AddProject<Spring_Gateway>("spring-gateway")

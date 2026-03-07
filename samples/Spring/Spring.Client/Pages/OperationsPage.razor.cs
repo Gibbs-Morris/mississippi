@@ -8,20 +8,20 @@ using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 
-using Spring.Client.Features.BankAccountAggregate.Actions;
-using Spring.Client.Features.BankAccountAggregate.Selectors;
-using Spring.Client.Features.BankAccountAggregate.State;
-using Spring.Client.Features.BankAccountBalance.Dtos;
-using Spring.Client.Features.BankAccountBalance.Selectors;
-using Spring.Client.Features.BankAccountLedger.Dtos;
-using Spring.Client.Features.DemoAccounts;
-using Spring.Client.Features.DualEntitySelection;
-using Spring.Client.Features.DualEntitySelection.Selectors;
-using Spring.Client.Features.MoneyTransferSaga.Actions;
-using Spring.Client.Features.MoneyTransferStatus.Dtos;
+using MississippiSamples.Spring.Client.Features.BankAccountAggregate.Actions;
+using MississippiSamples.Spring.Client.Features.BankAccountAggregate.Selectors;
+using MississippiSamples.Spring.Client.Features.BankAccountAggregate.State;
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Selectors;
+using MississippiSamples.Spring.Client.Features.BankAccountLedger.Dtos;
+using MississippiSamples.Spring.Client.Features.DemoAccounts;
+using MississippiSamples.Spring.Client.Features.DualEntitySelection;
+using MississippiSamples.Spring.Client.Features.DualEntitySelection.Selectors;
+using MississippiSamples.Spring.Client.Features.MoneyTransferSaga.Actions;
+using MississippiSamples.Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
-namespace Spring.Client.Pages;
+namespace MississippiSamples.Spring.Client.Pages;
 
 /// <summary>
 ///     Bank account operations page.

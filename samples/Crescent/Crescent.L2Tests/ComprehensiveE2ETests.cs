@@ -3,7 +3,7 @@ using Mississippi.DomainModeling.Abstractions;
 using Xunit.Abstractions;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Comprehensive end-to-end tests validating the complete event sourcing pipeline:

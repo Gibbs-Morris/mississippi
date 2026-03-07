@@ -7,7 +7,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Projections.BankAccountLedger;
+namespace MississippiSamples.Spring.Domain.Projections.BankAccountLedger;
 
 /// <summary>
 ///     Read-optimized projection for the last 20 ledger entries of a bank account.
@@ -27,7 +27,7 @@ namespace Spring.Domain.Projections.BankAccountLedger;
     Title = "Get Bank Account Ledger",
     Description = "Retrieves the transaction ledger for a bank account, showing recent deposits and withdrawals.")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Projections.BankAccountLedger.BankAccountLedgerProjection")]
+[Alias("MississippiSamples.Spring.Domain.Projections.BankAccountLedger.BankAccountLedgerProjection")]
 public sealed record BankAccountLedgerProjection
 {
     /// <summary>

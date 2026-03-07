@@ -13,6 +13,10 @@ using Mississippi.Brooks.Serialization.Json;
 using Mississippi.Inlet.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
+using MississippiSamples.Spring.Domain.Services;
+using MississippiSamples.Spring.Runtime.Registrations;
+using MississippiSamples.Spring.Runtime.Services;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -20,11 +24,6 @@ using OpenTelemetry.Trace;
 
 using Orleans.Hosting;
 using Orleans.Runtime;
-
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Domain.Services;
-using Spring.Runtime.Registrations;
-using Spring.Runtime.Services;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -160,7 +159,7 @@ app.MapGet(
                 new
                 {
                     Status = "Healthy",
-                    Service = "Spring.Runtime",
+                    Service = "MississippiSamples.Spring.Runtime",
                     Orleans = status.ToString(),
                 })
             : Results.StatusCode(503);
