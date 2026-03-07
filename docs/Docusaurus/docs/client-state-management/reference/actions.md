@@ -37,7 +37,7 @@ Actions are dispatched to the global [`IStore`](https://github.com/Gibbs-Morris/
 
 ### From a Blazor Component
 
-If your component inherits from [`StoreComponent`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs), use the `Dispatch` method:
+If your component inherits from [`StoreComponent`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs), use the `Dispatch` method:
 
 ```csharp
 public class MyComponent : StoreComponent
@@ -103,10 +103,10 @@ flowchart LR
 4. **Effects** — Asynchronous work runs last and can yield more actions
 
 Multiple feature states can have reducers that respond to the same action because the store runs each feature's root reducer when an action is dispatched.
-([Store.ReduceFeatureStates](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L236-L271))
+([Store.ReduceFeatureStates](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L236-L271))
 
 Dispatch remains synchronous through reducers and listeners; effects run asynchronously after reducers and listeners complete.
-([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L214-L228))
+([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L214-L228))
 
 ## Keep Actions Lean
 
@@ -122,7 +122,7 @@ Actions should carry only the data needed for reducers and effects. The `IAction
 
 ## Next Steps
 
-- [Reservoir Overview](./reservoir.md) — Understand how the pieces fit together
+- [Reservoir Overview](../reservoir.md) — Understand how the pieces fit together
 - [Reducers](./reducers.md) — Learn how reducers transform state based on actions
 - [Effects](./effects.md) — Handle async operations triggered by actions
 - [Feature State](./feature-state.md) — Organize state into feature slices

@@ -1,24 +1,23 @@
 ---
 id: spring-host-applications
-title: "Host Applications: Minimal Infrastructure Wiring"
-sidebar_label: Host Applications
+title: Spring Host Architecture
+sidebar_label: Host Architecture
 sidebar_position: 6
-description: How Spring.Runtime, Spring.Gateway, and Spring.Client stay minimal because all business logic lives in Spring.Domain.
+description: How Spring.Runtime, Spring.Gateway, and Spring.Client divide responsibilities while Spring.Domain owns the business logic.
 ---
 
-# Host Applications: Minimal Infrastructure Wiring
+# Spring Host Architecture
 
 ## Overview
 
-Focus: Public API / Developer Experience.
-
-Spring has three host applications. Each is a thin shell that wires infrastructure — none contains business logic. The domain project defines *what* the system does. The hosts define *how* it runs.
+Spring has three runtime host applications plus one local-development orchestrator. The runtime hosts are thin shells that wire infrastructure, and none contains business logic. The domain project defines what the system does. The hosts define how it runs.
 
 | Host | Role | References |
 |------|------|-----------|
 | `Spring.Runtime` | Orleans silo — runs grains, event sourcing, sagas | `Spring.Domain` + Mississippi Runtime SDK |
 | `Spring.Gateway` | ASP.NET API + Blazor host — serves endpoints and static files | `Spring.Domain` + Mississippi Gateway SDK |
 | `Spring.Client` | Blazor WebAssembly — UI shell with state management | `Spring.Domain` (compile-only) + Mississippi Client SDK |
+| `Spring.AppHost` | .NET Aspire orchestration for local development | Coordinates the runtime, gateway, storage, and emulator resources |
 
 ```mermaid
 flowchart LR
@@ -182,11 +181,9 @@ This applies a default authenticated policy to generated HTTP APIs while preserv
 
 ## Development Auth-Proof Mode
 
-Focus: Public API / Developer Experience.
-
 Spring includes an opt-in development mode that proves generated endpoint authorization behavior.
 
-The complete setup, endpoint matrix (`200`/`401`/`403`), and troubleshooting guidance are documented on [Spring Auth-Proof Mode](./auth-proof-mode.md).
+The complete setup, endpoint matrix (`200`/`401`/`403`), and troubleshooting guidance are documented on [Spring Auth-Proof Mode](../how-to/auth-proof-mode.md).
 
 ### What the Gateway Owns
 
@@ -224,6 +221,7 @@ builder.Services.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.Always;
     options.Name = "Spring Sample";
+    options.IsStrictStateRehydrationEnabled = true;
 });
 
 // Real-time projection updates via SignalR
@@ -264,7 +262,9 @@ Mississippi's Inlet generators produce three domain-level registration methods f
 
 Each method name follows the pattern `Add{DomainProject}Domain{HostType}()`. The generator derives the name from the assembly name (`Spring.Domain`) and the host target.
 
-For more details on domain registration generators, see [Domain Registration Generators](../domain-registration-generators.md).
+`Spring.AppHost` is separate from those generated methods. It is an Aspire entry point that provisions Azurite, Cosmos emulator resources, Orleans configuration, and project startup order for local development.
+
+For more details on domain registration generators, see [Domain Registration Generators](../../reference/domain-registration-generators.md).
 
 ## The Key Insight
 
@@ -285,6 +285,6 @@ Mississippi's source generators transform domain annotations into complete infra
 
 ## Next Steps
 
-- [Overview](./index.md) — Return to the Spring Sample App overview
+- [Overview](../index.md) — Return to the Spring Sample App overview
 - [Key Concepts](./key-concepts.md) — Revisit the concept reference for all patterns used
-- [Domain Registration Generators](../domain-registration-generators.md) — Deep dive into how generation works
+- [Domain Registration Generators](../../reference/domain-registration-generators.md) — Deep dive into how generation works

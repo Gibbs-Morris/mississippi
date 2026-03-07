@@ -1,4 +1,5 @@
 ---
+id: documentation-concepts
 title: Concept Pages
 description: Explain how Mississippi works, what it guarantees, and what trade-offs or limits the reader must understand.
 sidebar_label: Concepts
@@ -6,6 +7,8 @@ sidebar_position: 2
 ---
 
 # Concept Pages
+
+## Overview
 
 Use a concepts page when the reader needs the model, guarantees, limits, or trade-offs behind Mississippi behavior.
 
@@ -82,7 +85,13 @@ Brook event ordering defines which event sequences Mississippi preserves and whe
 ## Related tasks and reference
 ```
 
-## Related Content
+## Summary
+
+- concept pages explain mental models, guarantees, limits, and trade-offs
+- they should avoid turning explanation into a task guide or reference dump
+- distributed-systems concepts should make guarantees and non-guarantees explicit
+
+## Next Steps
 
 - [Documentation Guide](./documentation-guide.md)
 - [How-To Guides](./documentation-how-to.md)

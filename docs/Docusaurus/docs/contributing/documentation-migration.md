@@ -1,4 +1,5 @@
 ---
+id: documentation-migration
 title: Migration Pages
 description: Guide Mississippi users from one exact version range to another with explicit compatibility, validation, and rollback details.
 sidebar_label: Migration
@@ -6,6 +7,8 @@ sidebar_position: 9
 ---
 
 # Migration Pages
+
+## Overview
 
 Use a migration page when the reader needs to move from one exact version range to another safely.
 
@@ -77,7 +80,13 @@ This guide explains how to move from Mississippi 0.8 to 0.9 safely.
 ## Related release notes and reference
 ```
 
-## Related Content
+## Summary
+
+- migration pages are version-to-version guides, not release summaries
+- they must be precise about compatibility, order of operations, validation, and rollback
+- verified before-and-after code belongs here only when it directly supports the upgrade path
+
+## Next Steps
 
 - [Documentation Guide](./documentation-guide.md)
 - [Release Notes](./documentation-release-notes.md)

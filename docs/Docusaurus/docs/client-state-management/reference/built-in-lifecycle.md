@@ -12,7 +12,9 @@ description: Redux-style application lifecycle state management for Blazor appli
 
 The built-in lifecycle feature provides Redux-style application lifecycle state management for Blazor applications. It tracks initialization phases in the store, enabling components to show loading states, prevent user interaction during startup, and measure initialization performance.
 
-## Quick Start
+Use this page to look up the built-in lifecycle surface, its actions, and its state model.
+
+## Minimum Setup
 
 ### 1. Register the Feature
 
@@ -143,7 +145,7 @@ The reducer sets:
 
 ## LifecycleState
 
-The [`LifecycleState`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/BuiltIn/Lifecycle/State/LifecycleState.cs) feature state tracks lifecycle information:
+The [`LifecycleState`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/BuiltIn/Lifecycle/State/LifecycleState.cs) feature state tracks lifecycle information:
 
 ```csharp
 public sealed record LifecycleState : IFeatureState
@@ -285,7 +287,7 @@ Dispatch(new AppInitAction(fakeTime.GetUtcNow()));
 
 ## Testing Lifecycle
 
-Use the [`StoreTestHarness`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Testing/StoreTestHarness.cs) for unit testing lifecycle reducers:
+Use the [`StoreTestHarness`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.TestHarness/StoreTestHarness.cs) for unit testing lifecycle reducers:
 
 ```csharp
 [Fact]
@@ -332,9 +334,15 @@ public void AppReadyAction_TransitionsToReady()
 }
 ```
 
-## Related Documentation
+## Summary
 
-- [Reservoir Overview](reservoir.md) — Core concepts
-- [Actions](actions.md) — Action fundamentals
-- [Reducers](reducers.md) — State transitions
-- [Built-in Navigation](built-in-navigation.md) — Navigation state management
+- built-in lifecycle tracks startup progress as explicit Reservoir state instead of implicit component state
+- caller-supplied timestamps keep reducers pure and testable
+- the feature is most useful when components and effects need a shared view of application readiness
+
+## Next Steps
+
+- [Reservoir Overview](../reservoir.md) — Return to the full state-management model.
+- [Actions](actions.md) — Review the action model used by lifecycle updates.
+- [Reducers](reducers.md) — Review the reducer pattern behind lifecycle transitions.
+- [Built-in Navigation](built-in-navigation.md) — Pair readiness state with navigation state when needed.

@@ -1,4 +1,5 @@
 ---
+id: documentation-reference
 title: Reference Pages
 description: Document exact Mississippi contracts, options, defaults, constraints, and compatibility notes without tutorial narrative.
 sidebar_label: Reference
@@ -7,9 +8,13 @@ sidebar_position: 6
 
 # Reference Pages
 
+## Overview
+
 Use a reference page when the reader needs exact, neutral, complete, and scannable facts.
 
 Reference pages should mirror the system they describe. They are not the place for long rationale or guided walkthroughs.
+
+The primary reader question is: "What are the exact supported contracts, defaults, constraints, and failure behaviors?"
 
 ## Use This Page Type When
 
@@ -31,7 +36,8 @@ Use the relevant sections from this template:
 8. `## Errors`, `## Exceptions`, or `## Failure behavior`
 9. `## Compatibility` or `## Version notes`
 10. `## Example`
-11. `## Related content`
+11. `## Summary`
+12. `## Next Steps`
 
 ## Content Rules
 
@@ -72,10 +78,18 @@ This page documents the exact configuration contract for brook storage providers
 
 ## Failure behavior
 
-## Related content
+## Summary
+
+## Next Steps
 ```
 
-## Related Content
+## Summary
+
+- reference pages are for exact facts, not guided teaching
+- they should document contracts, defaults, constraints, and failure behavior with verified examples
+- long rationale belongs in concept pages, not here
+
+## Next Steps
 
 - [Documentation Guide](./documentation-guide.md)
 - [Concept Pages](./documentation-concepts.md)

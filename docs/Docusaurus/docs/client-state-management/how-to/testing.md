@@ -20,7 +20,7 @@ For applications requiring high test coverage, Reservoir provides a testing pyra
 3. **Effects** — Test async operations with the StoreTestHarness
 4. **Components** — Thin wiring verification only
 
-See [Why Use Selectors?](selectors.md#why-use-selectors) for detailed guidance on achieving high coverage without complex UI tests.
+See [Why Use Selectors?](../reference/selectors.md#why-use-selectors) for detailed guidance on achieving high coverage without complex UI tests.
 :::
 
 ## Testing Approach by Component
@@ -55,7 +55,7 @@ public void IsAccountOpen_WhenProjectionExists_ReturnsOpenStatus()
 }
 ```
 
-For comprehensive selector testing patterns including factory selectors, composite selectors, and memoization testing, see [Testing Selectors](selectors.md#testing-selectors).
+For comprehensive selector testing patterns including factory selectors, composite selectors, and memoization testing, see [Testing Selectors](../reference/selectors.md#testing-selectors).
 
 ## Testing Reducers and Effects with StoreTestHarness
 
@@ -408,14 +408,20 @@ var harness = StoreTestHarnessFactory.ForFeature<MyState>()
     .WithEffect<MyTimeBasedEffect>();
 ```
 
-## Related Documentation
+## Summary
 
-- [Selectors](selectors.md) — Testing business logic as pure functions (recommended for high coverage)
-- [Reservoir Overview](reservoir.md) — Core concepts
-- [Reducers](reducers.md) — Writing pure reducer functions
-- [Effects](effects.md) — Handling async side effects
-- [Built-in Navigation](built-in-navigation.md) — Testing navigation reducers
-- [Built-in Lifecycle](built-in-lifecycle.md) — Testing lifecycle reducers
+- Reservoir testing works best when selectors, reducers, and effects stay isolated and deterministic.
+- `StoreTestHarness` gives reducers and effects a focused Given/When/Then test surface without requiring the full store runtime.
+- Deterministic time and one-scenario-per-test keep failures local and repeatable.
+
+## Next Steps
+
+- [Selectors](../reference/selectors.md) — Test business logic as pure functions.
+- [Reservoir Overview](../reservoir.md) — Return to the full Reservoir model.
+- [Reducers](../reference/reducers.md) — Review reducer patterns that fit the test harness.
+- [Effects](../reference/effects.md) — Review effect behavior before testing async flows.
+- [Built-in Navigation](../reference/built-in-navigation.md) — Test navigation reducers.
+- [Built-in Lifecycle](../reference/built-in-lifecycle.md) — Test lifecycle reducers.
 
 ## Source Code
 

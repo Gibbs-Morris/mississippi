@@ -90,11 +90,11 @@ public static IServiceCollection AddFeatureState<TState>(
     where TState : class, IFeatureState, new();
 ```
 
-([ReservoirRegistrations.AddFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L53-L65))
+([ReservoirRegistrations.AddFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L53-L65))
 
 :::note Automatic Deduplication
 `AddFeatureState` uses `TryAddEnumerable` to prevent duplicate registrations. You can call it multiple times for the same state type without side effects.
-([ReservoirRegistrations source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L58-L63))
+([ReservoirRegistrations source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L58-L63))
 :::
 
 ## Accessing Feature State
@@ -113,7 +113,7 @@ private EntitySelectionState Selection => GetState<EntitySelectionState>();
 ```
 
 ([IStore.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L35-L44),
-[Store.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L112-L125))
+[Store.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L112-L125))
 
 If the feature state is not registered, `GetState` throws:
 
@@ -152,14 +152,14 @@ Each registration provides:
 | `RootActionEffect` | Composite effect for this feature (if any) |
 
 ([IFeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureStateRegistration.cs),
-[FeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/State/FeatureStateRegistration.cs),
-[Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L58-L86))
+[FeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/State/FeatureStateRegistration.cs),
+[Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L58-L86))
 
 ## Feature Key and Initialization
 
 The `FeatureKey` must be unique across all registered feature states. Initial state instances are created via `new TState()` in the registration path, so each feature state type must have a parameterless constructor.
 ([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs),
-[FeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/State/FeatureStateRegistration.cs))
+[FeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/State/FeatureStateRegistration.cs))
 
 ## Summary
 
@@ -173,11 +173,11 @@ The `FeatureKey` must be unique across all registered feature states. Initial st
 
 ([IFeatureState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureState.cs),
 [IFeatureStateRegistration](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/State/IFeatureStateRegistration.cs),
-[ReservoirRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs))
+[ReservoirRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs))
 
 ## Next Steps
 
-- [Reservoir Overview](./reservoir.md) — See how feature state participates in dispatch
+- [Reservoir Overview](../reservoir.md) — See how feature state participates in dispatch
 - [Store](./store.md) — Understand the central hub that coordinates feature states, reducers, and effects
 - [Reducers](./reducers.md) — Learn how reducers update feature state
 - [Effects](./effects.md) — Learn how effects perform async operations

@@ -10,8 +10,6 @@ description: Step-by-step walkthrough of the MoneyTransferSaga that orchestrates
 
 ## Overview
 
-Focus: Public API / Developer Experience.
-
 A saga coordinates a workflow that spans multiple aggregates or services. The `MoneyTransferSaga` in Spring transfers money between two bank accounts in two steps:
 
 1. **Withdraw** from the source account
@@ -28,6 +26,14 @@ flowchart LR
     Step1 -->|fail| Comp0["Compensate Step 0:\nDeposit back to Source"]
     Comp0 --> Compensated["Compensated\n(funds returned)"]
 ```
+
+## Before You Begin
+
+Before following this tutorial, read these pages:
+
+- [Spring Sample App](../index.md)
+- [Building an Aggregate](./building-an-aggregate.md)
+- [Event Sourcing Sagas](../../concepts/event-sourcing-sagas.md)
 
 ## Step 1: Define the Saga State
 
@@ -223,6 +229,15 @@ internal sealed class DepositToDestinationStep : ISagaStep<MoneyTransferSagaStat
 
 ([DepositToDestinationStep.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/MoneyTransferSaga/Steps/DepositToDestinationStep.cs))
 
+## Checkpoint 1
+
+At this point, your saga should include:
+
+- a state record implementing `ISagaState`
+- an input command for starting the saga
+- ordered step classes for withdrawal and deposit
+- compensation on the withdrawal step only
+
 ## How Saga Compensation Works
 
 When the deposit step fails, Mississippi automatically runs compensation in reverse order:
@@ -264,6 +279,14 @@ Sagas do not need their own events, `CommandHandler`s, or `EventReducer` types. 
 | Input validation happens in the first step | Catches invalid requests before any state changes |
 | `IAggregateGrainFactory` is injected via DI | Steps use the same dependency injection as all other domain types |
 
+## Checkpoint 2
+
+Before continuing to projections, verify these outcomes in the Spring sample source:
+
+- the step order matches the saga diagram on this page
+- the withdrawal step implements compensation and the deposit step does not
+- saga steps dispatch commands to existing aggregates instead of emitting events directly
+
 ## Summary
 
 A Mississippi saga is a state record plus a set of ordered steps. Steps execute in order and compensate in reverse. Each step dispatches commands to existing aggregates, reusing their validation and event pipelines. Source generators create the API endpoints, saga grain, and client dispatchers from annotations.
@@ -271,4 +294,4 @@ A Mississippi saga is a state record plus a set of ordered steps. Steps execute 
 ## Next Steps
 
 - [Building Projections](./building-projections.md) — Create read-optimized views that track saga and aggregate state
-- [Host Applications](./host-applications.md) — See how sagas are wired into the host with a single registration call
+- [Host Architecture](../concepts/host-applications.md) — See how sagas are wired into the host with a single registration call

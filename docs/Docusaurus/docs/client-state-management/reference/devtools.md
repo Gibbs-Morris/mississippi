@@ -12,9 +12,9 @@ description: Reservoir integrates with Redux DevTools for time-travel debugging 
 
 Reservoir provides opt-in integration with the [Redux DevTools](https://github.com/reduxjs/redux-devtools) browser extension. When enabled, a background service observes all dispatched actions and state changes, reporting them to DevTools for time-travel debugging, state inspection, and action replay.
 
-This page covers registration, configuration options, enablement modes, the composition architecture, and the strict time-travel rehydration feature.
+This page covers the registration requirements, configuration options, enablement modes, composition architecture, and strict time-travel rehydration feature.
 
-## Quick Start
+## Minimum Setup
 
 ### 1. Register DevTools
 
@@ -28,14 +28,14 @@ builder.Services.AddReservoirDevTools(options =>
 });
 ```
 
-([ReservoirDevToolsRegistrations.AddReservoirDevTools](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsRegistrations.cs#L33-L52))
+([ReservoirDevToolsRegistrations.AddReservoirDevTools](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReservoirDevToolsRegistrations.cs#L44-L69))
 
 ### 2. Add the Initializer Component
 
 Add `ReservoirDevToolsInitializerComponent` to your `App.razor`:
 
 ```razor
-@using Mississippi.Reservoir.Blazor
+@using Mississippi.Reservoir.Client
 
 <ReservoirDevToolsInitializerComponent/>
 
@@ -48,7 +48,7 @@ Add `ReservoirDevToolsInitializerComponent` to your `App.razor`:
 This step is required. The component calls `Initialize()` after the Blazor rendering context is available. Without it, DevTools will not connect.
 :::
 
-([ReservoirDevToolsInitializerComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsInitializerComponent.razor))
+([ReservoirDevToolsInitializerComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReservoirDevToolsInitializerComponent.razor))
 
 ### 3. Install the Browser Extension
 
@@ -83,7 +83,7 @@ public enum ReservoirDevToolsEnablement
 | `DevelopmentOnly` | DevTools integration is enabled only when `IHostEnvironment.IsDevelopment()` returns `true`. Recommended for most applications. |
 | `Always` | DevTools integration is enabled in all environments including production. Use with caution. |
 
-([ReservoirDevToolsEnablement](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L85-L107))
+([ReservoirDevToolsEnablement](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReservoirDevToolsOptions.cs#L107-L123))
 
 ### Example
 
@@ -113,9 +113,11 @@ The `ReservoirDevToolsOptions` class provides configuration for the DevTools int
 | `IsStrictStateRehydrationEnabled` | `bool` | `false` | When `true`, time-travel rejects payloads missing any feature state. See [Strict State Rehydration](#strict-state-rehydration). |
 | `ThrowOnMissingInitializer` | `bool?` | `null` | Controls error handling when the initializer component is missing. See [Missing Component Detection](#missing-component-detection). |
 | `ActionSanitizer` | `Func<IAction, object?>?` | `null` | Transform actions before sending. Return `null` to use default serialization. See [Sanitizers](#sanitizers). |
-| `StateSanitizer` | `Func<IReadOnlyDictionary<string, object>, object?>?` | `null` | Transform state snapshot before sending. Return `null` to use original. See [Sanitizers](#sanitizers). |
+| `StateSanitizer` | `Func<IReadOnlyDictionary<string, object>, object?>?` | `null` | Transform state snapshot before sending. Return `null` to use the original snapshot. See [Sanitizers](#sanitizers). |
+| `AdditionalOptions` | `IDictionary<string, object?>` | empty dictionary | Pass through additional Redux DevTools extension options. |
+| `SerializerOptions` | `JsonSerializerOptions` | web defaults with case-insensitive property names | Controls JSON-based state rehydration during time-travel operations. |
 
-([ReservoirDevToolsOptions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReservoirDevToolsOptions.cs#L14-L91))
+([ReservoirDevToolsOptions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReservoirDevToolsOptions.cs#L14-L104))
 
 ### Example Configuration
 
@@ -182,7 +184,7 @@ If connection fails (e.g., the browser extension is not installed), a `Warning` 
 
 > Failed to connect to Redux DevTools. Ensure the Redux DevTools browser extension is installed and the page is open in a supported browser.
 
-([DevToolsLoggerExtensions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/DevToolsLoggerExtensions.cs#L39-L56))
+([DevToolsLoggerExtensions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/DevToolsLoggerExtensions.cs#L39-L56))
 
 ## Missing Component Detection
 
@@ -229,7 +231,7 @@ builder.Services.AddReservoirDevTools(options =>
 Leave `ThrowOnMissingInitializer` at its default (`null`) to get fail-fast behavior during development while avoiding runtime exceptions in production.
 :::
 
-([DevToolsInitializationCheckerService](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/DevToolsInitializationCheckerService.cs))
+([DevToolsInitializationCheckerService](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/DevToolsInitializationCheckerService.cs))
 
 ### Composition Pattern
 
@@ -239,7 +241,7 @@ Leave `ThrowOnMissingInitializer` at its default (`null`) to get fail-fast behav
 
 This design maintains unidirectional data flow—even time-travel commands go through `Dispatch()`.
 
-([ReduxDevToolsService](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReduxDevToolsService.cs#L32-L155))
+([ReduxDevToolsService](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReduxDevToolsService.cs#L32-L155))
 
 ## Time-Travel Debugging
 
@@ -287,7 +289,7 @@ When `IsStrictStateRehydrationEnabled` is `false` (default):
 - Features that fail deserialization are skipped
 - Successfully deserialized features are applied
 
-([ReduxDevToolsService.TryRestoreStateFromJsonDocument](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/ReduxDevToolsService.cs#L429-L490))
+([ReduxDevToolsService.TryRestoreStateFromJsonDocument](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReduxDevToolsService.cs#L429-L490))
 
 ### When to Use Strict Mode
 
@@ -384,5 +386,5 @@ Sanitizers run on every action dispatch. Keep them fast to avoid impacting appli
 ## Next Steps
 
 - [Store](./store.md) — Understand the observable store events and system actions that DevTools uses
-- [Reservoir Overview](./reservoir.md) — Learn the dispatch pipeline that DevTools observes
-- [Testing](./testing.md) — Test reducers and effects without DevTools
+- [Reservoir Overview](../reservoir.md) — Learn the dispatch pipeline that DevTools observes
+- [Testing](../how-to/testing.md) — Test reducers and effects without DevTools

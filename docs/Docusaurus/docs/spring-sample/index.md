@@ -10,8 +10,6 @@ description: A banking domain sample that demonstrates how Mississippi keeps all
 
 ## Overview
 
-Focus: Public API / Developer Experience.
-
 Spring is a full-stack event-sourced banking application built with the Mississippi framework. It demonstrates a core architectural principle: **all business logic lives in one domain project** (`Spring.Domain`), while the host applications (`Spring.Runtime`, `Spring.Gateway`, `Spring.Client`) contain only infrastructure wiring.
 
 The sample models a banking domain with accounts, deposits, withdrawals, money transfers, and compliance flagging. Every feature is built using Mississippi's event-sourcing patterns — `Command`s, `CommandHandler`s, events, `EventReducer`s, effects, sagas, and projections — all defined inside `Spring.Domain`.
@@ -27,11 +25,11 @@ flowchart LR
 
 | Lesson | Where to Look |
 |--------|---------------|
-| **Define an aggregate** with `Command`s, `CommandHandler`s, events, and `EventReducer`s | [Building an Aggregate](./building-an-aggregate.md) |
-| **Add side effects** that react to events (sync and fire-and-forget) | [Building an Aggregate — Effects](./building-an-aggregate.md#step-6-add-effects) |
-| **Orchestrate multi-step workflows** with sagas and compensation | [Building a Saga](./building-a-saga.md) |
-| **Create read-optimized views** from event streams | [Building Projections](./building-projections.md) |
-| **Keep hosts minimal** with source-generated registration | [Host Applications](./host-applications.md) |
+| **Define an aggregate** with `Command`s, `CommandHandler`s, events, and `EventReducer`s | [Building an Aggregate](./tutorials/building-an-aggregate.md) |
+| **Add side effects** that react to events (sync and fire-and-forget) | [Building an Aggregate — Effects](./tutorials/building-an-aggregate.md#step-6-add-effects) |
+| **Orchestrate multi-step workflows** with sagas and compensation | [Building a Saga](./tutorials/building-a-saga.md) |
+| **Create read-optimized views** from event streams | [Building Projections](./tutorials/building-projections.md) |
+| **Keep hosts minimal** with source-generated registration | [Host Architecture](./concepts/host-applications.md) |
 
 ## Project Structure
 
@@ -70,10 +68,10 @@ When learning Spring, start with the domain pages first (`Aggregate` → `Saga` 
 
 ## Learn More
 
-- [Key Concepts](./key-concepts.md) — Quick reference for every pattern used in Spring
-- [Building an Aggregate](./building-an-aggregate.md) — Step-by-step walkthrough of the BankAccount aggregate
-- [Building a Saga](./building-a-saga.md) — Multi-step money transfer with compensation
-- [Building Projections](./building-projections.md) — Read-optimized views from event streams
-- [Host Applications](./host-applications.md) — How Runtime, Gateway, and Client stay minimal
-- [Auth-Proof Mode](./auth-proof-mode.md) — Dev-only generated HTTP and SignalR subscription authorization proof (`200`/`401`/`403` + `Subscription denied.`)
-- [MCP in VS Code](./mcp-server-vscode-testing.md) — Configure VS Code to call Spring MCP tools for local testing
+- [Key Concepts](./concepts/key-concepts.md) — Quick reference for the domain-modeling vocabulary used throughout Spring
+- [Host Architecture](./concepts/host-applications.md) — How Runtime, Gateway, and Client stay minimal while the domain owns business logic
+- [Building an Aggregate](./tutorials/building-an-aggregate.md) — Step-by-step walkthrough of the BankAccount aggregate
+- [Building a Saga](./tutorials/building-a-saga.md) — Multi-step money transfer with compensation
+- [Building Projections](./tutorials/building-projections.md) — Read-optimized views from event streams
+- [Auth-Proof Mode](./how-to/auth-proof-mode.md) — Verify generated HTTP and subscription authorization behavior locally
+- [MCP in VS Code](./how-to/mcp-server-vscode-testing.md) — Connect VS Code to the Spring MCP endpoint for local tool testing

@@ -132,8 +132,8 @@ It registers:
 
 ## Next Steps
 
-- [Event Sourcing Sagas](./event-sourcing-sagas.md)
-- [Documentation Guide](./contributing/documentation-guide.md)
+- [Event Sourcing Sagas](../concepts/event-sourcing-sagas.md)
+- [Documentation Guide](../contributing/documentation-guide.md)
 
 <!-- Reference-style links -->
 [isagastate]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs

@@ -17,13 +17,13 @@ description: StoreComponent is the abstract Blazor base class for components tha
 StoreComponent bridges Blazor's component model with the Reservoir store:
 
 - **Inherits from `ComponentBase`**
-    ([StoreComponent.cs#L22-L25](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L22-L25))
+    ([StoreComponent.cs#L20-L23](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L20-L23))
 - **Implements `IDisposable`** and disposes the store subscription in `Dispose(bool)`
-    ([StoreComponent.cs#L59-L79](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L59-L79))
+    ([StoreComponent.cs#L52-L72](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L52-L72))
 - **Injects `IStore`**
-    ([StoreComponent.cs#L33-L34](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L33-L34))
+    ([StoreComponent.cs#L30-L31](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L30-L31))
 - **Auto-subscribes** in `OnInitialized` and calls `StateHasChanged` via `InvokeAsync`
-    ([StoreComponent.cs#L87-L96](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L87-L96), [StoreComponent.cs#L152-L156](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L152-L156))
+    ([StoreComponent.cs#L81-L90](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L81-L90), [StoreComponent.cs#L146-L150](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L146-L150))
 
 ```mermaid
 flowchart TB
@@ -56,7 +56,7 @@ The injected store instance, available to derived components:
 protected IStore Store { get; set; }
 ```
 
-**Source**: [`StoreComponent.cs#L33-L34`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L33-L34)
+**Source**: [`StoreComponent.cs#L30-L31`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L30-L31)
 
 ### Dispatch
 
@@ -68,7 +68,7 @@ protected void Dispatch(IAction action)
 
 This method delegates directly to [`Store.Dispatch(action)`](store.md#dispatching-actions). Use it to trigger state changes from user interactions or component logic.
 
-**Source**: [`StoreComponent.cs#L48-L53`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L48-L53)
+**Source**: [`StoreComponent.cs#L40-L46`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L40-L46)
 
 ### GetState
 
@@ -80,7 +80,7 @@ protected TState GetState<TState>() where TState : class, IFeatureState
 
 This method delegates to [`Store.GetState<TState>()`](store.md#reading-state). The generic constraint ensures only registered feature states can be retrieved.
 
-**Source**: [`StoreComponent.cs#L82-L84`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L82-L84)
+**Source**: [`StoreComponent.cs#L76-L79`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L76-L79)
 
 ### Select
 
@@ -138,7 +138,7 @@ protected override void OnInitialized()
 }
 ```
 
-**Source**: [`StoreComponent.cs#L87-L96`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L87-L96)
+**Source**: [`StoreComponent.cs#L81-L90`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L81-L90)
 
 ### State Change Notification
 
@@ -151,7 +151,7 @@ private void OnStoreChanged()
 }
 ```
 
-**Source**: [`StoreComponent.cs#L152-L156`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L152-L156)
+**Source**: [`StoreComponent.cs#L146-L150`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L146-L150)
 
 ### Dispose
 
@@ -172,7 +172,7 @@ protected virtual void Dispose(bool disposing)
 
 The `disposed` flag short-circuits repeated disposal attempts.
 
-**Source**: [`StoreComponent.cs#L59-L79`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L59-L79)
+**Source**: [`StoreComponent.cs#L52-L72`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L52-L72)
 
 ## Repository Examples
 
@@ -252,11 +252,17 @@ private sealed class TestStoreComponent : StoreComponent
 }
 ```
 
-**Source**: [`StoreComponentTests.cs#L91-L117`](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.Blazor.L0Tests/StoreComponentTests.cs#L91-L117)
+**Source**: [`StoreComponentTests.cs#L75-L118`](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.Client.L0Tests/StoreComponentTests.cs#L75-L118)
+
+## Summary
+
+- `StoreComponent` is the Blazor bridge into Reservoir state, dispatch, and selectors.
+- It owns store subscription and re-render wiring so derived components can stay focused on feature logic.
+- `InletComponent` builds on the same base pattern when a component also needs projection helpers.
 
 ## Next Steps
 
-- [Reservoir Overview](./reservoir.md) — Learn where StoreComponent fits in the system
+- [Reservoir Overview](../reservoir.md) — Learn where StoreComponent fits in the system
 - [Selectors](./selectors.md) — Derive computed values via the `Select()` method
 - [Store](./store.md) — The central state container that StoreComponent wraps
 - [Actions](./actions.md) — The action types dispatched via `Dispatch()`

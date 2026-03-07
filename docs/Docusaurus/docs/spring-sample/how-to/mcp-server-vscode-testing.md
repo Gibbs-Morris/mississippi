@@ -10,8 +10,6 @@ description: Configure VS Code to connect to Spring.Gateway as an MCP server and
 
 ## Overview
 
-Focus: Public API / Developer Experience.
-
 This page shows how to connect VS Code to the Spring sample MCP server so you can test source-generated MCP tools (for example, `open_account`, `deposit_funds`, and projection read tools) from chat.
 
 Spring exposes MCP in `Spring.Gateway` with:
@@ -21,13 +19,13 @@ Spring exposes MCP in `Spring.Gateway` with:
 
 Reference: [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
 
-## Prerequisites
+## Before You Begin
 
 - VS Code with GitHub Copilot Chat enabled
 - This repository checked out locally
 - .NET SDK installed
 
-## Start Spring Locally
+## Step 1: Start Spring Locally
 
 From the repository root, run:
 
@@ -46,7 +44,7 @@ When Spring is running from `run-spring.ps1`, Spring uses these default endpoint
 
 For MCP over HTTP, use `http://localhost:5101/mcp`.
 
-## Add the MCP Server to VS Code
+## Step 2: Add the MCP Server to VS Code
 
 Open (or create) `.vscode/mcp.json` in the workspace root and add a server entry:
 
@@ -67,7 +65,7 @@ Notes:
 - If you change launch settings, update this URL to match your `Spring.Gateway` HTTP port.
 - MCP client behavior and UI workflows can change across VS Code releases; use the official MCP documentation linked in [References](#references).
 
-## Validate Tool Discovery in Chat
+## Verify
 
 1. Open Chat in VS Code.
 1. Open the tools picker and ensure tools from `springBank` are enabled.
@@ -95,21 +93,18 @@ Use the springBank tools to call spring_gateway_ping.
 - **No tools discovered**: confirm Spring is running and that `/mcp` is mapped in `Spring.Gateway`.
 - **Tools mismatch after code changes**: restart Spring with `pwsh ./run-spring.ps1` so regenerated tools are loaded.
 
-## See Also
-
-- [Host Applications](./host-applications.md)
-- [Key Concepts](./key-concepts.md)
-- [Domain Registration Generators](../domain-registration-generators.md)
-
 ## Summary
 
 Spring exposes MCP tools at `http://localhost:5101/mcp` in Development, with both generated domain tools and a manual `spring_gateway_ping` tool.
 
 ## Next Steps
 
-- Run through [Building an Aggregate](./building-an-aggregate.md) and test generated command tools over MCP.
-- Run through [Building Projections](./building-projections.md) and test projection read tools over MCP.
+- Run through [Building an Aggregate](../tutorials/building-an-aggregate.md) and test generated command tools over MCP.
+- Run through [Building Projections](../tutorials/building-projections.md) and test projection read tools over MCP.
 - Extend your local MCP prompts using the Spring tool names validated in this page.
+- [Host Architecture](../concepts/host-applications.md) — Revisit how the MCP surface fits into the Spring gateway host.
+- [Key Concepts](../concepts/key-concepts.md) — Revisit the domain-modeling vocabulary behind the generated tools.
+- [Domain Registration Generators](../../reference/domain-registration-generators.md) — Look up how the host registration surface is generated.
 
 ## References
 

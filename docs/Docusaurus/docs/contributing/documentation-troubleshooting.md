@@ -1,4 +1,5 @@
 ---
+id: documentation-troubleshooting
 title: Troubleshooting Pages
 description: Diagnose Mississippi failures from symptoms and evidence, then guide the reader through confirmation, resolution, and prevention.
 sidebar_label: Troubleshooting
@@ -7,9 +8,13 @@ sidebar_position: 8
 
 # Troubleshooting Pages
 
+## Overview
+
 Use a troubleshooting page when the reader starts from a symptom and needs to diagnose and resolve a problem from evidence.
 
 Organize the page by symptom, not by subsystem alone.
+
+The primary reader question is: "Given this symptom, how do I confirm the cause, fix it, and verify recovery?"
 
 ## Use This Page Type When
 
@@ -27,7 +32,8 @@ Organize the page by symptom, not by subsystem alone.
 6. `## Resolution`
 7. `## Verify the fix`
 8. `## Prevention`
-9. `## Related content`
+9. `## Summary`
+10. `## Next Steps`
 
 ## Content Rules
 
@@ -68,10 +74,18 @@ Use this guide when Mississippi fails to load persisted state after a version ch
 
 ## Prevention
 
-## Related content
+## Summary
+
+## Next Steps
 ```
 
-## Related Content
+## Summary
+
+- troubleshooting pages start from observable symptoms, not subsystem tours
+- they should pair each probable cause with confirmation steps and concrete resolution guidance
+- speculative causes without a confirmation path do not belong in this page type
+
+## Next Steps
 
 - [Documentation Guide](./documentation-guide.md)
 - [Concept Pages](./documentation-concepts.md)

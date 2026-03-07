@@ -45,10 +45,10 @@ services.AddReducer<SetEntityIdAction, EntitySelectionState>(EntitySelectionRedu
 
 ```
 
-This approach uses [`DelegateActionReducer<TAction, TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/DelegateActionReducer.cs) internally.
+This approach uses [`DelegateActionReducer<TAction, TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/DelegateActionReducer.cs) internally.
 
 This option registers a delegate-based reducer for the action/state pair.
-([AddReducer overloads](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130))
+([AddReducer overloads](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L86-L130))
 
 ### Option 2: Class-Based Reducers
 
@@ -67,7 +67,7 @@ services.AddReducer<MyAction, MyState, MyReducer>();
 ```
 
 This option registers the reducer class as a transient service and composes it into the root reducer.
-([AddReducer overloads](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130))
+([AddReducer overloads](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L86-L130))
 
 ## Organizing Reducers
 
@@ -100,7 +100,7 @@ services.AddReducer<SetEntityIdAction, EntitySelectionState>(EntitySelectionRedu
 
 ## How Reducers Are Invoked
 
-When an action is dispatched, the store calls [`RootReducer<TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootReducer.cs) for each registered feature state. The root reducer:
+When an action is dispatched, the store calls [`RootReducer<TState>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootReducer.cs) for each registered feature state. The root reducer:
 
 1. Looks up reducers registered for the action's exact type
 2. Calls each matching reducer in registration order
@@ -122,7 +122,7 @@ flowchart LR
 
 Multiple reducers can handle the same action type. They run in sequence, each receiving the state produced by the previous reducer.
 
-([RootReducer.Reduce](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootReducer.cs#L108-L136))
+([RootReducer.Reduce](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootReducer.cs#L108-L136))
 
 ## State Updates
 
@@ -163,7 +163,7 @@ Both `AddReducer` overloads automatically:
 
 You don't need to call `AddFeatureState` or `AddRootReducer` separately when using `AddReducer`.
 
-([ReservoirRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L86-L130))
+([ReservoirRegistrations](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L86-L130))
 
 ## Summary
 
@@ -177,7 +177,7 @@ You don't need to call `AddFeatureState` or `AddRootReducer` separately when usi
 
 ## Next Steps
 
-- [Reservoir Overview](./reservoir.md) — Understand how reducers fit into the dispatch pipeline
+- [Reservoir Overview](../reservoir.md) — Understand how reducers fit into the dispatch pipeline
 - [Effects](./effects.md) — Handle async operations triggered by actions
 - [Feature State](./feature-state.md) — Organize state into feature slices
 - [Store](./store.md) — Understand the central hub that coordinates reducers, effects, and state

@@ -10,15 +10,21 @@ description: Dev-only, opt-in generated endpoint authorization proof flow for th
 
 ## Overview
 
-Focus: Public API / Developer Experience.
-
 Spring includes a dedicated auth-proof flow for generated endpoints so you can verify authentication and authorization behavior in local development with explicit `200`, `401`, and `403` outcomes.
 
 :::warning
 Auth-proof mode is a local development aid that uses header-based identity emulation. It is not a production authentication design.
 :::
 
-## Enable Auth-Proof Mode
+## Before You Begin
+
+Before following this guide:
+
+- start from a local Spring sample environment
+- keep this page scoped to development validation only
+- use [Host Architecture](../concepts/host-applications.md) for the broader generated-host wiring context
+
+## Step 1: Enable Auth-Proof Mode
 
 Set `Spring__AuthProofMode=true` before launching `Spring.AppHost`.
 
@@ -40,7 +46,7 @@ When enabled, AppHost sets `SpringAuth__Enabled=true` for `spring-gateway`.
 
 When not set (or set to `false`), Spring still wires authentication and authorization middleware, but the local dev authentication handler returns `NoResult` and does not establish a principal. Endpoints decorated with generated authorization metadata therefore return `401`/`403` based on normal ASP.NET authorization behavior.
 
-## Identity Override Headers
+## Step 2: Set Identity Override Headers
 
 When local dev auth is enabled, `Spring.Gateway` reads these headers:
 
@@ -61,7 +67,7 @@ Source:
 - [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs)
 - [SpringLocalDevAuthenticationHandler](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/SpringLocalDevAuthenticationHandler.cs)
 
-## Generated Endpoint Matrix
+## Expected Results
 
 Spring auth-proof mode demonstrates generated authorization behavior across all three endpoint categories:
 
@@ -100,7 +106,7 @@ Source:
 - [InletHub](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletHub.cs)
 - [InletHubConstants](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Abstractions/InletHubConstants.cs)
 
-## Verify with L2 Tests
+## Verify
 
 Run the auth-proof matrix tests:
 
@@ -136,6 +142,6 @@ Source:
 
 ## Next Steps
 
-- [Host Applications](./host-applications.md) — Spring host wiring and generated registration overview
-- [Overview](./index.md) — Spring sample architecture and learning path
+- [Host Architecture](../concepts/host-applications.md) — Spring host wiring and generated registration overview
+- [Overview](../index.md) — Spring sample architecture and learning path
 - [MCP in VS Code](./mcp-server-vscode-testing.md) — Testing generated MCP tools locally
