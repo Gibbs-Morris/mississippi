@@ -4,10 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Logging (LoggerExtensions) Standard
+
 **Source:** .github/instructions/logging-rules.instructions.md
-
-
-# Logging (LoggerExtensions) Standard
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: All logging goes through `[LoggerMessage]` LoggerExtensions for zero-allocation performance and consistent observability.
 

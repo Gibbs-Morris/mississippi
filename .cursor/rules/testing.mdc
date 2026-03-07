@@ -3,10 +3,9 @@ description: Testing, Coverage, and Mutation Strategy
 alwaysApply: true
 ---
 # Testing, Coverage, and Mutation Strategy
+
 **Source:** .github/instructions/testing.instructions.md
-
-
-# Testing, Coverage, and Mutation Strategy
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Default to fast, deterministic L0 tests with high coverage and mutation strength; Mississippi projects carry full gates, Samples stay minimal.
 

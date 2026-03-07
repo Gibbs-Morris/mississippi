@@ -3,10 +3,9 @@ description: Build Issue Remediation Protocol
 alwaysApply: true
 ---
 # Build Issue Remediation Protocol
+
 **Source:** .github/instructions/build-issue-remediation.instructions.md
-
-
-# Build Issue Remediation Protocol
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Fix each warning/error with the smallest safe edit in at most five focused attempts, deferring with context when blocked.
 

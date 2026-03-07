@@ -3,10 +3,9 @@ description: Shared Engineering Guardrails
 alwaysApply: true
 ---
 # Shared Engineering Guardrails
+
 **Source:** .github/instructions/shared-policies.instructions.md
-
-
-# Shared Engineering Guardrails
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Common rules for every instruction—zero warnings, centralized packages, consistent dependency injection, and LoggerExtensions logging—so other docs can stay concise.
 

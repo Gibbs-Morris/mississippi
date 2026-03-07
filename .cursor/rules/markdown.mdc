@@ -4,10 +4,9 @@ globs: ["**/*.md"]
 alwaysApply: false
 ---
 # Markdown and markdownlint
+
 **Source:** .github/instructions/markdown.instructions.md
-
-
-# Markdown and markdownlint
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: All Markdown must pass the configured markdownlint rules with no suppressions; fix content instead of disabling rules.
 

@@ -3,10 +3,9 @@ description: Abstractions Projects
 alwaysApply: true
 ---
 # Abstractions Projects
+
 **Source:** .github/instructions/abstractions-projects.instructions.md
-
-
-# Abstractions Projects
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Split stable public contracts into `{Vendor}.{Area}[.{Feature}].Abstractions` projects so consumers take lightweight interfaces without implementations.
 

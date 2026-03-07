@@ -3,10 +3,9 @@ description: Pull Request Review Guide
 alwaysApply: true
 ---
 # Pull Request Review Guide
+
 **Source:** .github/instructions/pull-request-reviews.instructions.md
-
-
-# Pull Request Review Guide
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Deliver high-signal reviews that enforce small, single-responsibility PRs with proven tests and build results.
 
@@ -42,4 +41,4 @@ PR reviewers in this repository.
 
 - Testing: `.github/instructions/testing.instructions.md`
 - Logging/DI guardrails: `.github/instructions/logging-rules.instructions.md`, `.github/instructions/shared-policies.instructions.md`
-- Documentation agent: `.github/agents/CoV-mississippi-docs.agent.md`
+- Documentation agent: `.github/agents/technical-writer.agent.md`

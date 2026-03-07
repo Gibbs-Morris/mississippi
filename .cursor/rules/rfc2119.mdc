@@ -1,13 +1,12 @@
 ---
 description: RFC 2119 Keyword Usage
-globs: ["**/*.instructions.md,.github/copilot-instructions.md,agents.md"]
+globs: ["**/*.instructions.md", ".github/copilot-instructions.md", "agents.md"]
 alwaysApply: false
 ---
 # RFC 2119 Keyword Usage
+
 **Source:** .github/instructions/rfc2119.instructions.md
-
-
-# RFC 2119 Keyword Usage
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Use RFC 2119 keywords only for normative requirements, keep them uppercase, and confine them to a single Rules section per file.
 
