@@ -13,6 +13,7 @@ using Mississippi.Brooks.Serialization.Json;
 using Mississippi.Inlet.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
+
 using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
 using MississippiSamples.Spring.Domain.Services;
 using MississippiSamples.Spring.Runtime.Registrations;

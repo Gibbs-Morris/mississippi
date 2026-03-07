@@ -25,7 +25,7 @@ namespace Mississippi.DomainModeling.Abstractions.Subscriptions;
 ///         before the grain deactivates.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.DomainModeling.Abstractions.IUxProjectionSubscriptionGrain")]
+[Alias("Mississippi.DomainModeling.Abstractions.Subscriptions.IUxProjectionSubscriptionGrain")]
 public interface IUxProjectionSubscriptionGrain : IGrainWithStringKey
 {
     /// <summary>

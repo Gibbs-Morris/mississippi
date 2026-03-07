@@ -19,7 +19,7 @@ namespace Mississippi.Aqueduct.Abstractions.Messages;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Aqueduct.AllMessage")]
+[Alias("Mississippi.Aqueduct.Abstractions.Messages.AllMessage")]
 public sealed record AllMessage
 {
     /// <summary>

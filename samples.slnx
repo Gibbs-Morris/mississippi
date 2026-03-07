@@ -7,6 +7,7 @@
     <Folder Name="/Samples/" />
     <Folder Name="/Samples/Crescent/">
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
+        <Project Path="samples\Crescent\Crescent.L0Tests\Crescent.L0Tests.csproj" />
         <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
     </Folder>
     <Folder Name="/Samples/Spring/">

@@ -55,6 +55,8 @@ public sealed class AccessControlArchitectureTests : ArchitectureTestBase
             .And()
             .DoNotResideInNamespaceMatching(@"Mississippi\..*\.Abstractions.*")
             .And()
+            .DoNotResideInNamespaceMatching(@"Mississippi\..*\.TestHarness.*")
+            .And()
             .DoNotResideInNamespaceMatching(@"OrleansCodeGen\..*") // Exclude Orleans generated code
             .And()
             .AreNotAbstract()

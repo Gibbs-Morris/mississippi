@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Spring.Gateway" />
-    <InternalsVisibleTo Include="Spring.Runtime" />
+    <InternalsVisibleTo Include="MississippiSamples.Spring.Gateway" />
+    <InternalsVisibleTo Include="MississippiSamples.Spring.Runtime" />
   </ItemGroup>
 
   <ItemGroup>

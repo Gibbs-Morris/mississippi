@@ -13,6 +13,7 @@ using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Runtime;
 using Mississippi.Inlet.Gateway;
 using Mississippi.Inlet.Runtime;
+
 using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
 using MississippiSamples.Spring.Gateway;
 using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Mappers;

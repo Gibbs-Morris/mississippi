@@ -26,8 +26,12 @@ public sealed class SpringGatewayPingMcpTools
     /// <summary>
     ///     Confirms that MississippiSamples.Spring.Gateway is alive and reachable via MCP.
     /// </summary>
-    /// <returns>A status string with gateway name and current UTC time, confirming MississippiSamples.Spring.Gateway is online.</returns>
+    /// <returns>
+    ///     A status string with gateway name and current UTC time, confirming MississippiSamples.Spring.Gateway is
+    ///     online.
+    /// </returns>
     [McpServerTool(Name = "spring_gateway_ping", Title = "Spring Gateway Ping", ReadOnly = true, Idempotent = true)]
-    [Description("Connectivity probe — returns a status message confirming MississippiSamples.Spring.Gateway is alive and reachable.")]
+    [Description(
+        "Connectivity probe — returns a status message confirming MississippiSamples.Spring.Gateway is alive and reachable.")]
     public string Ping() => $"MississippiSamples.Spring.Gateway is online ({TimeProvider.GetUtcNow().UtcDateTime:u})";
 }

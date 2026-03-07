@@ -22,7 +22,7 @@ namespace Mississippi.DomainModeling.Abstractions.Subscriptions;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.DomainModeling.Abstractions.UxProjectionChangedEvent")]
+[Alias("Mississippi.DomainModeling.Abstractions.Subscriptions.UxProjectionChangedEvent")]
 public sealed record UxProjectionChangedEvent
 {
     /// <summary>

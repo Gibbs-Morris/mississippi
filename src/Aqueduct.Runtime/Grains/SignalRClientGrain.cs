@@ -39,7 +39,7 @@ namespace Mississippi.Aqueduct.Runtime.Grains;
 ///         <c>AqueductHubLifetimeManager</c>.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.Aqueduct.SignalRClientGrain")]
+[Alias("Mississippi.Aqueduct.Runtime.Grains.SignalRClientGrain")]
 internal sealed class SignalRClientGrain
     : ISignalRClientGrain,
       IGrainBase
