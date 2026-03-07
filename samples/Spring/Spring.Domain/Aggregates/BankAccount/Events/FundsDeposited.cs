@@ -10,7 +10,7 @@ namespace Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
 /// </summary>
 [EventStorageName("SPRING", "BANKING", "FUNDSDEPOSITED")]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Events.FundsDeposited")]
+[Alias("Mississippi.Spring.Domain.Aggregates.BankAccount.Events.FundsDeposited")]
 internal sealed record FundsDeposited
 {
     /// <summary>

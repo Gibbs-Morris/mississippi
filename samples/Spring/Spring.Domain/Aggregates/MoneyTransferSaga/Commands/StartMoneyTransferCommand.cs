@@ -10,7 +10,7 @@ namespace Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 /// </summary>
 [GenerateCommand(Route = "transfer")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.MoneyTransferSaga.Commands.StartMoneyTransferCommand")]
+[Alias("Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Commands.StartMoneyTransferCommand")]
 public sealed record StartMoneyTransferCommand
 {
     /// <summary>

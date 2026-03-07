@@ -25,7 +25,7 @@ namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
 [SnapshotStorageName("SPRING", "COMPLIANCE", "INVESTIGATIONSTATE")]
 [GenerateAggregateEndpoints]
 [GenerateSerializer]
-[Alias("Spring.Domain.TransactionInvestigationQueue.TransactionInvestigationQueueAggregate")]
+[Alias("Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.TransactionInvestigationQueueAggregate")]
 public sealed record TransactionInvestigationQueueAggregate
 {
     /// <summary>

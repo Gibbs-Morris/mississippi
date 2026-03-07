@@ -22,7 +22,7 @@ namespace Mississippi.Spring.Domain.Projections.MoneyTransferStatus;
     Description = "Retrieves the current status and phase of a money transfer saga.")]
 [GenerateSerializer]
 [GenerateSagaStatusReducers]
-[Alias("Spring.Domain.Projections.MoneyTransferStatus.MoneyTransferStatusProjection")]
+[Alias("Mississippi.Spring.Domain.Projections.MoneyTransferStatus.MoneyTransferStatusProjection")]
 public sealed record MoneyTransferStatusProjection
 {
     /// <summary>

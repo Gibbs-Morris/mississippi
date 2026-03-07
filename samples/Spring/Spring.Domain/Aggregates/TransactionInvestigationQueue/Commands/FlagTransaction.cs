@@ -19,7 +19,7 @@ namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Com
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Spring.Domain.TransactionInvestigationQueue.Commands.FlagTransaction")]
+[Alias("Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands.FlagTransaction")]
 public sealed record FlagTransaction
 {
     /// <summary>

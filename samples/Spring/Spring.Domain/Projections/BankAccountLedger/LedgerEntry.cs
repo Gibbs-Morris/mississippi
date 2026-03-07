@@ -7,7 +7,7 @@ namespace Mississippi.Spring.Domain.Projections.BankAccountLedger;
 ///     A single entry in the account ledger.
 /// </summary>
 [GenerateSerializer]
-[Alias("Spring.Domain.Projections.BankAccountLedger.LedgerEntry")]
+[Alias("Mississippi.Spring.Domain.Projections.BankAccountLedger.LedgerEntry")]
 public sealed record LedgerEntry
 {
     /// <summary>

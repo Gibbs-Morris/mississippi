@@ -1,6 +1,6 @@
 using System;
 
-using global::Spring.Client.Features.BankAccountAggregate.State;
+using Spring.Client.Features.BankAccountAggregate.State;
 
 
 namespace Mississippi.Spring.Client.Features.BankAccountAggregate.Selectors;

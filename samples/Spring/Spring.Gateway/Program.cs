@@ -1,9 +1,6 @@
 using System;
 using System.Threading.Tasks;
 
-using global::Spring.Gateway.Controllers.Aggregates.Mappers;
-using global::Spring.Gateway.Controllers.Projections.Mappers;
-using global::Spring.Gateway.McpTools;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -27,6 +24,10 @@ using OpenTelemetry.Trace;
 using Orleans.Hosting;
 
 using Scalar.AspNetCore;
+
+using Spring.Gateway.Controllers.Aggregates.Mappers;
+using Spring.Gateway.Controllers.Projections.Mappers;
+using Spring.Gateway.McpTools;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -122,14 +123,14 @@ else
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add generated domain mapper registrations
-AuthProofAggregateMapperRegistrations.AddAuthProofAggregateMappers(builder.Services);
-BankAccountAggregateMapperRegistrations.AddBankAccountAggregateMappers(builder.Services);
-MoneyTransferSagaAggregateMapperRegistrations.AddMoneyTransferSagaAggregateMappers(builder.Services);
-AuthProofProjectionMapperRegistrations.AddAuthProofProjectionMappers(builder.Services);
-BankAccountBalanceProjectionMapperRegistrations.AddBankAccountBalanceProjectionMappers(builder.Services);
-BankAccountLedgerProjectionMapperRegistrations.AddBankAccountLedgerProjectionMappers(builder.Services);
-FlaggedTransactionsProjectionMapperRegistrations.AddFlaggedTransactionsProjectionMappers(builder.Services);
-MoneyTransferStatusProjectionMapperRegistrations.AddMoneyTransferStatusProjectionMappers(builder.Services);
+builder.Services.AddAuthProofAggregateMappers();
+builder.Services.AddBankAccountAggregateMappers();
+builder.Services.AddMoneyTransferSagaAggregateMappers();
+builder.Services.AddAuthProofProjectionMappers();
+builder.Services.AddBankAccountBalanceProjectionMappers();
+builder.Services.AddBankAccountLedgerProjectionMappers();
+builder.Services.AddFlaggedTransactionsProjectionMappers();
+builder.Services.AddMoneyTransferStatusProjectionMappers();
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.

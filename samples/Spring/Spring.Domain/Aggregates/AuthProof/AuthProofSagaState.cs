@@ -20,7 +20,7 @@ namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
     FeatureKey = "authProof")]
 [GenerateAuthorization(Roles = "auth-proof-operator")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.AuthProof.AuthProofSagaState")]
+[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.AuthProofSagaState")]
 public sealed record AuthProofSagaState : ISagaState
 {
     /// <summary>

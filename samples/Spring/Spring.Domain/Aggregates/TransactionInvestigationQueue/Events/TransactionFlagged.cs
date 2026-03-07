@@ -12,7 +12,7 @@ namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Eve
 /// </summary>
 [EventStorageName("SPRING", "COMPLIANCE", "TRANSACTIONFLAGGED")]
 [GenerateSerializer]
-[Alias("Spring.Domain.TransactionInvestigationQueue.Events.TransactionFlagged")]
+[Alias("Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events.TransactionFlagged")]
 internal sealed record TransactionFlagged
 {
     /// <summary>

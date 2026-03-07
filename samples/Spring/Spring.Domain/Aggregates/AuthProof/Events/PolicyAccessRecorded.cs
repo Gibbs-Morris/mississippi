@@ -10,5 +10,5 @@ namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Events;
 /// </summary>
 [EventStorageName("SPRING", "AUTHPROOF", "POLICYACCESSRECORDED")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.AuthProof.Events.PolicyAccessRecorded")]
+[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.Events.PolicyAccessRecorded")]
 internal sealed record PolicyAccessRecorded;

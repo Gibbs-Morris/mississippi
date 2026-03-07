@@ -16,7 +16,7 @@ namespace Mississippi.Spring.Domain.Projections.AuthProof;
 [GenerateProjectionEndpoints]
 [GenerateAuthorization(Policy = "spring.auth-proof.claim")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Projections.AuthProof.AuthProofProjection")]
+[Alias("Mississippi.Spring.Domain.Projections.AuthProof.AuthProofProjection")]
 public sealed record AuthProofProjection
 {
     /// <summary>

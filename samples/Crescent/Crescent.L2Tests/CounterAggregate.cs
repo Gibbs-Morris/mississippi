@@ -12,7 +12,7 @@ namespace Mississippi.Crescent.L2Tests;
 [BrookName("CRESCENT", "SAMPLE", "COUNTER")]
 [SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSTATE")]
 [GenerateSerializer]
-[Alias("Crescent.L2Tests.Domain.Counter.CounterAggregate")]
+[Alias("Mississippi.Crescent.L2Tests.CounterAggregate")]
 internal sealed record CounterAggregate
 {
     /// <summary>

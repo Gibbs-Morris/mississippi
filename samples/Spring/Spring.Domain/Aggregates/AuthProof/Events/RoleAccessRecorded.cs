@@ -10,5 +10,5 @@ namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Events;
 /// </summary>
 [EventStorageName("SPRING", "AUTHPROOF", "ROLEACCESSRECORDED")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.AuthProof.Events.RoleAccessRecorded")]
+[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.Events.RoleAccessRecorded")]
 internal sealed record RoleAccessRecorded;

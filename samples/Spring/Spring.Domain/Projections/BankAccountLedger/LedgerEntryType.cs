@@ -7,7 +7,7 @@ namespace Mississippi.Spring.Domain.Projections.BankAccountLedger;
 ///     Identifies the type of ledger entry.
 /// </summary>
 [GenerateSerializer]
-[Alias("Spring.Domain.Projections.BankAccountLedger.LedgerEntryType")]
+[Alias("Mississippi.Spring.Domain.Projections.BankAccountLedger.LedgerEntryType")]
 public enum LedgerEntryType
 {
     /// <summary>

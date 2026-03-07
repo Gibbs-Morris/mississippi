@@ -32,7 +32,7 @@ namespace Mississippi.Spring.Domain.Projections.FlaggedTransactions;
     Title = "Get Flagged Transactions",
     Description = "Retrieves the most recent flagged high-value transactions requiring investigation.")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Projections.FlaggedTransactions.FlaggedTransactionsProjection")]
+[Alias("Mississippi.Spring.Domain.Projections.FlaggedTransactions.FlaggedTransactionsProjection")]
 public sealed record FlaggedTransactionsProjection
 {
     /// <summary>

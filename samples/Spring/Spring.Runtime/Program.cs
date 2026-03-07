@@ -1,6 +1,5 @@
 using Azure.Storage.Blobs;
 
-using global::Spring.Runtime.Registrations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
@@ -24,6 +23,8 @@ using OpenTelemetry.Trace;
 
 using Orleans.Hosting;
 using Orleans.Runtime;
+
+using Spring.Runtime.Registrations;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);

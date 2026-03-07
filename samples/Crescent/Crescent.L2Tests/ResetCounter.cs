@@ -7,7 +7,7 @@ namespace Mississippi.Crescent.L2Tests;
 ///     Command to reset the counter to a specified value.
 /// </summary>
 [GenerateSerializer]
-[Alias("Crescent.L2Tests.Domain.Counter.Commands.ResetCounter")]
+[Alias("Mississippi.Crescent.L2Tests.ResetCounter")]
 internal sealed record ResetCounter
 {
     /// <summary>

@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 
-using global::Spring.Client.Features.AuthProof.Dtos;
-using global::Spring.Client.Features.AuthProofAggregate.Actions;
-using global::Spring.Client.Features.AuthProofAggregate.State;
-using global::Spring.Client.Features.AuthProofSaga.Actions;
-using global::Spring.Client.Features.AuthProofSaga.State;
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 using Mississippi.Spring.Client.Features.AuthSimulation;
+
+using Spring.Client.Features.AuthProof.Dtos;
+using Spring.Client.Features.AuthProofAggregate.Actions;
+using Spring.Client.Features.AuthProofAggregate.State;
+using Spring.Client.Features.AuthProofSaga.Actions;
+using Spring.Client.Features.AuthProofSaga.State;
 
 
 namespace Mississippi.Spring.Client.Pages;

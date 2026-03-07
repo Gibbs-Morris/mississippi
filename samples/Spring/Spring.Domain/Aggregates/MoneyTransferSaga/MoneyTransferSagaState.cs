@@ -24,7 +24,7 @@ namespace Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga;
     Description = "Transfers funds between two Spring Bank accounts using the saga orchestrator.",
     ToolPrefix = "transfer_funds")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.MoneyTransferSaga.MoneyTransferSagaState")]
+[Alias("Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.MoneyTransferSagaState")]
 public sealed record MoneyTransferSagaState : ISagaState
 {
     /// <summary>

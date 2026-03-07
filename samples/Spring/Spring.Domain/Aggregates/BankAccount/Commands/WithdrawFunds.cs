@@ -18,7 +18,7 @@ namespace Mississippi.Spring.Domain.Aggregates.BankAccount.Commands;
     ReadOnly = false,
     OpenWorld = false)]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.Commands.WithdrawFunds")]
+[Alias("Mississippi.Spring.Domain.Aggregates.BankAccount.Commands.WithdrawFunds")]
 public sealed record WithdrawFunds
 {
     /// <summary>

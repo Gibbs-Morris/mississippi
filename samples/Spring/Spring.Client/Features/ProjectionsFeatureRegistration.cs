@@ -1,15 +1,16 @@
 using System;
 
-using global::Spring.Client.Features.BankAccountBalance.Dtos;
-using global::Spring.Client.Features.BankAccountLedger.Dtos;
-using global::Spring.Client.Features.FlaggedTransactions.Dtos;
-using global::Spring.Client.Features.MoneyTransferStatus.Dtos;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions.Actions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.Reducers;
 using Mississippi.Reservoir.Core;
+
+using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.BankAccountLedger.Dtos;
+using Spring.Client.Features.FlaggedTransactions.Dtos;
+using Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
 namespace Spring.Client.Features;

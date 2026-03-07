@@ -1,7 +1,8 @@
-using global::Spring.Client.Features.BankAccountBalance.Dtos;
-using global::Spring.Client.Features.BankAccountLedger.Dtos;
-using global::Spring.Client.Features.MoneyTransferStatus.Dtos;
 using Microsoft.AspNetCore.Components;
+
+using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.BankAccountLedger.Dtos;
+using Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
 namespace Mississippi.Spring.Client.Components.Organisms;

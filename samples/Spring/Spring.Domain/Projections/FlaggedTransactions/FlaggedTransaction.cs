@@ -9,7 +9,7 @@ namespace Mississippi.Spring.Domain.Projections.FlaggedTransactions;
 ///     A single entry in the flagged transactions list.
 /// </summary>
 [GenerateSerializer]
-[Alias("Spring.Domain.Projections.FlaggedTransactions.FlaggedTransaction")]
+[Alias("Mississippi.Spring.Domain.Projections.FlaggedTransactions.FlaggedTransaction")]
 public sealed record FlaggedTransaction
 {
     /// <summary>

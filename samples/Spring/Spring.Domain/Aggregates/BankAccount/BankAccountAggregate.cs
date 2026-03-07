@@ -15,7 +15,7 @@ namespace Mississippi.Spring.Domain.Aggregates.BankAccount;
 [GenerateAggregateEndpoints]
 [GenerateMcpTools]
 [GenerateSerializer]
-[Alias("Spring.Domain.BankAccount.BankAccountAggregate")]
+[Alias("Mississippi.Spring.Domain.Aggregates.BankAccount.BankAccountAggregate")]
 public sealed record BankAccountAggregate
 {
     /// <summary>

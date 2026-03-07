@@ -11,5 +11,5 @@ namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Commands;
 [GenerateCommand(Route = "role")]
 [GenerateAuthorization(Roles = "auth-proof-operator")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.AuthProof.Commands.RecordRoleAccess")]
+[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.Commands.RecordRoleAccess")]
 public sealed record RecordRoleAccess;

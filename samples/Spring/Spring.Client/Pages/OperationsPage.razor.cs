@@ -1,12 +1,6 @@
 using System;
 using System.Globalization;
 
-using global::Spring.Client.Features.BankAccountAggregate.Actions;
-using global::Spring.Client.Features.BankAccountAggregate.State;
-using global::Spring.Client.Features.BankAccountBalance.Dtos;
-using global::Spring.Client.Features.BankAccountLedger.Dtos;
-using global::Spring.Client.Features.MoneyTransferSaga.Actions;
-using global::Spring.Client.Features.MoneyTransferStatus.Dtos;
 using Microsoft.AspNetCore.Components;
 
 using Mississippi.Inlet.Client.Abstractions.State;
@@ -18,6 +12,13 @@ using Mississippi.Spring.Client.Features.BankAccountBalance.Selectors;
 using Mississippi.Spring.Client.Features.DemoAccounts;
 using Mississippi.Spring.Client.Features.DualEntitySelection;
 using Mississippi.Spring.Client.Features.DualEntitySelection.Selectors;
+
+using Spring.Client.Features.BankAccountAggregate.Actions;
+using Spring.Client.Features.BankAccountAggregate.State;
+using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.BankAccountLedger.Dtos;
+using Spring.Client.Features.MoneyTransferSaga.Actions;
+using Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
 namespace Mississippi.Spring.Client.Pages;
