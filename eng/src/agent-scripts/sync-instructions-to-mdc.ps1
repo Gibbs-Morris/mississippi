@@ -108,6 +108,54 @@ function Get-ContentStartIndex {
     return 0
 }
 
+function Split-TopLevelApplyToPatterns {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return @()
+    }
+
+    $patterns = New-Object System.Collections.Generic.List[string]
+    $builder = New-Object System.Text.StringBuilder
+    $braceDepth = 0
+
+    foreach ($character in $Value.ToCharArray()) {
+        if ($character -eq '{') {
+            $braceDepth++
+            [void]$builder.Append($character)
+            continue
+        }
+
+        if ($character -eq '}') {
+            if ($braceDepth -gt 0) {
+                $braceDepth--
+            }
+
+            [void]$builder.Append($character)
+            continue
+        }
+
+        if ($character -eq ',' -and $braceDepth -eq 0) {
+            $pattern = $builder.ToString().Trim()
+            if (-not [string]::IsNullOrWhiteSpace($pattern)) {
+                $patterns.Add($pattern)
+            }
+
+            [void]$builder.Clear()
+            continue
+        }
+
+        [void]$builder.Append($character)
+    }
+
+    $finalPattern = $builder.ToString().Trim()
+    if (-not [string]::IsNullOrWhiteSpace($finalPattern)) {
+        $patterns.Add($finalPattern)
+    }
+
+    return @($patterns)
+}
+
 # Derive MDC front matter from instruction YAML and title
 function New-MdcFrontMatter {
     param(
@@ -124,11 +172,9 @@ function New-MdcFrontMatter {
         if ($applyTo -eq '**') { $alwaysApply = $true }
         elseif ($applyTo -match '\*\.cs') { $globs = '["**/*.cs"]' }
         else {
-            # Convert comma-separated applyTo patterns to an MDC globs array.
+            # Convert applyTo patterns to an MDC globs array without splitting brace globs.
             $applyToPatterns = @(
-                $applyTo.Split(',') |
-                    ForEach-Object { $_.Trim() } |
-                    Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                Split-TopLevelApplyToPatterns -Value $applyTo |
                     ForEach-Object { $_.Replace('"', '') }
             )
 
@@ -177,7 +223,7 @@ foreach ($file in $instructionFiles) {
         $contentWithoutLeadingH1 = $contentBody
 
         if ($title) {
-            $leadingH1Regex = [regex]'^[ \t]*#\s+.+(?:\r?\n)+'
+            $leadingH1Regex = [regex]'\A(?:\s*\r?\n)*[ \t]*#\s+.+(?:\r?\n)+'
             $contentWithoutLeadingH1 = $leadingH1Regex.Replace($contentBody, '', 1).TrimStart()
         }
 

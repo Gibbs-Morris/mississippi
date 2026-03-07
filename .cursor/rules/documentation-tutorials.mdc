@@ -1,14 +1,12 @@
 ---
 description: Tutorial Documentation
-globs: ["docs/Docusaurus/docs/**/*tutorial*.{md", "mdx}"]
+globs: ["docs/Docusaurus/docs/**/*tutorial*.{md,mdx}"]
 alwaysApply: false
 ---
 # Tutorial Documentation
 
 **Source:** .github/instructions/documentation-tutorials.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Tutorial Documentation
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Tutorials teach Mississippi through one linear, verified path where the writer is responsible for the reader's safety and success.
 

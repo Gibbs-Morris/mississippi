@@ -5,9 +5,7 @@ alwaysApply: true
 # Legacy Test Improvement Loop
 
 **Source:** .github/instructions/test-improvement.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Legacy Test Improvement Loop
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Raise coverage/mutation on legacy code by adding tests only, keeping production code untouched unless explicitly approved.
 

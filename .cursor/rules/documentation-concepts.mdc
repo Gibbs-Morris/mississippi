@@ -1,14 +1,12 @@
 ---
 description: Concept Documentation
-globs: ["docs/Docusaurus/docs/**/*concept*.{md", "mdx}", "docs/Docusaurus/docs/**/*concepts*.{md", "mdx}"]
+globs: ["docs/Docusaurus/docs/**/*concept*.{md,mdx}", "docs/Docusaurus/docs/**/*concepts*.{md,mdx}"]
 alwaysApply: false
 ---
 # Concept Documentation
 
 **Source:** .github/instructions/documentation-concepts.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Concept Documentation
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Concepts pages explain how Mississippi works, what it guarantees, and what trade-offs or limits the reader must understand.
 

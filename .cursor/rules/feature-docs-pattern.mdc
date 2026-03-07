@@ -6,9 +6,7 @@ alwaysApply: false
 # Feature Documentation Pattern
 
 **Source:** .github/instructions/feature-docs-pattern.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Feature Documentation Pattern
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Mississippi features that support both source-generated and manual registration paths need a subordinate documentation pattern, not a parallel taxonomy.
 

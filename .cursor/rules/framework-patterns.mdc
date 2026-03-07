@@ -6,9 +6,7 @@ alwaysApply: false
 # Framework Patterns (Mississippi Core)
 
 **Source:** .github/instructions/framework-patterns.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Framework Patterns (Mississippi Core)
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Framework code prioritizes developer experience and minimizes cognitive overload by exposing consistent primitives—aggregates, projections, commands, events, actions, reducers, effects—throughout. Internal flexibility serves external consistency.
 

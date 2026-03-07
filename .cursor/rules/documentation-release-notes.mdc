@@ -1,14 +1,12 @@
 ---
 description: Release Notes Documentation
-globs: ["docs/Docusaurus/docs/**/*release-notes*.{md", "mdx}", "docs/Docusaurus/docs/**/*releases*.{md", "mdx}"]
+globs: ["docs/Docusaurus/docs/**/*release-notes*.{md,mdx}", "docs/Docusaurus/docs/**/*releases*.{md,mdx}"]
 alwaysApply: false
 ---
 # Release Notes Documentation
 
 **Source:** .github/instructions/documentation-release-notes.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Release Notes Documentation
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Release notes tell Mississippi users what changed, why it matters, and what action is required without turning into migration guides or marketing copy.
 

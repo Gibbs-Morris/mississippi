@@ -1,14 +1,12 @@
 ---
 description: How-To Documentation
-globs: ["docs/Docusaurus/docs/**/*how-to*.{md", "mdx}"]
+globs: ["docs/Docusaurus/docs/**/*how-to*.{md,mdx}"]
 alwaysApply: false
 ---
 # How-To Documentation
 
 **Source:** .github/instructions/documentation-how-to.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# How-To Documentation
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: How-to guides help a competent Mississippi user complete one real task with exact steps, verification, and safety notes.
 

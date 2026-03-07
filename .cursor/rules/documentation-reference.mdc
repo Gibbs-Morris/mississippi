@@ -1,14 +1,12 @@
 ---
 description: Reference Documentation
-globs: ["docs/Docusaurus/docs/**/*reference*.{md", "mdx}"]
+globs: ["docs/Docusaurus/docs/**/*reference*.{md,mdx}"]
 alwaysApply: false
 ---
 # Reference Documentation
 
 **Source:** .github/instructions/documentation-reference.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Reference Documentation
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Reference pages provide exact, neutral, complete, and scannable facts about Mississippi contracts, configuration, and behavior.
 

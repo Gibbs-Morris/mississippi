@@ -6,9 +6,7 @@ alwaysApply: false
 # Service Registration Pattern
 
 **Source:** .github/instructions/service-registration.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Service Registration Pattern
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Use hierarchical `ServiceRegistration` extension methods with options-based overloads and synchronous registration; defer async work to hosted services or Orleans lifecycle participants.
 

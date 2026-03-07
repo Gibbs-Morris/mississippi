@@ -6,9 +6,7 @@ alwaysApply: false
 # Domain Modeling with Mississippi Event Sourcing
 
 **Source:** .github/instructions/domain-modeling.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Domain Modeling with Mississippi Event Sourcing
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Use consistent, attribute-driven domain modeling with immutable aggregates, typed handlers, and projection reducers following the Mississippi framework patterns.
 

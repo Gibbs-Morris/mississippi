@@ -1,14 +1,12 @@
 ---
 description: Documentation Page Focus
-globs: ["docs/Docusaurus/docs/**/*.{md", "mdx}"]
+globs: ["docs/Docusaurus/docs/**/*.{md,mdx}"]
 alwaysApply: false
 ---
 # Documentation Page Focus
 
 **Source:** .github/instructions/documentation-page-focus.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Documentation Page Focus
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Every Mississippi documentation page should serve one reader intent and one page type, even while the repository is still migrating from older feature-oriented layouts.
 

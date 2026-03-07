@@ -5,9 +5,7 @@ alwaysApply: true
 # Agent Scratchpad
 
 **Source:** .github/instructions/agent-scratchpad.instructions.md
-**Last synced:** 2026-03-07 (commit 57cafc82)
-
-# Agent Scratchpad
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: `.scratchpad/` is an ephemeral, untracked workspace for task handoff—never store secrets or couple code to it.
 
