@@ -3,7 +3,7 @@ using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 using Spring.Client.Features.FlaggedTransactions.Dtos;
 
 
-namespace Mississippi.Spring.Client.Pages;
+namespace Spring.Client.Pages;
 
 /// <summary>
 ///     Investigations page showing flagged high-value transactions.

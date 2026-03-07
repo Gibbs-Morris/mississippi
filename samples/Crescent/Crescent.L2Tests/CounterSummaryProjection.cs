@@ -3,7 +3,7 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     A read-optimized projection of counter aggregate state for UX display.
@@ -33,7 +33,7 @@ namespace Mississippi.Crescent.L2Tests;
 [BrookName("CRESCENT", "SAMPLE", "COUNTER")]
 [SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSUMMARY")]
 [GenerateSerializer]
-[Alias("Mississippi.Crescent.L2Tests.CounterSummaryProjection")]
+[Alias("Crescent.L2Tests.Domain.CounterSummary.CounterSummaryProjection")]
 internal sealed record CounterSummaryProjection
 {
     /// <summary>

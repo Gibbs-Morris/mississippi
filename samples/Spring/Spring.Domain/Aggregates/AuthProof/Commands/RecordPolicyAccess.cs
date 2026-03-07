@@ -3,7 +3,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Commands;
+namespace Spring.Domain.Aggregates.AuthProof.Commands;
 
 /// <summary>
 ///     Command used to prove claim-policy generated endpoint access.
@@ -11,5 +11,5 @@ namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Commands;
 [GenerateCommand(Route = "policy")]
 [GenerateAuthorization(Policy = "spring.auth-proof.claim")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.Commands.RecordPolicyAccess")]
+[Alias("Spring.Domain.Aggregates.AuthProof.Commands.RecordPolicyAccess")]
 public sealed record RecordPolicyAccess;

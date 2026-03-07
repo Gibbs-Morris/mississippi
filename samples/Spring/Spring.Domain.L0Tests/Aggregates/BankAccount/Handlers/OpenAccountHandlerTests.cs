@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Spring.Domain.Aggregates.BankAccount;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Commands;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Handlers;
+
+using Spring.Domain.Aggregates.BankAccount;
+using Spring.Domain.Aggregates.BankAccount.Commands;
+using Spring.Domain.Aggregates.BankAccount.Events;
+using Spring.Domain.Aggregates.BankAccount.Handlers;
 
 
-namespace Mississippi.Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
+namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Handlers;
 
 /// <summary>
 ///     Tests for <see cref="OpenAccountHandler" />.

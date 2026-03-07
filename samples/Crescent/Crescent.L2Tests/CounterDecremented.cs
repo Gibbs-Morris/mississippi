@@ -3,14 +3,14 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Event raised when the counter is decremented.
 /// </summary>
 [EventStorageName("CRESCENT", "SAMPLE", "COUNTERDECREMENTED")]
 [GenerateSerializer]
-[Alias("Mississippi.Crescent.L2Tests.CounterDecremented")]
+[Alias("Crescent.L2Tests.Domain.Counter.Events.CounterDecremented")]
 internal sealed record CounterDecremented
 {
     /// <summary>

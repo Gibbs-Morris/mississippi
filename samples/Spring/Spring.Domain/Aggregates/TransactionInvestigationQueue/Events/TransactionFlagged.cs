@@ -5,14 +5,14 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
+namespace Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 
 /// <summary>
 ///     Event raised when a high-value transaction is flagged for investigation.
 /// </summary>
 [EventStorageName("SPRING", "COMPLIANCE", "TRANSACTIONFLAGGED")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events.TransactionFlagged")]
+[Alias("Spring.Domain.TransactionInvestigationQueue.Events.TransactionFlagged")]
 internal sealed record TransactionFlagged
 {
     /// <summary>

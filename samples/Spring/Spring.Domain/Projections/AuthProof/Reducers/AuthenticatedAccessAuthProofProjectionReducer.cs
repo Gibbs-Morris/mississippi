@@ -1,8 +1,9 @@
-using Mississippi.Spring.Domain.Aggregates.AuthProof.Events;
 using Mississippi.Tributary.Abstractions;
 
+using Spring.Domain.Aggregates.AuthProof.Events;
 
-namespace Mississippi.Spring.Domain.Projections.AuthProof.Reducers;
+
+namespace Spring.Domain.Projections.AuthProof.Reducers;
 
 /// <summary>
 ///     Reduces authenticated access events into the auth-proof projection.

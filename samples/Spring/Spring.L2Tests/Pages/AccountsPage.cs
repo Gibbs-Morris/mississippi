@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 
 
-namespace Mississippi.Spring.L2Tests.Pages;
+namespace Spring.L2Tests.Pages;
 
 /// <summary>
 ///     Page Object Model for the Spring sample Accounts page (Demo Account Setup).

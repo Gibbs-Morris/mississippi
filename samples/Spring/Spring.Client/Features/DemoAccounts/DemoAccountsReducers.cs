@@ -1,4 +1,4 @@
-namespace Mississippi.Spring.Client.Features.DemoAccounts;
+namespace Spring.Client.Features.DemoAccounts;
 
 /// <summary>
 ///     Reducers for the demo accounts feature state.

@@ -3,12 +3,12 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Events;
+namespace Spring.Domain.Aggregates.AuthProof.Events;
 
 /// <summary>
 ///     Event raised when role-protected endpoint access is authorized.
 /// </summary>
 [EventStorageName("SPRING", "AUTHPROOF", "ROLEACCESSRECORDED")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.Events.RoleAccessRecorded")]
+[Alias("Spring.Domain.Aggregates.AuthProof.Events.RoleAccessRecorded")]
 internal sealed record RoleAccessRecorded;

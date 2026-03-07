@@ -5,7 +5,7 @@ using Mississippi.Inlet.Client.Abstractions.State;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 
 
-namespace Mississippi.Spring.Client.Features.BankAccountBalance.Selectors;
+namespace Spring.Client.Features.BankAccountBalance.Selectors;
 
 /// <summary>
 ///     Selectors for deriving values from <see cref="BankAccountBalanceProjectionDto" /> projection state.

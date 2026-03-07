@@ -1,13 +1,13 @@
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Projections.BankAccountLedger;
+namespace Spring.Domain.Projections.BankAccountLedger;
 
 /// <summary>
 ///     A single entry in the account ledger.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Projections.BankAccountLedger.LedgerEntry")]
+[Alias("Spring.Domain.Projections.BankAccountLedger.LedgerEntry")]
 public sealed record LedgerEntry
 {
     /// <summary>

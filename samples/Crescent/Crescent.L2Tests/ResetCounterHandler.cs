@@ -1,7 +1,7 @@
 using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Command handler for resetting a counter.

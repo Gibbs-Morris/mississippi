@@ -1,13 +1,13 @@
 using Orleans;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Command to increment the counter by a specified amount.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.Crescent.L2Tests.IncrementCounter")]
+[Alias("Crescent.L2Tests.Domain.Counter.Commands.IncrementCounter")]
 internal sealed record IncrementCounter
 {
     /// <summary>

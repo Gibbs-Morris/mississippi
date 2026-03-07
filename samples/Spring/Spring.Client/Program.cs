@@ -7,17 +7,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Inlet.Client;
 using Mississippi.Reservoir.Client;
 using Mississippi.Reservoir.Client.BuiltIn;
-using Mississippi.Spring.Client;
-using Mississippi.Spring.Client.AuthSimulation;
-using Mississippi.Spring.Client.Features.AuthSimulation;
-using Mississippi.Spring.Client.Features.DemoAccounts;
-using Mississippi.Spring.Client.Features.DualEntitySelection;
 
+using Spring.Client;
+using Spring.Client.AuthSimulation;
 using Spring.Client.Features;
 using Spring.Client.Features.AuthProofAggregate;
 using Spring.Client.Features.AuthProofSaga;
+using Spring.Client.Features.AuthSimulation;
 using Spring.Client.Features.BankAccountAggregate;
 using Spring.Client.Features.BankAccountBalance.Dtos;
+using Spring.Client.Features.DemoAccounts;
+using Spring.Client.Features.DualEntitySelection;
 using Spring.Client.Features.MoneyTransferSaga;
 using Spring.Client.Features.MoneyTransferSagaAggregate;
 

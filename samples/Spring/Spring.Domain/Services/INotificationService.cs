@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.Spring.Domain.Services;
+namespace Spring.Domain.Services;
 
 /// <summary>
 ///     Service for sending customer notifications.

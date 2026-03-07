@@ -3,7 +3,7 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Internal aggregate state for the counter.
@@ -12,7 +12,7 @@ namespace Mississippi.Crescent.L2Tests;
 [BrookName("CRESCENT", "SAMPLE", "COUNTER")]
 [SnapshotStorageName("CRESCENT", "SAMPLE", "COUNTERSTATE")]
 [GenerateSerializer]
-[Alias("Mississippi.Crescent.L2Tests.CounterAggregate")]
+[Alias("Crescent.L2Tests.Domain.Counter.CounterAggregate")]
 internal sealed record CounterAggregate
 {
     /// <summary>

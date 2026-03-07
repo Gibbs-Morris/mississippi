@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Steps;
+namespace Spring.Domain.Aggregates.AuthProof.Steps;
 
 /// <summary>
 ///     Minimal saga step used to keep the auth-proof saga executable for endpoint authorization tests.

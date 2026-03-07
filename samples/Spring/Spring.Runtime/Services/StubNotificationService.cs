@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
 
-using Mississippi.Spring.Domain.Services;
+using Spring.Domain.Services;
 
 
-namespace Mississippi.Spring.Runtime.Services;
+namespace Spring.Runtime.Services;
 
 /// <summary>
 ///     Stub implementation of <see cref="INotificationService" /> for demonstration.

@@ -1,7 +1,7 @@
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Spring.Client.Features.AuthSimulation;
+namespace Spring.Client.Features.AuthSimulation;
 
 /// <summary>
 ///     Feature state for local-auth simulation headers applied to outgoing API requests.

@@ -6,7 +6,7 @@ using Spring.Client.Features.BankAccountAggregate.State;
 using Spring.Client.Features.BankAccountBalance.Dtos;
 
 
-namespace Mississippi.Spring.Client.Features.BankAccountAggregate.Selectors;
+namespace Spring.Client.Features.BankAccountAggregate.Selectors;
 
 /// <summary>
 ///     Composite selectors that derive values from multiple feature states.

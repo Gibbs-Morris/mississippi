@@ -3,14 +3,14 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Event raised when a counter is initialized.
 /// </summary>
 [EventStorageName("CRESCENT", "SAMPLE", "COUNTERINITIALIZED")]
 [GenerateSerializer]
-[Alias("Mississippi.Crescent.L2Tests.CounterInitialized")]
+[Alias("Crescent.L2Tests.Domain.Counter.Events.CounterInitialized")]
 internal sealed record CounterInitialized
 {
     /// <summary>

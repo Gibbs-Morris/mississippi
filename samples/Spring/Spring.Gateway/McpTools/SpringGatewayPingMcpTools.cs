@@ -4,7 +4,7 @@ using System.ComponentModel;
 using ModelContextProtocol.Server;
 
 
-namespace Mississippi.Spring.Gateway.McpTools;
+namespace Spring.Gateway.McpTools;
 
 /// <summary>
 ///     Exposes lightweight diagnostic MCP tools for Spring.Gateway.

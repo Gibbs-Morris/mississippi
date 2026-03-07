@@ -3,14 +3,14 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
+namespace Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 
 /// <summary>
 ///     Command input to start a money transfer saga.
 /// </summary>
 [GenerateCommand(Route = "transfer")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Commands.StartMoneyTransferCommand")]
+[Alias("Spring.Domain.Aggregates.MoneyTransferSaga.Commands.StartMoneyTransferCommand")]
 public sealed record StartMoneyTransferCommand
 {
     /// <summary>

@@ -1,7 +1,7 @@
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Mississippi.Spring.Client.Features.AuthSimulation;
+namespace Spring.Client.Features.AuthSimulation;
 
 /// <summary>
 ///     Action that sets the active auth simulation persona.

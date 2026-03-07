@@ -3,7 +3,7 @@ using System;
 using Spring.Client.Features.BankAccountAggregate.State;
 
 
-namespace Mississippi.Spring.Client.Features.BankAccountAggregate.Selectors;
+namespace Spring.Client.Features.BankAccountAggregate.Selectors;
 
 /// <summary>
 ///     Selectors for deriving values from <see cref="BankAccountAggregateState" />.

@@ -3,13 +3,13 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Projections.FlaggedTransactions;
+namespace Spring.Domain.Projections.FlaggedTransactions;
 
 /// <summary>
 ///     A single entry in the flagged transactions list.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Projections.FlaggedTransactions.FlaggedTransaction")]
+[Alias("Spring.Domain.Projections.FlaggedTransactions.FlaggedTransaction")]
 public sealed record FlaggedTransaction
 {
     /// <summary>

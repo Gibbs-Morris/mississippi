@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace Mississippi.Spring.Client.AuthSimulation;
+namespace Spring.Client.AuthSimulation;
 
 /// <summary>
 ///     Applies local-auth simulation headers to outgoing requests.

@@ -5,16 +5,16 @@ using System.Globalization;
 using System.Reflection;
 
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
-using Mississippi.Spring.Client.Features.AuthSimulation;
 
 using Spring.Client.Features.AuthProof.Dtos;
 using Spring.Client.Features.AuthProofAggregate.Actions;
 using Spring.Client.Features.AuthProofAggregate.State;
 using Spring.Client.Features.AuthProofSaga.Actions;
 using Spring.Client.Features.AuthProofSaga.State;
+using Spring.Client.Features.AuthSimulation;
 
 
-namespace Mississippi.Spring.Client.Pages;
+namespace Spring.Client.Pages;
 
 /// <summary>
 ///     Auth proof demonstration page.

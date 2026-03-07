@@ -7,7 +7,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Projections.FlaggedTransactions;
+namespace Spring.Domain.Projections.FlaggedTransactions;
 
 /// <summary>
 ///     Read-optimized projection for the last 30 flagged transactions requiring investigation.
@@ -32,7 +32,7 @@ namespace Mississippi.Spring.Domain.Projections.FlaggedTransactions;
     Title = "Get Flagged Transactions",
     Description = "Retrieves the most recent flagged high-value transactions requiring investigation.")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Projections.FlaggedTransactions.FlaggedTransactionsProjection")]
+[Alias("Spring.Domain.Projections.FlaggedTransactions.FlaggedTransactionsProjection")]
 public sealed record FlaggedTransactionsProjection
 {
     /// <summary>

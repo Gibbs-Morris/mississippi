@@ -1,4 +1,4 @@
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Brook name constants for the Crescent sample application.

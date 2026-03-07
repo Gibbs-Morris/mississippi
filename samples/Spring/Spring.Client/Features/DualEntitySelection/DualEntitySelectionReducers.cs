@@ -1,4 +1,4 @@
-namespace Mississippi.Spring.Client.Features.DualEntitySelection;
+namespace Spring.Client.Features.DualEntitySelection;
 
 /// <summary>
 ///     Pure reducer functions for the DualEntitySelection feature state.

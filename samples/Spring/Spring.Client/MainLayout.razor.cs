@@ -4,7 +4,7 @@ using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.SignalRConnection;
 
 
-namespace Mississippi.Spring.Client;
+namespace Spring.Client;
 
 /// <summary>
 ///     Main layout shell for the Spring application.
@@ -15,7 +15,7 @@ namespace Mississippi.Spring.Client;
 ///         real-time projection updates across all pages.
 ///     </para>
 /// </remarks>
-public sealed class MainLayout : LayoutComponentBase
+public sealed partial class MainLayout : LayoutComponentBase
 {
     /// <summary>
     ///     Gets or sets the inlet store for dispatching actions.

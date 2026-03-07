@@ -4,7 +4,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
+namespace Spring.Domain.Aggregates.AuthProof;
 
 /// <summary>
 ///     Aggregate used to prove generated endpoint authorization behaviors in local development.
@@ -13,7 +13,7 @@ namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
 [SnapshotStorageName("SPRING", "AUTHPROOF", "FLOWSTATE")]
 [GenerateAggregateEndpoints]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.AuthProofAggregate")]
+[Alias("Spring.Domain.Aggregates.AuthProof.AuthProofAggregate")]
 public sealed record AuthProofAggregate
 {
     /// <summary>

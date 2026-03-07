@@ -5,7 +5,7 @@ using Spring.Client.Features.BankAccountLedger.Dtos;
 using Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
-namespace Mississippi.Spring.Client.Components.Organisms;
+namespace Spring.Client.Components.Organisms;
 
 /// <summary>
 ///     Bank account operations section.

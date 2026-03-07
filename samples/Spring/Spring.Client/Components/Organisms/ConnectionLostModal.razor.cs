@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Spring.Client.Components.Organisms;
+namespace Spring.Client.Components.Organisms;
 
 /// <summary>
 ///     Connection lost modal.

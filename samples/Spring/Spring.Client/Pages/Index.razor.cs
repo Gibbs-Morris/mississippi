@@ -1,4 +1,4 @@
-namespace Mississippi.Spring.Client.Pages;
+namespace Spring.Client.Pages;
 
 /// <summary>
 ///     Bank Account Demo landing page.

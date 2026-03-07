@@ -5,7 +5,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Projections.AuthProof;
+namespace Spring.Domain.Projections.AuthProof;
 
 /// <summary>
 ///     Read projection used to prove generated projection endpoint authorization behavior.
@@ -16,7 +16,7 @@ namespace Mississippi.Spring.Domain.Projections.AuthProof;
 [GenerateProjectionEndpoints]
 [GenerateAuthorization(Policy = "spring.auth-proof.claim")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Projections.AuthProof.AuthProofProjection")]
+[Alias("Spring.Domain.Projections.AuthProof.AuthProofProjection")]
 public sealed record AuthProofProjection
 {
     /// <summary>

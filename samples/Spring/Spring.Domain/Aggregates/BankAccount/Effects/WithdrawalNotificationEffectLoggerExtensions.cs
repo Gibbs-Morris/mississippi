@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.BankAccount.Effects;
+namespace Spring.Domain.Aggregates.BankAccount.Effects;
 
 /// <summary>
 ///     High-performance logging extensions for the withdrawal notification effect.

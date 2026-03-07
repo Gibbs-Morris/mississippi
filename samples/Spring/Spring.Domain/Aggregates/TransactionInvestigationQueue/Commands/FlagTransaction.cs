@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
+namespace Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
 
 /// <summary>
 ///     Command to flag a high-value transaction for manual investigation.
@@ -19,7 +19,7 @@ namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Com
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands.FlagTransaction")]
+[Alias("Spring.Domain.TransactionInvestigationQueue.Commands.FlagTransaction")]
 public sealed record FlagTransaction
 {
     /// <summary>

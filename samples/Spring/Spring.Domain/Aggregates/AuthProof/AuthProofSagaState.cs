@@ -7,7 +7,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
+namespace Spring.Domain.Aggregates.AuthProof;
 
 /// <summary>
 ///     Saga state used to prove generated saga endpoint authorization behavior.
@@ -20,7 +20,7 @@ namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
     FeatureKey = "authProof")]
 [GenerateAuthorization(Roles = "auth-proof-operator")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.AuthProofSagaState")]
+[Alias("Spring.Domain.Aggregates.AuthProof.AuthProofSagaState")]
 public sealed record AuthProofSagaState : ISagaState
 {
     /// <summary>

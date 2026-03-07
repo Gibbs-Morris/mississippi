@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Spring.Domain.Aggregates.AuthProof.Commands;
-using Mississippi.Spring.Domain.Aggregates.AuthProof.Events;
+
+using Spring.Domain.Aggregates.AuthProof.Commands;
+using Spring.Domain.Aggregates.AuthProof.Events;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Handlers;
+namespace Spring.Domain.Aggregates.AuthProof.Handlers;
 
 /// <summary>
 ///     Handler for authenticated-only auth-proof endpoint access.

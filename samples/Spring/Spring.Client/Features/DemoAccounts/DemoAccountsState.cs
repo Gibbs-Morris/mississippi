@@ -1,7 +1,7 @@
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Spring.Client.Features.DemoAccounts;
+namespace Spring.Client.Features.DemoAccounts;
 
 /// <summary>
 ///     Feature state for tracking demo account identifiers used by the Spring sample UI.

@@ -3,14 +3,15 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Spring.Domain.Aggregates.BankAccount;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Effects;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
+
+using Spring.Domain.Aggregates.BankAccount;
+using Spring.Domain.Aggregates.BankAccount.Effects;
+using Spring.Domain.Aggregates.BankAccount.Events;
+using Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
 
 
-namespace Mississippi.Spring.Domain.L0Tests.Aggregates.BankAccount.Effects;
+namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Effects;
 
 /// <summary>
 ///     Unit tests for <see cref="HighValueTransactionEffect" />.

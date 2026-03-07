@@ -2,7 +2,7 @@ using Mississippi.DomainModeling.Runtime;
 using Mississippi.Tributary.Runtime;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Extension methods for registering counter aggregate services.

@@ -1,6 +1,11 @@
 ---
-applyTo: '**/*.{cs,razor,css}'
+description: Namespace and Folder Placement
+globs: ["**/*.{cs,razor,css}"]
+alwaysApply: false
 ---
+# Namespace and Folder Placement
+**Source:** .github/instructions/namespace-folder-placement.instructions.md
+
 
 # Namespace and Folder Placement
 

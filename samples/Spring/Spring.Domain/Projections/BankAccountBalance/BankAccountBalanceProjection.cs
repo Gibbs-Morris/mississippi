@@ -5,7 +5,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Projections.BankAccountBalance;
+namespace Spring.Domain.Projections.BankAccountBalance;
 
 /// <summary>
 ///     Read-optimized projection for the balance of a bank account.
@@ -24,7 +24,7 @@ namespace Mississippi.Spring.Domain.Projections.BankAccountBalance;
     Title = "Get Bank Account Balance",
     Description = "Retrieves the current balance and holder name for a bank account.")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection")]
+[Alias("Spring.Domain.Projections.BankAccountBalance.BankAccountBalanceProjection")]
 public sealed record BankAccountBalanceProjection
 {
     /// <summary>

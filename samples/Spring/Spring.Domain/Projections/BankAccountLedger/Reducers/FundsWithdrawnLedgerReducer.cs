@@ -2,11 +2,12 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
 using Mississippi.Tributary.Abstractions;
 
+using Spring.Domain.Aggregates.BankAccount.Events;
 
-namespace Mississippi.Spring.Domain.Projections.BankAccountLedger.Reducers;
+
+namespace Spring.Domain.Projections.BankAccountLedger.Reducers;
 
 /// <summary>
 ///     Reduces the <see cref="FundsWithdrawn" /> event to add

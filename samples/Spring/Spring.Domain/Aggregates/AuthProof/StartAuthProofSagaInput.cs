@@ -1,13 +1,13 @@
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
+namespace Spring.Domain.Aggregates.AuthProof;
 
 /// <summary>
 ///     Input used to start the auth-proof saga endpoint surface.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.AuthProof.StartAuthProofSagaInput")]
+[Alias("Spring.Domain.Aggregates.AuthProof.StartAuthProofSagaInput")]
 public sealed record StartAuthProofSagaInput
 {
     /// <summary>

@@ -1,10 +1,11 @@
 using System;
 
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
 using Mississippi.Tributary.Abstractions;
 
+using Spring.Domain.Aggregates.BankAccount.Events;
 
-namespace Mississippi.Spring.Domain.Projections.BankAccountBalance.Reducers;
+
+namespace Spring.Domain.Projections.BankAccountBalance.Reducers;
 
 /// <summary>
 ///     Reduces the <see cref="FundsDeposited" /> event to update

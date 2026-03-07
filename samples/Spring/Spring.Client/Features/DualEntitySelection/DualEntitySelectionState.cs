@@ -1,7 +1,7 @@
 using Mississippi.Reservoir.Abstractions.State;
 
 
-namespace Mississippi.Spring.Client.Features.DualEntitySelection;
+namespace Spring.Client.Features.DualEntitySelection;
 
 /// <summary>
 ///     Feature state for tracking two active entity identifiers in the UI.

@@ -3,12 +3,13 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Spring.Domain.Aggregates.BankAccount;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Commands;
-using Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
+
+using Spring.Domain.Aggregates.BankAccount;
+using Spring.Domain.Aggregates.BankAccount.Commands;
+using Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
+namespace Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 
 /// <summary>
 ///     Saga step that deposits funds into the destination account.

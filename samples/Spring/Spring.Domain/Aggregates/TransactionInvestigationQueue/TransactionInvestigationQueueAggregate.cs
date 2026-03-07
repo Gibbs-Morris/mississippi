@@ -4,7 +4,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
+namespace Spring.Domain.Aggregates.TransactionInvestigationQueue;
 
 /// <summary>
 ///     Aggregate that maintains a queue of high-value transactions flagged for manual investigation.
@@ -25,7 +25,7 @@ namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
 [SnapshotStorageName("SPRING", "COMPLIANCE", "INVESTIGATIONSTATE")]
 [GenerateAggregateEndpoints]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.TransactionInvestigationQueueAggregate")]
+[Alias("Spring.Domain.TransactionInvestigationQueue.TransactionInvestigationQueueAggregate")]
 public sealed record TransactionInvestigationQueueAggregate
 {
     /// <summary>

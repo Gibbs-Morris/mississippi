@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
+
+using Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
+using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
+using Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
 
 
-namespace Mississippi.Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Handlers;
+namespace Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Handlers;
 
 /// <summary>
 ///     Tests for <see cref="FlagTransactionHandler" />.

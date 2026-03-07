@@ -1,9 +1,9 @@
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
-using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Reducers;
+using Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
+using Spring.Domain.Aggregates.TransactionInvestigationQueue.Reducers;
 
 
-namespace Mississippi.Spring.Domain.L0Tests.Fixtures;
+namespace Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Pre-wired test fixture for TransactionInvestigationQueue aggregate testing.

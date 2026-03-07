@@ -2,15 +2,16 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Spring.Domain.Aggregates.BankAccount;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Commands;
-using Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga;
-using Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 
 using Moq;
 
+using Spring.Domain.Aggregates.BankAccount;
+using Spring.Domain.Aggregates.BankAccount.Commands;
+using Spring.Domain.Aggregates.MoneyTransferSaga;
+using Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 
-namespace Mississippi.Spring.Domain.L0Tests.Aggregates.MoneyTransferSaga.Steps;
+
+namespace Spring.Domain.L0Tests.Aggregates.MoneyTransferSaga.Steps;
 
 /// <summary>
 ///     Tests for <see cref="WithdrawFromSourceStep" />.

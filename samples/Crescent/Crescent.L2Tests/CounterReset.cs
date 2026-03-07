@@ -3,14 +3,14 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Event raised when the counter is reset.
 /// </summary>
 [EventStorageName("CRESCENT", "SAMPLE", "COUNTERRESET")]
 [GenerateSerializer]
-[Alias("Mississippi.Crescent.L2Tests.CounterReset")]
+[Alias("Crescent.L2Tests.Domain.Counter.Events.CounterReset")]
 internal sealed record CounterReset
 {
     /// <summary>

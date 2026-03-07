@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Reservoir.Core;
 
 
-namespace Mississippi.Spring.Client.Features.DualEntitySelection;
+namespace Spring.Client.Features.DualEntitySelection;
 
 /// <summary>
 ///     Extension methods for registering the dual entity selection feature.

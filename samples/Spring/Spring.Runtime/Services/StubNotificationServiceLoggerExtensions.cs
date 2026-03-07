@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Mississippi.Spring.Runtime.Services;
+namespace Spring.Runtime.Services;
 
 /// <summary>
 ///     High-performance logging extensions for the stub notification service.

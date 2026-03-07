@@ -1,13 +1,13 @@
 using Orleans;
 
 
-namespace Mississippi.Crescent.L2Tests;
+namespace Crescent.Crescent.L2Tests;
 
 /// <summary>
 ///     Command to reset the counter to a specified value.
 /// </summary>
 [GenerateSerializer]
-[Alias("Mississippi.Crescent.L2Tests.ResetCounter")]
+[Alias("Crescent.L2Tests.Domain.Counter.Commands.ResetCounter")]
 internal sealed record ResetCounter
 {
     /// <summary>

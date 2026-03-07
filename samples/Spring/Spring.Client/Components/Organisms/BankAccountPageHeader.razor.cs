@@ -3,7 +3,7 @@ using System;
 using Microsoft.AspNetCore.Components;
 
 
-namespace Mississippi.Spring.Client.Components.Organisms;
+namespace Spring.Client.Components.Organisms;
 
 /// <summary>
 ///     Page header and navigation for the bank account demo.

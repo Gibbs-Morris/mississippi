@@ -1,10 +1,10 @@
-using Mississippi.Spring.Domain.Aggregates.BankAccount;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Handlers;
-using Mississippi.Spring.Domain.Aggregates.BankAccount.Reducers;
+using Spring.Domain.Aggregates.BankAccount;
+using Spring.Domain.Aggregates.BankAccount.Events;
+using Spring.Domain.Aggregates.BankAccount.Handlers;
+using Spring.Domain.Aggregates.BankAccount.Reducers;
 
 
-namespace Mississippi.Spring.Domain.L0Tests.Fixtures;
+namespace Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Pre-wired test fixture for BankAccount aggregate testing.

@@ -3,14 +3,14 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
+namespace Spring.Domain.Aggregates.BankAccount.Events;
 
 /// <summary>
 ///     Event raised when a bank account is opened.
 /// </summary>
 [EventStorageName("SPRING", "BANKING", "ACCOUNTOPENED")]
 [GenerateSerializer]
-[Alias("Mississippi.Spring.Domain.Aggregates.BankAccount.Events.AccountOpened")]
+[Alias("Spring.Domain.BankAccount.Events.AccountOpened")]
 internal sealed record AccountOpened
 {
     /// <summary>

@@ -5,7 +5,7 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Spring.Client.Components.Organisms;
+using Spring.Client.Components.Organisms;
 
 
 namespace Mississippi.Spring.Client.L0Tests.Components.Organisms;
