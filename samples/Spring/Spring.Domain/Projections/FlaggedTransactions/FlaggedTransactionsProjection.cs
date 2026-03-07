@@ -7,7 +7,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Projections.FlaggedTransactions;
+namespace Mississippi.Spring.Domain.Projections.FlaggedTransactions;
 
 /// <summary>
 ///     Read-optimized projection for the last 30 flagged transactions requiring investigation.

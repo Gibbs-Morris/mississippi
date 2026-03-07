@@ -3,7 +3,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.AuthProof.Commands;
+namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Commands;
 
 /// <summary>
 ///     Command used to prove authenticated-only generated endpoint access.

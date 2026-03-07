@@ -7,7 +7,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Projections.BankAccountLedger;
+namespace Mississippi.Spring.Domain.Projections.BankAccountLedger;
 
 /// <summary>
 ///     Read-optimized projection for the last 20 ledger entries of a bank account.

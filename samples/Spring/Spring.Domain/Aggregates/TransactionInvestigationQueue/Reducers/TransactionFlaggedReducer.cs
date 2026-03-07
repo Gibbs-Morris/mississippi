@@ -1,11 +1,10 @@
 using System;
 
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 using Mississippi.Tributary.Abstractions;
 
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 
-
-namespace Spring.Domain.Aggregates.TransactionInvestigationQueue.Reducers;
+namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Reducers;
 
 /// <summary>
 ///     Reducer for <see cref="TransactionFlagged" /> events on the aggregate state.

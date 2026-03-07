@@ -3,7 +3,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.BankAccount.Commands;
+namespace Mississippi.Spring.Domain.Aggregates.BankAccount.Commands;
 
 /// <summary>
 ///     Command to open a new bank account.

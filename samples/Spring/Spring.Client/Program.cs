@@ -1,5 +1,12 @@
 using System.Net.Http;
 
+using global::Spring.Client.Features;
+using global::Spring.Client.Features.AuthProofAggregate;
+using global::Spring.Client.Features.AuthProofSaga;
+using global::Spring.Client.Features.BankAccountAggregate;
+using global::Spring.Client.Features.BankAccountBalance.Dtos;
+using global::Spring.Client.Features.MoneyTransferSaga;
+using global::Spring.Client.Features.MoneyTransferSagaAggregate;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,14 +14,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Inlet.Client;
 using Mississippi.Reservoir.Client;
 using Mississippi.Reservoir.Client.BuiltIn;
-
-using Spring.Client;
-using Spring.Client.AuthSimulation;
-using Spring.Client.Features;
-using Spring.Client.Features.AuthSimulation;
-using Spring.Client.Features.BankAccountBalance.Dtos;
-using Spring.Client.Features.DemoAccounts;
-using Spring.Client.Features.DualEntitySelection;
+using Mississippi.Spring.Client;
+using Mississippi.Spring.Client.AuthSimulation;
+using Mississippi.Spring.Client.Features.AuthSimulation;
+using Mississippi.Spring.Client.Features.DemoAccounts;
+using Mississippi.Spring.Client.Features.DualEntitySelection;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -37,7 +41,12 @@ builder.Services.AddScoped(sp =>
 
 // Register features (one line per feature - scales cleanly)
 // Write side + projection feature registrations
-builder.Services.AddSpringDomainClient();
+builder.Services.AddProjectionsFeature();
+AuthProofAggregateFeatureRegistration.AddAuthProofAggregateFeature(builder.Services);
+BankAccountAggregateFeatureRegistration.AddBankAccountAggregateFeature(builder.Services);
+MoneyTransferSagaAggregateFeatureRegistration.AddMoneyTransferSagaAggregateFeature(builder.Services);
+AuthProofSagaFeatureRegistration.AddAuthProofSagaFeature(builder.Services);
+MoneyTransferSagaFeatureRegistration.AddMoneyTransferSagaFeature(builder.Services);
 
 // Navigation/UI: entity selection
 builder.Services.AddDualEntitySelectionFeature();

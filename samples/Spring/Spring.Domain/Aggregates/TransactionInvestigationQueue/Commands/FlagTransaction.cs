@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
+namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
 
 /// <summary>
 ///     Command to flag a high-value transaction for manual investigation.

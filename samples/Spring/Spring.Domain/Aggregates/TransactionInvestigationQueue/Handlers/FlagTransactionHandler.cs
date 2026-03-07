@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 
-
-namespace Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
+namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Handlers;
 
 /// <summary>
 ///     Command handler for flagging high-value transactions for investigation.

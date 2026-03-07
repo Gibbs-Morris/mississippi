@@ -3,13 +3,12 @@ using System;
 using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Inlet.Generators.Abstractions;
+using Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 
 using Orleans;
 
-using Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 
-
-namespace Spring.Domain.Aggregates.MoneyTransferSaga;
+namespace Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga;
 
 /// <summary>
 ///     Saga state for orchestrating money transfers between bank accounts.

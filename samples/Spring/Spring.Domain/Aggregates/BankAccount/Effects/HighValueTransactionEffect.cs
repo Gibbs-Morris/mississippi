@@ -6,13 +6,12 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.Brooks.Abstractions;
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
 
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
 
-
-namespace Spring.Domain.Aggregates.BankAccount.Effects;
+namespace Mississippi.Spring.Domain.Aggregates.BankAccount.Effects;
 
 /// <summary>
 ///     Effect that flags high-value deposits for manual investigation.

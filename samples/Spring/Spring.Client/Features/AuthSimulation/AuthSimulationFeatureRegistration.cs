@@ -1,11 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Core;
+using Mississippi.Spring.Client.AuthSimulation;
 
-using Spring.Client.AuthSimulation;
 
-
-namespace Spring.Client.Features.AuthSimulation;
+namespace Mississippi.Spring.Client.Features.AuthSimulation;
 
 /// <summary>
 ///     Extension methods for registering auth simulation feature.

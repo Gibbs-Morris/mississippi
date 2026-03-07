@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Spring.Client.Features.DualEntitySelection.Selectors;
+namespace Mississippi.Spring.Client.Features.DualEntitySelection.Selectors;
 
 /// <summary>
 ///     Selectors for deriving values from <see cref="DualEntitySelectionState" />.

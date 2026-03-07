@@ -1,9 +1,7 @@
-using Crescent.Crescent.L2Tests.Domain.Counter.Events;
-
 using Mississippi.Tributary.Abstractions;
 
 
-namespace Crescent.Crescent.L2Tests.Domain.Counter.Reducers;
+namespace Mississippi.Crescent.L2Tests;
 
 /// <summary>
 ///     Reducer for <see cref="CounterIncremented" /> events.

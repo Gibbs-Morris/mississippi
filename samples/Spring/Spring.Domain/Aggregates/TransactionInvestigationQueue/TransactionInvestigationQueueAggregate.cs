@@ -4,7 +4,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.TransactionInvestigationQueue;
+namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
 
 /// <summary>
 ///     Aggregate that maintains a queue of high-value transactions flagged for manual investigation.

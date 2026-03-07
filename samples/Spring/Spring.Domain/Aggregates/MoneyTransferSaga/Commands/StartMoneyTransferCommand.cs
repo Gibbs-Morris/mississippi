@@ -3,7 +3,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
+namespace Mississippi.Spring.Domain.Aggregates.MoneyTransferSaga.Commands;
 
 /// <summary>
 ///     Command input to start a money transfer saga.

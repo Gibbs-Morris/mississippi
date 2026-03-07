@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Spring.Domain.Projections.BankAccountLedger;
+namespace Mississippi.Spring.Domain.Projections.BankAccountLedger;
 
 /// <summary>
 ///     A single entry in the account ledger.

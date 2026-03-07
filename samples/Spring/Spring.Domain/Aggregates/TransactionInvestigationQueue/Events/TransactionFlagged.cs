@@ -5,7 +5,7 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
+namespace Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 
 /// <summary>
 ///     Event raised when a high-value transaction is flagged for investigation.

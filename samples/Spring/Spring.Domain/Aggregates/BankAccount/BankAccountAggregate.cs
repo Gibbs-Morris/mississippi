@@ -4,7 +4,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.BankAccount;
+namespace Mississippi.Spring.Domain.Aggregates.BankAccount;
 
 /// <summary>
 ///     Internal aggregate state for the bank account.

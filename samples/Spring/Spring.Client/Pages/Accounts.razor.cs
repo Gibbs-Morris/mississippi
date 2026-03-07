@@ -1,19 +1,18 @@
 using System;
 using System.Globalization;
 
+using global::Spring.Client.Features.BankAccountAggregate.Actions;
+using global::Spring.Client.Features.BankAccountAggregate.State;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.SignalRConnection;
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
-
-using Spring.Client.Features.BankAccountAggregate.Actions;
-using Spring.Client.Features.BankAccountAggregate.Selectors;
-using Spring.Client.Features.BankAccountAggregate.State;
-using Spring.Client.Features.DemoAccounts;
-using Spring.Client.Features.DualEntitySelection;
-using Spring.Client.Features.DualEntitySelection.Selectors;
+using Mississippi.Spring.Client.Features.BankAccountAggregate.Selectors;
+using Mississippi.Spring.Client.Features.DemoAccounts;
+using Mississippi.Spring.Client.Features.DualEntitySelection;
+using Mississippi.Spring.Client.Features.DualEntitySelection.Selectors;
 
 
-namespace Spring.Client.Pages;
+namespace Mississippi.Spring.Client.Pages;
 
 /// <summary>
 ///     Demo account setup and selection page.

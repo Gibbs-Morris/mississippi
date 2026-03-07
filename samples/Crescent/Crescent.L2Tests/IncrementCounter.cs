@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Crescent.Crescent.L2Tests.Domain.Counter.Commands;
+namespace Mississippi.Crescent.L2Tests;
 
 /// <summary>
 ///     Command to increment the counter by a specified amount.

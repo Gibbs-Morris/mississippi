@@ -4,7 +4,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.AuthProof;
+namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
 
 /// <summary>
 ///     Aggregate used to prove generated endpoint authorization behaviors in local development.

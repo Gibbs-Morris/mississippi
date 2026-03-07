@@ -1,15 +1,15 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using Mississippi.Spring.Domain.Aggregates.BankAccount;
+using Mississippi.Spring.Domain.Aggregates.BankAccount.Effects;
+using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
+using Mississippi.Spring.Domain.Services;
+
 using Moq;
 
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Effects;
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Services;
 
-
-namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Effects;
+namespace Mississippi.Spring.Domain.L0Tests.Aggregates.BankAccount.Effects;
 
 /// <summary>
 ///     Unit tests for <see cref="WithdrawalNotificationEffect" />.

@@ -1,9 +1,9 @@
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Domain.Projections.BankAccountBalance.Reducers;
+using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
+using Mississippi.Spring.Domain.Projections.BankAccountBalance;
+using Mississippi.Spring.Domain.Projections.BankAccountBalance.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Projections.BankAccountBalance;
+namespace Mississippi.Spring.Domain.L0Tests.Projections.BankAccountBalance;
 
 /// <summary>
 ///     Integration tests for the BankAccountBalance projection using the full reducer chain.

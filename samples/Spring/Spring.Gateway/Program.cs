@@ -1,6 +1,9 @@
 using System;
 using System.Threading.Tasks;
 
+using global::Spring.Gateway.Controllers.Aggregates.Mappers;
+using global::Spring.Gateway.Controllers.Projections.Mappers;
+using global::Spring.Gateway.McpTools;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -13,6 +16,9 @@ using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Runtime;
 using Mississippi.Inlet.Gateway;
 using Mississippi.Inlet.Runtime;
+using Mississippi.Spring.Domain.Projections.BankAccountBalance;
+using Mississippi.Spring.Gateway;
+using Mississippi.Spring.Gateway.McpTools;
 
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -21,11 +27,6 @@ using OpenTelemetry.Trace;
 using Orleans.Hosting;
 
 using Scalar.AspNetCore;
-
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Gateway;
-using Spring.Gateway.Controllers.Mappers;
-using Spring.Gateway.McpTools;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -121,7 +122,14 @@ else
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add generated domain mapper registrations
-builder.Services.AddSpringDomainServer();
+AuthProofAggregateMapperRegistrations.AddAuthProofAggregateMappers(builder.Services);
+BankAccountAggregateMapperRegistrations.AddBankAccountAggregateMappers(builder.Services);
+MoneyTransferSagaAggregateMapperRegistrations.AddMoneyTransferSagaAggregateMappers(builder.Services);
+AuthProofProjectionMapperRegistrations.AddAuthProofProjectionMappers(builder.Services);
+BankAccountBalanceProjectionMapperRegistrations.AddBankAccountBalanceProjectionMappers(builder.Services);
+BankAccountLedgerProjectionMapperRegistrations.AddBankAccountLedgerProjectionMappers(builder.Services);
+FlaggedTransactionsProjectionMapperRegistrations.AddFlaggedTransactionsProjectionMappers(builder.Services);
+MoneyTransferStatusProjectionMapperRegistrations.AddMoneyTransferStatusProjectionMappers(builder.Services);
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.

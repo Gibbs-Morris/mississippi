@@ -1,12 +1,12 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
-using Spring.Domain.Projections.FlaggedTransactions;
-using Spring.Domain.Projections.FlaggedTransactions.Reducers;
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
+using Mississippi.Spring.Domain.Projections.FlaggedTransactions;
+using Mississippi.Spring.Domain.Projections.FlaggedTransactions.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Projections.FlaggedTransactions;
+namespace Mississippi.Spring.Domain.L0Tests.Projections.FlaggedTransactions;
 
 /// <summary>
 ///     Tests for <see cref="TransactionFlaggedProjectionReducer" />.

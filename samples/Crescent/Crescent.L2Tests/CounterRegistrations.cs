@@ -1,15 +1,8 @@
-using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
-using Crescent.Crescent.L2Tests.Domain.Counter.Events;
-using Crescent.Crescent.L2Tests.Domain.Counter.Handlers;
-using Crescent.Crescent.L2Tests.Domain.Counter.Reducers;
-using Crescent.Crescent.L2Tests.Domain.CounterSummary;
-using Crescent.Crescent.L2Tests.Domain.CounterSummary.Reducers;
-
 using Mississippi.DomainModeling.Runtime;
 using Mississippi.Tributary.Runtime;
 
 
-namespace Crescent.Crescent.L2Tests.Domain.Counter;
+namespace Mississippi.Crescent.L2Tests;
 
 /// <summary>
 ///     Extension methods for registering counter aggregate services.

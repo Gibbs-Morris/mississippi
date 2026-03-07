@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 
+using global::Spring.Runtime.Registrations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
@@ -11,6 +12,9 @@ using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
 using Mississippi.Inlet.Runtime;
+using Mississippi.Spring.Domain.Projections.BankAccountBalance;
+using Mississippi.Spring.Domain.Services;
+using Mississippi.Spring.Runtime.Services;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
 
@@ -20,11 +24,6 @@ using OpenTelemetry.Trace;
 
 using Orleans.Hosting;
 using Orleans.Runtime;
-
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Domain.Services;
-using Spring.Runtime.Registrations;
-using Spring.Runtime.Services;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -36,7 +35,16 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<INotificationService, StubNotificationService>();
 
 // Register Spring domain aggregates
-builder.Services.AddSpringDomainSilo();
+builder.Services.AddAuthProofAggregate();
+builder.Services.AddBankAccountAggregate();
+builder.Services.AddTransactionInvestigationQueueAggregate();
+builder.Services.AddAuthProofProjection();
+builder.Services.AddBankAccountBalanceProjection();
+builder.Services.AddBankAccountLedgerProjection();
+builder.Services.AddFlaggedTransactionsProjection();
+builder.Services.AddMoneyTransferStatusProjection();
+builder.Services.AddAuthProofSaga();
+builder.Services.AddMoneyTransferSaga();
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()

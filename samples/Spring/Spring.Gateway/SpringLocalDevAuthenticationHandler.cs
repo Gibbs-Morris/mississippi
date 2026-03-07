@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 
-namespace Spring.Gateway;
+namespace Mississippi.Spring.Gateway;
 
 /// <summary>
 ///     Local development authentication handler used when optional Spring auth is enabled.

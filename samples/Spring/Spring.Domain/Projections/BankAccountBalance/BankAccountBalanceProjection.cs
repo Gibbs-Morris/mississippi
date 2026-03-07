@@ -5,7 +5,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Projections.BankAccountBalance;
+namespace Mississippi.Spring.Domain.Projections.BankAccountBalance;
 
 /// <summary>
 ///     Read-optimized projection for the balance of a bank account.

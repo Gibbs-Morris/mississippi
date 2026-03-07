@@ -2,10 +2,10 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
-using Spring.Client.Components.Organisms;
+using Mississippi.Spring.Client.Components.Organisms;
 
 
-namespace Spring.Client.L0Tests.Components.Organisms;
+namespace Mississippi.Spring.Client.L0Tests.Components.Organisms;
 
 /// <summary>
 ///     Tests for <see cref="ConnectionStatusModal" />.

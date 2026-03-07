@@ -1,10 +1,9 @@
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Spring.Domain.Projections.MoneyTransferStatus;
+using Mississippi.Spring.Domain.Projections.MoneyTransferStatus.Reducers;
 
-using Spring.Domain.Projections.MoneyTransferStatus;
-using Spring.Domain.Projections.MoneyTransferStatus.Reducers;
 
-
-namespace Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
+namespace Mississippi.Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
 
 /// <summary>
 ///     Tests for <see cref="SagaFailedStatusReducer" />.

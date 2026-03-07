@@ -8,7 +8,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Projections.MoneyTransferStatus;
+namespace Mississippi.Spring.Domain.Projections.MoneyTransferStatus;
 
 /// <summary>
 ///     Read-optimized projection for tracking money transfer saga status.

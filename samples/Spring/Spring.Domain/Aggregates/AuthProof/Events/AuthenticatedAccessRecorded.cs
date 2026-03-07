@@ -3,7 +3,7 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.AuthProof.Events;
+namespace Mississippi.Spring.Domain.Aggregates.AuthProof.Events;
 
 /// <summary>
 ///     Event raised when authenticated-only endpoint access is authorized.

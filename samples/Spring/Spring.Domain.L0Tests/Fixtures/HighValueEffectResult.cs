@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 
-namespace Spring.Domain.L0Tests.Fixtures;
+namespace Mississippi.Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Result from processing a deposit through the HighValueTransactionEffect.

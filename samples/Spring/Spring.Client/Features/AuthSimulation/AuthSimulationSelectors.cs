@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Spring.Client.Features.AuthSimulation;
+namespace Mississippi.Spring.Client.Features.AuthSimulation;
 
 /// <summary>
 ///     Selectors for deriving values from <see cref="AuthSimulationState" />.

@@ -5,7 +5,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Projections.AuthProof;
+namespace Mississippi.Spring.Domain.Projections.AuthProof;
 
 /// <summary>
 ///     Read projection used to prove generated projection endpoint authorization behavior.

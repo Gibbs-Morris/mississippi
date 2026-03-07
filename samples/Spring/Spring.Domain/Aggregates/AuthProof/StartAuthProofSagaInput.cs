@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.AuthProof;
+namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
 
 /// <summary>
 ///     Input used to start the auth-proof saga endpoint surface.

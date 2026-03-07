@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 
 
-namespace Spring.Client.Components.Organisms;
+namespace Mississippi.Spring.Client.Components.Organisms;
 
 /// <summary>
 ///     Demo accounts control panel.

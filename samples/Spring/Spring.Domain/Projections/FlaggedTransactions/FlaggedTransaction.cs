@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Spring.Domain.Projections.FlaggedTransactions;
+namespace Mississippi.Spring.Domain.Projections.FlaggedTransactions;
 
 /// <summary>
 ///     A single entry in the flagged transactions list.

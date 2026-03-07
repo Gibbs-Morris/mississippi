@@ -1,10 +1,7 @@
-using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
-using Crescent.Crescent.L2Tests.Domain.Counter.Events;
-
 using Mississippi.DomainModeling.Abstractions;
 
 
-namespace Crescent.Crescent.L2Tests.Domain.Counter.Handlers;
+namespace Mississippi.Crescent.L2Tests;
 
 /// <summary>
 ///     Command handler for incrementing a counter.

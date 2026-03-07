@@ -2,12 +2,11 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 using Mississippi.Tributary.Abstractions;
 
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
 
-
-namespace Spring.Domain.Projections.FlaggedTransactions.Reducers;
+namespace Mississippi.Spring.Domain.Projections.FlaggedTransactions.Reducers;
 
 /// <summary>
 ///     Reduces the <see cref="TransactionFlagged" /> event to add

@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
 
-namespace Spring.L2Tests;
+namespace Mississippi.Spring.L2Tests;
 
 /// <summary>
 ///     End-to-end integration tests for the BankAccount aggregate and projection.

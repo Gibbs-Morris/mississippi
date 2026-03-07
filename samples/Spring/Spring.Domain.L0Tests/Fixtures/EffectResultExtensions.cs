@@ -1,8 +1,8 @@
-using Spring.Domain.Aggregates.TransactionInvestigationQueue;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using Mississippi.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
 
 
-namespace Spring.Domain.L0Tests.Fixtures;
+namespace Mississippi.Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Fluent assertion extensions for <see cref="HighValueEffectResult" />.

@@ -3,7 +3,7 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.BankAccount.Events;
+namespace Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
 
 /// <summary>
 ///     Event raised when funds are withdrawn from a bank account.

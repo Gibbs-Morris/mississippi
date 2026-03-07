@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 
 
-namespace Spring.L2Tests.Pages;
+namespace Mississippi.Spring.L2Tests.Pages;
 
 /// <summary>
 ///     Page Object Model for the Spring sample Operations page (Bank Account Operations).

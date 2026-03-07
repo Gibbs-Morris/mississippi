@@ -7,7 +7,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.AuthProof;
+namespace Mississippi.Spring.Domain.Aggregates.AuthProof;
 
 /// <summary>
 ///     Saga state used to prove generated saga endpoint authorization behavior.

@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Spring.Domain.Aggregates.BankAccount.Commands;
+using Mississippi.Spring.Domain.Aggregates.BankAccount.Events;
 
-using Spring.Domain.Aggregates.BankAccount.Commands;
-using Spring.Domain.Aggregates.BankAccount.Events;
 
-
-namespace Spring.Domain.Aggregates.BankAccount.Handlers;
+namespace Mississippi.Spring.Domain.Aggregates.BankAccount.Handlers;
 
 /// <summary>
 ///     Command handler for withdrawing funds from a bank account.
