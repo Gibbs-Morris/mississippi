@@ -136,17 +136,17 @@ It registers:
 - [Documentation Guide](../contributing/documentation-guide.md)
 
 <!-- Reference-style links -->
-[isagastate]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs
-[startsagacommand]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/StartSagaCommand.cs
-[sagas-abstractions]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions
-[isagastep]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs
-[stepresult]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/StepResult.cs
-[compensationresult]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/CompensationResult.cs
-[sagastepattribute]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepAttribute.cs
-[sagastepinfo]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfo.cs
-[isagastepinfoprovider]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStepInfoProvider.cs
-[sagastepinforegistrations]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepInfoRegistrations.cs
-[sagaregistrations]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas/SagaRegistrations.cs
+[isagastate]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaState.cs
+[startsagacommand]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/StartSagaCommand.cs
+[sagas-abstractions]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions
+[isagastep]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStep.cs
+[stepresult]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/StepResult.cs
+[compensationresult]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/CompensationResult.cs
+[sagastepattribute]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/SagaStepAttribute.cs
+[sagastepinfo]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/SagaStepInfo.cs
+[isagastepinfoprovider]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStepInfoProvider.cs
+[sagastepinforegistrations]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/SagaStepInfoRegistrations.cs
+[sagaregistrations]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/SagaRegistrations.cs
 [generatesagaendpoints]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs
 [generatesagaendpoints-generic]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute%7BTInput%7D.cs
 [generatesagastatusreducers]: https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaStatusReducersAttribute.cs

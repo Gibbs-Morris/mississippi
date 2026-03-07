@@ -14,7 +14,7 @@
     ./run-docs.ps1 -Mode Serve
 
 .EXAMPLE
-    ./run-docs.ps1 -Mode Start -- --port 3001
+    ./run-docs.ps1 -Mode Start --port 3001
 #>
 
 [CmdletBinding()]
@@ -101,7 +101,7 @@ try {
     Write-Host "Running docs command: npm run $scriptName" -ForegroundColor Green
     if (($null -ne $ScriptArgs) -and ($ScriptArgs.Length -gt 0)) {
         Write-Host "Forwarding arguments: $($ScriptArgs -join ' ')" -ForegroundColor Green
-        Invoke-NpmCommand -Arguments @('run', $scriptName, '--') + $ScriptArgs -FailureMessage "npm run $scriptName failed."
+            Invoke-NpmCommand -Arguments (@('run', $scriptName, '--') + $ScriptArgs) -FailureMessage "npm run $scriptName failed."
     }
     else {
         Invoke-NpmCommand -Arguments @('run', $scriptName) -FailureMessage "npm run $scriptName failed."

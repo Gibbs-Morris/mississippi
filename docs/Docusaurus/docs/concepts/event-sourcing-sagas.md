@@ -67,10 +67,10 @@ At a high level:
 
 ## Guarantees
 
-- Mississippi gives saga state a defined contract through [`ISagaState`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs).
-- Step ordering is explicit through [`SagaStepAttribute<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/SagaStepAttribute.cs) metadata and `SagaStepInfo` registration.
+- Mississippi gives saga state a defined contract through [`ISagaState`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaState.cs).
+- Step ordering is explicit through [`SagaStepAttribute<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/SagaStepAttribute.cs) metadata and `SagaStepInfo` registration.
 - Saga orchestration uses lifecycle events such as `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaCompleted`, and `SagaCompensated`.
-- Compensation is opt-in per step through [`ICompensatable<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs).
+- Compensation is opt-in per step through [`ICompensatable<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStep.cs).
 
 ## Non-Guarantees
 
