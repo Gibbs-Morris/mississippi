@@ -4,10 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # C# Naming and XML Documentation
+
 **Source:** .github/instructions/naming.instructions.md
-
-
-# C# Naming and XML Documentation
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Use feature-centric namespaces, clear PascalCase identifiers, and factual XML docs enforced by StyleCop.
 

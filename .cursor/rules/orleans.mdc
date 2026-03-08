@@ -4,10 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Orleans POCO Grains
+
 **Source:** .github/instructions/orleans.instructions.md
-
-
-# Orleans POCO Grains
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Use Orleans 7+ POCO grains with `IGrainBase`, constructor injection, and extension methods—never inherit from `Grain`.
 

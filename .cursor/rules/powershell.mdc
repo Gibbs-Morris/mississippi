@@ -4,10 +4,9 @@ globs: ["**/*.ps*"]
 alwaysApply: false
 ---
 # PowerShell Scripting
+
 **Source:** .github/instructions/powershell.instructions.md
-
-
-# PowerShell Scripting
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Scripts run with strict mode, explicit parameters, deterministic exit codes, and shared helpers—mirroring our C# quality bar.
 

@@ -1,0 +1,30 @@
+---
+description: Concept Documentation
+globs: ["docs/Docusaurus/docs/**/*concept*.{md,mdx}", "docs/Docusaurus/docs/**/*concepts*.{md,mdx}"]
+alwaysApply: false
+---
+# Concept Documentation
+
+**Source:** .github/instructions/documentation-concepts.instructions.md
+**Last synced:** 2026-03-07 (commit 213f37b9)
+
+Governing thought: Concepts pages explain how Mississippi works, what it guarantees, and what trade-offs or limits the reader must understand.
+
+> Drift check: Keep this file aligned with `docs/Docusaurus/docs/contributing/documentation-concepts.md`.
+
+## Rules (RFC 2119)
+
+- This file **MUST** be applied only when the page is classified as `concepts`. Why: Concepts pages are explanation surfaces, not task guides.
+- Concept pages **MUST** use the structure: direct explanation statement, `## The problem this solves`, `## Core idea`, `## How it works`, `## Guarantees`, `## Non-guarantees` or `## Limits`, `## Trade-offs`, and `## Related tasks and reference`. Why: Readers need a predictable explanation structure.
+- Concept pages **MUST** explain ordering, concurrency, durability, visibility of state changes, failure boundaries, cancellation behavior, and versioning implications when relevant. Why: Mississippi concepts often depend on distributed-systems semantics.
+- Comparisons **MUST** be evidence-based and **MUST NOT** imply equivalence to Orleans or another system without proof. Why: Similarity is not identity.
+- Concept pages **MUST NOT** become procedural task guides, reference dumps, release notes, or marketing pages. Why: Explanation pages should remain focused on understanding.
+
+## Scope and Audience
+
+Contributors and agents authoring concept pages for Mississippi documentation.
+
+## References
+
+- Public guide: `docs/Docusaurus/docs/contributing/documentation-concepts.md`
+- General authoring: `.github/instructions/documentation-authoring.instructions.md`

@@ -4,10 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # DDD and Architecture Checklist
+
 **Source:** .github/instructions/dotnet-architecture-good-practices.instructions.md
-
-
-# DDD and Architecture Checklist
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Start every domain change with explicit DDD/SOLID analysis, keep logic in the right layer, and verify tests/observability before shipping.
 

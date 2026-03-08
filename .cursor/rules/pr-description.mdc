@@ -3,10 +3,9 @@ description: Pull Request Description Authoring
 alwaysApply: true
 ---
 # Pull Request Description Authoring
+
 **Source:** .github/instructions/pr-description.instructions.md
-
-
-# Pull Request Description Authoring
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: PR descriptions should communicate business value, explain the holistic design, and enable reviewers and future maintainers to understand both what changed and why.
 

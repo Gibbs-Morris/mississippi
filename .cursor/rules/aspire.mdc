@@ -4,10 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Aspire Integration Testing
+
 **Source:** .github/instructions/aspire.instructions.md
-
-
-# Aspire Integration Testing
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Use the preview Cosmos emulator with HTTP mode and SDK workarounds to avoid known connectivity issues.
 

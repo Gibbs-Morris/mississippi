@@ -4,10 +4,9 @@ globs: ["**/*.instructions.md"]
 alwaysApply: false
 ---
 # Instruction Authoring Guide
+
 **Source:** .github/instructions/authoring.instructions.md
-
-
-# Instruction Authoring Guide
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Every instruction file follows the same concise template—front matter, governing thought, a single Rules section, then supporting detail.
 

@@ -4,10 +4,9 @@ globs: ["**/*.cs"]
 alwaysApply: false
 ---
 # Storage Type Naming with Attributes
+
 **Source:** .github/instructions/storage-type-naming.instructions.md
-
-
-# Storage Type Naming with Attributes
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Persisted types carry stable, versioned attribute names (`APP.MODULE.NAME.Vn`) so code can be refactored without breaking stored data.
 

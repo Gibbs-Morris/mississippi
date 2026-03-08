@@ -3,10 +3,9 @@ description: Mutation Testing Playbook (Mississippi)
 alwaysApply: true
 ---
 # Mutation Testing Playbook (Mississippi)
+
 **Source:** .github/instructions/mutation-testing.instructions.md
-
-
-# Mutation Testing Playbook (Mississippi)
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Run Stryker after a clean build, let it finish, and close survivors through targeted tests without altering production behavior.
 

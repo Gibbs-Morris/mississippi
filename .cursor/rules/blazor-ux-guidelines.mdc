@@ -4,10 +4,9 @@ globs: ["**/*.razor*"]
 alwaysApply: false
 ---
 # Blazor UX Guidelines
+
 **Source:** .github/instructions/blazor-ux-guidelines.instructions.md
-
-
-# Blazor UX Guidelines
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Build atomic, testable Blazor components with split markup/logic, Redux-style state, accessibility by default, and WebAssembly-friendly dependencies.
 

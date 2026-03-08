@@ -3,10 +3,9 @@ description: Benchmark Projects
 alwaysApply: true
 ---
 # Benchmark Projects
+
 **Source:** .github/instructions/benchmarks.instructions.md
-
-
-# Benchmark Projects
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Benchmarks are opt-in performance checks in dedicated `*.Benchmarks` console projects kept out of PR gates.
 

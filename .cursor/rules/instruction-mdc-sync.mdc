@@ -3,10 +3,9 @@ description: Instruction ↔ Cursor MDC Sync
 alwaysApply: true
 ---
 # Instruction ↔ Cursor MDC Sync
+
 **Source:** .github/instructions/instruction-mdc-sync.instructions.md
-
-
-# Instruction ↔ Cursor MDC Sync
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: Markdown instructions are canonical; Cursor `.mdc` files must stay semantically identical and be updated together.
 

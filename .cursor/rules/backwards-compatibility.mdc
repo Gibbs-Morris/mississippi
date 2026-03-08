@@ -3,10 +3,9 @@ description: Backwards Compatibility Policy
 alwaysApply: true
 ---
 # Backwards Compatibility Policy
+
 **Source:** .github/instructions/backwards-compatibility.instructions.md
-
-
-# Backwards Compatibility Policy
+**Last synced:** 2026-03-07 (commit 213f37b9)
 
 Governing thought: While the repository version is pre-1.0.0, breaking changes are freely permitted; agents must not add compatibility shims for patterns that only exist on the current branch.
 

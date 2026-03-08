@@ -1,0 +1,31 @@
+---
+description: Release Notes Documentation
+globs: ["docs/Docusaurus/docs/**/*release-notes*.{md,mdx}", "docs/Docusaurus/docs/**/*releases*.{md,mdx}"]
+alwaysApply: false
+---
+# Release Notes Documentation
+
+**Source:** .github/instructions/documentation-release-notes.instructions.md
+**Last synced:** 2026-03-07 (commit 213f37b9)
+
+Governing thought: Release notes tell Mississippi users what changed, why it matters, and what action is required without turning into migration guides or marketing copy.
+
+> Drift check: Keep this file aligned with `docs/Docusaurus/docs/contributing/documentation-release-notes.md`.
+
+## Rules (RFC 2119)
+
+- This file **MUST** be applied only when the page is classified as `release-notes`. Why: Release notes are concise change summaries, not broad docs pages.
+- Release notes **MUST** include exact version and release date, a concise summary, breaking changes, features, fixes, deprecations, security notes when relevant, upgrade guidance, and links. Why: Readers need a standard release summary shape.
+- Release notes **MUST** lead with user impact and **MUST** include exact identifiers when relevant, such as version numbers, issue numbers, PR numbers, config keys, removed APIs, or changed defaults. Why: Precise identifiers make release notes actionable.
+- Breaking changes **MUST** be called out even when a workaround exists. Why: Breakage belongs in the breaking-changes section, not buried in prose.
+- Release notes **SHOULD** link to migration, how-to, or reference pages for detail instead of duplicating them. Why: Release notes should stay concise.
+- Release notes **MUST NOT** restate commit messages verbatim or use marketing language. Why: They are engineering change summaries.
+
+## Scope and Audience
+
+Contributors and agents authoring release notes for Mississippi documentation.
+
+## References
+
+- Public guide: `docs/Docusaurus/docs/contributing/documentation-release-notes.md`
+- General authoring: `.github/instructions/documentation-authoring.instructions.md`
