@@ -1,4 +1,5 @@
 ---
+id: documentation-tutorials
 title: Tutorial Pages
 description: Teach Mississippi through one linear end-to-end path with complete verified steps and checkpoints.
 sidebar_label: Tutorials
@@ -7,9 +8,13 @@ sidebar_position: 4
 
 # Tutorial Pages
 
+## Overview
+
 Use a tutorial when the reader needs guided learning and you are responsible for keeping them on a safe, linear path.
 
 Tutorials are not reference pages and they are not concept essays. They should teach by building or configuring something real from start to finish.
+
+The primary reader question is: "Can you walk me through one complete path so I learn by doing instead of assembling the pieces myself?"
 
 ## Use This Page Type When
 
@@ -23,8 +28,8 @@ Tutorials are not reference pages and they are not concept essays. They should t
 2. `## Before you begin`
 3. `## Step 1`, `## Step 2`, and so on in strict sequence
 4. verification checkpoints after major steps
-5. `## Recap`
-6. `## Next steps`
+5. `## Summary`
+6. `## Next Steps`
 
 ## Content Rules
 
@@ -62,12 +67,14 @@ Build a saga that coordinates a transfer workflow and verify each major step as 
 
 ## Checkpoint
 
-## Recap
+## Summary
 
-## Next steps
+Tutorials teach one complete path from start to finish.
+
+They should keep the reader moving forward with explicit steps, verification checkpoints, and only the theory needed for the next action.
+
+## Next Steps
 ```
-
-## Related Content
 
 - [Documentation Guide](./documentation-guide.md)
 - [Getting-Started Pages](./documentation-getting-started.md)

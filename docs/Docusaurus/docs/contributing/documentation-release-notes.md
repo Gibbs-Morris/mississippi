@@ -1,4 +1,5 @@
 ---
+id: documentation-release-notes
 title: Release Notes
 description: Summarize Mississippi release changes concisely with exact version identifiers, user impact, and upgrade links.
 sidebar_label: Release Notes
@@ -6,6 +7,8 @@ sidebar_position: 10
 ---
 
 # Release Notes
+
+## Overview
 
 Use release notes to tell readers what changed, why it matters, and what action is required.
 
@@ -67,7 +70,13 @@ Mississippi 0.9 focuses on verified documentation governance, runtime fixes, and
 ## Links
 ```
 
-## Related Content
+## Summary
+
+- release notes summarize impact concisely for a specific release or release train
+- breaking changes belong in release notes even when there is a workaround
+- deeper upgrade mechanics should move to migration, how-to, or reference pages and be linked from here
+
+## Next Steps
 
 - [Documentation Guide](./documentation-guide.md)
 - [Migration Pages](./documentation-migration.md)

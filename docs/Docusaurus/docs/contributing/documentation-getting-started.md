@@ -1,4 +1,5 @@
 ---
+id: documentation-getting-started
 title: Getting-Started Pages
 description: Get a new Mississippi user to a first successful outcome with the smallest verified path and the least theory.
 sidebar_label: Getting Started
@@ -7,9 +8,13 @@ sidebar_position: 3
 
 # Getting-Started Pages
 
+## Overview
+
 Use a getting-started page when the reader is new to Mississippi and needs one verified path to first success.
 
 Assume the reader is already a professional developer. The goal is not to teach every concept; the goal is to get them safely to a working result and then point them to deeper material.
+
+The primary reader question is: "How do I get to one verified first success with the least amount of setup and theory?"
 
 ## Use This Page Type When
 
@@ -26,7 +31,8 @@ Assume the reader is already a professional developer. The goal is not to teach 
 5. `## Create the project` or `## Run the sample`
 6. `## Verify it works`
 7. `## What happened`
-8. `## Next steps`
+8. `## Summary`
+9. `## Next Steps`
 
 ## Content Rules
 
@@ -73,10 +79,18 @@ Create a minimal Reservoir feature and verify that actions update state in a run
 
 ## What happened
 
-## Next steps
+## Summary
+
+## Next Steps
 ```
 
-## Related Content
+## Summary
+
+- getting-started pages optimize for one verified first success
+- they minimize branches, production complexity, and deep theory
+- they should hand readers off to tutorials, concepts, and reference once the first result works
+
+## Next Steps
 
 - [Documentation Guide](./documentation-guide.md)
 - [Tutorial Pages](./documentation-tutorials.md)

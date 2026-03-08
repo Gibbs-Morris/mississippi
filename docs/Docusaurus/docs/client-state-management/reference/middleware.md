@@ -22,7 +22,7 @@ Middleware intercepts actions before they reach reducers. Unlike effects (which 
 - **Block actions** — Prevent actions from reaching reducers and effects
 - **Perform side operations** — Execute operations like logging, analytics, or persistence
 ([IMiddleware remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IMiddleware.cs#L11-L19),
-[Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L213-L231))
+[Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L213-L231))
 
 ## The IMiddleware Interface
 
@@ -72,7 +72,7 @@ flowchart LR
     style H fill:#ff6b6b,color:#fff
 ```
 
-([Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L197-L210))
+([Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L197-L210))
 
 ## Creating Middleware
 
@@ -146,11 +146,11 @@ public static IServiceCollection AddMiddleware<TMiddleware>(
     where TMiddleware : class, IMiddleware;
 ```
 
-([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81))
+([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L73-L81))
 
 Middleware is registered as transient and resolved when the store is created.
-([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81),
-[Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L50-L90))
+([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L73-L81),
+[Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L50-L90))
 
 ### Runtime Registration
 
@@ -162,12 +162,12 @@ public void RegisterMiddleware(
 );
 ```
 
-([Store.RegisterMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L131-L139))
+([Store.RegisterMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L131-L139))
 
 :::note Registration Timing
 Middleware registered after dispatch has started will be included in subsequent dispatches. Each `Dispatch` call rebuilds the pipeline.
-([Store.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L95-L110),
-[Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L197-L210))
+([Store.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L95-L110),
+[Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L197-L210))
 :::
 
 ## Testing Middleware
@@ -225,11 +225,11 @@ public void RegisterMiddlewareAddsToDispatchPipeline()
 | **Transient lifetime** | Middleware is registered as transient and resolved when the store is created |
 | **Dispatch order** | Runs before reducers and effects in the dispatch pipeline |
 
-([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L73-L81),
-[Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L213-L231))
+([ReservoirRegistrations.AddMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L73-L81),
+[Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L213-L231))
 
 ## Next Steps
 
-- [Reservoir Overview](./reservoir.md) — See where middleware sits in the pipeline
+- [Reservoir Overview](../reservoir.md) — See where middleware sits in the pipeline
 - [Feature State](./feature-state.md) — Learn how to define feature state that middleware can inspect
 - [Store](./store.md) — Understand the central hub that coordinates middleware, reducers, and effects

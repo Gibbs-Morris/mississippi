@@ -382,7 +382,7 @@ protected TResult Select<TState, TResult>(Func<TState, TResult> selector)
 
 Use these in component properties and methods to derive values from state.
 
-**Source**: [`StoreComponent.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs)
+**Source**: [`StoreComponent.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs)
 
 ## Writing Selectors
 
@@ -654,7 +654,7 @@ public static class Memoize
 }
 ```
 
-**Source**: [`Memoize.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Selectors/Memoize.cs)
+**Source**: [`Memoize.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Selectors/Memoize.cs)
 
 ### Creating Memoized Selectors
 
@@ -1013,9 +1013,15 @@ The [Spring sample](https://github.com/Gibbs-Morris/mississippi/tree/main/sample
 
 - [`Index.razor.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs) — All patterns in action
 
-## See Also
+## Summary
 
-- [Store](store.md) — The central state container
-- [StoreComponent](store-component.md) — Base class for state-connected components
-- [Feature State](feature-state.md) — Defining slices of state
-- [Reducers](reducers.md) — Updating state in response to actions
+- selectors isolate derived state and keep business logic out of UI components
+- factory selectors handle entity-keyed projection access without giving up testability
+- memoization is most useful for expensive derived computations, not simple property access
+
+## Next Steps
+
+- [Store](store.md) — Return to the store surface that selectors read from.
+- [StoreComponent](store-component.md) — Review the component helpers that call selectors.
+- [Feature State](feature-state.md) — Revisit the state slices selectors derive from.
+- [Reducers](reducers.md) — Review the synchronous state updates that feed selector inputs.

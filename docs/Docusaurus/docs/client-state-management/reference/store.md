@@ -67,7 +67,7 @@ public static IServiceCollection AddReservoir(
 }
 ```
 
-([ReservoirRegistrations.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L139-L148))
+([ReservoirRegistrations.AddReservoir](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L139-L148))
 
 :::note Scoped Lifetime
 The Store is registered as **scoped**. Its lifetime follows the dependency-injection scope configured by the host.
@@ -123,7 +123,7 @@ private void CoreDispatch(IAction action)
 }
 ```
 
-([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L238-L256))
+([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L238-L256))
 
 ## Dispatching Actions
 
@@ -131,7 +131,7 @@ Call `Dispatch` on the store to send actions through the pipeline.
 ([IStore.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs#L55-L64))
 
 Components inheriting `StoreComponent` can call its protected `Dispatch` helper.
-([StoreComponent.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L48-L53))
+([StoreComponent.Dispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L40-L46))
 
 ### Dispatch Rules
 
@@ -140,7 +140,7 @@ Components inheriting `StoreComponent` can call its protected `Dispatch` helper.
 - **Null actions throw** — `Dispatch(null)` throws `ArgumentNullException`
 - **Disposed throws** — Dispatching to a disposed store throws `ObjectDisposedException`
 
-([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L214-L228),
+([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L214-L228),
 [StoreTests.DispatchAfterDisposeThrowsObjectDisposedException](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L327-L335),
 [StoreTests.DispatchWithNullActionThrowsArgumentNullException](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L338-L345))
 
@@ -160,7 +160,7 @@ private string? SelectedEntityId =>
 ```
 
 ([Spring.Index](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs#L190),
-[StoreComponent.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L82-L84))
+[StoreComponent.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs#L76-L79))
 
 ### GetState Rules
 
@@ -172,7 +172,7 @@ No feature state registered for 'entitySelection'.
 Call AddFeatureState<EntitySelectionState>() during service registration.
 ```
 
-([Store.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L131-L144))
+([Store.GetState](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L131-L144))
 
 ## Subscribing to Changes
 
@@ -186,7 +186,7 @@ Use `Subscribe` to register a listener that runs after every dispatch.
 - Dispose the returned `IDisposable` to unsubscribe
 - Subscriptions can be disposed multiple times safely
 
-([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L214-L228),
+([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L214-L228),
 [StoreTests.SubscriptionDisposeCanBeCalledMultipleTimes](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L600-L626))
 
 For an example of unsubscribe behavior, see the unit test.
@@ -218,7 +218,7 @@ private void OnStoreChanged()
 }
 ```
 
-([StoreComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs#L22-L157))
+([StoreComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs))
 
 ## Store Lifecycle
 
@@ -230,7 +230,7 @@ The Store can be constructed two ways:
 2. **Manually** — Pass feature registrations and middleware directly to the constructor
 
 Manual construction is used in tests to validate middleware behavior.
-([Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L58-L86),
+([Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L58-L86),
 [StoreTests.ConstructorWithMiddlewareCollectionRegistersMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L253-L266))
 
 ### Disposal
@@ -242,8 +242,8 @@ The Store implements `IDisposable`. When disposed:
 - Subsequent `Dispatch`, `GetState`, or `Subscribe` calls throw `ObjectDisposedException`
 
 ([StoreTests.DispatchAfterDisposeThrowsObjectDisposedException](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L327-L335),
-[Store.Dispose](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L124-L129),
-[Store.Dispose(bool)](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L183-L208))
+[Store.Dispose](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L124-L129),
+[Store.Dispose(bool)](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L183-L208))
 
 ## Effect Error Handling
 
@@ -253,7 +253,7 @@ Effects run asynchronously after dispatch. If an effect throws:
 - Other effects continue to run
 - Effects should handle their own errors by emitting error actions
 
-([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L372-L426))
+([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L372-L426))
 
 ## Observable Store Events
 
@@ -374,7 +374,7 @@ For advanced scenarios, understanding the Store's internal structure helps:
 | `listeners` | `List<Action>` | Registered subscribers |
 | `storeEventSubject` | `StoreEventSubject<StoreEventBase>` | Observable subject for store events |
 
-([Store fields](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L23-L45))
+([Store fields](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L23-L45))
 
 ### Middleware Pipeline Building
 
@@ -397,7 +397,7 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 }
 ```
 
-([Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L221-L236))
+([Store.BuildMiddlewarePipeline](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L221-L236))
 
 ## Summary
 
@@ -415,12 +415,12 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 | **Error handling** | Effects swallow exceptions; emit error actions instead |
 
 ([IStore](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IStore.cs),
-[Store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs),
-[StoreComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/StoreComponent.cs))
+[Store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs),
+[StoreComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs))
 
 ## Next Steps
 
-- [Reservoir Overview](./reservoir.md) — Understand the dispatch pipeline end-to-end
+- [Reservoir Overview](../reservoir.md) — Understand the dispatch pipeline end-to-end
 - [DevTools](./devtools.md) — See how DevTools uses StoreEvents and system actions
 - [Actions](./actions.md) — Define what can happen in your application
 - [Reducers](./reducers.md) — Update state in response to actions

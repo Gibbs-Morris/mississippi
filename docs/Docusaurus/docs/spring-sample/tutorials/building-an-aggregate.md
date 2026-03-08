@@ -10,11 +10,18 @@ description: Step-by-step walkthrough of defining the BankAccount aggregate with
 
 ## Overview
 
-Focus: Public API / Developer Experience.
-
 This page walks through building the `BankAccount` aggregate in the Spring sample from scratch. By the end, you will understand the exact files needed to define a fully working event-sourced aggregate with Mississippi.
 
 The BankAccount aggregate supports three operations: opening an account, depositing funds, and withdrawing funds. It also demonstrates two kinds of effects: a synchronous compliance check and a fire-and-forget notification.
+
+## Before You Begin
+
+Before following this tutorial, make sure you have read these pages:
+
+- [Spring Sample App](../index.md)
+- [Key Concepts](../concepts/key-concepts.md)
+
+You will get the most value from this page if you also have the Spring domain code open under `samples/Spring/Spring.Domain/Aggregates/BankAccount/`.
 
 ## Step 1: Define the Aggregate State
 
@@ -221,6 +228,15 @@ Key pattern: `CommandHandler`s return `OperationResult.Fail(...)` or `OperationR
 [DepositFundsHandler.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/DepositFundsHandler.cs) |
 [WithdrawFundsHandler.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/WithdrawFundsHandler.cs))
 
+## Checkpoint 1
+
+At this point, your aggregate should have:
+
+- one state record with brook and snapshot attributes
+- command records for open, deposit, and withdraw
+- internal event records for each state change
+- one handler per command that returns events instead of mutating state directly
+
 ## Step 5: Define EventReducers
 
 `EventReducer`s are pure functions that compute new state from an event. Each event type gets its own `EventReducer`. `EventReducer`s extend `EventReducerBase<TEvent, TProjection>`.
@@ -295,7 +311,7 @@ Effects react to events after persistence, and Spring demonstrates both executio
 
 ### Simple Effect: HighValueTransactionEffect
 
-This effect monitors deposits and flags amounts over £10,000 for AML investigation. It runs synchronously within the aggregate grain — the command response waits until the effect completes.
+This effect monitors deposits and flags amounts over £10,000 for AML investigation. In the Spring sample it runs on the aggregate event-effect pipeline after the deposit event has been persisted, and the effect code dispatches a follow-up command to the investigation queue.
 
 ```csharp
 internal sealed class HighValueTransactionEffect
@@ -427,6 +443,15 @@ flowchart LR
     Event --> Effect1["HighValueTransactionEffect\n(sync: AML check)"]
     Event --> ProjReducer["Projection EventReducers\n(update read models)"]
 ```
+
+## Checkpoint 2
+
+Before moving on, verify these tutorial outcomes in the Spring sample source:
+
+- the aggregate file structure matches the layout shown above
+- each event type has a matching reducer
+- the aggregate demonstrates both a synchronous effect and a fire-and-forget effect
+- command flow still matches the diagram on this page
 
 ## Summary
 

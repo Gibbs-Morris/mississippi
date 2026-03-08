@@ -12,7 +12,7 @@ description: Effects handle asynchronous side effects in Reservoir—API calls, 
 
 Effects handle asynchronous side effects triggered by actions. They run after reducers have updated state and can perform operations like HTTP calls, timers, or navigation—and optionally dispatch additional actions as results.
 ([IActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionEffect%7BTState%7D.cs),
-[Store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs))
+[Store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs))
 
 ## What Is an Effect?
 
@@ -51,7 +51,7 @@ flowchart LR
 ```
 
 All matching effects for a feature state are invoked. Effects can yield additional actions that flow back through the dispatch pipeline.
-([RootActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootActionEffect.cs#L24-L30))
+([RootActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootActionEffect.cs#L24-L30))
 
 ## The IActionEffect Interface
 
@@ -164,7 +164,7 @@ services.AddActionEffect<MyFeatureState, LoadDataEffect>();
 services.AddActionEffect<MyFeatureState, LogAnalyticsEffect>();
 ```
 
-([ReservoirRegistrations.AddActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/ReservoirRegistrations.cs#L31-L42))
+([ReservoirRegistrations.AddActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs#L31-L42))
 
 This method:
 
@@ -187,7 +187,7 @@ When an action is dispatched, the store triggers effects after reducers and list
 4. **All effects run** — All matching effects are invoked (reducers also run all matching reducers in order)
 5. **Yielded actions** — Actions yielded by effects are dispatched back through the store pipeline
 
-([RootActionEffect dispatch logic](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootActionEffect.cs#L103-L125))
+([RootActionEffect dispatch logic](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootActionEffect.cs#L103-L125))
 
 ## Error Handling
 
@@ -197,8 +197,8 @@ Effects are responsible for their own error handling. The store catches exceptio
 - The store swallows exceptions while invoking effects to keep dispatch stable
 - Effects should emit error actions rather than throwing
 
-([Store error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L276-L328),
-[RootActionEffect error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/RootActionEffect.cs#L140-L260))
+([Store error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L276-L328),
+[RootActionEffect error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootActionEffect.cs#L140-L260))
 
 ## Cancellation
 
@@ -206,7 +206,7 @@ Client-side action effects are non-cancellable once started. The store passes `C
 
 > Client-side action effects are intentionally non-cancellable once started. We pass CancellationToken.None to HandleAsync to indicate that the effect should not depend on external cancellation and must handle its own lifetime.
 
-([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L305-L309))
+([Store.TriggerEffectsAsync](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L305-L309))
 
 ## Testing Effects
 
@@ -279,10 +279,10 @@ public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
 | **Transient lifetime** | Effects are stateless; state flows through actions |
 | **Error handling** | Effects should emit error actions rather than throwing |
 
-([Store error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir/Store.cs#L276-L328))
+([Store error handling](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L276-L328))
 
 ## Next Steps
 
-- [Reservoir Overview](./reservoir.md) — See the end-to-end dispatch pipeline
+- [Reservoir Overview](../reservoir.md) — See the end-to-end dispatch pipeline
 - [Feature State](./feature-state.md) — Learn how to define feature state that effects operate on
 - [Store](./store.md) — Understand the central hub that coordinates effects, reducers, and state

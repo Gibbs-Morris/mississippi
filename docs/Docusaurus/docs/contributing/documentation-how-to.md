@@ -1,4 +1,5 @@
 ---
+id: documentation-how-to
 title: How-To Guides
 description: Help a competent Mississippi user complete one real task with exact steps, verification, and task-specific safety notes.
 sidebar_label: How-To
@@ -7,9 +8,13 @@ sidebar_position: 5
 
 # How-To Guides
 
+## Overview
+
 Use a how-to guide when the reader already understands the basics and wants the fastest reliable route to a result.
 
 The task comes first. Long conceptual explanation does not.
+
+The primary reader question is: "How do I complete this specific task safely and verify the result?"
 
 ## Use This Page Type When
 
@@ -25,7 +30,8 @@ The task comes first. Long conceptual explanation does not.
 4. `## Steps`
 5. `## Verify the result`
 6. `## Troubleshooting` or `## Common problems` when justified
-7. `## Related content`
+7. `## Summary`
+8. `## Next Steps`
 
 ## Content Rules
 
@@ -70,10 +76,18 @@ Configure a Cosmos-backed storage provider for Mississippi and verify that the r
 
 ## Common problems
 
-## Related content
+## Summary
+
+## Next Steps
 ```
 
-## Related Content
+## Summary
+
+- how-to guides optimize for task completion, not guided learning
+- they must make prerequisites, side effects, and verification explicit
+- they should link out to concepts and reference instead of embedding long background sections
+
+## Next Steps
 
 - [Documentation Guide](./documentation-guide.md)
 - [Reference Pages](./documentation-reference.md)

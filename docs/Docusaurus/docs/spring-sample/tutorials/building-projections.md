@@ -10,8 +10,6 @@ description: Step-by-step walkthrough of building UX projections that transform 
 
 ## Overview
 
-Focus: Public API / Developer Experience.
-
 Aggregates store internal state for command validation. Projections build **read-optimized views** from the same event streams. A single event stream can feed multiple projections, each tailored for a different read pattern.
 
 Spring defines four projections from three event streams:
@@ -30,6 +28,14 @@ flowchart LR
     CompStream["Investigation\nEvent Stream"] --> Flagged["Flagged\nProjection"]
     SagaStream["Transfer Saga\nEvent Stream"] --> Status["Transfer Status\nProjection"]
 ```
+
+## Before You Begin
+
+Before following this tutorial, read these pages:
+
+- [Spring Sample App](../index.md)
+- [Building an Aggregate](./building-an-aggregate.md)
+- [Building a Saga](./building-a-saga.md)
 
 ## Step 1: Define the Projection State
 
@@ -127,6 +133,14 @@ These `EventReducer`s subscribe to the same events as the aggregate's `EventRedu
 ([AccountOpenedBalanceReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/AccountOpenedBalanceReducer.cs) |
 [FundsDepositedBalanceReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/FundsDepositedBalanceReducer.cs) |
 [FundsWithdrawnBalanceReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/FundsWithdrawnBalanceReducer.cs))
+
+## Checkpoint 1
+
+At this point, your projection implementation should include:
+
+- one projection state record with `ProjectionPath`, `BrookName`, and snapshot metadata
+- reducer types that apply the relevant events to projection state
+- a clear separation between aggregate state and read-model state
 
 ## A Richer Projection: BankAccountLedger
 
@@ -257,6 +271,14 @@ The `[GenerateSagaStatusReducers]` attribute does all the work. No manual event 
 
 ([MoneyTransferStatusProjection.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/MoneyTransferStatus/MoneyTransferStatusProjection.cs))
 
+## Checkpoint 2
+
+Before moving on, verify these tutorial outcomes in the Spring sample source:
+
+- the balance and ledger projections subscribe to the bank-account brook
+- the flagged-transactions projection subscribes to the compliance brook
+- the saga-status projection uses generated saga status reducers instead of manual reducers
+
 ## The Complete Projections File Structure
 
 ```text
@@ -299,5 +321,5 @@ Projections in Mississippi are read-optimized state records with their own `Even
 
 ## Next Steps
 
-- [Host Applications](./host-applications.md) — See how projections are wired into the host with one registration call
-- [Key Concepts](./key-concepts.md) — Revisit the concept reference
+- [Host Architecture](../concepts/host-applications.md) — See how projections are wired into the host with one registration call
+- [Key Concepts](../concepts/key-concepts.md) — Revisit the concept reference

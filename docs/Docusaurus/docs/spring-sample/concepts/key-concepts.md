@@ -10,8 +10,6 @@ description: Quick reference for every event sourcing concept used in the Spring
 
 ## Overview
 
-Focus: Public API / Developer Experience.
-
 This page defines every concept used in the Spring sample. Each concept maps to a specific base class or interface in the Mississippi framework. Read this page first if you are new to event sourcing or to Mississippi.
 
 ## Domain Terms → Framework Types
@@ -41,20 +39,20 @@ Notes:
 
 Key framework references:
 
-- [`CommandHandlerBase<TCommand, TSnapshot>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/CommandHandlerBase.cs)
-- [`EventReducerBase<TEvent, TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Reducers.Abstractions/EventReducerBase.cs)
-- [`IEventReducer`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Reducers.Abstractions/IEventReducer.cs)
-- [`ISagaState`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaState.cs)
-- [`ISagaStep<TSaga>` and `ICompensatable<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs)
-- [`SimpleEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/SimpleEventEffectBase.cs)
-- [`FireAndForgetEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/FireAndForgetEventEffectBase.cs)
+- [`CommandHandlerBase<TCommand, TSnapshot>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/CommandHandlerBase.cs)
+- [`EventReducerBase<TEvent, TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/EventReducerBase.cs)
+- [`IEventReducer`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/IEventReducer.cs)
+- [`ISagaState`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaState.cs)
+- [`ISagaStep<TSaga>` and `ICompensatable<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStep.cs)
+- [`SimpleEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/SimpleEventEffectBase.cs)
+- [`FireAndForgetEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/FireAndForgetEventEffectBase.cs)
 - [`GenerateCommandAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateCommandAttribute.cs)
 - [`GenerateAggregateEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAggregateEndpointsAttribute.cs)
 - [`GenerateProjectionEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateProjectionEndpointsAttribute.cs)
 - [`GenerateSagaEndpointsAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateSagaEndpointsAttribute.cs)
 - [`ProjectionPathAttribute`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Abstractions/ProjectionPathAttribute.cs)
-- [`IUxProjectionGrain<TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.UxProjections.Abstractions/IUxProjectionGrain.cs)
-- [`UxProjectionGrain<TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.UxProjections/UxProjectionGrain.cs)
+- [`IUxProjectionGrain<TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/IUxProjectionGrain.cs)
+- [`UxProjectionGrain<TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Runtime/UxProjectionGrain.cs)
 
 ## Command
 
@@ -78,7 +76,7 @@ A command says "deposit £500." It does not decide whether the deposit is allowe
 
 ## Command Handler
 
-A command handler receives a command and the current aggregate state, validates business rules, and returns either a list of events (success) or an error (failure). Command handlers extend [`CommandHandlerBase<TCommand, TSnapshot>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/CommandHandlerBase.cs).
+A command handler receives a command and the current aggregate state, validates business rules, and returns either a list of events (success) or an error (failure). Command handlers extend [`CommandHandlerBase<TCommand, TSnapshot>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/CommandHandlerBase.cs).
 
 `CommandHandler`s are **pure decision-makers**. They inspect the command and state, apply business rules, and produce events. They do not mutate state, call databases, or perform side effects.
 
@@ -131,7 +129,7 @@ An event says "£500 was deposited." It is a statement of fact — past tense, i
 
 ## EventReducer
 
-An `EventReducer` is a pure function that takes the current state and an event, and returns the new state. `EventReducer`s extend [`EventReducerBase<TEvent, TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Reducers.Abstractions/EventReducerBase.cs) and implement `IEventReducer` contracts.
+An `EventReducer` is a pure function that takes the current state and an event, and returns the new state. `EventReducer`s extend [`EventReducerBase<TEvent, TProjection>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/EventReducerBase.cs) and implement `IEventReducer` contracts.
 
 `EventReducer`s have no side effects, no dependencies, no I/O. They receive state + event and return new state. This makes them trivially testable and deterministic.
 
@@ -187,8 +185,8 @@ Mississippi provides two effect types:
 
 | Type | Base Class | Behavior |
 |------|-----------|----------|
-| **Simple effect** | [`SimpleEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/SimpleEventEffectBase.cs) | Runs synchronously within the aggregate grain. Blocks the command response until complete. Use for critical side effects. |
-| **Fire-and-forget effect** | [`FireAndForgetEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Aggregates.Abstractions/FireAndForgetEventEffectBase.cs) | Runs asynchronously in a separate worker grain. Does not block the command response. Use for non-critical side effects. |
+| **Simple effect** | [`SimpleEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/SimpleEventEffectBase.cs) | Runs on the aggregate event-effect pipeline after the event is persisted. Use it for side operations that stay coupled to the aggregate flow without yielding additional events. |
+| **Fire-and-forget effect** | [`FireAndForgetEventEffectBase<TEvent, TAggregate>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/FireAndForgetEventEffectBase.cs) | Runs in a separate worker grain. Use it for side effects that should be decoupled from the aggregate pipeline. |
 
 Spring uses both:
 
@@ -224,7 +222,7 @@ The saga itself does not contain step logic. Steps are separate classes.
 
 ## Saga Step
 
-A saga step implements [`ISagaStep<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs) and executes one unit of work in the saga. Steps are ordered by the `[SagaStep<TSaga>(index)]` attribute.
+A saga step implements [`ISagaStep<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStep.cs) and executes one unit of work in the saga. Steps are ordered by the `[SagaStep<TSaga>(index)]` attribute.
 
 ```csharp
 [SagaStep<MoneyTransferSagaState>(0)]
@@ -245,7 +243,7 @@ Steps return `StepResult.Succeeded()` or `StepResult.Failed(...)`. If a step fai
 
 ## Saga Compensation
 
-A saga step that implements [`ICompensatable<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/EventSourcing.Sagas.Abstractions/ISagaStep.cs) provides a `CompensateAsync` method. If a later step fails, the framework calls `CompensateAsync` on previously completed compensatable steps in reverse order to undo their work.
+A saga step that implements [`ICompensatable<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStep.cs) provides a `CompensateAsync` method. If a later step fails, the framework calls `CompensateAsync` on previously completed compensatable steps in reverse order to undo their work.
 
 ```csharp
 [SagaStep<MoneyTransferSagaState>(0)]
@@ -334,6 +332,6 @@ Every concept in Mississippi has a single, well-defined responsibility. Commands
 
 ## Next Steps
 
-- [Building an Aggregate](./building-an-aggregate.md) — See these concepts in action with the BankAccount example
-- [Building a Saga](./building-a-saga.md) — Orchestrate a multi-aggregate workflow
-- [Building Projections](./building-projections.md) — Create read-optimized views
+- [Building an Aggregate](../tutorials/building-an-aggregate.md) — See these concepts in action with the BankAccount example
+- [Building a Saga](../tutorials/building-a-saga.md) — Orchestrate a multi-aggregate workflow
+- [Building Projections](../tutorials/building-projections.md) — Create read-optimized views

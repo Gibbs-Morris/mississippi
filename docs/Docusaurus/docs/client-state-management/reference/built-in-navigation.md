@@ -12,7 +12,9 @@ description: Redux-style navigation state management for Blazor applications usi
 
 The built-in navigation feature provides Redux-style navigation state management for Blazor applications. It tracks navigation history in the store, allowing components to react to route changes and enabling programmatic navigation through dispatched actions.
 
-## Quick Start
+Use this page to look up the built-in navigation surface, its actions, and its state model.
+
+## Minimum Setup
 
 ### 1. Register the Feature
 
@@ -31,10 +33,10 @@ builder.Services.AddBuiltInNavigation();
 
 ### 2. Add the Navigation Provider
 
-Add the [`ReservoirNavigationProvider`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/BuiltIn/Components/ReservoirNavigationProvider.razor) component to your `App.razor`:
+Add the [`ReservoirNavigationProvider`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/BuiltIn/Components/ReservoirNavigationProvider.razor) component to your `App.razor`:
 
 ```razor
-@using Mississippi.Reservoir.Blazor.BuiltIn.Components
+@using Mississippi.Reservoir.Client.BuiltIn.Components
 <ReservoirNavigationProvider />
 
 <Router AppAssembly="@typeof(App).Assembly">
@@ -42,7 +44,7 @@ Add the [`ReservoirNavigationProvider`](https://github.com/Gibbs-Morris/mississi
 </Router>
 ```
 
-This component subscribes to Blazor's `NavigationManager.LocationChanged` event and dispatches [`LocationChangedAction`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/BuiltIn/Navigation/Actions/LocationChangedAction.cs) automatically.
+This component subscribes to Blazor's `NavigationManager.LocationChanged` event and dispatches [`LocationChangedAction`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/BuiltIn/Navigation/Actions/LocationChangedAction.cs) automatically.
 
 ### 3. Navigate via Actions
 
@@ -195,7 +197,7 @@ public async IAsyncEnumerable<IAction> HandleAsync(
 
 ## NavigationState
 
-The [`NavigationState`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Blazor/BuiltIn/Navigation/State/NavigationState.cs) feature state tracks navigation information:
+The [`NavigationState`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/BuiltIn/Navigation/State/NavigationState.cs) feature state tracks navigation information:
 
 ```csharp
 public sealed record NavigationState : IFeatureState
@@ -255,7 +257,7 @@ The navigation effect validates that URIs are same-origin before navigating. Ext
 
 ## Testing Navigation
 
-Use the [`StoreTestHarness`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Testing/StoreTestHarness.cs) for unit testing navigation reducers:
+Use the [`StoreTestHarness`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.TestHarness/StoreTestHarness.cs) for unit testing navigation reducers:
 
 ```csharp
 [Fact]
@@ -277,9 +279,15 @@ public void LocationChangedAction_UpdatesCurrentUri()
 }
 ```
 
-## Related Documentation
+## Summary
 
-- [Reservoir Overview](reservoir.md) — Core concepts
-- [Actions](actions.md) — Action fundamentals
-- [Effects](effects.md) — Handling side effects
-- [Built-in Lifecycle](built-in-lifecycle.md) — Application lifecycle management
+- built-in navigation keeps route changes inside the Reservoir action and reducer model
+- `ReservoirNavigationProvider` bridges browser navigation into store updates through `LocationChangedAction`
+- navigation actions are limited to same-origin application routes, while external URLs should use normal links
+
+## Next Steps
+
+- [Reservoir Overview](../reservoir.md) — Return to the full dispatch model.
+- [Actions](actions.md) — Review the action surfaces used by navigation.
+- [Effects](effects.md) — Review the effect model that drives navigation side effects.
+- [Built-in Lifecycle](built-in-lifecycle.md) — Pair navigation state with application lifecycle state.

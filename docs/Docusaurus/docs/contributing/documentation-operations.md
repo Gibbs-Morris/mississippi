@@ -1,4 +1,5 @@
 ---
+id: documentation-operations
 title: Operations Pages
 description: Help engineers run Mississippi safely in production with explicit guidance on validation, failure modes, telemetry, and rollback.
 sidebar_label: Operations
@@ -7,9 +8,13 @@ sidebar_position: 7
 
 # Operations Pages
 
+## Overview
+
 Use an operations page when the reader is responsible for reliability, throughput, security, cost, or recovery in a live system.
 
 Operational guidance must be concrete. Replace vague advice with signals, thresholds, dashboards, commands, and validation steps whenever the evidence exists.
+
+The primary reader question is: "How do I run or change this safely in a live system and prove the outcome?"
 
 ## Use This Page Type When
 
@@ -27,7 +32,8 @@ Operational guidance must be concrete. Replace vague advice with signals, thresh
 6. `## Validation`
 7. `## Failure modes and rollback`
 8. `## Telemetry to watch`
-9. `## Related content`
+9. `## Summary`
+10. `## Next Steps`
 
 ## Content Rules
 
@@ -68,10 +74,18 @@ This page explains how to roll out Mississippi updates safely in production.
 
 ## Telemetry to watch
 
-## Related content
+## Summary
+
+## Next Steps
 ```
 
-## Related Content
+## Summary
+
+- operations pages are for live-system safety, validation, and rollback
+- they must replace vague advice with concrete signals, procedures, and telemetry
+- they should state what is safe live, what is not, and how to prove the change succeeded
+
+## Next Steps
 
 - [Documentation Guide](./documentation-guide.md)
 - [Migration Pages](./documentation-migration.md)
