@@ -1,5 +1,7 @@
 ---
+id: aqueduct-getting-started
 title: Aqueduct Getting Started
+sidebar_label: Getting Started
 sidebar_position: 1
 description: Start with Aqueduct by choosing the correct package boundary and neighboring Mississippi areas.
 ---

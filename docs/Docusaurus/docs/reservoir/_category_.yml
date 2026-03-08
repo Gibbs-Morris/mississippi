@@ -1,6 +1,6 @@
-label: Reservoir
+label: Reservoir (Redux-Style State)
 position: 5
-collapsed: false
+collapsed: true
 collapsible: true
 link:
   type: doc

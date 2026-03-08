@@ -1,5 +1,7 @@
 ---
+id: brooks-getting-started
 title: Brooks Getting Started
+sidebar_label: Getting Started
 sidebar_position: 1
 description: Start with Brooks by confirming that your question is about event streams, serialization seams, or storage providers.
 ---

@@ -1,5 +1,7 @@
 ---
+id: aqueduct-concepts
 title: Aqueduct Concepts
+sidebar_label: Concepts
 sidebar_position: 1
 description: Understand Aqueduct as Mississippi's Orleans-backed SignalR backplane layer.
 ---

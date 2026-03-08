@@ -1,5 +1,7 @@
 ---
+id: inlet-reference
 title: Inlet Reference
+sidebar_label: Reference
 sidebar_position: 1
 description: Current reference surface for Inlet packages and cross-layer ownership.
 ---

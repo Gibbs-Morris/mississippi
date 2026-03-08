@@ -2,7 +2,7 @@
 id: about-benjamin-gibbs-reference
 title: About Benjamin Gibbs
 sidebar_label: About Benjamin Gibbs
-sidebar_position: 2
+sidebar_position: 90
 description: Reference the background of Benjamin Gibbs, the creator of Mississippi.
 ---
 

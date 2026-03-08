@@ -1,6 +1,6 @@
-label: Domain Modeling
+label: Domain Modeling (Aggregates & Sagas)
 position: 8
-collapsed: false
+collapsed: true
 collapsible: true
 link:
   type: doc

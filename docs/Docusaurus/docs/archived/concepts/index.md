@@ -1,5 +1,5 @@
 ---
-id: concepts-overview
+id: archived-concepts-overview
 title: Concepts
 sidebar_label: Overview
 sidebar_position: 1

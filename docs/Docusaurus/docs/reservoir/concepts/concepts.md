@@ -1,5 +1,7 @@
 ---
+id: reservoir-concepts
 title: Reservoir Concepts
+sidebar_label: Concepts
 sidebar_position: 1
 description: Understand Reservoir as Mississippi's client-state management subsystem.
 ---

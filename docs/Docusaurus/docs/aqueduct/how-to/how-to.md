@@ -1,5 +1,7 @@
 ---
+id: aqueduct-how-to
 title: How To Choose An Aqueduct Package Entry Point
+sidebar_label: How To
 sidebar_position: 1
 description: Select the correct Aqueduct package based on whether you need contracts, gateway hosting, or runtime hosting.
 ---

@@ -10,47 +10,72 @@ description: Start here to understand what Mississippi is for, how the pieces fi
 
 ## Overview
 
-Mississippi is for teams that want to model domain behavior directly and let the framework scaffold much of the surrounding transport, client, and runtime plumbing.
+Mississippi is an end-to-end application model for event-sourced systems built on Orleans.
 
-You define aggregates, commands, events, and projections. Mississippi then composes event sourcing, CQRS, Orleans execution, generated APIs, client actions, and real-time projection delivery into a single application model.
+It combines aggregate command handling, reducer-driven read models, generated HTTP and client surfaces, and real-time projection notifications into one framework shape. The goal is not to hide the domain model. The goal is to keep the domain model small and explicit while moving transport, registration, and client synchronization boilerplate into reusable runtime and generator infrastructure.
 
-## What Mississippi Optimizes For
+## What This Section Covers
 
-- keeping domain behavior explicit instead of burying it in infrastructure code
-- reducing boilerplate through source generation and runtime composition
-- separating write-side behavior, read models, and client state so each concern stays testable
-- allowing some areas to be adopted independently when a full-stack Mississippi application is not needed
+Use this section when you need the framework-level mental model before choosing a subsystem or a sample.
 
-## Core Model
+| Question | Start here |
+| --- | --- |
+| What Mississippi is and how the product areas relate | [Architectural Model](./architectural-model.md) |
+| How commands, events, reducers, and effects work on the write side | [Write Model](./write-model.md) |
+| How projections, HTTP reads, SignalR notifications, and client state fit together | [Read Models and Client Sync](./read-models-and-client-sync.md) |
+| How saga orchestration and compensation work | [Sagas and Orchestration](./sagas-and-orchestration.md) |
+| Why Mississippi is opinionated, what it optimizes for, and what it trades away | [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) |
 
-At a high level, Mississippi starts from domain definitions and builds outward.
+## Core Frame
+
+This diagram shows the verified top-level composition model.
 
 ```mermaid
 flowchart LR
-    A[Model the domain] --> B[Generate and compose surrounding surfaces]
-    B --> C[Execute commands and append events]
-    C --> D[Build projections and client state]
-    D --> E[Deliver updates to applications]
+    A[Domain records and handlers] --> B[Generic Orleans aggregate grains]
+    B --> C[Brooks event streams]
+    C --> D[Tributary reducers and snapshots]
+    D --> E[UX projection grains and generated HTTP endpoints]
+    E --> F[Inlet SignalR notifications and HTTP fetches]
+    F --> G[Reservoir client state]
 ```
 
-In practice, that means:
+At a high level:
 
-- domain-modeling types describe aggregates, sagas, effects, and UX projections
-- Brooks and Tributary provide event streams, reducers, and snapshot mechanics
-- Inlet aligns runtime, HTTP, and client surfaces
-- Reservoir and Refraction support predictable client behavior and UI composition
+- Domain Modeling owns aggregates, sagas, event effects, and UX projection runtime abstractions.
+- Brooks owns event streams and event storage.
+- Tributary owns reducers and snapshot reconstruction.
+- Inlet aligns runtime registration, HTTP endpoints, SignalR subscriptions, and client code generation.
+- Reservoir provides Redux-style client state management.
+- Aqueduct provides Orleans-backed SignalR messaging infrastructure.
 
-## Use This Section
+## Suggested Reading Paths
 
-Start here if you are new to Mississippi, evaluating whether it fits your system, or trying to understand how the major subsystems relate before choosing packages or samples.
+If you are evaluating Mississippi as an architecture, read the pages in this order:
 
-Use the product-area sections after this page when you need detail about a specific subsystem.
+1. [Architectural Model](./architectural-model.md)
+2. [Write Model](./write-model.md)
+3. [Read Models and Client Sync](./read-models-and-client-sync.md)
+4. [Sagas and Orchestration](./sagas-and-orchestration.md)
+5. [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md)
+
+If you already know the framework style and need a subsystem boundary, move to the product-area docs under [Domain Modeling](../domain-modeling/index.md), [Inlet](../inlet/index.md), [Reservoir](../reservoir/index.md), [Tributary](../tributary/index.md), and [Brooks](../brooks/index.md).
+
+## Current Coverage
+
+This concepts section now covers the verified framework model at the cross-cutting level.
+
+It explains the architecture that spans multiple product areas. It does not replace the product-area pages for package-level detail, API reference, or operational guidance.
 
 ## Learn More
 
 - [Documentation Home](../index.md) - Return to the main landing page
-- [About Benjamin Gibbs](./about-benjamin-gibbs-reference.md) - Learn about the creator of Mississippi
-- [Aqueduct](../aqueduct/index.md) - Explore the Orleans-backed SignalR backplane layer
-- [Reservoir](../reservoir/index.md) - Explore the Redux-style client state layer
+- [Architectural Model](./architectural-model.md) - See the framework-wide subsystem map and mental model
+- [Write Model](./write-model.md) - Follow the aggregate command, event, reducer, and effect flow
+- [Read Models and Client Sync](./read-models-and-client-sync.md) - See how projections move from event streams into client state
+- [Sagas and Orchestration](./sagas-and-orchestration.md) - Understand long-running workflow coordination and compensation
+- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) - Review the framework rationale, constraints, and AI-related implications
+- [Domain Modeling](../domain-modeling/index.md) - Go deeper on aggregates, sagas, effects, and UX projections
+- [Inlet](../inlet/index.md) - Go deeper on generated client, API, and runtime alignment
 - [Samples](../samples/index.md) - See complete Mississippi applications
-- [Archived Concepts](../archived/concepts/index.md) - Browse preserved concept material from the earlier docs set
+- [About Benjamin Gibbs](./about-benjamin-gibbs-reference.md) - Learn about the creator of Mississippi

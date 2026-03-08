@@ -1,5 +1,7 @@
 ---
+id: brooks-reference
 title: Brooks Reference
+sidebar_label: Reference
 sidebar_position: 1
 description: Current reference surface for Brooks packages and event-stream ownership.
 ---

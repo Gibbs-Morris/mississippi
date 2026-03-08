@@ -1,5 +1,7 @@
 ---
+id: domain-modeling-getting-started
 title: Domain Modeling Getting Started
+sidebar_label: Getting Started
 sidebar_position: 1
 description: Start with Domain Modeling by confirming that your question is about aggregates, sagas, effects, or UX projections.
 ---

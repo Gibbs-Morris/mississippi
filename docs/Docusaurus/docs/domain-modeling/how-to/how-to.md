@@ -1,5 +1,7 @@
 ---
+id: domain-modeling-how-to
 title: How To Choose A Domain Modeling Package Entry Point
+sidebar_label: How To
 sidebar_position: 1
 description: Select the correct Domain Modeling package based on whether you need contracts, runtime support, gateway support, or testing support.
 ---

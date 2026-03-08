@@ -1,5 +1,7 @@
 ---
+id: domain-modeling-concepts
 title: Domain Modeling Concepts
+sidebar_label: Concepts
 sidebar_position: 1
 description: Understand Domain Modeling as Mississippi's domain-facing aggregate, saga, effect, and UX projection layer.
 ---

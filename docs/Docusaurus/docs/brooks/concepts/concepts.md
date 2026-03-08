@@ -1,5 +1,7 @@
 ---
+id: brooks-concepts
 title: Brooks Concepts
+sidebar_label: Concepts
 sidebar_position: 1
 description: Understand Brooks as Mississippi's event-stream and provider foundation.
 ---

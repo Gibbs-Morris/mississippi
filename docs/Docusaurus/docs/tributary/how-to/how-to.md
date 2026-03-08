@@ -1,5 +1,7 @@
 ---
+id: tributary-how-to
 title: How To Choose A Tributary Package Entry Point
+sidebar_label: How To
 sidebar_position: 1
 description: Select the correct Tributary package based on whether you need contracts, runtime reduction, or snapshot storage seams.
 ---

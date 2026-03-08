@@ -1,5 +1,7 @@
 ---
+id: tributary-concepts
 title: Tributary Concepts
+sidebar_label: Concepts
 sidebar_position: 1
 description: Understand Tributary as Mississippi's reducer and snapshot layer.
 ---

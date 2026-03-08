@@ -1,6 +1,6 @@
-label: Aqueduct
+label: Aqueduct (SignalR Backplane)
 position: 3
-collapsed: false
+collapsed: true
 collapsible: true
 link:
   type: doc

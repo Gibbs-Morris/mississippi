@@ -1,5 +1,7 @@
 ---
+id: refraction-reference
 title: Refraction Reference
+sidebar_label: Reference
 sidebar_position: 1
 description: Current reference surface for Refraction packages and UX-layer ownership.
 ---

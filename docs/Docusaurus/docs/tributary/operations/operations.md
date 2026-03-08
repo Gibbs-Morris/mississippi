@@ -1,5 +1,7 @@
 ---
+id: tributary-operations
 title: Tributary Operations
+sidebar_label: Operations
 sidebar_position: 1
 description: Current operational scope for Tributary and the evidence gaps that still need dedicated reducer and snapshot guidance.
 ---

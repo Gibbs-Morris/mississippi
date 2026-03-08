@@ -1,5 +1,7 @@
 ---
+id: inlet-getting-started
 title: Inlet Getting Started
+sidebar_label: Getting Started
 sidebar_position: 1
 description: Start with Inlet by confirming that your question is about generated cross-layer alignment rather than one subsystem in isolation.
 ---

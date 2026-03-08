@@ -1,5 +1,7 @@
 ---
+id: domain-modeling-reference
 title: Domain Modeling Reference
+sidebar_label: Reference
 sidebar_position: 1
 description: Current reference surface for Domain Modeling packages and domain-facing ownership.
 ---

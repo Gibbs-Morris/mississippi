@@ -1,5 +1,7 @@
 ---
+id: aqueduct-troubleshooting
 title: Troubleshoot Aqueduct Scope And Entry-Point Confusion
+sidebar_label: Troubleshooting
 sidebar_position: 1
 description: Resolve the common problem of starting in Aqueduct when the question belongs to another Mississippi area.
 ---

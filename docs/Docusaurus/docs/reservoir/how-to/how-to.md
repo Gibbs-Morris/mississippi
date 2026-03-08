@@ -1,5 +1,7 @@
 ---
+id: reservoir-how-to
 title: How To Choose A Reservoir Package Entry Point
+sidebar_label: How To
 sidebar_position: 1
 description: Select the correct Reservoir package based on whether you need contracts, core state management, client integration, or testing support.
 ---

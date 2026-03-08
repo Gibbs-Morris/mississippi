@@ -1,6 +1,6 @@
-label: Tributary
+label: Tributary (Reducers & Snapshots)
 position: 7
-collapsed: false
+collapsed: true
 collapsible: true
 link:
   type: doc

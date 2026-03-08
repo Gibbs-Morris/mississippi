@@ -1,5 +1,7 @@
 ---
+id: brooks-how-to
 title: How To Choose A Brooks Package Entry Point
+sidebar_label: How To
 sidebar_position: 1
 description: Select the correct Brooks package based on whether you need stream contracts, runtime services, or serialization seams.
 ---

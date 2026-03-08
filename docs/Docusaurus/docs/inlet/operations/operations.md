@@ -1,5 +1,7 @@
 ---
+id: inlet-operations
 title: Inlet Operations
+sidebar_label: Operations
 sidebar_position: 1
 description: Current operational scope for Inlet and the evidence gaps that still need dedicated generator and runtime guidance.
 ---

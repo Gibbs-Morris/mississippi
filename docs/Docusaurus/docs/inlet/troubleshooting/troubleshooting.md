@@ -1,5 +1,7 @@
 ---
+id: inlet-troubleshooting
 title: Troubleshoot Inlet Scope And Entry-Point Confusion
+sidebar_label: Troubleshooting
 sidebar_position: 1
 description: Resolve the common problem of starting in Inlet when the question is really confined to one Mississippi subsystem.
 ---

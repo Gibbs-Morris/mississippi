@@ -1,6 +1,6 @@
-label: Inlet
+label: Inlet (Client/API/Runtime Sync)
 position: 9
-collapsed: false
+collapsed: true
 collapsible: true
 link:
   type: doc

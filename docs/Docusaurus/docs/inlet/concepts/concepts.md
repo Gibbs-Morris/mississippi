@@ -1,5 +1,7 @@
 ---
+id: inlet-concepts
 title: Inlet Concepts
+sidebar_label: Concepts
 sidebar_position: 1
 description: Understand Inlet as Mississippi's composition and source-generation layer.
 ---

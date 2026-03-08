@@ -1,5 +1,7 @@
 ---
+id: refraction-how-to
 title: How To Decide Between Refraction And Reservoir
+sidebar_label: How To
 sidebar_position: 1
 description: Choose Refraction when the problem is the UI interaction contract and Reservoir when it is the state-management model.
 ---

@@ -1,5 +1,7 @@
 ---
+id: refraction-getting-started
 title: Refraction Getting Started
+sidebar_label: Getting Started
 sidebar_position: 1
 description: Start with Refraction by confirming that your question is about Blazor UX composition rather than state management.
 ---

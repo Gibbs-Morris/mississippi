@@ -1,5 +1,7 @@
 ---
+id: tributary-reference
 title: Tributary Reference
+sidebar_label: Reference
 sidebar_position: 1
 description: Current reference surface for Tributary packages and reducer and snapshot ownership.
 ---

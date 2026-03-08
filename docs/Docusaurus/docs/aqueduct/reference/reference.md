@@ -1,5 +1,7 @@
 ---
+id: aqueduct-reference
 title: Aqueduct Reference
+sidebar_label: Reference
 sidebar_position: 1
 description: Current reference surface for Aqueduct packages and subsystem ownership.
 ---

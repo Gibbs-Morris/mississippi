@@ -1,5 +1,7 @@
 ---
+id: inlet-how-to
 title: How To Choose An Inlet Package Entry Point
+sidebar_label: How To
 sidebar_position: 1
 description: Select the correct Inlet package based on whether you need shared abstractions, client support, gateway support, or runtime support.
 ---

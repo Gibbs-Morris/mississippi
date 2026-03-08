@@ -1,5 +1,7 @@
 ---
+id: reservoir-troubleshooting
 title: Troubleshoot Reservoir Scope And Entry-Point Confusion
+sidebar_label: Troubleshooting
 sidebar_position: 1
 description: Resolve the common problem of starting in Reservoir when the question is really about UI composition or another layer.
 ---

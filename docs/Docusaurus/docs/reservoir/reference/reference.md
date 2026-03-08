@@ -1,5 +1,7 @@
 ---
+id: reservoir-reference
 title: Reservoir Reference
+sidebar_label: Reference
 sidebar_position: 1
 description: Current reference surface for Reservoir packages and client-state ownership.
 ---

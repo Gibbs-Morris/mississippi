@@ -1,5 +1,7 @@
 ---
+id: aqueduct-operations
 title: Aqueduct Operations
+sidebar_label: Operations
 sidebar_position: 1
 description: Current operational scope for Aqueduct and the evidence gaps that still need dedicated runtime guidance.
 ---

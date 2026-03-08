@@ -1,5 +1,7 @@
 ---
+id: tributary-troubleshooting
 title: Troubleshoot Tributary Scope And Entry-Point Confusion
+sidebar_label: Troubleshooting
 sidebar_position: 1
 description: Resolve the common problem of starting in Tributary when the question is really about raw streams or domain behavior.
 ---

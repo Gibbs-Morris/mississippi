@@ -1,6 +1,6 @@
-label: Refraction
+label: Refraction (Blazor UX)
 position: 4
-collapsed: false
+collapsed: true
 collapsible: true
 link:
   type: doc

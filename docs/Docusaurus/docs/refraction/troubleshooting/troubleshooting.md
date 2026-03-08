@@ -1,5 +1,7 @@
 ---
+id: refraction-troubleshooting
 title: Troubleshoot Refraction Scope And Entry-Point Confusion
+sidebar_label: Troubleshooting
 sidebar_position: 1
 description: Resolve the common problem of starting in Refraction when the question is really about state management or another layer.
 ---

@@ -1,5 +1,7 @@
 ---
+id: tributary-getting-started
 title: Tributary Getting Started
+sidebar_label: Getting Started
 sidebar_position: 1
 description: Start with Tributary by confirming that your question is about reducers or snapshots rather than raw streams or domain behavior.
 ---

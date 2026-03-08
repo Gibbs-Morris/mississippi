@@ -1,5 +1,7 @@
 ---
+id: brooks-troubleshooting
 title: Troubleshoot Brooks Scope And Entry-Point Confusion
+sidebar_label: Troubleshooting
 sidebar_position: 1
 description: Resolve the common problem of starting in Brooks when the question is really about reducers, snapshots, or domain behavior.
 ---

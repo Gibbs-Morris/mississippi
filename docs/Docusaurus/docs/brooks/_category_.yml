@@ -1,6 +1,6 @@
-label: Brooks
+label: Brooks (Event Streams)
 position: 6
-collapsed: false
+collapsed: true
 collapsible: true
 link:
   type: doc

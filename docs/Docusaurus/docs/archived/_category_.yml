@@ -1,6 +1,6 @@
 label: Archived
 position: 11
-collapsed: false
+collapsed: true
 collapsible: true
 link:
   type: doc

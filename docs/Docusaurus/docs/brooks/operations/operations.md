@@ -1,5 +1,7 @@
 ---
+id: brooks-operations
 title: Brooks Operations
+sidebar_label: Operations
 sidebar_position: 1
 description: Current operational scope for Brooks and the evidence gaps that still need dedicated provider guidance.
 ---

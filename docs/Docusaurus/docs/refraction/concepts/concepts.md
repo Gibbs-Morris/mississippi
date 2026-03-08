@@ -1,5 +1,7 @@
 ---
+id: refraction-concepts
 title: Refraction Concepts
+sidebar_label: Concepts
 sidebar_position: 1
 description: Understand Refraction as Mississippi's state-down, events-up Blazor UX layer.
 ---

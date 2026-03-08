@@ -1,5 +1,7 @@
 ---
+id: reservoir-getting-started
 title: Reservoir Getting Started
+sidebar_label: Getting Started
 sidebar_position: 1
 description: Start with Reservoir by confirming that your question is about the client-state model rather than only UI composition.
 ---
