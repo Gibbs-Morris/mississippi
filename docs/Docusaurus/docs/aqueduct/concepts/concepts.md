@@ -54,7 +54,7 @@ Aqueduct gives you a dedicated infrastructure boundary, but it is only one layer
 
 Think of Aqueduct as the distributed real-time transport boundary in Mississippi.
 
-## Related Reading
+## Next Steps
 
 - [Aqueduct Getting Started](../getting-started/getting-started.md)
 - [Inlet Overview](../../inlet/index.md)

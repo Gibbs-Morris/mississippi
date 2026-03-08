@@ -52,7 +52,7 @@ Reservoir gives you a disciplined state model, but it adds an explicit state-man
 
 Think of Reservoir as the client-state subsystem, not as the UI layer and not as the domain layer.
 
-## Related Reading
+## Next Steps
 
 - [Reservoir Getting Started](../getting-started/getting-started.md)
 - [Refraction Overview](../../refraction/index.md)

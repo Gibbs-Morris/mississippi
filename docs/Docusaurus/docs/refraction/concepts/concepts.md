@@ -50,7 +50,7 @@ Refraction gives you a clear UI contract, but it does not replace a full state-m
 
 Think of Refraction as the UX layer that stays clean by pushing state and domain logic outside the component boundary.
 
-## Related Reading
+## Next Steps
 
 - [Refraction Getting Started](../getting-started/getting-started.md)
 - [Reservoir Overview](../../reservoir/index.md)

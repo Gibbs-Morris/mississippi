@@ -50,7 +50,7 @@ Tributary gives you an explicit reconstruction layer, but it is a supporting lay
 
 Think of Tributary as the bridge between event streams and domain-facing behavior.
 
-## Related Reading
+## Next Steps
 
 - [Tributary Getting Started](../getting-started/getting-started.md)
 - [Brooks Overview](../../brooks/index.md)

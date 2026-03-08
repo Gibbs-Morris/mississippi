@@ -8,9 +8,11 @@ description: Resolve the common problem of starting in Aqueduct when the questio
 
 # Troubleshoot Aqueduct Scope And Entry-Point Confusion
 
-## Symptom
+Use this guide when you started in Aqueduct, but the question now seems to involve projections, domain behavior, or client concerns.
 
-You started in Aqueduct, but the question now seems to involve projections, domain behavior, or client concerns.
+## Symptoms
+
+- You started in Aqueduct, but the question now seems to involve projections, domain behavior, or client concerns.
 
 ## What This Usually Means
 

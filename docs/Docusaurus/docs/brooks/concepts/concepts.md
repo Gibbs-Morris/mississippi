@@ -50,7 +50,7 @@ Brooks gives you a clean stream foundation, but applications normally need highe
 
 Think of Brooks as the event-stream foundation underneath the rest of the Mississippi stack.
 
-## Related Reading
+## Next Steps
 
 - [Brooks Getting Started](../getting-started/getting-started.md)
 - [Tributary Overview](../../tributary/index.md)

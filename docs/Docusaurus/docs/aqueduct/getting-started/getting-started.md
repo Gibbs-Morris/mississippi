@@ -8,7 +8,7 @@ description: Start with Aqueduct by choosing the correct package boundary and ne
 
 # Aqueduct Getting Started
 
-## Outcome
+## Overview
 
 Use this page to identify whether Aqueduct is the right subsystem for your problem and which package boundary to inspect first.
 

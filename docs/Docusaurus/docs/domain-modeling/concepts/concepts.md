@@ -52,7 +52,7 @@ Domain Modeling gives you business-facing building blocks, but it depends on the
 
 Think of Domain Modeling as the place where Mississippi becomes application behavior instead of infrastructure.
 
-## Related Reading
+## Next Steps
 
 - [Domain Modeling Getting Started](../getting-started/getting-started.md)
 - [Tributary Overview](../../tributary/index.md)

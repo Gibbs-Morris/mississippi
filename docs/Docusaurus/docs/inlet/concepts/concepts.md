@@ -53,7 +53,7 @@ Inlet reduces duplicated cross-layer plumbing, but it only makes sense when the 
 
 Think of Inlet as the layer that keeps Mississippi surfaces aligned across the stack.
 
-## Related Reading
+## Next Steps
 
 - [Inlet Getting Started](../getting-started/getting-started.md)
 - [Spring Sample](../../samples/spring-sample/index.md)
