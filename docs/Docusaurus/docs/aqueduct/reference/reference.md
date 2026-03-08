@@ -8,8 +8,6 @@ description: Current reference surface for Aqueduct packages and subsystem owner
 
 # Aqueduct Reference
 
-## Summary
-
 Aqueduct is the Mississippi subsystem for Orleans-backed SignalR backplane integration.
 
 ## Applies To
