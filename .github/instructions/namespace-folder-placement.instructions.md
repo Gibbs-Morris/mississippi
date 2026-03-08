@@ -60,10 +60,10 @@ Contributors moving or adding source files under `src/`, `tests/`, and `samples/
 ## References
 
 - Root namespace sources:
-	- `Directory.Build.props`
-	- `samples/Spring/Directory.Build.props`
-	- `samples/LightSpeed/Directory.Build.props`
-	- `samples/Crescent/Directory.Build.props`
+  - `Directory.Build.props`
+  - `samples/Spring/Directory.Build.props`
+  - `samples/LightSpeed/Directory.Build.props`
+  - `samples/Crescent/Directory.Build.props`
 - Naming policy: `.github/instructions/naming.instructions.md`
 - Project roles and boundaries: `.github/instructions/projects.instructions.md`
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`

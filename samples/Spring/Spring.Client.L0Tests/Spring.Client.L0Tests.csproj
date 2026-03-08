@@ -5,7 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\samples\Spring\Spring.Client\Spring.Client.csproj" />
+        <ProjectReference Include="..\Spring.Client\Spring.Client.csproj" />
     </ItemGroup>
 
 </Project>

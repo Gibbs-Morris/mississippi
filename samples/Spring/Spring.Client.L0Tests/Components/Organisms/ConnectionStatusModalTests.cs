@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components;
 using MississippiSamples.Spring.Client.Components.Organisms;
 
 
-namespace Mississippi.Spring.Client.L0Tests.Components.Organisms;
+namespace MississippiSamples.Spring.Client.L0Tests.Components.Organisms;
 
 /// <summary>
 ///     Tests for <see cref="ConnectionStatusModal" />.
