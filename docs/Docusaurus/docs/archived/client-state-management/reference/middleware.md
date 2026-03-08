@@ -3,7 +3,7 @@ id: middleware
 title: Middleware
 sidebar_label: Middleware
 sidebar_position: 5
-description: Middleware intercepts actions in the Reservoir dispatch pipeline—for logging, analytics, blocking, or transforming actions before they reach reducers.
+description: Middleware intercepts actions in the Reservoir dispatch pipeline-for logging, analytics, blocking, or transforming actions before they reach reducers.
 ---
 
 # Middleware
@@ -17,10 +17,10 @@ Middleware forms a pipeline between `Dispatch` and reducers. Each middleware can
 
 Middleware intercepts actions before they reach reducers. Unlike effects (which run after reducers), middleware runs during dispatch and can:
 
-- **Log actions** — Record every action for debugging or analytics
-- **Transform actions** — Modify or replace actions before reducers see them
-- **Block actions** — Prevent actions from reaching reducers and effects
-- **Perform side operations** — Execute operations like logging, analytics, or persistence
+- **Log actions** - Record every action for debugging or analytics
+- **Transform actions** - Modify or replace actions before reducers see them
+- **Block actions** - Prevent actions from reaching reducers and effects
+- **Perform side operations** - Execute operations like logging, analytics, or persistence
 ([IMiddleware remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IMiddleware.cs#L11-L19),
 [Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L213-L231))
 
@@ -230,6 +230,6 @@ public void RegisterMiddlewareAddsToDispatchPipeline()
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — See where middleware sits in the pipeline
-- [Feature State](./feature-state.md) — Learn how to define feature state that middleware can inspect
-- [Store](./store.md) — Understand the central hub that coordinates middleware, reducers, and effects
+- [Reservoir Overview](../reservoir.md) - See where middleware sits in the pipeline
+- [Feature State](./feature-state.md) - Learn how to define feature state that middleware can inspect
+- [Store](./store.md) - Understand the central hub that coordinates middleware, reducers, and effects

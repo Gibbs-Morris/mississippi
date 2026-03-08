@@ -90,15 +90,15 @@ Use the child pages for details on:
 
 ## Learn More
 
-- [Actions](./reference/actions.md) — Define and organize actions
-- [Reducers](./reference/reducers.md) — Write pure reducer functions
-- [Effects](./reference/effects.md) — Handle async side effects
-- [Feature State](./reference/feature-state.md) — Design modular state slices
-- [Store](./reference/store.md) — See the store contract and dispatch behavior
-- [Middleware](./reference/middleware.md) — Handle cross-cutting concerns
-- [StoreComponent](./reference/store-component.md) — Integrate Reservoir with Blazor components
-- [Selectors](./reference/selectors.md) — Derive computed values from state
-- [Built-in Navigation](./reference/built-in-navigation.md) — Look up the built-in navigation feature
-- [Built-in Lifecycle](./reference/built-in-lifecycle.md) — Look up the built-in lifecycle feature
-- [DevTools](./reference/devtools.md) — Enable Redux DevTools integration
-- [Testing](./how-to/testing.md) — Test reducers, effects, selectors, and built-in features
+- [Actions](./reference/actions.md) - Define and organize actions
+- [Reducers](./reference/reducers.md) - Write pure reducer functions
+- [Effects](./reference/effects.md) - Handle async side effects
+- [Feature State](./reference/feature-state.md) - Design modular state slices
+- [Store](./reference/store.md) - See the store contract and dispatch behavior
+- [Middleware](./reference/middleware.md) - Handle cross-cutting concerns
+- [StoreComponent](./reference/store-component.md) - Integrate Reservoir with Blazor components
+- [Selectors](./reference/selectors.md) - Derive computed values from state
+- [Built-in Navigation](./reference/built-in-navigation.md) - Look up the built-in navigation feature
+- [Built-in Lifecycle](./reference/built-in-lifecycle.md) - Look up the built-in lifecycle feature
+- [DevTools](./reference/devtools.md) - Enable Redux DevTools integration
+- [Testing](./how-to/testing.md) - Test reducers, effects, selectors, and built-in features

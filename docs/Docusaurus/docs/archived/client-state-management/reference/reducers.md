@@ -3,7 +3,7 @@ id: reducers
 title: Action Reducers
 sidebar_label: Action Reducers
 sidebar_position: 3
-description: Action reducers are pure functions that transform state based on actions—the synchronous heart of Reservoir state management.
+description: Action reducers are pure functions that transform state based on actions-the synchronous heart of Reservoir state management.
 ---
 
 # Action Reducers
@@ -148,7 +148,7 @@ If the reducer doesn't need to change state, return the original state instance 
 public static MyState MaybeUpdate(MyState state, SomeAction action)
 {
     if (!action.ShouldApply)
-        return state; // No change—return same instance
+        return state; // No change-return same instance
     
     return state with { Value = action.NewValue };
 }
@@ -177,7 +177,7 @@ You don't need to call `AddFeatureState` or `AddRootReducer` separately when usi
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — Understand how reducers fit into the dispatch pipeline
-- [Effects](./effects.md) — Handle async operations triggered by actions
-- [Feature State](./feature-state.md) — Organize state into feature slices
-- [Store](./store.md) — Understand the central hub that coordinates reducers, effects, and state
+- [Reservoir Overview](../reservoir.md) - Understand how reducers fit into the dispatch pipeline
+- [Effects](./effects.md) - Handle async operations triggered by actions
+- [Feature State](./feature-state.md) - Organize state into feature slices
+- [Store](./store.md) - Understand the central hub that coordinates reducers, effects, and state

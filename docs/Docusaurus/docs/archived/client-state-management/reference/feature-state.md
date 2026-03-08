@@ -177,7 +177,7 @@ The `FeatureKey` must be unique across all registered feature states. Initial st
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — See how feature state participates in dispatch
-- [Store](./store.md) — Understand the central hub that coordinates feature states, reducers, and effects
-- [Reducers](./reducers.md) — Learn how reducers update feature state
-- [Effects](./effects.md) — Learn how effects perform async operations
+- [Reservoir Overview](../reservoir.md) - See how feature state participates in dispatch
+- [Store](./store.md) - Understand the central hub that coordinates feature states, reducers, and effects
+- [Reducers](./reducers.md) - Learn how reducers update feature state
+- [Effects](./effects.md) - Learn how effects perform async operations

@@ -142,6 +142,6 @@ Source:
 
 ## Next Steps
 
-- [Host Architecture](../concepts/host-applications.md) — Spring host wiring and generated registration overview
-- [Overview](../index.md) — Spring sample architecture and learning path
-- [MCP in VS Code](./mcp-server-vscode-testing.md) — Testing generated MCP tools locally
+- [Host Architecture](../concepts/host-applications.md) - Spring host wiring and generated registration overview
+- [Overview](../index.md) - Spring sample architecture and learning path
+- [MCP in VS Code](./mcp-server-vscode-testing.md) - Testing generated MCP tools locally

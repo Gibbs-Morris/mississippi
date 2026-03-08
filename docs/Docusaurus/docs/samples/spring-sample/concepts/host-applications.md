@@ -14,9 +14,9 @@ Spring has three runtime host applications plus one local-development orchestrat
 
 | Host | Role | References |
 |------|------|-----------|
-| `Spring.Runtime` | Orleans silo — runs grains, event sourcing, sagas | `Spring.Domain` + Mississippi Runtime SDK |
-| `Spring.Gateway` | ASP.NET API + Blazor host — serves endpoints and static files | `Spring.Domain` + Mississippi Gateway SDK |
-| `Spring.Client` | Blazor WebAssembly — UI shell with state management | `Spring.Domain` (compile-only) + Mississippi Client SDK |
+| `Spring.Runtime` | Orleans silo - runs grains, event sourcing, sagas | `Spring.Domain` + Mississippi Runtime SDK |
+| `Spring.Gateway` | ASP.NET API + Blazor host - serves endpoints and static files | `Spring.Domain` + Mississippi Gateway SDK |
+| `Spring.Client` | Blazor WebAssembly - UI shell with state management | `Spring.Domain` (compile-only) + Mississippi Client SDK |
 | `Spring.AppHost` | .NET Aspire orchestration for local development | Coordinates the runtime, gateway, storage, and emulator resources |
 
 ```mermaid
@@ -73,7 +73,7 @@ app.MapGet("/health", /* ... */);
 await app.RunAsync();
 ```
 
-The single line `builder.Services.AddSpringDomainSilo()` registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi — you do not write it manually.
+The single line `builder.Services.AddSpringDomainSilo()` registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi - you do not write it manually.
 
 ([Spring.Runtime/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs))
 
@@ -81,10 +81,10 @@ The single line `builder.Services.AddSpringDomainSilo()` registers every aggrega
 
 Beyond `Program.cs`, the silo contains a small set of non-generated support files:
 
-- `Grains/GreeterGrain.cs` — A simple demo grain (not event-sourced) that demonstrates basic Orleans communication.
-- `Grains/GreeterGrainLoggerExtensions.cs` — Logging extension declarations used by the greeter grain.
-- `Services/StubNotificationService.cs` — A stub implementation of `INotificationService` that logs instead of sending real notifications.
-- `Services/StubNotificationServiceLoggerExtensions.cs` — Logging extension declarations used by the stub notification service.
+- `Grains/GreeterGrain.cs` - A simple demo grain (not event-sourced) that demonstrates basic Orleans communication.
+- `Grains/GreeterGrainLoggerExtensions.cs` - Logging extension declarations used by the greeter grain.
+- `Services/StubNotificationService.cs` - A stub implementation of `INotificationService` that logs instead of sending real notifications.
+- `Services/StubNotificationServiceLoggerExtensions.cs` - Logging extension declarations used by the stub notification service.
 
 These files are infrastructure/support concerns rather than domain business logic.
 
@@ -167,7 +167,7 @@ app.MapFallbackToFile("index.html");
 await app.RunAsync();
 ```
 
-The `AddSpringDomainServer()` call registers all source-generated API controller mappers and feature registrations for the gateway host. The gateway does not contain `CommandHandler` code, `EventReducer` code, or domain-specific types — it maps HTTP requests to Orleans grain calls.
+The `AddSpringDomainServer()` call registers all source-generated API controller mappers and feature registrations for the gateway host. The gateway does not contain `CommandHandler` code, `EventReducer` code, or domain-specific types - it maps HTTP requests to Orleans grain calls.
 
 ([Spring.Gateway/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs))
 
@@ -285,6 +285,6 @@ Mississippi's source generators transform domain annotations into complete infra
 
 ## Next Steps
 
-- [Overview](../index.md) — Return to the Spring Sample App overview
-- [Key Concepts](./key-concepts.md) — Revisit the concept reference for all patterns used
-- [Domain Registration Generators](../../../archived/reference/domain-registration-generators.md) — Deep dive into how generation works
+- [Overview](../index.md) - Return to the Spring Sample App overview
+- [Key Concepts](./key-concepts.md) - Revisit the concept reference for all patterns used
+- [Domain Registration Generators](../../../archived/reference/domain-registration-generators.md) - Deep dive into how generation works

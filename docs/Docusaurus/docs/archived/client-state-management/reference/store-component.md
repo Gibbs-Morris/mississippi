@@ -116,7 +116,7 @@ private bool IsDisconnected => Select<SignalRConnectionState, bool>(SignalRConne
 ```
 
 :::tip Testing Advantage
-Extracting logic into selectors makes business rules **trivially testable** as pure functions—no component rendering, mocking, or DI setup required. For enterprise applications requiring high test coverage, selectors are the primary mechanism for testing client-side logic.
+Extracting logic into selectors makes business rules **trivially testable** as pure functions-no component rendering, mocking, or DI setup required. For enterprise applications requiring high test coverage, selectors are the primary mechanism for testing client-side logic.
 
 See [Why Use Selectors?](selectors.md#why-use-selectors) for detailed guidance on achieving high coverage without complex UI tests.
 :::
@@ -262,9 +262,9 @@ private sealed class TestStoreComponent : StoreComponent
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — Learn where StoreComponent fits in the system
-- [Selectors](./selectors.md) — Derive computed values via the `Select()` method
-- [Store](./store.md) — The central state container that StoreComponent wraps
-- [Actions](./actions.md) — The action types dispatched via `Dispatch()`
-- [Feature State](./feature-state.md) — The state slices retrieved via `GetState<TState>()`
-- [Reducers](./reducers.md) — How dispatched actions transform state
+- [Reservoir Overview](../reservoir.md) - Learn where StoreComponent fits in the system
+- [Selectors](./selectors.md) - Derive computed values via the `Select()` method
+- [Store](./store.md) - The central state container that StoreComponent wraps
+- [Actions](./actions.md) - The action types dispatched via `Dispatch()`
+- [Feature State](./feature-state.md) - The state slices retrieved via `GetState<TState>()`
+- [Reducers](./reducers.md) - How dispatched actions transform state

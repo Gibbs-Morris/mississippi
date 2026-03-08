@@ -25,7 +25,7 @@ You will get the most value from this page if you also have the Spring domain co
 
 ## Step 1: Define the Aggregate State
 
-The aggregate state is a `sealed record` that represents the current snapshot of the entity. It does not contain behavior — just data. `EventReducer`s are responsible for producing new state from events.
+The aggregate state is a `sealed record` that represents the current snapshot of the entity. It does not contain behavior - just data. `EventReducer`s are responsible for producing new state from events.
 
 ```csharp
 [BrookName("SPRING", "BANKING", "ACCOUNT")]
@@ -47,7 +47,7 @@ Key attributes:
 
 | Attribute | Purpose |
 |-----------|---------|
-| `[BrookName]` | Names the event stream — all events for this aggregate are stored under `SPRING/BANKING/ACCOUNT` |
+| `[BrookName]` | Names the event stream - all events for this aggregate are stored under `SPRING/BANKING/ACCOUNT` |
 | `[SnapshotStorageName]` | Names the snapshot storage container for efficient state recovery |
 | `[GenerateAggregateEndpoints]` | Source-generates API controllers, Orleans grains, and client-side dispatchers |
 | `[GenerateSerializer]` | Orleans serialization support |
@@ -143,7 +143,7 @@ internal sealed record FundsWithdrawn
 }
 ```
 
-The `[EventStorageName]` attribute defines how the event is identified in storage. This identity is permanent — renaming the C# type does not break stored events.
+The `[EventStorageName]` attribute defines how the event is identified in storage. This identity is permanent - renaming the C# type does not break stored events.
 
 ([AccountOpened.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/AccountOpened.cs) |
 [FundsDeposited.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/FundsDeposited.cs) |
@@ -192,7 +192,7 @@ internal sealed class OpenAccountHandler : CommandHandlerBase<OpenAccount, BankA
 
 ### WithdrawFundsHandler
 
-The withdrawal handler demonstrates richer business rules — the account must be open, the amount must be positive, and there must be sufficient funds:
+The withdrawal handler demonstrates richer business rules - the account must be open, the amount must be positive, and there must be sufficient funds:
 
 ```csharp
 internal sealed class WithdrawFundsHandler : CommandHandlerBase<WithdrawFunds, BankAccountAggregate>
@@ -299,7 +299,7 @@ internal sealed class FundsWithdrawnReducer : EventReducerBase<FundsWithdrawn, B
 }
 ```
 
-Event reducers use C# `with` expressions to create new immutable state. The original state is never mutated. This guarantees deterministic replay — replaying the same events always produces the same state.
+Event reducers use C# `with` expressions to create new immutable state. The original state is never mutated. This guarantees deterministic replay - replaying the same events always produces the same state.
 
 ([AccountOpenedReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/AccountOpenedReducer.cs) |
 [FundsDepositedReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/FundsDepositedReducer.cs) |
@@ -359,11 +359,11 @@ internal sealed class HighValueTransactionEffect
 }
 ```
 
-This effect demonstrates **cross-aggregate command dispatch** — one aggregate's event triggers a command to a different aggregate. The `TransactionInvestigationQueueAggregate` is a separate aggregate that maintains a compliance queue.
+This effect demonstrates **cross-aggregate command dispatch** - one aggregate's event triggers a command to a different aggregate. The `TransactionInvestigationQueueAggregate` is a separate aggregate that maintains a compliance queue.
 
 ### Fire-and-Forget Effect: WithdrawalNotificationEffect
 
-This effect sends a notification after every withdrawal. It runs in a separate worker grain — the withdrawal command returns immediately without waiting for the notification.
+This effect sends a notification after every withdrawal. It runs in a separate worker grain - the withdrawal command returns immediately without waiting for the notification.
 
 ```csharp
 internal sealed class WithdrawalNotificationEffect
@@ -430,7 +430,7 @@ Aggregates/BankAccount/
     └── WithdrawalNotificationEffectLoggerExtensions.cs
 ```
 
-Every file has a single responsibility. Adding a new operation (such as "close account") means adding one command, one event, one handler, and one `EventReducer` — the existing code does not change.
+Every file has a single responsibility. Adding a new operation (such as "close account") means adding one command, one event, one handler, and one `EventReducer` - the existing code does not change.
 
 ## The Command Flow
 
@@ -459,5 +459,5 @@ An aggregate in Mississippi is a set of small, focused files with strict respons
 
 ## Next Steps
 
-- [Building a Saga](./building-a-saga.md) — Coordinate a money transfer across two BankAccount aggregates
-- [Building Projections](./building-projections.md) — Create read-optimized views of the BankAccount event stream
+- [Building a Saga](./building-a-saga.md) - Coordinate a money transfer across two BankAccount aggregates
+- [Building Projections](./building-projections.md) - Create read-optimized views of the BankAccount event stream

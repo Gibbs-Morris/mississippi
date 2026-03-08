@@ -171,7 +171,7 @@ Dispatch(new ScrollToAnchorAction("section-2"));
 Dispatch(new ScrollToAnchorAction("section-2", ReplaceHistory: true));
 ```
 
-This uses Blazor's built-in fragment navigation—no JavaScript interop required.
+This uses Blazor's built-in fragment navigation-no JavaScript interop required.
 
 ### LocationChangedAction
 
@@ -241,7 +241,7 @@ public class BreadcrumbComponent : StoreComponent
 
 ## Security Considerations
 
-The navigation effect validates that URIs are same-origin before navigating. External URLs are not supported by the navigation actions—use standard HTML anchors with `target="_blank"` for external links:
+The navigation effect validates that URIs are same-origin before navigating. External URLs are not supported by the navigation actions-use standard HTML anchors with `target="_blank"` for external links:
 
 ```razor
 <!-- For external links, use standard HTML -->
@@ -287,7 +287,7 @@ public void LocationChangedAction_UpdatesCurrentUri()
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — Return to the full dispatch model.
-- [Actions](actions.md) — Review the action surfaces used by navigation.
-- [Effects](effects.md) — Review the effect model that drives navigation side effects.
-- [Built-in Lifecycle](built-in-lifecycle.md) — Pair navigation state with application lifecycle state.
+- [Reservoir Overview](../reservoir.md) - Return to the full dispatch model.
+- [Actions](actions.md) - Review the action surfaces used by navigation.
+- [Effects](effects.md) - Review the effect model that drives navigation side effects.
+- [Built-in Lifecycle](built-in-lifecycle.md) - Pair navigation state with application lifecycle state.

@@ -3,20 +3,20 @@ id: effects
 title: Effects
 sidebar_label: Effects
 sidebar_position: 4
-description: Effects handle asynchronous side effects in Reservoir—API calls, timers, navigation, and other async operations triggered by actions.
+description: Effects handle asynchronous side effects in Reservoir-API calls, timers, navigation, and other async operations triggered by actions.
 ---
 
 # Effects
 
 ## Overview
 
-Effects handle asynchronous side effects triggered by actions. They run after reducers have updated state and can perform operations like HTTP calls, timers, or navigation—and optionally dispatch additional actions as results.
+Effects handle asynchronous side effects triggered by actions. They run after reducers have updated state and can perform operations like HTTP calls, timers, or navigation-and optionally dispatch additional actions as results.
 ([IActionEffect](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionEffect%7BTState%7D.cs),
 [Store](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs))
 
 ## What Is an Effect?
 
-An effect is a handler that performs asynchronous work in response to an action. Unlike reducers which synchronously compute new state, effects handle operations that cannot be expressed as pure functions—network requests, timers, browser APIs, and other I/O.
+An effect is a handler that performs asynchronous work in response to an action. Unlike reducers which synchronously compute new state, effects handle operations that cannot be expressed as pure functions-network requests, timers, browser APIs, and other I/O.
 
 Effects are feature-scoped: each effect is registered for a specific feature state type and only receives actions dispatched to the store.
 
@@ -24,10 +24,10 @@ Effects are feature-scoped: each effect is registered for a specific feature sta
 
 Use effects when you need to:
 
-- **Call external APIs** — HTTP requests or other outbound calls
-- **Perform navigation** — Redirect after a successful action
-- **Set timers** — Schedule delayed actions
-- **Perform logging or analytics** — Emit telemetry without dispatching follow-up actions
+- **Call external APIs** - HTTP requests or other outbound calls
+- **Perform navigation** - Redirect after a successful action
+- **Set timers** - Schedule delayed actions
+- **Perform logging or analytics** - Emit telemetry without dispatching follow-up actions
 ([IActionEffect remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IActionEffect%7BTState%7D.cs),
 [SimpleActionEffectBase remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/SimpleActionEffectBase.cs))
 
@@ -117,8 +117,8 @@ private sealed class TestEffect : ActionEffectBase<TestAction, TestState>
 
 The base class handles:
 
-- Type checking in `CanHandle` — returns `true` only for `TAction`
-- Dispatch to your typed `HandleAsync` — returns empty enumerable for non-matching actions
+- Type checking in `CanHandle` - returns `true` only for `TAction`
+- Dispatch to your typed `HandleAsync` - returns empty enumerable for non-matching actions
 
 ([ActionEffectBase source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/ActionEffectBase.cs#L28-L53))
 
@@ -149,7 +149,7 @@ private sealed class TestSimpleEffect : SimpleActionEffectBase<TestAction, TestS
 
 The base class handles:
 
-- Type checking in `CanHandle` — returns `true` only for `TAction`
+- Type checking in `CanHandle` - returns `true` only for `TAction`
 - Wrapping your `Task`-returning handler as an `IAsyncEnumerable<IAction>` that yields nothing
 
 ([SimpleActionEffectBase source](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/SimpleActionEffectBase.cs#L28-L72))
@@ -173,7 +173,7 @@ This method:
 3. Registers the feature state
 
 :::tip Effects Are Transient
-Effects are registered as transient services. Keep them stateless—any state should flow through actions and feature state.
+Effects are registered as transient services. Keep them stateless-any state should flow through actions and feature state.
 ([ActionEffectBase remarks](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/ActionEffectBase.cs#L23-L25))
 :::
 
@@ -181,11 +181,11 @@ Effects are registered as transient services. Keep them stateless—any state sh
 
 When an action is dispatched, the store triggers effects after reducers and listener notifications:
 
-1. **Action type indexing** — `RootActionEffect` pre-indexes effects by action type at construction for fast lookup
-2. **Matching** — Effects registered for the exact action type are invoked first
-3. **Fallback** — Effects whose action type could not be determined at construction use `CanHandle` filtering
-4. **All effects run** — All matching effects are invoked (reducers also run all matching reducers in order)
-5. **Yielded actions** — Actions yielded by effects are dispatched back through the store pipeline
+1. **Action type indexing** - `RootActionEffect` pre-indexes effects by action type at construction for fast lookup
+2. **Matching** - Effects registered for the exact action type are invoked first
+3. **Fallback** - Effects whose action type could not be determined at construction use `CanHandle` filtering
+4. **All effects run** - All matching effects are invoked (reducers also run all matching reducers in order)
+5. **Yielded actions** - Actions yielded by effects are dispatched back through the store pipeline
 
 ([RootActionEffect dispatch logic](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/RootActionEffect.cs#L103-L125))
 
@@ -283,6 +283,6 @@ public async Task HandleAsyncInvokesSimpleHandlerAndYieldsNoActions()
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — See the end-to-end dispatch pipeline
-- [Feature State](./feature-state.md) — Learn how to define feature state that effects operate on
-- [Store](./store.md) — Understand the central hub that coordinates effects, reducers, and state
+- [Reservoir Overview](../reservoir.md) - See the end-to-end dispatch pipeline
+- [Feature State](./feature-state.md) - Learn how to define feature state that effects operate on
+- [Store](./store.md) - Understand the central hub that coordinates effects, reducers, and state

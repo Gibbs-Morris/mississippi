@@ -87,7 +87,7 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 
 ## Summary
 
-Mississippi read models move from event streams to versioned grains to HTTP endpoints to client state through one generated pipeline — no hand-wired controllers, no manual SignalR subscriptions, no imperative client state mutation.
+Mississippi read models move from event streams to versioned grains to HTTP endpoints to client state through one generated pipeline - no hand-wired controllers, no manual SignalR subscriptions, no imperative client state mutation.
 
 ## Next Steps
 

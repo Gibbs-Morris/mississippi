@@ -12,7 +12,7 @@ description: Start here to understand what Mississippi is for, how the pieces fi
 
 Mississippi is an end-to-end application model for event-sourced systems built on Orleans.
 
-It lets teams focus on the code that matters — domain records, command handlers, reducers, and saga steps — while the framework generates and manages the transport, registration, client synchronization, and real-time notification infrastructure around it. The domain model stays small and explicit. The boilerplate disappears.
+It lets teams focus on the code that matters - domain records, command handlers, reducers, and saga steps - while the framework generates and manages the transport, registration, client synchronization, and real-time notification infrastructure around it. The domain model stays small and explicit. The boilerplate disappears.
 
 ## What This Section Covers
 

@@ -3,7 +3,7 @@ id: actions
 title: Actions
 sidebar_label: Actions
 sidebar_position: 2
-description: Actions are the foundation of Reservoir state management—immutable messages that describe what happened or what you intend to do.
+description: Actions are the foundation of Reservoir state management-immutable messages that describe what happened or what you intend to do.
 ---
 
 # Actions
@@ -97,10 +97,10 @@ flowchart TB
     style S fill:#9b59b6,color:#fff
 ```
 
-1. **Middleware** — The action flows through any registered middleware
-2. **Reducers** — Synchronous state updates happen here
-3. **Listeners** — Subscribers are notified after the action is processed
-4. **Effects** — Asynchronous work runs last and can yield more actions
+1. **Middleware** - The action flows through any registered middleware
+2. **Reducers** - Synchronous state updates happen here
+3. **Listeners** - Subscribers are notified after the action is processed
+4. **Effects** - Asynchronous work runs last and can yield more actions
 
 Multiple feature states can have reducers that respond to the same action because the store runs each feature's root reducer when an action is dispatched.
 ([Store.ReduceFeatureStates](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L236-L271))
@@ -122,8 +122,8 @@ Actions should carry only the data needed for reducers and effects. The `IAction
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — Understand how the pieces fit together
-- [Reducers](./reducers.md) — Learn how reducers transform state based on actions
-- [Effects](./effects.md) — Handle async operations triggered by actions
-- [Feature State](./feature-state.md) — Organize state into feature slices
-- [Store](./store.md) — Understand the central hub that coordinates actions, reducers, and effects
+- [Reservoir Overview](../reservoir.md) - Understand how the pieces fit together
+- [Reducers](./reducers.md) - Learn how reducers transform state based on actions
+- [Effects](./effects.md) - Handle async operations triggered by actions
+- [Feature State](./feature-state.md) - Organize state into feature slices
+- [Store](./store.md) - Understand the central hub that coordinates actions, reducers, and effects

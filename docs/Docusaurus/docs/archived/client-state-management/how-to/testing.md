@@ -15,10 +15,10 @@ Reservoir's architecture is designed for testability. The pattern separates pure
 :::tip Enterprise Testing Strategy
 For applications requiring high test coverage, Reservoir provides a testing pyramid:
 
-1. **Selectors** — Test business logic as pure functions (fastest, highest coverage)
-2. **Reducers** — Test state transitions with Given/When/Then
-3. **Effects** — Test async operations with the StoreTestHarness
-4. **Components** — Thin wiring verification only
+1. **Selectors** - Test business logic as pure functions (fastest, highest coverage)
+2. **Reducers** - Test state transitions with Given/When/Then
+3. **Effects** - Test async operations with the StoreTestHarness
+4. **Components** - Thin wiring verification only
 
 See [Why Use Selectors?](../reference/selectors.md#why-use-selectors) for detailed guidance on achieving high coverage without complex UI tests.
 :::
@@ -34,7 +34,7 @@ See [Why Use Selectors?](../reference/selectors.md#why-use-selectors) for detail
 
 ## Testing Selectors
 
-Selectors are pure functions—the easiest code to test. They require no special infrastructure:
+Selectors are pure functions-the easiest code to test. They require no special infrastructure:
 
 ```csharp
 [Fact]
@@ -128,7 +128,7 @@ Executes the Given/When/Then pattern. Scenarios are disposable and should be wra
 
 ## Testing Reducers
 
-Reducers are pure functions—given the same state and action, they always return the same result. This makes them easy to test:
+Reducers are pure functions-given the same state and action, they always return the same result. This makes them easy to test:
 
 ```csharp
 [Fact]
@@ -416,12 +416,12 @@ var harness = StoreTestHarnessFactory.ForFeature<MyState>()
 
 ## Next Steps
 
-- [Selectors](../reference/selectors.md) — Test business logic as pure functions.
-- [Reservoir Overview](../reservoir.md) — Return to the full Reservoir model.
-- [Reducers](../reference/reducers.md) — Review reducer patterns that fit the test harness.
-- [Effects](../reference/effects.md) — Review effect behavior before testing async flows.
-- [Built-in Navigation](../reference/built-in-navigation.md) — Test navigation reducers.
-- [Built-in Lifecycle](../reference/built-in-lifecycle.md) — Test lifecycle reducers.
+- [Selectors](../reference/selectors.md) - Test business logic as pure functions.
+- [Reservoir Overview](../reservoir.md) - Return to the full Reservoir model.
+- [Reducers](../reference/reducers.md) - Review reducer patterns that fit the test harness.
+- [Effects](../reference/effects.md) - Review effect behavior before testing async flows.
+- [Built-in Navigation](../reference/built-in-navigation.md) - Test navigation reducers.
+- [Built-in Lifecycle](../reference/built-in-lifecycle.md) - Test lifecycle reducers.
 
 ## Source Code
 

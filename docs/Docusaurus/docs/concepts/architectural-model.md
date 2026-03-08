@@ -16,7 +16,7 @@ It combines aggregate command execution, event streams, reducer-driven read mode
 
 ## The Problem This Solves
 
-CQRS, event sourcing, Orleans, and real-time clients are individually well understood. The real cost appears in the seams between them — the duplicated mappings, mirrored DTOs, and hand-wired plumbing that multiply with every new aggregate or projection.
+CQRS, event sourcing, Orleans, and real-time clients are individually well understood. The real cost appears in the seams between them - the duplicated mappings, mirrored DTOs, and hand-wired plumbing that multiply with every new aggregate or projection.
 
 Teams often end up maintaining the same mappings in several places:
 

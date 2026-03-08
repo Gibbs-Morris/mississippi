@@ -108,7 +108,7 @@ This is **expensive, fragile, and slow**.
 
 ### The Solution: Pure, Testable Selectors
 
-Extract the same logic into selectors—**pure functions that are trivially testable**:
+Extract the same logic into selectors-**pure functions that are trivially testable**:
 
 ```csharp
 // ✅ GOOD: Business logic in pure, testable selectors
@@ -274,7 +274,7 @@ For enterprise applications requiring 80%+ code coverage:
 
 - **Selectors** provide the bulk of business logic coverage with fast, isolated unit tests
 - **Reducers** cover state transitions (also pure functions)
-- **Component tests** verify only the wiring—that the right selectors are called
+- **Component tests** verify only the wiring-that the right selectors are called
 - **E2E tests** cover critical user journeys, not business logic edge cases
 
 This approach achieves high coverage **without slow, brittle UI tests**.
@@ -822,7 +822,7 @@ public void MemoizedSelector_WithSameReference_ReturnsCachedResult()
 
 ### Testing Factory Selectors
 
-Factory selectors are just as easy to test—invoke the factory, then test the returned function:
+Factory selectors are just as easy to test-invoke the factory, then test the returned function:
 
 ```csharp
 [Fact]
@@ -905,7 +905,7 @@ public void IsOperationInProgress_WhenProjectionLoading_ReturnsTrue()
 
 ### DO
 
-- ✅ Keep selectors pure—no side effects
+- ✅ Keep selectors pure-no side effects
 - ✅ Validate inputs with `ArgumentNullException.ThrowIfNull`
 - ✅ Use meaningful names that describe the derived value
 - ✅ Co-locate selectors with the feature state they derive from
@@ -998,20 +998,20 @@ The [Spring sample](https://github.com/Gibbs-Morris/mississippi/tree/main/sample
 
 **Single-State Selectors:**
 
-- [`EntitySelectionSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/Selectors/EntitySelectionSelectors.cs) — Entity selection state
-- [`BankAccountAggregateSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountAggregateSelectors.cs) — Aggregate command state
+- [`EntitySelectionSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/EntitySelection/Selectors/EntitySelectionSelectors.cs) - Entity selection state
+- [`BankAccountAggregateSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountAggregateSelectors.cs) - Aggregate command state
 
 **Factory Selectors (Entity-Keyed):**
 
-- [`BankAccountProjectionSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountBalance/Selectors/BankAccountProjectionSelectors.cs) — Projection state
+- [`BankAccountProjectionSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountBalance/Selectors/BankAccountProjectionSelectors.cs) - Projection state
 
 **Composite Selectors (Cross-State):**
 
-- [`BankAccountCompositeSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountCompositeSelectors.cs) — Aggregate + Projection
+- [`BankAccountCompositeSelectors.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountCompositeSelectors.cs) - Aggregate + Projection
 
 **Usage in Components:**
 
-- [`Index.razor.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs) — All patterns in action
+- [`Index.razor.cs`](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/Index.razor.cs) - All patterns in action
 
 ## Summary
 
@@ -1021,7 +1021,7 @@ The [Spring sample](https://github.com/Gibbs-Morris/mississippi/tree/main/sample
 
 ## Next Steps
 
-- [Store](store.md) — Return to the store surface that selectors read from.
-- [StoreComponent](store-component.md) — Review the component helpers that call selectors.
-- [Feature State](feature-state.md) — Revisit the state slices selectors derive from.
-- [Reducers](reducers.md) — Review the synchronous state updates that feed selector inputs.
+- [Store](store.md) - Return to the store surface that selectors read from.
+- [StoreComponent](store-component.md) - Review the component helpers that call selectors.
+- [Feature State](feature-state.md) - Revisit the state slices selectors derive from.
+- [Reducers](reducers.md) - Review the synchronous state updates that feed selector inputs.

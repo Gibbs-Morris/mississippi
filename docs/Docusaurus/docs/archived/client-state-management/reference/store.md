@@ -98,10 +98,10 @@ flowchart TB
 
 ### Pipeline Steps
 
-1. **Middleware Pipeline** — Each registered middleware can inspect, modify, or short-circuit the action
-2. **Reducers** — All root reducers process the action and update their feature states
-3. **Notify Subscribers** — All registered listeners are invoked synchronously
-4. **Effects** — Root effects handle the action asynchronously; returned actions are dispatched
+1. **Middleware Pipeline** - Each registered middleware can inspect, modify, or short-circuit the action
+2. **Reducers** - All root reducers process the action and update their feature states
+3. **Notify Subscribers** - All registered listeners are invoked synchronously
+4. **Effects** - Root effects handle the action asynchronously; returned actions are dispatched
 
 ```csharp
 private void CoreDispatch(IAction action)
@@ -135,10 +135,10 @@ Components inheriting `StoreComponent` can call its protected `Dispatch` helper.
 
 ### Dispatch Rules
 
-- **Synchronous reducers and listeners** — Reducers run first, then subscribers are notified
-- **Effects are async** — Effects are triggered asynchronously after the reducers and notifications
-- **Null actions throw** — `Dispatch(null)` throws `ArgumentNullException`
-- **Disposed throws** — Dispatching to a disposed store throws `ObjectDisposedException`
+- **Synchronous reducers and listeners** - Reducers run first, then subscribers are notified
+- **Effects are async** - Effects are triggered asynchronously after the reducers and notifications
+- **Null actions throw** - `Dispatch(null)` throws `ArgumentNullException`
+- **Disposed throws** - Dispatching to a disposed store throws `ObjectDisposedException`
 
 ([Store.CoreDispatch](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L214-L228),
 [StoreTests.DispatchAfterDisposeThrowsObjectDisposedException](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.L0Tests/StoreTests.cs#L327-L335),
@@ -182,7 +182,7 @@ Use `Subscribe` to register a listener that runs after every dispatch.
 ### Subscription Behavior
 
 - Listeners are called synchronously after reducers complete and before effects run
-- Listeners receive no parameters—query state via `GetState<TState>()`
+- Listeners receive no parameters-query state via `GetState<TState>()`
 - Dispose the returned `IDisposable` to unsubscribe
 - Subscriptions can be disposed multiple times safely
 
@@ -201,9 +201,9 @@ For Blazor components, inherit from [`StoreComponent`](store-component.md) inste
 
 [`StoreComponent`](store-component.md) handles:
 
-- **Automatic subscription** — Subscribes to the store in `OnInitialized`
-- **Automatic re-render** — Calls `StateHasChanged` when state changes
-- **Automatic cleanup** — Disposes the subscription when the component is disposed
+- **Automatic subscription** - Subscribes to the store in `OnInitialized`
+- **Automatic re-render** - Calls `StateHasChanged` when state changes
+- **Automatic cleanup** - Disposes the subscription when the component is disposed
 
 ```csharp
 protected override void OnInitialized()
@@ -226,8 +226,8 @@ private void OnStoreChanged()
 
 The Store can be constructed two ways:
 
-1. **Via DI (recommended)** — `AddReservoir()` registers the Store with feature registrations and middleware resolved from DI
-2. **Manually** — Pass feature registrations and middleware directly to the constructor
+1. **Via DI (recommended)** - `AddReservoir()` registers the Store with feature registrations and middleware resolved from DI
+2. **Manually** - Pass feature registrations and middleware directly to the constructor
 
 Manual construction is used in tests to validate middleware behavior.
 ([Store constructor](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Store.cs#L58-L86),
@@ -420,12 +420,12 @@ private Action<IAction> BuildMiddlewarePipeline(Action<IAction> coreDispatch)
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — Understand the dispatch pipeline end-to-end
-- [DevTools](./devtools.md) — See how DevTools uses StoreEvents and system actions
-- [Actions](./actions.md) — Define what can happen in your application
-- [Reducers](./reducers.md) — Update state in response to actions
-- [Effects](./effects.md) — Handle async operations and side effects
-- [Middleware](./middleware.md) — Intercept and transform actions
-- [Feature State](./feature-state.md) — Organize state into modular slices
-- [StoreComponent](./store-component.md) — Blazor base component for store integration
-- [Selectors](./selectors.md) — Derive computed values from state
+- [Reservoir Overview](../reservoir.md) - Understand the dispatch pipeline end-to-end
+- [DevTools](./devtools.md) - See how DevTools uses StoreEvents and system actions
+- [Actions](./actions.md) - Define what can happen in your application
+- [Reducers](./reducers.md) - Update state in response to actions
+- [Effects](./effects.md) - Handle async operations and side effects
+- [Middleware](./middleware.md) - Intercept and transform actions
+- [Feature State](./feature-state.md) - Organize state into modular slices
+- [StoreComponent](./store-component.md) - Blazor base component for store integration
+- [Selectors](./selectors.md) - Derive computed values from state

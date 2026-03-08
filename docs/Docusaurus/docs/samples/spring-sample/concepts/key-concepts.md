@@ -56,7 +56,7 @@ Key framework references:
 
 ## Command
 
-A command is an instruction to do something. It is a simple data record that carries the intent and parameters of an action. Commands do not contain logic — they describe *what* the caller wants to happen.
+A command is an instruction to do something. It is a simple data record that carries the intent and parameters of an action. Commands do not contain logic - they describe *what* the caller wants to happen.
 
 In Spring, commands are `sealed record` types decorated with `[GenerateCommand]` to auto-generate API endpoints and client-side dispatchers.
 
@@ -123,7 +123,7 @@ internal sealed record FundsDeposited
 }
 ```
 
-An event says "£500 was deposited." It is a statement of fact — past tense, immutable, permanent.
+An event says "£500 was deposited." It is a statement of fact - past tense, immutable, permanent.
 
 ([FundsDeposited.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/FundsDeposited.cs))
 
@@ -190,8 +190,8 @@ Mississippi provides two effect types:
 
 Spring uses both:
 
-- `HighValueTransactionEffect` (simple) — flags deposits over £10,000 by dispatching a command to the `TransactionInvestigationQueueAggregate`.
-- `WithdrawalNotificationEffect` (fire-and-forget) — sends a notification after withdrawals without blocking the response.
+- `HighValueTransactionEffect` (simple) - flags deposits over £10,000 by dispatching a command to the `TransactionInvestigationQueueAggregate`.
+- `WithdrawalNotificationEffect` (fire-and-forget) - sends a notification after withdrawals without blocking the response.
 
 ([HighValueTransactionEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/HighValueTransactionEffect.cs) |
 [WithdrawalNotificationEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Effects/WithdrawalNotificationEffect.cs))
@@ -260,7 +260,7 @@ internal sealed class WithdrawFromSourceStep
 }
 ```
 
-Not every step needs compensation. The `DepositToDestinationStep` in Spring does not implement `ICompensatable` because it is the final step — there is nothing after it that could fail.
+Not every step needs compensation. The `DepositToDestinationStep` in Spring does not implement `ICompensatable` because it is the final step - there is nothing after it that could fail.
 
 ([WithdrawFromSourceStep.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/MoneyTransferSaga/Steps/WithdrawFromSourceStep.cs) |
 [DepositToDestinationStep.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/MoneyTransferSaga/Steps/DepositToDestinationStep.cs))
@@ -299,7 +299,7 @@ public sealed record BankAccountBalanceProjection
 }
 ```
 
-Projections have their own `EventReducer`s. A single event stream can feed multiple projections — the `BankAccount` event stream feeds both `BankAccountBalanceProjection` and `BankAccountLedgerProjection`.
+Projections have their own `EventReducer`s. A single event stream can feed multiple projections - the `BankAccount` event stream feeds both `BankAccountBalanceProjection` and `BankAccountLedgerProjection`.
 
 ([BankAccountBalanceProjection.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs))
 
@@ -332,6 +332,6 @@ Every concept in Mississippi has a single, well-defined responsibility. Commands
 
 ## Next Steps
 
-- [Building an Aggregate](../tutorials/building-an-aggregate.md) — See these concepts in action with the BankAccount example
-- [Building a Saga](../tutorials/building-a-saga.md) — Orchestrate a multi-aggregate workflow
-- [Building Projections](../tutorials/building-projections.md) — Create read-optimized views
+- [Building an Aggregate](../tutorials/building-an-aggregate.md) - See these concepts in action with the BankAccount example
+- [Building a Saga](../tutorials/building-a-saga.md) - Orchestrate a multi-aggregate workflow
+- [Building Projections](../tutorials/building-projections.md) - Create read-optimized views

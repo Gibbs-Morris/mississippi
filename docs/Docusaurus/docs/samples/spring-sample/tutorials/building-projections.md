@@ -128,7 +128,7 @@ internal sealed class FundsWithdrawnBalanceReducer
 }
 ```
 
-These `EventReducer`s subscribe to the same events as the aggregate's `EventReducer`s but apply them to a different state type. The balance projection extracts only the fields needed for displaying a balance — it does not track `DepositCount` or `WithdrawalCount`.
+These `EventReducer`s subscribe to the same events as the aggregate's `EventReducer`s but apply them to a different state type. The balance projection extracts only the fields needed for displaying a balance - it does not track `DepositCount` or `WithdrawalCount`.
 
 ([AccountOpenedBalanceReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/AccountOpenedBalanceReducer.cs) |
 [FundsDepositedBalanceReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/FundsDepositedBalanceReducer.cs) |
@@ -223,7 +223,7 @@ This `EventReducer` creates a new entry, prepends it to the list, and trims to t
 
 ## Cross-Aggregate Projection: FlaggedTransactions
 
-The `FlaggedTransactionsProjection` subscribes to events from the `TransactionInvestigationQueueAggregate` — a different aggregate than BankAccount. This demonstrates that projections subscribe to event streams, not to aggregates.
+The `FlaggedTransactionsProjection` subscribes to events from the `TransactionInvestigationQueueAggregate` - a different aggregate than BankAccount. This demonstrates that projections subscribe to event streams, not to aggregates.
 
 ```csharp
 [ProjectionPath("flagged-transactions")]
@@ -247,7 +247,7 @@ The `[BrookName("SPRING", "COMPLIANCE", "INVESTIGATION")]` matches the `Transact
 
 ## Saga Status Projection: MoneyTransferStatus
 
-The `MoneyTransferStatusProjection` demonstrates a projection over a saga's event stream. The `[GenerateSagaStatusReducers]` attribute tells Mississippi to source-generate event reducers that automatically track saga phase, step progress, errors, and timestamps — you do not write event reducers for saga status projections.
+The `MoneyTransferStatusProjection` demonstrates a projection over a saga's event stream. The `[GenerateSagaStatusReducers]` attribute tells Mississippi to source-generate event reducers that automatically track saga phase, step progress, errors, and timestamps - you do not write event reducers for saga status projections.
 
 ```csharp
 [ProjectionPath("money-transfer-status")]
@@ -310,8 +310,8 @@ Projections/
 | Decision | Rationale |
 |----------|-----------|
 | One projection per read concern | Balance view, ledger view, and flagged view serve different UI components |
-| Separate snapshot storage names | Aggregate and projection snapshots are independent — rebuilding one does not affect the other |
-| Sliding window via `ImmutableArray` | Pure functional state — prepend, take, return new array |
+| Separate snapshot storage names | Aggregate and projection snapshots are independent - rebuilding one does not affect the other |
+| Sliding window via `ImmutableArray` | Pure functional state - prepend, take, return new array |
 | `[GenerateSagaStatusReducers]` for saga projections | Saga lifecycle events follow a standard pattern that can be fully generated |
 | Projections are `public` | Unlike domain events (which are `internal` to `Spring.Domain`), projections are the public read API |
 
@@ -321,5 +321,5 @@ Projections in Mississippi are read-optimized state records with their own `Even
 
 ## Next Steps
 
-- [Host Architecture](../concepts/host-applications.md) — See how projections are wired into the host with one registration call
-- [Key Concepts](../concepts/key-concepts.md) — Revisit the concept reference
+- [Host Architecture](../concepts/host-applications.md) - See how projections are wired into the host with one registration call
+- [Key Concepts](../concepts/key-concepts.md) - Revisit the concept reference

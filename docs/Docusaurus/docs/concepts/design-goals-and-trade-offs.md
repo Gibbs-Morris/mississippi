@@ -10,7 +10,7 @@ description: Explain what Mississippi optimizes for, how source generation and t
 
 ## Overview
 
-Mississippi is intentionally opinionated — and that is a feature, not a limitation.
+Mississippi is intentionally opinionated - and that is a feature, not a limitation.
 
 The framework is designed to eliminate the ceremony that surrounds event-sourced, Orleans-based applications while keeping domain logic fully in the developer's hands. Conventions, source generators, generic runtime infrastructure, and dedicated test harnesses work together so teams spend their time on business problems instead of wiring infrastructure.
 

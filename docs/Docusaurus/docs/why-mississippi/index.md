@@ -19,7 +19,7 @@ For leadership teams, the value can be reduced to four outcomes:
 * **better resilience** in systems with many concurrent, stateful workflows
 * **better consistency** because the architecture follows one joined-up model end to end
 
-That is particularly powerful in financial platforms, where traceability, timeliness, and correctness carry direct commercial value. But the same benefits apply anywhere the business depends on complex workflows, live operations, or long-lived state.
+That is particularly powerful in platforms where traceability, timeliness, and correctness carry direct commercial value - and the same benefits apply anywhere the business depends on complex workflows, live operations, or long-lived state.
 
 ---
 
@@ -58,7 +58,7 @@ For the business, that means:
 
 In executive terms, this means the platform has a **durable operational memory**. It is easier to explain, easier to verify, and easier to correct.
 
-That is especially valuable in financial platforms, where history, evidence, and reconstruction matter. But it is equally useful in healthcare, logistics, commerce, SaaS workflow products, and game backends where state evolves over time and decisions need to be understood in context.
+That is especially valuable in platforms where history, evidence, and reconstruction matter - including healthcare, financial services, logistics, commerce, SaaS workflow products, and game backends where state evolves over time and decisions need to be understood in context.
 
 ---
 
@@ -75,7 +75,7 @@ For the business, that means:
 
 The executive advantage is simple: **the system can protect the integrity of decisions while still serving fast, useful, business-shaped views of those decisions**.
 
-That is powerful in financial platforms with multiple user groups, dense operational views, and reporting pressure. But it is just as relevant in e-commerce, health platforms, enterprise admin tools, and marketplace systems with heavy read traffic and many different consumers of the same underlying truth.
+That is powerful in platforms with multiple user groups, dense operational views, and reporting pressure - including e-commerce, health platforms, financial services, enterprise admin tools, and marketplace systems with heavy read traffic and many different consumers of the same underlying truth.
 
 ---
 
@@ -93,7 +93,7 @@ For the business, that means:
 
 The executive benefit is **resilient scale around business objects, not just infrastructure**.
 
-That is particularly compelling in financial systems, where workflows are long-lived and correctness under concurrency matters. But it is also highly relevant in healthcare operations, telecoms, IoT platforms, booking systems, supply chains, social platforms, and multiplayer or persistent online games where many independent entities change at once.
+That is particularly compelling in systems where workflows are long-lived and correctness under concurrency matters - including healthcare operations, financial services, telecoms, IoT platforms, booking systems, supply chains, social platforms, and multiplayer or persistent online games where many independent entities change at once.
 
 ---
 
@@ -111,7 +111,7 @@ For the business, that means:
 
 The executive benefit is **faster awareness of change**.
 
-In financial platforms, that improves handling of live case movement, customer servicing, and operational oversight. But this matters equally in healthcare operations, live logistics, collaboration products, SaaS control planes, and interactive gaming environments where value depends on current shared state.
+This matters in any domain where value depends on current shared state - including healthcare operations, financial services, live logistics, collaboration products, SaaS control planes, and interactive gaming environments.
 
 ---
 
@@ -128,7 +128,7 @@ For the business, that means:
 
 The executive benefit is **confidence in rich user workflows**, not just confidence in backend processing.
 
-In financial applications, this supports trust in operational tools used for high-value decisions. But any rich web product benefits from this: healthcare interfaces, enterprise SaaS, workflow-heavy admin portals, commerce back offices, and game clients all gain from predictable client-side state.
+Any rich web product benefits from this: healthcare interfaces, financial dashboards, enterprise SaaS, workflow-heavy admin portals, commerce back offices, and game clients all gain from predictable client-side state.
 
 ---
 
@@ -169,11 +169,11 @@ Mississippi is particularly well suited to organisations that need one or more o
 * strong traceability of how outcomes evolved
 * systems where stale or inconsistent state has real business cost
 
-That makes it especially relevant for financial platforms, fintech products, brokers, and wider transaction-heavy environments.
+That makes it especially relevant for:
 
-But the same model also fits:
-
+* transaction-heavy platforms
 * healthcare systems
+* financial services and fintech
 * enterprise SaaS platforms
 * logistics and supply chain operations
 * telecoms and IoT platforms
@@ -199,9 +199,7 @@ Mississippi achieves that by combining:
 
 The outcome is a platform architecture that gives the business stronger control, better visibility, greater resilience, and a more consistent end-to-end operating model.
 
-In financial platforms, that translates directly into better traceability, better live operations, and better confidence in stateful workflows.
-
-Beyond financial services, it offers the same value anywhere the business depends on history, responsiveness, concurrency, and complex state.
+That translates directly into better traceability, better live operations, and better confidence in stateful workflows - anywhere the business depends on history, responsiveness, concurrency, and complex state.
 
 **Mississippi is not simply a framework that includes advanced patterns. It is a framework that makes those patterns work together as one system.** That is the real executive advantage.
 

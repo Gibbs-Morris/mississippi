@@ -99,9 +99,9 @@ stateDiagram-v2
     end note
 ```
 
-1. **NotStarted** — Initial state when the store is created
-2. **Initializing** — Entered when `AppInitAction` is dispatched
-3. **Ready** — Entered when `AppReadyAction` is dispatched
+1. **NotStarted** - Initial state when the store is created
+2. **Initializing** - Entered when `AppInitAction` is dispatched
+3. **Ready** - Entered when `AppReadyAction` is dispatched
 
 ## Lifecycle Actions
 
@@ -269,9 +269,9 @@ public class AnalyticsEffect : IActionEffect<LifecycleState>
 
 The lifecycle actions require the caller to provide timestamps rather than generating them internally. This design choice ensures:
 
-1. **Pure Reducers** — Reducers remain pure functions (no side effects like reading system time)
-2. **Testability** — Tests can provide deterministic timestamps via `FakeTimeProvider`
-3. **Consistency** — Timestamps align with your app's time source (useful for distributed systems)
+1. **Pure Reducers** - Reducers remain pure functions (no side effects like reading system time)
+2. **Testability** - Tests can provide deterministic timestamps via `FakeTimeProvider`
+3. **Consistency** - Timestamps align with your app's time source (useful for distributed systems)
 
 ```csharp
 // Production code (inject TimeProvider)
@@ -342,7 +342,7 @@ public void AppReadyAction_TransitionsToReady()
 
 ## Next Steps
 
-- [Reservoir Overview](../reservoir.md) — Return to the full state-management model.
-- [Actions](actions.md) — Review the action model used by lifecycle updates.
-- [Reducers](reducers.md) — Review the reducer pattern behind lifecycle transitions.
-- [Built-in Navigation](built-in-navigation.md) — Pair readiness state with navigation state when needed.
+- [Reservoir Overview](../reservoir.md) - Return to the full state-management model.
+- [Actions](actions.md) - Review the action model used by lifecycle updates.
+- [Reducers](reducers.md) - Review the reducer pattern behind lifecycle transitions.
+- [Built-in Navigation](built-in-navigation.md) - Pair readiness state with navigation state when needed.

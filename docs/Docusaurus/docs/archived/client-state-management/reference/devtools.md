@@ -239,7 +239,7 @@ Leave `ThrowOnMissingInitializer` at its default (`null`) to get fail-fast behav
 2. **DevTools observes**: `ReduxDevToolsService` subscribes to the event stream and reports actions/state to the browser extension
 3. **Time-travel via system actions**: Commands from DevTools (jump, reset, rollback) are translated into [system actions](./store.md#system-actions) dispatched to the store
 
-This design maintains unidirectional data flow—even time-travel commands go through `Dispatch()`.
+This design maintains unidirectional data flow-even time-travel commands go through `Dispatch()`.
 
 ([ReduxDevToolsService](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReduxDevToolsService.cs#L32-L155))
 
@@ -385,6 +385,6 @@ Sanitizers run on every action dispatch. Keep them fast to avoid impacting appli
 
 ## Next Steps
 
-- [Store](./store.md) — Understand the observable store events and system actions that DevTools uses
-- [Reservoir Overview](../reservoir.md) — Learn the dispatch pipeline that DevTools observes
-- [Testing](../how-to/testing.md) — Test reducers and effects without DevTools
+- [Store](./store.md) - Understand the observable store events and system actions that DevTools uses
+- [Reservoir Overview](../reservoir.md) - Learn the dispatch pipeline that DevTools observes
+- [Testing](../how-to/testing.md) - Test reducers and effects without DevTools

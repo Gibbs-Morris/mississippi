@@ -15,7 +15,7 @@ A saga coordinates a workflow that spans multiple aggregates or services. The `M
 1. **Withdraw** from the source account
 2. **Deposit** to the destination account
 
-If step 0 fails, no forward work was completed, so the saga immediately ends as `Compensated` (nothing to roll back). If step 1 fails (destination account is closed, for example), the saga compensates by re-depositing the withdrawn amount back to the source account. This is the saga pattern in action — forward steps with automatic rollback.
+If step 0 fails, no forward work was completed, so the saga immediately ends as `Compensated` (nothing to roll back). If step 1 fails (destination account is closed, for example), the saga compensates by re-depositing the withdrawn amount back to the source account. This is the saga pattern in action - forward steps with automatic rollback.
 
 ```mermaid
 flowchart TB
@@ -181,7 +181,7 @@ The step validates the input, dispatches a `WithdrawFunds` command, and returns 
 
 ### Step 1: DepositToDestinationStep
 
-This step deposits funds to the destination account. It is the final step and does not implement `ICompensatable` — there is no subsequent step that could fail.
+This step deposits funds to the destination account. It is the final step and does not implement `ICompensatable` - there is no subsequent step that could fail.
 
 ```csharp
 [SagaStep<MoneyTransferSagaState>(1)]
@@ -254,7 +254,7 @@ flowchart LR
 4. The compensation deposits the amount back to the source account.
 5. If compensation succeeds, the saga moves to the `Compensated` phase. The source account has its funds restored.
 
-Steps that do not implement `ICompensatable` are skipped during compensation. This is intentional — not every step has a meaningful reversal.
+Steps that do not implement `ICompensatable` are skipped during compensation. This is intentional - not every step has a meaningful reversal.
 
 ## The Complete Saga File Structure
 
@@ -275,7 +275,7 @@ Sagas do not need their own events, `CommandHandler`s, or `EventReducer` types. 
 | Decision | Rationale |
 |----------|-----------|
 | Steps dispatch commands, not emit events directly | Reuses existing aggregate validation and event pipelines |
-| Only Step 0 implements `ICompensatable` | Step 1 is the final step — if it fails, compensation runs backwards from step 0, not step 1 itself, so step 1 has nothing to reverse |
+| Only Step 0 implements `ICompensatable` | Step 1 is the final step - if it fails, compensation runs backwards from step 0, not step 1 itself, so step 1 has nothing to reverse |
 | Input validation happens in the first step | Catches invalid requests before any state changes |
 | `IAggregateGrainFactory` is injected via DI | Steps use the same dependency injection as all other domain types |
 
@@ -293,5 +293,5 @@ A Mississippi saga is a state record plus a set of ordered steps. Steps execute 
 
 ## Next Steps
 
-- [Building Projections](./building-projections.md) — Create read-optimized views that track saga and aggregate state
-- [Host Architecture](../concepts/host-applications.md) — See how sagas are wired into the host with a single registration call
+- [Building Projections](./building-projections.md) - Create read-optimized views that track saga and aggregate state
+- [Host Architecture](../concepts/host-applications.md) - See how sagas are wired into the host with a single registration call
