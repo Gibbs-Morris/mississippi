@@ -310,7 +310,7 @@ A brook is a named event stream. The `[BrookName("SPRING", "BANKING", "ACCOUNT")
 ## How Concepts Connect
 
 ```mermaid
-flowchart LR
+flowchart TB
     Cmd["Command"] --> Handler["CommandHandler"]
     Handler -->|validates| Events["Events"]
     Events --> Reducer["EventReducer"]

@@ -36,7 +36,7 @@ Use effects when you need to:
 Effects run after reducers have processed an action:
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Action Dispatched] --> B[Middleware]
     B --> C[Reducers Update State]
     C --> D[Notify Listeners]

@@ -62,7 +62,7 @@ public class MyComponent : StoreComponent
 ## How It Works
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph User Intent
         A[NavigateAction] --> E[NavigationEffect]
     end

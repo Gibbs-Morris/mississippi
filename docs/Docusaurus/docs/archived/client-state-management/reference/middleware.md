@@ -53,7 +53,7 @@ If you do not call `nextAction`, the action is blocked from reaching subsequent 
 Middleware executes in registration order. The store builds the pipeline in reverse so that the first registered middleware runs first:
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Dispatch] --> B[Middleware 1]
     B --> C[Middleware 2]
     C --> D[Middleware 3]

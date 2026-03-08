@@ -435,7 +435,7 @@ Every file has a single responsibility. Adding a new operation (such as "close a
 ## The Command Flow
 
 ```mermaid
-flowchart LR
+flowchart TB
     API["API Request\n(DepositFunds)"] --> Handler["DepositFundsHandler\n(validate rules)"]
     Handler -->|fail| Error["OperationResult.Fail"]
     Handler -->|pass| Event["FundsDeposited\n(stored to brook)"]

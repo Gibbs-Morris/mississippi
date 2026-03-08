@@ -36,7 +36,7 @@ Sagas reuse the aggregate-style event pipeline, but with specialized orchestrati
 This diagram shows the verified saga control flow.
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[StartSagaCommand<TInput>] --> B[StartSagaCommandHandler]
     B --> C[SagaStartedEvent plus SagaInputProvided<TInput>]
     C --> D[SagaOrchestrationEffect]

@@ -33,7 +33,7 @@ Source:
 ### Composition Flow
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Generated Feature Methods] --> B[Domain Registration Generator]
     B --> C[Add{Domain}Client]
     B --> D[Add{Domain}Server]

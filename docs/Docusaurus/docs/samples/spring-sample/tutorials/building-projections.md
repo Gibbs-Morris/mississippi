@@ -22,7 +22,7 @@ Spring defines four projections from three event streams:
 | `MoneyTransferStatusProjection` | MoneyTransferSaga events | Saga phase, step progress, errors |
 
 ```mermaid
-flowchart LR
+flowchart TB
     BankStream["BankAccount\nEvent Stream"] --> Balance["Balance\nProjection"]
     BankStream --> Ledger["Ledger\nProjection"]
     CompStream["Investigation\nEvent Stream"] --> Flagged["Flagged\nProjection"]

@@ -46,7 +46,7 @@ This diagram shows the high-level orchestration flow rather than a concrete samp
 ### Orchestration Flow
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[StartSagaCommand] --> B[SagaStartedEvent]
     B --> C[SagaOrchestrationEffect]
     C --> D[ISagaStep.ExecuteAsync]

@@ -37,7 +37,7 @@ Mississippi does not push full projection payloads over SignalR. Instead, it sen
 This diagram shows the verified production path used by Inlet.
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Aggregate events appended to Brooks] --> B[Projection reducers rebuild snapshots]
     B --> C[UxProjectionGrain latest version moves]
     C --> D[InletSubscriptionGrain observes brook cursor]

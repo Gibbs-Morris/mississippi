@@ -32,7 +32,7 @@ Reservoir consists of six core components that work together to manage applicati
 When a user interaction or system event occurs, an action is dispatched to the store. The store processes the action through a pipeline:
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Dispatch Pipeline
         A[Action] --> M[Middleware]
         M --> SE1[Emit Event]

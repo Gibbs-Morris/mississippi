@@ -31,7 +31,7 @@ Use this section when you need the framework-level mental model before choosing 
 This diagram shows the verified top-level composition model.
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Domain records and handlers] --> B[Generic Orleans aggregate grains]
     B --> C[Brooks event streams]
     C --> D[Tributary reducers and snapshots]

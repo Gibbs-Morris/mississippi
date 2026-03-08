@@ -629,7 +629,7 @@ private string? ErrorMessage =>
 Selectors run on every render. For expensive computations, memoization caches results when state hasn't changed:
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Component Renders] --> B{Same State Reference?}
     B -->|Yes| C[Return Cached Result]
     B -->|No| D[Recompute & Cache]

@@ -18,7 +18,7 @@ A saga coordinates a workflow that spans multiple aggregates or services. The `M
 If step 0 fails, no forward work was completed, so the saga immediately ends as `Compensated` (nothing to roll back). If step 1 fails (destination account is closed, for example), the saga compensates by re-depositing the withdrawn amount back to the source account. This is the saga pattern in action — forward steps with automatic rollback.
 
 ```mermaid
-flowchart LR
+flowchart TB
     Start["StartMoneyTransfer"] --> Step0["Step 0:\nWithdraw from Source"]
     Step0 -->|fail| NoRollback["Compensated\n(nothing to roll back)"]
     Step0 -->|success| Step1["Step 1:\nDeposit to Destination"]

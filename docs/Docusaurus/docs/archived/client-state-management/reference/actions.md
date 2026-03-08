@@ -80,7 +80,7 @@ public class SelectionService
 When you dispatch an action, it flows through the store's pipeline:
 
 ```mermaid
-flowchart LR
+flowchart TB
     D[Dispatch] --> M[Middleware]
     M --> R[Reducers]
     R --> L[Listeners]

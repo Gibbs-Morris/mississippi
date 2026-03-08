@@ -135,7 +135,7 @@ builder.Services.AddReservoirDevTools(options =>
 DevTools integration uses composition rather than inheritance. When enabled, `AddReservoirDevTools` registers `ReduxDevToolsService` as a **scoped service** that subscribes to [`IStore.StoreEvents`](./store.md#observable-store-events). The service is initialized via `ReservoirDevToolsInitializerComponent`, which calls `Initialize()` after the Blazor rendering context is available. This approach keeps the store implementation unchanged while allowing external integrations to observe its activity.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Blazor
         COMP[ReservoirDevToolsInitializerComponent] -->|Initialize| DTS
     end
@@ -195,7 +195,7 @@ Reservoir includes a hosted service that detects when DevTools is enabled but th
 After startup, `DevToolsInitializationCheckerService` waits 5 seconds and checks whether `Initialize()` was called. If DevTools is enabled (not `Off`) and initialization has not occurred, the service either throws an exception or logs a warning depending on configuration.
 
 ```mermaid
-flowchart LR
+flowchart TB
     START[App Starts] --> WAIT[Wait 5 seconds]
     WAIT --> CHECK{Was Initialize called?}
     CHECK -->|Yes| OK[No action]

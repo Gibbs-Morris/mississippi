@@ -36,7 +36,7 @@ Commands decide whether an aggregate may move from its current state to a new on
 This diagram shows the verified aggregate flow.
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[HTTP or client action] --> B[Generated aggregate endpoint or service]
     B --> C[GenericAggregateGrain]
     C --> D[IRootCommandHandler]

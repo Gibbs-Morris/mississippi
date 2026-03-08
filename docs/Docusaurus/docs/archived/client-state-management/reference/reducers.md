@@ -107,7 +107,7 @@ When an action is dispatched, the store calls [`RootReducer<TState>`](https://gi
 3. Passes the output of one reducer as input to the next
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Action Dispatched] --> RR[RootReducer]
     RR --> R1[Reducer 1]
     R1 -->|New State| R2[Reducer 2]

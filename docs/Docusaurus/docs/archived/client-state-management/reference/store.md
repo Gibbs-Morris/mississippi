@@ -78,7 +78,7 @@ The Store is registered as **scoped**. Its lifetime follows the dependency-injec
 When you call `store.Dispatch(action)`, the action flows through a well-defined pipeline:
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Dispatch] --> B[Middleware Pipeline]
     B --> SE1[ActionDispatchingEvent]
     SE1 --> C[Reducers]

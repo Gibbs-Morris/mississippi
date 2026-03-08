@@ -43,7 +43,7 @@ Mississippi starts from a few explicit domain artifacts and composes outward.
 This diagram shows the verified cross-area composition.
 
 ```mermaid
-flowchart LR
+flowchart TB
     A[Domain Modeling] --> B[Brooks event streams]
     B --> C[Tributary reducers and snapshots]
     C --> D[Domain Modeling UX projection runtime]
