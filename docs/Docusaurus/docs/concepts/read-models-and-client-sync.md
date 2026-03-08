@@ -10,9 +10,9 @@ description: Explain how Mississippi builds projections, exposes them over HTTP,
 
 ## Overview
 
-Mississippi treats projections as reducer-driven read models over a brook.
+Mississippi gives teams a complete path from domain events to client state without hand-wiring each layer.
 
-Projection types are rebuilt from events by reducers. When teams opt into Mississippi's generated delivery surface, those projections are served by `IUxProjectionGrain<TProjection>`, exposed through generated read endpoints, and can be synchronized into client state through Inlet and Reservoir.
+Projection types are rebuilt from events by reducers. When teams opt into Mississippi's generated delivery surface, those projections are automatically served through version-aware grains, exposed through generated HTTP endpoints, and synchronized into client state through Inlet SignalR notifications and Reservoir reducers.
 
 ## The Problem This Solves
 
@@ -28,9 +28,9 @@ Applications need read-optimized views, stable HTTP query endpoints, and a clien
 
 ## Core Idea
 
-The read model is event-derived, versioned, and eventually observed by clients.
+The read model is event-derived, versioned, and delivered efficiently.
 
-Mississippi does not push full projection payloads over SignalR by default. Instead, it pushes `(path, entityId, version)` metadata and lets the client fetch the exact projection version over HTTP.
+Mississippi does not push full projection payloads over SignalR. Instead, it sends lightweight `(path, entityId, version)` metadata and lets the client fetch the exact projection over HTTP with ETag-based caching. This keeps WebSocket frames small, enables HTTP-level caching, and avoids the bandwidth cost of pushing full payloads on every change.
 
 ## How It Works
 
@@ -87,7 +87,7 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 
 ## Summary
 
-Mississippi read models are reducer-built projections. When the generated delivery path is enabled, they are served by version-aware grains and synchronized to clients through SignalR metadata plus HTTP fetches.
+Mississippi read models move from event streams to versioned grains to HTTP endpoints to client state through one generated pipeline — no hand-wired controllers, no manual SignalR subscriptions, no imperative client state mutation.
 
 ## Next Steps
 

@@ -16,11 +16,11 @@ A saga state record implements `ISagaState`. A start command creates lifecycle e
 
 ## The Problem This Solves
 
-Some business operations do not fit inside one aggregate command.
+Some business operations span multiple aggregates and need coordinated execution with rollback capability.
 
-Money transfer is the obvious example in the Spring sample: a workflow spans more than one aggregate, needs ordered execution, and may need to undo earlier work when a later step fails.
+Money transfer is the clearest example in the Spring sample: debit one account, credit another, and undo the debit if the credit fails. That kind of workflow is easy to describe but hard to build reliably when the alternative is ad hoc service code with scattered try/catch blocks and manual state tracking.
 
-Mississippi addresses that by making workflow progress explicit in evented saga state instead of hiding it in ad hoc service code.
+Mississippi addresses that by making workflow progress explicit in evented saga state — every step, every failure, and every compensation action is a first-class event in the stream.
 
 ## Core Idea
 
@@ -86,7 +86,7 @@ The verified runtime behavior is:
 
 ## Summary
 
-Mississippi sagas are event-driven workflow coordinators built from explicit saga state, ordered steps, lifecycle events, and optional compensation.
+Mississippi sagas turn multi-step workflows into observable, compensatable event streams — making workflow progress, failure, and recovery explicit rather than buried in ad hoc service code.
 
 ## Next Steps
 

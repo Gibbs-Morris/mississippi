@@ -12,7 +12,7 @@ description: Start here to understand what Mississippi is for, how the pieces fi
 
 Mississippi is an end-to-end application model for event-sourced systems built on Orleans.
 
-It combines aggregate command handling, reducer-driven read models, generated HTTP and client surfaces, and real-time projection notifications into one framework shape. The goal is not to hide the domain model. The goal is to keep the domain model small and explicit while moving transport, registration, and client synchronization boilerplate into reusable runtime and generator infrastructure.
+It lets teams focus on the code that matters — domain records, command handlers, reducers, and saga steps — while the framework generates and manages the transport, registration, client synchronization, and real-time notification infrastructure around it. The domain model stays small and explicit. The boilerplate disappears.
 
 ## What This Section Covers
 
@@ -63,9 +63,7 @@ If you already know the framework style and need a subsystem boundary, move to t
 
 ## Current Coverage
 
-This concepts section now covers the verified framework model at the cross-cutting level.
-
-It explains the architecture that spans multiple product areas. It does not replace the product-area pages for package-level detail, API reference, or operational guidance.
+This section covers the verified framework model at the cross-cutting level. It explains the architecture that spans multiple product areas. For package-level detail, API reference, or operational guidance, see the individual product-area pages.
 
 ## Learn More
 

@@ -10,9 +10,9 @@ description: Explain what Mississippi optimizes for, how source generation and t
 
 ## Overview
 
-Mississippi is intentionally opinionated.
+Mississippi is intentionally opinionated — and that is a feature, not a limitation.
 
-It is designed to reduce the ceremony around event-sourced, Orleans-based applications without removing the need to write real C# domain logic. The framework does that through conventions, generators, generic runtime infrastructure, and test harnesses.
+The framework is designed to eliminate the ceremony that surrounds event-sourced, Orleans-based applications while keeping domain logic fully in the developer's hands. Conventions, source generators, generic runtime infrastructure, and dedicated test harnesses work together so teams spend their time on business problems instead of wiring infrastructure.
 
 ## The Problem This Solves
 
@@ -23,7 +23,9 @@ Teams building this style of system often repeat the same non-domain work:
 - keeping gateway routes and client actions aligned with server behavior
 - rebuilding Given/When/Then test setup for every aggregate and effect
 
-The repository evidence shows Mississippi trying to reduce exactly that kind of repeated scaffolding.
+Testing is a large part of that cost. In a typical Orleans application, validating domain behavior often means spinning up a `TestCluster`, mocking grain infrastructure, or mixing business-rule assertions with transport and hosting setup. Mississippi tries to separate those concerns so domain correctness can be exercised without bringing Orleans runtime concerns into every test.
+
+The repository evidence shows Mississippi eliminating exactly that kind of repeated scaffolding.
 
 ## Core Idea
 
@@ -50,6 +52,8 @@ The verified ergonomics story is built from three mechanisms.
 3. Focused test harnesses.
    `AggregateTestHarness<TAggregate>`, `AggregateScenario<TAggregate>`, and `EffectTestHarness<...>` support Given/When/Then style testing around domain logic without full infrastructure setup.
 
+   That matters because the framework does not force aggregate and effect tests to boot Orleans just to prove domain behavior. The harnesses let tests express prior events, execute a command or effect, and assert on emitted events, failures, and resulting state using the same domain concepts the runtime uses. Reducer and projection harnesses extend the same idea to read-side behavior, so the testing story stays aligned with the production model instead of requiring a separate testing architecture.
+
 ## Guarantees
 
 - Mississippi provides real source generators for aggregate, projection, saga, gateway, and client scaffolding. This is not just a design aspiration.
@@ -73,7 +77,7 @@ The verified ergonomics story is built from three mechanisms.
 
 This section is a reasoned interpretation of the repository shape, not a runtime guarantee.
 
-Mississippi appears well suited to AI-assisted development because it narrows how much infrastructure an engineer or coding agent must recreate by hand. The generators and test harnesses define a smaller, more regular surface area:
+Mississippi is well positioned for AI-assisted development because it narrows how much infrastructure an engineer or coding agent must recreate by hand. The generators and test harnesses define a smaller, more regular surface area:
 
 - domain records and handlers follow repeatable conventions
 - gateway and client scaffolding are generated from attributes instead of manually mirrored
@@ -89,7 +93,7 @@ That does not make the framework "AI-native" in a magical sense. It means the fr
 
 ## Summary
 
-Mississippi optimizes for leverage through explicit patterns, reusable runtime infrastructure, generation, and lightweight domain testing.
+Mississippi trades architectural freedom for development leverage: explicit patterns, generated infrastructure, and lightweight domain testing let teams ship faster without sacrificing correctness.
 
 ## Next Steps
 

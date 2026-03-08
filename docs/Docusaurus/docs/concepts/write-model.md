@@ -80,6 +80,12 @@ The concrete runtime sequence is:
 - Synchronous effects are powerful because they can emit more events, but they also make it easier to create complex event chains. The iteration limit exists to stop accidental cycles.
 - Fire-and-forget effects keep command latency low, but they shift some work into eventually observed background behavior.
 
+## Testability
+
+This write model is designed to keep domain behavior testable without Orleans infrastructure.
+
+Because command handlers return events instead of mutating state directly, the core business decision stays narrow and observable. Reducers rebuild state from those events, and effects run over explicit event inputs. That shape makes it practical to test aggregate flows with `AggregateTestHarness<TAggregate>` and `AggregateScenario<TAggregate>` and to test effect behavior with `EffectTestHarness<...>` using Given/When/Then style scenarios rather than `TestCluster` setup or grain mocking. The same design choice that keeps the runtime explicit also keeps the domain path cheap to validate.
+
 ## Related Tasks and Reference
 
 - Use [Read Models and Client Sync](./read-models-and-client-sync.md) for the projection side of the same events.
@@ -88,7 +94,7 @@ The concrete runtime sequence is:
 
 ## Summary
 
-Mississippi writes are aggregate-first: handlers emit events, reducers rebuild state, and effects react after persistence.
+Mississippi's write model keeps domain decisions in handlers and state reconstruction in reducers, making the entire command path explicit, testable, and free of infrastructure coupling.
 
 ## Next Steps
 

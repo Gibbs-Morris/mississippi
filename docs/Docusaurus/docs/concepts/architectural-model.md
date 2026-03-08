@@ -16,7 +16,7 @@ It combines aggregate command execution, event streams, reducer-driven read mode
 
 ## The Problem This Solves
 
-CQRS, event sourcing, Orleans, and real-time clients are individually understandable. The cost usually appears in the seams between them.
+CQRS, event sourcing, Orleans, and real-time clients are individually well understood. The real cost appears in the seams between them — the duplicated mappings, mirrored DTOs, and hand-wired plumbing that multiply with every new aggregate or projection.
 
 Teams often end up maintaining the same mappings in several places:
 
@@ -25,7 +25,7 @@ Teams often end up maintaining the same mappings in several places:
 - SignalR subscription plumbing and client-side refresh logic
 - test setup for domain logic versus test setup for infrastructure
 
-Mississippi narrows that seam work by letting a small set of domain-facing types drive more of the surrounding runtime and client surface.
+Mississippi eliminates that seam work by letting a small set of domain-facing types drive the surrounding runtime and client surface.
 
 ## Core Idea
 
@@ -90,7 +90,7 @@ In public package terms, the major responsibilities break down like this.
 
 ## Summary
 
-Mississippi is best understood as one coherent model: explicit domain logic on top of event streams and reducers, with generated runtime, gateway, and client surfaces around it.
+Mississippi eliminates the seam work between event sourcing, Orleans, and client delivery. Write domain logic once, and the framework generates the runtime, gateway, and client surfaces around it.
 
 ## Next Steps
 
