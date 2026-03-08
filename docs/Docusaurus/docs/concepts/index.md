@@ -12,7 +12,7 @@ description: Start here to understand what Mississippi is for, how the pieces fi
 
 Mississippi is an end-to-end application model for event-sourced systems built on Orleans.
 
-It lets teams focus on the code that matters - domain records, command handlers, reducers, and saga steps - while the framework generates and manages the transport, registration, client synchronization, and real-time notification infrastructure around it. The domain model stays small and explicit. The boilerplate disappears.
+Every subsystem in Mississippi — aggregates, event streams, reducers, projections, subscriptions, and SignalR transport — runs as Orleans grains. Teams write domain types: state records, command handlers, event reducers, and saga steps. The framework hosts those types in the appropriate grains, generates the HTTP, SignalR, and client surfaces around them, and manages registration, serialization, and storage.
 
 ## What This Section Covers
 
@@ -26,30 +26,45 @@ Use this section when you need the framework-level mental model before choosing 
 | How saga orchestration and compensation work | [Sagas and Orchestration](./sagas-and-orchestration.md) |
 | Why Mississippi is opinionated, what it optimizes for, and what it trades away | [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) |
 
-## Core Frame
+## Layer Model
 
-This diagram shows the verified top-level composition model.
+Mississippi is organized in three dependency layers. Each layer is built from Orleans grains and depends strictly downward.
 
 ```mermaid
 flowchart TB
-    A[Domain records and handlers] --> B[Generic Orleans aggregate grains]
-    B --> C[Brooks event streams]
-    C --> D[Tributary reducers and snapshots]
-    D --> E[UX projection grains and generated HTTP endpoints]
-    E --> F[Inlet SignalR notifications and HTTP fetches]
-    F --> G[Reservoir client state]
+    DM["DomainModeling · Layer 3<br/>aggregates, sagas, effects, projections"]
+    TR["Tributary · Layer 2<br/>event reducers, snapshot cache"]
+    BR["Brooks · Layer 1<br/>event streams, cursors, storage"]
+
+    DM --> TR
+    DM --> BR
+    TR --> BR
 ```
 
-At a high level:
+- **Brooks** (Layer 1) owns event stream identity, append, cursor tracking, and storage provider contracts. Each aggregate instance has a brook — a logical event stream keyed by aggregate type and entity ID — served by writer, reader, and cursor grains.
+- **Tributary** (Layer 2) owns event reducers and snapshot reconstruction. Reducers are pure functions that fold events into state. Snapshot cache grains store immutable, version-keyed state to avoid replaying full event histories.
+- **DomainModeling** (Layer 3) owns aggregate command execution, saga orchestration, event effects, and projection delivery. `GenericAggregateGrain<T>` hosts any aggregate type, routes commands through handlers, writes events to Brooks, and dispatches synchronous and fire-and-forget effects after persistence.
 
-- Domain Modeling owns aggregates, sagas, event effects, and UX projection runtime abstractions.
-- Brooks owns event streams and event storage.
-- Tributary owns reducers and snapshot reconstruction.
-- Inlet aligns runtime registration, HTTP endpoints, SignalR subscriptions, and client code generation.
-- Reservoir provides Redux-style client state management.
-- Aqueduct provides Orleans-backed SignalR messaging infrastructure.
+## Delivery and Client Surface
 
-## Suggested Reading Paths
+Teams define projection types and mark them with attributes. The framework takes those definitions and delivers them to clients through generated endpoints, real-time notifications, and a predictable client state store.
+
+```mermaid
+flowchart TB
+    PT[Projection types and attributes] --> IN[Inlet code generation]
+    IN --> HTTP[HTTP endpoints and controllers]
+    IN --> SUB[SignalR subscription management]
+    SUB --> AQ[Aqueduct SignalR transport]
+    HTTP --> RS[Reservoir client state store]
+    AQ --> RS
+```
+
+- **Inlet** takes projection types, aggregates, and sagas marked with attributes such as `[GenerateAggregateEndpoints]` and `[GenerateProjectionEndpoints]` and generates HTTP controllers, client DTOs, client-side Redux actions and reducers, and MCP tool definitions. At runtime, Inlet manages per-connection projection subscriptions through a SignalR hub that notifies clients when projections change.
+- **Aqueduct** provides the SignalR infrastructure that works across an Orleans cluster, so notifications reach clients regardless of which server they are connected to.
+- **Reservoir** provides Redux-style client state management. Actions flow through reducers that produce immutable state slices. Action effects handle async side effects such as fetching updated projections after a change notification.
+- **Refraction** provides a Blazor component library and design-token system for client UIs.
+
+## Suggested Reading Path
 
 If you are evaluating Mississippi as an architecture, read the pages in this order:
 
@@ -59,21 +74,17 @@ If you are evaluating Mississippi as an architecture, read the pages in this ord
 4. [Sagas and Orchestration](./sagas-and-orchestration.md)
 5. [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md)
 
-If you already know the framework style and need a subsystem boundary, move to the product-area docs under [Domain Modeling](../domain-modeling/index.md), [Inlet](../inlet/index.md), [Reservoir](../reservoir/index.md), [Tributary](../tributary/index.md), and [Brooks](../brooks/index.md).
-
-## Current Coverage
-
-This section covers the verified framework model at the cross-cutting level. It explains the architecture that spans multiple product areas. For package-level detail, API reference, or operational guidance, see the individual product-area pages.
-
 ## Learn More
 
-- [Documentation Home](../index.md) - Return to the main landing page
-- [Architectural Model](./architectural-model.md) - See the framework-wide subsystem map and mental model
-- [Write Model](./write-model.md) - Follow the aggregate command, event, reducer, and effect flow
-- [Read Models and Client Sync](./read-models-and-client-sync.md) - See how projections move from event streams into client state
-- [Sagas and Orchestration](./sagas-and-orchestration.md) - Understand long-running workflow coordination and compensation
-- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) - Review the framework rationale, constraints, and AI-related implications
-- [Domain Modeling](../domain-modeling/index.md) - Go deeper on aggregates, sagas, effects, and UX projections
-- [Inlet](../inlet/index.md) - Go deeper on generated client, API, and runtime alignment
-- [Samples](../samples/index.md) - See complete Mississippi applications
-- [About Benjamin Gibbs](./about-benjamin-gibbs-reference.md) - Learn about the creator of Mississippi
+- [Architectural Model](./architectural-model.md) — Framework-wide subsystem map and composition model
+- [Write Model](./write-model.md) — Aggregate command, event, reducer, and effect flow
+- [Read Models and Client Sync](./read-models-and-client-sync.md) — How projections reach client state through HTTP and SignalR
+- [Sagas and Orchestration](./sagas-and-orchestration.md) — Long-running workflow coordination and compensation
+- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) — Framework rationale, constraints, and trade-offs
+- [Domain Modeling](../domain-modeling/index.md) — Aggregates, sagas, effects, and projections in depth
+- [Brooks](../brooks/index.md) — Event stream identity, storage, and cursor mechanics
+- [Tributary](../tributary/index.md) — Event reducers and snapshot reconstruction
+- [Inlet](../inlet/index.md) — Code generation and projection subscriptions
+- [Reservoir](../reservoir/index.md) — Redux-style client state management
+- [Aqueduct](../aqueduct/index.md) — Orleans-backed SignalR infrastructure
+- [Samples](../samples/index.md) — Complete Mississippi applications
