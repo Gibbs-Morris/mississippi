@@ -1,7 +1,7 @@
-label: Concepts
-position: 2
+label: Reservoir
+position: 5
 collapsed: false
 collapsible: true
 link:
   type: doc
-  id: concepts-overview
+  id: reservoir-overview

@@ -2,8 +2,8 @@
 id: home
 title: Documentation
 sidebar_label: Home
-description: Start with the Mississippi docs set by choosing a verified learning path, concept page, or reference section.
 sidebar_position: 1
+description: Understand what Mississippi is for, choose the right entry point, and find the subsystem, package, or sample you need.
 slug: /
 ---
 
@@ -11,46 +11,87 @@ slug: /
 
 ## Overview
 
-Use this landing page to get to the right kind of Mississippi documentation quickly.
+Mississippi helps teams model domain behavior directly and let the framework scaffold much of the surrounding API, client, and runtime plumbing.
 
-The current public docs set is organized around verified entry points rather than around every framework area.
+You define aggregates, commands, events, and projections. Mississippi then composes event sourcing, CQRS, Orleans execution, generated APIs, client actions, and real-time projection delivery into one system.
 
-## Choose a Path
+Use this landing page to choose the right entry point: start with concepts if you are new to the framework, jump to a subsystem if you need a specific capability, or open samples if you want to see a complete application.
 
-Use this table to choose the page type that matches your question.
+## Start Here
 
-| If you need to... | Start here | Page type |
+| If you want to... | Start here |
+| --- | --- |
+| Understand what Mississippi is for and how the pieces fit together | [Concepts](./concepts/index.md) |
+| Evaluate or adopt a specific subsystem | The product-area sections below |
+| Find package names for independently adoptable areas | [Package Entry Points](#package-entry-points) |
+| See a complete working application | [Samples](./samples/index.md) |
+
+## Independent Foundations
+
+These areas can be adopted on their own without requiring the rest of the Mississippi stack.
+
+| Area | What it covers |
+| --- | --- |
+| [Aqueduct](./aqueduct/index.md) | Orleans-backed SignalR backplane support for distributed real-time messaging |
+| [Refraction](./refraction/index.md) | Blazor UX components built around a state-down, events-up interaction model |
+| [Reservoir](./reservoir/index.md) | Redux-style client state management |
+| [Brooks](./brooks/index.md) | Event streams and event storage |
+
+## Package Entry Points
+
+These independent areas also expose package entry points that can be adopted without taking the full Mississippi stack.
+
+The package IDs below come from the packable projects under `src/` and use the repository-wide `Mississippi.` package prefix.
+
+| Area | Representative packages | Notes |
 | --- | --- | --- |
-| Learn Mississippi by following a complete sample | [Spring Sample App](./spring-sample/index.md) | Overview + tutorials |
-| Understand Reservoir's dispatch model and feature surfaces | [Reservoir](./client-state-management/reservoir.md) | Concepts + reference |
-| Understand saga orchestration and trade-offs | [Event Sourcing Sagas](./concepts/event-sourcing-sagas.md) | Concepts |
-| Look up saga contracts or generated registration methods | [Reference](./reference/index.md) | Reference |
-| Maintain the docs set itself | [Documentation Guide](./contributing/documentation-guide.md) | Contributing |
+| [Aqueduct](./aqueduct/index.md) | `Mississippi.Aqueduct.Abstractions`, `Mississippi.Aqueduct.Gateway`, `Mississippi.Aqueduct.Runtime` | Public contracts plus gateway and Orleans runtime integrations for the backplane |
+| [Refraction](./refraction/index.md) | `Mississippi.Refraction.Abstractions`, `Mississippi.Refraction.Client`, `Mississippi.Refraction.Client.StateManagement` | Blazor UX contracts, runtime components, and page-composition helpers |
+| [Reservoir](./reservoir/index.md) | `Mississippi.Reservoir.Abstractions`, `Mississippi.Reservoir.Core`, `Mississippi.Reservoir.Client`, `Mississippi.Reservoir.TestHarness` | State-management contracts, runtime, Blazor integration, and testing support |
+| [Brooks](./brooks/index.md) | `Mississippi.Brooks.Abstractions`, `Mississippi.Brooks.Runtime`, `Mississippi.Brooks.Serialization.Abstractions`, `Mississippi.Brooks.Serialization.Json` | Event-streaming contracts, runtime, and serialization seams |
 
-## What Is Covered
+Use the area pages above when you want the architectural view. Use the package names in this table when you are deciding what to reference from an application or library.
 
-The current docs set focuses on the documented surfaces that have source-backed pages today.
+## Domain Layers
 
-- [Spring Sample App](./spring-sample/index.md) groups concept pages, tutorials, and how-to guides for the `samples/Spring` application.
-- [Client State Management](./client-state-management/reservoir.md) groups Reservoir overview, reference pages, and testing guidance.
-- [Concepts](./concepts/index.md) contains framework mental models.
-- [Reference](./reference/index.md) contains framework contracts and generated-surface reference.
+These areas build domain behavior and derived state on top of the lower event and storage primitives.
 
-## Current Scope
+| Area | What it covers |
+| --- | --- |
+| [Tributary](./tributary/index.md) | Reducers and snapshots |
+| [Domain Modeling](./domain-modeling/index.md) | Aggregates, sagas, and UX projections |
 
-This alignment pass does not yet claim full public coverage for every documentation page type.
+## Composition Layer
 
-The following areas still need dedicated pages rather than being inferred from unrelated content:
+This area keeps the client, gateway, and runtime surfaces aligned.
 
-- production operations guidance outside the Spring sample's local-development flows
-- troubleshooting catalogs for framework features
-- migration guides
-- release notes
+| Area | What it covers |
+| --- | --- |
+| [Inlet](./inlet/index.md) | Source-generated alignment across client, HTTP, and runtime layers |
+
+## Samples
+
+This section covers complete applications that show how multiple Mississippi areas compose in practice.
+
+| Area | What it covers |
+| --- | --- |
+| [Samples](./samples/index.md) | End-to-end sample applications, guided walkthroughs, and sample-specific validation paths |
+
+## Legacy Material
+
+Earlier documentation is still available under [Archived Documentation](./archived/index.md).
+
+Use that material when you need preserved reference pages from the older docs set, but prefer the active top-level sections for new navigation.
 
 ## Learn More
 
-- [Spring Sample App](./spring-sample/index.md) - Learn the domain-first Mississippi workflow through guided tutorials and local validation guides
-- [Reservoir](./client-state-management/reservoir.md) - Understand Reservoir's dispatch pipeline and browse its reference pages
-- [Event Sourcing Sagas](./concepts/event-sourcing-sagas.md) - Learn the saga model and how it fits Mississippi event sourcing
-- [Reference](./reference/index.md) - Look up saga contracts and generated registration methods
-- [Documentation Guide](./contributing/documentation-guide.md) - See the page-type and structure rules that govern this docs set
+- [Concepts](./concepts/index.md) - Start with the framework overview and mental model
+- [Aqueduct](./aqueduct/index.md) - Start with the Orleans-backed SignalR backplane section
+- [Refraction](./refraction/index.md) - Start with the Blazor UX component section
+- [Reservoir](./reservoir/index.md) - Start with the client state-management section
+- [Brooks](./brooks/index.md) - Start with the event stream and storage section
+- [Tributary](./tributary/index.md) - Start with the reducers and snapshots section
+- [Domain Modeling](./domain-modeling/index.md) - Start with the aggregates, sagas, and projections section
+- [Inlet](./inlet/index.md) - Start with the composition and source-generation section
+- [Samples](./samples/index.md) - Explore complete applications built with Mississippi
+- [Archived Documentation](./archived/index.md) - Browse the preserved pre-reset docs set

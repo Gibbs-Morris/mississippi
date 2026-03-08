@@ -1,7 +1,7 @@
-label: Concepts
-position: 2
+label: Archived
+position: 11
 collapsed: false
 collapsible: true
 link:
   type: doc
-  id: concepts-overview
+  id: archived-overview
