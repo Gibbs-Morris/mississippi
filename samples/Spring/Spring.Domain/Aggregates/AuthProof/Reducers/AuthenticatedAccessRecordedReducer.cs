@@ -1,9 +1,9 @@
 using Mississippi.Tributary.Abstractions;
 
-using Spring.Domain.Aggregates.AuthProof.Events;
+using MississippiSamples.Spring.Domain.Aggregates.AuthProof.Events;
 
 
-namespace Spring.Domain.Aggregates.AuthProof.Reducers;
+namespace MississippiSamples.Spring.Domain.Aggregates.AuthProof.Reducers;
 
 /// <summary>
 ///     Reducer for <see cref="AuthenticatedAccessRecorded" /> events.

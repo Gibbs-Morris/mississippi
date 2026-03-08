@@ -4,10 +4,10 @@ using System.Linq;
 
 using Mississippi.Tributary.Abstractions;
 
-using Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
 
 
-namespace Spring.Domain.Projections.BankAccountLedger.Reducers;
+namespace MississippiSamples.Spring.Domain.Projections.BankAccountLedger.Reducers;
 
 /// <summary>
 ///     Reduces the <see cref="FundsWithdrawn" /> event to add

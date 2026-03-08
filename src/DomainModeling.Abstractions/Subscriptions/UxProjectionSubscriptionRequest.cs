@@ -17,7 +17,7 @@ namespace Mississippi.DomainModeling.Abstractions.Subscriptions;
 ///     </para>
 /// </remarks>
 [GenerateSerializer]
-[Alias("Mississippi.DomainModeling.Abstractions.UxProjectionSubscriptionRequest")]
+[Alias("Mississippi.DomainModeling.Abstractions.Subscriptions.UxProjectionSubscriptionRequest")]
 public sealed record UxProjectionSubscriptionRequest
 {
     /// <summary>

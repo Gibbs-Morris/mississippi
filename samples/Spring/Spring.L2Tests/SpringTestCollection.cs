@@ -1,4 +1,4 @@
-namespace Spring.L2Tests;
+namespace MississippiSamples.Spring.L2Tests;
 
 /// <summary>
 ///     xUnit collection definition that ensures all Spring tests share a single AppHost instance.

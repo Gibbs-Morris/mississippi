@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Threading;
 
 
-namespace Spring.L2Tests;
+namespace MississippiSamples.Spring.L2Tests;
 
 /// <summary>
 ///     Integration tests proving generated endpoint authorization behavior for the Spring auth-proof slice.

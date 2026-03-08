@@ -7,11 +7,13 @@
     <Folder Name="/Samples/" />
     <Folder Name="/Samples/Crescent/">
         <Project Path="samples\Crescent\Crescent.AppHost\Crescent.AppHost.csproj" />
+        <Project Path="samples\Crescent\Crescent.L0Tests\Crescent.L0Tests.csproj" />
         <Project Path="samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj" />
     </Folder>
     <Folder Name="/Samples/Spring/">
         <Project Path="samples\Spring\Spring.Domain\Spring.Domain.csproj" />
         <Project Path="samples\Spring\Spring.Client\Spring.Client.csproj" />
+        <Project Path="samples\Spring\Spring.Client.L0Tests\Spring.Client.L0Tests.csproj" />
         <Project Path="samples\Spring\Spring.Gateway\Spring.Gateway.csproj" />
         <Project Path="samples\Spring\Spring.Runtime\Spring.Runtime.csproj" />
         <Project Path="samples\Spring\Spring.AppHost\Spring.AppHost.csproj" />
@@ -22,8 +24,5 @@
         <Project Path="samples\LightSpeed\LightSpeed.Client\LightSpeed.Client.csproj" />
         <Project Path="samples\LightSpeed\LightSpeed.Gateway\LightSpeed.Gateway.csproj" />
         <Project Path="samples\LightSpeed\LightSpeed.AppHost\LightSpeed.AppHost.csproj" />
-    </Folder>
-    <Folder Name="/Tests/Spring/">
-        <Project Path="tests\Spring.Client.L0Tests\Spring.Client.L0Tests.csproj" />
     </Folder>
 </Solution>

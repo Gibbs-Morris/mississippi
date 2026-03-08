@@ -1,8 +1,4 @@
-// <copyright file="CrescentTestCollection.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     xUnit collection definition that ensures all Crescent tests share a single AppHost instance.

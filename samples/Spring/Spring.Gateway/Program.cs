@@ -14,6 +14,12 @@ using Mississippi.DomainModeling.Runtime;
 using Mississippi.Inlet.Gateway;
 using Mississippi.Inlet.Runtime;
 
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
+using MississippiSamples.Spring.Gateway;
+using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Projections.Mappers;
+using MississippiSamples.Spring.Gateway.McpTools;
+
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -21,11 +27,6 @@ using OpenTelemetry.Trace;
 using Orleans.Hosting;
 
 using Scalar.AspNetCore;
-
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Gateway;
-using Spring.Gateway.Controllers.Mappers;
-using Spring.Gateway.McpTools;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -121,7 +122,14 @@ else
 builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
 
 // Add generated domain mapper registrations
-builder.Services.AddSpringDomainServer();
+builder.Services.AddAuthProofAggregateMappers();
+builder.Services.AddBankAccountAggregateMappers();
+builder.Services.AddMoneyTransferSagaAggregateMappers();
+builder.Services.AddAuthProofProjectionMappers();
+builder.Services.AddBankAccountBalanceProjectionMappers();
+builder.Services.AddBankAccountLedgerProjectionMappers();
+builder.Services.AddFlaggedTransactionsProjectionMappers();
+builder.Services.AddMoneyTransferStatusProjectionMappers();
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.

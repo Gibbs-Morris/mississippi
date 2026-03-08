@@ -1,11 +1,11 @@
 using System.Collections.Immutable;
 using System.Linq;
 
-using Spring.Domain.Projections.FlaggedTransactions;
-using Spring.Domain.Projections.FlaggedTransactions.Reducers;
+using MississippiSamples.Spring.Domain.Projections.FlaggedTransactions;
+using MississippiSamples.Spring.Domain.Projections.FlaggedTransactions.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Fixtures;
+namespace MississippiSamples.Spring.Domain.L0Tests.Fixtures;
 
 /// <summary>
 ///     Pre-wired test fixture for FlaggedTransactions projection testing.

@@ -1,7 +1,7 @@
 using System;
 
 
-namespace Spring.Client.Features.DemoAccounts;
+namespace MississippiSamples.Spring.Client.Features.DemoAccounts;
 
 /// <summary>
 ///     Selectors for deriving values from <see cref="DemoAccountsState" />.

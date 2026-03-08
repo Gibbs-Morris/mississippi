@@ -52,3 +52,4 @@ All C# contributors.
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - C# standards: `.github/instructions/csharp.instructions.md`
 - Domain modeling: `.github/instructions/domain-modeling.instructions.md`
+- Deterministic placement: `.github/instructions/namespace-folder-placement.instructions.md`

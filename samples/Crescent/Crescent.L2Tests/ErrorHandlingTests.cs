@@ -1,11 +1,7 @@
-// <copyright file="ErrorHandlingTests.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
 using Azure;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Tests that verify proper error handling when operations fail or resources are unavailable.

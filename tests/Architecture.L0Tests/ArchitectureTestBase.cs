@@ -50,7 +50,8 @@ public abstract class ArchitectureTestBase
         {
             if (path.Contains(".L0Tests.", StringComparison.Ordinal) ||
                 path.Contains(".L1Tests.", StringComparison.Ordinal) ||
-                path.Contains(".L2Tests.", StringComparison.Ordinal))
+                path.Contains(".L2Tests.", StringComparison.Ordinal) ||
+                path.Contains("Mississippi.Testing.Utilities", StringComparison.Ordinal))
             {
                 continue;
             }
