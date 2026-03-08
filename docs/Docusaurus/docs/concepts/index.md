@@ -49,6 +49,7 @@ Use the product-area sections after this page when you need detail about a speci
 ## Learn More
 
 - [Documentation Home](../index.md) - Return to the main landing page
+- [About Benjamin Gibbs](./about-benjamin-gibbs-reference.md) - Learn about the creator of Mississippi
 - [Aqueduct](../aqueduct/index.md) - Explore the Orleans-backed SignalR backplane layer
 - [Reservoir](../reservoir/index.md) - Explore the Redux-style client state layer
 - [Samples](../samples/index.md) - See complete Mississippi applications

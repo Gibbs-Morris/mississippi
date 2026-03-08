@@ -86,6 +86,7 @@ Use that material when you need preserved reference pages from the older docs se
 ## Learn More
 
 - [Concepts](./concepts/index.md) - Start with the framework overview and mental model
+- [About Benjamin Gibbs](./concepts/about-benjamin-gibbs-reference.md) - Learn about the creator of Mississippi
 - [Aqueduct](./aqueduct/index.md) - Start with the Orleans-backed SignalR backplane section
 - [Refraction](./refraction/index.md) - Start with the Blazor UX component section
 - [Reservoir](./reservoir/index.md) - Start with the client state-management section
