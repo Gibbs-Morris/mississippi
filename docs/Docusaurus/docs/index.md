@@ -21,6 +21,7 @@ Use this landing page to choose the right entry point: start with concepts if yo
 
 | If you want to... | Start here |
 | --- | --- |
+| Understand the business value of Mississippi | [Why Mississippi](./why-mississippi/index.md) |
 | Understand what Mississippi is for and how the pieces fit together | [Concepts](./concepts/index.md) |
 | Evaluate or adopt a specific subsystem | The product-area sections below |
 | Find package names for independently adoptable areas | [Package Entry Points](#package-entry-points) |
