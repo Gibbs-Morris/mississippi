@@ -140,7 +140,7 @@ flowchart LR
     C --> D[Verified claims]
 ```
 
-- Use `flowchart LR` by default.
+- Use `flowchart LR` only when the diagram has four or fewer nodes; use `flowchart TB` when it has more than four. Docs render at a fixed width and readers scroll vertically, so wide LR diagrams overflow or become unreadably compressed.
 - Keep diagrams small and focused on one main point.
 - Use labels that match Mississippi terminology.
 
