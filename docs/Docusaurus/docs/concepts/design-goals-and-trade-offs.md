@@ -53,9 +53,9 @@ The verified ergonomics story is built from three mechanisms.
 ## Guarantees
 
 - Mississippi provides real source generators for aggregate, projection, saga, gateway, and client scaffolding. This is not just a design aspiration.
-- The repository includes dedicated test harnesses for command handlers, aggregate scenarios, reducers, projections, and effects.
+- The repository includes dedicated test harnesses for aggregate scenarios, reducers, projections, and both synchronous and fire-and-forget effects.
 - The current client model is explicitly Redux-style. `IStore`, Reservoir reducers, and Inlet projection actions all use that vocabulary directly.
-- The repository states clearly that Mississippi is pre-1.0 and early alpha.
+- The repository is explicitly pre-1.0.
 
 ## Non-Guarantees
 
