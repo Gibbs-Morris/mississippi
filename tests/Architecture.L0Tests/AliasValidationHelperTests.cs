@@ -12,6 +12,32 @@ namespace Mississippi.Architecture.L0Tests;
 public sealed class AliasValidationHelperTests
 {
     /// <summary>
+    ///     Verifies that whitespace-padded exception rules still suppress the intended mismatch.
+    /// </summary>
+    [Fact]
+    public void AnalyzeAssembliesShouldApplyWhitespacePaddedExceptionRules()
+    {
+        AliasValidationSummary summary = AliasValidation.AnalyzeAssemblies(
+            [typeof(AliasValidationHelperTests).Assembly],
+            [
+                new(
+                    $"  {typeof(NamespaceMismatchFixture).FullName}  ",
+                    null,
+                    AliasExceptionClassification.NonContractHelper,
+                    "  Helper regression fixture.  "),
+            ]);
+        Assert.DoesNotContain(
+            summary.ConfigurationErrors,
+            static error => error.Contains("stale", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            summary.Mismatches,
+            mismatch => string.Equals(
+                mismatch.TypeFullName,
+                typeof(NamespaceMismatchFixture).FullName,
+                StringComparison.Ordinal));
+    }
+
+    /// <summary>
     ///     Verifies that method-level aliases alone do not create type-level mismatches.
     /// </summary>
     [Fact]

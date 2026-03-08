@@ -1,7 +1,3 @@
-// <copyright file="CrescentTestCollection.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
 namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>

@@ -1,7 +1,3 @@
-// <copyright file="CrescentFixture.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Brooks.Abstractions.Streaming;

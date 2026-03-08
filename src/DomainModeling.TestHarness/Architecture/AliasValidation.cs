@@ -42,9 +42,11 @@ public static class AliasValidation
             .OrderBy(static type => type.Assembly.GetName().Name, StringComparer.Ordinal)
             .ThenBy(static type => GetTypeFullName(type), StringComparer.Ordinal)
             .ToImmutableArray();
-        ImmutableArray<string> configurationErrors = ValidateExceptionRules(candidateTypes, configuredRules);
+        ImmutableArray<AliasValidationExceptionRule> normalizedRules =
+            configuredRules.Select(static rule => NormalizeRule(rule)).ToImmutableArray();
+        ImmutableArray<string> configurationErrors = ValidateExceptionRules(candidateTypes, normalizedRules);
         ImmutableArray<AliasValidationExceptionRule> activeExceptions = candidateTypes
-            .SelectMany(type => configuredRules.Where(rule => MatchesRule(type, rule)))
+            .SelectMany(type => normalizedRules.Where(rule => MatchesRule(type, rule)))
             .Distinct()
             .OrderBy(static rule => rule.TypeFullName ?? string.Empty, StringComparer.Ordinal)
             .ThenBy(static rule => rule.ExpectedAlias ?? string.Empty, StringComparer.Ordinal)
@@ -53,7 +55,7 @@ public static class AliasValidation
             .Select(static type => CreatePotentialMismatch(type))
             .Where(static mismatch => mismatch is not null)
             .Select(static mismatch => mismatch!)
-            .Where(mismatch => !configuredRules.Any(rule => MatchesRule(mismatch, rule)))
+            .Where(mismatch => !normalizedRules.Any(rule => MatchesRule(mismatch, rule)))
             .OrderBy(static mismatch => mismatch.AssemblyName, StringComparer.Ordinal)
             .ThenBy(static mismatch => mismatch.TypeFullName, StringComparer.Ordinal)
             .ThenBy(static mismatch => mismatch.MismatchCategory.ToString(), StringComparer.Ordinal)
@@ -204,6 +206,16 @@ public static class AliasValidation
         string.Equals(rule.TypeFullName, mismatch.TypeFullName, StringComparison.Ordinal) ||
         string.Equals(rule.ExpectedAlias, mismatch.ExpectedAlias, StringComparison.Ordinal);
 
+    private static AliasValidationExceptionRule NormalizeRule(
+        AliasValidationExceptionRule rule
+    ) =>
+        new(
+            NormalizeValue(rule.TypeFullName),
+            NormalizeValue(rule.ExpectedAlias),
+            rule.Classification,
+            rule.Reason.Trim(),
+            NormalizeValue(rule.Owner));
+
     private static string? NormalizeValue(
         string? value
     ) =>
@@ -239,9 +251,9 @@ public static class AliasValidation
         HashSet<string> seenKeys = new(StringComparer.Ordinal);
         foreach (AliasValidationExceptionRule configuredRule in configuredRules)
         {
-            string? normalizedTypeFullName = NormalizeValue(configuredRule.TypeFullName);
-            string? normalizedExpectedAlias = NormalizeValue(configuredRule.ExpectedAlias);
-            string normalizedReason = configuredRule.Reason?.Trim() ?? string.Empty;
+            string? normalizedTypeFullName = configuredRule.TypeFullName;
+            string? normalizedExpectedAlias = configuredRule.ExpectedAlias;
+            string normalizedReason = configuredRule.Reason;
             if (string.IsNullOrWhiteSpace(normalizedTypeFullName) && string.IsNullOrWhiteSpace(normalizedExpectedAlias))
             {
                 errors.Add("Alias exception rules must specify either TypeFullName or ExpectedAlias.");

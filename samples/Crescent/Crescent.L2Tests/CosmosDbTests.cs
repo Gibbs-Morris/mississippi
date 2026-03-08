@@ -1,7 +1,3 @@
-// <copyright file="CosmosDbTests.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
 using Newtonsoft.Json;
 
 
