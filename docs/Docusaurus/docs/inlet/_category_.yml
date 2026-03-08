@@ -1,0 +1,7 @@
+label: Inlet (Client/API/Runtime Sync)
+position: 10
+collapsed: true
+collapsible: true
+link:
+  type: doc
+  id: inlet-overview

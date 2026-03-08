@@ -1,0 +1,7 @@
+label: Brooks (Event Streams)
+position: 7
+collapsed: true
+collapsible: true
+link:
+  type: doc
+  id: brooks-overview
