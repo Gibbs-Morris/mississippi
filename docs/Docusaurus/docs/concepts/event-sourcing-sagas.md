@@ -91,3 +91,18 @@ At a high level:
 - [Building a Saga](../spring-sample/tutorials/building-a-saga.md) - Spring sample tutorial for a concrete money-transfer saga
 - [Building Projections](../spring-sample/tutorials/building-projections.md) - Tutorial for projections, including saga status projection generation
 - [Domain Registration Generators](../reference/domain-registration-generators.md) - Reference for generated host registration methods used by sample and framework hosts
+
+## Summary
+
+Mississippi sagas model long-running, event-driven workflows by combining explicit saga state, ordered steps, and optional compensation.
+
+They make workflow progress and failure modes visible through lifecycle events while leaving compensation behavior opt-in and domain-specific.
+
+Use sagas when you need to coordinate multiple aggregates or irreversible actions over time and want both progress and compensation to be explicit in your domain model.
+
+## Next Steps
+
+- [Saga Public APIs](../reference/event-sourcing-sagas-public-apis.md) - Read the detailed saga contracts, lifecycle types, and registration helpers.
+- [Building a Saga](../spring-sample/tutorials/building-a-saga.md) - Build a concrete saga end to end in the Spring sample.
+- [Building Projections](../spring-sample/tutorials/building-projections.md) - Surface saga state to clients with status projections.
+- [Domain Registration Generators](../reference/domain-registration-generators.md) - Review the generated host registration helpers used to wire sagas into hosts.

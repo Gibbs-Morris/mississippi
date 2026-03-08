@@ -1,6 +1,7 @@
 ---
 id: home
 title: Documentation
+sidebar_label: Home
 description: Start with the Mississippi docs set by choosing a verified learning path, concept page, or reference section.
 sidebar_position: 1
 slug: /
