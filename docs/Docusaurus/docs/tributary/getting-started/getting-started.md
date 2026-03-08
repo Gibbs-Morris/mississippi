@@ -44,9 +44,9 @@ By the end of this page, you should know whether your question belongs to reduce
 
 - You should be able to explain whether the issue is reduction-layer work or a neighboring layer above or below it.
 
-## What This Page Does Not Yet Provide
+## Current Scope
 
-This page does not yet publish a runnable reducer or snapshot quickstart. That material still needs to be verified and written.
+This page covers package selection and subsystem orientation. For runnable reducer examples, see the [Spring sample projections tutorial](../../samples/spring-sample/tutorials/building-projections.md).
 
 ## Summary
 

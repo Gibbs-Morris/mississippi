@@ -8,7 +8,7 @@ description: Resolve the common problem of starting in Brooks when the question 
 
 # Troubleshoot Brooks Scope And Entry-Point Confusion
 
-## Symptom
+## Symptoms
 
 You started in Brooks, but the question now appears to be about derived state, aggregate behavior, or another layer above event streams.
 

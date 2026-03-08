@@ -8,7 +8,7 @@ description: Resolve the common problem of starting in Inlet when the question i
 
 # Troubleshoot Inlet Scope And Entry-Point Confusion
 
-## Symptom
+## Symptoms
 
 You started in Inlet, but the question now appears to be only about one subsystem rather than cross-layer alignment.
 

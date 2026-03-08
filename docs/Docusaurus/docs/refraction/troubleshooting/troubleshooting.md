@@ -8,7 +8,7 @@ description: Resolve the common problem of starting in Refraction when the quest
 
 # Troubleshoot Refraction Scope And Entry-Point Confusion
 
-## Symptom
+## Symptoms
 
 You started in Refraction, but the question now appears to be about stores, reducers, effects, or another non-UI concern.
 

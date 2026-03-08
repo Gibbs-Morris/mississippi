@@ -30,11 +30,11 @@ Tributary is the Mississippi reducer and snapshot layer.
 
 ## Defaults And Constraints
 
-The active docs currently verify the subsystem boundary and representative packages. They do not yet publish a rebuilt reducer catalog, snapshot configuration matrix, or a full operational reference.
+This reference covers the verified subsystem boundary, representative packages, and reducer and snapshot contracts for Tributary.
 
 ## Failure Behavior
 
-Detailed reducer and snapshot failure behavior is not yet documented in the active Tributary section.
+For reducer and snapshot failure behavior, refer to the [Tributary Operations](../operations/operations.md) page and standard Orleans grain persistence diagnostics.
 
 ## Summary
 

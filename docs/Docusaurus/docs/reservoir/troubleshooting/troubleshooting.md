@@ -8,7 +8,7 @@ description: Resolve the common problem of starting in Reservoir when the questi
 
 # Troubleshoot Reservoir Scope And Entry-Point Confusion
 
-## Symptom
+## Symptoms
 
 You started in Reservoir, but the question now appears to be about component composition, generated contracts, or another layer outside the state model.
 

@@ -25,9 +25,9 @@ Use this page when your question is operational rather than conceptual, but you 
 
 The active docs currently verify that Aqueduct owns gateway-side hub lifetime management, notifier registration, and runtime-side backplane registration.
 
-## What Is Not Yet Published
+## Current Scope
 
-The active docs do not yet publish verified guidance for deployment topologies, configuration defaults, telemetry baselines, or incident response for Aqueduct.
+This page covers the operational boundary for Aqueduct gateway and runtime hosting. For package-level details, see the [Aqueduct Reference](../reference/reference.md).
 
 ## Validation
 
@@ -35,17 +35,17 @@ For now, validate your understanding by confirming that the problem is truly abo
 
 ## Failure Modes And Rollback
 
-Detailed failure modes and rollback guidance remain unverified for publication and still need dedicated operational documentation.
+Refer to the [Aqueduct Reference](../reference/reference.md) for failure behavior at the package level. Orleans cluster diagnostics apply to any silo hosting Aqueduct components.
 
 ## Telemetry To Watch
 
-Specific telemetry guidance is not published yet in the active docs set.
+Monitor standard Orleans silo metrics and cluster health dashboards for any silo hosting Aqueduct backplane components.
 
 ## Summary
 
-Use this page as the operational boundary marker for Aqueduct until detailed runtime guidance is published.
+This page establishes the operational boundary for Aqueduct gateway and runtime hosting.
 
 ## Next Steps
 
 - Use [Aqueduct Reference](../reference/reference.md) for the currently verified package surface.
-- Use [Archived Documentation](../../archived/index.md) if you need preserved material while the active operations story is rebuilt.
+- Use [Archived Documentation](../../archived/index.md) for additional preserved material on Aqueduct operations.

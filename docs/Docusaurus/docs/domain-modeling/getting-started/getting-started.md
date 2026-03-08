@@ -44,9 +44,9 @@ By the end of this page, you should know whether your question belongs to aggreg
 
 - You should be able to explain whether the issue is domain-facing behavior or lower-level infrastructure.
 
-## What This Page Does Not Yet Provide
+## Current Scope
 
-This page does not yet publish a runnable aggregate or saga quickstart. That material still needs to be verified and written.
+This page covers package selection and subsystem orientation. For runnable aggregate and saga examples, see the [Spring sample tutorials](../../samples/spring-sample/tutorials/building-an-aggregate.md).
 
 ## Summary
 

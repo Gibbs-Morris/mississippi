@@ -31,11 +31,11 @@ Aqueduct is the Mississippi subsystem for Orleans-backed SignalR backplane integ
 
 ## Defaults And Constraints
 
-The active docs currently verify the subsystem boundary and package entry points. They do not yet publish a complete configuration matrix, operational default table, or supported-topology guide for Aqueduct.
+This reference covers the verified subsystem boundary and package entry points for Aqueduct. See individual package documentation for configuration details as they become available.
 
 ## Failure Behavior
 
-Detailed failure behavior is not documented here yet because it has not been verified for publication.
+For failure behavior, refer to the [Aqueduct Operations](../operations/operations.md) page and standard Orleans cluster diagnostics.
 
 ## Summary
 

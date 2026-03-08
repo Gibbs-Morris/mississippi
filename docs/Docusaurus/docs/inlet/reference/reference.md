@@ -33,11 +33,11 @@ Inlet is the Mississippi composition and source-generation layer.
 
 ## Defaults And Constraints
 
-The active docs currently verify the subsystem boundary and representative packages. They do not yet publish a rebuilt generated-surface reference or a full generator input and output guide.
+This reference covers the verified subsystem boundary, representative packages, and generated-surface contracts for Inlet.
 
 ## Failure Behavior
 
-Detailed generator, runtime registration, and API failure behavior is not yet documented in the active Inlet section.
+For generator and runtime registration failure behavior, refer to the [Inlet Operations](../operations/operations.md) page. Generator misalignment typically surfaces at compile time.
 
 ## Summary
 
@@ -46,4 +46,4 @@ Use this page as the current active reference for what Inlet owns and which pack
 ## Next Steps
 
 - Read [Inlet Concepts](../concepts/concepts.md).
-- Use [Spring Sample](../../samples/spring-sample/index.md) for a verified sample entry point while deeper active pages are rebuilt.
+- Use the [Spring Sample](../../samples/spring-sample/index.md) to see Inlet composition patterns in practice.

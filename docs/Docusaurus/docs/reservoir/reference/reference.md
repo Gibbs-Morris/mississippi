@@ -30,11 +30,11 @@ Reservoir is the Mississippi client-state management subsystem.
 
 ## Defaults And Constraints
 
-The active docs currently verify the subsystem boundary and representative package entry points. They do not yet publish the rebuilt API-level reference or the full preserved guidance from the archived section.
+This reference covers the verified subsystem boundary and representative package entry points for Reservoir. See [Archived Reservoir Docs](../../archived/client-state-management/reservoir.md) for deeper API-level material.
 
 ## Failure Behavior
 
-Detailed runtime and API-level failure behavior is not yet republished in the active Reservoir section.
+For runtime and API-level failure behavior, refer to the [Archived Reservoir Docs](../../archived/client-state-management/reservoir.md) and the [Reservoir Concepts](../concepts/concepts.md) page.
 
 ## Summary
 

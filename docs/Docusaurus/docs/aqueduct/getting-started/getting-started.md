@@ -43,9 +43,9 @@ By the end of this page, you should know whether your question is about the Aque
 
 - You should be able to name the correct package boundary or decide that the question belongs in Inlet instead.
 
-## What This Page Does Not Yet Provide
+## Current Scope
 
-This getting-started page does not publish a runnable end-to-end quickstart yet. A verified Aqueduct-focused walkthrough still needs to be written.
+This page covers package selection and subsystem orientation. For runnable end-to-end examples, see the [Spring sample](../../samples/spring-sample/index.md).
 
 ## Summary
 

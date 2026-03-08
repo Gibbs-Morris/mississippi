@@ -43,9 +43,9 @@ By the end of this page, you should know whether your question is about stores, 
 
 - You should be able to identify the correct Reservoir package or conclude that the issue belongs in Refraction instead.
 
-## What This Page Does Not Yet Provide
+## Current Scope
 
-This page does not replace the deeper archived Reservoir material. Use the archived docs when you need preserved detailed guidance that has not yet been rebuilt in the active section.
+This page covers package selection and subsystem orientation. For detailed Reservoir guidance including testing and API reference, see the [archived Reservoir material](../../archived/client-state-management/reservoir.md).
 
 ## Summary
 

@@ -29,11 +29,11 @@ Refraction is the Mississippi Blazor UX layer organized around a state-down, eve
 
 ## Defaults And Constraints
 
-The active docs currently verify the interaction model and package boundaries. They do not yet publish a component catalog or complete API-level reference.
+This reference covers the verified interaction model and package boundaries for Refraction.
 
 ## Failure Behavior
 
-Detailed component-level or rendering failure behavior is not yet documented in the active docs.
+For component-level failure behavior, refer to standard Blazor rendering diagnostics and the [Refraction Concepts](../concepts/concepts.md) page.
 
 ## Summary
 

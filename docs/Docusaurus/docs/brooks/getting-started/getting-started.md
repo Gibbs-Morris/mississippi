@@ -44,9 +44,9 @@ By the end of this page, you should know whether your question belongs to event 
 
 - You should be able to state whether the issue is about streams, serialization, a provider seam, or a higher-level subsystem.
 
-## What This Page Does Not Yet Provide
+## Current Scope
 
-This page does not yet publish a runnable provider setup walkthrough. That material still needs to be verified and written.
+This page covers package selection and subsystem orientation. For runnable examples that include Brooks provider usage, see the [Spring sample](../../samples/spring-sample/index.md).
 
 ## Summary
 

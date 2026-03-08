@@ -42,9 +42,9 @@ By the end of this page, you should know whether your task is about state-down, 
 
 - You should be able to state whether the issue is UI contract first or state-management first.
 
-## What This Page Does Not Yet Provide
+## Current Scope
 
-This page does not publish a verified runnable UI quickstart yet. That walkthrough still needs to be written.
+This page covers package selection and subsystem orientation. For a runnable Blazor UI example using Refraction, see the [Spring sample](../../samples/spring-sample/index.md).
 
 ## Summary
 

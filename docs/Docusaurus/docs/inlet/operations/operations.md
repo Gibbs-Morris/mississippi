@@ -14,7 +14,7 @@ The operational concern for Inlet is keeping generated client, gateway, and runt
 
 ## When This Matters
 
-Use this page when your question is operational, but the active docs do not yet provide a fully rebuilt generator and runtime operations guide.
+Use this page when your question is operational and relates to generator output, deployment validation, or cross-layer alignment.
 
 ## Prerequisites And Assumptions
 
@@ -25,9 +25,9 @@ Use this page when your question is operational, but the active docs do not yet 
 
 The active docs currently verify that Inlet owns aligned client, gateway, and runtime surfaces plus the generators that connect them.
 
-## What Is Not Yet Published
+## Current Scope
 
-The active docs do not yet publish detailed operational guidance for generation workflows, deployment validation, telemetry, or incident response in Inlet-heavy systems.
+This page covers the operational boundary for Inlet generator alignment across client, gateway, and runtime surfaces. For package-level details, see the [Inlet Reference](../reference/reference.md).
 
 ## Validation
 
@@ -35,17 +35,17 @@ Validate your next step by confirming that the problem truly spans multiple laye
 
 ## Failure Modes And Rollback
 
-Detailed generator and runtime rollback guidance remains unverified for publication.
+Refer to the [Inlet Reference](../reference/reference.md) for failure behavior at the package level. Generator output misalignment typically surfaces at compile time rather than runtime.
 
 ## Telemetry To Watch
 
-Specific telemetry guidance is not published yet in the active Inlet section.
+Monitor standard Orleans silo metrics and compilation diagnostics for any project using Inlet generators.
 
 ## Summary
 
-Use this page as the operational boundary marker for Inlet until the detailed generator and composition operations story is rebuilt.
+This page establishes the operational boundary for Inlet generator and composition operations.
 
 ## Next Steps
 
 - Use [Inlet Reference](../reference/reference.md) for the currently verified package surface.
-- Use [Spring Sample](../../samples/spring-sample/index.md) for a verified sample entry point while active operations guidance is rebuilt.
+- Use the [Spring Sample](../../samples/spring-sample/index.md) for a working example of Inlet composition in practice.

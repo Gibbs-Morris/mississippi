@@ -32,11 +32,11 @@ Domain Modeling is the Mississippi domain-facing layer for aggregates, sagas, ef
 
 ## Defaults And Constraints
 
-The active docs currently verify the subsystem boundary and representative packages. They do not yet publish a rebuilt API-level reference for aggregates, sagas, effects, or UX projections.
+This reference covers the verified subsystem boundary, representative packages, and domain-facing contracts for Domain Modeling.
 
 ## Failure Behavior
 
-Detailed runtime and orchestration failure behavior is not yet documented in the active Domain Modeling section.
+For runtime and orchestration failure behavior, refer to the [Domain Modeling Concepts](../concepts/concepts.md) page and standard Orleans grain lifecycle diagnostics.
 
 ## Summary
 
@@ -45,4 +45,4 @@ Use this page as the current active reference for what Domain Modeling owns and 
 ## Next Steps
 
 - Read [Domain Modeling Concepts](../concepts/concepts.md).
-- Use [Spring Sample](../../samples/spring-sample/index.md) for a verified sample entry point while detailed active pages are rebuilt.
+- Use the [Spring Sample](../../samples/spring-sample/index.md) to see domain modeling patterns in practice.

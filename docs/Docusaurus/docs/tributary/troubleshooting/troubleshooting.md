@@ -8,7 +8,7 @@ description: Resolve the common problem of starting in Tributary when the questi
 
 # Troubleshoot Tributary Scope And Entry-Point Confusion
 
-## Symptom
+## Symptoms
 
 You started in Tributary, but the question now appears to be about raw event streams or domain behavior.
 

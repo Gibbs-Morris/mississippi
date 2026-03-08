@@ -43,9 +43,9 @@ By the end of this page, you should know whether your question belongs to genera
 
 - You should be able to state whether the issue is truly cross-layer or whether it belongs to one subsystem in isolation.
 
-## What This Page Does Not Yet Provide
+## Current Scope
 
-This page does not yet publish a runnable end-to-end generated walkthrough. Use the [Spring sample](../../samples/spring-sample/index.md) while that material is being rebuilt.
+This page covers package selection and subsystem orientation. For a runnable end-to-end example that uses Inlet generation, see the [Spring sample](../../samples/spring-sample/index.md).
 
 ## Summary
 

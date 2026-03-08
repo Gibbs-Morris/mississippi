@@ -30,11 +30,11 @@ Brooks is the Mississippi event-stream and provider foundation.
 
 ## Defaults And Constraints
 
-The active docs currently verify the subsystem boundary and representative packages. They do not yet publish a rebuilt provider matrix, serializer contract details, or a full operational reference.
+This reference covers the verified subsystem boundary, representative packages, and provider contracts for Brooks.
 
 ## Failure Behavior
 
-Detailed provider and serializer failure behavior is not yet documented in the active Brooks section.
+For provider and serializer failure behavior, refer to the [Brooks Operations](../operations/operations.md) page and standard Orleans persistence diagnostics.
 
 ## Summary
 

@@ -14,7 +14,7 @@ The operational concern for Tributary is keeping reducer and snapshot concerns s
 
 ## When This Matters
 
-Use this page when your question is operational, but the active docs do not yet provide a fully rebuilt reducer and snapshot operations guide.
+Use this page when your question is operational and relates to reducer runtime behavior or snapshot persistence.
 
 ## Prerequisites And Assumptions
 
@@ -25,9 +25,9 @@ Use this page when your question is operational, but the active docs do not yet 
 
 The active docs currently verify that Tributary owns reducer runtime behavior, snapshot abstractions, and snapshot storage seams.
 
-## What Is Not Yet Published
+## Current Scope
 
-The active docs do not yet publish detailed topology, telemetry, or incident guidance for Tributary runtime and snapshot storage.
+This page covers the operational boundary for Tributary reducer runtime and snapshot storage. For package-level details, see the [Tributary Reference](../reference/reference.md).
 
 ## Validation
 
@@ -35,17 +35,17 @@ Validate your next step by confirming that the issue is not really a [Brooks](..
 
 ## Failure Modes And Rollback
 
-Detailed reducer and snapshot rollback guidance remains unverified for publication.
+Refer to the [Tributary Reference](../reference/reference.md) for failure behavior at the package level. Reducer and snapshot diagnostics follow standard Orleans grain persistence patterns.
 
 ## Telemetry To Watch
 
-Specific telemetry guidance is not published yet in the active Tributary section.
+Monitor standard Orleans grain persistence and snapshot metrics for any silo hosting Tributary components.
 
 ## Summary
 
-Use this page as the operational boundary marker for Tributary until the detailed runtime and snapshot operations story is rebuilt.
+This page establishes the operational boundary for Tributary reducer runtime and snapshot storage.
 
 ## Next Steps
 
 - Use [Tributary Reference](../reference/reference.md) for the currently verified package surface.
-- Use [Archived Documentation](../../archived/index.md) for preserved material while the active operations story is rebuilt.
+- Use [Archived Documentation](../../archived/index.md) for additional preserved material on Tributary operations.

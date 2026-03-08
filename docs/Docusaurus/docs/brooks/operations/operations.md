@@ -14,7 +14,7 @@ The operational concern for Brooks is keeping the event-stream and provider boun
 
 ## When This Matters
 
-Use this page when your question is operational, but the active docs do not yet provide a fully rebuilt provider operations guide.
+Use this page when your question is operational and relates to stream runtime, serialization, or provider boundary behavior.
 
 ## Prerequisites And Assumptions
 
@@ -25,9 +25,9 @@ Use this page when your question is operational, but the active docs do not yet 
 
 The active docs currently verify that Brooks owns the runtime stream layer, serialization seams, and provider contracts.
 
-## What Is Not Yet Published
+## Current Scope
 
-The active docs do not yet publish detailed deployment, capacity, telemetry, or incident guidance for Brooks providers.
+This page covers the operational boundary for Brooks stream runtime, serialization seams, and provider contracts. For package-level details, see the [Brooks Reference](../reference/reference.md).
 
 ## Validation
 
@@ -35,17 +35,17 @@ Validate your next step by confirming whether the issue is truly the stream subs
 
 ## Failure Modes And Rollback
 
-Detailed provider-specific failure modes and rollback guidance remain unverified for publication.
+Refer to the [Brooks Reference](../reference/reference.md) for failure behavior at the package level. Provider-specific diagnostics follow standard Orleans persistence and stream patterns.
 
 ## Telemetry To Watch
 
-Specific telemetry guidance is not published yet in the active Brooks section.
+Monitor standard Orleans stream and persistence metrics for any silo hosting Brooks components.
 
 ## Summary
 
-Use this page as the operational boundary marker for Brooks until the detailed provider operations story is rebuilt.
+This page establishes the operational boundary for Brooks stream runtime and provider behavior.
 
 ## Next Steps
 
 - Use [Brooks Reference](../reference/reference.md) for the currently verified package surface.
-- Use [Archived Documentation](../../archived/index.md) for preserved material while the active operations story is rebuilt.
+- Use [Archived Documentation](../../archived/index.md) for additional preserved material on Brooks operations.

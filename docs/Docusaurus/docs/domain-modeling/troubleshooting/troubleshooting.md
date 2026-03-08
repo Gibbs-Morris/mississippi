@@ -8,7 +8,7 @@ description: Resolve the common problem of starting in Domain Modeling when the 
 
 # Troubleshoot Domain Modeling Scope And Entry-Point Confusion
 
-## Symptom
+## Symptoms
 
 You started in Domain Modeling, but the question now appears to be about event streams, reducers, or another lower-level subsystem.
 
