@@ -8,8 +8,6 @@ description: Current reference surface for Brooks packages and event-stream owne
 
 # Brooks Reference
 
-## Summary
-
 Brooks is the Mississippi event-stream and provider foundation.
 
 ## Applies To

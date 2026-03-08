@@ -8,8 +8,6 @@ description: Current reference surface for Inlet packages and cross-layer owners
 
 # Inlet Reference
 
-## Summary
-
 Inlet is the Mississippi composition and source-generation layer.
 
 ## Applies To

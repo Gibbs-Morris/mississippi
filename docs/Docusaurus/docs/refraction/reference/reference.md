@@ -8,8 +8,6 @@ description: Current reference surface for Refraction packages and UX-layer owne
 
 # Refraction Reference
 
-## Summary
-
 Refraction is the Mississippi Blazor UX layer organized around a state-down, events-up interaction model.
 
 ## Applies To

@@ -8,8 +8,6 @@ description: Current reference surface for Tributary packages and reducer and sn
 
 # Tributary Reference
 
-## Summary
-
 Tributary is the Mississippi reducer and snapshot layer.
 
 ## Applies To

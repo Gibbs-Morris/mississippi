@@ -8,8 +8,6 @@ description: Current reference surface for Reservoir packages and client-state o
 
 # Reservoir Reference
 
-## Summary
-
 Reservoir is the Mississippi client-state management subsystem.
 
 ## Applies To

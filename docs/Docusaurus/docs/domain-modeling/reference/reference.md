@@ -8,8 +8,6 @@ description: Current reference surface for Domain Modeling packages and domain-f
 
 # Domain Modeling Reference
 
-## Summary
-
 Domain Modeling is the Mississippi domain-facing layer for aggregates, sagas, effects, and UX projections.
 
 ## Applies To
