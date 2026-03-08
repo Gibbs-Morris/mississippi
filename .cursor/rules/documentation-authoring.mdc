@@ -25,6 +25,7 @@ Governing thought: Mississippi documentation exists to help engineers make corre
 - Tabs **MUST** be used only for true parallel variants such as operating system, language, or hosting mode. Why: Tabs hide information and should be reserved for real alternatives.
 - Admonitions **MUST** be used only when the note materially changes user behavior, and blank lines **MUST** be left inside them. Why: Admonitions should be high-signal and robust under formatters.
 - Mermaid **SHOULD** be preferred over screenshots for diagrams, and every diagram **MUST** include an introductory sentence and a clear main point. Why: Source diagrams are reviewable and easier to maintain.
+- Mermaid flowcharts with more than four nodes **MUST** use `flowchart TB` (top-to-bottom); `flowchart LR` **MAY** be used only when the diagram has four or fewer nodes. Why: Docs render at a fixed width and readers scroll vertically; wide LR diagrams overflow or become unreadably compressed.
 - Runnable code examples **MUST** come from verified samples, newly verified samples, or executable verification tied to tests or builds. Why: Sample drift is worse than no sample.
 - Authors **MUST** make prerequisites explicit, use plain language, avoid hype, and end pages with relevant next steps or related links. Why: Readers need clear action, not filler.
 - The distributed-systems checklist **MUST** be applied when a page describes runtime semantics, lifecycle, persistence, messaging, deployment, or failure behavior. Why: Those topics are where under-specified docs cause the most damage.

@@ -108,6 +108,18 @@ Every doc must follow this structure in order:
 - Use the exact heading casing shown here. Do not substitute `Recap`, `Related content`, or lowercase variants of `Next Steps`.
 - Optional appendix sections such as `## References` or `## Source Code` may follow those closing sections.
 
+## Section Entry Page Rules
+
+Section entry pages are landing pages for a documentation area.
+
+- They **must** orient the reader before listing ownership or links.
+- They **must not** read like placeholders, migration notes, or internal status updates.
+- They **should** explain what the area is for, what belongs there, when to start there, and how it fits the rest of Mississippi.
+- They **should** name representative package entry points when the area can be adopted independently.
+- They **should** use `## Current Coverage` instead of apology language when describing what is available today.
+
+Use [Section Entry Pages](./documentation-section-entry-pages.md) for the detailed landing-page standard.
+
 ## Markdown And Docusaurus Rules
 
 - Use `.md` unless the page genuinely needs MDX components.
@@ -128,7 +140,7 @@ flowchart LR
     C --> D[Verified claims]
 ```
 
-- Use `flowchart LR` by default.
+- Use `flowchart LR` only when the diagram has four or fewer nodes; use `flowchart TB` when it has more than four. Docs render at a fixed width and readers scroll vertically, so wide LR diagrams overflow or become unreadably compressed.
 - Keep diagrams small and focused on one main point.
 - Use labels that match Mississippi terminology.
 
@@ -196,6 +208,7 @@ Mississippi is in a hybrid transition.
 
 ## Next Steps
 
+- [Section Entry Pages](./documentation-section-entry-pages.md)
 - [Concept Pages](./documentation-concepts.md)
 - [Getting-Started Pages](./documentation-getting-started.md)
 - [Tutorial Pages](./documentation-tutorials.md)

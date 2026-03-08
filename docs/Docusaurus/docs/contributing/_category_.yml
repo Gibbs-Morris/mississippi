@@ -1,5 +1,7 @@
 label: Contributing
 position: 20
+collapsed: true
+collapsible: true
 link:
   type: generated-index
   title: Contributing
