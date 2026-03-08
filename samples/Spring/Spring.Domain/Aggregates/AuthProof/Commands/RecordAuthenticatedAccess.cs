@@ -3,7 +3,7 @@ using Mississippi.Inlet.Generators.Abstractions;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.AuthProof.Commands;
+namespace MississippiSamples.Spring.Domain.Aggregates.AuthProof.Commands;
 
 /// <summary>
 ///     Command used to prove authenticated-only generated endpoint access.
@@ -11,5 +11,5 @@ namespace Spring.Domain.Aggregates.AuthProof.Commands;
 [GenerateCommand(Route = "authenticated")]
 [GenerateAuthorization]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.AuthProof.Commands.RecordAuthenticatedAccess")]
+[Alias("MississippiSamples.Spring.Domain.Aggregates.AuthProof.Commands.RecordAuthenticatedAccess")]
 public sealed record RecordAuthenticatedAccess;

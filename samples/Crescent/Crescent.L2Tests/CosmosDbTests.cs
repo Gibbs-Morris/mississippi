@@ -1,11 +1,7 @@
-// <copyright file="CosmosDbTests.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
 using Newtonsoft.Json;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Integration tests for Cosmos DB operations using the Crescent emulator.

@@ -1,13 +1,9 @@
-using Crescent.Crescent.L2Tests.Domain.Counter;
-using Crescent.Crescent.L2Tests.Domain.Counter.Commands;
-using Crescent.Crescent.L2Tests.Domain.CounterSummary;
-
 using Mississippi.DomainModeling.Abstractions;
 
 using Xunit.Abstractions;
 
 
-namespace Crescent.Crescent.L2Tests;
+namespace MississippiSamples.Crescent.L2Tests;
 
 /// <summary>
 ///     Tests validating aggregate lifecycle, concurrency, throughput, and validation.

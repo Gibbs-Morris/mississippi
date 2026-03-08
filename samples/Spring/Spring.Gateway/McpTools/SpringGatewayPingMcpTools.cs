@@ -4,10 +4,10 @@ using System.ComponentModel;
 using ModelContextProtocol.Server;
 
 
-namespace Spring.Gateway.McpTools;
+namespace MississippiSamples.Spring.Gateway.McpTools;
 
 /// <summary>
-///     Exposes lightweight diagnostic MCP tools for Spring.Gateway.
+///     Exposes lightweight diagnostic MCP tools for MississippiSamples.Spring.Gateway.
 /// </summary>
 [McpServerToolType]
 public sealed class SpringGatewayPingMcpTools
@@ -24,10 +24,14 @@ public sealed class SpringGatewayPingMcpTools
     private TimeProvider TimeProvider { get; }
 
     /// <summary>
-    ///     Confirms that Spring.Gateway is alive and reachable via MCP.
+    ///     Confirms that MississippiSamples.Spring.Gateway is alive and reachable via MCP.
     /// </summary>
-    /// <returns>A status string with gateway name and current UTC time, confirming Spring.Gateway is online.</returns>
+    /// <returns>
+    ///     A status string with gateway name and current UTC time, confirming MississippiSamples.Spring.Gateway is
+    ///     online.
+    /// </returns>
     [McpServerTool(Name = "spring_gateway_ping", Title = "Spring Gateway Ping", ReadOnly = true, Idempotent = true)]
-    [Description("Connectivity probe — returns a status message confirming Spring.Gateway is alive and reachable.")]
-    public string Ping() => $"Spring.Gateway is online ({TimeProvider.GetUtcNow().UtcDateTime:u})";
+    [Description(
+        "Connectivity probe — returns a status message confirming MississippiSamples.Spring.Gateway is alive and reachable.")]
+    public string Ping() => $"MississippiSamples.Spring.Gateway is online ({TimeProvider.GetUtcNow().UtcDateTime:u})";
 }

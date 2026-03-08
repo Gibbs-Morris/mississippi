@@ -1,7 +1,7 @@
 using Mississippi.Reservoir.Abstractions.Actions;
 
 
-namespace Spring.Client.Features.DualEntitySelection;
+namespace MississippiSamples.Spring.Client.Features.DualEntitySelection;
 
 /// <summary>
 ///     Action dispatched to set the account B entity ID.

@@ -761,8 +761,7 @@
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
       "Mississippi.Aqueduct.Gateway": {
@@ -790,8 +789,7 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Streaming": "[10.0.1, )"
         }
       },
       "Mississippi.Brooks.Runtime": {
@@ -889,6 +887,17 @@
           "Mississippi.Tributary.Runtime": "[1.0.0, )"
         }
       },
+      "Mississippi.DomainModeling.TestHarness": {
+        "type": "Project",
+        "dependencies": {
+          "FluentAssertions": "[8.8.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
+          "Microsoft.Orleans.Sdk": "[10.0.1, )",
+          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Abstractions": "[1.0.0, )",
+          "Moq": "[4.20.72, )"
+        }
+      },
       "Mississippi.Inlet.Abstractions": {
         "type": "Project"
       },
@@ -917,7 +926,6 @@
         "type": "Project",
         "dependencies": {
           "Mississippi.Aqueduct.Gateway": "[1.0.0, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Runtime": "[1.0.0, )"
         }
@@ -1027,6 +1035,12 @@
         "requested": "[2.8.0, )",
         "resolved": "2.8.0",
         "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
+      },
+      "FluentAssertions": {
+        "type": "CentralTransitive",
+        "requested": "[8.8.0, )",
+        "resolved": "8.8.0",
+        "contentHash": "m0kwcqBwvVel03FuMa7Ozo/oTaxYbjeNlcOhQFkyQpwX/8wks6RNl/Jnn58DCZVs6c2oG1RsCZw7HfKSaxLm3w=="
       },
       "Microsoft.AspNetCore.Components": {
         "type": "CentralTransitive",

@@ -1,13 +1,13 @@
 using Orleans;
 
 
-namespace Spring.Domain.Projections.BankAccountLedger;
+namespace MississippiSamples.Spring.Domain.Projections.BankAccountLedger;
 
 /// <summary>
 ///     Identifies the type of ledger entry.
 /// </summary>
 [GenerateSerializer]
-[Alias("Spring.Domain.Projections.BankAccountLedger.LedgerEntryType")]
+[Alias("MississippiSamples.Spring.Domain.Projections.BankAccountLedger.LedgerEntryType")]
 public enum LedgerEntryType
 {
     /// <summary>

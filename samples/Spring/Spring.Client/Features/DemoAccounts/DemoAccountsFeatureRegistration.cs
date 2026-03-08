@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Reservoir.Core;
 
 
-namespace Spring.Client.Features.DemoAccounts;
+namespace MississippiSamples.Spring.Client.Features.DemoAccounts;
 
 /// <summary>
 ///     Extension methods for registering the demo accounts feature.

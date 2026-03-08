@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <ItemGroup>
+        <ProjectReference Include="..\Crescent.L2Tests\Crescent.L2Tests.csproj" />
+        <ProjectReference Include="..\..\..\src\DomainModeling.TestHarness\DomainModeling.TestHarness.csproj" />
+    </ItemGroup>
+</Project>

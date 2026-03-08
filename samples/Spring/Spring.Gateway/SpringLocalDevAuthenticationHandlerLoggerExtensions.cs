@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 
 
-namespace Spring.Gateway;
+namespace MississippiSamples.Spring.Gateway;
 
 /// <summary>
 ///     LoggerExtensions methods for <see cref="SpringLocalDevAuthenticationHandler" />.

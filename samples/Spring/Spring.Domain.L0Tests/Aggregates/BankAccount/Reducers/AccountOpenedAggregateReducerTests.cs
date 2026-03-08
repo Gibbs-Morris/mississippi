@@ -1,9 +1,9 @@
-using Spring.Domain.Aggregates.BankAccount;
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Aggregates.BankAccount.Reducers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Aggregates.BankAccount.Reducers;
+namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.BankAccount.Reducers;
 
 /// <summary>
 ///     Tests for <see cref="AccountOpenedReducer" /> for the aggregate.

@@ -4,7 +4,7 @@ using System.Threading;
 using Projects;
 
 
-namespace Spring.L2Tests;
+namespace MississippiSamples.Spring.L2Tests;
 
 /// <summary>
 ///     xUnit fixture that starts the Spring AppHost with Azurite emulator and Playwright browser.

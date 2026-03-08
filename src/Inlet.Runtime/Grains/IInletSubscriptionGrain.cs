@@ -30,7 +30,7 @@ namespace Mississippi.Inlet.Runtime.Grains;
 ///         (path, entityId, newVersion) - never exposing brook details.
 ///     </para>
 /// </remarks>
-[Alias("Mississippi.Inlet.Orleans.IInletSubscriptionGrain")]
+[Alias("Mississippi.Inlet.Runtime.Grains.IInletSubscriptionGrain")]
 public interface IInletSubscriptionGrain : IGrainWithStringKey
 {
     /// <summary>

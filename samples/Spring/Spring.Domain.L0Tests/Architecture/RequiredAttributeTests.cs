@@ -4,12 +4,12 @@ using System.Reflection;
 
 using Mississippi.Brooks.Abstractions.Attributes;
 
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
+
 using Orleans;
 
-using Spring.Domain.Aggregates.BankAccount;
 
-
-namespace Spring.Domain.L0Tests.Architecture;
+namespace MississippiSamples.Spring.Domain.L0Tests.Architecture;
 
 /// <summary>
 ///     Architecture tests validating that domain types have required attributes.

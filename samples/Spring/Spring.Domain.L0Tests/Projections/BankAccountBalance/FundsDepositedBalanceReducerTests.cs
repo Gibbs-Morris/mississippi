@@ -1,9 +1,9 @@
-using Spring.Domain.Aggregates.BankAccount.Events;
-using Spring.Domain.Projections.BankAccountBalance;
-using Spring.Domain.Projections.BankAccountBalance.Reducers;
+using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
+using MississippiSamples.Spring.Domain.Projections.BankAccountBalance.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Projections.BankAccountBalance;
+namespace MississippiSamples.Spring.Domain.L0Tests.Projections.BankAccountBalance;
 
 /// <summary>
 ///     Tests for <see cref="FundsDepositedBalanceReducer" />.

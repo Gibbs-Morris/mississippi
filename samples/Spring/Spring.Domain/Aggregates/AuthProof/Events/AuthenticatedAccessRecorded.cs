@@ -3,12 +3,12 @@ using Mississippi.Brooks.Abstractions.Attributes;
 using Orleans;
 
 
-namespace Spring.Domain.Aggregates.AuthProof.Events;
+namespace MississippiSamples.Spring.Domain.Aggregates.AuthProof.Events;
 
 /// <summary>
 ///     Event raised when authenticated-only endpoint access is authorized.
 /// </summary>
 [EventStorageName("SPRING", "AUTHPROOF", "AUTHENTICATEDACCESSRECORDED")]
 [GenerateSerializer]
-[Alias("Spring.Domain.Aggregates.AuthProof.Events.AuthenticatedAccessRecorded")]
+[Alias("MississippiSamples.Spring.Domain.Aggregates.AuthProof.Events.AuthenticatedAccessRecorded")]
 internal sealed record AuthenticatedAccessRecorded;

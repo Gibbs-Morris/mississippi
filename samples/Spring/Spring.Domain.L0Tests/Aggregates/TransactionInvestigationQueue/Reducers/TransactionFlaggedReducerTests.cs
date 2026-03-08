@@ -1,9 +1,9 @@
-using Spring.Domain.Aggregates.TransactionInvestigationQueue;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
-using Spring.Domain.Aggregates.TransactionInvestigationQueue.Reducers;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue.Events;
+using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue.Reducers;
 
 
-namespace Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Reducers;
+namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.TransactionInvestigationQueue.Reducers;
 
 /// <summary>
 ///     Tests for <see cref="TransactionFlaggedReducer" />.

@@ -7,13 +7,13 @@ using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.Reducers;
 using Mississippi.Reservoir.Core;
 
-using Spring.Client.Features.BankAccountBalance.Dtos;
-using Spring.Client.Features.BankAccountLedger.Dtos;
-using Spring.Client.Features.FlaggedTransactions.Dtos;
-using Spring.Client.Features.MoneyTransferStatus.Dtos;
+using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
+using MississippiSamples.Spring.Client.Features.BankAccountLedger.Dtos;
+using MississippiSamples.Spring.Client.Features.FlaggedTransactions.Dtos;
+using MississippiSamples.Spring.Client.Features.MoneyTransferStatus.Dtos;
 
 
-namespace Spring.Client.Features;
+namespace MississippiSamples.Spring.Client.Features;
 
 /// <summary>
 ///     Extension methods for registering projection reducers.

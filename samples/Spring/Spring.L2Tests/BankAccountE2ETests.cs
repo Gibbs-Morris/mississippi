@@ -1,7 +1,7 @@
-using Spring.L2Tests.Pages;
+using MississippiSamples.Spring.L2Tests.Pages;
 
 
-namespace Spring.L2Tests;
+namespace MississippiSamples.Spring.L2Tests;
 
 /// <summary>
 ///     End-to-end tests for the Bank Account Demo using Playwright.

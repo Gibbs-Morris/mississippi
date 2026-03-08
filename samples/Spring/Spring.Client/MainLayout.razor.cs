@@ -4,7 +4,7 @@ using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.SignalRConnection;
 
 
-namespace Spring.Client;
+namespace MississippiSamples.Spring.Client;
 
 /// <summary>
 ///     Main layout shell for the Spring application.
