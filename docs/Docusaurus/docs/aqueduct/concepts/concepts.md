@@ -6,10 +6,6 @@ description: Understand Aqueduct as Mississippi's Orleans-backed SignalR backpla
 
 # Aqueduct Concepts
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Problem This Area Solves
 
 Aqueduct exists for the case where Orleans-driven events and real-time delivery must work across multiple hosts without forcing application code to manage SignalR backplane mechanics directly.
@@ -36,6 +32,17 @@ Within Mississippi, Inlet can compose with Aqueduct for real-time projection del
 - Aggregate, saga, or projection behavior
 - Client-side state management
 - Full generated API and subscription alignment across the stack
+
+## What This Page Guarantees
+
+- It defines Aqueduct as the backplane and push-delivery boundary between Orleans and SignalR in the active docs set.
+- It identifies the neighboring Mississippi areas readers should switch to when the problem is above or outside that boundary.
+
+## What This Page Does Not Claim
+
+- Delivery guarantees, ordering guarantees, or retry semantics
+- Supported deployment topologies or operational defaults
+- Full API, configuration, or runtime behavior documentation
 
 ## Trade-Off To Keep In Mind
 

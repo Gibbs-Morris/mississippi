@@ -8,10 +8,6 @@ description: Inlet keeps Mississippi client, HTTP, and runtime surfaces aligned 
 
 # Inlet
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Overview
 
 Inlet is the Mississippi composition layer.
@@ -51,7 +47,7 @@ Start here when you need to understand generated projection, API, and registrati
 
 ## Current Coverage
 
-This section now includes typed holding pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
+This section now includes typed boundary pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
 
 They establish the composition and source-generation boundary while deeper generated-surface documentation is still being written.
 

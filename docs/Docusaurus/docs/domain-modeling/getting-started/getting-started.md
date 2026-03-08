@@ -6,10 +6,6 @@ description: Start with Domain Modeling by confirming that your question is abou
 
 # Domain Modeling Getting Started
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Outcome
 
 Use this page to confirm whether Domain Modeling is the correct subsystem and which package boundary to inspect first.
@@ -23,6 +19,12 @@ By the end of this page, you should know whether your question belongs to aggreg
 - Read the [Domain Modeling overview](../index.md).
 - Read [Tributary](../../tributary/index.md) if the question may actually be about reduction or snapshots.
 
+## First Verified Success
+
+1. Read the [Domain Modeling overview](../index.md) and confirm the problem is about aggregates, sagas, effects, or UX projections.
+2. Open [Domain Modeling Reference](../reference/reference.md) and identify the package boundary that matches the work.
+3. If you need a verified end-to-end example immediately, continue into the [Spring Sample](../../samples/spring-sample/index.md).
+
 ## Choose Your Starting Point
 
 - Start with `Mississippi.DomainModeling.Abstractions` for the domain-facing contracts.
@@ -35,6 +37,10 @@ By the end of this page, you should know whether your question belongs to aggreg
 - Stay in Domain Modeling when the concern is business behavior or UX projection behavior.
 - Move to [Tributary](../../tributary/index.md) when the concern is reduction and snapshots.
 - Move to [Brooks](../../brooks/index.md) when the concern is raw event streams.
+
+## Verify The Result
+
+- You should be able to explain whether the issue is domain-facing behavior or lower-level infrastructure.
 
 ## What This Page Does Not Yet Provide
 

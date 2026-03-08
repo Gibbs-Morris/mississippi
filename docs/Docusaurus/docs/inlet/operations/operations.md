@@ -6,10 +6,6 @@ description: Current operational scope for Inlet and the evidence gaps that stil
 
 # Inlet Operations
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Operational Goal
 
 The operational concern for Inlet is keeping generated client, gateway, and runtime surfaces aligned across the stack.

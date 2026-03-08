@@ -8,10 +8,6 @@ description: Brooks provides event streams and the storage surfaces used to pers
 
 # Brooks
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Overview
 
 Brooks is the Mississippi event-streaming and event-storage foundation.
@@ -50,7 +46,7 @@ Start here when you need to understand the event-stream substrate, not the highe
 
 ## Current Coverage
 
-This section now includes typed holding pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
+This section now includes typed boundary pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
 
 They establish the stream and provider boundary while deeper storage-provider documentation is still being written.
 

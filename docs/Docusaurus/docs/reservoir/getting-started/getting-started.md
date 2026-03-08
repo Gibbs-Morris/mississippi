@@ -6,10 +6,6 @@ description: Start with Reservoir by confirming that your question is about the 
 
 # Reservoir Getting Started
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Outcome
 
 Use this page to confirm whether Reservoir is the correct subsystem and which package boundary to inspect first.
@@ -23,6 +19,12 @@ By the end of this page, you should know whether your question is about stores, 
 - Read the [Reservoir overview](../index.md).
 - Read [Refraction](../../refraction/index.md) if the UI layer boundary is still unclear.
 
+## First Verified Success
+
+1. Read the [Reservoir overview](../index.md) and confirm the question is about state transitions, reducers, selectors, effects, middleware, or testing.
+2. Open [Reservoir Reference](../reference/reference.md) and identify the package boundary that matches the work.
+3. If you need deeper preserved material immediately, jump to [Archived Reservoir Docs](../../archived/client-state-management/reservoir.md).
+
 ## Choose Your Starting Point
 
 - Start with `Mississippi.Reservoir.Abstractions` when you need the core state-management contracts.
@@ -34,6 +36,10 @@ By the end of this page, you should know whether your question is about stores, 
 
 - Stay in Reservoir when the concern is the state-management model itself.
 - Move to [Refraction](../../refraction/index.md) when the concern is primarily the Blazor UX contract.
+
+## Verify The Result
+
+- You should be able to identify the correct Reservoir package or conclude that the issue belongs in Refraction instead.
 
 ## What This Page Does Not Yet Provide
 

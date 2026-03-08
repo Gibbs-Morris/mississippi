@@ -6,10 +6,6 @@ description: Understand Refraction as Mississippi's state-down, events-up Blazor
 
 # Refraction Concepts
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Problem This Area Solves
 
 Refraction exists to keep Blazor rendering concerns and interaction contracts separate from application state and domain behavior.
@@ -32,6 +28,17 @@ This model keeps components reusable and keeps application logic outside the com
 
 - The primary client-state store model
 - Reducers, selectors, middleware, and effects as a subsystem
+
+## What This Page Guarantees
+
+- It defines Refraction as the Blazor UX layer organized around the state-down, events-up interaction model.
+- It identifies Reservoir as the neighboring subsystem when the problem is really the state model rather than the UI contract.
+
+## What This Page Does Not Claim
+
+- A complete component catalog or API reference
+- Rendering, performance, or lifecycle guarantees
+- Full guidance for every supported application composition pattern
 
 ## Trade-Off To Keep In Mind
 

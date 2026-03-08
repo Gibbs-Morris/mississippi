@@ -8,10 +8,6 @@ description: Domain Modeling provides the aggregate, saga, and UX projection sur
 
 # Domain Modeling
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Overview
 
 Domain Modeling is the Mississippi area where aggregates, sagas, event effects, and UX projections are expressed.
@@ -50,7 +46,7 @@ Start here when the question is about aggregates, sagas, effects, or UX projecti
 
 ## Current Coverage
 
-This section now includes typed holding pages for getting started, concepts, package selection, reference, and troubleshooting.
+This section now includes typed boundary pages for getting started, concepts, package selection, reference, and troubleshooting.
 
 They make the domain-facing boundary easier to navigate while deeper aggregate, saga, effect, and UX projection pages are still being written.
 

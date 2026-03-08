@@ -6,10 +6,6 @@ description: Start with Refraction by confirming that your question is about Bla
 
 # Refraction Getting Started
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Outcome
 
 Use this page to confirm whether Refraction is the right place to start and which package boundary matches your UI question.
@@ -23,6 +19,12 @@ By the end of this page, you should know whether your task is about state-down, 
 - Read the [Refraction overview](../index.md).
 - If the task involves stores, reducers, or effects, also read [Reservoir](../../reservoir/index.md).
 
+## First Verified Success
+
+1. Read the [Refraction overview](../index.md) and confirm the problem is about the UI interaction contract rather than the state-management model.
+2. Open [Refraction Reference](../reference/reference.md) and identify which Refraction package boundary matches the question you are trying to answer.
+3. If the core issue is really store behavior, switch to [Reservoir](../../reservoir/index.md) before going further.
+
 ## Choose Your Starting Point
 
 - Start with `Mississippi.Refraction.Abstractions` when you need the contracts behind the UI layer.
@@ -33,6 +35,10 @@ By the end of this page, you should know whether your task is about state-down, 
 
 - Stay in Refraction when the concern is component interaction contracts and UI composition.
 - Move to [Reservoir](../../reservoir/index.md) when the concern is the store, reducers, effects, or selectors.
+
+## Verify The Result
+
+- You should be able to state whether the issue is UI contract first or state-management first.
 
 ## What This Page Does Not Yet Provide
 

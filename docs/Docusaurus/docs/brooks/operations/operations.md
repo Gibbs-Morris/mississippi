@@ -6,10 +6,6 @@ description: Current operational scope for Brooks and the evidence gaps that sti
 
 # Brooks Operations
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Operational Goal
 
 The operational concern for Brooks is keeping the event-stream and provider boundary clear across runtime, serialization, and storage concerns.

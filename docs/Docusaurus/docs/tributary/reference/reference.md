@@ -6,10 +6,6 @@ description: Current reference surface for Tributary packages and reducer and sn
 
 # Tributary Reference
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Summary
 
 Tributary is the Mississippi reducer and snapshot layer.

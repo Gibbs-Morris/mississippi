@@ -6,10 +6,6 @@ description: Current reference surface for Inlet packages and cross-layer owners
 
 # Inlet Reference
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Summary
 
 Inlet is the Mississippi composition and source-generation layer.

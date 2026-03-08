@@ -6,10 +6,6 @@ description: Select the correct Reservoir package based on whether you need cont
 
 # How To Choose A Reservoir Package Entry Point
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## When To Use This Page
 
 Use this page when you know the problem belongs to Reservoir but you still need the correct package boundary.

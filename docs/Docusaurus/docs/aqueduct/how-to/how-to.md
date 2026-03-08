@@ -6,10 +6,6 @@ description: Select the correct Aqueduct package based on whether you need contr
 
 # How To Choose An Aqueduct Package Entry Point
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## When To Use This Page
 
 Use this page when you know the problem belongs to Aqueduct but you still need to choose the first package or documentation path.

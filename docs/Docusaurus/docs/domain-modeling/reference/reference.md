@@ -6,10 +6,6 @@ description: Current reference surface for Domain Modeling packages and domain-f
 
 # Domain Modeling Reference
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Summary
 
 Domain Modeling is the Mississippi domain-facing layer for aggregates, sagas, effects, and UX projections.

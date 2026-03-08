@@ -6,10 +6,6 @@ description: Understand Reservoir as Mississippi's client-state management subsy
 
 # Reservoir Concepts
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Problem This Area Solves
 
 Reservoir exists to keep client-side state transitions explicit, predictable, and testable instead of scattering state changes through UI callbacks and transport glue.
@@ -34,6 +30,17 @@ Within Mississippi applications, it often sits beneath [Refraction](../../refrac
 
 - The Blazor UX component contract itself
 - Domain behavior or event-stream persistence
+
+## What This Page Guarantees
+
+- It defines Reservoir as the client-state subsystem responsible for stores, reducers, selectors, effects, middleware, and related integration.
+- It identifies the line between Reservoir and neighboring UI or cross-layer composition concerns.
+
+## What This Page Does Not Claim
+
+- Full API-level behavioral reference for the store pipeline
+- Performance characteristics or operational guarantees
+- Replacement of the preserved deep detail that still lives in the archived docs set
 
 ## Trade-Off To Keep In Mind
 

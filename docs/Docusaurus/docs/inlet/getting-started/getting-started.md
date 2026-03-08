@@ -6,10 +6,6 @@ description: Start with Inlet by confirming that your question is about generate
 
 # Inlet Getting Started
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Outcome
 
 Use this page to confirm whether Inlet is the correct subsystem and which package boundary to inspect first.
@@ -23,6 +19,12 @@ By the end of this page, you should know whether your question belongs to genera
 - Read the [Inlet overview](../index.md).
 - Read [Aqueduct](../../aqueduct/index.md) if the question may actually be only about the backplane.
 
+## First Verified Success
+
+1. Read the [Inlet overview](../index.md) and confirm the problem spans client, gateway, and runtime surfaces together.
+2. Open [Inlet Reference](../reference/reference.md) and identify which package boundary matches the work.
+3. If you need a verified end-to-end path immediately, continue into the [Spring Sample](../../samples/spring-sample/index.md).
+
 ## Choose Your Starting Point
 
 - Start with `Mississippi.Inlet.Abstractions` for shared projection-path and metadata contracts.
@@ -34,6 +36,10 @@ By the end of this page, you should know whether your question belongs to genera
 
 - Stay in Inlet when the concern is cross-layer alignment driven by source generation and runtime wiring.
 - Move to [Aqueduct](../../aqueduct/index.md), [Reservoir](../../reservoir/index.md), or [Domain Modeling](../../domain-modeling/index.md) when the issue is isolated to one of those layers.
+
+## Verify The Result
+
+- You should be able to state whether the issue is truly cross-layer or whether it belongs to one subsystem in isolation.
 
 ## What This Page Does Not Yet Provide
 

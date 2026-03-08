@@ -6,10 +6,6 @@ description: Resolve the common problem of starting in Aqueduct when the questio
 
 # Troubleshoot Aqueduct Scope And Entry-Point Confusion
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Symptom
 
 You started in Aqueduct, but the question now seems to involve projections, domain behavior, or client concerns.

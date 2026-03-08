@@ -8,10 +8,6 @@ description: Refraction is a Blazor UX component library built around a state-do
 
 # Refraction
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Overview
 
 Refraction is the Mississippi UX component library for Blazor applications.
@@ -48,7 +44,7 @@ Start here when you need to understand the Mississippi UI layer, the state-down 
 
 ## Current Coverage
 
-This section now includes typed holding pages for getting started, concepts, package selection, reference, and troubleshooting.
+This section now includes typed boundary pages for getting started, concepts, package selection, reference, and troubleshooting.
 
 They make the Refraction boundary explicit while deeper component and pattern documentation is still being written.
 

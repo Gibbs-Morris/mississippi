@@ -8,10 +8,6 @@ description: Aqueduct provides the Orleans-backed SignalR backplane used for dis
 
 # Aqueduct
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Overview
 
 Aqueduct is the Mississippi area responsible for using Orleans as a SignalR backplane and push-delivery layer.
@@ -50,7 +46,7 @@ Start here when you need to understand Mississippi's real-time delivery layer, t
 
 ## Current Coverage
 
-This section now includes typed holding pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
+This section now includes typed boundary pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
 
 They establish the correct reading paths and subsystem boundaries without inventing unverified runtime detail.
 

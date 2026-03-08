@@ -6,10 +6,6 @@ description: Choose Refraction when the problem is the UI interaction contract a
 
 # How To Decide Between Refraction And Reservoir
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## When To Use This Page
 
 Use this page when a client-side question spans both UI composition and state management and you need the correct primary entry point.

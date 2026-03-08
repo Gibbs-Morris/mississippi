@@ -6,10 +6,6 @@ description: Understand Inlet as Mississippi's composition and source-generation
 
 # Inlet Concepts
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Problem This Area Solves
 
 Inlet exists to keep client, gateway, and runtime surfaces aligned so teams do not have to rebuild the same transport and projection surface by hand.
@@ -35,6 +31,17 @@ Inlet is the composition layer that ties together [Aqueduct](../../aqueduct/inde
 - The underlying real-time backplane by itself
 - The domain behavior layer by itself
 - The client-state model by itself
+
+## What This Page Guarantees
+
+- It defines Inlet as the cross-layer composition boundary that aligns client, gateway, and runtime surfaces.
+- It identifies the single-subsystem areas readers should switch to when the problem does not actually span multiple layers.
+
+## What This Page Does Not Claim
+
+- Full generated output reference or generator contract reference
+- Runtime registration guarantees, deployment guarantees, or operational defaults
+- Complete end-to-end walkthrough material beyond the verified sample links provided here
 
 ## Trade-Off To Keep In Mind
 

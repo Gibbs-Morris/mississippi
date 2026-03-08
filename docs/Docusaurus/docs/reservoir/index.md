@@ -8,10 +8,6 @@ description: Reservoir provides Redux-style client state management for Mississi
 
 # Reservoir
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Overview
 
 Reservoir is the Mississippi client state-management library.
@@ -49,7 +45,7 @@ Start here when you need the client-state model itself: store behavior, reducers
 
 ## Current Coverage
 
-The active section now includes typed holding pages for getting started, concepts, package selection, reference, and troubleshooting.
+The active section now includes typed boundary pages for getting started, concepts, package selection, reference, and troubleshooting.
 
 The archived section still contains the deepest preserved material while the active Reservoir pages are rebuilt around the new information architecture.
 

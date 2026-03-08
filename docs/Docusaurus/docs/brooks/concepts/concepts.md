@@ -6,10 +6,6 @@ description: Understand Brooks as Mississippi's event-stream and provider founda
 
 # Brooks Concepts
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Problem This Area Solves
 
 Brooks exists to make event streams, serialization seams, and storage-provider boundaries explicit instead of burying them inside higher-level domain code.
@@ -32,6 +28,17 @@ Brooks sits below [Tributary](../../tributary/index.md) and [Domain Modeling](..
 
 - Reducers and snapshots
 - Aggregate, saga, or projection behavior
+
+## What This Page Guarantees
+
+- It defines Brooks as the event-stream substrate and provider-seam boundary in Mississippi.
+- It identifies the layers above Brooks that readers should move to when the problem is no longer the stream foundation itself.
+
+## What This Page Does Not Claim
+
+- Storage-provider guarantees, serializer guarantees, or compatibility guarantees
+- Full provider configuration or deployment guidance
+- Detailed failure-mode or performance documentation
 
 ## Trade-Off To Keep In Mind
 

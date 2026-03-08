@@ -6,10 +6,6 @@ description: Understand Domain Modeling as Mississippi's domain-facing aggregate
 
 # Domain Modeling Concepts
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Problem This Area Solves
 
 Domain Modeling exists to let application code express business behavior directly instead of encoding it in lower-level stream, transport, or client infrastructure.
@@ -34,6 +30,17 @@ Domain Modeling sits above [Brooks](../../brooks/index.md) and [Tributary](../..
 - Raw event-stream persistence
 - The reducer and snapshot substrate beneath domain behavior
 - Client-side UI composition as a subsystem
+
+## What This Page Guarantees
+
+- It defines Domain Modeling as the business-facing layer for aggregates, sagas, effects, and UX projections.
+- It identifies the lower layers readers should switch to when the problem is really stream or reduction infrastructure.
+
+## What This Page Does Not Claim
+
+- Full aggregate, saga, effect, or projection API reference
+- Orchestration, durability, retry, or ordering guarantees
+- Detailed runtime behavior documentation for every domain pattern
 
 ## Trade-Off To Keep In Mind
 

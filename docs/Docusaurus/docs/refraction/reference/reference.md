@@ -6,10 +6,6 @@ description: Current reference surface for Refraction packages and UX-layer owne
 
 # Refraction Reference
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Summary
 
 Refraction is the Mississippi Blazor UX layer organized around a state-down, events-up interaction model.

@@ -8,10 +8,6 @@ description: Tributary provides reducers and snapshot infrastructure for rebuild
 
 # Tributary
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Overview
 
 Tributary is the Mississippi layer for reducers and snapshots.
@@ -49,7 +45,7 @@ Start here when you need reducers, snapshots, or the layer that turns Brooks eve
 
 ## Current Coverage
 
-This section now includes typed holding pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
+This section now includes typed boundary pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
 
 They make the reducer and snapshot boundary explicit while deeper guidance is still being written.
 

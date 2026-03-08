@@ -6,10 +6,6 @@ description: Understand Tributary as Mississippi's reducer and snapshot layer.
 
 # Tributary Concepts
 
-:::warning Holding Page
-This page is a holding page awaiting full content in a future pull request. It exists to establish the navigation path and currently verified subsystem boundary. Some details may still be incomplete or revised as the active documentation set is rebuilt.
-:::
-
 ## Problem This Area Solves
 
 Tributary exists to turn event streams into derived state without forcing reducer and snapshot mechanics into the stream layer or the domain layer.
@@ -32,6 +28,17 @@ Tributary sits above [Brooks](../../brooks/index.md) and below [Domain Modeling]
 
 - Raw event-stream persistence
 - Aggregate, saga, or projection business behavior
+
+## What This Page Guarantees
+
+- It defines Tributary as the reducer and snapshot layer between raw streams and domain-facing behavior.
+- It identifies the neighboring layers readers should switch to when the problem is actually stream persistence or domain behavior.
+
+## What This Page Does Not Claim
+
+- Snapshot durability guarantees, rebuild guarantees, or retry behavior
+- Full reducer catalog or operational guidance
+- Detailed provider configuration or runtime failure documentation
 
 ## Trade-Off To Keep In Mind
 
