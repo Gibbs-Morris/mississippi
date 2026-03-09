@@ -12,7 +12,7 @@ description: Explain what Mississippi optimizes for, how source generation and t
 
 Mississippi is intentionally opinionated because it is optimizing for leverage, consistency, and change safety rather than for unlimited architectural freedom.
 
-The framework is designed to reduce the non-domain work that usually makes event-sourced, Orleans-based systems feel expensive to build and maintain. Conventions, source generators, shared runtime building blocks, and focused test harnesses work together so teams spend more time on business behaviour and less time on wiring, duplicated DTOs, endpoint scaffolding, and repetitive test setup.
+The framework is designed to reduce the non-domain work that usually makes event-sourced, Orleans-based systems feel expensive to build and maintain. Conventions, source generators, shared runtime building blocks, and focused test harnesses work together so teams spend more time on business behavior and less time on wiring, duplicated DTOs, endpoint scaffolding, and repetitive test setup.
 
 ## The Problem This Solves
 
@@ -68,7 +68,7 @@ These mechanisms are trying to achieve a specific outcome: keep the business mod
 
 Mississippi is optimized for a specific style of engineering work.
 
-- **Explicit business behaviour**. Commands, events, reducers, effects, and projections stay visible in the codebase instead of being hidden behind broad service layers.
+- **Explicit business behavior**. Commands, events, reducers, effects, and projections stay visible in the codebase instead of being hidden behind broad service layers.
 - **End-to-end alignment**. The same domain definitions drive runtime behavior, generated endpoints, client actions, and read-model delivery.
 - **Fast domain-level testing**. Aggregate, reducer, effect, and store harnesses let teams test core logic in memory using the same concepts the production runtime uses.
 - **Lower ceremony for complex systems**. Generation and shared runtime building blocks reduce the amount of repetitive code teams would otherwise write by hand.

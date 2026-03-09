@@ -71,7 +71,7 @@ Use the path that matches your immediate goal.
 
 | Question | Start here |
 | --- | --- |
-| Why would a team or organisation choose Mississippi? | [Why Mississippi](./why-mississippi/index.md) |
+| Why would a team or organization choose Mississippi? | [Why Mississippi](./why-mississippi/index.md) |
 | How do the main architecture layers fit together? | [Concepts](./concepts/index.md) |
 | How do commands, events, reducers, and effects work? | [Write Model](./concepts/write-model.md) |
 | How do projections reach HTTP and client state? | [Read Models and Client Sync](./concepts/read-models-and-client-sync.md) |

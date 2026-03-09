@@ -76,6 +76,7 @@ If you are evaluating Mississippi as an architecture, read the pages in this ord
 
 ## Learn More
 
+- [Documentation Home](../index.md) - Return to the product-area docs landing page
 - [Architectural Model](./architectural-model.md) - Framework-wide subsystem map and composition model
 - [Write Model](./write-model.md) - Aggregate command, event, reducer, and effect flow
 - [Read Models and Client Sync](./read-models-and-client-sync.md) - How projections reach client state through HTTP and SignalR
