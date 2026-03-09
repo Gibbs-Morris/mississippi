@@ -11,11 +11,11 @@ slug: /
 
 ## Overview
 
-Mississippi helps teams model domain behavior directly and let the framework scaffold much of the surrounding API, client, and runtime plumbing.
+Mississippi gives teams one coherent model for building stateful, event-driven systems that need durable history, explicit business behavior, real-time visibility, and predictable client state.
 
-You define aggregates, commands, events, and projections. Mississippi then composes event sourcing, CQRS, Orleans execution, generated APIs, client actions, and real-time projection delivery into one system.
+You define aggregates, commands, events, reducers, saga steps, and projections. Mississippi then composes event sourcing, CQRS, Orleans execution, generated APIs, real-time delivery, and client-state updates around those types so the whole system follows one architectural shape.
 
-Use this landing page to choose the right entry point: start with concepts if you are new to the framework, jump to a subsystem if you need a specific capability, or open samples if you want to see a complete application.
+Use this landing page to decide where to start: why Mississippi if you need the business case, concepts if you need the mental model, a product area if you need one capability, or samples if you want to see a complete application.
 
 ## Start Here
 
@@ -27,9 +27,60 @@ Use this landing page to choose the right entry point: start with concepts if yo
 | Find package names for independently adoptable areas | [Package Entry Points](#package-entry-points) |
 | See a complete working application | [Samples](./samples/index.md) |
 
+## Why Mississippi Exists
+
+Mississippi is designed for systems where business state changes matter over time, several read models need to stay aligned to the same truth, and users need to see those changes quickly and reliably.
+
+At a high level, it is optimizing for four outcomes:
+
+- **Control** over how business state changes
+- **Visibility** into what happened and what is happening now
+- **Resilience** for long-lived, stateful, concurrent workflows
+- **Consistency** across runtime execution, read models, live delivery, and client state
+
+If that is the question you are trying to answer, start with [Why Mississippi](./why-mississippi/index.md). If you already accept the business case and need the technical model, continue below.
+
+## Architecture At A Glance
+
+This diagram shows the high-level path from domain behavior to live client state.
+
+```mermaid
+flowchart TB
+	D[Domain types] --> W[Write model]
+	W --> E[Event streams]
+	E --> P[Projections]
+	P --> H[HTTP and SignalR delivery]
+	H --> C[Client state]
+```
+
+That high-level flow maps to Mississippi's product areas like this:
+
+- **Brooks** provides event streams and storage primitives.
+- **Tributary** rebuilds derived state through reducers and snapshots.
+- **Domain Modeling** defines aggregates, sagas, effects, and projection access.
+- **Inlet** generates gateway, runtime, and client delivery surfaces.
+- **Aqueduct** handles Orleans-backed SignalR transport.
+- **Reservoir** provides Redux-style client state management.
+- **Refraction** provides Blazor UI components and design tokens.
+
+For the detailed subsystem map and concepts reading path, use [Concepts](./concepts/index.md).
+
+## Choose Your Path
+
+Use the path that matches your immediate goal.
+
+| Question | Start here |
+| --- | --- |
+| Why would a team or organisation choose Mississippi? | [Why Mississippi](./why-mississippi/index.md) |
+| How do the main architecture layers fit together? | [Concepts](./concepts/index.md) |
+| How do commands, events, reducers, and effects work? | [Write Model](./concepts/write-model.md) |
+| How do projections reach HTTP and client state? | [Read Models and Client Sync](./concepts/read-models-and-client-sync.md) |
+| How are long-running workflows modeled? | [Sagas and Orchestration](./concepts/sagas-and-orchestration.md) |
+| What is Mississippi optimizing for, and what does it cost? | [Design Goals and Trade-Offs](./concepts/design-goals-and-trade-offs.md) |
+
 ## Independent Foundations
 
-These areas can be adopted on their own without requiring the rest of the Mississippi stack.
+These areas can be adopted on their own without requiring the full Mississippi stack.
 
 | Area | What it covers |
 | --- | --- |
@@ -53,22 +104,19 @@ The package IDs below come from the packable projects under `src/` and use the r
 
 Use the area pages above when you want the architectural view. Use the package names in this table when you are deciding what to reference from an application or library.
 
-## Domain Layers
+## Core Architecture Areas
 
-These areas build domain behavior and derived state on top of the lower event and storage primitives.
+These areas form the end-to-end Mississippi application model.
 
 | Area | What it covers |
 | --- | --- |
+| [Brooks](./brooks/index.md) | Event streams, cursor tracking, and storage contracts |
 | [Tributary](./tributary/index.md) | Reducers and snapshots |
-| [Domain Modeling](./domain-modeling/index.md) | Aggregates, sagas, and UX projections |
-
-## Composition Layer
-
-This area keeps the client, gateway, and runtime surfaces aligned.
-
-| Area | What it covers |
-| --- | --- |
+| [Domain Modeling](./domain-modeling/index.md) | Aggregates, sagas, effects, and projections |
 | [Inlet](./inlet/index.md) | Source-generated alignment across client, HTTP, and runtime layers |
+| [Aqueduct](./aqueduct/index.md) | Orleans-backed SignalR transport and connection infrastructure |
+| [Reservoir](./reservoir/index.md) | Redux-style client state management |
+| [Refraction](./refraction/index.md) | Blazor component library and design tokens |
 
 ## Samples
 
@@ -78,6 +126,17 @@ This section covers complete applications that show how multiple Mississippi are
 | --- | --- |
 | [Samples](./samples/index.md) | End-to-end sample applications, guided walkthroughs, and sample-specific validation paths |
 
+## Current Coverage
+
+This documentation set currently provides:
+
+- a business-oriented explanation of why the framework exists
+- a concepts path covering architecture, writes, reads, sagas, and design trade-offs
+- product-area entry pages for the main Mississippi subsystems
+- sample documentation showing how the pieces compose in complete applications
+
+Earlier material is still preserved for reference, but the active top-level sections above are the right place to start for new reading.
+
 ## Legacy Material
 
 Earlier documentation is still available under [Archived Documentation](./archived/index.md).
@@ -86,8 +145,8 @@ Use that material when you need preserved reference pages from the older docs se
 
 ## Learn More
 
+- [Why Mississippi](./why-mississippi/index.md) - Start with the business case and platform value
 - [Concepts](./concepts/index.md) - Start with the framework overview and mental model
-- [About Benjamin Gibbs](./concepts/about-benjamin-gibbs-reference.md) - Learn about the creator of Mississippi
 - [Aqueduct](./aqueduct/index.md) - Start with the Orleans-backed SignalR backplane section
 - [Refraction](./refraction/index.md) - Start with the Blazor UX component section
 - [Reservoir](./reservoir/index.md) - Start with the client state-management section
