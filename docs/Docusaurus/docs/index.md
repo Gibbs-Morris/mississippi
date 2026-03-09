@@ -85,7 +85,7 @@ These areas can be adopted on their own without requiring the full Mississippi s
 | Area | What it covers |
 | --- | --- |
 | [SignalR Backplane](./aqueduct/index.md) | Aqueduct provides Orleans-backed SignalR backplane support for distributed real-time messaging |
-| [Blazor UI](./refraction/index.md) | Refraction provides Blazor UX components built around a state-down, events-up interaction model |
+| [Blazor UI](./refraction/index.md) | Refraction provides Blazor UI components built around a state-down, events-up interaction model |
 | [Client State](./reservoir/index.md) | Reservoir provides Redux-style client state management |
 | [Event Streams](./brooks/index.md) | Brooks provides event streams and event storage |
 
@@ -98,7 +98,7 @@ The package IDs below come from the packable projects under `src/` and use the r
 | Area | Representative packages | Notes |
 | --- | --- | --- |
 | [SignalR Backplane](./aqueduct/index.md) | `Mississippi.Aqueduct.Abstractions`, `Mississippi.Aqueduct.Gateway`, `Mississippi.Aqueduct.Runtime` | Aqueduct contracts plus gateway and Orleans runtime integrations for the backplane |
-| [Blazor UI](./refraction/index.md) | `Mississippi.Refraction.Abstractions`, `Mississippi.Refraction.Client`, `Mississippi.Refraction.Client.StateManagement` | Refraction UX contracts, runtime components, and page-composition helpers |
+| [Blazor UI](./refraction/index.md) | `Mississippi.Refraction.Abstractions`, `Mississippi.Refraction.Client`, `Mississippi.Refraction.Client.StateManagement` | Refraction UI contracts, runtime components, and page-composition helpers |
 | [Client State](./reservoir/index.md) | `Mississippi.Reservoir.Abstractions`, `Mississippi.Reservoir.Core`, `Mississippi.Reservoir.Client`, `Mississippi.Reservoir.TestHarness` | Reservoir state-management contracts, runtime, Blazor integration, and testing support |
 | [Event Streams](./brooks/index.md) | `Mississippi.Brooks.Abstractions`, `Mississippi.Brooks.Runtime`, `Mississippi.Brooks.Serialization.Abstractions`, `Mississippi.Brooks.Serialization.Json` | Brooks event-streaming contracts, runtime, and serialization seams |
 
@@ -147,12 +147,12 @@ Use that material when you need preserved reference pages from the older docs se
 
 - [Why Mississippi](./why-mississippi/index.md) - Start with the business case and platform value
 - [Concepts](./concepts/index.md) - Start with the framework overview and mental model
-- [Domain Modeling](./domain-modeling/index.md) - Start with the Domain Behavior section for aggregates, sagas, and projections
-- [Tributary](./tributary/index.md) - Start with the Reducers & Snapshots section
-- [Brooks](./brooks/index.md) - Start with the Event Streams section
-- [Inlet](./inlet/index.md) - Start with the API & Client Sync section
-- [Aqueduct](./aqueduct/index.md) - Start with the SignalR Backplane section
-- [Reservoir](./reservoir/index.md) - Start with the Client State section
-- [Refraction](./refraction/index.md) - Start with the Blazor UI section
+- [Domain Behavior](./domain-modeling/index.md) - Start with the Domain Behavior section for aggregates, sagas, and projections
+- [Reducers & Snapshots](./tributary/index.md) - Start with the Reducers & Snapshots section
+- [Event Streams](./brooks/index.md) - Start with the Event Streams section
+- [API & Client Sync](./inlet/index.md) - Start with the API & Client Sync section
+- [SignalR Backplane](./aqueduct/index.md) - Start with the SignalR Backplane section
+- [Client State](./reservoir/index.md) - Start with the Client State section
+- [Blazor UI](./refraction/index.md) - Start with the Blazor UI section
 - [Samples](./samples/index.md) - Explore complete applications built with Mississippi
 - [Archived Documentation](./archived/index.md) - Browse the preserved pre-reset docs set
