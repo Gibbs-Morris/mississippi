@@ -110,9 +110,9 @@ These areas form the end-to-end Mississippi application model.
 
 | Area | What it covers |
 | --- | --- |
-| [Brooks](./brooks/index.md) | Event streams, cursor tracking, and storage contracts |
-| [Tributary](./tributary/index.md) | Reducers and snapshots |
 | [Domain Modeling](./domain-modeling/index.md) | Aggregates, sagas, effects, and projections |
+| [Tributary](./tributary/index.md) | Reducers and snapshots |
+| [Brooks](./brooks/index.md) | Event streams, cursor tracking, and storage contracts |
 | [Inlet](./inlet/index.md) | Source-generated alignment across client, HTTP, and runtime layers |
 | [Aqueduct](./aqueduct/index.md) | Orleans-backed SignalR transport and connection infrastructure |
 | [Reservoir](./reservoir/index.md) | Redux-style client state management |
@@ -147,12 +147,12 @@ Use that material when you need preserved reference pages from the older docs se
 
 - [Why Mississippi](./why-mississippi/index.md) - Start with the business case and platform value
 - [Concepts](./concepts/index.md) - Start with the framework overview and mental model
-- [Aqueduct](./aqueduct/index.md) - Start with the Orleans-backed SignalR backplane section
-- [Refraction](./refraction/index.md) - Start with the Blazor UX component section
-- [Reservoir](./reservoir/index.md) - Start with the client state-management section
-- [Brooks](./brooks/index.md) - Start with the event stream and storage section
-- [Tributary](./tributary/index.md) - Start with the reducers and snapshots section
 - [Domain Modeling](./domain-modeling/index.md) - Start with the aggregates, sagas, and projections section
+- [Tributary](./tributary/index.md) - Start with the reducers and snapshots section
+- [Brooks](./brooks/index.md) - Start with the event stream and storage section
 - [Inlet](./inlet/index.md) - Start with the composition and source-generation section
+- [Aqueduct](./aqueduct/index.md) - Start with the Orleans-backed SignalR backplane section
+- [Reservoir](./reservoir/index.md) - Start with the client state-management section
+- [Refraction](./refraction/index.md) - Start with the Blazor component section
 - [Samples](./samples/index.md) - Explore complete applications built with Mississippi
 - [Archived Documentation](./archived/index.md) - Browse the preserved pre-reset docs set
