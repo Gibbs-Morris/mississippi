@@ -1,12 +1,12 @@
 ---
 id: aqueduct-overview
-title: Aqueduct
+title: SignalR Backplane (Aqueduct)
 sidebar_label: Overview
 sidebar_position: 1
-description: Aqueduct provides the Orleans-backed SignalR backplane used for distributed real-time messaging across Mississippi hosts.
+description: Understand Aqueduct, Mississippi's Orleans-backed SignalR backplane for distributed real-time messaging.
 ---
 
-# Aqueduct
+# SignalR Backplane (Aqueduct)
 
 ## Overview
 
