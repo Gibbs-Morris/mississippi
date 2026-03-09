@@ -34,7 +34,7 @@ Implementations are registered through extension methods on `IServiceCollection`
 
 ## Learn More
 
-- [Brooks Overview](../index.md) — return to the Brooks section landing page
+- [Brooks Overview](../index.md) - Return to the Brooks section landing page
 - [Cosmos DB Provider](cosmos.md)
 - [Brooks Concepts](../concepts/concepts.md)
 - [Brooks Reference](../reference/reference.md)

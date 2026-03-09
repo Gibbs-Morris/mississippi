@@ -34,7 +34,7 @@ Implementations are registered through extension methods on `IServiceCollection`
 
 ## Learn More
 
-- [Tributary Overview](../index.md) — return to the Tributary section landing page
+- [Tributary Overview](../index.md) - Return to the Tributary section landing page
 - [Cosmos DB Provider](cosmos.md)
 - [Tributary Concepts](../concepts/concepts.md)
 - [Tributary Reference](../reference/reference.md)
