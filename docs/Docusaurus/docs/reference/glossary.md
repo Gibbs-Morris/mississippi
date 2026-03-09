@@ -10,6 +10,8 @@ description: Look up Mississippi terms and add short definitions in one place.
 
 <!-- Contributor note: add new terms to the matching section and keep each section alphabetized. -->
 
+## Overview
+
 Look up Mississippi and event-sourcing terminology in one place.
 
 ## Terms
@@ -70,6 +72,10 @@ Look up Mississippi and event-sourcing terminology in one place.
 | [Refraction](../refraction/index.md) | Mississippi's Blazor UX component library built around a state-down, events-up interaction model that keeps UI interaction contracts separate from application state. |
 | [Reservoir](../reservoir/index.md) | Mississippi's Redux-style client state-management library, including store, actions, reducers, selectors, effects, middleware, and UI integration patterns. |
 | [Tributary](../tributary/index.md) | Mississippi's reducer and snapshot layer. It turns event streams into derived state that can be rebuilt efficiently and persisted as snapshots. |
+
+## Summary
+
+This glossary collects the core vocabulary used across Mississippi documentation and source code.
 
 ## Next Steps
 
