@@ -76,15 +76,16 @@ If you are evaluating Mississippi as an architecture, read the pages in this ord
 
 ## Learn More
 
-- [Architectural Model](./architectural-model.md) — Framework-wide subsystem map and composition model
-- [Write Model](./write-model.md) — Aggregate command, event, reducer, and effect flow
-- [Read Models and Client Sync](./read-models-and-client-sync.md) — How projections reach client state through HTTP and SignalR
-- [Sagas and Orchestration](./sagas-and-orchestration.md) — Long-running workflow coordination and compensation
-- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) — Framework rationale, constraints, and trade-offs
-- [Domain Modeling](../domain-modeling/index.md) — Aggregates, sagas, effects, and projections in depth
-- [Brooks](../brooks/index.md) — Event stream identity, storage, and cursor mechanics
-- [Tributary](../tributary/index.md) — Event reducers and snapshot reconstruction
-- [Inlet](../inlet/index.md) — Code generation and projection subscriptions
-- [Reservoir](../reservoir/index.md) — Redux-style client state management
-- [Aqueduct](../aqueduct/index.md) — Orleans-backed SignalR infrastructure
-- [Samples](../samples/index.md) — Complete Mississippi applications
+- [Architectural Model](./architectural-model.md) - Framework-wide subsystem map and composition model
+- [Write Model](./write-model.md) - Aggregate command, event, reducer, and effect flow
+- [Read Models and Client Sync](./read-models-and-client-sync.md) - How projections reach client state through HTTP and SignalR
+- [Sagas and Orchestration](./sagas-and-orchestration.md) - Long-running workflow coordination and compensation
+- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) - Framework rationale, constraints, and trade-offs
+- [Domain Modeling](../domain-modeling/index.md) - Aggregates, sagas, effects, and projections in depth
+- [Brooks](../brooks/index.md) - Event stream identity, storage, and cursor mechanics
+- [Tributary](../tributary/index.md) - Event reducers and snapshot reconstruction
+- [Inlet](../inlet/index.md) - Code generation and projection subscriptions
+- [Reservoir](../reservoir/index.md) - Redux-style client state management
+- [Aqueduct](../aqueduct/index.md) - Orleans-backed SignalR infrastructure
+- [Refraction](../refraction/index.md) - Blazor component library and design-token system for client UIs
+- [Samples](../samples/index.md) - Complete Mississippi applications
