@@ -10,9 +10,9 @@ description: Explain how Mississippi models long-running workflows through saga 
 
 ## Overview
 
-Mississippi models a saga as explicit state plus ordered step execution.
+Mississippi models a saga as explicit workflow state plus ordered step execution.
 
-A saga state record implements `ISagaState`. A start command creates lifecycle events. `SagaOrchestrationEffect<TSaga>` reacts to those lifecycle events, resolves ordered `ISagaStep<TSaga>` implementations, and emits further saga events as each step succeeds, fails, or compensates.
+A saga state record implements `ISagaState`. A start command enters the same aggregate-style command pipeline used elsewhere in Mississippi, but the work that follows is long-running and step-oriented rather than a single aggregate decision. `SagaOrchestrationEffect<TSaga>` reacts to saga lifecycle events, resolves ordered `ISagaStep<TSaga>` implementations, and emits further saga events as each step succeeds, fails, or compensates.
 
 ## The Problem This Solves
 
@@ -33,21 +33,22 @@ Sagas reuse the aggregate-style event pipeline, but with specialized orchestrati
 
 ## How It Works
 
-This diagram shows the verified saga control flow.
+This page starts where the single-aggregate write model stops: when one business operation needs ordered work across several steps, and often across several aggregates.
+
+This diagram shows the saga control flow.
 
 ```mermaid
 flowchart TB
-    A[StartSagaCommand<TInput>] --> B[StartSagaCommandHandler]
-    B --> C[SagaStartedEvent plus SagaInputProvided<TInput>]
-    C --> D[SagaOrchestrationEffect]
-    D --> E[ISagaStep<TSaga> ExecuteAsync]
-    E --> F[SagaStepCompleted or SagaStepFailed]
-    F --> G[Next step or SagaCompensating]
-    G --> H[ICompensatable<TSaga> CompensateAsync]
-    H --> I[SagaStepCompensated or SagaFailed]
+    A[Start saga command] --> B[Lifecycle events recorded]
+    B --> C[Orchestration effect selects next step]
+    C --> D[Step executes]
+    D --> E[Step completed or step failed]
+    E --> F[Next step or compensation begins]
+    F --> G[Compensation runs when supported]
+    G --> H[Completed, compensated, or failed]
 ```
 
-The verified runtime behavior is:
+The runtime behavior is:
 
 1. `StartSagaCommandHandler<TSaga, TInput>` checks that the saga has not already started and that step metadata exists.
 2. It emits `SagaStartedEvent` and `SagaInputProvided<TInput>`.
@@ -61,7 +62,7 @@ The verified runtime behavior is:
 ## Guarantees
 
 - Saga state has a defined contract through `ISagaState`, including `SagaId`, `Phase`, `LastCompletedStepIndex`, `StartedAt`, and `StepHash`.
-- Saga steps are explicitly ordered through `[SagaStep<TSaga>(index)]` metadata.
+- Saga steps are explicitly ordered through `[SagaStep<TSaga>(index)]` metadata and `ISagaStepInfoProvider<TSaga>`.
 - Start commands capture input into saga state through `SagaInputProvided<TInput>` so later steps can read the original input.
 - Compensation runs only for steps that implement `ICompensatable<TSaga>`.
 - Saga lifecycle transitions are represented as explicit events such as `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaCompleted`, `SagaCompensated`, and `SagaFailed`.
@@ -77,6 +78,12 @@ The verified runtime behavior is:
 - Explicit lifecycle events make saga progress observable and testable, but they also add more state and event types than a one-off workflow service would.
 - Ordered steps are easier to reason about than implicit orchestration, but they require developers to model forward progress and rollback rules carefully.
 - Saga orchestration reuses the aggregate/event infrastructure, which keeps the model consistent. It also means teams need to learn the same evented thinking for workflows, not just for aggregates.
+
+## Testability
+
+Saga orchestration remains testable for the same reason the rest of Mississippi's write path remains testable: workflow progress is expressed through explicit events and explicit state.
+
+Start commands, lifecycle events, ordered steps, and compensation outcomes are all modeled directly. That makes it easier to test saga progress and failure handling at the domain level instead of hiding workflow behavior inside broad service methods with scattered control flow.
 
 ## Related Tasks and Reference
 

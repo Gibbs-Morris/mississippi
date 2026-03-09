@@ -12,7 +12,7 @@ description: Explain how aggregates, commands, events, reducers, and event effec
 
 Mississippi's write model is aggregate-centric.
 
-An aggregate instance is addressed by entity ID and executed by `IGenericAggregateGrain<TAggregate>` and `GenericAggregateGrain<TAggregate>`. Commands are validated by command handlers against current aggregate state. Successful handlers emit events. Reducers rebuild state from those events. Event effects run after persistence to trigger follow-on behavior.
+One aggregate instance handles one command path for one entity ID at a time. The runtime loads the current aggregate state, asks command handlers to decide what should happen, persists the resulting events to the aggregate's brook, rebuilds state through reducers, and then runs any follow-on effects.
 
 ## The Problem This Solves
 
@@ -33,29 +33,29 @@ Commands decide whether an aggregate may move from its current state to a new on
 
 ## How It Works
 
-This diagram shows the verified aggregate flow.
+This diagram shows the aggregate write flow from command to persisted events and follow-on effects.
 
 ```mermaid
 flowchart TB
-    A[HTTP or client action] --> B[Generated aggregate endpoint or service]
-    B --> C[GenericAggregateGrain]
-    C --> D[IRootCommandHandler]
-    D --> E[Events returned by handler]
-    E --> F[Brooks append]
-    F --> G[Reducers rebuild snapshots]
-    G --> H[Synchronous event effects]
-    H --> I[Fire-and-forget effects]
+    A[Command request] --> B[Aggregate command path]
+    B --> C[Command handler decides outcome]
+    C --> D[Domain events]
+    D --> E[Brooks persists events]
+    E --> F[Reducers rebuild aggregate state]
+    F --> G[Synchronous effects]
+    G --> H[Fire-and-forget effects]
 ```
 
 The concrete runtime sequence is:
 
-1. The aggregate grain loads the latest brook position and current aggregate snapshot.
-2. `IRootCommandHandler<TAggregate>` dispatches the command to the matching `ICommandHandler` implementation.
-3. The handler returns either an `OperationResult` failure or an ordered list of domain events.
-4. The grain appends those events to Brooks.
-5. Tributary reducers rebuild aggregate snapshots from the event stream.
-6. If a root event effect is registered, synchronous event effects run after persistence and may yield additional events.
-7. If fire-and-forget effect registrations exist, they are dispatched after persistence in separate worker grains and are not awaited by the command path.
+1. A generated endpoint, generated client action, or another runtime component routes the command to the aggregate instance for a specific entity ID.
+2. `IGenericAggregateGrain<TAggregate>` loads the latest brook position and current aggregate state.
+3. `IRootCommandHandler<TAggregate>` dispatches the command to the matching `ICommandHandler` implementation.
+4. The handler returns either an `OperationResult` failure or an ordered list of domain events.
+5. The aggregate runtime appends those events to Brooks.
+6. Tributary reducers rebuild aggregate state from the event stream and snapshots.
+7. If a root event effect is registered, synchronous event effects run after persistence and may yield additional events.
+8. If fire-and-forget effect registrations exist, they are dispatched after persistence in separate worker grains and are not awaited by the command path.
 
 ## Guarantees
 
@@ -84,7 +84,7 @@ The concrete runtime sequence is:
 
 This write model is designed to keep domain behavior testable without Orleans infrastructure.
 
-Because command handlers return events instead of mutating state directly, the core business decision stays narrow and observable. Reducers rebuild state from those events, and effects run over explicit event inputs. That shape makes it practical to test aggregate flows with `AggregateTestHarness<TAggregate>` and `AggregateScenario<TAggregate>` and to test effect behavior with `EffectTestHarness<...>` using Given/When/Then style scenarios rather than `TestCluster` setup or grain mocking. The same design choice that keeps the runtime explicit also keeps the domain path cheap to validate.
+Because command handlers return events instead of mutating state directly, the core business decision stays narrow and observable. Reducers rebuild state from those events, and effects run over explicit event inputs. That makes it practical to test aggregate flows with `AggregateTestHarness<TAggregate>` and `AggregateScenario<TAggregate>`, and to test synchronous or fire-and-forget effects with `EffectTestHarness<...>` and `FireAndForgetEffectTestHarness<...>`, using Given/When/Then style scenarios rather than `TestCluster` setup or grain mocking.
 
 ## Related Tasks and Reference
 

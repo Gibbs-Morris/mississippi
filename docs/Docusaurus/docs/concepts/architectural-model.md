@@ -12,7 +12,7 @@ description: Explain what Mississippi is, why it exists, and how its major subsy
 
 Mississippi is an opinionated application model for building event-sourced systems on Orleans.
 
-It combines aggregate command execution, event streams, reducer-driven read models, generated HTTP surfaces, SignalR notifications, and Redux-style client state into one framework shape. The framework is designed so that application teams spend most of their time on domain records, handlers, reducers, and steps instead of repeating transport and registration code.
+It treats event sourcing, runtime composition, generated delivery surfaces, and client state as one architectural model instead of four separate concerns. Teams define domain types such as aggregate state, commands, events, reducers, saga steps, and projections. Mississippi then composes the Orleans runtime, generated HTTP and SignalR surfaces, and client state infrastructure around those types.
 
 ## The Problem This Solves
 
@@ -33,41 +33,53 @@ Mississippi starts from a few explicit domain artifacts and composes outward.
 
 - Aggregate state records define write-side state.
 - Command handlers validate commands against current state and emit events.
-- Reducers rebuild both aggregate state and projection state from events.
-- Projection types define read models over the same brook.
+- Brooks stores those events in per-aggregate brooks.
+- Tributary reducers rebuild both aggregate state and projection state from events.
+- Projection types define read models over the same brook and can opt into generated delivery with `[GenerateProjectionEndpoints]`.
 - Inlet generators derive gateway and client scaffolding from those types and attributes.
 - Reservoir keeps client state predictable by reducing actions into immutable feature slices.
 
 ## How It Works
 
-This diagram shows the verified cross-area composition.
+This diagram shows the verified runtime composition and dependency direction.
 
 ```mermaid
 flowchart TB
-    A[Domain Modeling] --> B[Brooks event streams]
-    B --> C[Tributary reducers and snapshots]
-    C --> D[Domain Modeling UX projection runtime]
-    D --> E[Inlet generated HTTP and SignalR surfaces]
-    E --> F[Reservoir client store]
-    E --> G[Aqueduct SignalR transport]
+    A[Domain types] --> DM[DomainModeling]
+    DM --> TR[Tributary]
+    DM --> BR[Brooks]
+    TR --> BR
+```
+
+This diagram shows how projection definitions become delivery surfaces and client state.
+
+```mermaid
+flowchart TB
+    P[Projection types and attributes] --> IN[Inlet code generation]
+    IN --> HTTP[HTTP endpoints and controllers]
+    IN --> SUB[SignalR subscription management]
+    SUB --> AQ[Aqueduct SignalR transport]
+    HTTP --> RS[Reservoir client state store]
+    AQ --> RS
 ```
 
 In public package terms, the major responsibilities break down like this.
 
 | Area | Verified role |
 | --- | --- |
-| Domain Modeling | Aggregates, sagas, event effects, generic aggregate grains, UX projection grains, and test harnesses |
-| Brooks | Event-stream identity, append and cursor behavior, and storage abstractions |
+| Domain Modeling | Aggregates, sagas, event effects, projection access, and test harnesses |
+| Brooks | Event-stream identity, append, cursor tracking, and storage abstractions |
 | Tributary | Event reducers, root reducers, and snapshot-oriented reconstruction |
-| Inlet | Source generation for aggregate, projection, and saga surfaces across runtime, gateway, and client layers |
+| Inlet | Source generation and registration for aggregate, projection, and saga surfaces across runtime, gateway, and client layers |
 | Reservoir | Redux-style store, action reducers, middleware, and action effects |
-| Aqueduct | Orleans-backed SignalR client, group, and server-directory grains |
+| Aqueduct | Orleans-backed SignalR transport and connection infrastructure |
+| Refraction | Blazor component library and design-token system for client UIs |
 
 ## Guarantees
 
 - Mississippi has a real end-to-end composition model rather than a single server-side helper package. The repository contains dedicated runtime, gateway, and client projects for the same concepts.
 - Aggregate, projection, and saga generation is attribute-driven. For example, `[GenerateAggregateEndpoints]`, `[GenerateProjectionEndpoints]`, `[GenerateCommand]`, and `[GenerateSagaEndpoints]` each drive concrete generator output.
-- The same model is visible in the Spring sample, where domain records, generated endpoints, Blazor client code, and SignalR-backed projection updates are used together.
+- The same model is visible in the Spring sample, where projection types marked with `[GenerateProjectionEndpoints]` feed generated endpoints and real-time client projection updates.
 
 ## Non-Guarantees
 
@@ -78,7 +90,7 @@ In public package terms, the major responsibilities break down like this.
 ## Trade-Offs
 
 - The framework reduces boilerplate by being opinionated. That increases leverage, but it also means teams must learn Mississippi-specific conventions.
-- The model is easier to follow when a team accepts the separation between write state, read models, generated transport, and client store behavior. Teams looking for a minimal abstraction layer may find this too structured.
+- The model is easier to follow when a team accepts the separation between write state, event streams, read models, generated transport, and client store behavior. Teams looking for a minimal abstraction layer may find this too structured.
 - Several Mississippi areas can be adopted independently, but the strongest payoff comes from using the pieces together.
 
 ## Related Tasks and Reference
@@ -90,7 +102,7 @@ In public package terms, the major responsibilities break down like this.
 
 ## Summary
 
-Mississippi eliminates the seam work between event sourcing, Orleans, and client delivery. Write domain logic once, and the framework generates the runtime, gateway, and client surfaces around it.
+Mississippi eliminates the seam work between event sourcing, Orleans, and client delivery by treating them as one architecture. Define the domain types once, and the framework composes the runtime, gateway, and client surfaces around them.
 
 ## Next Steps
 
