@@ -12,7 +12,7 @@ description: Explain how Mississippi builds projections, exposes them over HTTP,
 
 Mississippi gives teams a complete path from domain events to client state without hand-wiring each layer.
 
-Projection types are rebuilt from events by reducers. When teams opt into Mississippi's generated delivery surface, those projections are automatically served through version-aware grains, exposed through generated HTTP endpoints, and synchronized into client state through Inlet SignalR notifications and Reservoir reducers.
+Projection types are rebuilt from events by reducers. When teams opt into Mississippi's generated delivery surface, those projections become available as latest or historical versions, are exposed through generated HTTP endpoints, and are synchronized into client state through Inlet notifications and Reservoir reducers.
 
 ## The Problem This Solves
 
@@ -21,7 +21,7 @@ Event-sourced write models are not usually the best shape for reads.
 Applications need read-optimized views, stable HTTP query endpoints, and a client synchronization path that does not duplicate projection logic in several places. Mississippi addresses that by separating projection definition from delivery:
 
 - reducers define how events become read state
-- UX projection grains serve latest and historical versions
+- projection access supports latest and historical versions
 - generated controllers can expose the read model over HTTP
 - SignalR notifications tell clients which projection changed
 - Reservoir reducers update client state from actions, not from direct mutation
@@ -34,24 +34,24 @@ Mississippi does not push full projection payloads over SignalR. Instead, it sen
 
 ## How It Works
 
-This diagram shows the verified production path used by Inlet.
+This page combines read models and client sync because Mississippi treats them as one delivery path: event-derived state becomes a projection, and that projection becomes HTTP responses and client-state updates.
+
+This diagram shows the projection delivery path from event stream to client state.
 
 ```mermaid
 flowchart TB
-    A[Aggregate events appended to Brooks] --> B[Projection reducers rebuild snapshots]
-    B --> C[UxProjectionGrain latest version moves]
-    C --> D[InletSubscriptionGrain observes brook cursor]
-    D --> E[SignalR ProjectionUpdatedAsync(path entityId version)]
-    E --> F[AutoProjectionFetcher GET /api/projections/{path}/{entityId}/at/{version}]
-    F --> G[ProjectionUpdatedAction<T>]
-    G --> H[ProjectionsReducer updates Reservoir state]
+    A[Aggregate events appended to Brooks] --> B[Projection reducers rebuild state]
+    B --> C[Latest projection version advances]
+    C --> D[SignalR sends path entityId version]
+    D --> E[Client fetches projection over HTTP]
+    E --> F[Reservoir updates client state]
 ```
 
 The main pieces in the generated HTTP and Blazor SignalR path are:
 
 - Projection records are annotated with `[ProjectionPath(...)]` and `[BrookName(...)]`, and they add `[GenerateProjectionEndpoints]` when the generated HTTP and client surface is desired.
 - Projection reducers inherit from `EventReducerBase<TEvent, TProjection>`.
-- `IUxProjectionGrain<TProjection>` serves the latest projection state, historical versions, and the latest version number.
+- The projection runtime serves the latest projection state, historical versions, and the latest version number through `IUxProjectionGrain<TProjection>`.
 - `UxProjectionControllerBase<TProjection, TDto>` exposes `GET`, `GET at version`, and `GET version` endpoints.
 - `InletHub` manages client subscriptions by projection path and entity ID.
 - `InletSubscriptionGrain` deduplicates brook stream subscriptions per SignalR connection and sends only `(path, entityId, newVersion)` to the client.
@@ -59,7 +59,7 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 
 ## Guarantees
 
-- UX projection grains support both latest reads and historical version reads.
+- The projection runtime supports both latest reads and historical version reads.
 - Generated read endpoints use the projection path and entity ID shape rather than exposing brook internals to clients.
 - Latest projection endpoints set an `ETag` header containing the current version and return `304 Not Modified` when the client sends a matching `If-None-Match` header.
 - SignalR update messages carry metadata, not the full projection body.
@@ -71,7 +71,7 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 - Mississippi does not give clients strong read-after-write consistency across the entire stack. Projection delivery is eventually consistent.
 - A successful command does not mean every client has already received or fetched the new projection version.
 - Client subscription generation is optional. `GenerateProjectionEndpointsAttribute.GenerateClientSubscription` can be set to `false`.
-- The repository contains an older `UxProjectionSubscriptionGrain` abstraction, but the active Inlet SignalR path is implemented through `InletHub` and `InletSubscriptionGrain`.
+- Not every projection needs real-time client subscription. Teams can expose read endpoints without opting into generated client subscription behavior.
 
 ## Trade-Offs
 
@@ -87,7 +87,7 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 
 ## Summary
 
-Mississippi read models move from event streams to versioned grains to HTTP endpoints to client state through one generated pipeline - no hand-wired controllers, no manual SignalR subscriptions, no imperative client state mutation.
+Mississippi read models move from event streams to versioned projection access, generated HTTP endpoints, and client-state updates through one coherent delivery path - no hand-wired controllers, no manual SignalR subscriptions, no imperative client state mutation.
 
 ## Next Steps
 
