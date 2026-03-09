@@ -46,11 +46,11 @@ This diagram shows the high-level path from domain behavior to live client state
 
 ```mermaid
 flowchart TB
-	D[Domain types] --> W[Write model]
-	W --> E[Event streams]
-	E --> P[Projections]
-	P --> H[HTTP and SignalR delivery]
-	H --> C[Client state]
+    D[Domain types] --> W[Write model]
+    W --> E[Event streams]
+    E --> P[Projections]
+    P --> H[HTTP and SignalR delivery]
+    H --> C[Client state]
 ```
 
 That high-level flow maps to Mississippi's product areas like this:
