@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Linq;
 using System.Reflection;
@@ -256,3 +257,5 @@ public sealed class InletSiloRegistrationsTests
         Assert.Empty(registry.GetAllPaths());
     }
 }
+
+#pragma warning restore CS0618

@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Refraction.Client.StateManagement.Infrastructure;
@@ -26,3 +27,5 @@ public sealed class RefractionPagesServiceCollectionExtensionsTests
         Assert.Same(services, result);
     }
 }
+
+#pragma warning restore CS0618

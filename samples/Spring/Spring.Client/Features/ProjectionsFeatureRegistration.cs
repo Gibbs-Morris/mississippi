@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Sample still exercises legacy composition APIs pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -50,3 +51,5 @@ public static class ProjectionsFeatureRegistration
             ProjectionsReducer.ReduceConnectionChanged);
     }
 }
+
+#pragma warning restore CS0618

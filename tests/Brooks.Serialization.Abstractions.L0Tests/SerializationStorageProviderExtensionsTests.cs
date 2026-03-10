@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -114,3 +115,5 @@ public sealed class SerializationStorageProviderExtensionsTests
         Assert.Equal(expectedName, options.Name);
     }
 }
+
+#pragma warning restore CS0618

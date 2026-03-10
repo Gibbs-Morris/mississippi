@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 
 using Microsoft.AspNetCore.Components;
@@ -138,3 +139,5 @@ public sealed class NavigationFeatureRegistrationTests : IDisposable
         Assert.Equal("https://example.com/page3", state.CurrentUri);
     }
 }
+
+#pragma warning restore CS0618

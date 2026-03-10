@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -591,3 +592,5 @@ public class AggregateRegistrationsTests
         Assert.NotNull(registry);
     }
 }
+
+#pragma warning restore CS0618

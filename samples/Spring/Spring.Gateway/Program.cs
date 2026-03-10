@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Sample still demonstrates legacy composition pending issue #237.
 using System;
 using System.Threading.Tasks;
 
@@ -176,3 +177,4 @@ app.MapGet(
 // Fallback to index.html for SPA routing
 app.MapFallbackToFile("index.html");
 await app.RunAsync();
+#pragma warning restore CS0618

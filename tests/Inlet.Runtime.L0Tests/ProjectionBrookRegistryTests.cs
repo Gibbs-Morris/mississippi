@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Linq;
 
@@ -203,3 +204,5 @@ public sealed class ProjectionBrookRegistryTests : IDisposable
         Assert.Equal("path", exception.ParamName);
     }
 }
+
+#pragma warning restore CS0618

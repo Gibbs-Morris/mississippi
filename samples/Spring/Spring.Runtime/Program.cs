@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Sample still demonstrates legacy composition pending issue #237.
 using Azure.Storage.Blobs;
 
 using Microsoft.AspNetCore.Builder;
@@ -166,3 +167,4 @@ app.MapGet(
             : Results.StatusCode(503);
     });
 await app.RunAsync();
+#pragma warning restore CS0618

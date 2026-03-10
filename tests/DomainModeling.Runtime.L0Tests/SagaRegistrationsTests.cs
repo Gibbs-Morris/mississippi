@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -49,3 +50,5 @@ public sealed class SagaRegistrationsTests
         Assert.Throws<ArgumentNullException>(() => services!.AddSagaOrchestration<TestSagaState, TestInput>());
     }
 }
+
+#pragma warning restore CS0618

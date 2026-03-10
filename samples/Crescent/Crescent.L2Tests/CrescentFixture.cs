@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Sample/test still exercises legacy composition APIs pending issue #237.
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Brooks.Abstractions.Streaming;
@@ -399,3 +400,5 @@ public sealed class CrescentFixture
         }
     }
 }
+
+#pragma warning restore CS0618
