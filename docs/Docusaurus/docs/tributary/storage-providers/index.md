@@ -31,10 +31,12 @@ Implementations are registered through extension methods on `IServiceCollection`
 | Provider | Package | Status |
 |----------|---------|--------|
 | [Cosmos DB](cosmos.md) | `Mississippi.Tributary.Runtime.Storage.Cosmos` | Available |
+| [Blob Storage](blob.md) | `Mississippi.Tributary.Runtime.Storage.Blob` | Available |
 
 ## Learn More
 
 - [Tributary Overview](../index.md) - Return to the Tributary section landing page
-- [Cosmos DB Provider](cosmos.md)
-- [Tributary Concepts](../concepts/concepts.md)
-- [Tributary Reference](../reference/reference.md)
+- [Cosmos DB Provider](cosmos.md) - Use Azure Cosmos DB for snapshot persistence
+- [Blob Storage Provider](blob.md) - Use Azure Blob Storage for snapshot persistence
+- [Tributary Concepts](../concepts/concepts.md) - Learn the Tributary snapshot model
+- [Tributary Reference](../reference/reference.md) - Review Tributary contracts and reference details
