@@ -1,12 +1,12 @@
 ---
 id: inlet-overview
-title: Inlet
+title: API & Client Sync (Inlet)
 sidebar_label: Overview
 sidebar_position: 1
-description: Inlet keeps Mississippi client, HTTP, and runtime surfaces aligned through source generation and runtime wiring.
+description: Understand Inlet, Mississippi's API, client, and runtime alignment layer.
 ---
 
-# Inlet
+# API & Client Sync (Inlet)
 
 ## Overview
 
