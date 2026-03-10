@@ -159,9 +159,11 @@ public sealed class InletBlazorSignalRBuilder
         Services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
 
         // Register the Inlet connection feature state and SignalR effect
+#pragma warning disable CS0618 // TODO: migrate when #237 is complete
         Services.AddActionEffect<InletConnectionState, InletSignalRActionEffect>();
 
         // Register the SignalR connection feature (state, reducers, and lifecycle effect)
         Services.AddSignalRConnectionFeature();
+#pragma warning restore CS0618
     }
 }
