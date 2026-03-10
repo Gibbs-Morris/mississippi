@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,9 @@ namespace Mississippi.Brooks.Serialization.Abstractions;
 /// <summary>
 ///     Provides extension methods for registering serialization storage providers in dependency injection containers.
 /// </summary>
+[Obsolete(
+    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class SerializationStorageProviderExtensions
 {
     /// <summary>
@@ -17,6 +21,9 @@ public static class SerializationStorageProviderExtensions
     /// <typeparam name="TProvider">The type of the serialization provider to register.</typeparam>
     /// <param name="services">The service collection to register the provider in.</param>
     /// <returns>The service collection for method chaining.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection RegisterSerializationStorageProvider<TProvider>(
         this IServiceCollection services
     )
@@ -37,6 +44,9 @@ public static class SerializationStorageProviderExtensions
     /// <param name="services">The service collection to register the provider in.</param>
     /// <param name="configureOptions">An action to configure the provider options.</param>
     /// <returns>The service collection for method chaining.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection RegisterSerializationStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         Action<TOptions> configureOptions
@@ -56,6 +66,9 @@ public static class SerializationStorageProviderExtensions
     /// <param name="services">The service collection to register the provider in.</param>
     /// <param name="configurationSection">The configuration section to bind options from.</param>
     /// <returns>The service collection for method chaining.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection RegisterSerializationStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         IConfiguration configurationSection
@@ -67,3 +80,5 @@ public static class SerializationStorageProviderExtensions
         return services.RegisterSerializationStorageProvider<TProvider>();
     }
 }
+
+#pragma warning restore S1133

@@ -1,3 +1,6 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
+using System;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
@@ -20,6 +23,9 @@ namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
 ///         Register with <see cref="AddBuiltInLifecycle" /> after calling <c>AddReservoir</c>.
 ///     </para>
 /// </remarks>
+[Obsolete(
+    "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class LifecycleFeatureRegistration
 {
     /// <summary>
@@ -35,6 +41,9 @@ public static class LifecycleFeatureRegistration
     ///         <item>Reducer for <see cref="AppReadyAction" /></item>
     ///     </list>
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddBuiltInLifecycle(
         this IServiceCollection services
     )
@@ -44,3 +53,5 @@ public static class LifecycleFeatureRegistration
         return services;
     }
 }
+
+#pragma warning restore S1133

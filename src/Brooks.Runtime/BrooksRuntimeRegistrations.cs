@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,9 @@ namespace Mississippi.Brooks.Runtime;
 /// <summary>
 ///     Extension methods for registering Brooks runtime services in dependency injection.
 /// </summary>
+[Obsolete(
+    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class BrooksRuntimeRegistrations
 {
     /// <summary>
@@ -43,6 +47,9 @@ public static class BrooksRuntimeRegistrations
     ///         options.OrleansStreamProviderName = "MyStreams");
     ///     </code>
     /// </remarks>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static ISiloBuilder AddEventSourcing(
         this ISiloBuilder builder,
         Action<BrookProviderOptions>? configureOptions = null
@@ -75,6 +82,9 @@ public static class BrooksRuntimeRegistrations
     ///         Brooks should use for event notifications.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static HostApplicationBuilder AddEventSourcing(
         this HostApplicationBuilder builder,
         Action<BrookProviderOptions>? configureOptions = null
@@ -96,6 +106,9 @@ public static class BrooksRuntimeRegistrations
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
     /// <returns>The modified service collection for chaining.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddEventSourcingByService(
         this IServiceCollection services
     )
@@ -115,3 +128,5 @@ public static class BrooksRuntimeRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

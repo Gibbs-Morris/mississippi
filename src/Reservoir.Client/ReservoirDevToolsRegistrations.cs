@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,9 @@ namespace Mississippi.Reservoir.Client;
 /// <remarks>
 ///     Justification: public to provide opt-in registration from application startup.
 /// </remarks>
+[Obsolete(
+    "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class ReservoirDevToolsRegistrations
 {
     /// <summary>
@@ -41,6 +45,9 @@ public static class ReservoirDevToolsRegistrations
     ///         initialized DevTools, a warning is logged to help diagnose missing component configuration.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddReservoirDevTools(
         this IServiceCollection services,
         Action<ReservoirDevToolsOptions>? configure = null
@@ -69,3 +76,5 @@ public static class ReservoirDevToolsRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

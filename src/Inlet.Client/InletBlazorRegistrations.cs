@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,9 @@ namespace Mississippi.Inlet.Client;
 /// <summary>
 ///     Extension methods for adding Inlet Blazor services.
 /// </summary>
+[Obsolete(
+    "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class InletBlazorRegistrations
 {
     /// <summary>
@@ -21,6 +25,9 @@ public static class InletBlazorRegistrations
     /// <remarks>
     ///     This must be called after <c>AddInlet()</c>.
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddInletBlazor(
         this IServiceCollection services
     )
@@ -46,6 +53,9 @@ public static class InletBlazorRegistrations
     ///         Use the builder to configure the hub path and register projection fetchers.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddInletBlazorSignalR(
         this IServiceCollection services,
         Action<InletBlazorSignalRBuilder>? configure = null
@@ -58,3 +68,5 @@ public static class InletBlazorRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

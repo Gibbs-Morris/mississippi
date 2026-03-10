@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 using System.Reflection;
 
@@ -21,6 +22,9 @@ namespace Mississippi.Inlet.Runtime;
 ///         that serve SignalR hubs, use the extensions from <c>Inlet.Gateway</c>.
 ///     </para>
 /// </remarks>
+[Obsolete(
+    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class InletSiloRegistrations
 {
     /// <summary>
@@ -36,6 +40,9 @@ public static class InletSiloRegistrations
     ///         with projection-to-brook mappings from attributed types.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddInletSilo(
         this IServiceCollection services
     )
@@ -69,6 +76,9 @@ public static class InletSiloRegistrations
     ///         Call this after <see cref="AddInletSilo" /> to populate the registry.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection ScanProjectionAssemblies(
         this IServiceCollection services,
         params Assembly[] assemblies
@@ -118,3 +128,5 @@ public static class InletSiloRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

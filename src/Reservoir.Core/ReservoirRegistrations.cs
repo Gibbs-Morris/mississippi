@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,9 @@ namespace Mississippi.Reservoir.Core;
 /// <summary>
 ///     Provides extension methods for registering Reservoir components in the dependency injection container.
 /// </summary>
+[Obsolete(
+    "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class ReservoirRegistrations
 {
     /// <summary>
@@ -27,6 +31,9 @@ public static class ReservoirRegistrations
     ///     State-scoped effects are registered with transient lifetime and composited
     ///     into a <see cref="IRootActionEffect{TState}" /> for each feature state.
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddActionEffect<TState, TEffect>(
         this IServiceCollection services
     )
@@ -50,6 +57,9 @@ public static class ReservoirRegistrations
     ///     <see cref="AddReducer{TAction,TState}(IServiceCollection, Func{TState,TAction,TState})" />.
     ///     Call it directly only for feature states without reducers.
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddFeatureState<TState>(
         this IServiceCollection services
     )
@@ -70,6 +80,9 @@ public static class ReservoirRegistrations
     /// <typeparam name="TMiddleware">The middleware implementation type.</typeparam>
     /// <param name="services">The service collection to add the middleware to.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddMiddleware<TMiddleware>(
         this IServiceCollection services
     )
@@ -87,6 +100,9 @@ public static class ReservoirRegistrations
     /// <param name="services">The service collection to add the action reducer to.</param>
     /// <param name="reduce">The delegate invoked to apply actions to the current state.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddReducer<TAction, TState>(
         this IServiceCollection services,
         Func<TState, TAction, TState> reduce
@@ -113,6 +129,9 @@ public static class ReservoirRegistrations
     /// <typeparam name="TReducer">The action reducer implementation type.</typeparam>
     /// <param name="services">The service collection to add the action reducer to.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddReducer<TAction, TState, TReducer>(
         this IServiceCollection services
     )
@@ -136,6 +155,9 @@ public static class ReservoirRegistrations
     ///     All effects are feature-scoped via <see cref="IActionEffect{TState}" /> and are
     ///     resolved through feature state registrations. There are no global effects.
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddReservoir(
         this IServiceCollection services
     )
@@ -160,6 +182,9 @@ public static class ReservoirRegistrations
     ///     <see cref="AddActionEffect{TState, TEffect}" />.
     ///     Call it directly only when manually compositing effects.
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddRootActionEffect<TState>(
         this IServiceCollection services
     )
@@ -175,6 +200,9 @@ public static class ReservoirRegistrations
     /// <typeparam name="TState">The feature state type.</typeparam>
     /// <param name="services">The service collection to add the root action reducer to.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddRootReducer<TState>(
         this IServiceCollection services
     )
@@ -184,3 +212,5 @@ public static class ReservoirRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133
