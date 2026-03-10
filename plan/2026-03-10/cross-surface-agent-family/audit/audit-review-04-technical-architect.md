@@ -1,0 +1,9 @@
+# Review 04: Technical Architect
+
+- Issue: The plan should explicitly state that the three entry agents form the only navigation graph, while internal specialists are workers only. Why it matters: this prevents future drift into a mesh of visible agents and preserves the intended coordinator-worker architecture. Proposed change: add a hard rule in the manifest and entry-agent plan that handoffs exist only among entry agents and internal specialists never hand off to anything. Evidence: user requirement plus current draft intent. Confidence: High.
+- Issue: The coordinator-worker pattern should explicitly say that entry agents may invoke specialists in parallel when independent perspectives are useful. Why it matters: the user asked for verification-first specialist review rounds; parallel independent review improves that design in VS Code. Proposed change: add a note that entry agents should run relevant specialist reviews independently and in parallel where the environment supports it. Evidence: VS Code subagent docs describe parallel subagent execution. Confidence: High.
+- Issue: The plan should clarify that GitHub.com correctness must not depend on programmatic specialist invocation. Why it matters: cross-surface compatibility breaks if the orchestrators assume subagent features that GitHub.com may not expose equally. Proposed change: add a compatibility guardrail stating that specialists improve VS Code orchestration but the entry-agent prompt must still be able to proceed linearly on GitHub.com. Evidence: GitHub Docs do not document the richer VS Code `agents` subagent control surface. Confidence: High.
+
+## CoV
+
+- Claim: the family architecture is coordinator-worker, not peer mesh. Evidence: user asked for three entry points and internal specialists only. Confidence: High.

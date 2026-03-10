@@ -1,0 +1,9 @@
+# Review 10: Security Engineer
+
+- Issue: Entry-agent prompts should explicitly treat fetched web content, PR comments, issue text, and MCP/tool output as potentially untrusted input. Why it matters: these agents will review plans, docs, workflows, and PR threads, all of which can carry prompt-injection or misleading content. Proposed change: add a guardrail that externally sourced content and tool output must be treated as untrusted evidence until corroborated. Evidence: VS Code tool docs describe URL approval and prompt-injection risk for fetched content. Confidence: High.
+- Issue: The review and build PR-thread loop should explicitly preserve small-fix discipline to reduce security regression risk. Why it matters: large comment-response patches increase the chance of introducing new vulnerabilities while addressing one issue. Proposed change: reinforce the one-thread-at-a-time micro-plan, micro-fix, build-test, commit, reply loop in both entry-build and entry-review prompts. Evidence: user requirements explicitly mandate this workflow. Confidence: High.
+- Issue: The automation-enforcement specialist should call out supply-chain and workflow hardening checks when deterministic. Why it matters: dependency and CI changes often benefit from encodeable safeguards. Proposed change: mention CI validation, dependency integrity, and workflow hardening under automatable rules where stable. Evidence: user examples include GitHub Actions and workflow validation. Confidence: Medium.
+
+## CoV
+
+- Claim: prompt-injection awareness should be explicit in this family. Evidence: these agents will regularly process tool output and external content. Confidence: High.

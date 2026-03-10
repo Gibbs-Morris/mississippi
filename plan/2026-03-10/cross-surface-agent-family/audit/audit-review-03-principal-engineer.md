@@ -1,0 +1,9 @@
+# Review 03: Principal Engineer
+
+- Issue: The plan should prohibit unsupported or weakly documented frontmatter beyond the chosen subset, not merely omit it by default. Why it matters: consistency and compatibility are easier to preserve when the family treats extra fields as exceptions that require justification. Proposed change: add an explicit guardrail that `agents`, `metadata`, `mcp-servers`, `infer`, and surface-specific additions are out of scope unless a final verification step proves they are needed and safe. Evidence: official docs document a limited common subset; GitHub explicitly calls out only some ignored fields, and repo memory notes prior validation trouble around frontmatter drift. Confidence: Medium.
+- Issue: The plan's tool strategy should account for VS Code's maximum tool-count pressure. Why it matters: leaving tools fully open is usually correct, but in tool-heavy environments the 128-tool limit can become operationally relevant. Proposed change: document a fallback behavior: keep `tools` unset in files, but allow users to narrow tools manually in VS Code when the environment is saturated. Evidence: VS Code tool docs mention a 128-tools-per-request limit. Confidence: High.
+- Issue: The draft plan should require a final family-wide consistency pass over descriptions, scope sections, and output contracts. Why it matters: small wording drift across 21 files will reduce reliability more than frontmatter mistakes. Proposed change: add a verification task that compares all specialist files against one shared structure checklist. Evidence: inference from the large family size and the repo's emphasis on consistent policy. Confidence: High.
+
+## CoV
+
+- Claim: consistency drift is a bigger practical risk than raw file creation. Evidence: 21-file family with repeated structure and remit boundaries. Confidence: High.

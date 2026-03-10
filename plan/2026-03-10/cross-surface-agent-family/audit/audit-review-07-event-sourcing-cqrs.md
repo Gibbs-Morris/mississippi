@@ -1,0 +1,8 @@
+# Review 07: Event Sourcing And CQRS Specialist
+
+- Issue: The repo-policy and architecture-fitness specialists should explicitly call out persisted-contract immutability when changes touch events, snapshots, or storage identities. Why it matters: this repository has explicit storage-name immutability rules that differ from general pre-1.0 compatibility freedom. Proposed change: require affected entry-agent reviews to route persisted-contract concerns to repo-policy, data-architect, and architecture-fitness specialists together. Evidence: `.github/instructions/backwards-compatibility.instructions.md` and `.github/instructions/storage-type-naming.instructions.md` are part of repo policy scope. Confidence: Medium.
+- Issue: The docs sidecar concept should include migration and caveat notes for behavioral or contract changes. Why it matters: event-sourced and contract-heavy systems need migration communication even when major compatibility guarantees are relaxed. Proposed change: require the docs sidecar to track migration notes, contract caveats, and user-visible behavior deltas. Evidence: user requirements already mention migration notes in the sidecar concept. Confidence: High.
+
+## CoV
+
+- Claim: repo-policy enforcement must surface persisted-contract exceptions, not just generic backwards-compatibility language. Evidence: repo instructions distinguish storage identity from API compatibility. Confidence: Medium.

@@ -1,0 +1,9 @@
+# Review 01: Marketing And Contracts
+
+- Issue: The plan picks the `vfe` prefix, but the manifest requirements should explicitly require plain-language expansion of the acronym near the top. Why it matters: users scanning the agent list or manifest may not decode `vfe` quickly, which weakens discoverability. Proposed change: require the manifest title and opening paragraph to expand `vfe` as `verification-first enterprise` and explain when to use it versus `flow` and `epic`. Evidence: repo currently has several opaque family prefixes in `.github/agents/` and no manifest/index file. Confidence: High.
+- Issue: Entry-agent descriptions should optimize for intent-based selection, not internal workflow jargon. Why it matters: the three visible entry points must be obvious to humans on first use. Proposed change: require each entry-agent description to begin with a `Start here for ...` formulation tied to a user goal. Evidence: inference from the current mixed agent inventory and the lack of an existing family index. Confidence: Medium.
+- Issue: The manifest should document deliberate compatibility compromises as user-facing expectations, not just implementation notes. Why it matters: reviewers need to understand why some VS Code affordances are intentionally absent or limited. Proposed change: add a dedicated `Cross-surface compromises` section in the manifest. Evidence: user requirements explicitly ask for compatibility compromises to be explained. Confidence: High.
+
+## CoV
+
+- Claim: discoverability is a primary risk for this family. Evidence: crowded `.github/agents/` inventory plus no current manifest. Confidence: High.

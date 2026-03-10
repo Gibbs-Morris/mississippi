@@ -1,0 +1,9 @@
+# Review 02: Solution Engineering
+
+- Issue: The draft plan does not yet require the manifest to explain coexistence with existing families in task-selection terms. Why it matters: without a clear selection guide, humans may keep choosing older families for work this new family is meant to own. Proposed change: add a `When to use this family` section comparing `vfe` against the existing `flow`, `epic`, and CoV-oriented agents. Evidence: `.github/agents/` contains multiple planners, builders, and reviewers already. Confidence: High.
+- Issue: The plan should explicitly require GitHub.com-safe behavior when handoffs and `argument-hint` are ignored. Why it matters: cross-surface usability depends on the prompt body standing on its own. Proposed change: add a manifest and acceptance-check item stating that every entry agent must remain fully usable without handoff buttons or argument hints. Evidence: GitHub Docs say these fields are ignored on GitHub.com. Confidence: High.
+- Issue: The build and review entry agents should mention third-party integration and workflow-file inspection more explicitly. Why it matters: enterprise delivery often spans pipelines and external contracts, which the family claims to bias toward. Proposed change: strengthen the build/review workflow steps to explicitly read workflows, deployment files, and external interface changes before making conclusions. Evidence: inference from the requested enterprise/platform bias plus repo presence of workflow and solution infrastructure. Confidence: Medium.
+
+## CoV
+
+- Claim: coexistence guidance is necessary for adoption. Evidence: current repo has multiple overlapping agent families. Confidence: High.
