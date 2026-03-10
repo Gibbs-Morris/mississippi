@@ -258,6 +258,10 @@ Generate questions that would expose errors, including:
   - `Commit SHA`,
   - `Resolution link`.
 
+### 7) Post-push review polling loop (automatic after remediation or any push to an open-PR branch)
+
+After pushing code to a branch that has an open PR (whether from remediation or initial review fixes), execute the post-push polling loop exactly as specified in `.github/instructions/pr-review-polling.instructions.md`. That instruction is authoritative for all rules, steps, CLI commands, and hard limits.
+
 ### Final output (always include)
 
 - **Coverage evidence**
