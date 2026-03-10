@@ -9,7 +9,6 @@
     <Description>Source generators that create client data types, mappings, command and workflow actions, state updates, and service registrations from attributed domain types.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>

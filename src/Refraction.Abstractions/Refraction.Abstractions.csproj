@@ -1,7 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-  </ItemGroup>
   <PropertyGroup>
     <Description>Public contracts for UI themes, keyboard focus management, and motion preferences.</Description>
   </PropertyGroup>
