@@ -45,6 +45,12 @@
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
     </PropertyGroup>
+    <PropertyGroup>
+        <_NormalizedRepoRoot>$([System.String]::Copy('$(MSBuildThisFileDirectory)').Replace('\', '/'))</_NormalizedRepoRoot>
+        <_NormalizedProjectDirectory>$([System.String]::Copy('$(MSBuildProjectDirectory)').Replace('\', '/'))/</_NormalizedProjectDirectory>
+        <_IsSrcProject Condition="$([System.String]::Copy('$(_NormalizedProjectDirectory)').StartsWith('$(_NormalizedRepoRoot)src/'))">true</_IsSrcProject>
+        <_IsSdkSourceProject Condition="'$(_IsSrcProject)' == 'true' and $([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Sdk'))">true</_IsSdkSourceProject>
+    </PropertyGroup>
 
     <!-- Aspire AppHost projects: use OS/RID-specific NuGet lock file paths to avoid churn from runtime-specific packages -->
     <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').EndsWith('.AppHost'))">
@@ -77,6 +83,11 @@
     </PropertyGroup>
 
 
+
+    <!-- Keep the legacy label so the unchanged RT0002 workflow sees committed configuration and skips XML mutation. -->
+    <ItemGroup Label="ReferenceTrimmerCiInjection" Condition="'$(_IsSrcProject)' == 'true' and '$(_IsSdkSourceProject)' != 'true'">
+        <PackageReference Include="ReferenceTrimmer" PrivateAssets="all" />
+    </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="$(AssemblyName).Tests" />

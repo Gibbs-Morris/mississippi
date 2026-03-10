@@ -5,7 +5,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
-    <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <Description>ASP.NET gateway exposing HTTP endpoints for aggregate commands and UX projection queries.</Description>
