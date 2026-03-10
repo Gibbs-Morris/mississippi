@@ -19,9 +19,9 @@ Governing thought: After pushing code to a branch with an open PR, agents sleep 
 - If a comment is declined (disagree or out-of-scope), agents **MUST** reply with rationale and leave the thread open for the reviewer. Why: Only the reviewer or author should close a declined thread.
 - Review threads where `isOutdated` is `true` **SHOULD** be skipped during the polling loop; agents **SHOULD** record them in the remediation ledger as `SKIPPED (outdated)` and leave them open for human review. Why: GitHub does not permit resolving outdated threads via the normal flow; attempting to do so causes API errors or confusing state.
 - If the exact thread reply or resolution action cannot be completed with MCP or `gh` on the current machine, agents **MUST** stop and report the blocker rather than substituting a top-level PR comment. Why: A top-level comment does not satisfy the required per-thread audit trail.
-- After addressing all found comments, agents **MUST** sleep for another 300 seconds and poll again; this loop **MUST** repeat until a poll returns zero new unaddressed comments. Why: Reviewers may add follow-up comments after fixes land.
+- After addressing all found comments, agents **MUST** sleep for another 300 seconds and poll again; this loop **MUST** repeat until either (a) a poll returns zero new unaddressed comments or (b) a configured maximum iteration cap is reached. Why: Reviewers may add follow-up comments after fixes land while still bounding the loop in adversarial scenarios.
 - Agents **SHOULD** log each addressed thread (thread ID, status, commit SHA) in a running remediation ledger in their output. Why: Provides an auditable summary of all review actions taken.
-- Agents **SHOULD** cap the polling loop at a reasonable maximum (e.g., 20 iterations); if the cap is reached, agents **MUST** log the remaining unresolved threads in the ledger and stop with a summary for human review. Why: Prevents runaway loops in adversarial or high-volume review scenarios.
+- Agents **SHOULD** configure that maximum-iteration cap to a reasonable value (e.g., 20 iterations); if the cap condition in the previous rule is reached, agents **MUST** log the remaining unresolved threads in the ledger and stop with a summary for human review. Why: Prevents runaway loops in adversarial or high-volume review scenarios while keeping the stopping condition unambiguous.
 
 ## Scope and Audience
 
@@ -34,7 +34,7 @@ All agents that push code to branches associated with open pull requests.
 3. Poll for new unresolved review comments (GitHub MCP or `gh` CLI).
 4. For each comment: fix → commit → push → reply → resolve.
 5. Sleep 300 seconds, poll again.
-6. Repeat until zero new comments.
+6. Repeat until zero new comments or the iteration cap is reached.
 
 ## Procedure
 
@@ -43,7 +43,7 @@ All agents that push code to branches associated with open pull requests.
 ```text
 [TRIGGER: code pushed to a branch with an open PR]
 IF no open PR THEN EXIT
-LOOP
+LOOP (max 20 iterations)
   SLEEP 300 seconds  (e.g. Start-Sleep -Seconds 300)
   POLL for unresolved review comments/threads
   IF no new unaddressed comments THEN EXIT LOOP
@@ -56,6 +56,7 @@ LOOP
     IF fix applied THEN RESOLVE the thread
     ELSE reply with decline rationale and LEAVE thread open
   END FOR
+  IF iteration cap reached THEN LOG remaining threads and EXIT LOOP
 END LOOP
 ```
 
