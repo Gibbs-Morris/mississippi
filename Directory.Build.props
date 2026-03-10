@@ -49,7 +49,10 @@
         <_NormalizedRepoRoot>$([System.String]::Copy('$(MSBuildThisFileDirectory)').Replace('\', '/'))</_NormalizedRepoRoot>
         <_NormalizedProjectDirectory>$([System.String]::Copy('$(MSBuildProjectDirectory)').Replace('\', '/'))/</_NormalizedProjectDirectory>
         <_IsSrcProject Condition="$([System.String]::Copy('$(_NormalizedProjectDirectory)').StartsWith('$(_NormalizedRepoRoot)src/'))">true</_IsSrcProject>
-        <_IsSdkSourceProject Condition="'$(_IsSrcProject)' == 'true' and $([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Sdk'))">true</_IsSdkSourceProject>
+        <_IsTestsProjectDirectory Condition="$([System.String]::Copy('$(_NormalizedProjectDirectory)').StartsWith('$(_NormalizedRepoRoot)tests/'))">true</_IsTestsProjectDirectory>
+        <_IsSamplesProject Condition="$([System.String]::Copy('$(_NormalizedProjectDirectory)').StartsWith('$(_NormalizedRepoRoot)samples/'))">true</_IsSamplesProject>
+        <_IsSdkProject Condition="$([System.String]::Copy('$(MSBuildProjectName)').StartsWith('Sdk'))">true</_IsSdkProject>
+        <_ShouldInjectReferenceTrimmer Condition="'$(_IsSdkProject)' != 'true' and ('$(_IsSrcProject)' == 'true' or ('$(ReferenceTrimmerIncludeTestsAndSamples)' == 'true' and ('$(_IsTestsProjectDirectory)' == 'true' or '$(_IsSamplesProject)' == 'true')))">true</_ShouldInjectReferenceTrimmer>
     </PropertyGroup>
 
     <!-- Aspire AppHost projects: use OS/RID-specific NuGet lock file paths to avoid churn from runtime-specific packages -->
@@ -84,8 +87,8 @@
 
 
 
-    <!-- Keep the legacy label so the unchanged RT0002 workflow sees committed configuration and skips XML mutation. -->
-    <ItemGroup Label="ReferenceTrimmerCiInjection" Condition="'$(_IsSrcProject)' == 'true' and '$(_IsSdkSourceProject)' != 'true'">
+    <!-- Keep the legacy label so the RT0002 workflow can detect committed configuration without XML mutation. -->
+    <ItemGroup Label="ReferenceTrimmerCiInjection" Condition="'$(_ShouldInjectReferenceTrimmer)' == 'true'">
         <PackageReference Include="ReferenceTrimmer" PrivateAssets="all" />
     </ItemGroup>
 

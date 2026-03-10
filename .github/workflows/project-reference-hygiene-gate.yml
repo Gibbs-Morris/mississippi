@@ -11,7 +11,6 @@ permissions:
 
 env:
   CONFIGURATION: Release
-  REFERENCE_TRIMMER_VERSION: 3.4.5
 
 jobs:
   project-reference-hygiene:
@@ -37,64 +36,8 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Inject ReferenceTrimmer into all projects
-        shell: pwsh
-        run: |
-          $directoryPackagesPath = Join-Path $env:GITHUB_WORKSPACE 'Directory.Packages.props'
-          $usesCpm = Test-Path $directoryPackagesPath
-          if ($usesCpm) {
-            [xml]$directoryPackages = Get-Content -Path $directoryPackagesPath
-            $root = $directoryPackages.Project
-            if ($null -eq $root) {
-              throw "Directory.Packages.props does not contain a <Project> root element."
-            }
-
-            $packageVersionNode = $directoryPackages.SelectSingleNode("/Project/ItemGroup/PackageVersion[@Include='ReferenceTrimmer']")
-            if ($null -eq $packageVersionNode) {
-              $itemGroup = $directoryPackages.CreateElement('ItemGroup')
-              $packageVersion = $directoryPackages.CreateElement('PackageVersion')
-              $packageVersion.SetAttribute('Include', 'ReferenceTrimmer')
-              $packageVersion.SetAttribute('Version', $env:REFERENCE_TRIMMER_VERSION)
-              $itemGroup.AppendChild($packageVersion) | Out-Null
-              $root.AppendChild($itemGroup) | Out-Null
-              $directoryPackages.Save($directoryPackagesPath)
-              Write-Host "Added PackageVersion(ReferenceTrimmer=$($env:REFERENCE_TRIMMER_VERSION)) to Directory.Packages.props"
-            }
-          }
-
-          $directoryBuildPath = Join-Path $env:GITHUB_WORKSPACE 'Directory.Build.props'
-          if (-not (Test-Path $directoryBuildPath)) {
-            throw "Directory.Build.props not found at repository root."
-          }
-
-          [xml]$directoryBuild = Get-Content -Path $directoryBuildPath
-          $buildRoot = $directoryBuild.Project
-          if ($null -eq $buildRoot) {
-            throw "Directory.Build.props does not contain a <Project> root element."
-          }
-
-          $existingInjection = $directoryBuild.SelectSingleNode("/Project/ItemGroup[@Label='ReferenceTrimmerCiInjection']")
-          if ($null -eq $existingInjection) {
-            $itemGroup = $directoryBuild.CreateElement('ItemGroup')
-            $itemGroup.SetAttribute('Label', 'ReferenceTrimmerCiInjection')
-            $itemGroup.SetAttribute('Condition', "'`$(EnableReferenceTrimmer)' == 'true'")
-
-            $packageReference = $directoryBuild.CreateElement('PackageReference')
-            $packageReference.SetAttribute('Include', 'ReferenceTrimmer')
-            $packageReference.SetAttribute('PrivateAssets', 'all')
-
-            if (-not $usesCpm) {
-              $packageReference.SetAttribute('Version', $env:REFERENCE_TRIMMER_VERSION)
-            }
-
-            $itemGroup.AppendChild($packageReference) | Out-Null
-            $buildRoot.AppendChild($itemGroup) | Out-Null
-            $directoryBuild.Save($directoryBuildPath)
-            Write-Host "Injected ReferenceTrimmer PackageReference into Directory.Build.props"
-          }
-
       - name: Restore solution
-        run: dotnet restore ${{ github.workspace }}/${{ matrix.solution }} -p:EnableReferenceTrimmer=true
+        run: dotnet restore ${{ github.workspace }}/${{ matrix.solution }} -p:ReferenceTrimmerIncludeTestsAndSamples=true
 
       - name: Build with ReferenceTrimmer and fail on RT0002
         shell: pwsh
@@ -102,7 +45,7 @@ jobs:
           $solutionPath = Join-Path $env:GITHUB_WORKSPACE '${{ matrix.solution }}'
           $logPath = Join-Path $env:RUNNER_TEMP ('rt0002-' + '${{ matrix.solution }}'.Replace('/', '_').Replace('.', '_') + '.log')
 
-          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -warnaserror -p:EnableReferenceTrimmer=true -p:GenerateDocumentationFile=true 2>&1 | Tee-Object -FilePath $logPath
+          dotnet build $solutionPath --configuration $env:CONFIGURATION --no-restore -warnaserror -p:ReferenceTrimmerIncludeTestsAndSamples=true -p:GenerateDocumentationFile=true 2>&1 | Tee-Object -FilePath $logPath
           if ($LASTEXITCODE -ne 0) {
             throw "Build failed before RT0002 evaluation."
           }
