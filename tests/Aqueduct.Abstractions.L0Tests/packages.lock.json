@@ -507,14 +507,6 @@
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Common.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
@@ -570,8 +562,8 @@
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "CentralTransitive",
         "requested": "[10.0.3, )",
-        "resolved": "10.0.3",
-        "contentHash": "bwGMrRcAMWx2s/RDgja97p27rxSz2pEQW0+rX5cWAUWVETVJ/eyxGfjAl8vuG5a+lckWmPIE+vcuaZNVB5YDdw=="
+        "resolved": "10.0.0",
+        "contentHash": "L3AdmZ1WOK4XXT5YFPEwyt0ep6l8lGIPs7F5OOBZc77Zqeo01Of7XXICy47628sdVl0v/owxYJTe86DTgFwKCA=="
       },
       "Microsoft.Extensions.Features": {
         "type": "CentralTransitive",

@@ -540,20 +540,11 @@
       "Mississippi.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Common.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
-          "Microsoft.Orleans.Sdk": "[10.0.1, )"
+          "Microsoft.Orleans.Streaming": "[10.0.1, )"
         }
       },
       "Mississippi.Tributary.Abstractions": {
@@ -570,12 +561,6 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )"
         }
-      },
-      "CloudNative.CloudEvents": {
-        "type": "CentralTransitive",
-        "requested": "[2.8.0, )",
-        "resolved": "2.8.0",
-        "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
       },
       "Microsoft.CodeAnalysis.Common": {
         "type": "CentralTransitive",

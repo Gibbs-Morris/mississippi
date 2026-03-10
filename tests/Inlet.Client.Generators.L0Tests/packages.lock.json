@@ -409,10 +409,7 @@
         }
       },
       "Mississippi.Inlet.Client.Generators": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )"
-        }
+        "type": "Project"
       },
       "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"

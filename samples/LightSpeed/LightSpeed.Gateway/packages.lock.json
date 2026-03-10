@@ -93,9 +93,7 @@
       "Mississippi.Refraction.Client.StateManagement": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Refraction.Abstractions": "[1.0.0, )",
-          "Mississippi.Refraction.Client": "[1.0.0, )",
-          "Mississippi.Reservoir.Core": "[1.0.0, )"
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Reservoir.Abstractions": {

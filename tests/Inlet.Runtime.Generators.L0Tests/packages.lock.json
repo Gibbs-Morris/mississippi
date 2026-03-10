@@ -408,14 +408,8 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
-      "Mississippi.Inlet.Generators.Abstractions": {
-        "type": "Project"
-      },
       "Mississippi.Inlet.Runtime.Generators": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )"
-        }
+        "type": "Project"
       },
       "Newtonsoft.Json": {
         "type": "CentralTransitive",

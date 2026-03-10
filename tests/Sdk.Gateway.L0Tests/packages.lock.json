@@ -308,8 +308,7 @@
       "Mississippi.Aqueduct.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
       "Mississippi.Aqueduct.Gateway": {
@@ -323,19 +322,8 @@
       "Mississippi.Brooks.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "CloudNative.CloudEvents": "[2.8.0, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Brooks.Runtime": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Microsoft.Orleans.Streaming": "[10.0.1, )",
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Streaming": "[10.0.1, )"
         }
       },
       "Mississippi.Brooks.Runtime.Storage.Abstractions": {
@@ -362,23 +350,21 @@
       "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
+          "Mississippi.Brooks.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.DomainModeling.Gateway": {
         "type": "Project",
         "dependencies": {
           "Mississippi.Common.Abstractions": "[1.0.0, )",
-          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
+          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.DomainModeling.Runtime": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Brooks.Runtime": "[1.0.0, )",
+          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
           "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
@@ -392,7 +378,6 @@
         "type": "Project",
         "dependencies": {
           "Mississippi.Aqueduct.Gateway": "[1.0.0, )",
-          "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Runtime": "[1.0.0, )"
         }
@@ -410,7 +395,7 @@
           "Microsoft.Orleans.Streaming": "[10.0.1, )",
           "Mississippi.Aqueduct.Abstractions": "[1.0.0, )",
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
+          "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
@@ -420,8 +405,7 @@
       "Mississippi.Inlet.Runtime.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
       "Mississippi.Sdk.Gateway": {
@@ -446,7 +430,6 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Brooks.Runtime": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
@@ -457,12 +440,6 @@
         "dependencies": {
           "Mississippi.Tributary.Abstractions": "[1.0.0, )"
         }
-      },
-      "CloudNative.CloudEvents": {
-        "type": "CentralTransitive",
-        "requested": "[2.8.0, )",
-        "resolved": "2.8.0",
-        "contentHash": "RvabvAQV7u3FZcZL5UlRmFz3/T5nMl86GpChpRvHKRHbO+/I4LBcZ0xRqYnNfAh30gM+h/JkSBHEnbhl0zmGtA=="
       },
       "Microsoft.CodeAnalysis.Common": {
         "type": "CentralTransitive",

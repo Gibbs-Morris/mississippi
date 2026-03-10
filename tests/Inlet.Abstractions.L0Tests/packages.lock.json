@@ -511,9 +511,6 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
-      "Mississippi.Inlet.Abstractions": {
-        "type": "Project"
-      },
       "Mississippi.Inlet.Client.Abstractions": {
         "type": "Project",
         "dependencies": {
@@ -521,18 +518,17 @@
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Inlet.Server.Abstractions": {
+      "Mississippi.Inlet.Gateway.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )"
         }
       },
-      "Mississippi.Inlet.Silo.Abstractions": {
+      "Mississippi.Inlet.Runtime.Abstractions": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
       "Mississippi.Reservoir.Abstractions": {

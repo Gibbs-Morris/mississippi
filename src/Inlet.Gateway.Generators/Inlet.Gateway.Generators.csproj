@@ -9,7 +9,6 @@
     <Description>Source generators for Inlet.Gateway to reduce boilerplate.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Generators.Core\Inlet.Generators.Core.csproj" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>

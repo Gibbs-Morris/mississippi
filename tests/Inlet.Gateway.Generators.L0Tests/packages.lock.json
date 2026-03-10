@@ -409,12 +409,6 @@
         }
       },
       "Mississippi.Inlet.Gateway.Generators": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Inlet.Generators.Abstractions": {
         "type": "Project"
       },
       "Newtonsoft.Json": {
