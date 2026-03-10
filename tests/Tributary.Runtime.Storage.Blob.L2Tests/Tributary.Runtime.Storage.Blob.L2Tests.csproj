@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Orleans.Server" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tributary.Runtime\Tributary.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
+    <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Blob\Tributary.Runtime.Storage.Blob.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime.Storage.Blob.L2Tests.AppHost\Tributary.Runtime.Storage.Blob.L2Tests.AppHost.csproj" />
+  </ItemGroup>
+
+</Project>
