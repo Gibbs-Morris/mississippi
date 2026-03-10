@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "planName": "tributary-blob-snapshot-storage-provider",
+  "planDate": "2026-03-10",
+  "masterPlanPR": null,
+  "subPlans": [
+    {
+      "id": "01",
+      "slug": "blob-provider-core",
+      "title": "Blob provider core",
+      "file": "sub-plans/01-blob-provider-core.md",
+      "dependsOn": [],
+      "parallelGroup": null,
+      "branch": "epic/tributary-blob-snapshot-storage-provider/01-blob-provider-core",
+      "semver": "feature"
+    },
+    {
+      "id": "02",
+      "slug": "azurite-l2-verification",
+      "title": "Azurite L2 verification",
+      "file": "sub-plans/02-azurite-l2-verification.md",
+      "dependsOn": [
+        "01"
+      ],
+      "parallelGroup": null,
+      "branch": "epic/tributary-blob-snapshot-storage-provider/02-azurite-l2-verification",
+      "semver": "feature"
+    },
+    {
+      "id": "03",
+      "slug": "live-azure-smoke",
+      "title": "Live Azure smoke",
+      "file": "sub-plans/03-live-azure-smoke.md",
+      "dependsOn": [
+        "02"
+      ],
+      "parallelGroup": null,
+      "branch": "epic/tributary-blob-snapshot-storage-provider/03-live-azure-smoke",
+      "semver": "feature"
+    },
+    {
+      "id": "04",
+      "slug": "docs-and-wiring",
+      "title": "Docs and wiring",
+      "file": "sub-plans/04-docs-and-wiring.md",
+      "dependsOn": [
+        "03"
+      ],
+      "parallelGroup": null,
+      "branch": "epic/tributary-blob-snapshot-storage-provider/04-docs-and-wiring",
+      "semver": "feature"
+    }
+  ]
+}
