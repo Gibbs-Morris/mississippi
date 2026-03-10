@@ -1,12 +1,12 @@
 ---
 id: tributary-overview
-title: Tributary
+title: Reducers & Snapshots (Tributary)
 sidebar_label: Overview
 sidebar_position: 1
-description: Tributary provides reducers and snapshot infrastructure for rebuilding and persisting derived state.
+description: Understand Tributary, Mississippi's reducer and snapshot layer for rebuilding derived state.
 ---
 
-# Tributary
+# Reducers & Snapshots (Tributary)
 
 ## Overview
 

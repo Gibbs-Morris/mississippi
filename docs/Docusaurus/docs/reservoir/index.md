@@ -1,12 +1,12 @@
 ---
 id: reservoir-overview
-title: Reservoir
+title: Client State (Reservoir)
 sidebar_label: Overview
 sidebar_position: 1
-description: Reservoir provides Redux-style client state management for Mississippi applications.
+description: Understand Reservoir, Mississippi's Redux-style client state-management layer.
 ---
 
-# Reservoir
+# Client State (Reservoir)
 
 ## Overview
 

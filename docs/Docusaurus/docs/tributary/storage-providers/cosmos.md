@@ -48,6 +48,10 @@ Configuration is provided through `SnapshotStorageOptions`:
 
 <!-- Placeholder: throughput, partitioning, retry behavior, monitoring -->
 
+## Summary
+
+The Cosmos DB snapshot storage provider handles snapshot persistence and container initialization for Tributary snapshots. Detailed operational and configuration guidance is pending.
+
 ## Next Steps
 
 - [Storage Providers Overview](index.md)

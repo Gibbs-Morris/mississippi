@@ -35,6 +35,8 @@ Configuration is provided through `BrookStorageOptions`:
 | `DatabaseId` | `BrookCosmosDefaults.DatabaseId` | Cosmos DB database identifier |
 | `CosmosClientServiceKey` | `BrookCosmosDefaults.CosmosClientServiceKey` | Keyed service key for resolving `CosmosClient` |
 | `MaxEventsPerBatch` | `90` | Maximum events per transactional batch |
+| `MaxRequestSizeBytes` | `1_700_000` | Maximum request size in bytes for Cosmos DB operations |
+| `QueryBatchSize` | `100` | Batch size for query operations |
 | `LeaseDurationSeconds` | `60` | Distributed lock lease duration |
 | `LeaseRenewalThresholdSeconds` | `20` | Threshold before lease renewal |
 | `LockContainerName` | `BrookCosmosDefaults.LockContainerId` | Blob container for distributed locking |
@@ -54,6 +56,10 @@ Configuration is provided through `BrookStorageOptions`:
 ## Operational Notes
 
 <!-- Placeholder: throughput, partitioning, retry behavior, monitoring -->
+
+## Summary
+
+The Cosmos DB brook storage provider handles event persistence, distributed locking, and batched writes for Brooks event streams. Detailed operational and configuration guidance is pending.
 
 ## Next Steps
 

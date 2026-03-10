@@ -38,4 +38,5 @@ PR reviewers in this repository.
 
 - Testing: `.github/instructions/testing.instructions.md`
 - Logging/DI guardrails: `.github/instructions/logging-rules.instructions.md`, `.github/instructions/shared-policies.instructions.md`
+- Post-push review polling: `.github/instructions/pr-review-polling.instructions.md`
 - Documentation agent: `.github/agents/technical-writer.agent.md`
