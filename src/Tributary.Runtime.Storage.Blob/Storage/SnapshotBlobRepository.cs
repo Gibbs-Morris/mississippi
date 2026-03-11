@@ -71,7 +71,7 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(
+    public Task<bool> DeleteAsync(
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     ) =>
@@ -80,7 +80,7 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
             cancellationToken);
 
     /// <inheritdoc />
-    public async Task PruneAsync(
+    public async Task<int> PruneAsync(
         SnapshotStreamKey streamKey,
         IReadOnlyCollection<int> retainModuli,
         CancellationToken cancellationToken = default
@@ -95,18 +95,12 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
             blobNames.Add(blob.Name);
         }
 
-        foreach (string blobName in blobNames)
-        {
-            if (SnapshotBlobPathBuilder.TryParseVersion(streamKey, blobName, out long version))
-            {
-                blobs.Add((blobName, version));
-            }
-        }
+        blobs.AddRange(ParseValidBlobs(streamKey, blobNames));
 
         if (blobs.Count == 0)
         {
             Logger.NoSnapshotsToPrune(prefix);
-            return;
+            return 0;
         }
 
         long maxVersion = blobs.Max(item => item.Version);
@@ -127,6 +121,21 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
         }
 
         Logger.PrunedSnapshots(prefix, deletedCount, retainVersions.Count, maxVersion);
+        return deletedCount;
+
+        static IEnumerable<(string BlobName, long Version)> ParseValidBlobs(
+            SnapshotStreamKey key,
+            IEnumerable<string> names
+        )
+        {
+            foreach (string name in names)
+            {
+                if (SnapshotBlobPathBuilder.TryParseVersion(key, name, out long version))
+                {
+                    yield return (name, version);
+                }
+            }
+        }
     }
 
     /// <inheritdoc />

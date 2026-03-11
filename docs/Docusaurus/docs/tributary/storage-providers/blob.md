@@ -93,7 +93,7 @@ _ = storage.AddBlobs("blobs");
 await builder.Build().RunAsync();
 ```
 
-That path is opt-in and activates when `MISSISSIPPI_TRIBUTARY_BLOB_AZURITE_L2=true` is set in an Aspire-capable environment. It requires no live Azure credentials, but it does require the local environment to support Aspire DCP orchestration.
+That path runs by default when the local or CI environment supports Aspire DCP orchestration. It requires no live Azure credentials. When Aspire DCP is unavailable, the Azurite-backed tests skip with an explicit environment-capability message.
 
 ## Opt-In Live Azure Smoke Tests
 
@@ -101,7 +101,6 @@ The L2 project also includes a live Azure Blob smoke path that activates only wh
 
 | Variable | Purpose |
 |----------|---------|
-| `MISSISSIPPI_TRIBUTARY_BLOB_AZURITE_L2` | Enables the Azurite/AppHost-backed Blob L2 tests |
 | `MISSISSIPPI_TRIBUTARY_BLOB_LIVE_CONNECTION_STRING` | Connection string for the target Blob account |
 | `MISSISSIPPI_TRIBUTARY_BLOB_LIVE_CONTAINER` | Optional container name override for the smoke test |
 

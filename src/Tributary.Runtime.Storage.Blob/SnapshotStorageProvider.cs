@@ -56,8 +56,11 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
     )
     {
         Logger.DeletingSnapshot(snapshotKey);
-        await Repository.DeleteAsync(snapshotKey, cancellationToken).ConfigureAwait(false);
-        SnapshotStorageMetrics.RecordDelete(snapshotKey.Stream.SnapshotStorageName);
+        bool deleted = await Repository.DeleteAsync(snapshotKey, cancellationToken).ConfigureAwait(false);
+        if (deleted)
+        {
+            SnapshotStorageMetrics.RecordDelete(snapshotKey.Stream.SnapshotStorageName);
+        }
     }
 
     /// <inheritdoc />
@@ -69,8 +72,8 @@ internal sealed class SnapshotStorageProvider : ISnapshotStorageProvider
     {
         ArgumentNullException.ThrowIfNull(retainModuli);
         Logger.PruningSnapshots(streamKey, retainModuli.Count);
-        await Repository.PruneAsync(streamKey, retainModuli, cancellationToken).ConfigureAwait(false);
-        SnapshotStorageMetrics.RecordPrune(streamKey.SnapshotStorageName, retainModuli.Count);
+        int prunedCount = await Repository.PruneAsync(streamKey, retainModuli, cancellationToken).ConfigureAwait(false);
+        SnapshotStorageMetrics.RecordPrune(streamKey.SnapshotStorageName, prunedCount);
     }
 
     /// <inheritdoc />

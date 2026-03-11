@@ -31,7 +31,7 @@ public sealed class LiveAzureBlobSnapshotStorageTests
     public async Task WriteReadDeleteShouldRoundTripAgainstLiveAzure()
     {
         LiveAzureBlobTestConfiguration.TryCreate(out LiveAzureBlobTestConfiguration? configuration).Should().BeTrue();
-        IHost host = await CreateProviderHostAsync(configuration!);
+        using IHost host = await CreateProviderHostAsync(configuration!);
         try
         {
             ISnapshotStorageProvider provider = host.Services.GetRequiredService<ISnapshotStorageProvider>();
@@ -48,7 +48,6 @@ public sealed class LiveAzureBlobSnapshotStorageTests
         finally
         {
             await host.StopAsync();
-            host.Dispose();
         }
     }
 

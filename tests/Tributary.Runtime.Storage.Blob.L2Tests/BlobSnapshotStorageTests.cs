@@ -42,8 +42,9 @@ public sealed class BlobSnapshotStorageTests
     [AzuriteBlobFact]
     public async Task HostedInitializationShouldCreateContainer()
     {
+        fixture.EnsureAzuriteAvailable();
         string containerName = $"snapshot-init-{Guid.NewGuid():N}";
-        IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: false);
+        using IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: false);
         try
         {
             bool exists = await fixture.CreateBlobServiceClient().GetBlobContainerClient(containerName).ExistsAsync();
@@ -52,7 +53,6 @@ public sealed class BlobSnapshotStorageTests
         finally
         {
             await host.StopAsync();
-            host.Dispose();
         }
     }
 
@@ -63,8 +63,9 @@ public sealed class BlobSnapshotStorageTests
     [AzuriteBlobFact]
     public async Task WriteReadDeleteShouldRoundTripSnapshot()
     {
+        fixture.EnsureAzuriteAvailable();
         string containerName = $"snapshot-roundtrip-{Guid.NewGuid():N}";
-        IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: false);
+        using IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: false);
         try
         {
             ISnapshotStorageProvider provider = host.Services.GetRequiredService<ISnapshotStorageProvider>();
@@ -83,7 +84,6 @@ public sealed class BlobSnapshotStorageTests
         finally
         {
             await host.StopAsync();
-            host.Dispose();
         }
     }
 
@@ -94,8 +94,9 @@ public sealed class BlobSnapshotStorageTests
     [AzuriteBlobFact]
     public async Task DeleteAllShouldRemoveAllVersions()
     {
+        fixture.EnsureAzuriteAvailable();
         string containerName = $"snapshot-deleteall-{Guid.NewGuid():N}";
-        IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: false);
+        using IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: false);
         try
         {
             ISnapshotStorageProvider provider = host.Services.GetRequiredService<ISnapshotStorageProvider>();
@@ -109,7 +110,6 @@ public sealed class BlobSnapshotStorageTests
         finally
         {
             await host.StopAsync();
-            host.Dispose();
         }
     }
 
@@ -120,8 +120,9 @@ public sealed class BlobSnapshotStorageTests
     [AzuriteBlobFact]
     public async Task PruneShouldRetainMatchingModuliAndLatestVersion()
     {
+        fixture.EnsureAzuriteAvailable();
         string containerName = $"snapshot-prune-{Guid.NewGuid():N}";
-        IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: false);
+        using IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: false);
         try
         {
             ISnapshotStorageProvider provider = host.Services.GetRequiredService<ISnapshotStorageProvider>();
@@ -141,7 +142,6 @@ public sealed class BlobSnapshotStorageTests
         finally
         {
             await host.StopAsync();
-            host.Dispose();
         }
     }
 
@@ -152,8 +152,9 @@ public sealed class BlobSnapshotStorageTests
     [AzuriteBlobFact]
     public async Task CompressionEnabledShouldPersistGzipEncodedBlob()
     {
+        fixture.EnsureAzuriteAvailable();
         string containerName = $"snapshot-compression-{Guid.NewGuid():N}";
-        IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: true);
+        using IHost host = await fixture.CreateProviderHostAsync(containerName, compressionEnabled: true);
         try
         {
             ISnapshotStorageProvider provider = host.Services.GetRequiredService<ISnapshotStorageProvider>();
@@ -172,7 +173,6 @@ public sealed class BlobSnapshotStorageTests
         finally
         {
             await host.StopAsync();
-            host.Dispose();
         }
     }
 

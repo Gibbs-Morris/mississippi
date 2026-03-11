@@ -64,4 +64,27 @@ public sealed class SnapshotBlobStorageOptionsTests
         ValidateOptionsResult result = validator.Validate(null, new SnapshotBlobStorageOptions());
         Assert.True(result.Succeeded);
     }
+
+    /// <summary>
+    ///     Ensures validator rejects Azure-invalid container names.
+    /// </summary>
+    /// <param name="containerName">The container name under test.</param>
+    [Theory]
+    [InlineData("Bad_Name")]
+    [InlineData("UPPERCASE")]
+    [InlineData("ab")]
+    [InlineData("bad--name")]
+    public void ValidatorShouldRejectInvalidAzureContainerNames(
+        string containerName
+    )
+    {
+        SnapshotBlobStorageOptionsValidator validator = new();
+        ValidateOptionsResult result = validator.Validate(
+            null,
+            new()
+            {
+                ContainerName = containerName,
+            });
+        Assert.True(result.Failed);
+    }
 }

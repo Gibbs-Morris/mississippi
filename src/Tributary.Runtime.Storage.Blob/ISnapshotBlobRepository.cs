@@ -28,8 +28,8 @@ internal interface ISnapshotBlobRepository
     /// </summary>
     /// <param name="snapshotKey">The snapshot identifier.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>A task that completes when the snapshot is removed.</returns>
-    Task DeleteAsync(
+    /// <returns>A task that returns <see langword="true" /> when a snapshot was removed.</returns>
+    Task<bool> DeleteAsync(
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     );
@@ -40,8 +40,8 @@ internal interface ISnapshotBlobRepository
     /// <param name="streamKey">The snapshot stream identifier.</param>
     /// <param name="retainModuli">Modulus values to retain.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>A task representing the pruning operation.</returns>
-    Task PruneAsync(
+    /// <returns>A task that returns the number of deleted snapshots.</returns>
+    Task<int> PruneAsync(
         SnapshotStreamKey streamKey,
         IReadOnlyCollection<int> retainModuli,
         CancellationToken cancellationToken = default

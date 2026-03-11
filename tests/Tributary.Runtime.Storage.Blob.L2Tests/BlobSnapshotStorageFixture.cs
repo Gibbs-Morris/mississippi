@@ -1,4 +1,6 @@
 using System;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,6 +14,7 @@ using Microsoft.Extensions.Hosting;
 using Mississippi.Tributary.Runtime.Storage.Abstractions;
 
 using Projects;
+using Xunit.Sdk;
 
 
 namespace Mississippi.Tributary.Runtime.Storage.Blob.L2Tests;
@@ -36,6 +39,16 @@ public sealed class BlobSnapshotStorageFixture : IAsyncLifetime, IDisposable
     private bool disposed;
 
     /// <summary>
+    ///     Gets the initialization error if the Azurite-backed AppHost could not be started.
+    /// </summary>
+    public Exception? InitializationError { get; private set; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the Azurite-backed AppHost initialized successfully.
+    /// </summary>
+    public bool IsAvailable { get; private set; }
+
+    /// <summary>
     ///     Gets the Blob connection string exposed by the Azurite AppHost resource.
     /// </summary>
     public string BlobConnectionString { get; private set; } = string.Empty;
@@ -45,6 +58,22 @@ public sealed class BlobSnapshotStorageFixture : IAsyncLifetime, IDisposable
     /// </summary>
     /// <returns>A Blob service client connected to Azurite.</returns>
     public BlobServiceClient CreateBlobServiceClient() => new(BlobConnectionString);
+
+    /// <summary>
+    ///     Skips the current test when the Azurite-backed AppHost is unavailable in the current environment.
+    /// </summary>
+    public void EnsureAzuriteAvailable()
+    {
+        if (IsAvailable)
+        {
+            return;
+        }
+
+        throw SkipException.ForSkip(
+            InitializationError is null
+                ? "Azurite-backed Blob L2 tests require an Aspire DCP-capable environment."
+                : $"Azurite-backed Blob L2 tests are unavailable in this environment: {InitializationError.Message}");
+    }
 
     /// <summary>
     ///     Creates and starts a host configured with the Blob snapshot storage provider.
@@ -101,29 +130,53 @@ public sealed class BlobSnapshotStorageFixture : IAsyncLifetime, IDisposable
 #pragma warning disable IDISP001
     public async Task InitializeAsync()
     {
-        if (!AzuriteBlobFactAttribute.IsEnabled)
-        {
-            return;
-        }
-
         if (app is not null)
         {
             return;
         }
 
-        IDistributedApplicationTestingBuilder appHost =
-            await DistributedApplicationTestingBuilder.CreateAsync<Tributary_Runtime_Storage_Blob_L2Tests_AppHost>();
+        try
+        {
+            IDistributedApplicationTestingBuilder appHost =
+                await DistributedApplicationTestingBuilder.CreateAsync<Tributary_Runtime_Storage_Blob_L2Tests_AppHost>();
 #pragma warning restore IDISP001
-        DistributedApplication builtApp = await appHost.BuildAsync().WaitAsync(DefaultTimeout);
+            DistributedApplication builtApp = await appHost.BuildAsync().WaitAsync(DefaultTimeout);
 #pragma warning disable IDISP003
-        app = builtApp;
+            app = builtApp;
 #pragma warning restore IDISP003
-        await app.StartAsync().WaitAsync(DefaultTimeout);
-        using CancellationTokenSource cancellationTokenSource = new(DefaultTimeout);
-        await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cancellationTokenSource.Token)
-            .WaitAsync(DefaultTimeout, cancellationTokenSource.Token);
-        BlobConnectionString = await app.GetConnectionStringAsync("blobs", cancellationTokenSource.Token) ??
-                               throw new InvalidOperationException("Failed to get Blob storage connection string.");
-        BlobConnectionString.Should().NotBeNullOrWhiteSpace();
+            await app.StartAsync().WaitAsync(DefaultTimeout);
+            using CancellationTokenSource cancellationTokenSource = new(DefaultTimeout);
+            await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cancellationTokenSource.Token)
+                .WaitAsync(DefaultTimeout, cancellationTokenSource.Token);
+            BlobConnectionString = await app.GetConnectionStringAsync("blobs", cancellationTokenSource.Token) ??
+                                   throw new InvalidOperationException("Failed to get Blob storage connection string.");
+            BlobConnectionString.Should().NotBeNullOrWhiteSpace();
+            IsAvailable = true;
+        }
+        catch (HttpRequestException ex)
+        {
+            InitializationError = ex;
+            IsAvailable = false;
+        }
+        catch (SocketException ex)
+        {
+            InitializationError = ex;
+            IsAvailable = false;
+        }
+        catch (TimeoutException ex)
+        {
+            InitializationError = ex;
+            IsAvailable = false;
+        }
+        catch (InvalidOperationException ex)
+        {
+            InitializationError = ex;
+            IsAvailable = false;
+        }
+        catch (TaskCanceledException ex)
+        {
+            InitializationError = ex;
+            IsAvailable = false;
+        }
     }
 }

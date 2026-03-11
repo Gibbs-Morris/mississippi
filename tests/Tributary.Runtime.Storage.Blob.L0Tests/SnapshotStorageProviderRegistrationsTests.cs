@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,6 +6,7 @@ using Azure.Storage.Blobs;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -102,76 +101,33 @@ public sealed class SnapshotStorageProviderRegistrationsTests
     }
 
     /// <summary>
-    ///     Ensures hosted initialization calls container creation on start.
+    ///     Ensures hosted initialization uses the real provider registration path on host startup.
     /// </summary>
     /// <returns>Asynchronous test task.</returns>
     [Fact]
     public async Task BlobContainerInitializerShouldEnsureContainerExists()
     {
-        FakeSnapshotBlobContainerOperations operations = new();
-        TestHostedService hostedService = new(operations);
-        await hostedService.StartAsync(CancellationToken.None);
-        Assert.True(operations.EnsureContainerExistsCalled);
-    }
+        Mock<BlobServiceClient> blobServiceClient = new();
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddKeyedSingleton<BlobServiceClient>(SnapshotBlobDefaults.BlobServiceClientServiceKey, blobServiceClient.Object);
+        services.AddBlobSnapshotStorageProvider();
 
-    private sealed class FakeSnapshotBlobContainerOperations : ISnapshotBlobContainerOperations
-    {
-        public bool EnsureContainerExistsCalled { get; private set; }
+        Mock<ISnapshotBlobContainerOperations> operations = new();
+        operations.Setup(o => o.EnsureContainerExistsAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        services.Replace(ServiceDescriptor.Singleton(operations.Object));
 
-        public Task<bool> DeleteBlobIfExistsAsync(
-            string blobName,
-            CancellationToken cancellationToken = default
-        ) =>
-            Task.FromResult(true);
-
-        public Task<SnapshotBlobDownloadResult?> DownloadBlobAsync(
-            string blobName,
-            CancellationToken cancellationToken = default
-        ) =>
-            Task.FromResult<SnapshotBlobDownloadResult?>(null);
-
-        public Task EnsureContainerExistsAsync(
-            CancellationToken cancellationToken = default
-        )
+        using IHost host = Host.CreateDefaultBuilder().ConfigureServices(serviceCollection =>
         {
-            EnsureContainerExistsCalled = true;
-            return Task.CompletedTask;
-        }
+            foreach (ServiceDescriptor descriptor in services)
+            {
+                serviceCollection.Add(descriptor);
+            }
+        }).Build();
 
-        public async IAsyncEnumerable<SnapshotBlobListItem> ListBlobsAsync(
-            string prefix,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default
-        )
-        {
-            await Task.CompletedTask;
-            yield break;
-        }
+        await host.StartAsync();
 
-        public Task UploadBlobAsync(
-            string blobName,
-            SnapshotBlobWriteRequest request,
-            CancellationToken cancellationToken = default
-        ) =>
-            Task.CompletedTask;
-    }
-
-    private sealed class TestHostedService : IHostedService
-    {
-        public TestHostedService(
-            ISnapshotBlobContainerOperations operations
-        ) =>
-            Operations = operations;
-
-        private ISnapshotBlobContainerOperations Operations { get; }
-
-        public Task StartAsync(
-            CancellationToken cancellationToken
-        ) =>
-            Operations.EnsureContainerExistsAsync(cancellationToken);
-
-        public Task StopAsync(
-            CancellationToken cancellationToken
-        ) =>
-            Task.CompletedTask;
+        operations.Verify(o => o.EnsureContainerExistsAsync(It.IsAny<CancellationToken>()), Times.Once);
+        await host.StopAsync();
     }
 }
