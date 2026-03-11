@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.AspNetCore.SignalR;
@@ -12,6 +13,9 @@ namespace Mississippi.Aqueduct.Gateway;
 /// <summary>
 ///     Extension methods for configuring Aqueduct as a SignalR backplane.
 /// </summary>
+[Obsolete(
+    "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class AqueductRegistrations
 {
     /// <summary>
@@ -34,6 +38,9 @@ public static class AqueductRegistrations
     ///         </list>
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddAqueduct<THub>(
         this IServiceCollection services
     )
@@ -64,6 +71,9 @@ public static class AqueductRegistrations
     ///         heartbeat intervals, or stream namespaces.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddAqueduct<THub>(
         this IServiceCollection services,
         Action<AqueductOptions> configureOptions
@@ -97,6 +107,9 @@ public static class AqueductRegistrations
     ///         and <see cref="AddAqueductNotifier" />.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddAqueductGrainFactory(
         this IServiceCollection services
     )
@@ -122,6 +135,9 @@ public static class AqueductRegistrations
     ///         grains based on the target (connection, group, or all).
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddAqueductNotifier(
         this IServiceCollection services
     )
@@ -132,3 +148,5 @@ public static class AqueductRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +27,9 @@ namespace Mississippi.Inlet.Gateway;
 ///         from the <c>Inlet.Runtime</c> package directly.
 ///     </para>
 /// </remarks>
+[Obsolete(
+    "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class InletServerRegistrations
 {
     /// <summary>
@@ -45,6 +49,9 @@ public static class InletServerRegistrations
     ///         <c>AddAqueduct&lt;InletHub&gt;(options =&gt; ...)</c>.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddInletServer(
         this IServiceCollection services,
         Action<InletServerOptions>? configureOptions = null
@@ -78,6 +85,9 @@ public static class InletServerRegistrations
     ///         it requires <c>IHubContext</c> which only exists on ASP.NET pods.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddInletSignalRGrainObserver(
         this IServiceCollection services
     )
@@ -151,3 +161,5 @@ public static class InletServerRegistrations
         return hubEndpointBuilder;
     }
 }
+
+#pragma warning restore S1133

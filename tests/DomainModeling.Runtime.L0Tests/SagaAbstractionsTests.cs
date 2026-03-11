@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Collections.Generic;
 
@@ -171,3 +172,5 @@ public sealed class SagaAbstractionsTests
         Assert.Same(evt, Assert.Single(result.Events));
     }
 }
+
+#pragma warning restore CS0618

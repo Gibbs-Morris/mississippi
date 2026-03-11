@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -176,3 +177,5 @@ public sealed class ReservoirDevToolsRegistrationsTests
         Assert.NotSame(devTools1, devTools2);
     }
 }
+
+#pragma warning restore CS0618

@@ -32,6 +32,7 @@ public static class SignalRConnectionRegistrations
         this IServiceCollection services
     )
     {
+#pragma warning disable CS0618 // TODO: migrate when #237 is complete
         // Register reducers for each action
         services.AddReducer<SignalRConnectingAction, SignalRConnectionState>(SignalRConnectionReducers.OnConnecting);
         services.AddReducer<SignalRConnectedAction, SignalRConnectionState>(SignalRConnectionReducers.OnConnected);
@@ -42,6 +43,7 @@ public static class SignalRConnectionRegistrations
             SignalRConnectionReducers.OnDisconnected);
         services.AddReducer<SignalRMessageReceivedAction, SignalRConnectionState>(
             SignalRConnectionReducers.OnMessageReceived);
+#pragma warning restore CS0618
         return services;
     }
 }

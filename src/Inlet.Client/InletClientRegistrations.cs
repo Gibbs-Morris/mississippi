@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,9 @@ namespace Mississippi.Inlet.Client;
 /// <summary>
 ///     Extension methods for registering Inlet services.
 /// </summary>
+[Obsolete(
+    "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class InletClientRegistrations
 {
     /// <summary>
@@ -43,6 +47,9 @@ public static class InletClientRegistrations
     ///         Redux pattern. Access via <c>store.GetState&lt;ProjectionsFeatureState&gt;()</c>.
     ///     </para>
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddInletClient(
         this IServiceCollection services
     )
@@ -78,6 +85,9 @@ public static class InletClientRegistrations
     /// <exception cref="ArgumentNullException">
     ///     Thrown when <paramref name="services" /> or <paramref name="path" /> is null.
     /// </exception>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddProjectionPath<T>(
         this IServiceCollection services,
         string path
@@ -90,3 +100,5 @@ public static class InletClientRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

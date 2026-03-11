@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Linq;
 
@@ -80,3 +81,5 @@ public sealed class UxProjectionRegistrationsTests
         Assert.Throws<ArgumentNullException>(() => services!.AddUxProjections());
     }
 }
+
+#pragma warning restore CS0618

@@ -1,3 +1,6 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
+using System;
+
 using Microsoft.Extensions.DependencyInjection;
 
 
@@ -6,6 +9,9 @@ namespace Mississippi.Common.Abstractions.Mapping;
 /// <summary>
 ///     Provides extension methods for registering mappers in the dependency injection container.
 /// </summary>
+[Obsolete(
+    "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class MappingRegistrations
 {
     /// <summary>
@@ -13,6 +19,9 @@ public static class MappingRegistrations
     /// </summary>
     /// <param name="services">The service collection to add the mapper to.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddIAsyncEnumerableMapper(
         this IServiceCollection services
     )
@@ -26,6 +35,9 @@ public static class MappingRegistrations
     /// </summary>
     /// <param name="services">The service collection to add the mapper to.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddIEnumerableMapper(
         this IServiceCollection services
     )
@@ -42,6 +54,9 @@ public static class MappingRegistrations
     /// <typeparam name="TMapper">The type of the mapper.</typeparam>
     /// <param name="services">The service collection to add the mapper to.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddMapper<TFrom, TTo, TMapper>(
         this IServiceCollection services
     )
@@ -51,3 +66,5 @@ public static class MappingRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

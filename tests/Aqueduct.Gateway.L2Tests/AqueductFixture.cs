@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
 using Mississippi.Aqueduct.Runtime;
@@ -177,3 +178,5 @@ public sealed class AqueductFixture
         }
     }
 }
+
+#pragma warning restore CS0618

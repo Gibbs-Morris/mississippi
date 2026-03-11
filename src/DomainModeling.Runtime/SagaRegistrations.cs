@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,9 @@ namespace Mississippi.DomainModeling.Runtime;
 /// <summary>
 ///     Provides extension methods for registering saga orchestration components.
 /// </summary>
+[Obsolete(
+    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class SagaRegistrations
 {
     /// <summary>
@@ -20,6 +24,9 @@ public static class SagaRegistrations
     /// <typeparam name="TInput">The saga input type.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddSagaOrchestration<TSaga, TInput>(
         this IServiceCollection services
     )
@@ -49,3 +56,5 @@ public static class SagaRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

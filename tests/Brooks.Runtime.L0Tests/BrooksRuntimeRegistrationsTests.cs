@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Linq;
 
@@ -91,3 +92,5 @@ public sealed class BrooksRuntimeRegistrationsTests
         Assert.Contains(services, d => d.ServiceType == typeof(IStreamIdFactory));
     }
 }
+
+#pragma warning restore CS0618

@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
@@ -126,3 +127,5 @@ public sealed class SnapshotAbstractionsTests
         Assert.Equal("application/octet-stream", populated.DataContentType);
     }
 }
+
+#pragma warning restore CS0618

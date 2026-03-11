@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Sample still exercises legacy composition APIs pending issue #237.
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Core;
@@ -23,3 +24,5 @@ internal static class DemoAccountsFeatureRegistration
         return services;
     }
 }
+
+#pragma warning restore CS0618

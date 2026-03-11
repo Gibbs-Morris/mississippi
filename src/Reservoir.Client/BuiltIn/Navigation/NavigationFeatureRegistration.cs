@@ -1,3 +1,6 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
+using System;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
@@ -26,6 +29,9 @@ namespace Mississippi.Reservoir.Client.BuiltIn.Navigation;
 ///         to receive <see cref="LocationChangedAction" /> notifications.
 ///     </para>
 /// </remarks>
+[Obsolete(
+    "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class NavigationFeatureRegistration
 {
     /// <summary>
@@ -41,6 +47,9 @@ public static class NavigationFeatureRegistration
     ///         <item><see cref="NavigationEffect" /> for handling navigation actions</item>
     ///     </list>
     /// </remarks>
+    [Obsolete(
+        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddBuiltInNavigation(
         this IServiceCollection services
     )
@@ -53,3 +62,5 @@ public static class NavigationFeatureRegistration
         return services;
     }
 }
+
+#pragma warning restore S1133

@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -94,3 +95,5 @@ public sealed class BrookStorageProviderExtensionsTests
         Assert.Equal("x", opts.Value);
     }
 }
+
+#pragma warning restore CS0618

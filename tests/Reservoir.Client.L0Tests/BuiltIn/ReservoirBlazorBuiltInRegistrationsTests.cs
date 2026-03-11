@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 
 using Microsoft.AspNetCore.Components;
@@ -125,3 +126,5 @@ public sealed class ReservoirBlazorBuiltInRegistrationsTests : IDisposable
         Assert.Same(services, result);
     }
 }
+
+#pragma warning restore CS0618

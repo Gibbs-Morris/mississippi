@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,9 @@ namespace Mississippi.Tributary.Runtime;
 /// <summary>
 ///     Provides extension methods for registering reducers in the dependency injection container.
 /// </summary>
+[Obsolete(
+    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class ReducerRegistrations
 {
     /// <summary>
@@ -22,6 +26,9 @@ public static class ReducerRegistrations
     /// <param name="services">The service collection to add the event reducer to.</param>
     /// <param name="reduce">The delegate invoked to apply events to the current projection.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddReducer<TEvent, TProjection>(
         this IServiceCollection services,
         Func<TProjection, TEvent, TProjection> reduce
@@ -47,6 +54,9 @@ public static class ReducerRegistrations
     /// <typeparam name="TReducer">The event reducer implementation type.</typeparam>
     /// <param name="services">The service collection to add the event reducer to.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddReducer<TEvent, TProjection, TReducer>(
         this IServiceCollection services
     )
@@ -64,6 +74,9 @@ public static class ReducerRegistrations
     /// <typeparam name="TProjection">The projection state type.</typeparam>
     /// <param name="services">The service collection to add the root event reducer to.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddRootReducer<TProjection>(
         this IServiceCollection services
     )
@@ -72,3 +85,5 @@ public static class ReducerRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

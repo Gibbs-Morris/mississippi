@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Sample still demonstrates legacy composition pending issue #237.
 using System.Net.Http;
 
 using Microsoft.AspNetCore.Components.Web;
@@ -72,3 +73,4 @@ builder.Services.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
 await builder.Build().RunAsync();
+#pragma warning restore CS0618

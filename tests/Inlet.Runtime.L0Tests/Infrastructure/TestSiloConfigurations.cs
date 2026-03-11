@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -62,3 +63,5 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddMemoryGrainStorage("PubSubStore");
     }
 }
+
+#pragma warning restore CS0618

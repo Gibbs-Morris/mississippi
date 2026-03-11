@@ -1,3 +1,4 @@
+#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 using System.Collections.Generic;
 
@@ -9,6 +10,9 @@ namespace Mississippi.DomainModeling.Abstractions;
 /// <summary>
 ///     Provides extension methods for registering saga step metadata.
 /// </summary>
+[Obsolete(
+    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+    false)]
 public static class SagaStepInfoRegistrations
 {
     /// <summary>
@@ -18,6 +22,9 @@ public static class SagaStepInfoRegistrations
     /// <param name="services">The service collection.</param>
     /// <param name="steps">The ordered saga step metadata.</param>
     /// <returns>The updated service collection.</returns>
+    [Obsolete(
+        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
+        false)]
     public static IServiceCollection AddSagaStepInfo<TSaga>(
         this IServiceCollection services,
         IReadOnlyList<SagaStepInfo> steps
@@ -30,3 +37,5 @@ public static class SagaStepInfoRegistrations
         return services;
     }
 }
+
+#pragma warning restore S1133

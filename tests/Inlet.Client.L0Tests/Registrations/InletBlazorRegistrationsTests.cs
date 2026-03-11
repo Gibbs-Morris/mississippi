@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -86,3 +87,5 @@ public sealed class InletBlazorRegistrationsTests
         Assert.Throws<ArgumentNullException>(() => services!.AddInletBlazor());
     }
 }
+
+#pragma warning restore CS0618

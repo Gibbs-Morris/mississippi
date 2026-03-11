@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Linq;
 
@@ -220,3 +221,5 @@ public sealed class AqueductRegistrationsTests
         Assert.Throws<ArgumentNullException>(() => AqueductRegistrations.AddAqueduct<TestHub>(null!, _ => { }));
     }
 }
+
+#pragma warning restore CS0618

@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Collections.Generic;
 
@@ -196,3 +197,5 @@ public sealed class InletClientRegistrationsTests
         Assert.Equal("cascade/test", path);
     }
 }
+
+#pragma warning restore CS0618
