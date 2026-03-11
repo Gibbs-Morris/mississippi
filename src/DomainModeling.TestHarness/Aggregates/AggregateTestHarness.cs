@@ -35,20 +35,9 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///         </item>
 ///     </list>
 ///     <para>
-///         <strong>Example:</strong>
+///         Create a harness with ForAggregate, add handlers and reducers, then run scenarios
+///         using Given/When/ThenEmits/ThenState. See test examples in the repository for usage patterns.
 ///     </para>
-///     <code>
-///         CommandHandlerTestExtensions.ForAggregate&lt;BankAccountAggregate&gt;()
-///             .WithHandler&lt;OpenAccountHandler&gt;()
-///             .WithHandler&lt;DepositFundsHandler&gt;()
-///             .WithReducer&lt;AccountOpenedReducer&gt;()
-///             .WithReducer&lt;FundsDepositedReducer&gt;()
-///             .CreateScenario()
-///             .Given(new AccountOpened { HolderName = "Test", InitialDeposit = 100m })
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
-///     </code>
 ///     <para>
 ///         <strong>Unified Testing Approach:</strong>
 ///         This harness shares design patterns with
