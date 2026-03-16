@@ -133,6 +133,15 @@ public static class SnapshotStorageProviderRegistrations
     {
         private const string PartitionKeyPath = "/snapshotPartitionKey";
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="CosmosContainerInitializer" /> class.
+        /// </summary>
+        /// <param name="serviceProvider">
+        ///     The service provider for resolving keyed services. This is a factory pattern exception
+        ///     to the no-service-locator rule - the initializer must resolve keyed CosmosClient based on
+        ///     runtime options configuration.
+        /// </param>
+        /// <param name="options">The snapshot storage options.</param>
         [SuppressMessage("Major Code Smell", "S1144", Justification = "Used by DI")]
         public CosmosContainerInitializer(
             IServiceProvider serviceProvider,
