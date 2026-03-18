@@ -21,26 +21,9 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         or add additional endpoints.
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserController : AggregateControllerBase&lt;UserAggregate&gt;
-///             {
-///                 private readonly IUserService _service;
-///                 public UserController(
-///                     IUserService service,
-///                     ILogger&lt;UserController&gt; logger) : base(logger)
-///                 {
-///                     _service = service;
-///                 }
-///                 [HttpPost("register")]
-///                 public Task&lt;ActionResult&lt;OperationResult&gt;&gt; RegisterAsync(
-///                     [FromRoute] string entityId,
-///                     [FromBody] RegisterUser command,
-///                     CancellationToken ct = default)
-///                     =&gt; ExecuteAsync(entityId, command, _service.RegisterAsync, ct);
-///             }
-///         </code>
+///         Derive from this controller to create aggregate command endpoints.
+///         Apply a route attribute and use the <c>ExecuteAsync</c> method to delegate commands.
+///         Refer to sample applications for concrete usage patterns.
 ///     </para>
 ///     <para>
 ///         This base class provides:

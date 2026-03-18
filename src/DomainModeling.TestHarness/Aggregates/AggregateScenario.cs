@@ -19,14 +19,8 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///     <para>
 ///         Use this class to build readable test scenarios that establish state via events (Given),
 ///         execute a command (When), and verify emitted events and resulting state (Then).
+///         Refer to test projects for concrete usage patterns.
 ///     </para>
-///     <code>
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
-///     </code>
 /// </remarks>
 public sealed class AggregateScenario<TAggregate>
     where TAggregate : new()

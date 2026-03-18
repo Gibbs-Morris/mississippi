@@ -35,20 +35,11 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///         </item>
 ///     </list>
 ///     <para>
-///         <strong>Example:</strong>
+///         Register command handlers and event reducers, then create scenarios
+///         that establish state via events (Given), execute commands (When),
+///         and verify emitted events and resulting state (Then).
+///         Refer to test projects for concrete usage patterns.
 ///     </para>
-///     <code>
-///         CommandHandlerTestExtensions.ForAggregate&lt;BankAccountAggregate&gt;()
-///             .WithHandler&lt;OpenAccountHandler&gt;()
-///             .WithHandler&lt;DepositFundsHandler&gt;()
-///             .WithReducer&lt;AccountOpenedReducer&gt;()
-///             .WithReducer&lt;FundsDepositedReducer&gt;()
-///             .CreateScenario()
-///             .Given(new AccountOpened { HolderName = "Test", InitialDeposit = 100m })
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
-///     </code>
 ///     <para>
 ///         <strong>Unified Testing Approach:</strong>
 ///         This harness shares design patterns with
