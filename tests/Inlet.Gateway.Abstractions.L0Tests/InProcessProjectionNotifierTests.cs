@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +22,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        services.UseInletInProcess();
         serviceProvider = services.BuildServiceProvider();
         notifier = serviceProvider.GetRequiredService<IServerProjectionNotifier>();
     }
@@ -365,5 +364,3 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
         Assert.True(true);
     }
 }
-
-#pragma warning restore CS0618

@@ -14,4 +14,7 @@
   <PropertyGroup>
     <Description>Azure Cosmos DB provider for Brooks.Runtime storage.</Description>
   </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Sdk.Runtime" />
+  </ItemGroup>
 </Project>

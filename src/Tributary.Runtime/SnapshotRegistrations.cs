@@ -1,4 +1,3 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -12,9 +11,6 @@ namespace Mississippi.Tributary.Runtime;
 /// <summary>
 ///     Provides extension methods for registering snapshot caching components in the dependency injection container.
 /// </summary>
-[Obsolete(
-    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
 public static class SnapshotRegistrations
 {
     /// <summary>
@@ -22,9 +18,6 @@ public static class SnapshotRegistrations
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddSnapshotCaching(
         this IServiceCollection services
     )
@@ -40,9 +33,6 @@ public static class SnapshotRegistrations
     /// <typeparam name="TSnapshot">The state type to convert.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddSnapshotStateConverter<TSnapshot>(
         this IServiceCollection services
     )
@@ -52,5 +42,3 @@ public static class SnapshotRegistrations
         return services;
     }
 }
-
-#pragma warning restore S1133

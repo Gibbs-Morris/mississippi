@@ -114,10 +114,12 @@ public sealed class DomainServerRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
+            .First(tree => tree.FilePath.Contains("DomainGatewayRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains("AddTestAppDomainServer", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddTestAppDomainGateway", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("this MississippiGatewayBuilder gateway", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("gateway.RegisterDomainMappers", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregateMappers();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddBalanceProjectionMappers();", generatedCode, StringComparison.Ordinal);
     }
@@ -140,10 +142,10 @@ public sealed class DomainServerRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
+            .First(tree => tree.FilePath.Contains("DomainGatewayRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains("AddCoreLogicServer", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddCoreLogicGateway", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregateMappers();", generatedCode, StringComparison.Ordinal);
     }
 
@@ -165,7 +167,7 @@ public sealed class DomainServerRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
+            .First(tree => tree.FilePath.Contains("DomainGatewayRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
         Assert.Contains("Controllers.Aggregates.Mappers;", generatedCode, StringComparison.Ordinal);
@@ -192,7 +194,7 @@ public sealed class DomainServerRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
+            .First(tree => tree.FilePath.Contains("DomainGatewayRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
         Assert.Contains("Controllers.Projections.Mappers;", generatedCode, StringComparison.Ordinal);

@@ -3,6 +3,11 @@
     <Description>Orleans silo runtime integration for Inlet streams and projections.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Sdk.Runtime" />
+    <InternalsVisibleTo Include="Mississippi.Sdk.Gateway" />
+    <InternalsVisibleTo Include="Mississippi.Inlet.Gateway" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Sdk" />
     <PackageReference Include="Microsoft.Orleans.Streaming" />
   </ItemGroup>

@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS0618 // Sample still demonstrates legacy composition pending issue #237.
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
@@ -9,16 +8,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Mississippi.Aqueduct.Gateway;
-using Mississippi.Brooks.Serialization.Json;
-using Mississippi.DomainModeling.Runtime;
 using Mississippi.Inlet.Gateway;
-using Mississippi.Inlet.Runtime;
+using Mississippi.Sdk.Gateway;
 
-using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
 using MississippiSamples.Spring.Gateway;
-using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Mappers;
-using MississippiSamples.Spring.Gateway.Controllers.Projections.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Mappers;
 using MississippiSamples.Spring.Gateway.McpTools;
 
 using OpenTelemetry;
@@ -68,9 +62,6 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 // Configure Orleans client - Aspire injects clustering config via environment variables
 builder.UseOrleansClient(clientBuilder => { clientBuilder.AddActivityPropagation(); });
 
-// Add controllers for aggregate API endpoints
-builder.Services.AddControllers();
-
 // Add OpenAPI documentation
 builder.Services.AddOpenApi(options =>
 {
@@ -87,50 +78,40 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
-// Add JSON serialization provider (required by aggregate infrastructure)
-builder.Services.AddJsonSerialization();
-
-// Add aggregate infrastructure support (IAggregateGrainFactory, IBrookEventConverter, etc.)
-builder.Services.AddAggregateSupport();
-
-// Add UX projection infrastructure support (IUxProjectionGrainFactory)
-builder.Services.AddUxProjections();
-
-// Add Aqueduct backplane for InletHub (registers IServerIdProvider and other dependencies)
-builder.Services.AddSignalR();
-builder.Services.AddAqueduct<InletHub>(options =>
+// Single entrypoint for all Mississippi gateway-side composition.
+builder.UseMississippi(gateway =>
 {
-    // Use the same stream provider configured by Aspire's WithMemoryStreaming
-    options.StreamProviderName = "StreamProvider";
-});
+    // Generated extension: registers all generated API controllers,
+    // projection mappers, and aggregate command mappers for the Spring domain.
+    gateway.AddMississippiSamplesSpringDomainGateway();
 
-// Add Inlet Gateway services for real-time projection updates
-if (springAuthOptions.Enabled)
-{
-    builder.Services.AddInletServer(options =>
+    // JSON serialization provider for aggregate and event infrastructure.
+    gateway.AddJsonSerialization();
+
+    // Aqueduct SignalR backplane for real-time projection updates.
+    gateway.AddAqueduct<InletHub>(options =>
     {
-        options.GeneratedApiAuthorization.Mode =
-            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
-        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
-        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+        // Use the same stream provider configured by Aspire's WithMemoryStreaming.
+        options.StreamProviderName = "StreamProvider";
     });
-}
-else
-{
-    builder.Services.AddInletServer();
-}
 
-builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-
-// Add generated domain mapper registrations
-builder.Services.AddAuthProofAggregateMappers();
-builder.Services.AddBankAccountAggregateMappers();
-builder.Services.AddMoneyTransferSagaAggregateMappers();
-builder.Services.AddAuthProofProjectionMappers();
-builder.Services.AddBankAccountBalanceProjectionMappers();
-builder.Services.AddBankAccountLedgerProjectionMappers();
-builder.Services.AddFlaggedTransactionsProjectionMappers();
-builder.Services.AddMoneyTransferStatusProjectionMappers();
+    // Inlet gateway services: projection subscriptions, generated API authorization,
+    // aggregate infrastructure, UX projection infrastructure, and MVC controllers.
+    if (springAuthOptions.Enabled)
+    {
+        gateway.AddInletGateway(options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+        });
+    }
+    else
+    {
+        gateway.AddInletGateway();
+    }
+});
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.
@@ -177,4 +158,3 @@ app.MapGet(
 // Fallback to index.html for SPA routing
 app.MapFallbackToFile("index.html");
 await app.RunAsync();
-#pragma warning restore CS0618

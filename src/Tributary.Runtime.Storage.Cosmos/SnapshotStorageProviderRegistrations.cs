@@ -1,4 +1,3 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -25,9 +24,6 @@ namespace Mississippi.Tributary.Runtime.Storage.Cosmos;
 /// <summary>
 ///     Extension methods for registering Cosmos snapshot storage provider services.
 /// </summary>
-[Obsolete(
-    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
 public static class SnapshotStorageProviderRegistrations
 {
     /// <summary>
@@ -36,10 +32,7 @@ public static class SnapshotStorageProviderRegistrations
     /// </summary>
     /// <param name="services">The service collection to update.</param>
     /// <returns>The updated service collection.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
+    public static IServiceCollection UseCosmosSnapshotStorage(
         this IServiceCollection services
     )
     {
@@ -52,7 +45,7 @@ public static class SnapshotStorageProviderRegistrations
         services.AddMapper<SnapshotWriteModel, SnapshotStorageModel, SnapshotWriteModelToStorageMapper>();
         services.AddMapper<SnapshotStorageModel, SnapshotDocument, SnapshotStorageToDocumentMapper>();
         services.AddMapper<SnapshotDocument, SnapshotEnvelope, SnapshotDocumentToEnvelopeMapper>();
-        services.RegisterSnapshotStorageProvider<SnapshotStorageProvider>();
+        services.UseSnapshotStorageProvider<SnapshotStorageProvider>();
 
         // Ensure container exists asynchronously on host start
         services.AddHostedService<CosmosContainerInitializer>();
@@ -83,10 +76,7 @@ public static class SnapshotStorageProviderRegistrations
     /// <param name="cosmosConnectionString">Cosmos connection string used for client creation.</param>
     /// <param name="configureOptions">Optional options configuration applied during registration.</param>
     /// <returns>The service collection configured with a keyed Cosmos client.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
+    public static IServiceCollection UseCosmosSnapshotStorage(
         this IServiceCollection services,
         string cosmosConnectionString,
         Action<SnapshotStorageOptions>? configureOptions = null
@@ -104,7 +94,7 @@ public static class SnapshotStorageProviderRegistrations
             services.Configure(configureOptions);
         }
 
-        return services.AddCosmosSnapshotStorageProvider();
+        return services.UseCosmosSnapshotStorage();
     }
 
     /// <summary>
@@ -114,16 +104,13 @@ public static class SnapshotStorageProviderRegistrations
     /// <param name="services">The service collection to update.</param>
     /// <param name="configureOptions">Options configuration action applied before registration.</param>
     /// <returns>The service collection with configured snapshot storage options.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
+    public static IServiceCollection UseCosmosSnapshotStorage(
         this IServiceCollection services,
         Action<SnapshotStorageOptions> configureOptions
     )
     {
         services.Configure(configureOptions);
-        return services.AddCosmosSnapshotStorageProvider();
+        return services.UseCosmosSnapshotStorage();
     }
 
     /// <summary>
@@ -133,16 +120,13 @@ public static class SnapshotStorageProviderRegistrations
     /// <param name="services">The service collection to update.</param>
     /// <param name="configuration">Configuration section containing snapshot storage settings.</param>
     /// <returns>The service collection with bound snapshot storage options.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection AddCosmosSnapshotStorageProvider(
+    public static IServiceCollection UseCosmosSnapshotStorage(
         this IServiceCollection services,
         IConfiguration configuration
     )
     {
         services.Configure<SnapshotStorageOptions>(configuration);
-        return services.AddCosmosSnapshotStorageProvider();
+        return services.UseCosmosSnapshotStorage();
     }
 
     private sealed class CosmosContainerInitializer : IHostedService

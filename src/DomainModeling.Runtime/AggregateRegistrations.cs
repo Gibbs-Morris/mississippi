@@ -1,4 +1,3 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -14,21 +13,15 @@ using Mississippi.DomainModeling.Abstractions;
 namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
-///     Provides extension methods for registering aggregate components in the dependency injection container.
+///     Internal registration helpers for aggregate components.
 /// </summary>
-[Obsolete(
-    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
-public static class AggregateRegistrations
+internal static class AggregateRegistrations
 {
     /// <summary>
     ///     Adds aggregate infrastructure services to the service collection.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddAggregateSupport(
         this IServiceCollection services
     )
@@ -85,9 +78,6 @@ public static class AggregateRegistrations
     /// <typeparam name="THandler">The command handler implementation type.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddCommandHandler<TCommand, TSnapshot, THandler>(
         this IServiceCollection services
     )
@@ -108,9 +98,6 @@ public static class AggregateRegistrations
     /// <param name="services">The service collection.</param>
     /// <param name="handler">The delegate that handles the command.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddCommandHandler<TCommand, TSnapshot>(
         this IServiceCollection services,
         Func<TCommand, TSnapshot?, OperationResult<IReadOnlyList<object>>> handler
@@ -133,9 +120,6 @@ public static class AggregateRegistrations
     /// <typeparam name="TAggregate">The aggregate state type this effect handles.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddEventEffect<TEffect, TAggregate>(
         this IServiceCollection services
     )
@@ -156,9 +140,6 @@ public static class AggregateRegistrations
     /// </typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddEventType<TEvent>(
         this IServiceCollection services
     )
@@ -193,9 +174,6 @@ public static class AggregateRegistrations
     ///         the normal aggregate command API.
     ///     </para>
     /// </remarks>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddFireAndForgetEventEffect<TEffect, TEvent, TAggregate>(
         this IServiceCollection services
     )
@@ -220,9 +198,6 @@ public static class AggregateRegistrations
     /// <typeparam name="TSnapshot">The aggregate state type.</typeparam>
     /// <param name="services">The service collection to add the root command handler to.</param>
     /// <returns>The updated service collection.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddRootCommandHandler<TSnapshot>(
         this IServiceCollection services
     )
@@ -237,9 +212,6 @@ public static class AggregateRegistrations
     /// <typeparam name="TAggregate">The aggregate state type.</typeparam>
     /// <param name="services">The service collection to add the root event effect to.</param>
     /// <returns>The updated service collection.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddRootEventEffect<TAggregate>(
         this IServiceCollection services
     )
@@ -258,9 +230,6 @@ public static class AggregateRegistrations
     /// </typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddSnapshotType<TSnapshot>(
         this IServiceCollection services
     )
@@ -287,9 +256,6 @@ public static class AggregateRegistrations
     ///     All types in the assembly decorated with <see cref="EventStorageNameAttribute" /> will be automatically
     ///     registered, eliminating the need to call <see cref="AddEventType{TEvent}" /> for each type.
     /// </remarks>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection ScanAssemblyForEventTypes(
         this IServiceCollection services,
         Assembly assembly
@@ -312,9 +278,6 @@ public static class AggregateRegistrations
     /// <typeparam name="TMarker">A type in the assembly to scan.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection ScanAssemblyForEventTypes<TMarker>(
         this IServiceCollection services
     ) =>
@@ -331,9 +294,6 @@ public static class AggregateRegistrations
     ///     All types in the assembly decorated with <see cref="SnapshotStorageNameAttribute" /> will be automatically
     ///     registered, eliminating the need to call <see cref="AddSnapshotType{TSnapshot}" /> for each type.
     /// </remarks>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection ScanAssemblyForSnapshotTypes(
         this IServiceCollection services,
         Assembly assembly
@@ -356,41 +316,10 @@ public static class AggregateRegistrations
     /// <typeparam name="TMarker">A type in the assembly to scan.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection ScanAssemblyForSnapshotTypes<TMarker>(
         this IServiceCollection services
     ) =>
         services.ScanAssemblyForSnapshotTypes(typeof(TMarker).Assembly);
-
-    /// <summary>
-    ///     Marker interface for event type registrations.
-    /// </summary>
-    internal interface IEventTypeRegistration
-    {
-        /// <summary>
-        ///     Registers the event type with the registry.
-        /// </summary>
-        /// <param name="registry">The event type registry.</param>
-        void Register(
-            IEventTypeRegistry registry
-        );
-    }
-
-    /// <summary>
-    ///     Marker interface for snapshot type registrations.
-    /// </summary>
-    internal interface ISnapshotTypeRegistration
-    {
-        /// <summary>
-        ///     Registers the snapshot type with the registry.
-        /// </summary>
-        /// <param name="registry">The snapshot type registry.</param>
-        void Register(
-            ISnapshotTypeRegistry registry
-        );
-    }
 
     /// <summary>
     ///     A marker record used to queue assemblies for event type scanning during startup.
@@ -438,5 +367,3 @@ public static class AggregateRegistrations
         }
     }
 }
-
-#pragma warning restore S1133

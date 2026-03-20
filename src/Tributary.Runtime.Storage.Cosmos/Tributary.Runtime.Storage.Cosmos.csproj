@@ -13,4 +13,7 @@
   <PropertyGroup>
     <Description>Azure Cosmos DB provider for Tributary.Runtime storage.</Description>
   </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Sdk.Runtime" />
+  </ItemGroup>
 </Project>

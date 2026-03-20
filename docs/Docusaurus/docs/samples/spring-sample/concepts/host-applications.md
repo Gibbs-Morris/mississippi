@@ -33,39 +33,56 @@ The silo runs Orleans grains that execute commands, apply events, run effects, a
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// One call registers all domain aggregates, sagas, effects, and `EventReducer`s
-builder.Services.AddSpringDomainSilo();
-
-// Infrastructure: notification service stub
-builder.Services.AddSingleton<INotificationService, StubNotificationService>();
-
-// Infrastructure: telemetry, storage clients, event sourcing providers
+// Infrastructure: notification service stub, HTTP clients, telemetry
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<INotificationService, StubNotificationService>();
 builder.Services.AddOpenTelemetry()
     .WithTracing(/* ... */)
     .WithMetrics(/* ... */);
 
+// Aspire-managed Azure Storage and Cosmos clients
 builder.AddKeyedAzureTableServiceClient("clustering");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
 builder.AddAzureCosmosClient("cosmos", /* ... */);
+builder.AddKeyedAzureBlobServiceClient("blobs");
 
-// Mississippi infrastructure
-builder.Services.AddInletSilo();
-builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-builder.Services.AddJsonSerialization();
-builder.Services.AddEventSourcingByService();
-builder.Services.AddSnapshotCaching();
-builder.Services.AddCosmosBrookStorageProvider(/* ... */);
-builder.Services.AddCosmosSnapshotStorageProvider(/* ... */);
-
-// Orleans configuration
+// Configure Orleans silo with Mississippi runtime composition
 builder.UseOrleans(siloBuilder =>
 {
     siloBuilder.AddActivityPropagation();
-    siloBuilder.UseAqueduct(options =>
-        options.StreamProviderName = "StreamProvider");
-    siloBuilder.AddEventSourcing(options =>
-        options.OrleansStreamProviderName = "StreamProvider");
+
+    siloBuilder.UseMississippi(runtime =>
+    {
+        // One call registers all domain aggregates, projections, and sagas
+        runtime.AddMississippiSamplesSpringDomainRuntime();
+
+        // Serialization and event sourcing infrastructure
+        runtime.AddJsonSerialization();
+        runtime.AddEventSourcing(options =>
+            options.OrleansStreamProviderName = "StreamProvider");
+        runtime.AddSnapshotCaching();
+
+        // Cosmos storage for event streams and snapshots
+        runtime.AddCosmosEventStorage(options =>
+        {
+            options.CosmosClientServiceKey = "spring-cosmos";
+            options.DatabaseId = "spring-db";
+            options.ContainerId = "events";
+        });
+        runtime.AddCosmosSnapshotStorage(options =>
+        {
+            options.CosmosClientServiceKey = "spring-cosmos";
+            options.DatabaseId = "spring-db";
+            options.ContainerId = "snapshots";
+        });
+
+        // Aqueduct and Inlet
+        runtime.AddAqueduct(options =>
+            options.StreamProviderName = "StreamProvider");
+        runtime.AddInletRuntime();
+        runtime.ScanProjectionAssemblies(
+            typeof(BankAccountBalanceProjection).Assembly);
+    });
 });
 
 WebApplication app = builder.Build();
@@ -73,7 +90,7 @@ app.MapGet("/health", /* ... */);
 await app.RunAsync();
 ```
 
-The single line `builder.Services.AddSpringDomainSilo()` registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi - you do not write it manually.
+The `runtime.AddMississippiSamplesSpringDomainRuntime()` call registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi - you do not write it manually. All Mississippi runtime composition lives inside the `UseMississippi(runtime => ...)` callback on the silo builder.
 
 ([Spring.Runtime/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs))
 
@@ -209,31 +226,34 @@ builder.Services.AddScoped(sp =>
     };
 });
 
-// One call registers all client-side generated features (dispatchers and state wiring)
-builder.Services.AddSpringDomainClient();
-
-// UI features
-builder.Services.AddDualEntitySelectionFeature();
-builder.Services.AddDemoAccountsFeature();
-builder.Services.AddAuthSimulationFeature();
-builder.Services.AddReservoirBlazorBuiltIns();
-builder.Services.AddReservoirDevTools(options =>
+builder.AddReservoir(reservoir =>
 {
-    options.Enablement = ReservoirDevToolsEnablement.Always;
-    options.Name = "Spring Sample";
-    options.IsStrictStateRehydrationEnabled = true;
-});
+    // One call registers all client-side generated features (dispatchers and state wiring)
+    reservoir.AddSpringDomainClient();
 
-// Real-time projection updates via SignalR
-builder.Services.AddInletClient();
-builder.Services.AddInletBlazorSignalR(signalR => signalR
-    .WithHubPath("/hubs/inlet")
-    .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+    // UI features
+    reservoir.AddDualEntitySelectionFeature();
+    reservoir.AddDemoAccountsFeature();
+    reservoir.AddAuthSimulationFeature();
+    reservoir.AddReservoirBlazorBuiltIns();
+    reservoir.AddReservoirDevTools(options =>
+    {
+        options.Enablement = ReservoirDevToolsEnablement.Always;
+        options.Name = "Spring Sample";
+        options.IsStrictStateRehydrationEnabled = true;
+    });
+
+    // Real-time projection updates via SignalR
+    reservoir.AddInletClient();
+    reservoir.AddInletBlazorSignalR(signalR => signalR
+        .WithHubPath("/hubs/inlet")
+        .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+});
 
 await builder.Build().RunAsync();
 ```
 
-The `AddSpringDomainClient()` call registers source-generated command dispatchers and projection state wiring for the Blazor client. The client never directly calls Orleans grains or knows about event-sourcing internals.
+The `AddSpringDomainClient()` call registers source-generated command dispatchers and projection state wiring for the Blazor client inside the Reservoir builder callback. The client never directly calls Orleans grains or knows about event-sourcing internals.
 
 ([Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs))
 

@@ -1,4 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Sdk.Gateway" />
+    <InternalsVisibleTo Include="Mississippi.Inlet.Gateway" />
+  </ItemGroup>
   <PropertyGroup>
     <Description>Core Aqueduct runtime for event flow and stream processing.</Description>
   </PropertyGroup>

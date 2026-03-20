@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -15,7 +14,7 @@ using Mississippi.Reservoir.Abstractions.State;
 namespace Mississippi.Reservoir.Core.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="ReservoirRegistrations" />.
+///     Tests for Reservoir builder-based service composition.
 /// </summary>
 public sealed class ReservoirRegistrationsTests
 {
@@ -92,16 +91,18 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
-    ///     AddActionEffect should register feature-scoped action effect in DI.
+    ///     AddActionEffect should register a feature-scoped action effect in DI.
     /// </summary>
     [Fact]
     public void AddActionEffectRegistersFeatureScopedEffectInDI()
     {
         // Arrange
         ServiceCollection services = [];
+        ReservoirBuilder reservoirBuilder = new(services);
 
         // Act
-        services.AddActionEffect<TestFeatureState, TestActionEffect>();
+        reservoirBuilder.AddFeature<TestFeatureState>(feature =>
+            feature.AddActionEffect<TestFeatureState, TestActionEffect>());
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IActionEffect<TestFeatureState>> effects = provider.GetServices<IActionEffect<TestFeatureState>>();
 
@@ -117,9 +118,10 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        ReservoirBuilder reservoirBuilder = new(services);
 
         // Act
-        services.AddMiddleware<TestMiddleware>();
+        reservoirBuilder.AddMiddleware<TestMiddleware>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IMiddleware> middlewares = provider.GetServices<IMiddleware>();
 
@@ -128,22 +130,23 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReducer with delegate should register reducer in DI.
+    ///     AddReducer with delegate should register a reducer in DI.
     /// </summary>
     [Fact]
     public void AddReducerWithDelegateRegistersReducerInDI()
     {
         // Arrange
         ServiceCollection services = [];
+        ReservoirBuilder reservoirBuilder = new(services);
 
         // Act
-        services.AddReducer<TestAction, TestFeatureState>((
+        reservoirBuilder.AddFeature<TestFeatureState>(feature => feature.AddReducer<TestFeatureState, TestAction>((
             state,
             _
         ) => state with
         {
             Counter = state.Counter + 1,
-        });
+        }));
         using ServiceProvider provider = services.BuildServiceProvider();
         IActionReducer<TestFeatureState>? reducer = provider.GetService<IActionReducer<TestFeatureState>>();
 
@@ -159,22 +162,27 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        ReservoirBuilder reservoirBuilder = new(services);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services.AddReducer<TestAction, TestFeatureState>(null!));
+        Assert.Throws<ArgumentNullException>(() =>
+            reservoirBuilder.AddFeature<TestFeatureState>(feature =>
+                feature.AddReducer<TestFeatureState, TestAction>(null!)));
     }
 
     /// <summary>
-    ///     AddReducer with type should register reducer in DI.
+    ///     AddReducer with type should register a reducer in DI.
     /// </summary>
     [Fact]
     public void AddReducerWithTypeRegistersReducerInDI()
     {
         // Arrange
         ServiceCollection services = [];
+        ReservoirBuilder reservoirBuilder = new(services);
 
         // Act
-        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
+        reservoirBuilder.AddFeature<TestFeatureState>(feature =>
+            feature.AddReducer<TestFeatureState, TestAction, TestActionReducer>());
         using ServiceProvider provider = services.BuildServiceProvider();
         IActionReducer<TestFeatureState>? reducer = provider.GetService<IActionReducer<TestFeatureState>>();
         IActionReducer<TestAction, TestFeatureState>? typedReducer =
@@ -186,17 +194,17 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReservoir should not replace existing IStore registration.
+    ///     ReservoirBuilder should not replace an existing IStore registration.
     /// </summary>
     [Fact]
-    public void AddReservoirDoesNotReplaceExistingRegistration()
+    public void ReservoirBuilderDoesNotReplaceExistingStoreRegistration()
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir(); // First registration
+        _ = new ReservoirBuilder(services); // First registration
 
         // Act
-        services.AddReservoir(); // Second registration should not replace
+        _ = new ReservoirBuilder(services); // Second registration should not replace
         ServiceDescriptor[] descriptors = [.. services];
         int storeCount = descriptors.Count(d => d.ServiceType == typeof(IStore));
 
@@ -205,16 +213,16 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReservoir should register IStore as scoped.
+    ///     ReservoirBuilder should register IStore as scoped.
     /// </summary>
     [Fact]
-    public void AddReservoirRegistersIStoreAsScoped()
+    public void ReservoirBuilderRegistersIStoreAsScoped()
     {
         // Arrange
         ServiceCollection services = [];
 
         // Act
-        services.AddReservoir();
+        _ = new ReservoirBuilder(services);
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store1 = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -225,36 +233,11 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReservoir should throw ArgumentNullException when services is null.
+    ///     ReservoirBuilder should throw ArgumentNullException when services is null.
     /// </summary>
     [Fact]
-    public void AddReservoirWithNullServicesThrowsArgumentNullException()
+    public void ReservoirBuilderWithNullServicesThrowsArgumentNullException()
     {
-        // Arrange
-        IServiceCollection? services = null;
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddReservoir());
-    }
-
-    /// <summary>
-    ///     AddRootReducer should register root reducer in DI.
-    /// </summary>
-    [Fact]
-    public void AddRootReducerRegistersRootReducerInDI()
-    {
-        // Arrange
-        ServiceCollection services = [];
-        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
-
-        // Act
-        services.AddRootReducer<TestFeatureState>();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IRootReducer<TestFeatureState>? rootReducer = provider.GetService<IRootReducer<TestFeatureState>>();
-
-        // Assert
-        Assert.NotNull(rootReducer);
+        Assert.Throws<ArgumentNullException>(() => new ReservoirBuilder(null!));
     }
 }
-
-#pragma warning restore CS0618

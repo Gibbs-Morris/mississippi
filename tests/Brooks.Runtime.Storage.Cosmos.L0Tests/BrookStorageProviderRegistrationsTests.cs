@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -32,10 +31,10 @@ public sealed class BrookStorageProviderRegistrationsTests
     ///     Verifies core services and public abstractions are registered.
     /// </summary>
     [Fact]
-    public void AddCosmosBrookStorageProviderRegistersServicesAndMappers()
+    public void UseCosmosBrookStorageRegistersServicesAndMappers()
     {
         ServiceCollection services = new();
-        services.AddCosmosBrookStorageProvider(options =>
+        services.UseCosmosBrookStorage(options =>
         {
             options.DatabaseId = "db";
             options.LockContainerName = "locks";
@@ -90,7 +89,7 @@ public sealed class BrookStorageProviderRegistrationsTests
     ///     Verifies configuration binding overload binds BrookStorageOptions from IConfiguration.
     /// </summary>
     [Fact]
-    public void AddCosmosBrookStorageProviderWithConfigurationBindsOptions()
+    public void UseCosmosBrookStorageWithConfigurationBindsOptions()
     {
         Dictionary<string, string?> inMemory = new()
         {
@@ -101,7 +100,7 @@ public sealed class BrookStorageProviderRegistrationsTests
         ServiceCollection services = new();
 
         // Use the IConfiguration-only overload so we don't register SDK clients here.
-        services.AddCosmosBrookStorageProvider(configuration);
+        services.UseCosmosBrookStorage(configuration);
         using ServiceProvider provider = services.BuildServiceProvider();
         IOptions<BrookStorageOptions> opts = provider.GetRequiredService<IOptions<BrookStorageOptions>>();
         Assert.Equal("confdb", opts.Value.DatabaseId);
@@ -112,10 +111,10 @@ public sealed class BrookStorageProviderRegistrationsTests
     ///     Verifies configureOptions overload populates IOptions&lt;BrookStorageOptions&gt;.
     /// </summary>
     [Fact]
-    public void AddCosmosBrookStorageProviderWithConfigureOptionsAppliesOptions()
+    public void UseCosmosBrookStorageWithConfigureOptionsAppliesOptions()
     {
         ServiceCollection services = new();
-        services.AddCosmosBrookStorageProvider(options => { options.DatabaseId = "mydb"; });
+        services.UseCosmosBrookStorage(options => { options.DatabaseId = "mydb"; });
         using ServiceProvider provider = services.BuildServiceProvider();
         IOptions<BrookStorageOptions> opts = provider.GetRequiredService<IOptions<BrookStorageOptions>>();
         Assert.Equal("mydb", opts.Value.DatabaseId);
@@ -126,7 +125,7 @@ public sealed class BrookStorageProviderRegistrationsTests
     ///     clients.
     /// </summary>
     [Fact]
-    public void AddCosmosBrookStorageProviderWithConnectionStringsAndConfigurationBindsAndRegisters()
+    public void UseCosmosBrookStorageWithConnectionStringsAndConfigurationBindsAndRegisters()
     {
         ServiceCollection services = new();
         IConfigurationRoot cfg = new ConfigurationBuilder().AddInMemoryCollection(
@@ -136,7 +135,7 @@ public sealed class BrookStorageProviderRegistrationsTests
                     ["LockContainerName"] = "cfgLocks",
                 })
             .Build();
-        services.AddCosmosBrookStorageProvider(
+        services.UseCosmosBrookStorage(
             "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM=;",
             "UseDevelopmentStorage=true",
             cfg);
@@ -155,10 +154,10 @@ public sealed class BrookStorageProviderRegistrationsTests
     ///     Ensures Cosmos and Blob clients are registered when connection strings overload is used.
     /// </summary>
     [Fact]
-    public void AddCosmosBrookStorageProviderWithConnectionStringsRegistersClients()
+    public void UseCosmosBrookStorageWithConnectionStringsRegistersClients()
     {
         ServiceCollection services = new();
-        services.AddCosmosBrookStorageProvider(
+        services.UseCosmosBrookStorage(
             "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM=;",
             "UseDevelopmentStorage=true",
             configureOptions: null);
@@ -170,5 +169,3 @@ public sealed class BrookStorageProviderRegistrationsTests
         Assert.Contains(typeof(BlobServiceClient), serviceTypes2);
     }
 }
-
-#pragma warning restore CS0618

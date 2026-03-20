@@ -30,7 +30,7 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddMemoryGrainStorage("PubSubStore");
 
         // Tell Brooks which stream provider to use
-        siloBuilder.AddEventSourcing();
+        siloBuilder.UseEventSourcing();
 
         // Configure Aqueduct for IAqueductGrainFactory
         siloBuilder.UseAqueduct();
@@ -40,7 +40,7 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
             services.AddInletSilo();
 
             // Add EventSourcing services for IStreamIdFactory
-            services.AddEventSourcingByService();
+            services.UseEventSourcingServices();
 
             // In-memory brook storage for tests
             services.AddSingleton<InMemoryBrookStorage>();

@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,54 +60,6 @@ public sealed class SnapshotAbstractionsTests
     }
 
     /// <summary>
-    ///     Ensures the registration helper wires both reader and writer roles for a provider.
-    /// </summary>
-    [Fact]
-    public void RegisterSnapshotStorageProviderShouldRegisterReaderAndWriter()
-    {
-        ServiceCollection services = new();
-        services.RegisterSnapshotStorageProvider<FakeProvider>();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        ISnapshotStorageReader reader = provider.GetRequiredService<ISnapshotStorageReader>();
-        ISnapshotStorageWriter writer = provider.GetRequiredService<ISnapshotStorageWriter>();
-        Assert.IsType<FakeProvider>(reader);
-        Assert.IsType<FakeProvider>(writer);
-    }
-
-    /// <summary>
-    ///     Ensures the overload binding configuration section wires options and registration.
-    /// </summary>
-    [Fact]
-    public void RegisterSnapshotStorageProviderWithConfigurationShouldBind()
-    {
-        ConfigurationBuilder builder = new();
-        builder.AddInMemoryCollection(
-            new Dictionary<string, string?>
-            {
-                ["Value"] = "section",
-            });
-        IConfiguration config = builder.Build();
-        ServiceCollection services = new();
-        services.RegisterSnapshotStorageProvider<FakeProvider, FakeOptions>(config);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        FakeOptions options = provider.GetRequiredService<IOptions<FakeOptions>>().Value;
-        Assert.Equal("section", options.Value);
-    }
-
-    /// <summary>
-    ///     Ensures the overload binding configuration delegates wires options and registration.
-    /// </summary>
-    [Fact]
-    public void RegisterSnapshotStorageProviderWithOptionsDelegateShouldConfigure()
-    {
-        ServiceCollection services = new();
-        services.RegisterSnapshotStorageProvider<FakeProvider, FakeOptions>(o => o.Value = "ok");
-        using ServiceProvider provider = services.BuildServiceProvider();
-        FakeOptions options = provider.GetRequiredService<IOptions<FakeOptions>>().Value;
-        Assert.Equal("ok", options.Value);
-    }
-
-    /// <summary>
     ///     Ensures the envelope defaults are empty and can be initialized.
     /// </summary>
     [Fact]
@@ -126,6 +77,52 @@ public sealed class SnapshotAbstractionsTests
         Assert.Equal(data, populated.Data);
         Assert.Equal("application/octet-stream", populated.DataContentType);
     }
-}
 
-#pragma warning restore CS0618
+    /// <summary>
+    ///     Ensures the registration helper wires both reader and writer roles for a provider.
+    /// </summary>
+    [Fact]
+    public void UseSnapshotStorageProviderShouldRegisterReaderAndWriter()
+    {
+        ServiceCollection services = new();
+        services.UseSnapshotStorageProvider<FakeProvider>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISnapshotStorageReader reader = provider.GetRequiredService<ISnapshotStorageReader>();
+        ISnapshotStorageWriter writer = provider.GetRequiredService<ISnapshotStorageWriter>();
+        Assert.IsType<FakeProvider>(reader);
+        Assert.IsType<FakeProvider>(writer);
+    }
+
+    /// <summary>
+    ///     Ensures the overload binding configuration section wires options and registration.
+    /// </summary>
+    [Fact]
+    public void UseSnapshotStorageProviderWithConfigurationShouldBind()
+    {
+        ConfigurationBuilder builder = new();
+        builder.AddInMemoryCollection(
+            new Dictionary<string, string?>
+            {
+                ["Value"] = "section",
+            });
+        IConfiguration config = builder.Build();
+        ServiceCollection services = new();
+        services.UseSnapshotStorageProvider<FakeProvider, FakeOptions>(config);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        FakeOptions options = provider.GetRequiredService<IOptions<FakeOptions>>().Value;
+        Assert.Equal("section", options.Value);
+    }
+
+    /// <summary>
+    ///     Ensures the overload binding configuration delegates wires options and registration.
+    /// </summary>
+    [Fact]
+    public void UseSnapshotStorageProviderWithOptionsDelegateShouldConfigure()
+    {
+        ServiceCollection services = new();
+        services.UseSnapshotStorageProvider<FakeProvider, FakeOptions>(o => o.Value = "ok");
+        using ServiceProvider provider = services.BuildServiceProvider();
+        FakeOptions options = provider.GetRequiredService<IOptions<FakeOptions>>().Value;
+        Assert.Equal("ok", options.Value);
+    }
+}

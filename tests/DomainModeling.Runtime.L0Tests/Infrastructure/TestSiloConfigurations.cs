@@ -26,11 +26,11 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
 
         // Tell Brooks which stream provider to use
-        siloBuilder.AddEventSourcing();
+        siloBuilder.UseEventSourcing();
         siloBuilder.ConfigureServices(services =>
         {
             services.AddUxProjections();
-            services.AddEventSourcingByService(); // Registers IStreamIdFactory
+            services.UseEventSourcingServices(); // Registers IStreamIdFactory
             services.AddSingleton<InMemoryBrookStorage>();
             services.AddSingleton<IBrookStorageReader>(sp => sp.GetRequiredService<InMemoryBrookStorage>());
         });

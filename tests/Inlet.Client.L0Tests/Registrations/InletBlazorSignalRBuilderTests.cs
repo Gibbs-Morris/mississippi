@@ -1,6 +1,7 @@
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.ActionEffects;
@@ -70,10 +71,10 @@ public sealed class InletBlazorSignalRBuilderTests
     }
 
     /// <summary>
-    ///     Build registers options as singleton.
+    ///     Build registers options via Configure pattern.
     /// </summary>
     [Fact]
-    public void BuildRegistersOptionsAsSingleton()
+    public void BuildRegistersOptionsViaConfigure()
     {
         // Arrange
         ServiceCollection services = new();
@@ -83,11 +84,8 @@ public sealed class InletBlazorSignalRBuilderTests
         // Act
         builder.Build();
 
-        // Assert
-        Assert.Contains(
-            services,
-            sd => (sd.ServiceType == typeof(InletSignalRActionEffectOptions)) &&
-                  (sd.Lifetime == ServiceLifetime.Singleton));
+        // Assert — IOptions<T> registration uses IConfigureOptions<T> under the hood.
+        Assert.Contains(services, sd => sd.ServiceType == typeof(IConfigureOptions<InletSignalRActionEffectOptions>));
     }
 
     /// <summary>

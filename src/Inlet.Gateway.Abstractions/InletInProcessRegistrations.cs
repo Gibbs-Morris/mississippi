@@ -1,4 +1,3 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -10,9 +9,6 @@ namespace Mississippi.Inlet.Gateway.Abstractions;
 /// <summary>
 ///     Extension methods for registering Inlet in-process server services.
 /// </summary>
-[Obsolete(
-    "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
 public static class InletInProcessRegistrations
 {
     /// <summary>
@@ -33,10 +29,7 @@ public static class InletInProcessRegistrations
     ///         for Redux-style state management in Blazor Server applications.
     ///     </para>
     /// </remarks>
-    [Obsolete(
-        "Legacy gateway composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to GatewayBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection AddInletInProcess(
+    public static IServiceCollection UseInletInProcess(
         this IServiceCollection services
     )
     {
@@ -46,5 +39,3 @@ public static class InletInProcessRegistrations
         return services;
     }
 }
-
-#pragma warning restore S1133

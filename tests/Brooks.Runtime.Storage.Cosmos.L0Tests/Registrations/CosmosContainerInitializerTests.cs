@@ -127,7 +127,7 @@ public sealed class CosmosContainerInitializerTests
         ServiceCollection services = new();
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
         services.AddKeyedSingleton<CosmosClient>(BrookCosmosDefaults.CosmosClientServiceKey, cosmos.Object);
-        services.AddCosmosBrookStorageProvider();
+        services.UseCosmosBrookStorage();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
 
@@ -185,7 +185,7 @@ public sealed class CosmosContainerInitializerTests
         ServiceCollection services = new();
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
         services.AddKeyedSingleton<CosmosClient>(BrookCosmosDefaults.CosmosClientServiceKey, cosmos.Object);
-        services.AddCosmosBrookStorageProvider();
+        services.UseCosmosBrookStorage();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
 

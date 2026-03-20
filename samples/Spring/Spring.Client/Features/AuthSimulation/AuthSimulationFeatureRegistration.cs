@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS0618 // Sample still exercises legacy composition APIs pending issue #237.
-using Microsoft.Extensions.DependencyInjection;
-
+﻿using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Core;
 
 using MississippiSamples.Spring.Client.AuthSimulation;
@@ -16,16 +14,15 @@ internal static class AuthSimulationFeatureRegistration
     /// <summary>
     ///     Adds the auth simulation feature to the service collection.
     /// </summary>
-    /// <param name="services">Service collection.</param>
-    /// <returns>Service collection for chaining.</returns>
-    public static IServiceCollection AddAuthSimulationFeature(
-        this IServiceCollection services
+    /// <param name="reservoir">Reservoir builder.</param>
+    /// <returns>Reservoir builder for chaining.</returns>
+    public static IReservoirBuilder AddAuthSimulationFeature(
+        this IReservoirBuilder reservoir
     )
     {
-        services.AddReducer<SetAuthSimulationProfileAction, AuthSimulationState>(AuthSimulationReducers.SetProfile);
-        services.AddActionEffect<AuthSimulationState, AuthSimulationSyncEffect>();
-        return services;
+        reservoir.AddFeature<AuthSimulationState>(feature => feature
+            .AddReducer<AuthSimulationState, SetAuthSimulationProfileAction>(AuthSimulationReducers.SetProfile)
+            .AddActionEffect<AuthSimulationState, AuthSimulationSyncEffect>());
+        return reservoir;
     }
 }
-
-#pragma warning restore CS0618

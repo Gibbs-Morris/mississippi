@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime.Storage.Abstractions;
@@ -25,10 +24,10 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
 
         // Tell Brooks which stream provider to use
-        siloBuilder.AddEventSourcing();
+        siloBuilder.UseEventSourcing();
         siloBuilder.ConfigureServices(services =>
         {
-            services.AddEventSourcingByService();
+            services.UseEventSourcingServices();
             services.AddSingleton<InMemoryBrookStorage>();
             services.AddSingleton<IBrookStorageReader>(sp => sp.GetRequiredService<InMemoryBrookStorage>());
             services.AddSingleton<IBrookStorageWriter>(sp => sp.GetRequiredService<InMemoryBrookStorage>());
@@ -38,5 +37,3 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
         siloBuilder.AddMemoryGrainStorage("PubSubStore");
     }
 }
-
-#pragma warning restore CS0618

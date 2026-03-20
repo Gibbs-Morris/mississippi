@@ -3,6 +3,9 @@
     <Description>Client runtime for consuming Inlet projection streams and APIs.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Sdk.Client" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
     <ProjectReference Include="..\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />

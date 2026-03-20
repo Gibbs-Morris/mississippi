@@ -1,8 +1,6 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
-using Microsoft.Extensions.DependencyInjection;
-
+using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
 using Mississippi.Reservoir.Client.BuiltIn.Navigation;
 
@@ -17,20 +15,14 @@ namespace Mississippi.Reservoir.Client.BuiltIn;
 ///         This provides a convenient way to register all built-in features at once.
 ///         You can also register features individually using their specific extension methods.
 ///     </para>
-///     <para>
-///         Register with <see cref="AddReservoirBlazorBuiltIns" /> after calling <c>AddReservoir</c>.
-///     </para>
 /// </remarks>
-[Obsolete(
-    "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
 public static class ReservoirBlazorBuiltInRegistrations
 {
     /// <summary>
     ///     Adds all built-in Reservoir Blazor features to the service collection.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
+    /// <param name="reservoir">The Reservoir builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
     /// <remarks>
     ///     This registers:
     ///     <list type="bullet">
@@ -43,17 +35,13 @@ public static class ReservoirBlazorBuiltInRegistrations
     ///         to receive location change notifications.
     ///     </para>
     /// </remarks>
-    [Obsolete(
-        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection AddReservoirBlazorBuiltIns(
-        this IServiceCollection services
+    public static IReservoirBuilder AddReservoirBlazorBuiltIns(
+        this IReservoirBuilder reservoir
     )
     {
-        services.AddBuiltInNavigation();
-        services.AddBuiltInLifecycle();
-        return services;
+        ArgumentNullException.ThrowIfNull(reservoir);
+        reservoir.AddBuiltInNavigation();
+        reservoir.AddBuiltInLifecycle();
+        return reservoir;
     }
 }
-
-#pragma warning restore S1133

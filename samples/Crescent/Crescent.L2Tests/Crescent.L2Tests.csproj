@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\..\src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Brooks.Runtime\Brooks.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
+    <ProjectReference Include="..\..\..\src\Sdk.Runtime\Sdk.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Tributary.Runtime\Tributary.Runtime.csproj" />
     <ProjectReference Include="..\..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
     <ProjectReference Include="..\..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />

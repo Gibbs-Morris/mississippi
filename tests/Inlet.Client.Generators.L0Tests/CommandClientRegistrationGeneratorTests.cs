@@ -143,7 +143,7 @@ public class CommandClientRegistrationGeneratorTests
             RunGenerator(AttributeStubs, commandSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("AddOrderAggregateFeature(", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("this IServiceCollection services", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("this IReservoirBuilder reservoir", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -218,7 +218,7 @@ public class CommandClientRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, commandSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("AddMapper<", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddTransient<IMapper<", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -1,20 +1,15 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
-using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-using Mississippi.Brooks.Abstractions.Attributes;
-using Mississippi.Inlet.Abstractions;
-using Mississippi.Inlet.Generators.Abstractions;
 using Mississippi.Inlet.Runtime.Abstractions;
 
 
 namespace Mississippi.Inlet.Runtime;
 
 /// <summary>
-///     Extension methods for registering Inlet Silo services.
+///     Internal registration helpers for Inlet runtime services.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -22,10 +17,7 @@ namespace Mississippi.Inlet.Runtime;
 ///         that serve SignalR hubs, use the extensions from <c>Inlet.Gateway</c>.
 ///     </para>
 /// </remarks>
-[Obsolete(
-    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
-public static class InletSiloRegistrations
+internal static class InletSiloRegistrations
 {
     /// <summary>
     ///     Adds Inlet Orleans services to the service collection.
@@ -36,13 +28,8 @@ public static class InletSiloRegistrations
     ///     <para>
     ///         This method registers the <see cref="IProjectionBrookRegistry" /> as a singleton.
     ///         It also registers <see cref="IProjectionAuthorizationRegistry" /> as a singleton.
-    ///         You must call <see cref="ScanProjectionAssemblies" /> to populate the registry
-    ///         with projection-to-brook mappings from attributed types.
     ///     </para>
     /// </remarks>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static IServiceCollection AddInletSilo(
         this IServiceCollection services
     )
@@ -52,81 +39,4 @@ public static class InletSiloRegistrations
         services.TryAddSingleton<IProjectionAuthorizationRegistry, ProjectionAuthorizationRegistry>();
         return services;
     }
-
-    /// <summary>
-    ///     Scans assemblies for projection types and registers them in the brook registry.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="assemblies">The assemblies to scan for projection types.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <remarks>
-    ///     <para>
-    ///         This method scans the provided assemblies for types decorated with
-    ///         <see cref="ProjectionPathAttribute" /> and registers their path-to-brook
-    ///         mappings in the <see cref="IProjectionBrookRegistry" />. It also resolves
-    ///         <see cref="GenerateAuthorizationAttribute" /> and
-    ///         <see cref="GenerateAllowAnonymousAttribute" /> metadata and registers it in
-    ///         <see cref="IProjectionAuthorizationRegistry" />.
-    ///     </para>
-    ///     <para>
-    ///         The brook name is determined from <see cref="BrookNameAttribute" /> if present,
-    ///         otherwise defaults to the path from <see cref="ProjectionPathAttribute" />.
-    ///     </para>
-    ///     <para>
-    ///         Call this after <see cref="AddInletSilo" /> to populate the registry.
-    ///     </para>
-    /// </remarks>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection ScanProjectionAssemblies(
-        this IServiceCollection services,
-        params Assembly[] assemblies
-    )
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(assemblies);
-        ProjectionBrookRegistry registry = new();
-        ProjectionAuthorizationRegistry authorizationRegistry = new();
-        foreach (Assembly assembly in assemblies)
-        {
-            foreach (Type type in assembly.GetExportedTypes())
-            {
-                ProjectionPathAttribute? pathAttr = type.GetCustomAttribute<ProjectionPathAttribute>();
-                if (pathAttr is null)
-                {
-                    continue;
-                }
-
-                // Brook name from BrookNameAttribute, or default to path
-                BrookNameAttribute? brookAttr = type.GetCustomAttribute<BrookNameAttribute>();
-                string brookName = brookAttr?.BrookName ?? pathAttr.Path;
-                registry.Register(pathAttr.Path, brookName);
-                GenerateAuthorizationAttribute? authorizeAttr =
-                    type.GetCustomAttribute<GenerateAuthorizationAttribute>();
-                bool hasAuthorize = authorizeAttr is not null;
-                bool hasAllowAnonymous = type.GetCustomAttribute<GenerateAllowAnonymousAttribute>() is not null;
-                if (!hasAuthorize && !hasAllowAnonymous)
-                {
-                    continue;
-                }
-
-                ProjectionAuthorizationMetadata metadata = new(
-                    authorizeAttr?.Policy,
-                    authorizeAttr?.Roles,
-                    authorizeAttr?.AuthenticationSchemes,
-                    hasAuthorize,
-                    hasAllowAnonymous);
-                authorizationRegistry.Register(pathAttr.Path, metadata);
-            }
-        }
-
-        services.RemoveAll<IProjectionBrookRegistry>();
-        services.AddSingleton<IProjectionBrookRegistry>(registry);
-        services.RemoveAll<IProjectionAuthorizationRegistry>();
-        services.AddSingleton<IProjectionAuthorizationRegistry>(authorizationRegistry);
-        return services;
-    }
 }
-
-#pragma warning restore S1133

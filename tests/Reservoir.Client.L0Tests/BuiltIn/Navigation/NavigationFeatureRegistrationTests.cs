@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
-using System;
+﻿using System;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,8 +28,8 @@ public sealed class NavigationFeatureRegistrationTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddSingleton<NavigationManager>(new FakeNavigationManager());
-        services.AddReservoir();
-        services.AddBuiltInNavigation();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddBuiltInNavigation();
         serviceProvider = services.BuildServiceProvider();
         store = serviceProvider.GetRequiredService<IStore>();
     }
@@ -106,20 +105,20 @@ public sealed class NavigationFeatureRegistrationTests : IDisposable
     }
 
     /// <summary>
-    ///     AddBuiltInNavigation should return services for chaining.
+    ///     AddBuiltInNavigation should return the Reservoir builder for chaining.
     /// </summary>
     [Fact]
-    public void AddBuiltInNavigationReturnsServicesForChaining()
+    public void AddBuiltInNavigationReturnsBuilderForChaining()
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir();
+        ReservoirBuilder reservoirBuilder = new(services);
 
         // Act
-        IServiceCollection result = services.AddBuiltInNavigation();
+        IReservoirBuilder result = reservoirBuilder.AddBuiltInNavigation();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 
     /// <summary>
@@ -139,5 +138,3 @@ public sealed class NavigationFeatureRegistrationTests : IDisposable
         Assert.Equal("https://example.com/page3", state.CurrentUri);
     }
 }
-
-#pragma warning restore CS0618

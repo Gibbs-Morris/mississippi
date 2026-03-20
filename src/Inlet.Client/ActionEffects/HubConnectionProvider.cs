@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Options;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.SignalRConnection;
@@ -33,15 +34,16 @@ internal sealed class HubConnectionProvider : IHubConnectionProvider
     public HubConnectionProvider(
         NavigationManager navigationManager,
         Lazy<IInletStore> lazyStore,
-        InletSignalRActionEffectOptions? options = null,
+        IOptions<InletSignalRActionEffectOptions> options,
         TimeProvider? timeProvider = null
     )
     {
         ArgumentNullException.ThrowIfNull(navigationManager);
         ArgumentNullException.ThrowIfNull(lazyStore);
+        ArgumentNullException.ThrowIfNull(options);
         this.lazyStore = lazyStore;
         TimeProvider = timeProvider ?? TimeProvider.System;
-        InletSignalRActionEffectOptions effectOptions = options ?? new InletSignalRActionEffectOptions();
+        InletSignalRActionEffectOptions effectOptions = options.Value;
         Connection = new HubConnectionBuilder().WithUrl(navigationManager.ToAbsoluteUri(effectOptions.HubPath))
             .WithAutomaticReconnect()
             .Build();

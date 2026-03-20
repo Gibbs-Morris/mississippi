@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
-using System;
+﻿using System;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,8 +26,8 @@ public sealed class ReservoirBlazorBuiltInRegistrationsTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddSingleton<NavigationManager>(new FakeNavigationManager());
-        services.AddReservoir();
-        services.AddReservoirBlazorBuiltIns();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddReservoirBlazorBuiltIns();
         serviceProvider = services.BuildServiceProvider();
     }
 
@@ -110,21 +109,19 @@ public sealed class ReservoirBlazorBuiltInRegistrationsTests : IDisposable
     }
 
     /// <summary>
-    ///     AddReservoirBlazorBuiltIns should return services for chaining.
+    ///     AddReservoirBlazorBuiltIns should return the Reservoir builder for chaining.
     /// </summary>
     [Fact]
-    public void AddReservoirBlazorBuiltInsReturnsServicesForChaining()
+    public void AddReservoirBlazorBuiltInsReturnsBuilderForChaining()
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir();
+        ReservoirBuilder reservoirBuilder = new(services);
 
         // Act
-        IServiceCollection result = services.AddReservoirBlazorBuiltIns();
+        IReservoirBuilder result = reservoirBuilder.AddReservoirBlazorBuiltIns();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 }
-
-#pragma warning restore CS0618

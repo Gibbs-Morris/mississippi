@@ -1,4 +1,3 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.Configuration;
@@ -11,9 +10,6 @@ namespace Mississippi.Tributary.Runtime.Storage.Abstractions;
 /// <summary>
 ///     Provides helper methods for registering snapshot storage providers and their options.
 /// </summary>
-[Obsolete(
-    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
 public static class SnapshotStorageProviderExtensions
 {
     /// <summary>
@@ -22,10 +18,7 @@ public static class SnapshotStorageProviderExtensions
     /// <typeparam name="TProvider">The provider type to register.</typeparam>
     /// <param name="services">The service collection to modify.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection RegisterSnapshotStorageProvider<TProvider>(
+    public static IServiceCollection UseSnapshotStorageProvider<TProvider>(
         this IServiceCollection services
     )
         where TProvider : class, ISnapshotStorageProvider
@@ -46,10 +39,7 @@ public static class SnapshotStorageProviderExtensions
     /// <param name="services">The service collection to modify.</param>
     /// <param name="configureOptions">The options configuration action.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection RegisterSnapshotStorageProvider<TProvider, TOptions>(
+    public static IServiceCollection UseSnapshotStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         Action<TOptions> configureOptions
     )
@@ -57,7 +47,7 @@ public static class SnapshotStorageProviderExtensions
         where TOptions : class, new()
     {
         services.Configure(configureOptions);
-        return services.RegisterSnapshotStorageProvider<TProvider>();
+        return services.UseSnapshotStorageProvider<TProvider>();
     }
 
     /// <summary>
@@ -68,10 +58,7 @@ public static class SnapshotStorageProviderExtensions
     /// <param name="services">The service collection to modify.</param>
     /// <param name="configuration">The configuration section to bind.</param>
     /// <returns>The service collection for chaining.</returns>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection RegisterSnapshotStorageProvider<TProvider, TOptions>(
+    public static IServiceCollection UseSnapshotStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         IConfiguration configuration
     )
@@ -79,8 +66,6 @@ public static class SnapshotStorageProviderExtensions
         where TOptions : class, new()
     {
         services.Configure<TOptions>(configuration);
-        return services.RegisterSnapshotStorageProvider<TProvider>();
+        return services.UseSnapshotStorageProvider<TProvider>();
     }
 }
-
-#pragma warning restore S1133

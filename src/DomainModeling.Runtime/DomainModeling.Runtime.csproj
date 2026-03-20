@@ -1,8 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Sdk.Gateway" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Remove="SagaInfrastructureReducers.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
     <ProjectReference Include="..\Tributary.Runtime\Tributary.Runtime.csproj" />

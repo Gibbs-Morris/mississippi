@@ -1,8 +1,10 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+
+using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Reservoir.Client;
@@ -13,20 +15,17 @@ namespace Mississippi.Reservoir.Client;
 /// <remarks>
 ///     Justification: public to provide opt-in registration from application startup.
 /// </remarks>
-[Obsolete(
-    "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
 public static class ReservoirDevToolsRegistrations
 {
     /// <summary>
     ///     Adds Reservoir Redux DevTools integration to the service collection.
     /// </summary>
-    /// <param name="services">The service collection.</param>
+    /// <param name="reservoir">The Reservoir builder.</param>
     /// <param name="configure">Optional configuration for DevTools options.</param>
-    /// <returns>The service collection for chaining.</returns>
+    /// <returns>The Reservoir builder for chaining.</returns>
     /// <remarks>
     ///     <para>
-    ///         Register after calling <c>AddReservoir</c>. DevTools integration is opt-in and disabled by default.
+    ///         Register after attaching Reservoir to the host. DevTools integration is opt-in and disabled by default.
     ///     </para>
     ///     <para>
     ///         This registers a scoped <see cref="ReduxDevToolsService" /> that subscribes to
@@ -45,15 +44,17 @@ public static class ReservoirDevToolsRegistrations
     ///         initialized DevTools, a warning is logged to help diagnose missing component configuration.
     ///     </para>
     /// </remarks>
-    [Obsolete(
-        "Legacy client composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to ClientBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
-    public static IServiceCollection AddReservoirDevTools(
-        this IServiceCollection services,
+    public static IReservoirBuilder AddReservoirDevTools(
+        this IReservoirBuilder reservoir,
         Action<ReservoirDevToolsOptions>? configure = null
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(reservoir);
+        ReservoirBuilder builder = reservoir as ReservoirBuilder ??
+                                   throw new ArgumentException(
+                                       "The provided reservoir builder is not supported by the current Reservoir.Client implementation.",
+                                       nameof(reservoir));
+        IServiceCollection services = builder.Services;
         if (configure is not null)
         {
             services.AddOptions<ReservoirDevToolsOptions>().Configure(configure);
@@ -73,8 +74,6 @@ public static class ReservoirDevToolsRegistrations
         // In Blazor WASM, the single scope acts as a pseudo-singleton.
         services.TryAddScoped<ReservoirDevToolsInterop>();
         services.TryAddScoped<ReduxDevToolsService>();
-        return services;
+        return reservoir;
     }
 }
-
-#pragma warning restore S1133

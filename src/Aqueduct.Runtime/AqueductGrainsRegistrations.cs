@@ -1,4 +1,3 @@
-#pragma warning disable S1133 // Intentional staged deprecation pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -14,9 +13,6 @@ namespace Mississippi.Aqueduct.Runtime;
 /// <summary>
 ///     Extension methods for configuring Aqueduct on Orleans silos.
 /// </summary>
-[Obsolete(
-    "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-    false)]
 public static class AqueductGrainsRegistrations
 {
     /// <summary>
@@ -50,9 +46,6 @@ public static class AqueductGrainsRegistrations
     ///     });
     ///     </code>
     /// </remarks>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static ISiloBuilder UseAqueduct(
         this ISiloBuilder siloBuilder,
         Action<AqueductSiloOptions> configureOptions
@@ -90,9 +83,6 @@ public static class AqueductGrainsRegistrations
     ///         <see cref="AqueductStreamDefaults.StreamProviderName" />.
     ///     </para>
     /// </remarks>
-    [Obsolete(
-        "Legacy runtime composition entrypoint. Will be removed once GitHub issue #237 (Host/Sub-Builder Composition Model) is fully implemented. Migrate to RuntimeBuilder via UseMississippi() once available (see issue #237, in progress). See: https://github.com/Gibbs-Morris/mississippi/issues/237",
-        false)]
     public static ISiloBuilder UseAqueduct(
         this ISiloBuilder siloBuilder
     )
@@ -101,5 +91,3 @@ public static class AqueductGrainsRegistrations
         return siloBuilder.UseAqueduct(_ => { });
     }
 }
-
-#pragma warning restore S1133
