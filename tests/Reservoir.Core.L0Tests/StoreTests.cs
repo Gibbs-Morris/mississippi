@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -223,8 +224,9 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddActionEffect<TestFeatureState, ReturningActionEffect>();
-        services.AddReservoir();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddFeature<TestFeatureState>(feature =>
+            feature.AddActionEffect<TestFeatureState, ReturningActionEffect>());
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -249,11 +251,11 @@ public sealed class StoreTests : IDisposable
         // Arrange - use DI to register both effects
         bool secondEffectRan = false;
         ServiceCollection services = [];
+        ReservoirBuilder reservoirBuilder = new(services);
         services.AddTransient<IActionEffect<TestFeatureState>, ThrowingActionEffect>();
         services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => secondEffectRan = true));
-        services.AddRootActionEffect<TestFeatureState>();
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        reservoirBuilder.AddFeature<TestFeatureState>();
+        services.AddTransient<IRootActionEffect<TestFeatureState>, RootActionEffect<TestFeatureState>>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -385,10 +387,10 @@ public sealed class StoreTests : IDisposable
         // Arrange
         bool effectHandled = false;
         ServiceCollection services = [];
+        ReservoirBuilder reservoirBuilder = new(services);
         services.AddTransient<IActionEffect<TestFeatureState>>(_ => new TestActionEffect(() => effectHandled = true));
-        services.AddRootActionEffect<TestFeatureState>();
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        reservoirBuilder.AddFeature<TestFeatureState>();
+        services.AddTransient<IRootActionEffect<TestFeatureState>, RootActionEffect<TestFeatureState>>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -409,8 +411,8 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddFeatureState<TestFeatureState>();
-        services.AddReservoir();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddFeature<TestFeatureState>();
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
 
@@ -515,8 +517,9 @@ public sealed class StoreTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReducer<IncrementAction, TestFeatureState, TestFeatureActionReducer>();
-        services.AddReservoir();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddFeature<TestFeatureState>(feature =>
+            feature.AddReducer<TestFeatureState, IncrementAction, TestFeatureActionReducer>());
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore diStore = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -782,3 +785,5 @@ public sealed class StoreTests : IDisposable
         Assert.Equal(1, callCount);
     }
 }
+
+#pragma warning restore CS0618

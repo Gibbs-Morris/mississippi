@@ -9,9 +9,9 @@ using Mississippi.DomainModeling.Abstractions;
 namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
-///     Provides extension methods for registering UX projection components in the dependency injection container.
+///     Internal registration helpers for UX projection components.
 /// </summary>
-public static class UxProjectionRegistrations
+internal static class UxProjectionRegistrations
 {
     /// <summary>
     ///     Adds UX projection infrastructure services to the service collection.

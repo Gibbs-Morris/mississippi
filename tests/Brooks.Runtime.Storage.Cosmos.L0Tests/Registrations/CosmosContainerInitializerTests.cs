@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Linq;
 using System.Net;
@@ -126,7 +127,7 @@ public sealed class CosmosContainerInitializerTests
         ServiceCollection services = new();
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
         services.AddKeyedSingleton<CosmosClient>(BrookCosmosDefaults.CosmosClientServiceKey, cosmos.Object);
-        services.AddCosmosBrookStorageProvider();
+        services.UseCosmosBrookStorage();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
 
@@ -184,7 +185,7 @@ public sealed class CosmosContainerInitializerTests
         ServiceCollection services = new();
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
         services.AddKeyedSingleton<CosmosClient>(BrookCosmosDefaults.CosmosClientServiceKey, cosmos.Object);
-        services.AddCosmosBrookStorageProvider();
+        services.UseCosmosBrookStorage();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
 
@@ -192,3 +193,5 @@ public sealed class CosmosContainerInitializerTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => hosted.StartAsync(CancellationToken.None));
     }
 }
+
+#pragma warning restore CS0618

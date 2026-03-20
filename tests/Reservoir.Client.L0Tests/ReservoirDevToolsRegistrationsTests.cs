@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -28,8 +28,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
@@ -51,8 +51,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddReservoirDevTools();
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
@@ -74,8 +74,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
@@ -88,16 +88,16 @@ public sealed class ReservoirDevToolsRegistrationsTests
     }
 
     /// <summary>
-    ///     AddReservoirDevTools should throw when services is null.
+    ///     AddReservoirDevTools should throw when the builder is null.
     /// </summary>
     [Fact]
-    public void AddReservoirDevToolsWithNullServicesThrows()
+    public void AddReservoirDevToolsWithNullBuilderThrows()
     {
         // Arrange
-        ServiceCollection? services = null;
+        IReservoirBuilder? reservoirBuilder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddReservoirDevTools());
+        Assert.Throws<ArgumentNullException>(() => reservoirBuilder!.AddReservoirDevTools());
     }
 
     /// <summary>
@@ -115,8 +115,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
 
@@ -161,8 +161,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
 

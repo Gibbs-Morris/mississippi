@@ -29,7 +29,7 @@ public static class InletInProcessRegistrations
     ///         for Redux-style state management in Blazor Server applications.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInletInProcess(
+    public static IServiceCollection UseInletInProcess(
         this IServiceCollection services
     )
     {

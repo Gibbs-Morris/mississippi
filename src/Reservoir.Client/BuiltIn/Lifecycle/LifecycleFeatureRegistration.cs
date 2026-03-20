@@ -1,5 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
+using System;
 
+using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Reducers;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
@@ -16,17 +17,14 @@ namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
 ///         The lifecycle feature provides Redux-style lifecycle state management for Blazor.
 ///         It tracks the current lifecycle phase (NotStarted, Initializing, Ready) in the store.
 ///     </para>
-///     <para>
-///         Register with <see cref="AddBuiltInLifecycle" /> after calling <c>AddReservoir</c>.
-///     </para>
 /// </remarks>
 public static class LifecycleFeatureRegistration
 {
     /// <summary>
     ///     Adds the built-in lifecycle feature to the service collection.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
+    /// <param name="reservoir">The Reservoir builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
     /// <remarks>
     ///     This registers:
     ///     <list type="bullet">
@@ -35,12 +33,14 @@ public static class LifecycleFeatureRegistration
     ///         <item>Reducer for <see cref="AppReadyAction" /></item>
     ///     </list>
     /// </remarks>
-    public static IServiceCollection AddBuiltInLifecycle(
-        this IServiceCollection services
+    public static IReservoirBuilder AddBuiltInLifecycle(
+        this IReservoirBuilder reservoir
     )
     {
-        services.AddReducer<AppInitAction, LifecycleState>(LifecycleReducers.OnAppInit);
-        services.AddReducer<AppReadyAction, LifecycleState>(LifecycleReducers.OnAppReady);
-        return services;
+        ArgumentNullException.ThrowIfNull(reservoir);
+        reservoir.AddFeature<LifecycleState>(feature => feature
+            .AddReducer<LifecycleState, AppInitAction>(LifecycleReducers.OnAppInit)
+            .AddReducer<LifecycleState, AppReadyAction>(LifecycleReducers.OnAppReady));
+        return reservoir;
     }
 }

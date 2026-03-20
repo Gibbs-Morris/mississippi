@@ -9,9 +9,9 @@ using Mississippi.Tributary.Runtime;
 namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
-///     Provides extension methods for registering saga orchestration components.
+///     Internal registration helpers for saga orchestration components.
 /// </summary>
-public static class SagaRegistrations
+internal static class SagaRegistrations
 {
     /// <summary>
     ///     Adds saga orchestration infrastructure to the service collection.

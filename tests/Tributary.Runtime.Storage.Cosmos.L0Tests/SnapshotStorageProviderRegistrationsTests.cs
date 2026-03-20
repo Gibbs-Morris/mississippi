@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -27,98 +27,6 @@ namespace Mississippi.Tributary.Runtime.Storage.Cosmos.L0Tests;
 /// </summary>
 public sealed class SnapshotStorageProviderRegistrationsTests
 {
-    /// <summary>
-    ///     Ensures the registrations wire dependencies when a CosmosClient is already in DI.
-    /// </summary>
-    [Fact]
-    public void AddCosmosSnapshotStorageProviderShouldRegisterServices()
-    {
-        Mock<Container> container = new();
-        Mock<Database> database = new();
-        database.Setup(d => d.GetContainer("snapshots")).Returns(container.Object);
-        Mock<CosmosClient> cosmosClient = new();
-        cosmosClient.Setup(c => c.GetDatabase("db")).Returns(database.Object);
-        ServiceCollection services = new();
-        services.AddLogging();
-        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
-        services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
-        services.AddCosmosSnapshotStorageProvider();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        Assert.NotNull(provider.GetRequiredService<ISnapshotContainerOperations>());
-        Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
-        Assert.NotNull(provider.GetRequiredService<ISnapshotStorageProvider>());
-        Assert.NotNull(provider.GetRequiredService<IRetryPolicy>());
-        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotDocument, SnapshotStorageModel>>());
-        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotStorageModel, SnapshotEnvelope>>());
-        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotWriteModel, SnapshotStorageModel>>());
-        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotStorageModel, SnapshotDocument>>());
-        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotDocument, SnapshotEnvelope>>());
-        Container resolved =
-            provider.GetRequiredKeyedService<Container>(SnapshotCosmosDefaults.CosmosContainerServiceKey);
-        Assert.Same(container.Object, resolved);
-    }
-
-    /// <summary>
-    ///     Ensures the overload with IConfiguration binds options from configuration.
-    /// </summary>
-    [Fact]
-    public void AddCosmosSnapshotStorageProviderWithConfigurationShouldBindOptions()
-    {
-        Mock<Container> container = new();
-        Mock<Database> database = new();
-        database.Setup(d => d.GetContainer("snapshots")).Returns(container.Object);
-        Mock<CosmosClient> cosmosClient = new();
-        cosmosClient.Setup(c => c.GetDatabase("config-db")).Returns(database.Object);
-        IConfiguration configuration = new ConfigurationBuilder().AddInMemoryCollection(
-                new Dictionary<string, string?>
-                {
-                    { "DatabaseId", "config-db" },
-                })
-            .Build();
-        ServiceCollection services = new();
-        services.AddLogging();
-        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
-        services.AddCosmosSnapshotStorageProvider(configuration);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
-        Assert.Equal("config-db", options.DatabaseId);
-        Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
-    }
-
-    /// <summary>
-    ///     Ensures the overload with a configuration action applies option configuration.
-    /// </summary>
-    [Fact]
-    public void AddCosmosSnapshotStorageProviderWithConfigureActionShouldBindOptions()
-    {
-        Mock<Container> container = new();
-        Mock<Database> database = new();
-        database.Setup(d => d.GetContainer("snapshots")).Returns(container.Object);
-        Mock<CosmosClient> cosmosClient = new();
-        cosmosClient.Setup(c => c.GetDatabase("custom-db")).Returns(database.Object);
-        ServiceCollection services = new();
-        services.AddLogging();
-        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
-        services.AddCosmosSnapshotStorageProvider(o => o.DatabaseId = "custom-db");
-        using ServiceProvider provider = services.BuildServiceProvider();
-        SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
-        Assert.Equal("custom-db", options.DatabaseId);
-        Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
-    }
-
-    /// <summary>
-    ///     Ensures the overload that creates a CosmosClient applies option configuration.
-    /// </summary>
-    [Fact]
-    public void AddCosmosSnapshotStorageProviderWithConnectionStringShouldBindOptions()
-    {
-        ServiceCollection services = new();
-        services.AddCosmosSnapshotStorageProvider("UseDevelopmentStorage=true", o => o.DatabaseId = "db2");
-        using ServiceProvider provider = services.BuildServiceProvider();
-        SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
-        Assert.Equal("db2", options.DatabaseId);
-    }
-
     /// <summary>
     ///     CosmosContainerInitializer should create container when it does not exist (NotFound exception).
     /// </summary>
@@ -165,7 +73,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "new-db";
             o.ContainerId = "new-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        services.UseCosmosSnapshotStorage();
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -223,7 +131,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "existing-db";
             o.ContainerId = "existing-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        services.UseCosmosSnapshotStorage();
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -283,7 +191,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             o.DatabaseId = "test-db";
             o.ContainerId = "test-container";
         });
-        services.AddCosmosSnapshotStorageProvider();
+        services.UseCosmosSnapshotStorage();
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -351,7 +259,7 @@ public sealed class SnapshotStorageProviderRegistrationsTests
             SnapshotCosmosDefaults.CosmosClientServiceKey,
             cosmosClientMock.Object);
         services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
-        services.AddCosmosSnapshotStorageProvider();
+        services.UseCosmosSnapshotStorage();
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act
@@ -362,5 +270,97 @@ public sealed class SnapshotStorageProviderRegistrationsTests
 
         // Assert - StopAsync completes without throwing
         Assert.True(true, "StopAsync completed successfully without throwing.");
+    }
+
+    /// <summary>
+    ///     Ensures the registrations wire dependencies when a CosmosClient is already in DI.
+    /// </summary>
+    [Fact]
+    public void UseCosmosSnapshotStorageShouldRegisterServices()
+    {
+        Mock<Container> container = new();
+        Mock<Database> database = new();
+        database.Setup(d => d.GetContainer("snapshots")).Returns(container.Object);
+        Mock<CosmosClient> cosmosClient = new();
+        cosmosClient.Setup(c => c.GetDatabase("db")).Returns(database.Object);
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
+        services.Configure<SnapshotStorageOptions>(o => o.DatabaseId = "db");
+        services.UseCosmosSnapshotStorage();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.NotNull(provider.GetRequiredService<ISnapshotContainerOperations>());
+        Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
+        Assert.NotNull(provider.GetRequiredService<ISnapshotStorageProvider>());
+        Assert.NotNull(provider.GetRequiredService<IRetryPolicy>());
+        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotDocument, SnapshotStorageModel>>());
+        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotStorageModel, SnapshotEnvelope>>());
+        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotWriteModel, SnapshotStorageModel>>());
+        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotStorageModel, SnapshotDocument>>());
+        Assert.NotNull(provider.GetRequiredService<IMapper<SnapshotDocument, SnapshotEnvelope>>());
+        Container resolved =
+            provider.GetRequiredKeyedService<Container>(SnapshotCosmosDefaults.CosmosContainerServiceKey);
+        Assert.Same(container.Object, resolved);
+    }
+
+    /// <summary>
+    ///     Ensures the overload with IConfiguration binds options from configuration.
+    /// </summary>
+    [Fact]
+    public void UseCosmosSnapshotStorageWithConfigurationShouldBindOptions()
+    {
+        Mock<Container> container = new();
+        Mock<Database> database = new();
+        database.Setup(d => d.GetContainer("snapshots")).Returns(container.Object);
+        Mock<CosmosClient> cosmosClient = new();
+        cosmosClient.Setup(c => c.GetDatabase("config-db")).Returns(database.Object);
+        IConfiguration configuration = new ConfigurationBuilder().AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    { "DatabaseId", "config-db" },
+                })
+            .Build();
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
+        services.UseCosmosSnapshotStorage(configuration);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
+        Assert.Equal("config-db", options.DatabaseId);
+        Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
+    }
+
+    /// <summary>
+    ///     Ensures the overload with a configuration action applies option configuration.
+    /// </summary>
+    [Fact]
+    public void UseCosmosSnapshotStorageWithConfigureActionShouldBindOptions()
+    {
+        Mock<Container> container = new();
+        Mock<Database> database = new();
+        database.Setup(d => d.GetContainer("snapshots")).Returns(container.Object);
+        Mock<CosmosClient> cosmosClient = new();
+        cosmosClient.Setup(c => c.GetDatabase("custom-db")).Returns(database.Object);
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddKeyedSingleton<CosmosClient>(SnapshotCosmosDefaults.CosmosClientServiceKey, cosmosClient.Object);
+        services.UseCosmosSnapshotStorage(o => o.DatabaseId = "custom-db");
+        using ServiceProvider provider = services.BuildServiceProvider();
+        SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
+        Assert.Equal("custom-db", options.DatabaseId);
+        Assert.NotNull(provider.GetRequiredService<ISnapshotCosmosRepository>());
+    }
+
+    /// <summary>
+    ///     Ensures the overload that creates a CosmosClient applies option configuration.
+    /// </summary>
+    [Fact]
+    public void UseCosmosSnapshotStorageWithConnectionStringShouldBindOptions()
+    {
+        ServiceCollection services = new();
+        services.UseCosmosSnapshotStorage("UseDevelopmentStorage=true", o => o.DatabaseId = "db2");
+        using ServiceProvider provider = services.BuildServiceProvider();
+        SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
+        Assert.Equal("db2", options.DatabaseId);
     }
 }

@@ -13,9 +13,9 @@ using Mississippi.DomainModeling.Abstractions;
 namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>
-///     Provides extension methods for registering aggregate components in the dependency injection container.
+///     Internal registration helpers for aggregate components.
 /// </summary>
-public static class AggregateRegistrations
+internal static class AggregateRegistrations
 {
     /// <summary>
     ///     Adds aggregate infrastructure services to the service collection.
@@ -320,34 +320,6 @@ public static class AggregateRegistrations
         this IServiceCollection services
     ) =>
         services.ScanAssemblyForSnapshotTypes(typeof(TMarker).Assembly);
-
-    /// <summary>
-    ///     Marker interface for event type registrations.
-    /// </summary>
-    internal interface IEventTypeRegistration
-    {
-        /// <summary>
-        ///     Registers the event type with the registry.
-        /// </summary>
-        /// <param name="registry">The event type registry.</param>
-        void Register(
-            IEventTypeRegistry registry
-        );
-    }
-
-    /// <summary>
-    ///     Marker interface for snapshot type registrations.
-    /// </summary>
-    internal interface ISnapshotTypeRegistration
-    {
-        /// <summary>
-        ///     Registers the snapshot type with the registry.
-        /// </summary>
-        /// <param name="registry">The snapshot type registry.</param>
-        void Register(
-            ISnapshotTypeRegistry registry
-        );
-    }
 
     /// <summary>
     ///     A marker record used to queue assemblies for event type scanning during startup.

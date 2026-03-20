@@ -70,25 +70,14 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                               }
                                           }
 
-                                          namespace Mississippi.Tributary.Runtime
+                                          namespace Mississippi.DomainModeling.Abstractions.Builders
                                           {
-                                              public static class ReducerRegistrations
-                                              {
-                                              }
+                                              public interface ISagaBuilder { }
                                           }
 
-                                          namespace Mississippi.DomainModeling.Runtime
+                                          namespace Mississippi.DomainModeling.Runtime.Builders
                                           {
-                                              public static class SagaRegistrations
-                                              {
-                                              }
-                                          }
-
-                                          namespace Mississippi.Tributary.Runtime
-                                          {
-                                              public static class SnapshotRegistrations
-                                              {
-                                              }
+                                              public static class SagaBuilderExtensions { }
                                           }
                                           """;
 
@@ -222,10 +211,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
             "AddSnapshotStateConverter<global::TestApp.Domain.Sagas.TransferSagaState>",
             generatedCode,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "AddTransient<global::TestApp.Domain.Sagas.DebitStep>",
-            generatedCode,
-            StringComparison.Ordinal);
+        Assert.Contains("AddSagaStep<global::TestApp.Domain.Sagas.DebitStep>", generatedCode, StringComparison.Ordinal);
         Assert.Contains(
             "AddSagaStepInfo<global::TestApp.Domain.Sagas.TransferSagaState>",
             generatedCode,

@@ -6,9 +6,9 @@ using Mississippi.Brooks.Serialization.Abstractions;
 namespace Mississippi.Brooks.Serialization.Json;
 
 /// <summary>
-///     Extension methods for registering JSON serialization services.
+///     Internal registration helpers for JSON serialization services.
 /// </summary>
-public static class ServiceRegistration
+internal static class ServiceRegistration
 {
     /// <summary>
     ///     Adds the JSON serialization provider to the service collection.

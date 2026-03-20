@@ -10,9 +10,9 @@ using Mississippi.Aqueduct.Abstractions;
 namespace Mississippi.Aqueduct.Gateway;
 
 /// <summary>
-///     Extension methods for configuring Aqueduct as a SignalR backplane.
+///     Internal registration helpers for configuring Aqueduct as a SignalR backplane.
 /// </summary>
-public static class AqueductRegistrations
+internal static class AqueductRegistrations
 {
     /// <summary>
     ///     Adds the Aqueduct backplane for the specified hub type.

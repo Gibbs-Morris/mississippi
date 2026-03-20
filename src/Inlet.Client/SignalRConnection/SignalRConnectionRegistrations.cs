@@ -1,5 +1,8 @@
+using System;
+
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Core;
 
 
@@ -10,6 +13,27 @@ namespace Mississippi.Inlet.Client.SignalRConnection;
 /// </summary>
 public static class SignalRConnectionRegistrations
 {
+    /// <summary>
+    ///     Adds the SignalR connection feature to the Reservoir builder.
+    /// </summary>
+    /// <param name="reservoir">The Reservoir builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
+    public static IReservoirBuilder AddSignalRConnectionFeature(
+        this IReservoirBuilder reservoir
+    )
+    {
+        ArgumentNullException.ThrowIfNull(reservoir);
+        reservoir.AddFeature<SignalRConnectionState>(feature => feature
+            .AddReducer<SignalRConnectionState, SignalRConnectingAction>(SignalRConnectionReducers.OnConnecting)
+            .AddReducer<SignalRConnectionState, SignalRConnectedAction>(SignalRConnectionReducers.OnConnected)
+            .AddReducer<SignalRConnectionState, SignalRReconnectingAction>(SignalRConnectionReducers.OnReconnecting)
+            .AddReducer<SignalRConnectionState, SignalRReconnectedAction>(SignalRConnectionReducers.OnReconnected)
+            .AddReducer<SignalRConnectionState, SignalRDisconnectedAction>(SignalRConnectionReducers.OnDisconnected)
+            .AddReducer<SignalRConnectionState, SignalRMessageReceivedAction>(
+                SignalRConnectionReducers.OnMessageReceived));
+        return reservoir;
+    }
+
     /// <summary>
     ///     Adds the SignalR connection feature to the service collection.
     /// </summary>
@@ -32,16 +56,8 @@ public static class SignalRConnectionRegistrations
         this IServiceCollection services
     )
     {
-        // Register reducers for each action
-        services.AddReducer<SignalRConnectingAction, SignalRConnectionState>(SignalRConnectionReducers.OnConnecting);
-        services.AddReducer<SignalRConnectedAction, SignalRConnectionState>(SignalRConnectionReducers.OnConnected);
-        services.AddReducer<SignalRReconnectingAction, SignalRConnectionState>(
-            SignalRConnectionReducers.OnReconnecting);
-        services.AddReducer<SignalRReconnectedAction, SignalRConnectionState>(SignalRConnectionReducers.OnReconnected);
-        services.AddReducer<SignalRDisconnectedAction, SignalRConnectionState>(
-            SignalRConnectionReducers.OnDisconnected);
-        services.AddReducer<SignalRMessageReceivedAction, SignalRConnectionState>(
-            SignalRConnectionReducers.OnMessageReceived);
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddSignalRConnectionFeature();
         return services;
     }
 }

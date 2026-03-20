@@ -486,6 +486,13 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )"
         }
       },
+      "Mississippi.Common.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
+          "Microsoft.Orleans.Sdk": "[10.0.1, )"
+        }
+      },
       "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {

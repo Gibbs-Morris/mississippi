@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System.Globalization;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -76,3 +77,5 @@ public sealed class MappingRegistrationsTests
         Assert.IsType<MockMapper>(mapper);
     }
 }
+
+#pragma warning restore CS0618

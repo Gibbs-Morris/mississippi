@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Sdk.Runtime" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>

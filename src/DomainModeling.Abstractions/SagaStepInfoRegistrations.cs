@@ -7,9 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
-///     Provides extension methods for registering saga step metadata.
+///     Internal registration helpers for saga step metadata.
 /// </summary>
-public static class SagaStepInfoRegistrations
+internal static class SagaStepInfoRegistrations
 {
     /// <summary>
     ///     Registers saga step metadata for the provided saga state type.

@@ -55,12 +55,12 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         aggregateNames.Add(aggregateName!);
     }
 
-    private static void AddProjectionNameIfPresent(
+    private static void AddProjectionInfoIfPresent(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? generateProjectionAttribute,
         INamedTypeSymbol? projectionPathAttribute,
         string domainRoot,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain
+        Dictionary<string, Dictionary<string, string>> projectionsByDomain
     )
     {
         if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateProjectionAttribute) ||
@@ -72,13 +72,13 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         string projectionName = typeSymbol.Name.EndsWith("Projection", StringComparison.Ordinal)
             ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Projection".Length)
             : typeSymbol.Name;
-        if (!projectionNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? projectionNames))
+        if (!projectionsByDomain.TryGetValue(domainRoot, out Dictionary<string, string>? projections))
         {
-            projectionNames = [];
-            projectionNamesByDomain[domainRoot] = projectionNames;
+            projections = new(StringComparer.Ordinal);
+            projectionsByDomain[domainRoot] = projections;
         }
 
-        projectionNames.Add(projectionName);
+        projections[projectionName] = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
 
     private static void GatherFromNamespace(
@@ -87,7 +87,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? generateProjectionAttribute,
         INamedTypeSymbol? projectionPathAttribute,
         Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain
+        Dictionary<string, Dictionary<string, string>> projectionsByDomain
     )
     {
         foreach (INamedTypeSymbol typeSymbol in namespaceSymbol.GetTypeMembers())
@@ -98,7 +98,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 generateProjectionAttribute,
                 projectionPathAttribute,
                 aggregateNamesByDomain,
-                projectionNamesByDomain);
+                projectionsByDomain);
         }
 
         foreach (INamespaceSymbol child in namespaceSymbol.GetNamespaceMembers())
@@ -109,7 +109,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 generateProjectionAttribute,
                 projectionPathAttribute,
                 aggregateNamesByDomain,
-                projectionNamesByDomain);
+                projectionsByDomain);
         }
     }
 
@@ -126,6 +126,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine();
         sb.AppendLine("using System;");
         sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
+        sb.AppendLine("using Mississippi.Sdk.Gateway;");
         sb.AppendLine();
         if (includesAggregateMappers)
         {
@@ -146,33 +147,40 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine($"namespace {outputNamespace};");
         sb.AppendLine();
         sb.AppendLine("/// <summary>");
-        sb.AppendLine("///     Extension methods for registering complete server domain mapping feature sets.");
+        sb.AppendLine("///     Extension methods for registering complete gateway domain mapping feature sets.");
         sb.AppendLine("/// </summary>");
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"DomainServerRegistrationGenerator\", \"1.0.0\")]");
-        sb.AppendLine("public static class DomainServerRegistrations");
+        sb.AppendLine("public static class DomainGatewayRegistrations");
         sb.AppendLine("{");
         foreach (DomainRegistrationModel model in models.OrderBy(m => m.DomainMethodName, StringComparer.Ordinal))
         {
             sb.AppendLine("    /// <summary>");
-            sb.AppendLine($"    ///     Adds all generated server registrations for the {model.DomainRoot} domain.");
+            sb.AppendLine($"    ///     Adds all generated gateway registrations for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
-            sb.AppendLine("    /// <param name=\"services\">The service collection.</param>");
-            sb.AppendLine("    /// <returns>The service collection for chaining.</returns>");
-            sb.AppendLine(
-                $"    public static IServiceCollection {model.DomainMethodName}(this IServiceCollection services)");
+            sb.AppendLine("    /// <param name=\"gateway\">The Mississippi gateway builder.</param>");
+            sb.AppendLine($"    public static void {model.DomainMethodName}(this MississippiGatewayBuilder gateway)");
             sb.AppendLine("    {");
-            sb.AppendLine("        ArgumentNullException.ThrowIfNull(services);");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(gateway);");
+            sb.AppendLine("        gateway.RegisterDomainMappers(services =>");
+            sb.AppendLine("        {");
             foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        services.Add{aggregate}AggregateMappers();");
+                sb.AppendLine($"            services.Add{aggregate}AggregateMappers();");
             }
 
             foreach (string projection in model.ProjectionNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        services.Add{projection}ProjectionMappers();");
+                sb.AppendLine($"            services.Add{projection}ProjectionMappers();");
             }
 
-            sb.AppendLine("        return services;");
+            sb.AppendLine("        });");
+            foreach (ProjectionRegistrationModel projection in model.Projections.OrderBy(
+                         p => p.Name,
+                         StringComparer.Ordinal))
+            {
+                sb.AppendLine($"        gateway.RegisterProjectionAuthorization<{projection.TypeName}>();");
+            }
+
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -191,7 +199,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             compilation.GetTypeByMetadataName(GenerateProjectionEndpointsAttributeFullName);
         INamedTypeSymbol? projectionPathAttribute = compilation.GetTypeByMetadataName(ProjectionPathAttributeFullName);
         Dictionary<string, HashSet<string>> aggregateNamesByDomain = new(StringComparer.Ordinal);
-        Dictionary<string, HashSet<string>> projectionNamesByDomain = new(StringComparer.Ordinal);
+        Dictionary<string, Dictionary<string, string>> projectionsByDomain = new(StringComparer.Ordinal);
         foreach (IAssemblySymbol assembly in GeneratorSymbolAnalysis.GetReferencedAssemblies(compilation))
         {
             GatherFromNamespace(
@@ -200,7 +208,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 generateProjectionAttribute,
                 projectionPathAttribute,
                 aggregateNamesByDomain,
-                projectionNamesByDomain);
+                projectionsByDomain);
         }
 
         HashSet<string> domains = new(StringComparer.Ordinal);
@@ -209,7 +217,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             domains.Add(domain);
         }
 
-        foreach (string domain in projectionNamesByDomain.Keys)
+        foreach (string domain in projectionsByDomain.Keys)
         {
             domains.Add(domain);
         }
@@ -219,13 +227,18 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 string[] aggregateNames = aggregateNamesByDomain.TryGetValue(domain, out HashSet<string>? aggregates)
                     ? aggregates.OrderBy(n => n, StringComparer.Ordinal).ToArray()
                     : [];
-                string[] projectionNames = projectionNamesByDomain.TryGetValue(domain, out HashSet<string>? projections)
-                    ? projections.OrderBy(n => n, StringComparer.Ordinal).ToArray()
-                    : [];
+                ProjectionRegistrationModel[] projections =
+                    projectionsByDomain.TryGetValue(domain, out Dictionary<string, string>? projectionMap)
+                        ? projectionMap.OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                            .Select(pair => new ProjectionRegistrationModel(pair.Key, pair.Value))
+                            .ToArray()
+                        : [];
+                string[] projectionNames = projections.Select(projection => projection.Name).ToArray();
                 return new DomainRegistrationModel(
-                    NamingConventions.GetDomainRegistrationMethodName(domain) + "Server",
+                    NamingConventions.GetDomainRegistrationMethodName(domain) + "Gateway",
                     domain,
                     aggregateNames,
+                    projections,
                     projectionNames);
             })
             .Where(model => (model.AggregateNames.Count > 0) || (model.ProjectionNames.Count > 0))
@@ -239,7 +252,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? generateProjectionAttribute,
         INamedTypeSymbol? projectionPathAttribute,
         Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain
+        Dictionary<string, Dictionary<string, string>> projectionsByDomain
     )
     {
         string containingNamespace = typeSymbol.ContainingNamespace.ToDisplayString();
@@ -260,12 +273,12 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             containingNamespace,
             domainRoot,
             aggregateNamesByDomain);
-        AddProjectionNameIfPresent(
+        AddProjectionInfoIfPresent(
             typeSymbol,
             generateProjectionAttribute,
             projectionPathAttribute,
             domainRoot,
-            projectionNamesByDomain);
+            projectionsByDomain);
     }
 
     /// <inheritdoc />
@@ -307,7 +320,7 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 }
 
                 string source = GenerateRegistrationsSource(result.Domains, result.TargetRootNamespace);
-                spc.AddSource("DomainServerRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
+                spc.AddSource("DomainGatewayRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
             });
     }
 
@@ -317,12 +330,14 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
             string domainMethodName,
             string domainRoot,
             IReadOnlyList<string> aggregateNames,
+            IReadOnlyList<ProjectionRegistrationModel> projections,
             IReadOnlyList<string> projectionNames
         )
         {
             DomainMethodName = domainMethodName;
             DomainRoot = domainRoot;
             AggregateNames = aggregateNames;
+            Projections = projections;
             ProjectionNames = projectionNames;
         }
 
@@ -333,5 +348,23 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
         public string DomainRoot { get; }
 
         public IReadOnlyList<string> ProjectionNames { get; }
+
+        public IReadOnlyList<ProjectionRegistrationModel> Projections { get; }
+    }
+
+    private sealed class ProjectionRegistrationModel
+    {
+        public ProjectionRegistrationModel(
+            string name,
+            string typeName
+        )
+        {
+            Name = name;
+            TypeName = typeName;
+        }
+
+        public string Name { get; }
+
+        public string TypeName { get; }
     }
 }

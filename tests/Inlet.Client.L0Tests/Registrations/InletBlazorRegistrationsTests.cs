@@ -1,6 +1,11 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
+
+using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Abstractions.State;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client.L0Tests.Registrations;
@@ -10,6 +15,29 @@ namespace Mississippi.Inlet.Client.L0Tests.Registrations;
 /// </summary>
 public sealed class InletBlazorRegistrationsTests
 {
+    private sealed class TestFeatureState : IFeatureState
+    {
+        public static string FeatureKey => nameof(TestFeatureState);
+    }
+
+    /// <summary>
+    ///     AddInletBlazor on ReservoirBuilder returns the builder for chaining.
+    /// </summary>
+    [Fact]
+    public void AddInletBlazorOnReservoirBuilderReturnsBuilder()
+    {
+        // Arrange
+        ServiceCollection services = new();
+        ReservoirBuilder reservoir = new(services);
+        reservoir.AddFeature<TestFeatureState>();
+
+        // Act
+        IReservoirBuilder result = reservoir.AddInletBlazor();
+
+        // Assert
+        Assert.Same(reservoir, result);
+    }
+
     /// <summary>
     ///     AddInletBlazor returns the service collection for chaining.
     /// </summary>
@@ -61,6 +89,24 @@ public sealed class InletBlazorRegistrationsTests
     }
 
     /// <summary>
+    ///     AddInletBlazorSignalR on ReservoirBuilder accepts null configure action and returns the builder.
+    /// </summary>
+    [Fact]
+    public void AddInletBlazorSignalROnReservoirBuilderAcceptsNullConfigureAndReturnsBuilder()
+    {
+        // Arrange
+        ServiceCollection services = new();
+        ReservoirBuilder reservoir = new(services);
+        reservoir.AddFeature<TestFeatureState>();
+
+        // Act
+        IReservoirBuilder result = reservoir.AddInletBlazorSignalR();
+
+        // Assert
+        Assert.Same(reservoir, result);
+    }
+
+    /// <summary>
     ///     AddInletBlazorSignalR throws ArgumentNullException when services is null.
     /// </summary>
     [Fact]
@@ -86,3 +132,5 @@ public sealed class InletBlazorRegistrationsTests
         Assert.Throws<ArgumentNullException>(() => services!.AddInletBlazor());
     }
 }
+
+#pragma warning restore CS0618

@@ -17,7 +17,7 @@ public static class SerializationStorageProviderExtensions
     /// <typeparam name="TProvider">The type of the serialization provider to register.</typeparam>
     /// <param name="services">The service collection to register the provider in.</param>
     /// <returns>The service collection for method chaining.</returns>
-    public static IServiceCollection RegisterSerializationStorageProvider<TProvider>(
+    public static IServiceCollection UseSerializationStorageProvider<TProvider>(
         this IServiceCollection services
     )
         where TProvider : class, ISerializationProvider
@@ -37,7 +37,7 @@ public static class SerializationStorageProviderExtensions
     /// <param name="services">The service collection to register the provider in.</param>
     /// <param name="configureOptions">An action to configure the provider options.</param>
     /// <returns>The service collection for method chaining.</returns>
-    public static IServiceCollection RegisterSerializationStorageProvider<TProvider, TOptions>(
+    public static IServiceCollection UseSerializationStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         Action<TOptions> configureOptions
     )
@@ -45,7 +45,7 @@ public static class SerializationStorageProviderExtensions
         where TOptions : class, new()
     {
         services.Configure(configureOptions);
-        return services.RegisterSerializationStorageProvider<TProvider>();
+        return services.UseSerializationStorageProvider<TProvider>();
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public static class SerializationStorageProviderExtensions
     /// <param name="services">The service collection to register the provider in.</param>
     /// <param name="configurationSection">The configuration section to bind options from.</param>
     /// <returns>The service collection for method chaining.</returns>
-    public static IServiceCollection RegisterSerializationStorageProvider<TProvider, TOptions>(
+    public static IServiceCollection UseSerializationStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         IConfiguration configurationSection
     )
@@ -64,6 +64,6 @@ public static class SerializationStorageProviderExtensions
         where TOptions : class, new()
     {
         services.Configure<TOptions>(configurationSection);
-        return services.RegisterSerializationStorageProvider<TProvider>();
+        return services.UseSerializationStorageProvider<TProvider>();
     }
 }

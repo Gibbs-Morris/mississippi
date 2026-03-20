@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -184,8 +185,9 @@ public sealed class StoreComponentTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
-        services.AddReservoir();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddFeature<TestFeatureState>(feature =>
+            feature.AddReducer<TestFeatureState, TestAction, TestActionReducer>());
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore scopedStore = scope.ServiceProvider.GetRequiredService<IStore>();
@@ -243,3 +245,5 @@ public sealed class StoreComponentTests : IDisposable
         Assert.True(true);
     }
 }
+
+#pragma warning restore CS0618

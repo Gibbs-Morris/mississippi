@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Refraction.Client.StateManagement.Infrastructure;
 
@@ -11,16 +11,16 @@ namespace Mississippi.Refraction.Client.StateManagement.L0Tests.Infrastructure;
 public sealed class RefractionPagesServiceCollectionExtensionsTests
 {
     /// <summary>
-    ///     AddRefractionPages returns the service collection for chaining.
+    ///     UseRefractionPages returns the service collection for chaining.
     /// </summary>
     [Fact]
-    public void AddRefractionPagesReturnsServiceCollection()
+    public void UseRefractionPagesReturnsServiceCollection()
     {
         // Arrange
         ServiceCollection services = new();
 
         // Act
-        IServiceCollection result = services.AddRefractionPages();
+        IServiceCollection result = services.UseRefractionPages();
 
         // Assert
         Assert.Same(services, result);

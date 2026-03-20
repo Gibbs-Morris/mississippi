@@ -39,11 +39,11 @@ public static class BrooksRuntimeRegistrations
     ///     siloBuilder.AddMemoryGrainStorage("PubSubStore");
     ///
     ///     // Tell Brooks which stream provider to use
-    ///     siloBuilder.AddEventSourcing(options =&gt;
+    ///     siloBuilder.UseEventSourcing(options =&gt;
     ///         options.OrleansStreamProviderName = "MyStreams");
     ///     </code>
     /// </remarks>
-    public static ISiloBuilder AddEventSourcing(
+    public static ISiloBuilder UseEventSourcing(
         this ISiloBuilder builder,
         Action<BrookProviderOptions>? configureOptions = null
     )
@@ -75,7 +75,7 @@ public static class BrooksRuntimeRegistrations
     ///         Brooks should use for event notifications.
     ///     </para>
     /// </remarks>
-    public static HostApplicationBuilder AddEventSourcing(
+    public static HostApplicationBuilder UseEventSourcing(
         this HostApplicationBuilder builder,
         Action<BrookProviderOptions>? configureOptions = null
     )
@@ -83,10 +83,10 @@ public static class BrooksRuntimeRegistrations
         ArgumentNullException.ThrowIfNull(builder);
 
         // Add services to DI container
-        builder.Services.AddEventSourcingByService();
+        builder.Services.UseEventSourcingServices();
 
         // Configure Orleans silo with options
-        builder.UseOrleans(silo => silo.AddEventSourcing(configureOptions));
+        builder.UseOrleans(silo => silo.UseEventSourcing(configureOptions));
         return builder;
     }
 
@@ -96,7 +96,7 @@ public static class BrooksRuntimeRegistrations
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
     /// <returns>The modified service collection for chaining.</returns>
-    public static IServiceCollection AddEventSourcingByService(
+    public static IServiceCollection UseEventSourcingServices(
         this IServiceCollection services
     )
     {

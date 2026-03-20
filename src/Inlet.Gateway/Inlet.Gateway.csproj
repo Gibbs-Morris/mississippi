@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Sdk.Gateway" />
+  </ItemGroup>
   <PropertyGroup>
     <Description>Server runtime for exposing Inlet projections and API transport.</Description>
   </PropertyGroup>

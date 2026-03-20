@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Brooks.Serialization.Abstractions;
@@ -45,3 +46,5 @@ public sealed class ServiceRegistrationTests
         Assert.Same(services, result);
     }
 }
+
+#pragma warning restore CS0618

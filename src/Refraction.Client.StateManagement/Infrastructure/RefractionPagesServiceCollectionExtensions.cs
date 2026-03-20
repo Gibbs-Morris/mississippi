@@ -15,9 +15,9 @@ public static class RefractionPagesServiceCollectionExtensions
     /// <returns>The service collection for chaining.</returns>
     /// <remarks>
     ///     This method registers scene-level services. Call this in addition to
-    ///     <c>AddRefraction()</c> and <c>AddReservoir()</c> in your application startup.
+    ///     <c>UseRefraction()</c> and <c>AddReservoir()</c> in your application startup.
     /// </remarks>
-    public static IServiceCollection AddRefractionPages(
+    public static IServiceCollection UseRefractionPages(
         this IServiceCollection services
     ) =>
         services;

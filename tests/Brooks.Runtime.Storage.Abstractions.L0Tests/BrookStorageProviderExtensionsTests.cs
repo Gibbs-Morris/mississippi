@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,10 +54,10 @@ public sealed class BrookStorageProviderExtensionsTests
     ///     Verifies that registering a brook storage provider wires reader and writer services.
     /// </summary>
     [Fact]
-    public void RegisterBrookStorageProviderRegistersReaderAndWriter()
+    public void UseBrookStorageProviderRegistersReaderAndWriter()
     {
         ServiceCollection services = new();
-        services.RegisterBrookStorageProvider<FakeProvider>();
+        services.UseBrookStorageProvider<FakeProvider>();
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.NotNull(provider.GetRequiredService<IBrookStorageReader>());
         Assert.NotNull(provider.GetRequiredService<IBrookStorageWriter>());
@@ -67,7 +67,7 @@ public sealed class BrookStorageProviderExtensionsTests
     ///     Verifies that configuration binding populates provider options.
     /// </summary>
     [Fact]
-    public void RegisterBrookStorageProviderWithConfigurationBindsOptions()
+    public void UseBrookStorageProviderWithConfigurationBindsOptions()
     {
         Dictionary<string, string?> map = new()
         {
@@ -75,7 +75,7 @@ public sealed class BrookStorageProviderExtensionsTests
         };
         IConfiguration config = new ConfigurationBuilder().AddInMemoryCollection(map).Build();
         ServiceCollection services = new();
-        services.RegisterBrookStorageProvider<FakeProvider, FakeOptions>(config);
+        services.UseBrookStorageProvider<FakeProvider, FakeOptions>(config);
         using ServiceProvider provider = services.BuildServiceProvider();
         FakeOptions opts = provider.GetRequiredService<IOptions<FakeOptions>>().Value;
         Assert.Equal("y", opts.Value);
@@ -85,10 +85,10 @@ public sealed class BrookStorageProviderExtensionsTests
     ///     Verifies that the configure action binds options for the provider.
     /// </summary>
     [Fact]
-    public void RegisterBrookStorageProviderWithConfigureActionBindsOptions()
+    public void UseBrookStorageProviderWithConfigureActionBindsOptions()
     {
         ServiceCollection services = new();
-        services.RegisterBrookStorageProvider<FakeProvider, FakeOptions>(o => o.Value = "x");
+        services.UseBrookStorageProvider<FakeProvider, FakeOptions>(o => o.Value = "x");
         using ServiceProvider provider = services.BuildServiceProvider();
         FakeOptions opts = provider.GetRequiredService<IOptions<FakeOptions>>().Value;
         Assert.Equal("x", opts.Value);

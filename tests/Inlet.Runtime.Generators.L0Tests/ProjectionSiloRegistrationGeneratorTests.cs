@@ -50,25 +50,14 @@ public class ProjectionSiloRegistrationGeneratorTests
                                                      }
                                                  }
 
-                                                 namespace Mississippi.Tributary.Runtime
+                                                 namespace Mississippi.DomainModeling.Abstractions.Builders
                                                  {
-                                                     public static class ReducerRegistrations
-                                                     {
-                                                     }
+                                                     public interface IProjectionBuilder { }
                                                  }
 
-                                                 namespace Mississippi.Tributary.Runtime
+                                                 namespace Mississippi.DomainModeling.Runtime.Builders
                                                  {
-                                                     public static class SnapshotRegistrations
-                                                     {
-                                                     }
-                                                 }
-
-                                                 namespace Mississippi.DomainModeling.Runtime
-                                                 {
-                                                     public static class UxProjectionRegistrations
-                                                     {
-                                                     }
+                                                     public static class ProjectionBuilderExtensions { }
                                                  }
                                                  """;
 
@@ -154,7 +143,7 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "public static IServiceCollection AddAccountBalanceProjection(",
+            "public static IProjectionBuilder AddAccountBalanceProjection(",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -400,16 +389,16 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddSnapshotStateConverter<AccountBalanceProjection>();",
+            ".AddSnapshotStateConverter<AccountBalanceProjection>();",
             generatedCode,
             StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Generated registrations should call AddUxProjections.
+    ///     Generated registrations should call AddProjection.
     /// </summary>
     [Fact]
-    public void GeneratedRegistrationsCallsAddUxProjections()
+    public void GeneratedRegistrationsCallsAddProjection()
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
@@ -441,7 +430,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("services.AddUxProjections();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(".AddProjection<AccountBalanceProjection>()", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -529,11 +518,11 @@ public class ProjectionSiloRegistrationGeneratorTests
 
         // Both reducers should be registered
         Assert.Contains(
-            "services.AddReducer<BalanceIncreased, AccountBalanceProjection, BalanceIncreasedReducer>();",
+            ".AddReducer<BalanceIncreased, AccountBalanceProjection, BalanceIncreasedReducer>()",
             generatedCode,
             StringComparison.Ordinal);
         Assert.Contains(
-            "services.AddReducer<BalanceDecreased, AccountBalanceProjection, BalanceDecreasedReducer>();",
+            ".AddReducer<BalanceDecreased, AccountBalanceProjection, BalanceDecreasedReducer>()",
             generatedCode,
             StringComparison.Ordinal);
     }
@@ -574,10 +563,11 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("using Microsoft.Extensions.DependencyInjection;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.Tributary.Runtime;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.Tributary.Runtime;", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("using Mississippi.DomainModeling.Runtime;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "using Mississippi.DomainModeling.Abstractions.Builders;",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("using Mississippi.DomainModeling.Runtime.Builders;", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -617,16 +607,16 @@ public class ProjectionSiloRegistrationGeneratorTests
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains(
-            "services.AddReducer<BalanceUpdated, AccountBalanceProjection, BalanceUpdatedReducer>();",
+            ".AddReducer<BalanceUpdated, AccountBalanceProjection, BalanceUpdatedReducer>()",
             generatedCode,
             StringComparison.Ordinal);
     }
 
     /// <summary>
-    ///     Generated registrations should return services for chaining.
+    ///     Generated registrations should return projections for chaining.
     /// </summary>
     [Fact]
-    public void GeneratedRegistrationsReturnsServicesForChaining()
+    public void GeneratedRegistrationsReturnsProjectionsForChaining()
     {
         const string projectionSource = """
                                         using Mississippi.Inlet.Generators.Abstractions;
@@ -658,7 +648,7 @@ public class ProjectionSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeAndBaseStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains("return services;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return projections", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>

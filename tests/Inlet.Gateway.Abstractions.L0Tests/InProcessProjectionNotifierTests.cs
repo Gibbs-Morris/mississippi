@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +22,7 @@ public sealed class InProcessProjectionNotifierTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        services.UseInletInProcess();
         serviceProvider = services.BuildServiceProvider();
         notifier = serviceProvider.GetRequiredService<IServerProjectionNotifier>();
     }

@@ -1,11 +1,9 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 
 using Mississippi.Brooks.Abstractions.Streaming;
-using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
-using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
-using Mississippi.Tributary.Runtime;
+using Mississippi.Sdk.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
 
 using Orleans;
@@ -108,15 +106,6 @@ public sealed class CrescentFixture
         builder.Logging.AddFilter("Orleans", LogLevel.Warning);
         builder.Logging.AddFilter("Mississippi", LogLevel.Debug);
 
-        // Add Mississippi event sourcing services
-        builder.Services.AddEventSourcingByService();
-
-        // Add JSON serialization for event sourcing
-        builder.Services.AddJsonSerialization();
-
-        // Add snapshot caching infrastructure (required for aggregate grains)
-        builder.Services.AddSnapshotCaching();
-
         // Pre-register CosmosClient as keyed service with Gateway mode for Aspire emulator compatibility
         // IMPORTANT: Must be registered BEFORE UseOrleans() so Orleans grains can resolve them
         // See: https://github.com/dotnet/aspire/issues/5364
@@ -157,28 +146,6 @@ public sealed class CrescentFixture
                 _
             ) => new BlobServiceClient(blobConnectionString));
 
-        // Configure Cosmos DB storage for brooks (event streams)
-        // Use the overload without connection strings since we pre-registered the clients
-        builder.Services.AddCosmosBrookStorageProvider(o =>
-        {
-            o.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
-            o.DatabaseId = "aspire-l2tests";
-            o.QueryBatchSize = 50;
-            o.MaxEventsPerBatch = 50;
-        });
-
-        // Configure Cosmos DB storage for snapshots
-        builder.Services.AddCosmosSnapshotStorageProvider(options =>
-        {
-            options.CosmosClientServiceKey = SnapshotCosmosDefaults.CosmosClientServiceKey;
-            options.DatabaseId = "aspire-l2tests";
-            options.ContainerId = "snapshots";
-            options.QueryBatchSize = 100;
-        });
-
-        // Register Counter aggregate domain (events, handlers, reducers, projections)
-        builder.Services.AddCounterAggregate();
-
         // Configure Orleans silo
         // IMPORTANT: Must be after all service registrations so Orleans can see them
         builder.UseOrleans(silo =>
@@ -193,9 +160,28 @@ public sealed class CrescentFixture
             // Host configures stream infrastructure
             silo.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
             silo.AddMemoryGrainStorage("PubSubStore");
-
-            // Tell Brooks which stream provider to use
-            silo.AddEventSourcing();
+            silo.UseMississippi(runtime =>
+            {
+                runtime.AddCounterRuntime();
+                runtime.AddJsonSerialization();
+                runtime.AddEventSourcing(options =>
+                    options.OrleansStreamProviderName = BrookStreamingDefaults.OrleansStreamProviderName);
+                runtime.AddSnapshotCaching();
+                runtime.AddCosmosEventStorage(options =>
+                {
+                    options.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
+                    options.DatabaseId = "aspire-l2tests";
+                    options.QueryBatchSize = 50;
+                    options.MaxEventsPerBatch = 50;
+                });
+                runtime.AddCosmosSnapshotStorage(options =>
+                {
+                    options.CosmosClientServiceKey = SnapshotCosmosDefaults.CosmosClientServiceKey;
+                    options.DatabaseId = "aspire-l2tests";
+                    options.ContainerId = "snapshots";
+                    options.QueryBatchSize = 100;
+                });
+            });
         });
         IHost host = builder.Build();
 

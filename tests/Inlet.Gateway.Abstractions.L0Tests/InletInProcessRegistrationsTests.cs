@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,18 +11,18 @@ namespace Mississippi.Inlet.Gateway.Abstractions.L0Tests;
 public sealed class InletInProcessRegistrationsTests
 {
     /// <summary>
-    ///     AddInletInProcess can be called multiple times without error.
+    ///     UseInletInProcess can be called multiple times without error.
     /// </summary>
     [Fact]
-    public void AddInletInProcessCanBeCalledMultipleTimes()
+    public void UseInletInProcessCanBeCalledMultipleTimes()
     {
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
 
         // Act
-        services.AddInletInProcess();
-        IServiceCollection result = services.AddInletInProcess();
+        services.UseInletInProcess();
+        IServiceCollection result = services.UseInletInProcess();
 
         // Assert
         Assert.Same(services, result);
@@ -31,15 +31,15 @@ public sealed class InletInProcessRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletInProcess should register InProcessProjectionNotifier as singleton.
+    ///     UseInletInProcess should register InProcessProjectionNotifier as singleton.
     /// </summary>
     [Fact]
-    public void AddInletInProcessRegistersAsSingleton()
+    public void UseInletInProcessRegistersAsSingleton()
     {
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        services.UseInletInProcess();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -51,15 +51,15 @@ public sealed class InletInProcessRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletInProcess should register IServerProjectionNotifier.
+    ///     UseInletInProcess should register IServerProjectionNotifier.
     /// </summary>
     [Fact]
-    public void AddInletInProcessRegistersIServerProjectionNotifier()
+    public void UseInletInProcessRegistersIServerProjectionNotifier()
     {
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddInletInProcess();
+        services.UseInletInProcess();
 
         // Act
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -70,32 +70,32 @@ public sealed class InletInProcessRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInletInProcess should return the same services collection for chaining.
+    ///     UseInletInProcess should return the same services collection for chaining.
     /// </summary>
     [Fact]
-    public void AddInletInProcessReturnsSameCollection()
+    public void UseInletInProcessReturnsSameCollection()
     {
         // Arrange
         ServiceCollection services = [];
 
         // Act
-        IServiceCollection result = services.AddInletInProcess();
+        IServiceCollection result = services.UseInletInProcess();
 
         // Assert
         Assert.Same(services, result);
     }
 
     /// <summary>
-    ///     AddInletInProcess should throw when services is null.
+    ///     UseInletInProcess should throw when services is null.
     /// </summary>
     [Fact]
-    public void AddInletInProcessThrowsWhenServicesNull()
+    public void UseInletInProcessThrowsWhenServicesNull()
     {
         // Arrange
         IServiceCollection services = null!;
 
         // Act & Assert
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => services.AddInletInProcess());
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => services.UseInletInProcess());
         Assert.Equal("services", exception.ParamName);
     }
 }

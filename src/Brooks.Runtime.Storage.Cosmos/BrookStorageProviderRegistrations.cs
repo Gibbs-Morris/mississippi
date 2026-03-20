@@ -36,7 +36,7 @@ public static class BrookStorageProviderRegistrations
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
     /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
+    public static IServiceCollection UseCosmosBrookStorage(
         this IServiceCollection services
     )
     {
@@ -58,7 +58,7 @@ public static class BrookStorageProviderRegistrations
         services.AddMapper<EventDocument, EventStorageModel, EventDocumentToStorageMapper>();
 
         // Register storage provider interfaces using the helper
-        services.RegisterBrookStorageProvider<BrookStorageProvider>();
+        services.UseBrookStorageProvider<BrookStorageProvider>();
 
         // Ensure Cosmos DB resources are created asynchronously on host start
         services.AddHostedService<CosmosContainerInitializer>();
@@ -91,7 +91,7 @@ public static class BrookStorageProviderRegistrations
     /// <param name="blobStorageConnectionString">The Azure Blob Storage connection string for distributed locking.</param>
     /// <param name="configureOptions">Action to configure the BrookStorageOptions.</param>
     /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
+    public static IServiceCollection UseCosmosBrookStorage(
         this IServiceCollection services,
         string cosmosConnectionString,
         string blobStorageConnectionString,
@@ -120,7 +120,7 @@ public static class BrookStorageProviderRegistrations
             services.Configure(configureOptions);
         }
 
-        return services.AddCosmosBrookStorageProvider();
+        return services.UseCosmosBrookStorage();
     }
 
     /// <summary>
@@ -129,13 +129,13 @@ public static class BrookStorageProviderRegistrations
     /// <param name="services">The service collection to add services to.</param>
     /// <param name="configureOptions">Action to configure the BrookStorageOptions.</param>
     /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
+    public static IServiceCollection UseCosmosBrookStorage(
         this IServiceCollection services,
         Action<BrookStorageOptions> configureOptions
     )
     {
         services.Configure(configureOptions);
-        return services.AddCosmosBrookStorageProvider();
+        return services.UseCosmosBrookStorage();
     }
 
     /// <summary>
@@ -146,7 +146,7 @@ public static class BrookStorageProviderRegistrations
     /// <param name="blobStorageConnectionString">The Azure Blob Storage connection string for distributed locking.</param>
     /// <param name="configuration">The configuration section containing BrookStorageOptions.</param>
     /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
+    public static IServiceCollection UseCosmosBrookStorage(
         this IServiceCollection services,
         string cosmosConnectionString,
         string blobStorageConnectionString,
@@ -169,7 +169,7 @@ public static class BrookStorageProviderRegistrations
                 _
             ) => new BlobServiceClient(blobStorageConnectionString));
         services.Configure<BrookStorageOptions>(configuration);
-        return services.AddCosmosBrookStorageProvider();
+        return services.UseCosmosBrookStorage();
     }
 
     /// <summary>
@@ -178,13 +178,13 @@ public static class BrookStorageProviderRegistrations
     /// <param name="services">The service collection to add services to.</param>
     /// <param name="configuration">The configuration section containing BrookStorageOptions.</param>
     /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddCosmosBrookStorageProvider(
+    public static IServiceCollection UseCosmosBrookStorage(
         this IServiceCollection services,
         IConfiguration configuration
     )
     {
         services.Configure<BrookStorageOptions>(configuration);
-        return services.AddCosmosBrookStorageProvider();
+        return services.UseCosmosBrookStorage();
     }
 
     // Performs asynchronous Cosmos resource initialization without synchronous waits in DI

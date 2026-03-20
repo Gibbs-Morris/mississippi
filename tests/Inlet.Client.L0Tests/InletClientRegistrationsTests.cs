@@ -1,3 +1,4 @@
+﻿#pragma warning disable CS0618 // Testing legacy composition APIs pending issue #237.
 using System;
 using System.Collections.Generic;
 
@@ -5,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Abstractions.State;
 using Mississippi.Reservoir.Core;
 
 
@@ -15,11 +17,36 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// </summary>
 public sealed class InletClientRegistrationsTests
 {
+    private sealed class TestFeatureState : IFeatureState
+    {
+        public static string FeatureKey => nameof(TestFeatureState);
+    }
+
     /// <summary>
     ///     Test projection record for unit tests.
     /// </summary>
     /// <param name="Name">The projection name.</param>
     private sealed record TestProjection(string Name);
+
+    /// <summary>
+    ///     AddInletClient on ReservoirBuilder should register IInletStore as CompositeInletStore.
+    /// </summary>
+    [Fact]
+    public void AddInletClientOnReservoirBuilderRegistersIInletStoreAsCompositeInletStore()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        ReservoirBuilder reservoir = new(services);
+        reservoir.AddFeature<TestFeatureState>();
+
+        // Act
+        reservoir.AddInletClient();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IInletStore store = provider.GetRequiredService<IInletStore>();
+
+        // Assert
+        Assert.IsType<CompositeInletStore>(store);
+    }
 
     /// <summary>
     ///     AddInlet should register IInletStore as CompositeInletStore.
@@ -127,6 +154,27 @@ public sealed class InletClientRegistrationsTests
     }
 
     /// <summary>
+    ///     AddProjectionPath on ReservoirBuilder should register a projection-path configuration.
+    /// </summary>
+    [Fact]
+    public void AddProjectionPathOnReservoirBuilderRegistersConfiguration()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        ReservoirBuilder reservoir = new(services);
+        reservoir.AddFeature<TestFeatureState>();
+
+        // Act
+        reservoir.AddInletClient();
+        reservoir.AddProjectionPath<TestProjection>("cascade/test");
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEnumerable<IConfigureProjectionRegistry> configs = provider.GetServices<IConfigureProjectionRegistry>();
+
+        // Assert
+        Assert.Single(configs);
+    }
+
+    /// <summary>
     ///     AddProjectionPath should register path in IConfigureProjectionRegistry.
     /// </summary>
     [Fact]
@@ -196,3 +244,5 @@ public sealed class InletClientRegistrationsTests
         Assert.Equal("cascade/test", path);
     }
 }
+
+#pragma warning restore CS0618

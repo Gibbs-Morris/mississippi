@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -60,10 +60,10 @@ public sealed class SerializationStorageProviderExtensionsTests
     ///     the singleton lifetime per interface.
     /// </summary>
     [Fact]
-    public void RegisterSerializationStorageProviderShouldRegisterAllInterfacesGivenProviderType()
+    public void UseSerializationStorageProviderShouldRegisterAllInterfacesGivenProviderType()
     {
         ServiceCollection services = new();
-        services.RegisterSerializationStorageProvider<TestSerializationProvider>();
+        services.UseSerializationStorageProvider<TestSerializationProvider>();
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
         ISerializationReader reader = serviceProvider.GetRequiredService<ISerializationReader>();
         ISerializationReader secondReader = serviceProvider.GetRequiredService<ISerializationReader>();
@@ -87,13 +87,13 @@ public sealed class SerializationStorageProviderExtensionsTests
     ///     Ensures the configuration-based overload binds the configuration section into the expected options instance.
     /// </summary>
     [Fact]
-    public void RegisterSerializationStorageProviderWithConfigurationShouldBindOptions()
+    public void UseSerializationStorageProviderWithConfigurationShouldBindOptions()
     {
         ServiceCollection services = new();
         IConfiguration configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new[] { new KeyValuePair<string, string?>("Name", "configured") })
             .Build();
-        services.RegisterSerializationStorageProvider<TestSerializationProvider, TestOptions>(configuration);
+        services.UseSerializationStorageProvider<TestSerializationProvider, TestOptions>(configuration);
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
         TestOptions options = serviceProvider.GetRequiredService<IOptions<TestOptions>>().Value;
         Assert.Equal("configured", options.Name);
@@ -103,11 +103,11 @@ public sealed class SerializationStorageProviderExtensionsTests
     ///     Ensures the overload accepting an options action configures the expected options instance.
     /// </summary>
     [Fact]
-    public void RegisterSerializationStorageProviderWithOptionsActionShouldConfigureOptions()
+    public void UseSerializationStorageProviderWithOptionsActionShouldConfigureOptions()
     {
         ServiceCollection services = new();
         const string expectedName = "configured";
-        services.RegisterSerializationStorageProvider<TestSerializationProvider, TestOptions>(options =>
+        services.UseSerializationStorageProvider<TestSerializationProvider, TestOptions>(options =>
             options.Name = expectedName);
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
         TestOptions options = serviceProvider.GetRequiredService<IOptions<TestOptions>>().Value;

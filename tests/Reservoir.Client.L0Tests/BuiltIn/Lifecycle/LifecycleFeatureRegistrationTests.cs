@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
@@ -32,8 +32,8 @@ public sealed class LifecycleFeatureRegistrationTests : IDisposable
         fakeTimeProvider.SetUtcNow(new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero));
         ServiceCollection services = [];
         services.AddSingleton<TimeProvider>(fakeTimeProvider);
-        services.AddReservoir();
-        services.AddBuiltInLifecycle();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddBuiltInLifecycle();
         serviceProvider = services.BuildServiceProvider();
         store = serviceProvider.GetRequiredService<IStore>();
     }
@@ -103,20 +103,20 @@ public sealed class LifecycleFeatureRegistrationTests : IDisposable
     }
 
     /// <summary>
-    ///     AddBuiltInLifecycle should return services for chaining.
+    ///     AddBuiltInLifecycle should return the Reservoir builder for chaining.
     /// </summary>
     [Fact]
-    public void AddBuiltInLifecycleReturnsServicesForChaining()
+    public void AddBuiltInLifecycleReturnsBuilderForChaining()
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir();
+        ReservoirBuilder reservoirBuilder = new(services);
 
         // Act
-        IServiceCollection result = services.AddBuiltInLifecycle();
+        IReservoirBuilder result = reservoirBuilder.AddBuiltInLifecycle();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(reservoirBuilder, result);
     }
 
     /// <summary>

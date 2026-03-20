@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.DomainModeling.Runtime.L0Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <ProjectReference Include="..\Inlet.Abstractions\Inlet.Abstractions.csproj" />
   </ItemGroup>

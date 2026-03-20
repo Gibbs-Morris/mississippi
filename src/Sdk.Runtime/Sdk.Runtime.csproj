@@ -8,6 +8,7 @@
     <ProjectReference Include="..\Inlet.Runtime.Generators\Inlet.Runtime.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
     <ProjectReference Include="..\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />

@@ -18,7 +18,7 @@ public static class SnapshotStorageProviderExtensions
     /// <typeparam name="TProvider">The provider type to register.</typeparam>
     /// <param name="services">The service collection to modify.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection RegisterSnapshotStorageProvider<TProvider>(
+    public static IServiceCollection UseSnapshotStorageProvider<TProvider>(
         this IServiceCollection services
     )
         where TProvider : class, ISnapshotStorageProvider
@@ -39,7 +39,7 @@ public static class SnapshotStorageProviderExtensions
     /// <param name="services">The service collection to modify.</param>
     /// <param name="configureOptions">The options configuration action.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection RegisterSnapshotStorageProvider<TProvider, TOptions>(
+    public static IServiceCollection UseSnapshotStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         Action<TOptions> configureOptions
     )
@@ -47,7 +47,7 @@ public static class SnapshotStorageProviderExtensions
         where TOptions : class, new()
     {
         services.Configure(configureOptions);
-        return services.RegisterSnapshotStorageProvider<TProvider>();
+        return services.UseSnapshotStorageProvider<TProvider>();
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public static class SnapshotStorageProviderExtensions
     /// <param name="services">The service collection to modify.</param>
     /// <param name="configuration">The configuration section to bind.</param>
     /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection RegisterSnapshotStorageProvider<TProvider, TOptions>(
+    public static IServiceCollection UseSnapshotStorageProvider<TProvider, TOptions>(
         this IServiceCollection services,
         IConfiguration configuration
     )
@@ -66,6 +66,6 @@ public static class SnapshotStorageProviderExtensions
         where TOptions : class, new()
     {
         services.Configure<TOptions>(configuration);
-        return services.RegisterSnapshotStorageProvider<TProvider>();
+        return services.UseSnapshotStorageProvider<TProvider>();
     }
 }

@@ -20,8 +20,8 @@ namespace Mississippi.Inlet.Runtime.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
 {
-    private const string AggregateRegistrationsTypeFullName =
-        "Mississippi.DomainModeling.Runtime.AggregateRegistrations";
+    private const string AggregateBuilderExtensionsTypeFullName =
+        "Mississippi.DomainModeling.Runtime.Builders.AggregateBuilderExtensions";
 
     private const string GenerateAggregateEndpointsAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAggregateEndpointsAttribute";
@@ -35,14 +35,13 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
-    private const string ReducerRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.ReducerRegistrations";
+    private const string MississippiRuntimeBuilderTypeFullName = "Mississippi.Sdk.Runtime.MississippiRuntimeBuilder";
 
-    private const string SagaRegistrationsTypeFullName = "Mississippi.DomainModeling.Runtime.SagaRegistrations";
+    private const string ProjectionBuilderExtensionsTypeFullName =
+        "Mississippi.DomainModeling.Runtime.Builders.ProjectionBuilderExtensions";
 
-    private const string SnapshotRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.SnapshotRegistrations";
-
-    private const string UxProjectionRegistrationsTypeFullName =
-        "Mississippi.DomainModeling.Runtime.UxProjectionRegistrations";
+    private const string SagaBuilderExtensionsTypeFullName =
+        "Mississippi.DomainModeling.Runtime.Builders.SagaBuilderExtensions";
 
     private static void AddAggregateNameIfPresent(
         INamedTypeSymbol typeSymbol,
@@ -68,11 +67,11 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         aggregateNames.Add(aggregateName);
     }
 
-    private static void AddProjectionNameIfPresent(
+    private static void AddProjectionInfoIfPresent(
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? generateProjectionAttribute,
         string domainRoot,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain
+        Dictionary<string, Dictionary<string, string>> projectionsByDomain
     )
     {
         if (!GeneratorSymbolAnalysis.ContainsAttribute(typeSymbol, generateProjectionAttribute))
@@ -83,13 +82,13 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         string projectionName = typeSymbol.Name.EndsWith("Projection", StringComparison.Ordinal)
             ? typeSymbol.Name.Substring(0, typeSymbol.Name.Length - "Projection".Length)
             : typeSymbol.Name;
-        if (!projectionNamesByDomain.TryGetValue(domainRoot, out HashSet<string>? projectionNames))
+        if (!projectionsByDomain.TryGetValue(domainRoot, out Dictionary<string, string>? projections))
         {
-            projectionNames = [];
-            projectionNamesByDomain[domainRoot] = projectionNames;
+            projections = new(StringComparer.Ordinal);
+            projectionsByDomain[domainRoot] = projections;
         }
 
-        projectionNames.Add(projectionName);
+        projections[projectionName] = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
 
     private static void AddSagaNameIfPresent(
@@ -123,7 +122,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? generateSagaAttribute,
         INamedTypeSymbol? generateSagaGenericAttribute,
         Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain,
+        Dictionary<string, Dictionary<string, string>> projectionsByDomain,
         Dictionary<string, HashSet<string>> sagaNamesByDomain
     )
     {
@@ -136,7 +135,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 generateSagaAttribute,
                 generateSagaGenericAttribute,
                 aggregateNamesByDomain,
-                projectionNamesByDomain,
+                projectionsByDomain,
                 sagaNamesByDomain);
         }
 
@@ -149,7 +148,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 generateSagaAttribute,
                 generateSagaGenericAttribute,
                 aggregateNamesByDomain,
-                projectionNamesByDomain,
+                projectionsByDomain,
                 sagaNamesByDomain);
         }
     }
@@ -164,7 +163,8 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
-        sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
+        sb.AppendLine("using Mississippi.DomainModeling.Abstractions.Builders;");
+        sb.AppendLine("using Mississippi.Sdk.Runtime;");
         sb.AppendLine();
         string outputNamespace = targetRootNamespace.EndsWith(".Registrations", StringComparison.Ordinal)
             ? targetRootNamespace
@@ -172,38 +172,66 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine($"namespace {outputNamespace};");
         sb.AppendLine();
         sb.AppendLine("/// <summary>");
-        sb.AppendLine("///     Extension methods for registering complete silo domain feature sets.");
+        sb.AppendLine("///     Extension methods for registering complete runtime domain feature sets.");
         sb.AppendLine("/// </summary>");
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"DomainSiloRegistrationGenerator\", \"1.0.0\")]");
-        sb.AppendLine("public static class DomainSiloRegistrations");
+        sb.AppendLine("public static class DomainRuntimeRegistrations");
         sb.AppendLine("{");
         foreach (DomainRegistrationModel model in models.OrderBy(m => m.DomainMethodName, StringComparer.Ordinal))
         {
             sb.AppendLine("    /// <summary>");
-            sb.AppendLine($"    ///     Adds all generated silo registrations for the {model.DomainRoot} domain.");
+            sb.AppendLine($"    ///     Adds all generated runtime registrations for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
-            sb.AppendLine("    /// <param name=\"services\">The service collection.</param>");
-            sb.AppendLine("    /// <returns>The service collection for chaining.</returns>");
-            sb.AppendLine(
-                $"    public static IServiceCollection {model.DomainMethodName}(this IServiceCollection services)");
+            sb.AppendLine("    /// <param name=\"runtime\">The Mississippi runtime builder.</param>");
+            sb.AppendLine($"    public static void {model.DomainMethodName}(this MississippiRuntimeBuilder runtime)");
             sb.AppendLine("    {");
-            sb.AppendLine("        ArgumentNullException.ThrowIfNull(services);");
-            foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(runtime);");
+
+            // Aggregate sub-builder
+            if (model.AggregateNames.Count > 0)
             {
-                sb.AppendLine($"        services.Add{aggregate}Aggregate();");
+                sb.AppendLine("        runtime.Aggregates(aggregates =>");
+                sb.AppendLine("        {");
+                foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
+                {
+                    sb.AppendLine($"            aggregates.Add{aggregate}Aggregate();");
+                }
+
+                sb.AppendLine("        });");
             }
 
-            foreach (string saga in model.SagaNames.OrderBy(n => n, StringComparer.Ordinal))
+            // Projection sub-builder
+            if (model.ProjectionNames.Count > 0)
             {
-                sb.AppendLine($"        services.Add{saga}Saga();");
+                sb.AppendLine("        runtime.Projections(projections =>");
+                sb.AppendLine("        {");
+                foreach (string projection in model.ProjectionNames.OrderBy(n => n, StringComparer.Ordinal))
+                {
+                    sb.AppendLine($"            projections.Add{projection}Projection();");
+                }
+
+                sb.AppendLine("        });");
+                foreach (ProjectionRegistrationModel projection in model.Projections.OrderBy(
+                             p => p.Name,
+                             StringComparer.Ordinal))
+                {
+                    sb.AppendLine($"        runtime.RegisterProjectionMetadata<{projection.TypeName}>();");
+                }
             }
 
-            foreach (string projection in model.ProjectionNames.OrderBy(n => n, StringComparer.Ordinal))
+            // Saga sub-builder
+            if (model.SagaNames.Count > 0)
             {
-                sb.AppendLine($"        services.Add{projection}Projection();");
+                sb.AppendLine("        runtime.Sagas(sagas =>");
+                sb.AppendLine("        {");
+                foreach (string saga in model.SagaNames.OrderBy(n => n, StringComparer.Ordinal))
+                {
+                    sb.AppendLine($"            sagas.Add{saga}Saga();");
+                }
+
+                sb.AppendLine("        });");
             }
 
-            sb.AppendLine("        return services;");
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -225,7 +253,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? generateSagaGenericAttribute =
             compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
         Dictionary<string, HashSet<string>> aggregateNamesByDomain = new(StringComparer.Ordinal);
-        Dictionary<string, HashSet<string>> projectionNamesByDomain = new(StringComparer.Ordinal);
+        Dictionary<string, Dictionary<string, string>> projectionsByDomain = new(StringComparer.Ordinal);
         Dictionary<string, HashSet<string>> sagaNamesByDomain = new(StringComparer.Ordinal);
         foreach (IAssemblySymbol assembly in GeneratorSymbolAnalysis.GetReferencedAssemblies(compilation))
         {
@@ -236,7 +264,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 generateSagaAttribute,
                 generateSagaGenericAttribute,
                 aggregateNamesByDomain,
-                projectionNamesByDomain,
+                projectionsByDomain,
                 sagaNamesByDomain);
         }
 
@@ -246,7 +274,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
             domains.Add(domain);
         }
 
-        foreach (string domain in projectionNamesByDomain.Keys)
+        foreach (string domain in projectionsByDomain.Keys)
         {
             domains.Add(domain);
         }
@@ -261,16 +289,21 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 string[] aggregateNames = aggregateNamesByDomain.TryGetValue(domain, out HashSet<string>? aggregates)
                     ? aggregates.OrderBy(n => n, StringComparer.Ordinal).ToArray()
                     : [];
-                string[] projectionNames = projectionNamesByDomain.TryGetValue(domain, out HashSet<string>? projections)
-                    ? projections.OrderBy(n => n, StringComparer.Ordinal).ToArray()
-                    : [];
+                ProjectionRegistrationModel[] projections =
+                    projectionsByDomain.TryGetValue(domain, out Dictionary<string, string>? projectionMap)
+                        ? projectionMap.OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                            .Select(pair => new ProjectionRegistrationModel(pair.Key, pair.Value))
+                            .ToArray()
+                        : [];
+                string[] projectionNames = projections.Select(projection => projection.Name).ToArray();
                 string[] sagaNames = sagaNamesByDomain.TryGetValue(domain, out HashSet<string>? sagas)
                     ? sagas.OrderBy(n => n, StringComparer.Ordinal).ToArray()
                     : [];
                 return new DomainRegistrationModel(
-                    NamingConventions.GetDomainRegistrationMethodName(domain) + "Silo",
+                    NamingConventions.GetDomainRegistrationMethodName(domain) + "Runtime",
                     domain,
                     aggregateNames,
+                    projections,
                     projectionNames,
                     sagaNames);
             })
@@ -284,11 +317,10 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
     private static bool HasRegistrationDependencies(
         Compilation compilation
     ) =>
-        compilation.GetTypeByMetadataName(AggregateRegistrationsTypeFullName) is not null &&
-        compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
-        compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null &&
-        compilation.GetTypeByMetadataName(UxProjectionRegistrationsTypeFullName) is not null &&
-        compilation.GetTypeByMetadataName(SagaRegistrationsTypeFullName) is not null;
+        compilation.GetTypeByMetadataName(AggregateBuilderExtensionsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(MississippiRuntimeBuilderTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(ProjectionBuilderExtensionsTypeFullName) is not null &&
+        compilation.GetTypeByMetadataName(SagaBuilderExtensionsTypeFullName) is not null;
 
     private static void ProcessTypeMember(
         INamedTypeSymbol typeSymbol,
@@ -297,7 +329,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? generateSagaAttribute,
         INamedTypeSymbol? generateSagaGenericAttribute,
         Dictionary<string, HashSet<string>> aggregateNamesByDomain,
-        Dictionary<string, HashSet<string>> projectionNamesByDomain,
+        Dictionary<string, Dictionary<string, string>> projectionsByDomain,
         Dictionary<string, HashSet<string>> sagaNamesByDomain
     )
     {
@@ -314,7 +346,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         AddAggregateNameIfPresent(typeSymbol, generateAggregateAttribute, domainRoot, aggregateNamesByDomain);
-        AddProjectionNameIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, projectionNamesByDomain);
+        AddProjectionInfoIfPresent(typeSymbol, generateProjectionAttribute, domainRoot, projectionsByDomain);
         AddSagaNameIfPresent(
             typeSymbol,
             generateSagaAttribute,
@@ -367,7 +399,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 }
 
                 string source = GenerateRegistrationsSource(result.Domains, result.TargetRootNamespace);
-                spc.AddSource("DomainSiloRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
+                spc.AddSource("DomainRuntimeRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
             });
     }
 
@@ -377,6 +409,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
             string domainMethodName,
             string domainRoot,
             IReadOnlyList<string> aggregateNames,
+            IReadOnlyList<ProjectionRegistrationModel> projections,
             IReadOnlyList<string> projectionNames,
             IReadOnlyList<string> sagaNames
         )
@@ -384,6 +417,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
             DomainMethodName = domainMethodName;
             DomainRoot = domainRoot;
             AggregateNames = aggregateNames;
+            Projections = projections;
             ProjectionNames = projectionNames;
             SagaNames = sagaNames;
         }
@@ -396,6 +430,24 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
 
         public IReadOnlyList<string> ProjectionNames { get; }
 
+        public IReadOnlyList<ProjectionRegistrationModel> Projections { get; }
+
         public IReadOnlyList<string> SagaNames { get; }
+    }
+
+    private sealed class ProjectionRegistrationModel
+    {
+        public ProjectionRegistrationModel(
+            string name,
+            string typeName
+        )
+        {
+            Name = name;
+            TypeName = typeName;
+        }
+
+        public string Name { get; }
+
+        public string TypeName { get; }
     }
 }

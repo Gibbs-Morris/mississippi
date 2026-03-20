@@ -30,7 +30,7 @@ public static class RefractionServiceCollectionExtensions
     ///         </item>
     ///     </list>
     /// </remarks>
-    public static IServiceCollection AddRefraction(
+    public static IServiceCollection UseRefraction(
         this IServiceCollection services
     ) =>
         services;

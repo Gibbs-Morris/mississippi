@@ -3,6 +3,8 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.ActionEffects;
+using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client;
@@ -13,6 +15,46 @@ namespace Mississippi.Inlet.Client;
 public static class InletBlazorRegistrations
 {
     /// <summary>
+    ///     Adds Inlet Blazor services to the Reservoir builder.
+    /// </summary>
+    /// <param name="reservoir">The Reservoir builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="reservoir" /> is null.</exception>
+    public static IReservoirBuilder AddInletBlazor(
+        this IReservoirBuilder reservoir
+    )
+    {
+        ArgumentNullException.ThrowIfNull(reservoir);
+        return reservoir;
+    }
+
+    /// <summary>
+    ///     Adds Inlet Blazor SignalR services to the Reservoir builder.
+    /// </summary>
+    /// <param name="reservoir">The Reservoir builder.</param>
+    /// <param name="configure">Optional configuration for the builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="reservoir" /> is null.</exception>
+    /// <exception cref="ArgumentException">
+    ///     Thrown when <paramref name="reservoir" /> is not backed by the current Reservoir builder implementation.
+    /// </exception>
+    public static IReservoirBuilder AddInletBlazorSignalR(
+        this IReservoirBuilder reservoir,
+        Action<InletBlazorSignalRBuilder>? configure = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(reservoir);
+        ReservoirBuilder builder = reservoir as ReservoirBuilder ??
+                                   throw new ArgumentException(
+                                       "The provided reservoir builder is not supported by the current Inlet client implementation.",
+                                       nameof(reservoir));
+        InletBlazorSignalRBuilder signalRBuilder = new(builder.Services);
+        configure?.Invoke(signalRBuilder);
+        signalRBuilder.Build();
+        return reservoir;
+    }
+
+    /// <summary>
     ///     Adds Inlet Blazor services to the service collection.
     /// </summary>
     /// <param name="services">The service collection.</param>
@@ -21,7 +63,7 @@ public static class InletBlazorRegistrations
     /// <remarks>
     ///     This must be called after <c>AddInlet()</c>.
     /// </remarks>
-    public static IServiceCollection AddInletBlazor(
+    internal static IServiceCollection AddInletBlazor(
         this IServiceCollection services
     )
     {
@@ -46,15 +88,14 @@ public static class InletBlazorRegistrations
     ///         Use the builder to configure the hub path and register projection fetchers.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInletBlazorSignalR(
+    internal static IServiceCollection AddInletBlazorSignalR(
         this IServiceCollection services,
         Action<InletBlazorSignalRBuilder>? configure = null
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        InletBlazorSignalRBuilder builder = new(services);
-        configure?.Invoke(builder);
-        builder.Build();
+        ReservoirBuilder reservoirBuilder = new(services);
+        reservoirBuilder.AddInletBlazorSignalR(configure);
         return services;
     }
 }

@@ -36,39 +36,16 @@ public sealed class DomainSiloRegistrationGeneratorTests
                                               }
                                           }
 
-                                          namespace Mississippi.DomainModeling.Runtime
+                                          namespace Mississippi.DomainModeling.Runtime.Builders
                                           {
-                                              public static class AggregateRegistrations
-                                              {
-                                              }
+                                              public static class AggregateBuilderExtensions { }
+                                              public static class ProjectionBuilderExtensions { }
+                                              public static class SagaBuilderExtensions { }
                                           }
 
-                                          namespace Mississippi.Tributary.Runtime
+                                          namespace Mississippi.Sdk.Runtime
                                           {
-                                              public static class ReducerRegistrations
-                                              {
-                                              }
-                                          }
-
-                                          namespace Mississippi.Tributary.Runtime
-                                          {
-                                              public static class SnapshotRegistrations
-                                              {
-                                              }
-                                          }
-
-                                          namespace Mississippi.DomainModeling.Runtime
-                                          {
-                                              public static class UxProjectionRegistrations
-                                              {
-                                              }
-                                          }
-
-                                          namespace Mississippi.DomainModeling.Runtime
-                                          {
-                                              public static class SagaRegistrations
-                                              {
-                                              }
+                                              public class MississippiRuntimeBuilder { }
                                           }
                                           """;
 
@@ -145,14 +122,14 @@ public sealed class DomainSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainSiloRegistrations", StringComparison.Ordinal))
+            .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains("AddTestAppDomainSilo", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddMoneyTransferSaga();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddTestAppDomainRuntime", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("aggregates.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("sagas.AddMoneyTransferSaga();", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("SagaSaga", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddBalanceProjection();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("projections.AddBalanceProjection();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -173,10 +150,10 @@ public sealed class DomainSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainSiloRegistrations", StringComparison.Ordinal))
+            .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains("AddCoreLogicSilo", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddCoreLogicRuntime", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("aggregates.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
     }
 }

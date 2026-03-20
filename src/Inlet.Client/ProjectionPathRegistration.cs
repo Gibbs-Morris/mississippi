@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.Inlet.Client.Abstractions;
 
 
@@ -7,7 +9,7 @@ namespace Mississippi.Inlet.Client;
 ///     Implementation of <see cref="IConfigureProjectionRegistry" /> for registering projection paths.
 /// </summary>
 /// <typeparam name="T">The projection type being registered.</typeparam>
-internal sealed class ProjectionPathRegistration<T> : IConfigureProjectionRegistry
+public sealed class ProjectionPathRegistration<T> : IConfigureProjectionRegistry
     where T : class
 {
     /// <summary>
@@ -26,6 +28,7 @@ internal sealed class ProjectionPathRegistration<T> : IConfigureProjectionRegist
         IProjectionRegistry registry
     )
     {
+        ArgumentNullException.ThrowIfNull(registry);
         registry.Register<T>(Path);
     }
 }

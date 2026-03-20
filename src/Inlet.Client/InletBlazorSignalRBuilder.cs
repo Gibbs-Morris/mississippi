@@ -117,8 +117,8 @@ public sealed class InletBlazorSignalRBuilder
     /// </summary>
     internal void Build()
     {
-        // Register options
-        Services.TryAddSingleton(options);
+        // Register options via IOptions<T>
+        Services.Configure<InletSignalRActionEffectOptions>(o => { o.HubPath = options.HubPath; });
 
         // Register the projection DTO registry (always available)
         Services.TryAddSingleton<IProjectionDtoRegistry>(sp =>
@@ -159,9 +159,11 @@ public sealed class InletBlazorSignalRBuilder
         Services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
 
         // Register the Inlet connection feature state and SignalR effect
-        Services.AddActionEffect<InletConnectionState, InletSignalRActionEffect>();
+        ReservoirBuilder reservoirBuilder = new(Services);
+        reservoirBuilder.AddFeature<InletConnectionState>(feature => feature
+            .AddActionEffect<InletConnectionState, InletSignalRActionEffect>());
 
         // Register the SignalR connection feature (state, reducers, and lifecycle effect)
-        Services.AddSignalRConnectionFeature();
+        reservoirBuilder.AddSignalRConnectionFeature();
     }
 }
