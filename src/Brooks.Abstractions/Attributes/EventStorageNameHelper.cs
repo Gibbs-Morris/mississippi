@@ -1,6 +1,11 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+
+using Orleans;
 
 
 namespace Mississippi.Brooks.Abstractions.Attributes;
@@ -38,7 +43,7 @@ public static class EventStorageNameHelper
             type,
             static t =>
             {
-                EventStorageNameAttribute? attribute = t.GetCustomAttribute<EventStorageNameAttribute>();
+                EventStorageNameAttribute? attribute = GetAttribute(t);
                 if (attribute is null)
                 {
                     throw new InvalidOperationException(
@@ -46,7 +51,7 @@ public static class EventStorageNameHelper
                         $"Decorate the type with [EventStorageName(\"APP\", \"MODULE\", \"NAME\", version: 1)] to define its storage identity.");
                 }
 
-                return attribute.StorageName;
+                return BuildStorageName(t, attribute);
             });
     }
 
@@ -74,14 +79,67 @@ public static class EventStorageNameHelper
     )
     {
         ArgumentNullException.ThrowIfNull(type);
-        EventStorageNameAttribute? attribute = type.GetCustomAttribute<EventStorageNameAttribute>();
+        EventStorageNameAttribute? attribute = GetAttribute(type);
         if (attribute is null)
         {
             storageName = null;
             return false;
         }
 
-        storageName = attribute.StorageName;
+        storageName = BuildStorageName(type, attribute);
         return true;
+    }
+
+    private static string BuildStorageName(
+        Type type,
+        EventStorageNameAttribute attribute
+    )
+    {
+        if (!type.IsConstructedGenericType)
+        {
+            return attribute.StorageName;
+        }
+
+        string genericTypeHash = GetGenericTypeHash(type);
+        return $"{attribute.AppName}.{attribute.ModuleName}.{attribute.Name}G{genericTypeHash}.V{attribute.Version}";
+    }
+
+    private static EventStorageNameAttribute? GetAttribute(
+        Type type
+    ) =>
+        type.GetCustomAttribute<EventStorageNameAttribute>() ??
+        (type.IsConstructedGenericType
+            ? type.GetGenericTypeDefinition().GetCustomAttribute<EventStorageNameAttribute>()
+            : null);
+
+    private static string GetGenericTypeHash(
+        Type type
+    )
+    {
+        string identity = string.Join("|", type.GetGenericArguments().Select(GetTypeIdentity));
+        byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(identity));
+        return Convert.ToHexString(hashBytes[..16]);
+    }
+
+    private static string? GetTypeAlias(
+        Type type
+    ) =>
+        type.GetCustomAttribute<AliasAttribute>(false)?.Alias ??
+        (type.IsConstructedGenericType
+            ? type.GetGenericTypeDefinition().GetCustomAttribute<AliasAttribute>(false)?.Alias
+            : null);
+
+    private static string GetTypeIdentity(
+        Type type
+    )
+    {
+        string baseIdentity = GetTypeAlias(type) ?? type.FullName ?? type.Name;
+        if (!type.IsConstructedGenericType)
+        {
+            return baseIdentity;
+        }
+
+        string genericArguments = string.Join(",", type.GetGenericArguments().Select(GetTypeIdentity));
+        return $"{baseIdentity}[{genericArguments}]";
     }
 }
