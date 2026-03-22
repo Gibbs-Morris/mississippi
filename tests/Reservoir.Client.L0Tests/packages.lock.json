@@ -157,7 +157,7 @@
       "Mississippi.Reservoir.TestHarness": {
         "type": "Project",
         "dependencies": {
-          "FluentAssertions": "[8.8.0, )",
+          "FluentAssertions": "[8.9.0, )",
           "Microsoft.Extensions.TimeProvider.Testing": "[10.4.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )",
@@ -166,9 +166,9 @@
       },
       "FluentAssertions": {
         "type": "CentralTransitive",
-        "requested": "[8.8.0, )",
-        "resolved": "8.8.0",
-        "contentHash": "m0kwcqBwvVel03FuMa7Ozo/oTaxYbjeNlcOhQFkyQpwX/8wks6RNl/Jnn58DCZVs6c2oG1RsCZw7HfKSaxLm3w=="
+        "requested": "[8.9.0, )",
+        "resolved": "8.9.0",
+        "contentHash": "Y5RDjxaVlxWX2yy0X/ay1tJjSKMOtjepSb83mmfngFS63hm3LsoZNj6nhmImzm1ifRmpF9ouvmHjx9nNwnkpDg=="
       },
       "Microsoft.Extensions.TimeProvider.Testing": {
         "type": "CentralTransitive",
