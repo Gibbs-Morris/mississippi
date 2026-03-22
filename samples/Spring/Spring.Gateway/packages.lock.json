@@ -90,11 +90,11 @@
       },
       "ModelContextProtocol.AspNetCore": {
         "type": "Direct",
-        "requested": "[0.8.0-preview.1, )",
-        "resolved": "0.8.0-preview.1",
-        "contentHash": "vtDaGXuZ4zLurH/63ymCDxKy3tIeJc5sLJV0nVtWBHj1gM9ME3jNKY1t+RrUQ9P22t4T1nHUEeBP0xR3J3YBgA==",
+        "requested": "[1.1.0, )",
+        "resolved": "1.1.0",
+        "contentHash": "I6jXZq7tTYzP9oWpZSnyUqveHWXOLykmPv9mrTyyYqwb0ZUgqVajp96Iu2opSeL/bjBfKV4Lwc2hZUXWCnAUnA==",
         "dependencies": {
-          "ModelContextProtocol": "0.8.0-preview.1"
+          "ModelContextProtocol": "1.1.0"
         }
       },
       "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
@@ -228,8 +228,8 @@
       },
       "Microsoft.Extensions.AI.Abstractions": {
         "type": "Transitive",
-        "resolved": "10.2.0",
-        "contentHash": "ONGlIBht0ygEdKc0bCt9XWUiq19/460dAu7fCKzPM34OFJSMQIohEDTJwjCJ8vVp8znNakloc9xFF9+R/eDCYQ=="
+        "resolved": "10.3.0",
+        "contentHash": "hDjDvUERvUH3HBMs2MDusOcGJBjAHOG5pJIU2x/HZEa4e1UthNKt89cwMi3B+ogJo6skki1XFjfgGN3ksnVqvQ=="
       },
       "Microsoft.Extensions.Azure": {
         "type": "Transitive",
@@ -353,18 +353,18 @@
       },
       "ModelContextProtocol": {
         "type": "Transitive",
-        "resolved": "0.8.0-preview.1",
-        "contentHash": "hDhRtuMa2XBI70X/aIyvDv8/b5HIlRGenMiAk5LkM/8dhBuYNYBpbCwCFF+D2l0g8wa24WddPA3ciI55Uc3+/A==",
+        "resolved": "1.1.0",
+        "contentHash": "dr7MeQocnOD9exXF2TIZc/80xp/wNVw3WpJZlz0X+ezMcOCXXkAwdMbpM5hohvnXw+KF29iaaYPJwUFbni+NCQ==",
         "dependencies": {
-          "ModelContextProtocol.Core": "0.8.0-preview.1"
+          "ModelContextProtocol.Core": "1.1.0"
         }
       },
       "ModelContextProtocol.Core": {
         "type": "Transitive",
-        "resolved": "0.8.0-preview.1",
-        "contentHash": "BceTXxLV5d16gIJHiGvHPLlQARat3u53FuJv+sZfO+L7BGbdFwTbUJxUS0/gCpxmwd8GGnCjhT5Qdfw1+m9WJw==",
+        "resolved": "1.1.0",
+        "contentHash": "3E/qGSPxAnuenD8uBT2NsHCP91ztn4WC9SfV7miKjpzDYQgVvGwbxnPhhZ8PAvltYWJ/P4wWbRmJ+2M5rZkrDQ==",
         "dependencies": {
-          "Microsoft.Extensions.AI.Abstractions": "10.2.0"
+          "Microsoft.Extensions.AI.Abstractions": "10.3.0"
         }
       },
       "OpenTelemetry": {
