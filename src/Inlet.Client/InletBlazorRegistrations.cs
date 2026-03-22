@@ -39,6 +39,10 @@ public static class InletBlazorRegistrations
     ///         to be registered.
     ///     </para>
     ///     <para>
+    ///         This method also ensures the core Inlet client services are registered before the
+    ///         SignalR feature is composed.
+    ///     </para>
+    ///     <para>
     ///         Use the builder to configure the hub path and register projection fetchers.
     ///     </para>
     /// </remarks>
@@ -48,6 +52,7 @@ public static class InletBlazorRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
+        builder.AddInletClient();
         InletBlazorSignalRBuilder signalRBuilder = new(builder);
         configure?.Invoke(signalRBuilder);
         signalRBuilder.Build();

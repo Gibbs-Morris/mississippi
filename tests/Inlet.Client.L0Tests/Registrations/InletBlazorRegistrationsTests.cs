@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Core;
 
@@ -64,6 +65,25 @@ public sealed class InletBlazorRegistrationsTests
         // Assert - action was invoked and returns same collection
         Assert.True(configureWasCalled);
         Assert.Same(builder, result);
+    }
+
+    /// <summary>
+    ///     AddInletBlazorSignalR registers the core Inlet client services when they are not already present.
+    /// </summary>
+    [Fact]
+    public void AddInletBlazorSignalRRegistersCoreInletClientServices()
+    {
+        // Arrange
+        ServiceCollection services = new();
+        IReservoirBuilder builder = services.AddReservoir();
+
+        // Act
+        builder.AddInletBlazorSignalR();
+
+        // Assert
+        Assert.Contains(services, sd => sd.ServiceType == typeof(IInletStore));
+        Assert.Contains(services, sd => sd.ServiceType == typeof(IProjectionUpdateNotifier));
+        Assert.Contains(services, sd => sd.ServiceType == typeof(IProjectionRegistry));
     }
 
     /// <summary>
