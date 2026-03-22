@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client.SignalRConnection;
+using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client.L0Tests.Registrations;
@@ -18,10 +20,11 @@ public sealed class SignalRConnectionRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act (should not throw)
-        services.AddSignalRConnectionFeature();
-        services.AddSignalRConnectionFeature();
+        builder.AddSignalRConnectionFeature();
+        builder.AddSignalRConnectionFeature();
 
         // Assert - just verify no exception was thrown
         Assert.True(services.Count > 0);
@@ -35,9 +38,10 @@ public sealed class SignalRConnectionRegistrationsTests
     {
         // Arrange
         ServiceCollection services = new();
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddSignalRConnectionFeature();
+        builder.AddSignalRConnectionFeature();
 
         // Assert - verify that reducers were registered by checking service count increased
         // Each reducer registration adds at least one service
@@ -45,18 +49,19 @@ public sealed class SignalRConnectionRegistrationsTests
     }
 
     /// <summary>
-    ///     AddSignalRConnectionFeature returns the service collection for chaining.
+    ///     AddSignalRConnectionFeature returns the builder for chaining.
     /// </summary>
     [Fact]
-    public void AddSignalRConnectionFeatureReturnsServiceCollection()
+    public void AddSignalRConnectionFeatureReturnsBuilder()
     {
         // Arrange
         ServiceCollection services = new();
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        IServiceCollection result = services.AddSignalRConnectionFeature();
+        IReservoirBuilder result = builder.AddSignalRConnectionFeature();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 }

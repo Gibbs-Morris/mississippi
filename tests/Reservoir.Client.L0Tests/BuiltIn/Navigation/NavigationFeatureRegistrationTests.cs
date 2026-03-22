@@ -28,8 +28,8 @@ public sealed class NavigationFeatureRegistrationTests : IDisposable
     {
         ServiceCollection services = [];
         services.AddSingleton<NavigationManager>(new FakeNavigationManager());
-        services.AddReservoir();
-        services.AddBuiltInNavigation();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddBuiltInNavigation();
         serviceProvider = services.BuildServiceProvider();
         store = serviceProvider.GetRequiredService<IStore>();
     }
@@ -112,13 +112,13 @@ public sealed class NavigationFeatureRegistrationTests : IDisposable
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir();
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        IServiceCollection result = services.AddBuiltInNavigation();
+        IReservoirBuilder result = builder.AddBuiltInNavigation();
 
         // Assert
-        Assert.Same(services, result);
+        Assert.Same(builder, result);
     }
 
     /// <summary>

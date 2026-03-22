@@ -55,6 +55,7 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 - `UxProjectionControllerBase<TProjection, TDto>` exposes `GET`, `GET at version`, and `GET version` endpoints.
 - `InletHub` manages client subscriptions by projection path and entity ID.
 - `InletSubscriptionGrain` deduplicates brook stream subscriptions per SignalR connection and sends only `(path, entityId, newVersion)` to the client.
+- In Blazor clients, `builder.AddReservoir()` creates the `IReservoirBuilder` that client packages compose on. `AddInletClient()` and `AddInletBlazorSignalR(...)` both extend that builder.
 - When `AddInletBlazorSignalR(...)` is configured, `InletSignalRActionEffect` fetches the updated DTO over HTTP and dispatches Reservoir actions.
 
 ## Guarantees

@@ -1,9 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
+using System;
 
+using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Reducers;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
-using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
@@ -17,30 +17,25 @@ namespace Mississippi.Reservoir.Client.BuiltIn.Lifecycle;
 ///         It tracks the current lifecycle phase (NotStarted, Initializing, Ready) in the store.
 ///     </para>
 ///     <para>
-///         Register with <see cref="AddBuiltInLifecycle" /> after calling <c>AddReservoir</c>.
+///         Register with <see cref="AddBuiltInLifecycle(IReservoirBuilder)" /> after calling
+///         <c>AddReservoir</c>.
 ///     </para>
 /// </remarks>
 public static class LifecycleFeatureRegistration
 {
     /// <summary>
-    ///     Adds the built-in lifecycle feature to the service collection.
+    ///     Adds the built-in lifecycle feature to the Reservoir builder.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <remarks>
-    ///     This registers:
-    ///     <list type="bullet">
-    ///         <item><see cref="LifecycleState" /> as a feature state</item>
-    ///         <item>Reducer for <see cref="AppInitAction" /></item>
-    ///         <item>Reducer for <see cref="AppReadyAction" /></item>
-    ///     </list>
-    /// </remarks>
-    public static IServiceCollection AddBuiltInLifecycle(
-        this IServiceCollection services
+    /// <param name="builder">The Reservoir builder.</param>
+    /// <returns>The Reservoir builder for chaining.</returns>
+    public static IReservoirBuilder AddBuiltInLifecycle(
+        this IReservoirBuilder builder
     )
     {
-        services.AddReducer<AppInitAction, LifecycleState>(LifecycleReducers.OnAppInit);
-        services.AddReducer<AppReadyAction, LifecycleState>(LifecycleReducers.OnAppReady);
-        return services;
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.AddFeatureState<LifecycleState>(feature => feature
+            .AddReducer<AppInitAction>(LifecycleReducers.OnAppInit)
+            .AddReducer<AppReadyAction>(LifecycleReducers.OnAppReady));
+        return builder;
     }
 }

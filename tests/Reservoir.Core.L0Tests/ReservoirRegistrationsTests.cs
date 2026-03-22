@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -18,6 +19,20 @@ namespace Mississippi.Reservoir.Core.L0Tests;
 /// </summary>
 public sealed class ReservoirRegistrationsTests
 {
+    private sealed class ExistingMarker : IMarker;
+
+    /// <summary>
+    ///     Marker service used to verify advanced service-list mutations.
+    /// </summary>
+    private interface IMarker;
+
+    private sealed class InsertedMarker : IMarker;
+
+    /// <summary>
+    ///     Replacement time provider used to verify service replacement behavior.
+    /// </summary>
+    private sealed class ReplacementTimeProvider : TimeProvider;
+
     /// <summary>
     ///     Test action for unit tests.
     /// </summary>
@@ -98,14 +113,103 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddActionEffect<TestFeatureState, TestActionEffect>();
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddActionEffect<TestActionEffect>());
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IActionEffect<TestFeatureState>> effects = provider.GetServices<IActionEffect<TestFeatureState>>();
 
         // Assert
         Assert.Single(effects);
+    }
+
+    /// <summary>
+    ///     AddFeatureState with callback should configure reducers and effects through the builder.
+    /// </summary>
+    [Fact]
+    public void AddFeatureStateWithCallbackConfiguresReducersAndEffects()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+
+        // Act
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddReducer<TestAction>(static (
+                state,
+                _
+            ) => state with
+            {
+                Counter = state.Counter + 1,
+            })
+            .AddActionEffect<TestActionEffect>());
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Assert
+        Assert.NotNull(provider.GetService<IActionReducer<TestFeatureState>>());
+        Assert.Single(provider.GetServices<IActionEffect<TestFeatureState>>());
+        Assert.NotNull(provider.GetService<IFeatureStateRegistration>());
+    }
+
+    /// <summary>
+    ///     AddFeatureState with callback should leave services unchanged when configuration throws.
+    /// </summary>
+    [Fact]
+    public void AddFeatureStateWithCallbackDoesNotMutateServicesWhenConfigurationThrows()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        int baselineCount = services.Count;
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => builder.AddFeatureState<TestFeatureState>(feature =>
+        {
+            feature.AddReducer<TestAction>(static (
+                state,
+                _
+            ) => state with
+            {
+                Counter = state.Counter + 1,
+            });
+            throw new InvalidOperationException("Boom");
+        }));
+        Assert.Equal(baselineCount, services.Count);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Empty(provider.GetServices<IActionReducer<TestFeatureState>>());
+        Assert.Empty(provider.GetServices<IFeatureStateRegistration>());
+        Assert.Null(provider.GetService<IRootReducer<TestFeatureState>>());
+    }
+
+    /// <summary>
+    ///     AddFeatureState with callback should preserve advanced service mutations when configuration succeeds.
+    /// </summary>
+    [Fact]
+    public void AddFeatureStateWithCallbackPreservesAdvancedServiceMutations()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        TimeProvider replacementTimeProvider = new ReplacementTimeProvider();
+        services.AddSingleton<IMarker, ExistingMarker>();
+        IReservoirBuilder builder = services.AddReservoir();
+
+        // Act
+        builder.AddFeatureState<TestFeatureState>(feature =>
+        {
+            ServiceDescriptor existingMarkerDescriptor = feature.Services.Single(descriptor =>
+                (descriptor.ServiceType == typeof(IMarker)) &&
+                (descriptor.ImplementationType == typeof(ExistingMarker)));
+            feature.Services.Remove(existingMarkerDescriptor);
+            feature.Services.Insert(0, ServiceDescriptor.Singleton<IMarker, InsertedMarker>());
+            feature.Services.Replace(ServiceDescriptor.Singleton(replacementTimeProvider));
+        });
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Assert
+        Assert.Same(replacementTimeProvider, provider.GetRequiredService<TimeProvider>());
+        IMarker[] markers = [.. provider.GetServices<IMarker>()];
+        Assert.Single(markers);
+        Assert.IsType<InsertedMarker>(markers[0]);
     }
 
     /// <summary>
@@ -116,9 +220,10 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddMiddleware<TestMiddleware>();
+        builder.AddMiddleware<TestMiddleware>();
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IMiddleware> middlewares = provider.GetServices<IMiddleware>();
 
@@ -134,15 +239,16 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddReducer<TestAction, TestFeatureState>((
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddReducer<TestAction>((
             state,
             _
         ) => state with
         {
             Counter = state.Counter + 1,
-        });
+        }));
         using ServiceProvider provider = services.BuildServiceProvider();
         IActionReducer<TestFeatureState>? reducer = provider.GetService<IActionReducer<TestFeatureState>>();
 
@@ -158,9 +264,11 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services.AddReducer<TestAction, TestFeatureState>(null!));
+        Assert.Throws<ArgumentNullException>(() => builder.AddFeatureState<TestFeatureState>(feature =>
+            feature.AddReducer<TestAction>(null!)));
     }
 
     /// <summary>
@@ -171,9 +279,10 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddReducer<TestAction, TestActionReducer>());
         using ServiceProvider provider = services.BuildServiceProvider();
         IActionReducer<TestFeatureState>? reducer = provider.GetService<IActionReducer<TestFeatureState>>();
         IActionReducer<TestAction, TestFeatureState>? typedReducer =
@@ -192,10 +301,10 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReservoir(); // First registration
+        _ = services.AddReservoir(); // First registration
 
         // Act
-        services.AddReservoir(); // Second registration should not replace
+        _ = services.AddReservoir(); // Second registration should not replace
         ServiceDescriptor[] descriptors = [.. services];
         int storeCount = descriptors.Count(d => d.ServiceType == typeof(IStore));
 
@@ -213,13 +322,14 @@ public sealed class ReservoirRegistrationsTests
         ServiceCollection services = [];
 
         // Act
-        services.AddReservoir();
+        IReservoirBuilder builder = services.AddReservoir();
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         IStore store1 = scope.ServiceProvider.GetRequiredService<IStore>();
         IStore store2 = scope.ServiceProvider.GetRequiredService<IStore>();
 
         // Assert
+        Assert.Same(services, builder.Services);
         Assert.Same(store1, store2);
     }
 
@@ -244,10 +354,10 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddReducer<TestAction, TestFeatureState, TestActionReducer>();
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddRootReducer<TestFeatureState>();
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddReducer<TestAction, TestActionReducer>());
         using ServiceProvider provider = services.BuildServiceProvider();
         IRootReducer<TestFeatureState>? rootReducer = provider.GetService<IRootReducer<TestFeatureState>>();
 
