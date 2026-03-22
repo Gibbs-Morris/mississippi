@@ -185,10 +185,10 @@
         "resolved": "3.1.5",
         "contentHash": "tKi7dSTwP4m5m9eXPM2Ime4Kn7xNf4x4zT9sdLO/G4hZVnQCRiMTWoSZqI/pYTVeI27oPPqHBKYI/DjJ9GsYgA=="
       },
-      "Aspire.Dashboard.Sdk.win-x64": {
+      "Aspire.Dashboard.Sdk.linux-x64": {
         "type": "Transitive",
         "resolved": "13.1.2",
-        "contentHash": "1jE70VKm5FUrD0hHnDL5e2yv3Ag74hdqE9Q7cabWgEZ4kIodwfFJyV6guQzK6psce4+i5EeVbHUC5Z1Yp1adWw=="
+        "contentHash": "Y4U1uUGKGtbcEAuM6wXBKQ/Jo1T+57NNUzCTC5l+ZR2ibPjuW7xp4tw/qWdiwjNesN/BcCLmZ4c62jgVrnE9ww=="
       },
       "Aspire.Hosting": {
         "type": "Transitive",
@@ -221,10 +221,10 @@
           "System.IO.Hashing": "9.0.10"
         }
       },
-      "Aspire.Hosting.Orchestration.win-x64": {
+      "Aspire.Hosting.Orchestration.linux-x64": {
         "type": "Transitive",
         "resolved": "13.1.2",
-        "contentHash": "ukJ58yvu06a0Skn3J6+Qz1KcVcN7J8Hg47ObwVBg3iVoIVXGTaqtzj6iM+cQB1kK0QAYYDr+roOWS9g1Bj6XsQ=="
+        "contentHash": "Y4L2KiDOd95Pi4zlJ3DlXggq1eMbyAFZcBhNPiWsEsZFwvFkiQtcnz/0+VzOKplcCEE3KhoOIz5yZU1cBZtoEQ=="
       },
       "AspNetCore.HealthChecks.Uris": {
         "type": "Transitive",
@@ -1000,9 +1000,9 @@
       "Mississippi.Aqueduct.Gateway.L2Tests.AppHost": {
         "type": "Project",
         "dependencies": {
-          "Aspire.Dashboard.Sdk.win-x64": "[13.1.2, )",
+          "Aspire.Dashboard.Sdk.linux-x64": "[13.1.2, )",
           "Aspire.Hosting.AppHost": "[13.1.2, )",
-          "Aspire.Hosting.Orchestration.win-x64": "[13.1.2, )"
+          "Aspire.Hosting.Orchestration.linux-x64": "[13.1.2, )"
         }
       },
       "Mississippi.Aqueduct.Runtime": {

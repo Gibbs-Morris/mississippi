@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Blob\Tributary.Runtime.Storage.Blob.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime.Storage.Blob.L2Tests.AppHost\Tributary.Runtime.Storage.Blob.L2Tests.AppHost.csproj" />
+  </ItemGroup>
+</Project>

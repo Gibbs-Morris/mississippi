@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Blob\Tributary.Runtime.Storage.Blob.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
+    <ProjectReference Include="..\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Azure Blob Storage provider for Tributary snapshot persistence.</Description>
+  </PropertyGroup>
+</Project>
