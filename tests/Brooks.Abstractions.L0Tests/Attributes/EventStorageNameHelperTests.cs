@@ -2,6 +2,8 @@ using System;
 
 using Mississippi.Brooks.Abstractions.Attributes;
 
+using Orleans;
+
 
 namespace Mississippi.Brooks.Abstractions.L0Tests.Attributes;
 
@@ -11,12 +13,28 @@ namespace Mississippi.Brooks.Abstractions.L0Tests.Attributes;
 public class EventStorageNameHelperTests
 {
     /// <summary>
+    ///     First generic argument used for closed generic storage-name tests.
+    /// </summary>
+    [Alias("Mississippi.Brooks.Abstractions.L0Tests.Attributes.FirstGenericArgument")]
+    internal sealed record FirstGenericArgument;
+
+    /// <summary>
+    ///     Second generic argument used for closed generic storage-name tests.
+    /// </summary>
+    [Alias("Mississippi.Brooks.Abstractions.L0Tests.Attributes.SecondGenericArgument")]
+    internal sealed record SecondGenericArgument;
+
+    /// <summary>
     ///     Test fixture decorated with EventStorageName attribute.
     /// </summary>
     [EventStorageName("APP", "MODULE", "EVENT")]
     private sealed class DecoratedEvent
     {
     }
+
+    [EventStorageName("APP", "MODULE", "GENERICEVENT")]
+    private sealed record GenericEvent<T>(T Value)
+        where T : class;
 
     /// <summary>
     ///     Test fixture without EventStorageName attribute.
@@ -41,6 +59,33 @@ public class EventStorageNameHelperTests
     {
         string storageName = EventStorageNameHelper.GetStorageName<DecoratedEvent>();
         Assert.Equal("APP.MODULE.EVENT.V1", storageName);
+    }
+
+    /// <summary>
+    ///     GetStorageName should generate distinct names for different closed generic types.
+    /// </summary>
+    [Fact]
+    public void GetStorageNameReturnsDistinctNamesForClosedGenericTypes()
+    {
+        string firstStorageName = EventStorageNameHelper.GetStorageName<GenericEvent<FirstGenericArgument>>();
+        string secondStorageName = EventStorageNameHelper.GetStorageName<GenericEvent<SecondGenericArgument>>();
+        Assert.NotEqual(firstStorageName, secondStorageName);
+        Assert.StartsWith("APP.MODULE.GENERICEVENTG", firstStorageName, StringComparison.Ordinal);
+        Assert.StartsWith("APP.MODULE.GENERICEVENTG", secondStorageName, StringComparison.Ordinal);
+        Assert.EndsWith(".V1", firstStorageName, StringComparison.Ordinal);
+        Assert.EndsWith(".V1", secondStorageName, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     GetStorageName should be stable for the same closed generic type.
+    /// </summary>
+    [Fact]
+    public void GetStorageNameReturnsStableNameForClosedGenericType()
+    {
+        string firstStorageName = EventStorageNameHelper.GetStorageName<GenericEvent<FirstGenericArgument>>();
+        Type closedGenericType = typeof(GenericEvent<>).MakeGenericType(typeof(FirstGenericArgument));
+        string secondStorageName = EventStorageNameHelper.GetStorageName(closedGenericType);
+        Assert.Equal(firstStorageName, secondStorageName);
     }
 
     /// <summary>
@@ -80,6 +125,20 @@ public class EventStorageNameHelperTests
         bool result = EventStorageNameHelper.TryGetStorageName<UndecoratedEvent>(out string? storageName);
         Assert.False(result);
         Assert.Null(storageName);
+    }
+
+    /// <summary>
+    ///     TryGetStorageName should return generated storage name for a closed generic type.
+    /// </summary>
+    [Fact]
+    public void TryGetStorageNameReturnsGeneratedNameForClosedGenericType()
+    {
+        Type closedGenericType = typeof(GenericEvent<>).MakeGenericType(typeof(FirstGenericArgument));
+        bool result = EventStorageNameHelper.TryGetStorageName(closedGenericType, out string? storageName);
+        Assert.True(result);
+        Assert.NotNull(storageName);
+        Assert.StartsWith("APP.MODULE.GENERICEVENTG", storageName, StringComparison.Ordinal);
+        Assert.EndsWith(".V1", storageName, StringComparison.Ordinal);
     }
 
     /// <summary>
