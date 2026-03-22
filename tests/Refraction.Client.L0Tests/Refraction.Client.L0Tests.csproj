@@ -5,6 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
         <ProjectReference Include="..\..\src\Refraction.Client\Refraction.Client.csproj" />
     </ItemGroup>
 
