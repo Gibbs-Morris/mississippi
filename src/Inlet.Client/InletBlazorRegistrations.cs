@@ -7,16 +7,21 @@ using Mississippi.Reservoir.Abstractions;
 namespace Mississippi.Inlet.Client;
 
 /// <summary>
-///     Extension methods for adding Inlet Blazor services.
+///     Extension methods for composing Inlet Blazor features.
 /// </summary>
 public static class InletBlazorRegistrations
 {
     /// <summary>
-    ///     Adds Inlet Blazor services to the service collection.
+    ///     Returns the Reservoir builder for baseline Inlet Blazor composition.
     /// </summary>
     /// <param name="builder">The Reservoir builder.</param>
     /// <returns>The builder for chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder" /> is null.</exception>
+    /// <remarks>
+    ///     This method is currently a no-op extension point. It performs no additional
+    ///     registrations today and exists so callers can opt into future baseline Inlet Blazor
+    ///     composition without changing their startup shape.
+    /// </remarks>
     public static IReservoirBuilder AddInletBlazor(
         this IReservoirBuilder builder
     )
