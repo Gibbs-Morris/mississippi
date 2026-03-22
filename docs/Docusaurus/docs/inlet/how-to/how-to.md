@@ -30,7 +30,7 @@ IReservoirBuilder reservoir = builder.AddReservoir();
 
 1. Add generated or hand-written Reservoir features.
 
-This example uses the verified Spring client composition pattern from this branch.
+This example uses the verified Spring client composition pattern.
 
 ```csharp
 reservoir.AddProjectionsFeature();
@@ -91,7 +91,7 @@ await builder.Build().RunAsync();
 
 ## Full Spring Client Example
 
-This excerpt matches the current Spring sample startup shape on this branch.
+This excerpt matches the current Spring sample startup shape.
 
 ```csharp
 IReservoirBuilder reservoir = builder.AddReservoir();

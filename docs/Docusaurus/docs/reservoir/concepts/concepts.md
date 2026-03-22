@@ -12,7 +12,7 @@ description: Understand Reservoir's builder-based registration model and the fea
 
 Reservoir keeps client-side state transitions explicit, predictable, and testable instead of scattering state changes through UI callbacks and transport glue.
 
-On this branch, the main public registration idea is no longer a flat list of unrelated `IServiceCollection` helpers. Reservoir now exposes builders that make startup composition explicit at two levels:
+Reservoir's main public registration idea is no longer a flat list of unrelated `IServiceCollection` helpers. Reservoir now exposes builders that make startup composition explicit at two levels:
 
 - a top-level builder for host and package composition
 - a feature-scoped builder for reducers and action effects

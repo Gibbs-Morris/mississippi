@@ -20,7 +20,7 @@ For Blazor clients, Inlet now composes on top of `IReservoirBuilder`. The verifi
 
 ## First Working Setup
 
-This example matches the public Inlet client extensions and the Spring sample startup on this branch.
+This example matches the public Inlet client extensions and the Spring sample startup.
 
 ```csharp
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;

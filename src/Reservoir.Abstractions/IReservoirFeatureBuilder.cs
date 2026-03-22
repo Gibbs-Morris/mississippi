@@ -20,7 +20,9 @@ public interface IReservoirFeatureBuilder<TState>
     where TState : class, IFeatureState, new()
 {
     /// <summary>
-    ///     Gets the underlying service collection for advanced extension scenarios.
+    ///     Gets the service collection used for advanced extension scenarios.
+    ///     During feature configuration this collection may be a staged view whose mutations are committed
+    ///     back to the host builder after the callback completes successfully.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     IServiceCollection Services { get; }
