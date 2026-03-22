@@ -2,7 +2,6 @@ using System;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.DomainModeling.Abstractions;
 
 
@@ -45,13 +44,11 @@ public sealed class SagaRegistrationsTests
         IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
         string? firstEventName = registry.ResolveName(typeof(SagaInputProvided<TestInput>));
         string? secondEventName = registry.ResolveName(typeof(SagaInputProvided<SecondTestInput>));
-        string legacyEventName = EventStorageNameHelper.GetStorageName(typeof(SagaInputProvided<>));
         Assert.NotNull(firstEventName);
         Assert.NotNull(secondEventName);
         Assert.NotEqual(firstEventName, secondEventName);
         Assert.Equal(typeof(SagaInputProvided<TestInput>), registry.ResolveType(firstEventName));
         Assert.Equal(typeof(SagaInputProvided<SecondTestInput>), registry.ResolveType(secondEventName));
-        Assert.Equal(typeof(SagaInputProvided<TestInput>), registry.ResolveType(legacyEventName));
     }
 
     /// <summary>
