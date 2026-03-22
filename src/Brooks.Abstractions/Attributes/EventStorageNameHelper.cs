@@ -31,6 +31,11 @@ public static class EventStorageNameHelper
     ///     Gets the storage name from a type decorated with <see cref="EventStorageNameAttribute" />.
     /// </summary>
     /// <param name="type">The type decorated with <see cref="EventStorageNameAttribute" />.</param>
+    /// <remarks>
+    ///     Constructed generic types use the declared storage name as a base and append a deterministic hash
+    ///     derived from the generic type definition identity plus the generic argument identities.
+    ///     Non-generic types return the declared storage name unchanged.
+    /// </remarks>
     /// <returns>The storage name string.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="type" /> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the type lacks an <see cref="EventStorageNameAttribute" />.</exception>
@@ -72,6 +77,11 @@ public static class EventStorageNameHelper
     /// </summary>
     /// <param name="type">The type potentially decorated with <see cref="EventStorageNameAttribute" />.</param>
     /// <param name="storageName">When this method returns, contains the storage name if found; otherwise, null.</param>
+    /// <remarks>
+    ///     Constructed generic types use the declared storage name as a base and append a deterministic hash
+    ///     derived from the generic type definition identity plus the generic argument identities.
+    ///     Non-generic types return the declared storage name unchanged.
+    /// </remarks>
     /// <returns><c>true</c> if the storage name was found; otherwise, <c>false</c>.</returns>
     public static bool TryGetStorageName(
         Type type,
@@ -133,12 +143,13 @@ public static class EventStorageNameHelper
         Type type
     )
     {
-        string baseIdentity = GetTypeAlias(type) ?? type.FullName ?? type.Name;
         if (!type.IsConstructedGenericType)
         {
-            return baseIdentity;
+            return GetTypeAlias(type) ?? type.FullName ?? type.Name;
         }
 
+        Type genericDefinition = type.GetGenericTypeDefinition();
+        string baseIdentity = GetTypeAlias(genericDefinition) ?? genericDefinition.FullName ?? genericDefinition.Name;
         string genericArguments = string.Join(",", type.GetGenericArguments().Select(GetTypeIdentity));
         return $"{baseIdentity}[{genericArguments}]";
     }

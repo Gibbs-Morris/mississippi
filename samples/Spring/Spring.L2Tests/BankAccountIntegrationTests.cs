@@ -3,6 +3,8 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
+using Mississippi.DomainModeling.Abstractions;
+
 
 namespace MississippiSamples.Spring.L2Tests;
 
@@ -13,7 +15,7 @@ namespace MississippiSamples.Spring.L2Tests;
 [Collection(SpringTestCollection.Name)]
 public sealed class BankAccountIntegrationTests
 {
-    private const int CompletedSagaPhase = 3;
+    private const int CompletedSagaPhase = (int)SagaPhase.Completed;
 
     /// <summary>
     ///     Maximum time to wait for eventual consistency.

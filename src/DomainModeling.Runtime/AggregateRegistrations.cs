@@ -367,8 +367,29 @@ public static class AggregateRegistrations
             IEventTypeRegistry registry
         )
         {
+            Type eventType = typeof(TEvent);
             string eventName = EventStorageNameHelper.GetStorageName<TEvent>();
-            registry.Register(eventName, typeof(TEvent));
+            registry.Register(eventName, eventType);
+
+            string? legacyEventName = GetLegacyConstructedGenericEventName(eventType);
+            if ((legacyEventName is not null) && !string.Equals(legacyEventName, eventName, StringComparison.Ordinal))
+            {
+                registry.Register(legacyEventName, eventType);
+            }
+        }
+
+        private static string? GetLegacyConstructedGenericEventName(
+            Type eventType
+        )
+        {
+            if (!eventType.IsConstructedGenericType)
+            {
+                return null;
+            }
+
+            EventStorageNameAttribute? attribute = eventType.GetGenericTypeDefinition()
+                .GetCustomAttribute<EventStorageNameAttribute>(false);
+            return attribute?.StorageName;
         }
     }
 
