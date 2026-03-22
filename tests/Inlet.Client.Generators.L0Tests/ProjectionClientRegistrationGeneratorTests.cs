@@ -133,7 +133,8 @@ public sealed class ProjectionClientRegistrationGeneratorTests
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(GetRuntimeAssemblyPath(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(GetRuntimeAssemblyPath(runtimeDirectory, "System.Collections.dll")),
-            MetadataReference.CreateFromFile(GetRuntimeAssemblyPath(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(
+                GetRuntimeAssemblyPath(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
         string netstandardPath = GetRuntimeAssemblyPath(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))

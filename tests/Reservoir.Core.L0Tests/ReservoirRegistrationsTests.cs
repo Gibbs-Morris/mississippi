@@ -19,15 +19,24 @@ namespace Mississippi.Reservoir.Core.L0Tests;
 /// </summary>
 public sealed class ReservoirRegistrationsTests
 {
-    /// <summary>
-    ///     Test action for unit tests.
-    /// </summary>
-    private sealed record TestAction : IAction;
+    private sealed class ExistingMarker : IMarker;
 
     /// <summary>
     ///     Marker service used to verify advanced service-list mutations.
     /// </summary>
     private interface IMarker;
+
+    private sealed class InsertedMarker : IMarker;
+
+    /// <summary>
+    ///     Replacement time provider used to verify service replacement behavior.
+    /// </summary>
+    private sealed class ReplacementTimeProvider : TimeProvider;
+
+    /// <summary>
+    ///     Test action for unit tests.
+    /// </summary>
+    private sealed record TestAction : IAction;
 
     /// <summary>
     ///     Test action effect implementation.
@@ -68,15 +77,6 @@ public sealed class ReservoirRegistrationsTests
                 Counter = state.Counter + 1,
             };
     }
-
-    private sealed class ExistingMarker : IMarker;
-
-    private sealed class InsertedMarker : IMarker;
-
-    /// <summary>
-    ///     Replacement time provider used to verify service replacement behavior.
-    /// </summary>
-    private sealed class ReplacementTimeProvider : TimeProvider;
 
     /// <summary>
     ///     Test feature state for unit tests.
@@ -197,12 +197,12 @@ public sealed class ReservoirRegistrationsTests
         builder.AddFeatureState<TestFeatureState>(feature =>
         {
             ServiceDescriptor existingMarkerDescriptor = feature.Services.Single(descriptor =>
-                descriptor.ServiceType == typeof(IMarker) && descriptor.ImplementationType == typeof(ExistingMarker));
+                (descriptor.ServiceType == typeof(IMarker)) &&
+                (descriptor.ImplementationType == typeof(ExistingMarker)));
             feature.Services.Remove(existingMarkerDescriptor);
             feature.Services.Insert(0, ServiceDescriptor.Singleton<IMarker, InsertedMarker>());
             feature.Services.Replace(ServiceDescriptor.Singleton(replacementTimeProvider));
         });
-
         using ServiceProvider provider = services.BuildServiceProvider();
 
         // Assert

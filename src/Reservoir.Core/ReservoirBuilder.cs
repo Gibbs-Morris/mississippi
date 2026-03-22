@@ -85,7 +85,6 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
 
         ReservoirBuilderRegistrations.AddFeatureState<TState>(stagedServices);
         configure(new ReservoirFeatureBuilder<TState>(stagedServices));
-
         Services.Clear();
         foreach (ServiceDescriptor descriptor in stagedServices)
         {
