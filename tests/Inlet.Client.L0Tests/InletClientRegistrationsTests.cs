@@ -60,10 +60,10 @@ public sealed class InletClientRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInlet should register IStore as singleton.
+    ///     AddInlet should register IStore with scoped lifetime.
     /// </summary>
     [Fact]
-    public void AddInletRegistersIStoreAsSingleton()
+    public void AddInletRegistersIStoreAsScoped()
     {
         // Arrange
         ServiceCollection services = [];
@@ -72,11 +72,15 @@ public sealed class InletClientRegistrationsTests
         // Act
         builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
-        IStore store1 = provider.GetRequiredService<IStore>();
-        IStore store2 = provider.GetRequiredService<IStore>();
+        using IServiceScope scope1 = provider.CreateScope();
+        using IServiceScope scope2 = provider.CreateScope();
+        IStore scope1Store1 = scope1.ServiceProvider.GetRequiredService<IStore>();
+        IStore scope1Store2 = scope1.ServiceProvider.GetRequiredService<IStore>();
+        IStore scope2Store = scope2.ServiceProvider.GetRequiredService<IStore>();
 
         // Assert
-        Assert.Same(store1, store2);
+        Assert.Same(scope1Store1, scope1Store2);
+        Assert.NotSame(scope1Store1, scope2Store);
     }
 
     /// <summary>
