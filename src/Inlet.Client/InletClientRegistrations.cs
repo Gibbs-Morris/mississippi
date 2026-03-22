@@ -25,14 +25,22 @@ public static class InletClientRegistrations
     ///     <para>
     ///         This method registers the following services:
     ///         <list type="bullet">
-    ///             <item><see cref="IStore" /> - Redux-style state container</item>
+    ///             <item><see cref="IProjectionRegistry" /> - Registry that maps projection types to their configured paths</item>
+    ///             <item><see cref="ProjectionsFeatureState" /> - Feature state for all projections</item>
     ///             <item><see cref="IInletStore" /> - Composite interface for components</item>
     ///             <item><see cref="IProjectionUpdateNotifier" /> - For dispatching projection updates</item>
-    ///             <item><see cref="ProjectionsFeatureState" /> - Feature state for all projections</item>
     ///         </list>
     ///     </para>
     ///     <para>
-    ///         Use scoped lifetime to match Fluxor pattern:
+    ///         Call
+    ///         <see
+    ///             cref="Mississippi.Reservoir.Core.ReservoirRegistrations.AddReservoir(Microsoft.Extensions.DependencyInjection.IServiceCollection)" />
+    ///         first to create the
+    ///         <paramref name="builder" /> and register the underlying <see cref="IStore" /> infrastructure.
+    ///     </para>
+    ///     <para>
+    ///         <see cref="IInletStore" /> and <see cref="IProjectionUpdateNotifier" /> use scoped lifetime to match
+    ///         the Fluxor pattern:
     ///         Blazor WASM: scoped = singleton (no difference);
     ///         Blazor Server: scoped = per-circuit (each user gets own store).
     ///     </para>
