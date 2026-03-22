@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -23,6 +24,9 @@ public sealed class ReservoirRegistrationsTests
     /// </summary>
     private sealed record TestAction : IAction;
 
+    /// <summary>
+    ///     Marker service used to verify advanced service-list mutations.
+    /// </summary>
     private interface IMarker;
 
     /// <summary>
@@ -68,6 +72,11 @@ public sealed class ReservoirRegistrationsTests
     private sealed class ExistingMarker : IMarker;
 
     private sealed class InsertedMarker : IMarker;
+
+    /// <summary>
+    ///     Replacement time provider used to verify service replacement behavior.
+    /// </summary>
+    private sealed class ReplacementTimeProvider : TimeProvider;
 
     /// <summary>
     ///     Test feature state for unit tests.
@@ -180,7 +189,7 @@ public sealed class ReservoirRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        TimeProvider replacementTimeProvider = new FakeTimeProvider();
+        TimeProvider replacementTimeProvider = new ReplacementTimeProvider();
         services.AddSingleton<IMarker, ExistingMarker>();
         IReservoirBuilder builder = services.AddReservoir();
 
