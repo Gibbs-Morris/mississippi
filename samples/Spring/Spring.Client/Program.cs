@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Inlet.Client;
+using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Client;
 using Mississippi.Reservoir.Client.BuiltIn;
 
@@ -39,26 +40,27 @@ builder.Services.AddScoped(sp =>
     };
 });
 #pragma warning restore IDISP014
+IReservoirBuilder reservoir = builder.AddReservoir();
 
 // Register features (one line per feature - scales cleanly)
 // Write side + projection feature registrations
-builder.Services.AddProjectionsFeature();
-builder.Services.AddAuthProofAggregateFeature();
-builder.Services.AddBankAccountAggregateFeature();
-builder.Services.AddMoneyTransferSagaAggregateFeature();
-builder.Services.AddAuthProofSagaFeature();
-builder.Services.AddMoneyTransferSagaFeature();
+reservoir.AddProjectionsFeature();
+reservoir.AddAuthProofAggregateFeature();
+reservoir.AddBankAccountAggregateFeature();
+reservoir.AddMoneyTransferSagaAggregateFeature();
+reservoir.AddAuthProofSagaFeature();
+reservoir.AddMoneyTransferSagaFeature();
 
 // Navigation/UI: entity selection
-builder.Services.AddDualEntitySelectionFeature();
-builder.Services.AddDemoAccountsFeature();
-builder.Services.AddAuthSimulationFeature();
+reservoir.AddDualEntitySelectionFeature();
+reservoir.AddDemoAccountsFeature();
+reservoir.AddAuthSimulationFeature();
 
 // Built-in Reservoir features: navigation, lifecycle
-builder.Services.AddReservoirBlazorBuiltIns();
+reservoir.AddReservoirBlazorBuiltIns();
 
 // DevTools integration: enable Redux DevTools in development
-builder.Services.AddReservoirDevTools(options =>
+reservoir.AddReservoirDevTools(options =>
 {
     options.Enablement = ReservoirDevToolsEnablement.Always;
     options.Name = "Spring Sample";
@@ -67,8 +69,8 @@ builder.Services.AddReservoirDevTools(options =>
 
 // Configure Inlet with SignalR effect for real-time projection updates
 // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
-builder.Services.AddInletClient();
-builder.Services.AddInletBlazorSignalR(signalR => signalR
+reservoir.AddInletClient();
+reservoir.AddInletBlazorSignalR(signalR => signalR
     .WithHubPath("/hubs/inlet")
     .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
 await builder.Build().RunAsync();

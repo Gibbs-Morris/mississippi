@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.L0Tests.Helpers;
+using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client.L0Tests.Registrations;
@@ -22,7 +24,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act
         InletBlazorSignalRBuilder result = builder.AddProjectionFetcher<TestProjectionFetcher>();
@@ -39,7 +41,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act
         builder.Build();
@@ -58,7 +60,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act
         builder.Build();
@@ -77,7 +79,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
         builder.WithHubPath("/hubs/test");
 
         // Act
@@ -98,7 +100,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act
         builder.Build();
@@ -117,7 +119,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
         builder.AddProjectionFetcher<TestProjectionFetcher>();
 
         // Act
@@ -139,7 +141,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
         builder.ScanProjectionDtos(typeof(InletBlazorSignalRBuilderTests).Assembly);
 
         // Act
@@ -152,26 +154,27 @@ public sealed class InletBlazorSignalRBuilderTests
     }
 
     /// <summary>
-    ///     Constructor accepts non-null services.
+    ///     Constructor accepts non-null builder.
     /// </summary>
     [Fact]
-    public void ConstructorAcceptsNonNullServices()
+    public void ConstructorAcceptsNonNullBuilder()
     {
         // Arrange
         ServiceCollection services = new();
+        IReservoirBuilder reservoirBuilder = services.AddReservoir();
 
         // Act (should not throw)
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(reservoirBuilder);
 
         // Assert
         Assert.NotNull(builder);
     }
 
     /// <summary>
-    ///     Constructor throws ArgumentNullException when services is null.
+    ///     Constructor throws ArgumentNullException when builder is null.
     /// </summary>
     [Fact]
-    public void ConstructorThrowsWhenServicesIsNull()
+    public void ConstructorThrowsWhenBuilderIsNull()
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletBlazorSignalRBuilder(null!));
@@ -185,7 +188,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act
         InletBlazorSignalRBuilder result = builder.ScanProjectionDtos(typeof(InletBlazorSignalRBuilderTests).Assembly);
@@ -202,7 +205,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => builder.ScanProjectionDtos(null!));
@@ -216,7 +219,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act
         InletBlazorSignalRBuilder result = builder.WithHubPath("/hubs/inlet");
@@ -233,7 +236,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => builder.WithHubPath(null!));
@@ -247,7 +250,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => builder.WithHubPath("   "));
@@ -261,7 +264,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act
         InletBlazorSignalRBuilder result = builder.WithRoutePrefix("/api/projections");
@@ -278,7 +281,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => builder.WithRoutePrefix(null!));
@@ -292,7 +295,7 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Arrange
         ServiceCollection services = new();
-        InletBlazorSignalRBuilder builder = new(services);
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => builder.WithRoutePrefix(string.Empty));

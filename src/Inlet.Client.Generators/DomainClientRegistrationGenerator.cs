@@ -146,7 +146,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
-        sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
+        sb.AppendLine("using Mississippi.Reservoir.Abstractions;");
         sb.AppendLine();
         string[] usingNamespaces = models
             .SelectMany(m => m.AggregateNames.Select(name => $"{m.FeatureNamespace}.{name}Aggregate"))
@@ -180,28 +180,28 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine("    /// <summary>");
             sb.AppendLine($"    ///     Adds all generated client features for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
-            sb.AppendLine("    /// <param name=\"services\">The service collection.</param>");
-            sb.AppendLine("    /// <returns>The service collection for chaining.</returns>");
+            sb.AppendLine("    /// <param name=\"builder\">The Reservoir builder.</param>");
+            sb.AppendLine("    /// <returns>The Reservoir builder for chaining.</returns>");
             sb.AppendLine(
-                $"    public static IServiceCollection {model.DomainMethodName}(this IServiceCollection services)");
+                $"    public static IReservoirBuilder {model.DomainMethodName}(this IReservoirBuilder builder)");
             sb.AppendLine("    {");
-            sb.AppendLine("        ArgumentNullException.ThrowIfNull(services);");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(builder);");
             foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        services.Add{aggregate}AggregateFeature();");
+                sb.AppendLine($"        builder.Add{aggregate}AggregateFeature();");
             }
 
             foreach (string saga in model.SagaNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        services.Add{saga}SagaFeature();");
+                sb.AppendLine($"        builder.Add{saga}SagaFeature();");
             }
 
             if (model.IncludesProjections)
             {
-                sb.AppendLine("        services.AddProjectionsFeature();");
+                sb.AppendLine("        builder.AddProjectionsFeature();");
             }
 
-            sb.AppendLine("        return services;");
+            sb.AppendLine("        return builder;");
             sb.AppendLine("    }");
             sb.AppendLine();
         }
