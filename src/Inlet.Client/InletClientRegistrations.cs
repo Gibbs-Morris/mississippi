@@ -6,8 +6,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Reservoir.Abstractions;
-using Mississippi.Reservoir.Abstractions.State;
-using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Inlet.Client;
@@ -20,9 +18,9 @@ public static class InletClientRegistrations
     /// <summary>
     ///     Adds Inlet services to the service collection.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services" /> is null.</exception>
+    /// <param name="builder">The Reservoir builder.</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder" /> is null.</exception>
     /// <remarks>
     ///     <para>
     ///         This method registers the following services:
@@ -43,50 +41,38 @@ public static class InletClientRegistrations
     ///         Redux pattern. Access via <c>store.GetState&lt;ProjectionsFeatureState&gt;()</c>.
     ///     </para>
     /// </remarks>
-    public static IServiceCollection AddInletClient(
-        this IServiceCollection services
+    public static IReservoirBuilder AddInletClient(
+        this IReservoirBuilder builder
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(builder);
+        IServiceCollection services = builder.Services;
         services.TryAddSingleton<IProjectionRegistry, ProjectionRegistry>();
-
-        // Register the projections feature state
-        services.AddFeatureState<ProjectionsFeatureState>();
-
-        // Register the Store with DI-resolved components
-        services.TryAddSingleton(TimeProvider.System);
-        services.TryAddScoped<IStore>(sp => new Store(
-            sp.GetServices<IFeatureStateRegistration>(),
-            sp.GetServices<IMiddleware>(),
-            sp.GetRequiredService<TimeProvider>()));
-
-        // Register the composite InletStore (wraps Store)
+        builder.AddFeatureState<ProjectionsFeatureState>();
         services.TryAddScoped<IInletStore>(sp => new CompositeInletStore(sp.GetRequiredService<IStore>()));
-
-        // Register the projection notifier for dispatching updates
         services.TryAddScoped<IProjectionUpdateNotifier>(sp => new ProjectionNotifier(sp.GetRequiredService<IStore>()));
-        return services;
+        return builder;
     }
 
     /// <summary>
     ///     Registers a projection path.
     /// </summary>
     /// <typeparam name="T">The projection type.</typeparam>
-    /// <param name="services">The service collection.</param>
+    /// <param name="builder">The Reservoir builder.</param>
     /// <param name="path">The projection path.</param>
-    /// <returns>The service collection for chaining.</returns>
+    /// <returns>The builder for chaining.</returns>
     /// <exception cref="ArgumentNullException">
-    ///     Thrown when <paramref name="services" /> or <paramref name="path" /> is null.
+    ///     Thrown when <paramref name="builder" /> or <paramref name="path" /> is null.
     /// </exception>
-    public static IServiceCollection AddProjectionPath<T>(
-        this IServiceCollection services,
+    public static IReservoirBuilder AddProjectionPath<T>(
+        this IReservoirBuilder builder,
         string path
     )
         where T : class
     {
-        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(path);
-        services.AddSingleton<IConfigureProjectionRegistry>(new ProjectionPathRegistration<T>(path));
-        return services;
+        builder.Services.AddSingleton<IConfigureProjectionRegistry>(new ProjectionPathRegistration<T>(path));
+        return builder;
     }
 }

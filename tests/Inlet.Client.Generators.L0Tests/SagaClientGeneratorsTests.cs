@@ -516,7 +516,10 @@ public sealed class SagaClientGeneratorsTests
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("AddTransferSagaFeature", generatedCode, StringComparison.Ordinal);
         Assert.Contains("AddMapper<StartTransferSagaAction", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("AddActionEffect<TransferSagaState", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "feature.AddActionEffect<StartTransferSagaActionEffect>",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>

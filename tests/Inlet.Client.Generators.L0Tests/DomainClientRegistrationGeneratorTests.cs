@@ -114,10 +114,10 @@ public sealed class DomainClientRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains("AddTestAppDomainClient", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddMoneyTransferSagaFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("builder.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("builder.AddMoneyTransferSagaFeature();", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("SagaSagaFeature", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddProjectionsFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("builder.AddProjectionsFeature();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -142,6 +142,6 @@ public sealed class DomainClientRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains("AddCoreLogicClient", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("builder.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
     }
 }

@@ -11,7 +11,7 @@ using Mississippi.Inlet.Client.Abstractions;
 using Mississippi.Inlet.Client.Abstractions.State;
 using Mississippi.Inlet.Client.ActionEffects;
 using Mississippi.Inlet.Client.SignalRConnection;
-using Mississippi.Reservoir.Core;
+using Mississippi.Reservoir.Abstractions;
 
 
 namespace Mississippi.Inlet.Client;
@@ -22,6 +22,8 @@ namespace Mississippi.Inlet.Client;
 public sealed class InletBlazorSignalRBuilder
 {
     private readonly List<Assembly> assembliesToScan = [];
+
+    private readonly IReservoirBuilder reservoirBuilder;
 
     private InletSignalRActionEffectOptions options = new();
 
@@ -34,13 +36,14 @@ public sealed class InletBlazorSignalRBuilder
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletBlazorSignalRBuilder" /> class.
     /// </summary>
-    /// <param name="services">The service collection.</param>
+    /// <param name="builder">The Reservoir builder.</param>
     public InletBlazorSignalRBuilder(
-        IServiceCollection services
+        IReservoirBuilder builder
     )
     {
-        ArgumentNullException.ThrowIfNull(services);
-        Services = services;
+        ArgumentNullException.ThrowIfNull(builder);
+        reservoirBuilder = builder;
+        Services = builder.Services;
     }
 
     private IServiceCollection Services { get; }
@@ -157,11 +160,8 @@ public sealed class InletBlazorSignalRBuilder
         // Store resolves IActionEffect[] → InletSignalRActionEffect needs Store.
         // By using Lazy<IInletStore>, the effect defers resolution until first use.
         Services.TryAddScoped<Lazy<IInletStore>>(sp => new(() => sp.GetRequiredService<IInletStore>()));
-
-        // Register the Inlet connection feature state and SignalR effect
-        Services.AddActionEffect<InletConnectionState, InletSignalRActionEffect>();
-
-        // Register the SignalR connection feature (state, reducers, and lifecycle effect)
-        Services.AddSignalRConnectionFeature();
+        reservoirBuilder.AddFeatureState<InletConnectionState>(feature => feature
+            .AddActionEffect<InletSignalRActionEffect>());
+        reservoirBuilder.AddSignalRConnectionFeature();
     }
 }
