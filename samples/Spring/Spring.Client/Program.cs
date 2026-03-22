@@ -40,7 +40,6 @@ builder.Services.AddScoped(sp =>
     };
 });
 #pragma warning restore IDISP014
-
 IReservoirBuilder reservoir = builder.AddReservoir();
 
 // Register features (one line per feature - scales cleanly)
