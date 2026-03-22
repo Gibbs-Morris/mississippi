@@ -538,7 +538,7 @@
         "type": "Project",
         "dependencies": {
           "Azure.Storage.Blobs": "[12.27.0, )",
-          "Microsoft.Azure.Cosmos": "[3.57.1, )",
+          "Microsoft.Azure.Cosmos": "[3.58.0, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[10.0.5, )",
           "Microsoft.Extensions.Options": "[10.0.5, )",
           "Mississippi.Brooks.Runtime.Storage.Abstractions": "[1.0.0, )",
@@ -575,7 +575,7 @@
       "Mississippi.Common.Runtime.Storage.Cosmos": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Azure.Cosmos": "[3.57.1, )",
+          "Microsoft.Azure.Cosmos": "[3.58.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.5, )",
           "Mississippi.Common.Runtime.Storage.Abstractions": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.4, )"
@@ -674,7 +674,7 @@
       "Mississippi.Tributary.Runtime.Storage.Cosmos": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Azure.Cosmos": "[3.57.1, )",
+          "Microsoft.Azure.Cosmos": "[3.58.0, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[10.0.5, )",
           "Microsoft.Extensions.Options": "[10.0.5, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )",
@@ -701,9 +701,9 @@
       },
       "Microsoft.Azure.Cosmos": {
         "type": "CentralTransitive",
-        "requested": "[3.57.1, )",
-        "resolved": "3.57.1",
-        "contentHash": "UBUJCYPDILU9vjyHKqRlFnC5IhSvDHNB6Q0+FsD7/6Y25N+CIs65grxf6vI+PDaK8yiE6CcIS+YDWK1h4MYalg==",
+        "requested": "[3.58.0, )",
+        "resolved": "3.58.0",
+        "contentHash": "YuqS7w7URMizfavitu2wBz51n5JhlBZlFEUD01JMqYf9JWpKA2DS/JuJYdmM+/Hov3fmpxeP41ONi8IY1J22Ew==",
         "dependencies": {
           "Azure.Core": "1.44.1",
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
