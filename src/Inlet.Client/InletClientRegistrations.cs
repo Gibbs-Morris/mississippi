@@ -16,7 +16,7 @@ namespace Mississippi.Inlet.Client;
 public static class InletClientRegistrations
 {
     /// <summary>
-    ///     Adds Inlet services to the service collection.
+    ///     Adds Inlet client services to the Reservoir builder for fluent configuration.
     /// </summary>
     /// <param name="builder">The Reservoir builder.</param>
     /// <returns>The builder for chaining.</returns>
