@@ -83,12 +83,13 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
             stagedServices.Add(descriptor);
         }
 
-        int baselineCount = stagedServices.Count;
         ReservoirBuilderRegistrations.AddFeatureState<TState>(stagedServices);
         configure(new ReservoirFeatureBuilder<TState>(stagedServices));
-        for (int descriptorIndex = baselineCount; descriptorIndex < stagedServices.Count; descriptorIndex++)
+
+        Services.Clear();
+        foreach (ServiceDescriptor descriptor in stagedServices)
         {
-            Services.Add(stagedServices[descriptorIndex]);
+            Services.Add(descriptor);
         }
     }
 }

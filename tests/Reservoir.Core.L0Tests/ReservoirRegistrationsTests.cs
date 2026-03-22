@@ -23,6 +23,8 @@ public sealed class ReservoirRegistrationsTests
     /// </summary>
     private sealed record TestAction : IAction;
 
+    private interface IMarker;
+
     /// <summary>
     ///     Test action effect implementation.
     /// </summary>
@@ -62,6 +64,10 @@ public sealed class ReservoirRegistrationsTests
                 Counter = state.Counter + 1,
             };
     }
+
+    private sealed class ExistingMarker : IMarker;
+
+    private sealed class InsertedMarker : IMarker;
 
     /// <summary>
     ///     Test feature state for unit tests.
@@ -164,6 +170,37 @@ public sealed class ReservoirRegistrationsTests
         Assert.Empty(provider.GetServices<IActionReducer<TestFeatureState>>());
         Assert.Empty(provider.GetServices<IFeatureStateRegistration>());
         Assert.Null(provider.GetService<IRootReducer<TestFeatureState>>());
+    }
+
+    /// <summary>
+    ///     AddFeatureState with callback should preserve advanced service mutations when configuration succeeds.
+    /// </summary>
+    [Fact]
+    public void AddFeatureStateWithCallbackPreservesAdvancedServiceMutations()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        TimeProvider replacementTimeProvider = new FakeTimeProvider();
+        services.AddSingleton<IMarker, ExistingMarker>();
+        IReservoirBuilder builder = services.AddReservoir();
+
+        // Act
+        builder.AddFeatureState<TestFeatureState>(feature =>
+        {
+            ServiceDescriptor existingMarkerDescriptor = feature.Services.Single(descriptor =>
+                descriptor.ServiceType == typeof(IMarker) && descriptor.ImplementationType == typeof(ExistingMarker));
+            feature.Services.Remove(existingMarkerDescriptor);
+            feature.Services.Insert(0, ServiceDescriptor.Singleton<IMarker, InsertedMarker>());
+            feature.Services.Replace(ServiceDescriptor.Singleton(replacementTimeProvider));
+        });
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Assert
+        Assert.Same(replacementTimeProvider, provider.GetRequiredService<TimeProvider>());
+        IMarker[] markers = [.. provider.GetServices<IMarker>()];
+        Assert.Single(markers);
+        Assert.IsType<InsertedMarker>(markers[0]);
     }
 
     /// <summary>
