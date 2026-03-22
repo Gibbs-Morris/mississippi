@@ -3,55 +3,82 @@ id: inlet-getting-started
 title: Inlet Getting Started
 sidebar_label: Getting Started
 sidebar_position: 1
-description: Start with Inlet by confirming that your question is about generated cross-layer alignment rather than one subsystem in isolation.
+description: Start with Inlet by composing its client registrations on top of the Reservoir builder.
 ---
 
 # Inlet Getting Started
 
-## Outcome
+## Overview
 
-Use this page to confirm whether Inlet is the correct subsystem and which package boundary to inspect first.
+Use this page when you need the first verified Inlet client startup path.
 
-## What You Will Achieve
+For Blazor clients, Inlet now composes on top of `IReservoirBuilder`. The verified startup pattern is:
 
-By the end of this page, you should know whether your question belongs to generated client, gateway, and runtime alignment or whether it really belongs to Aqueduct, Reservoir, or Domain Modeling directly.
+- create the Reservoir builder with `AddReservoir()`
+- add Inlet client registrations on that builder
+- optionally add SignalR-based projection synchronization through `AddInletBlazorSignalR(...)`
 
-## Before You Begin
+## First Working Setup
 
-- Read the [Inlet overview](../index.md).
-- Read [Aqueduct](../../aqueduct/index.md) if the question may actually be only about the backplane.
+This example matches the public Inlet client extensions and the Spring sample startup on this branch.
 
-## First Verified Success
+```csharp
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
-1. Read the [Inlet overview](../index.md) and confirm the problem spans client, gateway, and runtime surfaces together.
-2. Open [Inlet Reference](../reference/reference.md) and identify which package boundary matches the work.
-3. If you need a verified end-to-end path immediately, continue into the [Spring Sample](../../samples/spring-sample/index.md).
+using Mississippi.Inlet.Client;
+using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Client;
 
-## Choose Your Starting Point
 
-- Start with `Mississippi.Inlet.Abstractions` for shared projection-path and metadata contracts.
-- Start with `Mississippi.Inlet.Client` when the concern is generated client-side projection support.
-- Start with `Mississippi.Inlet.Gateway` when the concern is generated gateway APIs or SignalR delivery support.
-- Start with `Mississippi.Inlet.Runtime` when the concern is runtime registration and generated silo wiring.
+WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
+IReservoirBuilder reservoir = builder.AddReservoir();
 
-## Verify You Are In The Right Section
+reservoir.AddInletClient();
+reservoir.AddInletBlazorSignalR(signalR => signalR
+    .WithHubPath("/hubs/inlet")
+    .ScanProjectionDtos(typeof(MyProjectionDto).Assembly));
+```
 
-- Stay in Inlet when the concern is cross-layer alignment driven by source generation and runtime wiring.
-- Move to [Aqueduct](../../aqueduct/index.md), [Reservoir](../../reservoir/index.md), or [Domain Modeling](../../domain-modeling/index.md) when the issue is isolated to one of those layers.
+The builder-based receiver is verified in:
 
-## Verify The Result
+- [InletClientRegistrations.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletClientRegistrations.cs)
+- [InletBlazorRegistrations.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorRegistrations.cs)
+- [InletBlazorSignalRBuilder.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletBlazorSignalRBuilder.cs)
 
-- You should be able to state whether the issue is truly cross-layer or whether it belongs to one subsystem in isolation.
+## What Inlet Adds To The Reservoir Builder
 
-## Current Scope
+The verified client-side extensions are:
 
-This page covers package selection and subsystem orientation. For a runnable end-to-end example that uses Inlet generation, see the [Spring sample](../../samples/spring-sample/index.md).
+- `AddInletClient()` to register projection state, projection registry support, and the client store adapter
+- `AddProjectionPath<T>(path)` to register explicit projection-path mappings
+- `AddInletBlazor()` for Blazor-specific client composition points
+- `AddInletBlazorSignalR(...)` to configure SignalR-driven projection refresh
+
+## Generated Client Composition
+
+Inlet client generators now emit builder-based registration methods.
+
+Depending on the generated surface for a domain, those methods can include:
+
+- `Add{Aggregate}AggregateFeature()`
+- `Add{Saga}SagaFeature()`
+- `AddProjectionsFeature()`
+- `Add{Domain}Client()`
+
+All of those generated client methods extend `IReservoirBuilder`.
+
+## When To Stay In Inlet
+
+Stay in Inlet when the concern is alignment across client fetch, projection metadata, generated registrations, SignalR notifications, and projection DTO discovery.
+
+Move to [Reservoir](../../reservoir/index.md) when the issue is only about client-state composition and not about projection delivery or generated cross-layer alignment.
 
 ## Summary
 
-Inlet is the correct entry point when the problem spans client, gateway, and runtime surfaces together.
+Inlet client startup now begins on the Reservoir builder. Create `IReservoirBuilder` with `AddReservoir()`, then compose Inlet client, projection, and SignalR registrations on that builder.
 
 ## Next Steps
 
-- Read [Inlet Concepts](../concepts/concepts.md).
-- Use [Inlet Reference](../reference/reference.md) for the currently verified package surface.
+- Read [Inlet How To](../how-to/how-to.md) for a full builder-composition walkthrough.
+- Use [Inlet Reference](../reference/reference.md) for the exact public and generated registration surface.
+- Continue into the [Spring Sample](../../samples/spring-sample/index.md) for a verified end-to-end client example.

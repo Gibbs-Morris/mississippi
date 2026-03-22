@@ -56,8 +56,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
         where TState : class, IFeatureState, new()
     {
         ArgumentNullException.ThrowIfNull(configure);
-        ReservoirBuilderRegistrations.AddFeatureState<TState>(Services);
-        configure(new ReservoirFeatureBuilder<TState>(Services));
+        AddFeatureStateTransactionally(configure);
         return this;
     }
 
@@ -71,5 +70,26 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     {
         ReservoirBuilderRegistrations.AddMiddleware<TMiddleware>(Services);
         return this;
+    }
+
+    private void AddFeatureStateTransactionally<TState>(
+        Action<IReservoirFeatureBuilder<TState>> configure
+    )
+        where TState : class, IFeatureState, new()
+    {
+        IServiceCollection stagedServices = new ServiceCollection();
+        foreach (ServiceDescriptor descriptor in Services)
+        {
+            stagedServices.Add(descriptor);
+        }
+
+        int baselineCount = stagedServices.Count;
+        ReservoirBuilderRegistrations.AddFeatureState<TState>(stagedServices);
+        configure(new ReservoirFeatureBuilder<TState>(stagedServices));
+
+        for (int descriptorIndex = baselineCount; descriptorIndex < stagedServices.Count; descriptorIndex++)
+        {
+            Services.Add(stagedServices[descriptorIndex]);
+        }
     }
 }

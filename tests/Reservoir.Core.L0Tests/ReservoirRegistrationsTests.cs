@@ -137,6 +137,39 @@ public sealed class ReservoirRegistrationsTests
     }
 
     /// <summary>
+    ///     AddFeatureState with callback should leave services unchanged when configuration throws.
+    /// </summary>
+    [Fact]
+    public void AddFeatureStateWithCallbackDoesNotMutateServicesWhenConfigurationThrows()
+    {
+        // Arrange
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        int baselineCount = services.Count;
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => builder.AddFeatureState<TestFeatureState>(feature =>
+        {
+            feature.AddReducer<TestAction>(static (
+                state,
+                _
+            ) => state with
+            {
+                Counter = state.Counter + 1,
+            });
+
+            throw new InvalidOperationException("Boom");
+        }));
+
+        Assert.Equal(baselineCount, services.Count);
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Empty(provider.GetServices<IActionReducer<TestFeatureState>>());
+        Assert.Empty(provider.GetServices<IFeatureStateRegistration>());
+        Assert.Null(provider.GetService<IRootReducer<TestFeatureState>>());
+    }
+
+    /// <summary>
     ///     AddMiddleware should register middleware in DI.
     /// </summary>
     [Fact]

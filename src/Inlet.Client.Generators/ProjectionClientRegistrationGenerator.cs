@@ -127,7 +127,7 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
         sb.AppendLine("        this IReservoirBuilder builder");
         sb.AppendLine("    )");
         sb.AppendLine("    {");
-        sb.AppendLine("        ArgumentNullException.ThrowIfNull(builder);");
+        sb.AppendLine("        global::System.ArgumentNullException.ThrowIfNull(builder);");
         sb.AppendLine("        builder.AddFeatureState<ProjectionsFeatureState>(feature =>");
         sb.AppendLine("        {");
         projectionDtos.Select(dto => dto.TypeName)

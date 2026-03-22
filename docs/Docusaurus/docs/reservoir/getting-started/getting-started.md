@@ -3,55 +3,93 @@ id: reservoir-getting-started
 title: Reservoir Getting Started
 sidebar_label: Getting Started
 sidebar_position: 1
-description: Start with Reservoir by confirming that your question is about the client-state model rather than only UI composition.
+description: Start with Reservoir by creating a Reservoir builder and composing feature registrations on top of it.
 ---
 
 # Reservoir Getting Started
 
-## Outcome
+## Overview
 
-Use this page to confirm whether Reservoir is the correct subsystem and which package boundary to inspect first.
+Use this page when you need the first verified Reservoir startup path.
 
-## What You Will Achieve
+Reservoir now starts from a builder-based registration model. The first successful outcome is creating an `IReservoirBuilder` with `AddReservoir()` and then composing feature registrations on that builder.
 
-By the end of this page, you should know whether your question is about stores, reducers, selectors, effects, or middleware and whether the active or archived Reservoir material is the better next stop.
+## First Working Setup
 
-## Before You Begin
+This example shows the current Blazor WebAssembly entry point verified in Reservoir and sample code.
+
+```csharp
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+
+using Mississippi.Reservoir.Abstractions;
+using Mississippi.Reservoir.Client;
+using Mississippi.Reservoir.Client.BuiltIn;
+
+
+WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
+IReservoirBuilder reservoir = builder.AddReservoir();
+
+reservoir.AddReservoirBlazorBuiltIns();
+reservoir.AddReservoirDevTools();
+```
+
+This startup shape is verified by the public [ReservoirWebAssemblyHostBuilderRegistrations.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReservoirWebAssemblyHostBuilderRegistrations.cs) entry point and by the [LightSpeed client startup](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/LightSpeed/LightSpeed.Client/Program.cs).
+
+## Builder Entry Points
+
+Reservoir exposes two verified entry points that both produce the same public builder contract:
+
+- `services.AddReservoir()` when startup code begins from an `IServiceCollection`
+- `builder.AddReservoir()` when startup code begins from a `WebAssemblyHostBuilder`
+
+Both return `IReservoirBuilder`. That builder is the public composition surface for Reservoir client packages and related packages such as Inlet.
+
+Source code:
+
+- [ReservoirRegistrations.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/ReservoirRegistrations.cs)
+- [ReservoirWebAssemblyHostBuilderRegistrations.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/ReservoirWebAssemblyHostBuilderRegistrations.cs)
+
+## What To Add On The Builder
+
+After creating the builder, compose one line per concern:
+
+- feature state registrations through `AddFeatureState<TState>(...)`
+- built-in client features through `AddReservoirBlazorBuiltIns()`, `AddBuiltInNavigation()`, or `AddBuiltInLifecycle()`
+- DevTools through `AddReservoirDevTools(...)`
+- Inlet client registrations through `AddInletClient()` and `AddInletBlazorSignalR(...)`
+
+This is the direction of the public registration model going forward. The builder keeps host startup readable while letting each package add only its own registrations.
+
+## Feature Configuration
+
+This example shows the feature-level builder used inside `AddFeatureState<TState>(...)`.
+
+```csharp
+reservoir.AddFeatureState<MyFeatureState>(feature => feature
+    .AddReducer<MyAction>(MyReducers.Reduce)
+    .AddActionEffect<MyActionEffect>());
+```
+
+The callback receives `IReservoirFeatureBuilder<TState>`, which is the public feature-scoped surface for reducers and action effects.
+
+Source code:
+
+- [IReservoirBuilder.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IReservoirBuilder.cs)
+- [IReservoirFeatureBuilder.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IReservoirFeatureBuilder.cs)
+
+## When To Stay In Reservoir
 
 - Read the [Reservoir overview](../index.md).
 - Read [Refraction](../../refraction/index.md) if the UI layer boundary is still unclear.
 
-## First Verified Success
-
-1. Read the [Reservoir overview](../index.md) and confirm the question is about state transitions, reducers, selectors, effects, middleware, or testing.
-2. Open [Reservoir Reference](../reference/reference.md) and identify the package boundary that matches the work.
-3. If you need deeper preserved material immediately, jump to [Archived Reservoir Docs](../../archived/client-state-management/reservoir.md).
-
-## Choose Your Starting Point
-
-- Start with `Mississippi.Reservoir.Abstractions` when you need the core state-management contracts.
-- Start with `Mississippi.Reservoir.Core` when the question is about the store, actions, reducers, selectors, effects, or middleware.
-- Start with `Mississippi.Reservoir.Client` when the question is about client integration.
-- Start with `Mississippi.Reservoir.TestHarness` when the question is about testing Reservoir-based code.
-
-## Verify You Are In The Right Section
-
-- Stay in Reservoir when the concern is the state-management model itself.
-- Move to [Refraction](../../refraction/index.md) when the concern is primarily the Blazor UX contract.
-
-## Verify The Result
-
-- You should be able to identify the correct Reservoir package or conclude that the issue belongs in Refraction instead.
-
-## Current Scope
-
-This page covers package selection and subsystem orientation. For detailed Reservoir guidance including testing and API reference, see the [archived Reservoir material](../../archived/client-state-management/reservoir.md).
+Stay in Reservoir when the concern is the state-management model itself: store behavior, feature state, reducers, effects, middleware, built-in client features, or the builder surface that composes them.
 
 ## Summary
 
-Reservoir is the correct entry point when the problem is the client-state model rather than the UI component contract.
+Reservoir startup now begins by creating `IReservoirBuilder` with `AddReservoir()` and composing feature registrations on that builder.
 
 ## Next Steps
 
-- Read [Reservoir Concepts](../concepts/concepts.md).
-- Use [Archived Reservoir Docs](../../archived/client-state-management/reservoir.md) for preserved deep material.
+- Read [Reservoir Concepts](../concepts/concepts.md) for the top-level builder and feature-builder mental model.
+- Read [Reservoir Reference](../reference/reference.md) for the exact public registration surface.
+- Use [Inlet Getting Started](../../inlet/getting-started/getting-started.md) if the next step is client sync on top of Reservoir.
