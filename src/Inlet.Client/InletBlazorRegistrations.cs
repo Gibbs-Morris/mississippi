@@ -31,7 +31,7 @@ public static class InletBlazorRegistrations
     }
 
     /// <summary>
-    ///     Adds Inlet Blazor SignalR services to the service collection.
+    ///     Adds Inlet Blazor SignalR services to the Reservoir builder.
     /// </summary>
     /// <param name="builder">The Reservoir builder.</param>
     /// <param name="configure">Optional configuration for the builder.</param>
