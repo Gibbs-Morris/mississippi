@@ -1,10 +1,7 @@
+---
 name: "cs Reviewer Strategic"
 description: "Clean Squad code reviewer focused on architecture, design patterns, and big-picture concerns. Evaluates whether the implementation serves the long-term health of the system."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: reviewer-strategic
-  workflow: chain-of-verification
 ---
 
 # cs Reviewer Strategic

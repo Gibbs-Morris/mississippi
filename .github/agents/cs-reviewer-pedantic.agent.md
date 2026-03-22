@@ -1,10 +1,7 @@
+---
 name: "cs Reviewer Pedantic"
 description: "Clean Squad code reviewer with extreme attention to detail. Scrutinizes naming, formatting, consistency, and micro-level code quality."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: reviewer-pedantic
-  workflow: chain-of-verification
 ---
 
 # cs Reviewer Pedantic

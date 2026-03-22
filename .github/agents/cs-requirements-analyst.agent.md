@@ -1,10 +1,7 @@
+---
 name: "cs Requirements Analyst"
 description: "Clean Squad sub-agent that performs deep requirements analysis, identifies gaps in discovered requirements, and suggests adaptive follow-up questions."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: requirements-analyst
-  workflow: chain-of-verification
 ---
 
 # cs Requirements Analyst

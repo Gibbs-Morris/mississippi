@@ -1,10 +1,7 @@
+---
 name: "cs ADR Keeper"
 description: "Clean Squad sub-agent that identifies and records Architecture Decision Records using the Nygard template. Maintains the decision trail throughout the SDLC."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: adr-keeper
-  workflow: chain-of-verification
 ---
 
 # cs ADR Keeper

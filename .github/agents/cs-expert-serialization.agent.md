@@ -1,10 +1,7 @@
+---
 name: "cs Expert Serialization"
 description: "Clean Squad domain expert for serialization formats, wire protocols, schema evolution, and data interchange. Evaluates versioning, compatibility, and performance of data formats."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: expert-serialization
-  workflow: chain-of-verification
 ---
 
 # cs Expert Serialization

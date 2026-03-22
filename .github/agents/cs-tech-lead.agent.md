@@ -1,10 +1,7 @@
+---
 name: "cs Tech Lead"
 description: "Clean Squad sub-agent providing technical leadership perspective in Three Amigos and planning phases. Focuses on feasibility, risks, architecture constraints, and technology choices."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: tech-lead
-  workflow: chain-of-verification
 ---
 
 # cs Tech Lead

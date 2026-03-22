@@ -1,10 +1,7 @@
+---
 name: "cs Expert Distributed"
 description: "Clean Squad domain expert for distributed systems, consistency models, consensus protocols, and Orleans virtual actor patterns."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: expert-distributed
-  workflow: chain-of-verification
 ---
 
 # cs Expert Distributed

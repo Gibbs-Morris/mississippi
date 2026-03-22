@@ -1,10 +1,7 @@
+---
 name: "cs Expert UX"
 description: "Clean Squad domain expert for user experience design. Evaluates user journeys, accessibility, interaction design, and developer experience from an end-user perspective."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: expert-ux
-  workflow: chain-of-verification
 ---
 
 # cs Expert UX

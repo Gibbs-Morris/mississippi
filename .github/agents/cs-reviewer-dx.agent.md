@@ -1,10 +1,7 @@
+---
 name: "cs Reviewer DX"
 description: "Clean Squad code reviewer focused on developer experience. Evaluates API ergonomics, discoverability, documentation, and how intuitive the code is for consumers."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: reviewer-dx
-  workflow: chain-of-verification
 ---
 
 # cs Reviewer DX

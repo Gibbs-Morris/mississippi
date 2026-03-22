@@ -1,10 +1,7 @@
+---
 name: "cs Solution Architect"
 description: "Clean Squad sub-agent that designs solution architecture with component design, technology choices, data flow, and integration points. Produces architecture documents with Minto Pyramid structure."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: solution-architect
-  workflow: chain-of-verification
 ---
 
 # cs Solution Architect

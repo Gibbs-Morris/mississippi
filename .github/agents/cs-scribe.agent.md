@@ -1,10 +1,7 @@
+---
 name: "cs Scribe"
 description: "Clean Squad sub-agent that records thinking, decisions, reasoning, and handovers in the .thinking folder. Maintains the decision trail and ensures institutional knowledge is captured."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: scribe
-  workflow: chain-of-verification
 ---
 
 # cs Scribe

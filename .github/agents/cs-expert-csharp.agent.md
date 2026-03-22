@@ -1,10 +1,7 @@
+---
 name: "cs Expert CSharp"
 description: "Clean Squad domain expert for C# language idioms, .NET runtime behavior, and framework conventions. Challenges designs from a C#-native perspective."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: expert-csharp
-  workflow: chain-of-verification
 ---
 
 # cs Expert CSharp

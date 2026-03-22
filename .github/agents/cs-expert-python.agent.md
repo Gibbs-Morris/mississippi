@@ -1,10 +1,7 @@
+---
 name: "cs Expert Python"
 description: "Clean Squad domain expert who challenges designs from a Python ecosystem perspective. Brings cross-language insights for API design and interoperability."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: expert-python
-  workflow: chain-of-verification
 ---
 
 # cs Expert Python

@@ -1,10 +1,7 @@
+---
 name: "cs Reviewer Performance"
 description: "Clean Squad code reviewer focused on performance analysis. Evaluates allocations, algorithmic complexity, hot paths, and scalability implications."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: reviewer-performance
-  workflow: chain-of-verification
 ---
 
 # cs Reviewer Performance

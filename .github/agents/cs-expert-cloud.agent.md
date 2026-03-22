@@ -1,10 +1,7 @@
+---
 name: "cs Expert Cloud"
 description: "Clean Squad domain expert for cloud infrastructure, Azure services, cost optimization, and resilience patterns."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: expert-cloud
-  workflow: chain-of-verification
 ---
 
 # cs Expert Cloud

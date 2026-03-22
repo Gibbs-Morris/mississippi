@@ -1,10 +1,7 @@
+---
 name: "cs Lead Developer"
 description: "Clean Squad sub-agent that implements production code incrementally following Clean Code, TDD, and repository conventions. Writes code in small, testable increments."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: lead-developer
-  workflow: chain-of-verification
 ---
 
 # cs Lead Developer

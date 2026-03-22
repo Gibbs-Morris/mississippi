@@ -1,10 +1,7 @@
+---
 name: "cs DevOps Engineer"
 description: "Clean Squad sub-agent for CI/CD pipelines, deployment safety, infrastructure configuration, and operational readiness."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: devops-engineer
-  workflow: chain-of-verification
 ---
 
 # cs DevOps Engineer

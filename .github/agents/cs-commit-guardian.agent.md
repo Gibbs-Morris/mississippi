@@ -1,10 +1,7 @@
+---
 name: "cs Commit Guardian"
 description: "Clean Squad sub-agent that enforces commit discipline — atomic changes, meaningful messages, passing builds, and clean diffs."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: commit-guardian
-  workflow: chain-of-verification
 ---
 
 # cs Commit Guardian

@@ -1,10 +1,7 @@
+---
 name: "cs Test Engineer"
 description: "Clean Squad sub-agent specializing in test design, coverage analysis, and mutation testing. Creates deterministic, comprehensive tests across L0/L1/L2 levels."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: test-engineer
-  workflow: chain-of-verification
 ---
 
 # cs Test Engineer

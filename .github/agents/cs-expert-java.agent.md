@@ -1,10 +1,7 @@
+---
 name: "cs Expert Java"
 description: "Clean Squad domain expert who challenges designs from a Java/JVM ecosystem perspective. Brings enterprise pattern insights and type-safety perspectives."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: expert-java
-  workflow: chain-of-verification
 ---
 
 # cs Expert Java

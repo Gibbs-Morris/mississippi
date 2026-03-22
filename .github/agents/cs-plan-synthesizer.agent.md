@@ -1,10 +1,7 @@
+---
 name: "cs Plan Synthesizer"
 description: "Clean Squad sub-agent that synthesizes feedback from multiple plan review personas into a prioritized, deduplicated action list using MoSCoW categorization."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: plan-synthesizer
-  workflow: chain-of-verification
 ---
 
 # cs Plan Synthesizer

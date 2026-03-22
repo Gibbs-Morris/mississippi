@@ -1,12 +1,7 @@
+---
 name: "cs Product Owner"
 description: "Clean Squad entry point. Takes an idea through the full SDLC — discovery, Three Amigos, architecture, planning, implementation, review, QA, and PR — by orchestrating 28 specialist sub-agents. The only agent that interacts directly with the human user."
 user-invocable: true
-metadata:
-  family: clean-squad
-  role: orchestrator
-  workflow: full-sdlc
-  entry_point: true
-  repo_url: https://github.com/Gibbs-Morris/mississippi/
 ---
 
 # cs Product Owner

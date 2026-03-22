@@ -1,10 +1,7 @@
+---
 name: "cs Reviewer Security"
 description: "Clean Squad code reviewer specialized in security analysis. Reviews for OWASP Top 10, injection attacks, data exposure, and authentication/authorization issues."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: reviewer-security
-  workflow: chain-of-verification
 ---
 
 # cs Reviewer Security

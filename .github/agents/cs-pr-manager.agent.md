@@ -1,10 +1,7 @@
+---
 name: "cs PR Manager"
 description: "Clean Squad sub-agent managing the full PR lifecycle — creation, description authoring, review thread handling, merge readiness checks, and the 10-minute review timing rule."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: pr-manager
-  workflow: chain-of-verification
 ---
 
 # cs PR Manager

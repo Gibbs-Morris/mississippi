@@ -1,10 +1,7 @@
+---
 name: "cs C4 Diagrammer"
 description: "Clean Squad sub-agent specializing in C4 model architecture diagrams. Produces Context, Container, and Component diagrams using Mermaid syntax."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: c4-diagrammer
-  workflow: chain-of-verification
 ---
 
 # cs C4 Diagrammer

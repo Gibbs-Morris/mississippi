@@ -1,10 +1,7 @@
+---
 name: "cs QA Exploratory"
 description: "Clean Squad sub-agent specializing in exploratory testing. Discovers unexpected scenarios, boundary conditions, and creative failure modes that structured testing misses."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: qa-exploratory
-  workflow: chain-of-verification
 ---
 
 # cs QA Exploratory

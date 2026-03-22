@@ -1,10 +1,7 @@
+---
 name: "cs Business Analyst"
 description: "Clean Squad sub-agent providing the Product/Business perspective in Three Amigos sessions. Focuses on user value, acceptance criteria, and business rules."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: business-analyst
-  workflow: chain-of-verification
 ---
 
 # cs Business Analyst

@@ -1,10 +1,7 @@
+---
 name: "cs QA Analyst"
 description: "Clean Squad sub-agent providing the Quality perspective in Three Amigos sessions. Focuses on testability, edge cases, failure scenarios, and shift-left quality strategy."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: qa-analyst
-  workflow: chain-of-verification
 ---
 
 # cs QA Analyst

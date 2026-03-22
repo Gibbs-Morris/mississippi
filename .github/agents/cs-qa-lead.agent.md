@@ -1,10 +1,7 @@
+---
 name: "cs QA Lead"
 description: "Clean Squad sub-agent providing strategic QA leadership. Owns test strategy, validates coverage gates, coordinates shift-left testing, and ensures quality standards are met."
 user-invocable: false
-metadata:
-  family: clean-squad
-  role: qa-lead
-  workflow: chain-of-verification
 ---
 
 # cs QA Lead
