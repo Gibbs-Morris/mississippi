@@ -43,7 +43,7 @@ step?
 
 ---
 
-## The CoVe Process: Four Steps
+## Key-Line 1: The Four-Step Process
 
 ### Step 1 — Generate Baseline Response (Draft)
 
@@ -125,9 +125,7 @@ measurably fewer hallucinated claims.
 
 ---
 
-## Key-Line Arguments
-
-### 1. Independence Is the Critical Factor
+## Key-Line 2: Independence Is the Critical Factor
 
 The most important design decision in CoVe is that verification answers must be
 produced independently of the draft. When the model verifies claims while still
@@ -135,7 +133,7 @@ produced independently of the draft. When the model verifies claims while still
 Factored verification — where each question is answered in its own prompt — is
 the most effective variant precisely because it eliminates this conditioning.
 
-### 2. CoVe Is Domain-Agnostic
+## Key-Line 3: CoVe Is Domain-Agnostic
 
 The paper demonstrates CoVe across three distinct task types:
 
@@ -148,7 +146,7 @@ The paper demonstrates CoVe across three distinct task types:
 
 This breadth shows the method is not specific to a single kind of output.
 
-### 3. CoVe Requires No External Tools
+## Key-Line 4: CoVe Requires No External Tools
 
 CoVe is a purely prompt-based technique. It does not require:
 
@@ -161,7 +159,7 @@ The model uses its own knowledge, accessed through a different prompting pathway
 to verify itself. This makes CoVe deployable immediately with any sufficiently
 capable LLM.
 
-### 4. Practical Application in Software Engineering
+## Key-Line 5: Practical Application in Software Engineering
 
 CoVe has been adapted for software engineering agent workflows. In this
 repository, the CoV pattern is used systematically:

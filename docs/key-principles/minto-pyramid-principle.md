@@ -1,5 +1,9 @@
 # The Minto Pyramid Principle
 
+**This document explains the Minto Pyramid format and is intentionally not
+written in that format itself, since it serves as the meta-reference that
+defines the structure all other documents follow.**
+
 ## What It Is
 
 The Minto Pyramid Principle is a structured communication framework developed by
