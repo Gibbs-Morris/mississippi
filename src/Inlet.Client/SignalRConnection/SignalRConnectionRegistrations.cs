@@ -11,7 +11,7 @@ namespace Mississippi.Inlet.Client.SignalRConnection;
 public static class SignalRConnectionRegistrations
 {
     /// <summary>
-    ///     Adds the SignalR connection feature to the service collection.
+    ///     Adds the SignalR connection feature to the Reservoir builder.
     /// </summary>
     /// <param name="builder">The Reservoir builder.</param>
     /// <returns>The builder for chaining.</returns>
