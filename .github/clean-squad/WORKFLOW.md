@@ -51,6 +51,7 @@ All agents share state through a filesystem folder:
 .thinking/
   <YYYY-MM-DD>-<task-slug>/        # One subfolder per task
     state.json                      # Workflow state (current phase, status)
+    activity-log.md                 # Start/progress/blocker/completion log
     00-intake.md                    # Initial request & context
     01-discovery/
       questions-round-01.md         # First group of 5 questions + answers
@@ -107,6 +108,21 @@ All agents share state through a filesystem folder:
     handover-log.md                 # All agent handovers
     decision-log.md                 # All decisions with reasoning
 ```
+
+### Operational Logging Protocol
+
+- Every Clean Squad agent MUST append an entry to `.thinking/<task>/activity-log.md` before substantive work starts.
+- Every Clean Squad agent MUST append another entry after each material decision, delegation, blocker, or phase transition.
+- Every Clean Squad agent MUST append a final entry before returning control, capturing outputs produced, status, blockers, and next action.
+- The Product Owner MUST treat this log as mandatory operational telemetry, not an optional summary.
+
+## Product Owner Execution Boundary
+
+The Product Owner is an orchestrator, not an implementation agent.
+
+- The Product Owner MUST ask the user questions, sequence the workflow, update shared state, synthesize sub-agent outputs, and enforce quality gates.
+- The Product Owner MUST use `runSubagent` for specialist work including analysis, design, coding, testing, code review, QA validation, documentation, and PR management.
+- The Product Owner MUST NOT bypass a specialist sub-agent by performing that specialist work directly.
 
 ### State File (`state.json`)
 
@@ -351,6 +367,7 @@ A review comment may be added at any point within **10 minutes** of the last
 commit. After that 10-minute window, no further checking is required.
 
 Protocol:
+
 1. After the last commit, start a 10-minute timer.
 2. Poll for new review comments.
 3. If a new comment appears within the window: address it, commit the fix,
