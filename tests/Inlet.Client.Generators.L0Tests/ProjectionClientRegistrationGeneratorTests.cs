@@ -16,104 +16,104 @@ namespace Mississippi.Inlet.Client.Generators.L0Tests;
 public sealed class ProjectionClientRegistrationGeneratorTests
 {
     private const string ProjectionStubs = """
-                                          namespace Mississippi.Inlet.Abstractions
-                                          {
-                                              using System;
+                                           namespace Mississippi.Inlet.Abstractions
+                                           {
+                                               using System;
 
-                                              [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
-                                              public sealed class ProjectionPathAttribute : Attribute
-                                              {
-                                                  public ProjectionPathAttribute(string path)
-                                                  {
-                                                  }
-                                              }
-                                          }
+                                               [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
+                                               public sealed class ProjectionPathAttribute : Attribute
+                                               {
+                                                   public ProjectionPathAttribute(string path)
+                                                   {
+                                                   }
+                                               }
+                                           }
 
-                                          namespace Microsoft.Extensions.DependencyInjection
-                                          {
-                                          }
+                                           namespace Microsoft.Extensions.DependencyInjection
+                                           {
+                                           }
 
-                                          namespace Mississippi.Reservoir.Abstractions
-                                          {
-                                              using System;
+                                           namespace Mississippi.Reservoir.Abstractions
+                                           {
+                                               using System;
 
-                                              public interface IReservoirBuilder
-                                              {
-                                                  IReservoirBuilder AddFeatureState<TState>(Action<IReservoirFeatureBuilder<TState>> configure)
-                                                      where TState : class, new();
-                                              }
+                                               public interface IReservoirBuilder
+                                               {
+                                                   IReservoirBuilder AddFeatureState<TState>(Action<IReservoirFeatureBuilder<TState>> configure)
+                                                       where TState : class, new();
+                                               }
 
-                                              public interface IReservoirFeatureBuilder<TState>
-                                                  where TState : class, new()
-                                              {
-                                                  IReservoirFeatureBuilder<TState> AddReducer<TAction>(Func<TState, TAction, TState> reduce);
-                                              }
-                                          }
+                                               public interface IReservoirFeatureBuilder<TState>
+                                                   where TState : class, new()
+                                               {
+                                                   IReservoirFeatureBuilder<TState> AddReducer<TAction>(Func<TState, TAction, TState> reduce);
+                                               }
+                                           }
 
-                                          namespace Mississippi.Inlet.Client.Abstractions.Actions
-                                          {
-                                              public sealed class ProjectionConnectionChangedAction<T>
-                                              {
-                                              }
+                                           namespace Mississippi.Inlet.Client.Abstractions.Actions
+                                           {
+                                               public sealed class ProjectionConnectionChangedAction<T>
+                                               {
+                                               }
 
-                                              public sealed class ProjectionErrorAction<T>
-                                              {
-                                              }
+                                               public sealed class ProjectionErrorAction<T>
+                                               {
+                                               }
 
-                                              public sealed class ProjectionLoadedAction<T>
-                                              {
-                                              }
+                                               public sealed class ProjectionLoadedAction<T>
+                                               {
+                                               }
 
-                                              public sealed class ProjectionLoadingAction<T>
-                                              {
-                                              }
+                                               public sealed class ProjectionLoadingAction<T>
+                                               {
+                                               }
 
-                                              public sealed class ProjectionUpdatedAction<T>
-                                              {
-                                              }
-                                          }
+                                               public sealed class ProjectionUpdatedAction<T>
+                                               {
+                                               }
+                                           }
 
-                                          namespace Mississippi.Inlet.Client.Abstractions.State
-                                          {
-                                              public sealed class ProjectionsFeatureState
-                                              {
-                                              }
-                                          }
+                                           namespace Mississippi.Inlet.Client.Abstractions.State
+                                           {
+                                               public sealed class ProjectionsFeatureState
+                                               {
+                                               }
+                                           }
 
-                                          namespace Mississippi.Inlet.Client.Reducers
-                                          {
-                                              using Mississippi.Inlet.Client.Abstractions.Actions;
-                                              using Mississippi.Inlet.Client.Abstractions.State;
+                                           namespace Mississippi.Inlet.Client.Reducers
+                                           {
+                                               using Mississippi.Inlet.Client.Abstractions.Actions;
+                                               using Mississippi.Inlet.Client.Abstractions.State;
 
-                                              public static class ProjectionsReducer
-                                              {
-                                                  public static ProjectionsFeatureState ReduceConnectionChanged<T>(
-                                                      ProjectionsFeatureState state,
-                                                      ProjectionConnectionChangedAction<T> action
-                                                  ) => state;
+                                               public static class ProjectionsReducer
+                                               {
+                                                   public static ProjectionsFeatureState ReduceConnectionChanged<T>(
+                                                       ProjectionsFeatureState state,
+                                                       ProjectionConnectionChangedAction<T> action
+                                                   ) => state;
 
-                                                  public static ProjectionsFeatureState ReduceError<T>(
-                                                      ProjectionsFeatureState state,
-                                                      ProjectionErrorAction<T> action
-                                                  ) => state;
+                                                   public static ProjectionsFeatureState ReduceError<T>(
+                                                       ProjectionsFeatureState state,
+                                                       ProjectionErrorAction<T> action
+                                                   ) => state;
 
-                                                  public static ProjectionsFeatureState ReduceLoaded<T>(
-                                                      ProjectionsFeatureState state,
-                                                      ProjectionLoadedAction<T> action
-                                                  ) => state;
+                                                   public static ProjectionsFeatureState ReduceLoaded<T>(
+                                                       ProjectionsFeatureState state,
+                                                       ProjectionLoadedAction<T> action
+                                                   ) => state;
 
-                                                  public static ProjectionsFeatureState ReduceLoading<T>(
-                                                      ProjectionsFeatureState state,
-                                                      ProjectionLoadingAction<T> action
-                                                  ) => state;
+                                                   public static ProjectionsFeatureState ReduceLoading<T>(
+                                                       ProjectionsFeatureState state,
+                                                       ProjectionLoadingAction<T> action
+                                                   ) => state;
 
-                                                  public static ProjectionsFeatureState ReduceUpdated<T>(
-                                                      ProjectionsFeatureState state,
-                                                      ProjectionUpdatedAction<T> action
-                                                  ) => state;
-                                              }
-                                          }
-                                          """;
+                                                   public static ProjectionsFeatureState ReduceUpdated<T>(
+                                                       ProjectionsFeatureState state,
+                                                       ProjectionUpdatedAction<T> action
+                                                   ) => state;
+                                               }
+                                           }
+                                           """;
 
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
         RunResult) RunGenerator(
@@ -129,7 +129,6 @@ public sealed class ProjectionClientRegistrationGeneratorTests
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-
         string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
@@ -142,7 +141,6 @@ public sealed class ProjectionClientRegistrationGeneratorTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(
                 NullableContextOptions.Enable));
-
         ProjectionClientRegistrationGenerator generator = new();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
         driver = driver.RunGeneratorsAndUpdateCompilation(
@@ -167,13 +165,14 @@ public sealed class ProjectionClientRegistrationGeneratorTests
                                             public sealed record AccountBalanceDto;
                                         }
                                         """;
-
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(ProjectionStubs, projectionSource);
         string generatedCode = runResult.GeneratedTrees.Single().GetText().ToString();
-        Diagnostic[] relevantDiagnostics = [.. diagnostics.Concat(outputCompilation.GetDiagnostics())
-            .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error)];
-
+        Diagnostic[] relevantDiagnostics =
+        [
+            .. diagnostics.Concat(outputCompilation.GetDiagnostics())
+                .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error),
+        ];
         Assert.Contains(
             "global::System.ArgumentNullException.ThrowIfNull(builder);",
             generatedCode,

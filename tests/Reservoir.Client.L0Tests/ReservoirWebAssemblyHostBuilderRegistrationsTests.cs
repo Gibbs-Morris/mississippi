@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Reservoir.Abstractions;
-using Mississippi.Reservoir.Core;
 
 
 namespace Mississippi.Reservoir.Client.L0Tests;
@@ -15,6 +14,20 @@ namespace Mississippi.Reservoir.Client.L0Tests;
 /// </summary>
 public sealed class ReservoirWebAssemblyHostBuilderRegistrationsTests
 {
+    private static WebAssemblyHostBuilder CreateBuilder(
+        IServiceCollection services
+    )
+    {
+        WebAssemblyHostBuilder builder =
+            (WebAssemblyHostBuilder)RuntimeHelpers.GetUninitializedObject(typeof(WebAssemblyHostBuilder));
+        FieldInfo? servicesField = typeof(WebAssemblyHostBuilder).GetField(
+            "<Services>k__BackingField",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(servicesField);
+        servicesField.SetValue(builder, services);
+        return builder;
+    }
+
     /// <summary>
     ///     AddReservoir should register Reservoir services on a WebAssembly host builder.
     /// </summary>
@@ -33,20 +46,5 @@ public sealed class ReservoirWebAssemblyHostBuilderRegistrationsTests
         // Assert
         Assert.Same(services, reservoirBuilder.Services);
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<IStore>());
-    }
-
-    private static WebAssemblyHostBuilder CreateBuilder(
-        IServiceCollection services
-    )
-    {
-        WebAssemblyHostBuilder builder =
-            (WebAssemblyHostBuilder)RuntimeHelpers.GetUninitializedObject(typeof(WebAssemblyHostBuilder));
-        FieldInfo? servicesField = typeof(WebAssemblyHostBuilder).GetField(
-            "<Services>k__BackingField",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-
-        Assert.NotNull(servicesField);
-        servicesField.SetValue(builder, services);
-        return builder;
     }
 }

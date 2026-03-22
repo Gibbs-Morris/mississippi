@@ -157,12 +157,9 @@ public sealed class ReservoirRegistrationsTests
             {
                 Counter = state.Counter + 1,
             });
-
             throw new InvalidOperationException("Boom");
         }));
-
         Assert.Equal(baselineCount, services.Count);
-
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.Empty(provider.GetServices<IActionReducer<TestFeatureState>>());
         Assert.Empty(provider.GetServices<IFeatureStateRegistration>());
