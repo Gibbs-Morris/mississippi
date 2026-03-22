@@ -115,6 +115,12 @@ public sealed class ProjectionClientRegistrationGeneratorTests
                                            }
                                            """;
 
+    private static string GetRuntimeAssemblyPath(
+        string runtimeDirectory,
+        string fileName
+    ) =>
+        runtimeDirectory + Path.DirectorySeparatorChar + fileName;
+
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
         RunResult) RunGenerator(
             params string[] sources
@@ -125,11 +131,11 @@ public sealed class ProjectionClientRegistrationGeneratorTests
         List<MetadataReference> references =
         [
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
-            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(GetRuntimeAssemblyPath(runtimeDirectory, "System.Runtime.dll")),
+            MetadataReference.CreateFromFile(GetRuntimeAssemblyPath(runtimeDirectory, "System.Collections.dll")),
+            MetadataReference.CreateFromFile(GetRuntimeAssemblyPath(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
-        string netstandardPath = Path.Combine(runtimeDirectory, "netstandard.dll");
+        string netstandardPath = GetRuntimeAssemblyPath(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
         {
             references.Add(MetadataReference.CreateFromFile(netstandardPath));
