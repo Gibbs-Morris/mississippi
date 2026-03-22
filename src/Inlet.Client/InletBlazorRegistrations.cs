@@ -17,9 +17,6 @@ public static class InletBlazorRegistrations
     /// <param name="builder">The Reservoir builder.</param>
     /// <returns>The builder for chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="builder" /> is null.</exception>
-    /// <remarks>
-    ///     This must be called after <c>AddInlet()</c>.
-    /// </remarks>
     public static IReservoirBuilder AddInletBlazor(
         this IReservoirBuilder builder
     )
