@@ -3,6 +3,8 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
+using Mississippi.DomainModeling.Abstractions;
+
 
 namespace MississippiSamples.Spring.L2Tests;
 
@@ -13,6 +15,8 @@ namespace MississippiSamples.Spring.L2Tests;
 [Collection(SpringTestCollection.Name)]
 public sealed class BankAccountIntegrationTests
 {
+    private const int CompletedSagaPhase = (int)SagaPhase.Completed;
+
     /// <summary>
     ///     Maximum time to wait for eventual consistency.
     /// </summary>
@@ -66,6 +70,36 @@ public sealed class BankAccountIntegrationTests
     }
 
     /// <summary>
+    ///     Polls the money transfer status projection until the expected phase is reached or timeout occurs.
+    /// </summary>
+    private static async Task<MoneyTransferStatusResponse?> WaitForTransferProjectionAsync(
+        HttpClient client,
+        Guid sagaId,
+        Func<MoneyTransferStatusResponse, bool> predicate
+    )
+    {
+        DateTime deadline = DateTime.UtcNow.Add(EventualConsistencyTimeout);
+        MoneyTransferStatusResponse? lastResult = null;
+        Uri projectionUri = new($"api/projections/money-transfer-status/{sagaId}", UriKind.Relative);
+        while (DateTime.UtcNow < deadline)
+        {
+            using HttpResponseMessage response = await client.GetAsync(projectionUri);
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                lastResult = await response.Content.ReadFromJsonAsync<MoneyTransferStatusResponse>();
+                if (lastResult is not null && predicate(lastResult))
+                {
+                    return lastResult;
+                }
+            }
+
+            await Task.Delay(PollingInterval);
+        }
+
+        return lastResult;
+    }
+
+    /// <summary>
     ///     Response model for the bank account balance projection.
     /// </summary>
     private sealed class BankAccountBalanceResponse
@@ -87,6 +121,48 @@ public sealed class BankAccountIntegrationTests
         /// </summary>
         [JsonPropertyName("isOpen")]
         public bool IsOpen { get; set; }
+    }
+
+    /// <summary>
+    ///     Response model for the money transfer status projection.
+    /// </summary>
+    private sealed class MoneyTransferStatusResponse
+    {
+        /// <summary>
+        ///     Gets or sets the saga completion timestamp.
+        /// </summary>
+        [JsonPropertyName("completedAt")]
+        public DateTimeOffset? CompletedAt { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the transfer failure code.
+        /// </summary>
+        [JsonPropertyName("errorCode")]
+        public string? ErrorCode { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the transfer failure message.
+        /// </summary>
+        [JsonPropertyName("errorMessage")]
+        public string? ErrorMessage { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the last completed saga step index.
+        /// </summary>
+        [JsonPropertyName("lastCompletedStepIndex")]
+        public int LastCompletedStepIndex { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the current saga phase.
+        /// </summary>
+        [JsonPropertyName("phase")]
+        public int Phase { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the saga start timestamp.
+        /// </summary>
+        [JsonPropertyName("startedAt")]
+        public DateTimeOffset? StartedAt { get; set; }
     }
 
     /// <summary>
@@ -162,6 +238,80 @@ public sealed class BankAccountIntegrationTests
         projectionResult!.HolderName.Should().Be(holderName);
         projectionResult.IsOpen.Should().BeTrue();
         projectionResult.Balance.Should().Be(expectedBalance, "balance should reflect all transactions");
+    }
+
+    /// <summary>
+    ///     Verifies that starting a money transfer saga completes and updates both account balances.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task MoneyTransferSagaShouldCompleteAndUpdateBothAccounts()
+    {
+        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        using HttpClient client = fixture.CreateHttpClient();
+        string sourceAccountId = $"transfer-source-{Guid.NewGuid():N}";
+        string destinationAccountId = $"transfer-destination-{Guid.NewGuid():N}";
+        Guid sagaId = Guid.NewGuid();
+        const decimal sourceInitialDeposit = 500.00m;
+        const decimal destinationInitialDeposit = 125.00m;
+        const decimal transferAmount = 75.00m;
+        using (HttpResponseMessage openSourceResponse = await client.PostAsJsonAsync(
+                   new Uri($"api/aggregates/bank-account/{sourceAccountId}/open", UriKind.Relative),
+                   new
+                   {
+                       HolderName = "Source Holder",
+                       InitialDeposit = sourceInitialDeposit,
+                   }))
+        {
+            openSourceResponse.StatusCode.Should().Be(HttpStatusCode.OK, "opening the source account should succeed");
+        }
+
+        using (HttpResponseMessage openDestinationResponse = await client.PostAsJsonAsync(
+                   new Uri($"api/aggregates/bank-account/{destinationAccountId}/open", UriKind.Relative),
+                   new
+                   {
+                       HolderName = "Destination Holder",
+                       InitialDeposit = destinationInitialDeposit,
+                   }))
+        {
+            openDestinationResponse.StatusCode.Should()
+                .Be(HttpStatusCode.OK, "opening the destination account should succeed");
+        }
+
+        using HttpResponseMessage startTransferResponse = await client.PostAsJsonAsync(
+            new Uri($"api/sagas/money-transfer/{sagaId}", UriKind.Relative),
+            new
+            {
+                Amount = transferAmount,
+                DestinationAccountId = destinationAccountId,
+                SourceAccountId = sourceAccountId,
+                CorrelationId = (string?)null,
+            });
+        string startTransferBody = await startTransferResponse.Content.ReadAsStringAsync();
+        startTransferResponse.StatusCode.Should()
+            .Be(
+                HttpStatusCode.OK,
+                $"starting the money transfer saga should succeed, but got {(int)startTransferResponse.StatusCode}: {startTransferBody}");
+        MoneyTransferStatusResponse? transferProjection = await WaitForTransferProjectionAsync(
+            client,
+            sagaId,
+            projection => projection.Phase == CompletedSagaPhase);
+        transferProjection.Should().NotBeNull("the transfer status projection should be created for the saga");
+        transferProjection!.Phase.Should()
+            .Be(CompletedSagaPhase, transferProjection.ErrorMessage ?? "the saga should complete successfully");
+        transferProjection.LastCompletedStepIndex.Should().BeGreaterThanOrEqualTo(1);
+        BankAccountBalanceResponse? sourceProjection = await WaitForProjectionAsync(
+            client,
+            sourceAccountId,
+            sourceInitialDeposit - transferAmount);
+        BankAccountBalanceResponse? destinationProjection = await WaitForProjectionAsync(
+            client,
+            destinationAccountId,
+            destinationInitialDeposit + transferAmount);
+        sourceProjection.Should().NotBeNull("the source account projection should exist after the transfer");
+        destinationProjection.Should().NotBeNull("the destination account projection should exist after the transfer");
+        sourceProjection!.Balance.Should().Be(sourceInitialDeposit - transferAmount);
+        destinationProjection!.Balance.Should().Be(destinationInitialDeposit + transferAmount);
     }
 
     /// <summary>

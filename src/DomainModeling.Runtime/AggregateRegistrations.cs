@@ -367,8 +367,9 @@ public static class AggregateRegistrations
             IEventTypeRegistry registry
         )
         {
+            Type eventType = typeof(TEvent);
             string eventName = EventStorageNameHelper.GetStorageName<TEvent>();
-            registry.Register(eventName, typeof(TEvent));
+            registry.Register(eventName, eventType);
         }
     }
 
