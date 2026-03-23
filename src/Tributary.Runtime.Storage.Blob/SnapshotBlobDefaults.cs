@@ -21,7 +21,17 @@ internal static class SnapshotBlobDefaults
     public const string ContainerName = "snapshots";
 
     /// <summary>
+    ///     The default logical root prefix for snapshot blobs inside the container.
+    /// </summary>
+    public const string BlobPrefix = "snapshots/";
+
+    /// <summary>
     ///     The default serializer format used to encode snapshot payload bytes.
     /// </summary>
     public const string PayloadSerializerFormat = "System.Text.Json";
+
+    /// <summary>
+    ///     The default page size hint for stream-local blob listings.
+    /// </summary>
+    public const int ListPageSizeHint = 500;
 }

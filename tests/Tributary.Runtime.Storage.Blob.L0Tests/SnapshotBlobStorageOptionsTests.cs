@@ -18,8 +18,10 @@ public sealed class SnapshotBlobStorageOptionsTests
     public void SnapshotBlobDefaultsShouldMatchExpectedContractValues()
     {
         Assert.Equal("snapshots", SnapshotBlobDefaults.ContainerName);
+        Assert.Equal("snapshots/", SnapshotBlobDefaults.BlobPrefix);
         Assert.Equal("mississippi-blob-snapshots", SnapshotBlobDefaults.BlobContainerServiceKey);
         Assert.Equal("mississippi-blob-snapshots-client", SnapshotBlobDefaults.BlobServiceClientServiceKey);
+        Assert.Equal(500, SnapshotBlobDefaults.ListPageSizeHint);
         Assert.Equal("System.Text.Json", SnapshotBlobDefaults.PayloadSerializerFormat);
     }
 
@@ -31,9 +33,11 @@ public sealed class SnapshotBlobStorageOptionsTests
     {
         SnapshotBlobStorageOptions options = new();
 
+        Assert.Equal(SnapshotBlobDefaults.BlobPrefix, options.BlobPrefix);
         Assert.Equal(SnapshotBlobDefaults.ContainerName, options.ContainerName);
         Assert.Equal(SnapshotBlobDefaults.BlobServiceClientServiceKey, options.BlobServiceClientServiceKey);
         Assert.Equal(SnapshotBlobContainerInitializationMode.CreateIfMissing, options.ContainerInitializationMode);
+        Assert.Equal(SnapshotBlobDefaults.ListPageSizeHint, options.ListPageSizeHint);
         Assert.Equal(SnapshotBlobDefaults.PayloadSerializerFormat, options.PayloadSerializerFormat);
     }
 
@@ -49,6 +53,7 @@ public sealed class SnapshotBlobStorageOptionsTests
             {
                 options.ContainerName = string.Empty;
                 options.BlobServiceClientServiceKey = string.Empty;
+                options.ListPageSizeHint = 0;
                 options.PayloadSerializerFormat = string.Empty;
                 options.ContainerInitializationMode = (SnapshotBlobContainerInitializationMode)99;
             });
@@ -61,6 +66,7 @@ public sealed class SnapshotBlobStorageOptionsTests
 
         Assert.Contains("ContainerName", exception.Message, System.StringComparison.Ordinal);
         Assert.Contains("BlobServiceClientServiceKey", exception.Message, System.StringComparison.Ordinal);
+        Assert.Contains("ListPageSizeHint", exception.Message, System.StringComparison.Ordinal);
         Assert.Contains("PayloadSerializerFormat", exception.Message, System.StringComparison.Ordinal);
         Assert.Contains("ContainerInitializationMode", exception.Message, System.StringComparison.Ordinal);
     }

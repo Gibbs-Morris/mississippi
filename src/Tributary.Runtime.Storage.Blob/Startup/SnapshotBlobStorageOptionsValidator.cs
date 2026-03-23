@@ -31,6 +31,11 @@ internal sealed class SnapshotBlobStorageOptionsValidator : IValidateOptions<Sna
             failures.Add("BlobServiceClientServiceKey must be configured.");
         }
 
+        if (options.ListPageSizeHint <= 0)
+        {
+            failures.Add("ListPageSizeHint must be greater than zero.");
+        }
+
         if (string.IsNullOrWhiteSpace(options.PayloadSerializerFormat))
         {
             failures.Add("PayloadSerializerFormat must be configured.");

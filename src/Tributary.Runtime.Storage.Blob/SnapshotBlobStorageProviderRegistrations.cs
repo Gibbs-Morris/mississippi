@@ -9,7 +9,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Tributary.Runtime.Storage.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Blob.Naming;
 using Mississippi.Tributary.Runtime.Storage.Blob.Startup;
+using Mississippi.Tributary.Runtime.Storage.Blob.Storage;
 
 
 namespace Mississippi.Tributary.Runtime.Storage.Blob;
@@ -35,7 +37,10 @@ internal static class SnapshotBlobStorageProviderRegistrations
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IValidateOptions<SnapshotBlobStorageOptions>, SnapshotBlobStorageOptionsValidator>());
         services.AddSingleton<SnapshotPayloadSerializerResolver>();
+        services.AddSingleton<IBlobNameStrategy, BlobNameStrategy>();
         services.AddSingleton<IBlobContainerInitializerOperations, BlobContainerInitializerOperations>();
+        services.AddSingleton<ISnapshotBlobOperations, SnapshotBlobOperations>();
+        services.AddSingleton<ISnapshotBlobRepository, SnapshotBlobRepository>();
         services.RegisterSnapshotStorageProvider<SnapshotBlobStorageProvider>();
         services.AddHostedService<BlobContainerInitializer>();
 
