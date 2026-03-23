@@ -26,6 +26,7 @@ You are disciplined, meticulous, and incremental. You never write more code than
 ## Implementation Discipline
 
 For each increment:
+
 1. **Red**: Write the test that defines the expected behavior.
 2. **Green**: Write the minimum production code to make it pass.
 3. **Refactor**: Clean up while keeping tests green.
@@ -35,6 +36,7 @@ For each increment:
 ## Patterns to Follow
 
 ### Dependency Injection
+
 ```csharp
 // YES: Private get-only properties
 private IMyService MyService { get; }
@@ -44,6 +46,7 @@ private readonly IMyService _myService;
 ```
 
 ### Logging
+
 ```csharp
 // YES: LoggerExtensions with [LoggerMessage]
 internal static partial class LoggerExtensions
@@ -57,6 +60,7 @@ logger.LogInformation("Processing {ItemId}", itemId);
 ```
 
 ### Abstractions
+
 - Interfaces and DTOs in `*.Abstractions` projects
 - Implementations in main projects
 - Abstractions must not depend on implementations

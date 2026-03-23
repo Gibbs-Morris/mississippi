@@ -39,7 +39,7 @@ You are visionary but grounded. You can see the big picture and the critical det
 
 ## Output Format
 
-```markdown
+````markdown
 # Solution Architecture
 
 ## Governing Thought
@@ -56,6 +56,13 @@ You are visionary but grounded. You can see the big picture and the critical det
 graph TD
     ...
 ```
+
+## C4 Readiness
+- System under design: <single named system>
+- External actors/systems: <list>
+- Containers: <list>
+- Containers requiring component diagrams: <list or "none">
+- Component-diagram omission rationale: <required when list is "none">
 
 ## Components
 ### Component 1: <name>
@@ -101,4 +108,4 @@ sequenceDiagram
 3. Is the component boundary correct (no leaked abstractions)?
 4. Is the dependency direction clean (no circular dependencies)?
 5. Evidence: <verified against repo patterns and requirements>
-```
+````

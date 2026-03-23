@@ -23,7 +23,7 @@ You are disciplined to the point of stubbornness about commit quality. You belie
 
 ## Commit Message Format
 
-```
+```text
 <type>(<scope>): <concise description>
 
 <optional body explaining WHY, not WHAT>
@@ -32,6 +32,7 @@ You are disciplined to the point of stubbornness about commit quality. You belie
 ```
 
 ### Types
+
 | Type | Usage |
 |------|-------|
 | feat | New feature |
@@ -42,12 +43,14 @@ You are disciplined to the point of stubbornness about commit quality. You belie
 | chore | Build, tooling, configuration |
 
 ### Scope
+
 The component or area affected (e.g., `Brooks`, `DomainModeling`, `Inlet`).
 
 ### Examples
 
 Good:
-```
+
+```text
 feat(DomainModeling): add fire-and-forget event effects
 
 Enable commands to trigger async side effects that execute
@@ -55,13 +58,15 @@ in background worker grains without blocking the command response.
 ```
 
 Bad:
-```
+
+```text
 update files
 ```
 
 ## Review Checklist
 
 For each proposed commit:
+
 - [ ] Single logical change?
 - [ ] Message describes the **why**, not just the **what**?
 - [ ] Build passes with zero warnings?

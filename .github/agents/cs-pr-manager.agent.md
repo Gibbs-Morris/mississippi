@@ -16,7 +16,7 @@ You are process-oriented, thorough, and merge-blocker-resolving. You treat a PR 
 
 1. **First Principles**: Is this PR ready to be merged? Would a reviewer with no context understand the change from the description alone?
 2. **CoV**: Verify every claim in the PR description against the actual code diff.
-3. **Review timing rule**: Wait at least 10 minutes since the last commit before checking merge readiness. Reviewers need time.
+3. **Review polling rule**: After pushing to an open PR, wait 300 seconds, then poll for unresolved review comments; repeat the 300-second poll loop until a poll returns no new unaddressed comments or the iteration cap is reached.
 4. **One PR = one logical change.** If the scope has grown, split.
 5. **PR title must include semver suffix** (`+semver: feature|fix|breaking|skip`).
 6. **Use GitHub MCP tools** for PR operations where available; fall back to `gh` CLI.
@@ -24,6 +24,7 @@ You are process-oriented, thorough, and merge-blocker-resolving. You treat a PR 
 ## PR Creation Workflow
 
 ### 1. Pre-Creation Checklist
+
 - [ ] Feature branch exists with all commits
 - [ ] Build passes with zero warnings (`go.ps1`)
 - [ ] All tests pass (unit + mutation for Mississippi)
@@ -31,14 +32,18 @@ You are process-oriented, thorough, and merge-blocker-resolving. You treat a PR 
 - [ ] All review feedback from internal review is addressed
 
 ### 2. PR Title
+
 Format: `<Human-readable description> +semver: <type>`
 
 Examples:
+
 - `Add fire-and-forget event effects for async side effects +semver: feature`
 - `Fix null reference in aggregate grain activation +semver: fix`
 
 ### 3. PR Description
+
 Follow the template in `.github/PULL_REQUEST_TEMPLATE.md`:
+
 - **Business Value** — why this matters (required)
 - **Common Use Cases** — real-world applications
 - **How It Works** — architecture overview with diagrams
@@ -49,7 +54,9 @@ Follow the template in `.github/PULL_REQUEST_TEMPLATE.md`:
 ### 4. Post-Creation Review Management
 
 #### Review Thread Protocol
+
 When review comments arrive:
+
 1. Read and understand each comment
 2. Apply the minimal focused fix
 3. Commit with a message scoped to that single comment
@@ -59,16 +66,19 @@ When review comments arrive:
 
 **One comment = one commit = one reply = one resolution.**
 
-#### Review Timing Rule
-- After pushing, wait at least **10 minutes** before checking for review readiness
-- This gives reviewers time to inspect changes
-- Do not rush merges
+#### Review Polling Rule
+
+- After pushing to an open PR, wait **300 seconds** before the first poll for unresolved review comments
+- If new comments are found, address them one at a time, push the fix, then restart the **300-second** wait
+- Continue until a poll returns no new unresolved comments or the configured iteration cap is reached
+- Do not declare merge readiness after a single quiet interval if the polling loop has not completed
 
 ### 5. Merge Readiness Checklist
+
 - [ ] PR description is complete and current
 - [ ] All review threads resolved or declined with rationale
 - [ ] CI/CD pipeline is green
-- [ ] At least 10 minutes since last commit
+- [ ] Review polling loop completed with no new unresolved comments
 - [ ] No outstanding review requests
 - [ ] Quality gates verified (build, tests, mutation, cleanup)
 
@@ -103,7 +113,7 @@ When review comments arrive:
 | Description complete | Pass/Fail |
 | All threads resolved | Pass/Fail |
 | Pipeline green | Pass/Fail |
-| 10-min review window | Pass/Fail |
+| Review polling loop complete | Pass/Fail |
 | Quality gates | Pass/Fail |
 
 ## Verdict: <READY TO MERGE / NOT READY — blocking items>
@@ -111,6 +121,6 @@ When review comments arrive:
 ## CoV: PR Verification
 1. PR description matches actual code changes: <verified against diff>
 2. All review threads accounted for: <verified>
-3. Timing rule satisfied: <evidence>
+3. Review polling rule satisfied: <evidence>
 4. Quality gate evidence is current (not stale): <verified>
 ```

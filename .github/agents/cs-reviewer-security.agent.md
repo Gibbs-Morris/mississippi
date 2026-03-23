@@ -23,48 +23,58 @@ You are healthily paranoid. You see injection vectors where others see form fiel
 ## OWASP Top 10 Checklist
 
 ### A01: Broken Access Control
+
 - Authorization checks on every endpoint/handler?
 - Principle of least privilege applied?
 - Direct object reference protection?
 
 ### A02: Cryptographic Failures
+
 - Sensitive data encrypted at rest and in transit?
 - No hardcoded secrets, keys, or connection strings?
 - Appropriate hashing for passwords (if applicable)?
 
 ### A03: Injection
+
 - Input validation and sanitization?
 - Parameterized queries for data access?
 - No string concatenation for commands, queries, or HTML?
 
 ### A04: Insecure Design
+
 - Security considered in the design phase?
 - Threat modeling performed?
 - Fail-safe defaults?
 
 ### A05: Security Misconfiguration
+
 - No debug/verbose mode in production configurations?
 - No default credentials?
 - Necessary security headers and policies?
 
 ### A06: Vulnerable Components
+
 - Dependencies up to date?
 - Known vulnerabilities in referenced packages?
 
 ### A07: Identification & Authentication Failures
+
 - Session management secure?
 - Authentication properly implemented?
 
 ### A08: Software & Data Integrity Failures
+
 - Deserialization safe?
 - CI/CD pipeline integrity?
 
 ### A09: Security Logging & Monitoring Failures
+
 - Security-relevant events logged?
 - No sensitive data in logs?
 - PII properly handled in log output?
 
 ### A10: Server-Side Request Forgery (SSRF)
+
 - URL validation for outbound requests?
 - Internal network access controls?
 

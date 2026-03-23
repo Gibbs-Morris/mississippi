@@ -1,6 +1,6 @@
 # Clean Squad: End-to-End SDLC Workflow
 
-The Clean Squad is a family of 29 GitHub Copilot agents that takes an idea from
+The Clean Squad is a family of 32 GitHub Copilot agents that takes an idea from
 initial request through to a merge-ready pull request. There is exactly one
 entry point — the **cs Product Owner** — who orchestrates all work by delegating
 to specialist sub-agents. Every agent applies first-principles thinking and
@@ -62,14 +62,15 @@ All agents share state through a filesystem folder:
       business-perspective.md       # Business Analyst output
       technical-perspective.md      # Tech Lead output
       qa-perspective.md             # QA Analyst output
+      adoption-perspective.md       # Developer Evangelist output
       synthesis.md                  # Unified requirements
     03-architecture/
       solution-design.md            # Solution Architecture
       c4-context.md                 # C4 Context diagram
       c4-container.md               # C4 Container diagram
       c4-component.md               # C4 Component diagram (if needed)
-      adrs/
-        adr-001-<slug>.md           # Architecture Decision Records
+      c4-component-omitted.md       # Explicit rationale when a Level 3 view is not needed
+      adr-notes.md                  # ADR candidate notes and rationale drafts
     04-planning/
       draft-plan-v1.md              # Initial plan
       review-cycle-01/
@@ -100,14 +101,31 @@ All agents share state through a filesystem folder:
       exploratory-findings.md       # Exploratory testing
       coverage-report.md            # Coverage analysis
       mutation-report.md            # Mutation testing results
-    08-pr-merge/
+    08-documentation/
+      scope-assessment.md           # Branch diff analysis for doc needs
+      page-plan.md                  # Planned pages with types and paths
+      evidence-map.md               # Evidence map for technical claims
+      drafts/
+        <page-name>.md              # Draft pages before publishing
+      review-cycle-01/
+        doc-review.md               # Doc Reviewer findings
+        doc-story-review.md         # Developer Evangelist story-value findings
+        remediation-log.md          # Fix tracking
+      review-cycle-02/              # Second review cycle (if needed)
+        ...
+      publication-report.md         # Final pages published with verification
+    09-pr-merge/
       pr-description.md             # PR description draft
       thread-log.md                 # Review thread tracking
       merge-readiness.md            # Merge readiness checklist
-      timing-log.md                 # Review timing rule log
+      polling-log.md                # Review polling rule log
     handover-log.md                 # All agent handovers
     decision-log.md                 # All decisions with reasoning
 ```
+
+Published ADRs live outside `.thinking/` under `docs/Docusaurus/docs/adr/` so
+they remain part of the long-term documentation set after the task folder is
+retired.
 
 ### Operational Logging Protocol
 
@@ -115,6 +133,7 @@ All agents share state through a filesystem folder:
 - Every Clean Squad agent MUST append another entry after each material decision, delegation, blocker, or phase transition.
 - Every Clean Squad agent MUST append a final entry before returning control, capturing outputs produced, status, blockers, and next action.
 - The Product Owner MUST treat this log as mandatory operational telemetry, not an optional summary.
+- Activity log entries SHOULD use a consistent structure: UTC timestamp, actor, phase, action, artifacts updated, blockers, and next action.
 
 ## Product Owner Execution Boundary
 
@@ -130,7 +149,7 @@ The Product Owner is an orchestrator, not an implementation agent.
 {
   "task": "<task-slug>",
   "created": "<ISO-8601 UTC>",
-  "currentPhase": "discovery|three-amigos|architecture|planning|implementation|code-review|qa|pr-merge",
+  "currentPhase": "discovery|three-amigos|architecture|planning|implementation|code-review|qa|documentation|pr-merge",
   "status": "in-progress|blocked|complete",
   "branch": "<branch-name>",
   "prNumber": null,
@@ -174,27 +193,28 @@ The Product Owner is an orchestrator, not an implementation agent.
 - Each question **MUST** include ranked options (A, B, C...) plus
   **(X) I don't care — pick the best default**.
 
-## Phase 2: Three Amigos
+## Phase 2: Three Amigos + Adoption
 
 **Owner**: cs Product Owner
-**Sub-agents**: cs Business Analyst, cs Tech Lead, cs QA Analyst
+**Sub-agents**: cs Business Analyst, cs Tech Lead, cs QA Analyst, cs Developer Evangelist
 
 ### Process
 
-1. Product Owner invokes each Three Amigos sub-agent with the requirements
+1. Product Owner invokes each perspective sub-agent with the requirements
    synthesis, one at a time.
 2. Each sub-agent reads requirements and produces their perspective document.
-3. Product Owner writes `02-three-amigos/synthesis.md` combining all three.
+3. Product Owner writes `02-three-amigos/synthesis.md` combining all four.
 4. If any sub-agent identifies critical gaps, Product Owner asks the user
    additional questions before proceeding.
 
-### Three Amigos Outputs
+### Perspective Outputs
 
 | Perspective | Agent | Focus |
 |-------------|-------|-------|
 | Product | cs Business Analyst | User value, acceptance criteria, business rules |
 | Development | cs Tech Lead | Technical feasibility, risks, architecture constraints |
 | Quality | cs QA Analyst | Test strategy, edge cases, failure scenarios |
+| Adoption | cs Developer Evangelist | Demo-ability, competitive positioning, conference potential, real-world relevance |
 
 ## Phase 3: Architecture & Design
 
@@ -207,19 +227,18 @@ The Product Owner is an orchestrator, not an implementation agent.
 2. Solution Architect produces `solution-design.md` with technology choices,
    component design, and integration points.
 3. Product Owner invokes **cs C4 Diagrammer** to produce C4 model diagrams
-   (Context, Container, Component as appropriate).
+  (Context and Container always; Component when a container has meaningful internal structure, otherwise an explicit omission rationale).
 4. For each significant architectural decision, Product Owner invokes
-   **cs ADR Keeper** to produce ADRs in `adrs/`.
+  **cs ADR Keeper** to produce ADRs in `docs/Docusaurus/docs/adr/`.
 5. Product Owner may invoke domain experts (distributed systems, cloud,
    serialization) for specialist input on architecture.
 
 ### ADR Protocol
 
 - Every significant decision **MUST** be recorded as an ADR.
-- ADRs use the Nygard template: Status, Context, Decision, Consequences.
+- ADRs **MUST** use the MADR 4.0.0 template defined in `.github/instructions/adr.instructions.md`.
+- ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the filename pattern `NNNN-title-with-dashes.md`.
 - ADRs are immutable — superseded decisions get a new ADR referencing the old.
-- ADRs in `.thinking/` are working copies; final ADRs **SHOULD** be extracted
-  to a permanent location (e.g., `docs/adrs/`) when the PR is created.
 - ADRs **MUST** be consulted on subsequent changes to verify directional
   alignment.
 
@@ -255,6 +274,7 @@ Each review cycle invokes these personas (subset varies by task complexity):
 | Cloud | cs Expert Cloud | Infrastructure implications |
 | Distributed Systems | cs Expert Distributed | Distributed concerns |
 | Performance | cs Reviewer Performance | Performance implications |
+| Adoption | cs Developer Evangelist | Demo-ability, competitive positioning, content hooks |
 
 ## Phase 5: Implementation
 
@@ -312,6 +332,7 @@ Each review cycle invokes these personas (subset varies by task complexity):
    | 3 | cs Reviewer Security | OWASP, attack surface, trust boundaries |
    | 4 | cs Reviewer DX | API ergonomics, discoverability, pit of success |
    | 5 | cs Reviewer Performance | Allocations, complexity, hot paths |
+   | 6 | cs Developer Evangelist | Demo-ability, shareability, competitive positioning (public API changes) |
 
 3. Product Owner invokes relevant domain experts based on the change type.
 4. Product Owner synthesizes all review output.
@@ -337,7 +358,73 @@ reviewers. Domain experts review files within their expertise.
    projects only).
 4. Any gaps identified are fed back to implementation.
 
-## Phase 8: PR Creation & Merge Readiness
+## Phase 8: Documentation
+
+**Owner**: cs Product Owner
+**Sub-agents**: cs Technical Writer, cs Doc Reviewer, cs Developer Evangelist
+
+### Purpose
+
+Ensure that every user-facing change is accompanied by accurate, evidence-backed
+Docusaurus documentation before the PR is created. Documentation is a first-class
+deliverable, not an afterthought.
+
+### Process
+
+1. Product Owner assesses documentation scope:
+   - Run `git diff --name-status --find-renames main...HEAD` to identify all
+     changed source files.
+   - Identify new public APIs, changed behavior, new concepts, and affected
+     existing doc pages.
+   - If no user-facing changes exist (pure refactors, internal-only changes),
+     record the skip reason in `.thinking/<task>/08-documentation/scope-assessment.md`
+     and proceed to Phase 9.
+
+2. Product Owner invokes **cs Technical Writer** to create/update documentation:
+   - The writer reads all `.thinking/<task>/` artifacts and the branch diff.
+   - The writer builds an evidence map, classifies page types, and drafts pages.
+   - Draft pages are written to `.thinking/<task>/08-documentation/drafts/`.
+   - Verified pages are published to `docs/Docusaurus/docs/`.
+
+3. Product Owner runs a **documentation review cycle** (repeat 1-3 times):
+   a. Invoke **cs Doc Reviewer** to independently review every new or updated
+      doc page against source code and tests.
+   b. Doc Reviewer writes findings to
+      `.thinking/<task>/08-documentation/review-cycle-NN/doc-review.md`.
+   c. Invoke **cs Developer Evangelist** to review documentation for story
+      value, content potential, and adoption narrative.
+   d. Developer Evangelist writes findings to
+      `.thinking/<task>/08-documentation/review-cycle-NN/doc-story-review.md`.
+   e. For each Must Fix or Should Fix finding:
+      - Re-invoke **cs Technical Writer** with the specific finding to fix.
+      - Record the fix in the remediation log.
+   f. Repeat until the Doc Reviewer returns no Must Fix findings.
+
+4. Product Owner validates documentation quality gates:
+   - [ ] All new public APIs have documentation
+   - [ ] All changed behaviors reflected in existing docs
+   - [ ] Page types are correct
+   - [ ] Frontmatter is complete
+   - [ ] Internal links resolve
+   - [ ] Code examples are verified
+   - [ ] Claims are evidence-backed
+   - [ ] Adjacent pages are cross-linked
+   - [ ] No Must Fix findings remain from Doc Reviewer
+
+5. Update `.thinking/<task>/activity-log.md` with documentation outcomes.
+
+### Documentation Skip Criteria
+
+Documentation may be skipped **only** when ALL of these are true:
+
+- No new public types, methods, or extension points were introduced
+- No existing public behavior was changed
+- No new configuration options were added
+- No existing documentation is invalidated by the change
+
+The skip reason **MUST** be recorded in `scope-assessment.md` with evidence.
+
+## Phase 9: PR Creation & Merge Readiness
 
 **Owner**: cs Product Owner
 **Sub-agents**: cs PR Manager, cs Scribe
@@ -350,30 +437,33 @@ reviewers. Domain experts review files within their expertise.
    a. Create the PR with a complete description (business value, how it works,
       files changed, testing evidence, breaking changes).
    b. Monitor CI pipelines.
-   c. Handle review threads.
+  c. Handle review threads using the repository PR polling protocol.
 3. Review thread handling:
    - For each human review comment: read it, decide scope-appropriateness,
      fix it or push back with reasoning. Reply to every thread. Resolve it.
 4. Merge readiness is confirmed when:
-   - [ ] PR exists
-   - [ ] All CI pipelines are green
-   - [ ] No unresolved review comments
-   - [ ] No open review threads
-   - [ ] Review timing rule satisfied
 
-### Review Timing Rule
+- [ ] PR exists
+- [ ] All CI pipelines are green
+- [ ] No unresolved review comments
+- [ ] No open review threads
+- [ ] Review polling rule satisfied
 
-A review comment may be added at any point within **10 minutes** of the last
-commit. After that 10-minute window, no further checking is required.
+### Review Polling Rule
+
+A pushed PR enters a **300-second poll loop** for review comments. A single
+quiet interval is not enough; the loop ends only when a poll returns no new
+unaddressed comments or the configured iteration cap is reached.
 
 Protocol:
 
-1. After the last commit, start a 10-minute timer.
-2. Poll for new review comments.
-3. If a new comment appears within the window: address it, commit the fix,
-   and restart the 10-minute timer from the new commit time.
-4. If no new comments appear after 10 minutes from the last commit: merge
-   readiness is confirmed.
+1. After pushing to an open PR, wait 300 seconds.
+2. Poll for unresolved review comments.
+3. If new comments exist: address them one-at-a-time, push the fixes, then
+   restart the 300-second wait.
+4. If a poll returns zero new unaddressed comments: merge readiness is confirmed.
+5. If the iteration cap is reached: stop and report the remaining unresolved
+  threads for human review.
 
 ### Review Thread Handling
 
@@ -407,7 +497,7 @@ Handovers are logged in `.thinking/<task>/handover-log.md`:
 - **Output**: <expected result and location>
 ```
 
-## Agent Roster (29 Agents)
+## Agent Roster (32 Agents)
 
 ### Entry Point (1)
 
@@ -468,6 +558,12 @@ Handovers are logged in `.thinking/<task>/handover-log.md`:
 | cs Expert Distributed | Distributed systems, consensus, CAP theorem |
 | cs Expert UX | User experience, accessibility, interaction design |
 
+### Adoption (1)
+
+| Agent | Role |
+|-------|------|
+| cs Developer Evangelist | Conference talks, competitive positioning, demo-ability, real-world adoption |
+
 ### QA (2)
 
 | Agent | Role |
@@ -481,7 +577,14 @@ Handovers are logged in `.thinking/<task>/handover-log.md`:
 |-------|------|
 | cs DevOps Engineer | CI/CD, pipelines, deployment, observability |
 
-### Documentation & PR (2)
+### Documentation (2)
+
+| Agent | Role |
+|-------|------|
+| cs Technical Writer | Docusaurus docs authoring, evidence-backed pages |
+| cs Doc Reviewer | Documentation accuracy, completeness, and navigation review |
+
+### PR & Records (2)
 
 | Agent | Role |
 |-------|------|
