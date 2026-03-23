@@ -1,5 +1,5 @@
 ---
-applyTo: 'docs/Docusaurus/docs/adr/**/*.md'
+applyTo: 'docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md'
 ---
 
 # Architecture Decision Records (MADR)
