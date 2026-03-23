@@ -1,5 +1,12 @@
+using System.Buffers;
+using System.Security.Cryptography;
+using System.Text.Json;
+
 using Microsoft.Extensions.Hosting;
 
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
@@ -8,6 +15,7 @@ using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Tributary.Abstractions;
 using Mississippi.Tributary.Runtime;
+using Mississippi.Tributary.Runtime.Storage.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Blob;
 
 using Orleans.Configuration;
@@ -141,6 +149,76 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
             snapshotBlobPrefix,
             CancellationToken.None);
         orleansHosts.Add(restartedHost);
+    }
+
+    /// <summary>
+    ///     Persists the supplied large-snapshot state through the registered snapshot storage writer and returns the exact
+    ///     snapshot Blob for that version.
+    /// </summary>
+    /// <param name="entityId">The aggregate entity identifier.</param>
+    /// <param name="snapshotState">The snapshot state to persist.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The exact Blob client for the persisted snapshot version.</returns>
+    public async Task<BlobClient> PersistSnapshotAsync(
+        string entityId,
+        LargeSnapshotAggregate snapshotState,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        ArgumentNullException.ThrowIfNull(snapshotState);
+
+        using IServiceScope scope = CurrentOrleansHost.Services.CreateScope();
+        IServiceProvider services = scope.ServiceProvider;
+        IBrookGrainFactory brookGrainFactory = services.GetRequiredService<IBrookGrainFactory>();
+        IRootReducer<LargeSnapshotAggregate> rootReducer = services.GetRequiredService<IRootReducer<LargeSnapshotAggregate>>();
+        ISnapshotStateConverter<LargeSnapshotAggregate> snapshotStateConverter =
+            services.GetRequiredService<ISnapshotStateConverter<LargeSnapshotAggregate>>();
+        ISnapshotStorageWriter snapshotStorageWriter = services.GetRequiredService<ISnapshotStorageWriter>();
+
+        BrookPosition snapshotVersion = await brookGrainFactory
+            .GetBrookCursorGrain(BrookKey.ForType<LargeSnapshotAggregate>(entityId))
+            .GetLatestPositionAsync()
+            .ConfigureAwait(false);
+
+        if (snapshotVersion.NotSet)
+        {
+            throw new InvalidOperationException($"No events have been committed for aggregate '{entityId}'.");
+        }
+
+        string reducerHash = rootReducer.GetReducerHash();
+        SnapshotStreamKey snapshotStreamKey = new(
+            BrookNameHelper.GetBrookName<LargeSnapshotAggregate>(),
+            SnapshotStorageNameHelper.GetStorageName<LargeSnapshotAggregate>(),
+            entityId,
+            reducerHash);
+        SnapshotKey snapshotKey = new(snapshotStreamKey, snapshotVersion.Value);
+        BlobClient blobClient = CreateBlobServiceClient()
+            .GetBlobContainerClient(snapshotContainerName)
+            .GetBlobClient(GetBlobName(snapshotKey));
+
+        if (await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return blobClient;
+        }
+
+        SnapshotEnvelope snapshotEnvelope = snapshotStateConverter.ToEnvelope(snapshotState, reducerHash);
+
+        try
+        {
+            await snapshotStorageWriter.WriteAsync(snapshotKey, snapshotEnvelope, cancellationToken).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException)
+        {
+            if (!await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
+            {
+                throw;
+            }
+
+            // The background persister may have already committed the exact blob version; treat that as ready.
+        }
+
+        return blobClient;
     }
 
     /// <inheritdoc />
@@ -283,5 +361,41 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
         orleansHosts.RemoveAt(orleansHosts.Count - 1);
         await currentHost.StopAsync();
         currentHost.Dispose();
+    }
+
+    private string GetBlobName(
+        SnapshotKey snapshotKey
+    ) => $"{GetStreamPrefix(snapshotKey.Stream)}v{snapshotKey.Version:D20}.snapshot";
+
+    private string GetStreamPrefix(
+        SnapshotStreamKey snapshotStreamKey
+    )
+    {
+        ArrayBufferWriter<byte> buffer = new();
+        using (Utf8JsonWriter writer = new(buffer))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("brookName", snapshotStreamKey.BrookName);
+            writer.WriteString("snapshotStorageName", snapshotStreamKey.SnapshotStorageName);
+            writer.WriteString("entityId", snapshotStreamKey.EntityId);
+            writer.WriteString("reducersHash", snapshotStreamKey.ReducersHash);
+            writer.WriteEndObject();
+        }
+
+        string streamHash = Convert.ToHexString(SHA256.HashData(buffer.WrittenSpan));
+        return string.Concat(NormalizeBlobPrefix(snapshotBlobPrefix), streamHash, "/");
+    }
+
+    private static string NormalizeBlobPrefix(
+        string? blobPrefix
+    )
+    {
+        if (string.IsNullOrWhiteSpace(blobPrefix))
+        {
+            return string.Empty;
+        }
+
+        string normalizedPrefix = blobPrefix.Trim().Replace('\\', '/').Trim('/');
+        return string.IsNullOrEmpty(normalizedPrefix) ? string.Empty : string.Concat(normalizedPrefix, "/");
     }
 }

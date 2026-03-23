@@ -65,6 +65,7 @@ public sealed class BlobEnvelopeCodecTests
         Assert.Equal(compression, decodedFrame.Compression);
         Assert.Equal(expectedWrittenUtc, decodedFrame.Header.WrittenUtc);
         Assert.Equal("Mississippi.Tributary.Runtime.Storage.Blob.L0Tests.TestSerializationProvider", decodedFrame.Header.PayloadSerializerId);
+        Assert.Equal(decodedFrame.Header.PayloadSerializerId, decodedFrame.Snapshot.PayloadSerializerId);
         Assert.Equal(snapshotKey.Stream.SnapshotStorageName, decodedFrame.Header.SnapshotStorageName);
     }
 

@@ -56,11 +56,13 @@ public sealed class BlobSnapshotTrustSliceTests
 
         writeResult.Success.Should().BeTrue("the large snapshot command should succeed");
 
-        LargeSnapshotAggregate? stateBeforeRestart = await WaitForAggregateStateAsync(aggregate, marker, payload.Length);
+        LargeSnapshotAggregate? stateBeforeRestart = await aggregate.GetStateAsync();
         stateBeforeRestart.Should().NotBeNull();
+        stateBeforeRestart!.Marker.Should().Be(marker);
         stateBeforeRestart!.Payload.Should().Be(payload);
+        stateBeforeRestart.PayloadLength.Should().Be(payload.Length);
 
-        BlobClient snapshotBlob = await WaitForSnapshotBlobAsync(scenario.CreateBlobServiceClient(), scenario.SnapshotContainerName);
+        BlobClient snapshotBlob = await scenario.PersistSnapshotAsync(entityId, stateBeforeRestart);
         BlobFrameInspection inspection = await InspectSnapshotBlobAsync(snapshotBlob);
 
         inspection.Header.CompressionAlgorithm.Should().Be("gzip");
@@ -87,10 +89,7 @@ public sealed class BlobSnapshotTrustSliceTests
         IGenericAggregateGrain<LargeSnapshotAggregate> restartedAggregate = scenario.AggregateGrainFactory
             .GetGenericAggregate<LargeSnapshotAggregate>(entityId);
 
-        LargeSnapshotAggregate? stateAfterRestart = await WaitForAggregateStateAsync(
-            restartedAggregate,
-            blobBackedSnapshotState.Marker,
-            blobBackedSnapshotState.PayloadLength);
+        LargeSnapshotAggregate? stateAfterRestart = await restartedAggregate.GetStateAsync();
         stateAfterRestart.Should().NotBeNull();
         stateAfterRestart!.Marker.Should().Be(blobBackedSnapshotState.Marker);
         stateAfterRestart.Payload.Should().Be(blobBackedSnapshotState.Payload);
@@ -201,58 +200,6 @@ public sealed class BlobSnapshotTrustSliceTests
         byte[] updatedFrame = EncodeSnapshotBlobFrame(updatedHeader, storedPayloadBytes);
         using MemoryStream stream = new(updatedFrame, writable: false);
         await blobClient.UploadAsync(stream, overwrite: true);
-    }
-
-    private static async Task<LargeSnapshotAggregate?> WaitForAggregateStateAsync(
-        IGenericAggregateGrain<LargeSnapshotAggregate> aggregate,
-        string expectedMarker,
-        int expectedPayloadLength
-    )
-    {
-        DateTime deadlineUtc = DateTime.UtcNow.AddMinutes(1);
-
-        while (DateTime.UtcNow < deadlineUtc)
-        {
-            LargeSnapshotAggregate? state = await aggregate.GetStateAsync();
-            if (state is not null &&
-                string.Equals(state.Marker, expectedMarker, StringComparison.Ordinal) &&
-                state.PayloadLength == expectedPayloadLength)
-            {
-                return state;
-            }
-
-            await Task.Delay(200);
-        }
-
-        return await aggregate.GetStateAsync();
-    }
-
-    private static async Task<BlobClient> WaitForSnapshotBlobAsync(
-        BlobServiceClient blobServiceClient,
-        string containerName
-    )
-    {
-        BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-        DateTime deadlineUtc = DateTime.UtcNow.AddMinutes(1);
-
-        while (DateTime.UtcNow < deadlineUtc)
-        {
-            List<BlobItem> blobs = [];
-            await foreach (BlobItem blob in containerClient.GetBlobsAsync())
-            {
-                blobs.Add(blob);
-            }
-
-            if (blobs.Count > 0)
-            {
-                blobs.Should().ContainSingle("the trust slice writes one aggregate snapshot blob");
-                return containerClient.GetBlobClient(blobs[0].Name);
-            }
-
-            await Task.Delay(200);
-        }
-
-        throw new TimeoutException($"No snapshot blob was written to container '{containerName}' within the timeout.");
     }
 
     private sealed record BlobFrameInspection(

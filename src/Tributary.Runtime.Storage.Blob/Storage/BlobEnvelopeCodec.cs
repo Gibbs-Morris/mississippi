@@ -176,6 +176,7 @@ internal sealed class BlobEnvelopeCodec : IBlobEnvelopeCodec
             Data = ImmutableArray.Create(payloadBytes),
             DataContentType = header.DataContentType,
             DataSizeBytes = payloadBytes.Length,
+            PayloadSerializerId = header.PayloadSerializerId,
             ReducerHash = header.ReducerHash,
         };
 
