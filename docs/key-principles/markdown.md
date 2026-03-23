@@ -320,7 +320,7 @@ In this repository, Markdown is used for:
 | Project root | `README.md`, `AGENTS.md`, `todo.md` | Repository-level documentation |
 | PR descriptions | GitHub PRs | Pull request body content |
 
-All authored Markdown in this repository must:
+All authored Markdown that is within the repository's markdownlint scope should follow these conventions:
 
 1. Pass markdownlint with the project's configured rules.
 2. Use ATX-style headings.
