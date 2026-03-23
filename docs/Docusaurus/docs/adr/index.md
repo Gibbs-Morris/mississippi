@@ -38,7 +38,7 @@ Write an ADR when a decision:
 
 Accepted ADRs are **immutable** — if a decision changes, a new ADR supersedes the original.
 
-## Further Reading
+## Learn More
 
 - [MADR 4.0.0 specification](https://adr.github.io/madr/)
 - [Architecture Decision Records key principles](https://github.com/Gibbs-Morris/mississippi/blob/main/docs/key-principles/architecture-decision-records.md)
