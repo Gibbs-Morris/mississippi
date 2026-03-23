@@ -9,7 +9,7 @@ alwaysApply: true
 
 Governing thought: Agents record validated lessons from real-work failures into typed `self-taught-<domain>.instructions.md` files, creating persistent institutional memory that prevents repeated mistakes without conflicting with hand-authored rules.
 
-> Drift check: Review the Rules Manager agent (`rules-manager.agent.md`) for the conflict-detection process before adding lessons; open relevant domain instruction files to check for overlap.
+> Drift check: Review `.github/agents/rules-manager.agent.md` for the conflict-detection process before adding lessons; open relevant domain instruction files to check for overlap.
 
 ## Rules (RFC 2119)
 
