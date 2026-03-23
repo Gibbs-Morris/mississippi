@@ -299,13 +299,39 @@ Each review cycle invokes these personas (subset varies by task complexity):
    a. Product Owner invokes **cs Lead Developer** with the next slice of work
       from the plan.
    b. Lead Developer writes production code (small, focused increment).
-   c. Product Owner invokes **cs Test Engineer** to write/validate tests.
-   d. Build is run and verified clean (zero warnings).
-   e. Tests are run and verified passing.
-   f. Product Owner invokes **cs Commit Guardian** to review the increment.
-   g. If issues found, Lead Developer fixes them.
-   h. Commit is made with a properly scoped message.
+  c. Lead Developer performs semantic consistency review for touched code
+    elements (types or members),
+    updates stale comments or XML documentation when needed, and records the
+    reviewed-member evidence in `changes.md`.
+  d. Product Owner invokes **cs Test Engineer** to write/validate tests and
+    independently verify semantic consistency for touched code elements
+    against the changed behavior, recording the result in `test-results.md`.
+  e. Build is run and verified clean (zero warnings).
+  f. Tests are run and verified passing.
+  g. Product Owner invokes **cs Commit Guardian** to review the final staged
+    diff, validate the semantic consistency evidence chain, and emit a
+    `PASS`, `WARNING`, or `BLOCKER` verdict in `commit-review.md`.
+  h. If semantic drift or missing semantic-review evidence is found, Lead
+    Developer fixes it and the semantic consistency gate is rerun against the
+    final staged diff.
+  i. Commit is made with a properly scoped message.
 3. Repeat until all plan items are implemented.
+
+Touched semantic-review scope includes any touched code element (type or
+member) whose behavior, signature, or name changes, and any touched code
+element that already has comments or XML documentation. Semantic drift on a
+touched code element is a must-fix blocker before commit. Missing comments or
+XML documentation are not universally required, but when a touched code element
+clearly needs explanation or follows an established documented-public-API
+pattern, the absence must be flagged as `BLOCKER` if it would leave a
+materially false, incomplete, or undocumented contract; otherwise it must be
+flagged as `WARNING`. This semantic consistency review is a Phase 5
+code-comment/XML-doc gate, not Phase 8 product documentation.
+
+Evidence of semantic consistency review must be recorded in `changes.md`,
+`test-results.md`, and `commit-review.md`. Each artifact must identify the
+reviewed touched code elements or explicitly state why no touched code
+elements were in semantic-review scope.
 
 ### Incremental Discipline Rules
 
@@ -313,6 +339,11 @@ Each review cycle invokes these personas (subset varies by task complexity):
 - Each increment **MUST** include relevant tests.
 - The build **MUST** be clean after each increment.
 - All tests **MUST** pass after each increment.
+- Semantic consistency review evidence **MUST** be current for the final staged
+  diff before commit approval.
+- Any code change after semantic consistency review evidence is recorded
+  **MUST** invalidate prior approval and **MUST** rerun the gate against the
+  final staged diff before commit.
 - Each commit **MUST** represent one logical step.
 - The Commit Guardian reviews each commit before the next begins.
 
@@ -322,8 +353,8 @@ Each review cycle invokes these personas (subset varies by task complexity):
 2. Write the minimal production code to pass it.
 3. Refactor if needed.
 4. Run build + tests.
-5. Commit.
-6. Review.
+5. Review the final staged diff, including the semantic consistency gate.
+6. Commit.
 7. Next increment.
 
 ## Phase 6: Comprehensive Code Review

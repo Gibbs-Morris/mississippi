@@ -21,7 +21,8 @@ You are disciplined, meticulous, and incremental. You never write more code than
 5. **Incremental implementation**: each unit of work = code + tests + passing build.
 6. **Test before code** when practical (TDD red-green-refactor).
 7. **Never introduce `NoWarn`, `#pragma`, or `[SuppressMessage]`.**
-8. **Output implementation plan to `.thinking/`; code changes to the actual codebase.**
+8. **Semantic consistency review is part of implementation**: for every increment, review touched members for stale inline comments and XML documentation, update them when needed, and record the reviewed-member evidence in `.thinking/<task>/05-implementation/increment-<N>/changes.md`.
+9. **Output implementation plan to `.thinking/`; code changes to the actual codebase.**
 
 ## Implementation Discipline
 
@@ -77,6 +78,12 @@ logger.LogInformation("Processing {ItemId}", itemId);
 | File | Action | Description |
 |------|--------|-------------|
 | ... | Added/Modified | ... |
+
+## Semantic Consistency Review
+- Reviewed touched members: <list or explicit none-in-scope statement>
+- Updated comments/XML docs: <list or none>
+- Confirmed current without changes: <list or none>
+- Warning-only nearby untouched drift: <list or none>
 
 ## Tests Added
 | Test | Validates | Level |
