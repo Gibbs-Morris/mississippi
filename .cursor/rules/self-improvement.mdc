@@ -1,0 +1,106 @@
+---
+description: Self-Improvement Learning System
+alwaysApply: true
+---
+# Self-Improvement Learning System
+
+**Source:** .github/instructions/self-improvement.instructions.md
+**Last synced:** 2026-03-23 (commit 80ff68f7)
+
+Governing thought: Agents record validated lessons from real-work failures into typed `self-taught-<domain>.instructions.md` files, creating persistent institutional memory that prevents repeated mistakes without conflicting with hand-authored rules.
+
+> Drift check: Review the Rules Manager agent (`rules-manager.agent.md`) for the conflict-detection process before adding lessons; open relevant domain instruction files to check for overlap.
+
+## Rules (RFC 2119)
+
+- When an agent encounters an issue that required retry, rework, or a non-obvious workaround, it **SHOULD** capture a concise lesson in the appropriate `self-taught-<domain>.instructions.md` file. Why: Prevents the same mistake in future conversations.
+- Self-taught files **MUST** live in `.github/instructions/` and follow the naming pattern `self-taught-<domain>.instructions.md` using kebab-case domain names. Why: Consistent discoverability alongside hand-authored instructions.
+- Self-taught files **MUST** follow the standard authoring template (YAML front matter with `applyTo`, H1, governing thought, drift check, Rules section, references). Why: Parseable by humans and automation.
+- Each lesson **MUST** be a single, concise bullet in the Rules section using an RFC 2119 keyword and a "Why:" suffix citing the observed failure (error message, build output, or specific scenario). Why: Token economy requires density; evidence anchors credibility.
+- Before adding a lesson, the agent **MUST** read all existing instruction files whose `applyTo` scope overlaps with the target self-taught file and verify the new lesson does not contradict any hand-authored rule. Why: Hand-authored rules are the source of truth; self-taught lessons supplement but never override.
+- If a proposed lesson conflicts with a hand-authored rule, the agent **MUST NOT** add the lesson and **SHOULD** instead record a note in `.thinking/` (if a task folder is active) explaining the conflict for human review. Why: Prevents institutional memory from corrupting authoritative policy.
+- Lessons in self-taught files **MUST** be treated as supplementary guidance; when any conflict exists between a self-taught lesson and a hand-authored instruction, the hand-authored instruction **MUST** take precedence. Why: Establishes a clear authority hierarchy.
+- Self-taught files **SHOULD** stay under 30 items per file; when a file approaches this limit, lessons **SHOULD** be reviewed and either promoted to the relevant hand-authored instruction file (with human approval) or retired if no longer relevant. Why: Keeps token footprint manageable per Rules Manager token-economy principles.
+- Duplicate or near-duplicate lessons **MUST NOT** be added; agents **MUST** check the existing lessons in the target file before writing. Why: Prevents bloat and redundancy.
+- Self-taught files **MUST NOT** contain opinions, preferences, or speculative guidance; every lesson **MUST** trace to a concrete, observed failure or inefficiency. Why: Empirical evidence only; no cargo-culting.
+- New domains **MAY** be created when no existing domain covers the lesson; the agent **MUST** select the `applyTo` pattern that best matches the domain scope. Why: Categories grow organically with the codebase.
+
+## Scope and Audience
+
+All agents and contributors; applies whenever an agent encounters a recoverable failure, retry, or non-obvious workaround during any workflow.
+
+## At-a-Glance Quick-Start
+
+- Hit an issue that required retry or rework? After resolving it, add a one-bullet lesson to `self-taught-<domain>.instructions.md`.
+- Before adding: read overlapping instruction files, check for conflicts, check for duplicates, then add.
+- Keep lessons evidence-based, concise, and RFC 2119-formatted.
+- Hand-authored rules always win; self-taught lessons are supplementary.
+
+## Domain Categories
+
+| Domain | `applyTo` | Covers |
+|--------|-----------|--------|
+| `build` | `'**'` | Build pipeline, MSBuild, project files, NuGet, CI |
+| `testing` | `'tests/**'` | Test patterns, coverage, mutation, determinism |
+| `csharp` | `'**/*.cs'` | C# idioms, compiler behavior, analyzers |
+| `serialization` | `'**/*.cs'` | Orleans serialization, JSON, wire formats |
+| `orleans` | `'**/*.cs'` | Grains, activation, lifecycle, hosting |
+| `agent-workflow` | `'.github/agents/**'` | Agent design, workflow steps, prompt engineering |
+| `documentation` | `'docs/**'` | Docusaurus, page structure, MDX |
+| `powershell` | `'**/*.ps*'` | Scripts, engineering tools |
+| `blazor` | `'**/*.razor*'` | Blazor UI, components, SignalR |
+
+## Self-Taught File Template
+
+New `self-taught-<domain>.instructions.md` files use this structure:
+
+````markdown
+---
+applyTo: '<matching pattern for domain>'
+---
+
+# Self-Taught Lessons: <Domain>
+
+Governing thought: Empirical lessons learned from real-work failures in <domain area>, captured to prevent repeated mistakes.
+
+> Drift check: Before adding a lesson, read all instruction files whose `applyTo` overlaps with this file's scope; verify no conflict with hand-authored rules per `self-improvement.instructions.md`.
+
+## Rules (RFC 2119)
+
+- <RFC 2119 keyword> <concise lesson>. Why: <evidence from the observed failure>.
+
+## References
+
+- Self-improvement governance: `.github/instructions/self-improvement.instructions.md`
+- <relevant domain instruction file(s)>
+````
+
+## Conflict Detection Protocol
+
+Adapted from the Rules Manager workflow:
+
+1. **Identify scope**: Determine the `applyTo` of the target self-taught file.
+2. **Read overlapping files**: Read every `.github/instructions/*.instructions.md` whose `applyTo` intersects with the target scope.
+3. **Check contradiction**: Does the new lesson CONTRADICT any existing rule?
+4. **Check redundancy**: Does an existing rule already COVER this lesson, making it redundant?
+5. **Decide**: If contradicts → do not add. If already covered → do not add. If supplementary → add.
+
+## Lesson Lifecycle
+
+1. **Capture**: Agent observes a failure or retry → writes a concise bullet in the appropriate file after conflict and duplicate checking.
+2. **Accumulate**: Lessons collect over multiple conversations; each file stays under 30 items.
+3. **Promote**: When a lesson proves universally valuable, it **SHOULD** be proposed for inclusion in the relevant hand-authored instruction file (requires human approval).
+4. **Retire**: Lessons that are no longer relevant (fixed by tooling, superseded by a promoted rule) **SHOULD** be removed during periodic review.
+
+## Core Principles
+
+- Empirical, not speculative: every lesson traces to an observed event.
+- Supplementary, not authoritative: hand-written rules always win.
+- Token-conscious: concise bullets, scoped `applyTo`, size limits.
+- Conflict-aware: check before writing, using Rules Manager-style validation.
+
+## References
+
+- Rules Manager agent: `.github/agents/rules-manager.agent.md`
+- Instruction authoring: `.github/instructions/authoring.instructions.md`
+- Shared guardrails: `.github/instructions/shared-policies.instructions.md`
