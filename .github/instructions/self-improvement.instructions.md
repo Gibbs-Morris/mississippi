@@ -49,7 +49,7 @@ All agents and contributors; applies whenever an agent encounters a recoverable 
 
 ## Self-Taught File Template
 
-New `self-taught-<domain>.instructions.md` files **MUST** use this structure:
+Use this structure for new `self-taught-<domain>.instructions.md` files:
 
 ````markdown
 ---
