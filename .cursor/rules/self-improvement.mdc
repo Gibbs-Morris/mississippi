@@ -89,8 +89,8 @@ Adapted from the Rules Manager workflow:
 
 1. **Capture**: Agent observes a failure or retry → writes a concise bullet in the appropriate file after conflict and duplicate checking.
 2. **Accumulate**: Lessons collect over multiple conversations; each file stays under 30 items.
-3. **Promote**: When a lesson proves universally valuable, it **SHOULD** be proposed for inclusion in the relevant hand-authored instruction file (requires human approval).
-4. **Retire**: Lessons that are no longer relevant (fixed by tooling, superseded by a promoted rule) **SHOULD** be removed during periodic review.
+3. **Promote**: When a lesson proves universally valuable, it can be proposed for inclusion in the relevant hand-authored instruction file (requires human approval).
+4. **Retire**: Lessons that are no longer relevant (fixed by tooling, superseded by a promoted rule) are candidates for removal during periodic review.
 
 ## Core Principles
 
