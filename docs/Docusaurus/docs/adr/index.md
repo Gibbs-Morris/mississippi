@@ -8,6 +8,8 @@ id: adr-overview
 
 # Architecture Decision Records
 
+## Overview
+
 This section contains the Architecture Decision Records (ADRs) for the Mississippi framework. Each ADR captures a significant architectural choice — the context that motivated it, the alternatives considered, and the consequences of the decision.
 
 ## What Is an ADR?
