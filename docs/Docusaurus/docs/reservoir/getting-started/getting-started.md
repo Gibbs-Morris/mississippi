@@ -3,16 +3,18 @@ id: reservoir-getting-started
 title: Reservoir Getting Started
 sidebar_label: Getting Started
 sidebar_position: 1
-description: Start with Reservoir by creating a Reservoir builder and composing feature registrations on top of it.
+description: Start with Reservoir by creating a Reservoir-only builder and composing feature registrations on top of it.
 ---
 
 # Reservoir Getting Started
 
 ## Overview
 
-Use this page when you need the first verified Reservoir startup path.
+Use this page when you need the first verified Reservoir-only startup path.
 
 Reservoir now starts from a builder-based registration model. The first successful outcome is creating an `IReservoirBuilder` with `AddReservoir()` and then composing feature registrations on that builder.
+
+If you are building a full Mississippi client application, start with `AddMississippiClient()` instead and use `client.Reservoir(...)` to reach this same subsystem builder.
 
 ## First Working Setup
 
@@ -42,7 +44,7 @@ Reservoir exposes two verified entry points that both produce the same public bu
 - `services.AddReservoir()` when startup code begins from an `IServiceCollection`
 - `builder.AddReservoir()` when startup code begins from a `WebAssemblyHostBuilder`
 
-Both return `IReservoirBuilder`. That builder is the public composition surface for Reservoir client packages and related packages such as Inlet.
+Both return `IReservoirBuilder`. That builder is the public composition surface for Reservoir-only apps and for higher-level callers such as `MississippiClientBuilder.Reservoir(...)`.
 
 Source code:
 
@@ -86,10 +88,10 @@ Stay in Reservoir when the concern is the state-management model itself: store b
 
 ## Summary
 
-Reservoir startup now begins by creating `IReservoirBuilder` with `AddReservoir()` and composing feature registrations on that builder.
+Reservoir-only startup begins by creating `IReservoirBuilder` with `AddReservoir()` and composing feature registrations on that builder.
 
 ## Next Steps
 
 - Read [Reservoir Concepts](../concepts/concepts.md) for the top-level builder and feature-builder mental model.
 - Read [Reservoir Reference](../reference/reference.md) for the exact public registration surface.
-- Use [Inlet Getting Started](../../inlet/getting-started/getting-started.md) if the next step is client sync on top of Reservoir.
+- Use [Inlet Getting Started](../../inlet/getting-started/getting-started.md) if the next step is a full Mississippi client app with client sync on top of Reservoir.

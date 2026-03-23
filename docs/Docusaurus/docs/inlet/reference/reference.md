@@ -3,7 +3,7 @@ id: inlet-reference
 title: Inlet Reference
 sidebar_label: Reference
 sidebar_position: 1
-description: Reference the current builder-based Inlet client registration surface and the generated client method shapes that compose on Reservoir.
+description: Reference the current builder-based Inlet client registration surface and the generated client method shapes for MississippiClientBuilder and IReservoirBuilder.
 ---
 
 # Inlet Reference
@@ -21,7 +21,7 @@ Inlet is the Mississippi composition and source-generation layer.
 
 ## Verified Client Registration Surface
 
-These client-side extension methods now compose on `IReservoirBuilder`.
+These client-side Inlet extensions compose on `IReservoirBuilder`. Full Mississippi client apps reach them through `MississippiClientBuilder.Reservoir(...)`.
 
 | Method | Receiver | Purpose |
 |--------|----------|---------|
@@ -63,7 +63,7 @@ The current Inlet client generators emit builder-based client registrations.
 | Command client generator | `Add{Aggregate}AggregateFeature()` | `IReservoirBuilder` |
 | Saga client generator | `Add{Saga}SagaFeature()` | `IReservoirBuilder` |
 | Projection client generator | `AddProjectionsFeature()` | `IReservoirBuilder` |
-| Domain client generator | `Add{Domain}Client()` | `IReservoirBuilder` |
+| Domain client generator | `Add{Domain}Client()` | `MississippiClientBuilder` |
 
 Source code:
 
@@ -88,7 +88,7 @@ Source code:
 
 ## Defaults And Constraints
 
-This reference covers the verified subsystem boundary and the current client-side builder surface. Inlet client registrations now assume a Reservoir builder already exists.
+This reference covers the verified subsystem boundary and the current client-side builder surface. Inlet client registrations assume a Reservoir builder exists; full Mississippi client apps create that builder by starting with `AddMississippiClient()` and then using `Reservoir(...)`.
 
 ## Failure Behavior
 
@@ -96,10 +96,10 @@ For generator and runtime registration failure behavior, refer to the [Inlet Ope
 
 ## Summary
 
-Use this page as the current active reference for Inlet's builder-based client registrations and the generated client method shapes that compose on Reservoir.
+Use this page as the current active reference for Inlet's builder-based client registrations and the generated client method shapes that compose through `MississippiClientBuilder` and `IReservoirBuilder`.
 
 ## Next Steps
 
 - Read [Inlet Concepts](../concepts/concepts.md).
-- Read [How To Compose Inlet On Top Of Reservoir Builders](../how-to/how-to.md) for startup composition guidance.
+- Read [How To Compose Inlet In Mississippi Client Apps](../how-to/how-to.md) for startup composition guidance.
 - Use the [Spring Sample](../../samples/spring-sample/index.md) to see Inlet composition patterns in practice.

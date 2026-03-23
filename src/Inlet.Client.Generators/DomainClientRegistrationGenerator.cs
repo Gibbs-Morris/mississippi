@@ -146,7 +146,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
-        sb.AppendLine("using Mississippi.Reservoir.Abstractions;");
+        sb.AppendLine("using Mississippi.Hosting.Client;");
         sb.AppendLine();
         string[] usingNamespaces = models
             .SelectMany(m => m.AggregateNames.Select(name => $"{m.FeatureNamespace}.{name}Aggregate"))
@@ -180,28 +180,31 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine("    /// <summary>");
             sb.AppendLine($"    ///     Adds all generated client features for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
-            sb.AppendLine("    /// <param name=\"builder\">The Reservoir builder.</param>");
-            sb.AppendLine("    /// <returns>The Reservoir builder for chaining.</returns>");
+            sb.AppendLine("    /// <param name=\"client\">The Mississippi client builder.</param>");
+            sb.AppendLine("    /// <returns>The Mississippi client builder for chaining.</returns>");
             sb.AppendLine(
-                $"    public static IReservoirBuilder {model.DomainMethodName}(this IReservoirBuilder builder)");
+                $"    public static MississippiClientBuilder {model.DomainMethodName}(this MississippiClientBuilder client)");
             sb.AppendLine("    {");
-            sb.AppendLine("        ArgumentNullException.ThrowIfNull(builder);");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(client);");
+            sb.AppendLine("        client.Reservoir(reservoir =>");
+            sb.AppendLine("        {");
             foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        builder.Add{aggregate}AggregateFeature();");
+                sb.AppendLine($"            reservoir.Add{aggregate}AggregateFeature();");
             }
 
             foreach (string saga in model.SagaNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        builder.Add{saga}SagaFeature();");
+                sb.AppendLine($"            reservoir.Add{saga}SagaFeature();");
             }
 
             if (model.IncludesProjections)
             {
-                sb.AppendLine("        builder.AddProjectionsFeature();");
+                sb.AppendLine("            reservoir.AddProjectionsFeature();");
             }
 
-            sb.AppendLine("        return builder;");
+            sb.AppendLine("        });");
+            sb.AppendLine("        return client;");
             sb.AppendLine("    }");
             sb.AppendLine();
         }

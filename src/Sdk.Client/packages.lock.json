@@ -480,6 +480,17 @@
           "Microsoft.Orleans.Sdk": "[10.0.1, )"
         }
       },
+      "Mississippi.Hosting.Client": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[10.0.5, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.5, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.5, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[10.0.5, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Client": "[1.0.0, )"
+        }
+      },
       "Mississippi.Inlet.Abstractions": {
         "type": "Project"
       },

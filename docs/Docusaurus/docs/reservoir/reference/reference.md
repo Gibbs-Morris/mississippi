@@ -98,7 +98,7 @@ This reference covers the verified subsystem boundary and the current public reg
 
 Builder-based composition is the direction of the public Reservoir registration model going forward.
 
-Application startup should begin with `AddReservoir()` and then compose package or feature extensions on the returned `IReservoirBuilder`.
+Reservoir-only application startup should begin with `AddReservoir()` and then compose package or feature extensions on the returned `IReservoirBuilder`. Full Mississippi client apps should begin with `AddMississippiClient()` and use `client.Reservoir(...)` when they need Reservoir-level composition.
 
 ## Failure Behavior
 
