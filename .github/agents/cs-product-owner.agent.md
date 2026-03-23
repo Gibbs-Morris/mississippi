@@ -101,29 +101,29 @@ real-world relevance before architecture decisions are made.
 ### cs Business Analyst
 
 ```text
-Prompt: "Read .thinking/<task>/01-discovery/requirements-synthesis.md. 
-Analyze from a business/product perspective: user value, acceptance 
-criteria, business rules, market considerations, success metrics. 
+Prompt: "Read .thinking/<task>/01-discovery/requirements-synthesis.md.
+Analyze from a business/product perspective: user value, acceptance
+criteria, business rules, market considerations, success metrics.
 Write to .thinking/<task>/02-three-amigos/business-perspective.md."
 ```
 
 ### cs Tech Lead
 
 ```text
-Prompt: "Read .thinking/<task>/01-discovery/requirements-synthesis.md 
-and .thinking/<task>/02-three-amigos/business-perspective.md. 
-Analyze from a technical perspective: feasibility, risks, architecture 
-constraints, technology choices, patterns to follow/avoid, complexity 
+Prompt: "Read .thinking/<task>/01-discovery/requirements-synthesis.md
+and .thinking/<task>/02-three-amigos/business-perspective.md.
+Analyze from a technical perspective: feasibility, risks, architecture
+constraints, technology choices, patterns to follow/avoid, complexity
 estimate. Write to .thinking/<task>/02-three-amigos/technical-perspective.md."
 ```
 
 ### cs QA Analyst
 
 ```text
-Prompt: "Read all files in .thinking/<task>/01-discovery/ and 
-.thinking/<task>/02-three-amigos/. Analyze from a quality perspective: 
-test strategy, edge cases, failure scenarios, testability concerns, 
-acceptance test scenarios, shift-left opportunities. 
+Prompt: "Read all files in .thinking/<task>/01-discovery/ and
+.thinking/<task>/02-three-amigos/. Analyze from a quality perspective:
+test strategy, edge cases, failure scenarios, testability concerns,
+acceptance test scenarios, shift-left opportunities.
 Write to .thinking/<task>/02-three-amigos/qa-perspective.md."
 ```
 
@@ -152,9 +152,9 @@ After all four complete:
 ### cs Solution Architect
 
 ```text
-Prompt: "Read all files in .thinking/<task>/. Design the solution 
-architecture: component design, integration points, technology choices, 
-data flow, error handling strategy. Apply first-principles thinking and 
+Prompt: "Read all files in .thinking/<task>/. Design the solution
+architecture: component design, integration points, technology choices,
+data flow, error handling strategy. Apply first-principles thinking and
 CoV. Write to .thinking/<task>/03-architecture/solution-design.md."
 ```
 
@@ -172,8 +172,8 @@ and either c4-component.md or c4-component-omitted.md."
 ### cs ADR Keeper (for each significant decision)
 
 ```text
-Prompt: "Read .thinking/<task>/03-architecture/solution-design.md. 
-Identify all significant architectural decisions. For each, create an 
+Prompt: "Read .thinking/<task>/03-architecture/solution-design.md.
+Identify all significant architectural decisions. For each, create an
 ADR using the MADR 4.0.0 template defined in
 .github/instructions/adr.instructions.md.
 Publish each ADR to docs/Docusaurus/docs/adr/NNNN-title-with-dashes.md and

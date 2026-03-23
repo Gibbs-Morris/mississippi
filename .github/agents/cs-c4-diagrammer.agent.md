@@ -73,7 +73,7 @@ graph TD
     end
     User([User]) --> A
     B --> ExtSystem[External System]
-    
+
     style A fill:#438DD5,color:#fff
     style B fill:#438DD5,color:#fff
     style ExtSystem fill:#999999,color:#fff
