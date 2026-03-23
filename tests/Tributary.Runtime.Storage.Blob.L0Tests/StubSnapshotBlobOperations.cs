@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +16,11 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob.L0Tests;
 internal sealed class StubSnapshotBlobOperations : ISnapshotBlobOperations
 {
     /// <summary>
+    ///     Gets the stored Blob payloads by Blob name.
+    /// </summary>
+    public Dictionary<string, byte[]> Blobs { get; } = new(System.StringComparer.Ordinal);
+
+    /// <summary>
     ///     Gets the Blob names captured for conditional-create calls.
     /// </summary>
     public List<string> CreatedBlobNames { get; } = [];
@@ -23,6 +29,16 @@ internal sealed class StubSnapshotBlobOperations : ISnapshotBlobOperations
     ///     Gets a value indicating whether conditional create should report success.
     /// </summary>
     public bool CreateIfAbsentResult { get; init; } = true;
+
+    /// <summary>
+    ///     Gets the Blob names captured for delete calls.
+    /// </summary>
+    public List<string> DeletedBlobNames { get; } = [];
+
+    /// <summary>
+    ///     Gets the Blob names captured for download calls.
+    /// </summary>
+    public List<string> DownloadedBlobNames { get; } = [];
 
     /// <summary>
     ///     Gets the page size hints captured for listing calls.
@@ -40,14 +56,43 @@ internal sealed class StubSnapshotBlobOperations : ISnapshotBlobOperations
     public List<SnapshotBlobPage> Pages { get; } = [];
 
     /// <inheritdoc />
-    public Task<bool> CreateIfAbsentAsync(
+    public async Task<bool> CreateIfAbsentAsync(
         string blobName,
         Stream content,
         CancellationToken cancellationToken = default
     )
     {
         CreatedBlobNames.Add(blobName);
-        return Task.FromResult(CreateIfAbsentResult);
+
+        if (!CreateIfAbsentResult || Blobs.ContainsKey(blobName))
+        {
+            return false;
+        }
+
+        using MemoryStream buffer = new();
+        await content.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+        Blobs[blobName] = buffer.ToArray();
+        return true;
+    }
+
+    /// <inheritdoc />
+    public Task<bool> DeleteIfExistsAsync(
+        string blobName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        DeletedBlobNames.Add(blobName);
+        return Task.FromResult(Blobs.Remove(blobName));
+    }
+
+    /// <inheritdoc />
+    public Task<byte[]?> DownloadIfExistsAsync(
+        string blobName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        DownloadedBlobNames.Add(blobName);
+        return Task.FromResult<byte[]?>(Blobs.TryGetValue(blobName, out byte[]? content) ? [.. content] : null);
     }
 
     /// <inheritdoc />
@@ -61,10 +106,30 @@ internal sealed class StubSnapshotBlobOperations : ISnapshotBlobOperations
         ListPrefixes.Add(prefix);
         ListPageSizeHints.Add(pageSizeHint);
 
-        foreach (SnapshotBlobPage page in Pages)
+        IEnumerable<SnapshotBlobPage> pages = Pages.Count > 0
+            ? Pages
+            : CreatePagesFromStoredBlobs(prefix, pageSizeHint);
+
+        foreach (SnapshotBlobPage page in pages)
         {
             yield return page;
             await Task.Yield();
+        }
+    }
+
+    private IEnumerable<SnapshotBlobPage> CreatePagesFromStoredBlobs(
+        string prefix,
+        int pageSizeHint
+    )
+    {
+        string[] matchingBlobNames = Blobs.Keys
+            .Where(blobName => blobName.StartsWith(prefix, System.StringComparison.Ordinal))
+            .OrderBy(blobName => blobName, System.StringComparer.Ordinal)
+            .ToArray();
+
+        for (int index = 0; index < matchingBlobNames.Length; index += pageSizeHint)
+        {
+            yield return new SnapshotBlobPage(matchingBlobNames.Skip(index).Take(pageSizeHint).ToArray());
         }
     }
 }

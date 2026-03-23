@@ -25,6 +25,28 @@ internal interface ISnapshotBlobOperations
     );
 
     /// <summary>
+    ///     Deletes a Blob when it exists.
+    /// </summary>
+    /// <param name="blobName">The Blob name to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><see langword="true" /> when the Blob existed and was deleted; otherwise, <see langword="false" />.</returns>
+    Task<bool> DeleteIfExistsAsync(
+        string blobName,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Downloads a Blob body when it exists.
+    /// </summary>
+    /// <param name="blobName">The Blob name to download.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The downloaded Blob bytes, or <see langword="null" /> when the Blob does not exist.</returns>
+    Task<byte[]?> DownloadIfExistsAsync(
+        string blobName,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     ///     Lists Blob names for a stream-local prefix in incremental pages.
     /// </summary>
     /// <param name="prefix">The stream-local prefix.</param>

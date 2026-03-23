@@ -65,6 +65,42 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
     }
 
     /// <inheritdoc />
+    public async Task<bool> DeleteIfExistsAsync(
+        string blobName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
+
+        BlobClient blobClient = BlobContainerClient.GetBlobClient(blobName);
+        Response<bool> response = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        return response.Value;
+    }
+
+    /// <inheritdoc />
+    public async Task<byte[]?> DownloadIfExistsAsync(
+        string blobName,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
+
+        BlobClient blobClient = BlobContainerClient.GetBlobClient(blobName);
+
+        try
+        {
+            Response<BlobDownloadResult> response = await blobClient.DownloadContentAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+            return response.Value.Content.ToArray();
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
     public IAsyncEnumerable<SnapshotBlobPage> ListByPrefixAsync(
         string prefix,
         int pageSizeHint,

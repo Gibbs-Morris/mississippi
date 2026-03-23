@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -80,6 +81,77 @@ public sealed class SnapshotBlobOperationsTests
         bool created = await operations.CreateIfAbsentAsync(blobName, content, CancellationToken.None);
 
         Assert.False(created);
+    }
+
+    /// <summary>
+    ///     Verifies exact-name downloads return the Blob content bytes.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DownloadIfExistsAsyncShouldReturnBlobContentWhenTheBlobExists()
+    {
+        const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
+        Mock<BlobContainerClient> container = new();
+        Mock<BlobClient> blob = new();
+
+        container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
+        blob.Setup(client => client.DownloadContentAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Response.FromValue(BlobsModelFactory.BlobDownloadResult(content: BinaryData.FromBytes([1, 2, 3])), Mock.Of<Response>()));
+
+        SnapshotBlobOperations operations = new(container.Object);
+
+        byte[]? content = await operations.DownloadIfExistsAsync(blobName, CancellationToken.None);
+
+        Assert.NotNull(content);
+        Assert.Equal([1, 2, 3], content);
+    }
+
+    /// <summary>
+    ///     Verifies exact-name downloads return null for missing blobs.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DownloadIfExistsAsyncShouldReturnNullWhenTheBlobDoesNotExist()
+    {
+        const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
+        Mock<BlobContainerClient> container = new();
+        Mock<BlobClient> blob = new();
+
+        container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
+        blob.Setup(client => client.DownloadContentAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new RequestFailedException(404, "missing"));
+
+        SnapshotBlobOperations operations = new(container.Object);
+
+        byte[]? content = await operations.DownloadIfExistsAsync(blobName, CancellationToken.None);
+
+        Assert.Null(content);
+    }
+
+    /// <summary>
+    ///     Verifies exact-name deletes forward to the Blob SDK and return the delete result.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteIfExistsAsyncShouldReturnDeleteResultFromTheBlobSdk()
+    {
+        const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
+        Mock<BlobContainerClient> container = new();
+        Mock<BlobClient> blob = new();
+        CancellationToken capturedCancellationToken = default;
+
+        container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
+        blob.Setup(client => client.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
+            .Callback<DeleteSnapshotsOption, BlobRequestConditions, CancellationToken>((_, _, cancellationToken) => capturedCancellationToken = cancellationToken)
+            .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
+
+        SnapshotBlobOperations operations = new(container.Object);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        bool deleted = await operations.DeleteIfExistsAsync(blobName, cancellationTokenSource.Token);
+
+        Assert.True(deleted);
+        Assert.Equal(cancellationTokenSource.Token, capturedCancellationToken);
     }
 
     /// <summary>

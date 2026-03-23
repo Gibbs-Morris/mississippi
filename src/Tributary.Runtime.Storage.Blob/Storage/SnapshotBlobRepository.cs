@@ -24,23 +24,53 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     /// </summary>
     /// <param name="blobNameStrategy">The Blob naming strategy.</param>
     /// <param name="blobOperations">The low-level Blob operations seam.</param>
+    /// <param name="blobEnvelopeCodec">The provider-owned Blob frame codec.</param>
     /// <param name="options">The configured Blob storage options.</param>
     public SnapshotBlobRepository(
         IBlobNameStrategy blobNameStrategy,
         ISnapshotBlobOperations blobOperations,
+        IBlobEnvelopeCodec blobEnvelopeCodec,
         IOptions<SnapshotBlobStorageOptions> options
     )
     {
         BlobNameStrategy = blobNameStrategy ?? throw new ArgumentNullException(nameof(blobNameStrategy));
         BlobOperations = blobOperations ?? throw new ArgumentNullException(nameof(blobOperations));
+        BlobEnvelopeCodec = blobEnvelopeCodec ?? throw new ArgumentNullException(nameof(blobEnvelopeCodec));
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
     }
+
+    private IBlobEnvelopeCodec BlobEnvelopeCodec { get; }
 
     private IBlobNameStrategy BlobNameStrategy { get; }
 
     private ISnapshotBlobOperations BlobOperations { get; }
 
     private SnapshotBlobStorageOptions Options { get; }
+
+    /// <inheritdoc />
+    public async Task DeleteAsync(
+        SnapshotKey snapshotKey,
+        CancellationToken cancellationToken = default
+    )
+    {
+        string blobName = BlobNameStrategy.GetBlobName(snapshotKey);
+        await BlobOperations.DeleteIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteAllAsync(
+        SnapshotStreamKey streamKey,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await foreach (IReadOnlyList<long> page in ListVersionsAsync(streamKey, cancellationToken))
+        {
+            foreach (long version in page)
+            {
+                await DeleteAsync(new(streamKey, version), cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
 
     /// <inheritdoc />
     public async Task<long?> GetLatestVersionAsync(
@@ -59,6 +89,80 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
         }
 
         return latestVersion;
+    }
+
+    /// <inheritdoc />
+    public async Task PruneAsync(
+        SnapshotStreamKey streamKey,
+        IReadOnlyCollection<int> retainModuli,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(retainModuli);
+
+        long? latestVersion = await GetLatestVersionAsync(streamKey, cancellationToken).ConfigureAwait(false);
+        if (!latestVersion.HasValue)
+        {
+            return;
+        }
+
+        await foreach (IReadOnlyList<long> page in ListVersionsAsync(streamKey, cancellationToken))
+        {
+            foreach (long version in page)
+            {
+                if (ShouldRetain(version, latestVersion.Value, retainModuli))
+                {
+                    continue;
+                }
+
+                await DeleteAsync(new(streamKey, version), cancellationToken).ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<SnapshotEnvelope?> ReadAsync(
+        SnapshotKey snapshotKey,
+        CancellationToken cancellationToken = default
+    )
+    {
+        string blobName = BlobNameStrategy.GetBlobName(snapshotKey);
+        byte[]? storedFrame = await BlobOperations.DownloadIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false);
+        if (storedFrame is null)
+        {
+            return null;
+        }
+
+        return BlobEnvelopeCodec.Decode(snapshotKey, storedFrame).Snapshot;
+    }
+
+    /// <inheritdoc />
+    public async Task<SnapshotEnvelope?> ReadLatestAsync(
+        SnapshotStreamKey streamKey,
+        CancellationToken cancellationToken = default
+    )
+    {
+        long? latestVersion = await GetLatestVersionAsync(streamKey, cancellationToken).ConfigureAwait(false);
+        if (!latestVersion.HasValue)
+        {
+            return null;
+        }
+
+        return await ReadAsync(new(streamKey, latestVersion.Value), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task WriteAsync(
+        SnapshotKey snapshotKey,
+        SnapshotEnvelope snapshot,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        byte[] storedFrame = BlobEnvelopeCodec.Encode(snapshotKey, snapshot);
+        using MemoryStream frameStream = new(storedFrame, writable: false);
+        await WriteIfAbsentAsync(snapshotKey, frameStream, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -100,4 +204,11 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
             throw new SnapshotBlobDuplicateVersionException(snapshotKey);
         }
     }
+
+    private static bool ShouldRetain(
+        long version,
+        long latestVersion,
+        IReadOnlyCollection<int> retainModuli
+    ) => (version == latestVersion)
+         || retainModuli.Any(modulus => (modulus != 0) && ((version % modulus) == 0));
 }

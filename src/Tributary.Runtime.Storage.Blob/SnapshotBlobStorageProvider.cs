@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 using Mississippi.Tributary.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Blob.Storage;
 
 
 namespace Mississippi.Tributary.Runtime.Storage.Blob;
@@ -16,72 +17,92 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob;
 /// </summary>
 internal sealed class SnapshotBlobStorageProvider : ISnapshotStorageProvider
 {
-    private const string IncrementNotImplementedMessage =
-        "Blob snapshot storage behavior is not implemented until increment 4.";
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="SnapshotBlobStorageProvider" /> class.
     /// </summary>
+    /// <param name="repository">The Blob repository handling snapshot persistence.</param>
     /// <param name="logger">The logger for diagnostic output.</param>
     public SnapshotBlobStorageProvider(
+        ISnapshotBlobRepository repository,
         ILogger<SnapshotBlobStorageProvider> logger
-    ) =>
+    )
+    {
+        Repository = repository ?? throw new ArgumentNullException(nameof(repository));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
 
     /// <inheritdoc />
     public string Format => "azure-blob";
 
     private ILogger<SnapshotBlobStorageProvider> Logger { get; }
 
+    private ISnapshotBlobRepository Repository { get; }
+
     /// <inheritdoc />
-    public Task DeleteAllAsync(
+    public async Task DeleteAllAsync(
         SnapshotStreamKey streamKey,
         CancellationToken cancellationToken = default
     )
     {
-        Logger.SnapshotOperationNotImplemented(nameof(DeleteAllAsync));
-        throw new NotSupportedException(IncrementNotImplementedMessage);
+        Logger.DeletingAllSnapshots(streamKey);
+        await Repository.DeleteAllAsync(streamKey, cancellationToken).ConfigureAwait(false);
+        Logger.DeletedAllSnapshots(streamKey);
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(
+    public async Task DeleteAsync(
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     )
     {
-        Logger.SnapshotOperationNotImplemented(nameof(DeleteAsync));
-        throw new NotSupportedException(IncrementNotImplementedMessage);
+        Logger.DeletingSnapshot(snapshotKey);
+        await Repository.DeleteAsync(snapshotKey, cancellationToken).ConfigureAwait(false);
+        Logger.DeletedSnapshot(snapshotKey);
     }
 
     /// <inheritdoc />
-    public Task PruneAsync(
+    public async Task PruneAsync(
         SnapshotStreamKey streamKey,
         IReadOnlyCollection<int> retainModuli,
         CancellationToken cancellationToken = default
     )
     {
-        Logger.SnapshotOperationNotImplemented(nameof(PruneAsync));
-        throw new NotSupportedException(IncrementNotImplementedMessage);
+        ArgumentNullException.ThrowIfNull(retainModuli);
+
+        Logger.PruningSnapshots(streamKey, retainModuli.Count);
+        await Repository.PruneAsync(streamKey, retainModuli, cancellationToken).ConfigureAwait(false);
+        Logger.PrunedSnapshots(streamKey);
     }
 
     /// <inheritdoc />
-    public Task<SnapshotEnvelope?> ReadAsync(
+    public async Task<SnapshotEnvelope?> ReadAsync(
         SnapshotKey snapshotKey,
         CancellationToken cancellationToken = default
     )
     {
-        Logger.SnapshotOperationNotImplemented(nameof(ReadAsync));
-        throw new NotSupportedException(IncrementNotImplementedMessage);
+        Logger.ReadingSnapshot(snapshotKey);
+        SnapshotEnvelope? snapshot = await Repository.ReadAsync(snapshotKey, cancellationToken).ConfigureAwait(false);
+        if (snapshot is null)
+        {
+            Logger.SnapshotNotFound(snapshotKey);
+            return null;
+        }
+
+        Logger.SnapshotFound(snapshotKey);
+        return snapshot;
     }
 
     /// <inheritdoc />
-    public Task WriteAsync(
+    public async Task WriteAsync(
         SnapshotKey snapshotKey,
         SnapshotEnvelope snapshot,
         CancellationToken cancellationToken = default
     )
     {
-        Logger.SnapshotOperationNotImplemented(nameof(WriteAsync));
-        throw new NotSupportedException(IncrementNotImplementedMessage);
+        ArgumentNullException.ThrowIfNull(snapshot);
+
+        Logger.WritingSnapshot(snapshotKey);
+        await Repository.WriteAsync(snapshotKey, snapshot, cancellationToken).ConfigureAwait(false);
+        Logger.SnapshotWritten(snapshotKey);
     }
 }

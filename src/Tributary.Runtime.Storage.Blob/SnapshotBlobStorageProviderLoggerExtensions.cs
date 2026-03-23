@@ -1,23 +1,144 @@
 using Microsoft.Extensions.Logging;
 
+using Mississippi.Tributary.Abstractions;
+
 
 namespace Mississippi.Tributary.Runtime.Storage.Blob;
 
 /// <summary>
-///     Logger extensions for the Blob snapshot storage provider shell.
+///     Logger extensions for the Blob snapshot storage provider.
 /// </summary>
 internal static partial class SnapshotBlobStorageProviderLoggerExtensions
 {
     /// <summary>
-    ///     Logs that a Blob snapshot operation has not yet been implemented.
+    ///     Logs when deleting all snapshots for a stream.
     /// </summary>
-    /// <param name="logger">The logger receiving the event.</param>
-    /// <param name="operationName">The storage operation name.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="streamKey">The stream key.</param>
     [LoggerMessage(
         EventId = 2400,
-        Level = LogLevel.Warning,
-        Message = "Snapshot Blob operation '{operationName}' is not implemented in increment 1.")]
-    public static partial void SnapshotOperationNotImplemented(
-        this ILogger<SnapshotBlobStorageProvider> logger,
-        string operationName);
+        Level = LogLevel.Information,
+        Message = "Deleting all Blob snapshots for stream '{streamKey}'.")]
+    public static partial void DeletingAllSnapshots(
+        this ILogger logger,
+        SnapshotStreamKey streamKey
+    );
+
+    /// <summary>
+    ///     Logs when delete-all has completed for a stream.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="streamKey">The stream key.</param>
+    [LoggerMessage(
+        EventId = 2401,
+        Level = LogLevel.Information,
+        Message = "Deleted all Blob snapshots for stream '{streamKey}'.")]
+    public static partial void DeletedAllSnapshots(
+        this ILogger logger,
+        SnapshotStreamKey streamKey
+    );
+
+    /// <summary>
+    ///     Logs when deleting a snapshot.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2402, Level = LogLevel.Debug, Message = "Deleting Blob snapshot '{snapshotKey}'.")]
+    public static partial void DeletingSnapshot(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Logs when a snapshot delete has completed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2403, Level = LogLevel.Debug, Message = "Deleted Blob snapshot '{snapshotKey}'.")]
+    public static partial void DeletedSnapshot(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Logs when pruning snapshots.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="streamKey">The stream key.</param>
+    /// <param name="moduliCount">The number of retain moduli.</param>
+    [LoggerMessage(
+        EventId = 2404,
+        Level = LogLevel.Information,
+        Message = "Pruning Blob snapshots for stream '{streamKey}' with {moduliCount} retain moduli.")]
+    public static partial void PruningSnapshots(
+        this ILogger logger,
+        SnapshotStreamKey streamKey,
+        int moduliCount
+    );
+
+    /// <summary>
+    ///     Logs when prune has completed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="streamKey">The stream key.</param>
+    [LoggerMessage(EventId = 2405, Level = LogLevel.Information, Message = "Pruned Blob snapshots for stream '{streamKey}'.")]
+    public static partial void PrunedSnapshots(
+        this ILogger logger,
+        SnapshotStreamKey streamKey
+    );
+
+    /// <summary>
+    ///     Logs when reading a snapshot.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2406, Level = LogLevel.Debug, Message = "Reading Blob snapshot '{snapshotKey}'.")]
+    public static partial void ReadingSnapshot(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Logs when a snapshot was found.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2407, Level = LogLevel.Debug, Message = "Blob snapshot found for key '{snapshotKey}'.")]
+    public static partial void SnapshotFound(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Logs when a snapshot was not found.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2408, Level = LogLevel.Debug, Message = "Blob snapshot not found for key '{snapshotKey}'.")]
+    public static partial void SnapshotNotFound(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Logs when writing a snapshot.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2409, Level = LogLevel.Debug, Message = "Writing Blob snapshot '{snapshotKey}'.")]
+    public static partial void WritingSnapshot(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Logs when a snapshot write has completed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2410, Level = LogLevel.Debug, Message = "Blob snapshot written for key '{snapshotKey}'.")]
+    public static partial void SnapshotWritten(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
 }
