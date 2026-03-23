@@ -68,13 +68,13 @@ flowchart TD
     subgraph Phase5["Phase 5: Implementation"]
         P5Branch["Create a feature branch from main"]
         P5Lead["Invoke cs Lead Developer with the next slice of work"]
-        P5Code["Lead Developer writes a small, focused increment"]
+        P5Code["cs Lead Developer writes a small, focused increment"]
         P5Tests["Invoke cs Test Engineer to write or validate tests"]
         P5Build["Run the build and verify zero warnings"]
         P5RunTests["Run tests and verify they pass"]
         P5Guard["Invoke cs Commit Guardian"]
-        P5Issues{"Commit Guardian issues found?"}
-        P5Remediate["Lead Developer remediates Commit Guardian findings in the current increment"]
+        P5Issues{"cs Commit Guardian issues found?"}
+        P5Remediate["cs Lead Developer remediates cs Commit Guardian findings in the current increment"]
         P5Commit["Commit with a scoped message and record increment artifacts"]
         P5More{"More plan items to implement?"}
         P5Full["After all increments, run the full build, full tests, and mutation tests if Mississippi"]
@@ -88,7 +88,7 @@ flowchart TD
 
     subgraph Phase6["Phase 6: Comprehensive Code Review"]
         P6Diff["Use git diff main...HEAD to identify changed files"]
-        P6Review["Invoke approved review personas in sequence"]
+        P6Review["Invoke cs Reviewer Pedantic, cs Reviewer Strategic, cs Reviewer Security, cs Reviewer DX, cs Reviewer Performance, and cs Developer Evangelist in sequence"]
         P6Experts["Invoke relevant approved domain experts from the Agent Roster"]
         P6Synthesis["Synthesize all review output"]
         P6Findings{"Review findings remain?"}
@@ -116,7 +116,7 @@ flowchart TD
         P8Writer["Invoke cs Technical Writer"]
         P8Drafts["Create the evidence map, classify page types, draft pages, and publish verified pages"]
         P8Review["Run the documentation review cycle with cs Doc Reviewer and cs Developer Evangelist"]
-        P8MustFix{"Doc Reviewer Must Fix findings remain?"}
+        P8MustFix{"cs Doc Reviewer Must Fix findings remain?"}
         P8Fixes["Re-invoke cs Technical Writer for each Must Fix or Should Fix finding and record remediation"]
         P8Validate["Validate the documentation quality gates"]
 
