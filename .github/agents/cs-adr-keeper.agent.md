@@ -17,9 +17,11 @@ You are a historian and a context-preserver. You understand that decisions witho
 1. **First Principles**: Is this decision actually significant? Does it affect structure, is it hard to reverse, does it set a precedent? Only record genuine architectural decisions, not trivial implementation choices.
 2. **CoV on every decision record**: verify the context is accurate, alternatives were genuinely considered, and consequences are realistic.
 3. **Use the MADR 4.0.0 template** as defined in `.github/instructions/adr.instructions.md`. Required sections: Context and Problem Statement, Considered Options, Decision Outcome. Include optional sections (Decision Drivers, Consequences, Confirmation, Pros and Cons of the Options, More Information) when they add value.
-4. **ADRs are immutable** once accepted. Supersede, never edit.
-5. **Sequential numbering**: `NNNN-title-with-dashes.md` (zero-padded, e.g., `0001-use-event-sourcing.md`).
-6. **Output ADRs to `docs/Docusaurus/docs/adr/`** so they are published on the documentation site. Draft reasoning and working notes go to `.thinking/`.
+4. **Use Mermaid when the ADR meets the qualifying test**: for new ADRs, substantively revised mutable ADRs, and new superseding ADRs, include Mermaid when the ADR explains a multi-step flow or multi-component structural relationship that prose alone would make materially harder to understand. A qualifying ADR normally has both of these properties: it documents a multi-step flow or multi-component structural relationship, and that relationship would be materially harder to understand from prose alone. If either property is absent, Mermaid remains optional. Keep prose authoritative, place the diagram under the section it clarifies, and include a short omission rationale when a qualifying ADR intentionally omits Mermaid.
+5. **Prefer the simplest fitting Mermaid type**: use `sequenceDiagram` for interactions over time, `flowchart` for process or decision flow, and simple architecture or C4-style Mermaid for structural relationships. Decorative diagrams are out of scope.
+6. **ADRs are immutable** once accepted. Supersede, never edit.
+7. **Sequential numbering**: `NNNN-title-with-dashes.md` (zero-padded, e.g., `0001-use-event-sourcing.md`).
+8. **Output ADRs to `docs/Docusaurus/docs/adr/`** so they are published on the documentation site. Draft reasoning and working notes go to `.thinking/`.
 
 ## Decision Threshold
 
@@ -72,6 +74,8 @@ What is the issue motivating this decision? Include:
 - The constraints in play
 - The forces acting on the decision
 
+Add a focused Mermaid diagram under the section it clarifies when the ADR meets the qualifying Mermaid test above.
+
 ## Decision Drivers
 
 - Driver 1 (e.g., performance requirement)
@@ -116,6 +120,8 @@ Description.
 ## More Information
 
 Links to related ADRs, design documents, or external references.
+
+If the ADR would normally benefit from Mermaid but intentionally omits one, add a brief omission rationale near the relevant discussion or in this section.
 ```
 
 ## CoV: Decision Verification

@@ -6,7 +6,7 @@ globs: docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md
 # Architecture Decision Records (MADR)
 
 **Source:** .github/instructions/adr.instructions.md
-**Last synced:** 2026-03-23 (commit 80ff68f7)
+**Last synced:** 2026-03-23 (pending current workspace changes)
 
 Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/docs/adr/` for Docusaurus publishing, and are immutable once accepted.
 
@@ -19,6 +19,10 @@ Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/do
 - ADR frontmatter **MUST** include `title`, `description`, `sidebar_position` (matching the `NNNN` number), `status`, and `date`; `decision_makers`, `consulted`, and `informed` fields **SHOULD** be included when applicable. Why: Combines Docusaurus rendering requirements with MADR metadata.
 - The required MADR sections **MUST** be: `Context and Problem Statement`, `Considered Options`, and `Decision Outcome` (with `Chosen option:` sentence). Why: These three sections are the MADR 4.0.0 mandatory minimum.
 - Optional MADR sections (`Decision Drivers`, `Consequences`, `Confirmation`, `Pros and Cons of the Options`, `More Information`) **SHOULD** be included when they add value and **MAY** be omitted for simple decisions. Why: Keeps lightweight decisions lightweight while allowing rigour when needed.
+- New ADRs, substantively revised mutable ADRs, and new superseding ADRs **SHOULD** include Mermaid when they explain a multi-step flow or a multi-component structural relationship that prose alone would make materially harder to understand; trivial, metadata-only, and link-only edits **SHOULD NOT** trigger new diagram work. Why: Diagram effort should track comprehension benefit, not create churn for small edits.
+- When Mermaid is included in an ADR, the prose **MUST** remain authoritative, the diagram **MUST** stay aligned with that prose, and the diagram **SHOULD** appear directly under the section it clarifies. Why: Diagrams improve comprehension only when they support rather than compete with the written decision record.
+- When an ADR meets the normal Mermaid trigger and omits a diagram, the author **SHOULD** include a short omission rationale near the relevant discussion or in a clearly labeled note. Why: This keeps omissions intentional and reviewable without forcing low-value diagrams.
+- Authors **SHOULD** prefer `sequenceDiagram` for interactions over time, `flowchart` for process or decision flow, and simple architecture or C4-style Mermaid for structural relationships. Why: Default mappings reduce diagram-choice churn and improve reviewer consistency.
 - Accepted ADRs **MUST NOT** have their Context or Decision Outcome sections modified; if a decision changes, a new ADR **MUST** be created with status `superseded by [ADR-NNNN](NNNN-title.md)` on the original. Why: Immutability preserves historical reasoning.
 - Status values **MUST** be one of: `proposed`, `accepted`, `deprecated`, `superseded by [ADR-NNNN](NNNN-title.md)`. Why: Defined lifecycle with traceability.
 - ADR cross-references **MUST** use relative Markdown links. Why: Keeps links valid across environments.
@@ -34,7 +38,18 @@ All contributors creating or modifying ADRs; the cs ADR Keeper agent is the prim
 - Create: copy the template below to `docs/Docusaurus/docs/adr/NNNN-title-with-dashes.md`
 - Set `sidebar_position` to the `NNNN` number so ADRs sort chronologically
 - Fill in required sections: Context and Problem Statement, Considered Options, Decision Outcome
+- Add Mermaid when the ADR documents both a multi-step flow or multi-component structural relationship and a relationship that would be materially harder to understand from prose alone; otherwise Mermaid remains optional
+- If a qualifying ADR intentionally omits Mermaid, include a short omission rationale
 - Set status to `proposed`; update to `accepted` after approval
+
+## Qualifying Test
+
+A qualifying ADR normally has both of these properties:
+
+1. It documents a multi-step flow or multi-component structural relationship.
+2. That relationship would be materially harder to understand from prose alone.
+
+If either property is absent, Mermaid remains optional.
 
 ## MADR 4.0.0 Template (Mississippi)
 
@@ -59,6 +74,8 @@ informed:
 
 Describe the context and problem statement in two to three sentences.
 Articulate the problem as a question when possible.
+
+When the ADR meets the qualifying Mermaid test above, place the diagram directly under the section it clarifies and keep the prose authoritative.
 
 ## Decision Drivers
 
@@ -104,6 +121,8 @@ Description or pointer to more information.
 ## More Information
 
 Links to related ADRs, RFCs, design documents, or external references.
+
+If the ADR would normally benefit from Mermaid but intentionally omits one, add a brief omission rationale near the relevant discussion or in this section.
 ````
 
 ## Core Principles
@@ -112,6 +131,7 @@ Links to related ADRs, RFCs, design documents, or external references.
 - Immutability preserves historical reasoning; supersede, never edit.
 - Published in Docusaurus so the whole team can find and read decisions.
 - Sequential numbering provides stable, unambiguous identifiers.
+- Mermaid should raise clarity for complex flows and structures, not become decorative ceremony.
 
 ## References
 
