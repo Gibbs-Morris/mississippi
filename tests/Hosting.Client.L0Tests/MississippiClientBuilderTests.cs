@@ -10,7 +10,8 @@ using Mississippi.Reservoir.Abstractions;
 namespace Mississippi.Hosting.Client.L0Tests;
 
 /// <summary>
-///     Tests for <see cref="MississippiClientBuilder" /> and <see cref="MississippiClientWebAssemblyHostBuilderRegistrations" />.
+///     Tests for <see cref="MississippiClientBuilder" /> and
+///     <see cref="MississippiClientWebAssemblyHostBuilderRegistrations" />.
 /// </summary>
 public sealed class MississippiClientBuilderTests
 {

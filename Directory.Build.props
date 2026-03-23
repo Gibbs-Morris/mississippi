@@ -51,7 +51,10 @@
 
         <!-- Prefer an explicit *single* RID (e.g. dotnet restore/publish -r win-x64).
              Guard against accidental multi-values (semicolon list) which would produce an invalid filename on Windows. -->
-        <_LockRid Condition="'$(RuntimeIdentifier)' != '' and !$([System.String]::Copy('$(RuntimeIdentifier)').Contains(';'))">$([System.String]::Copy('$(RuntimeIdentifier)').Trim())</_LockRid>
+        <_LockRid
+            Condition="'$(RuntimeIdentifier)' != '' and !$([System.String]::Copy('$(RuntimeIdentifier)').Contains(';'))">
+            $([System.String]::Copy('$(RuntimeIdentifier)').Trim())
+        </_LockRid>
 
         <!-- Otherwise compute from host OS + *process* architecture -->
         <_Arch Condition="'$(_LockRid)' == ''">$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</_Arch>
@@ -63,7 +66,10 @@
 
         <!-- Linux: split glibc vs musl (Alpine etc.) -->
         <_IsMusl Condition="'$(_BaseOs)' == 'linux' and $([System.IO.File]::Exists('/etc/alpine-release'))">true</_IsMusl>
-        <_IsMusl Condition="'$(_BaseOs)' == 'linux' and '$(_IsMusl)' == '' and $([System.String]::Copy('$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier)').Contains('musl'))">true</_IsMusl>
+        <_IsMusl
+            Condition="'$(_BaseOs)' == 'linux' and '$(_IsMusl)' == '' and $([System.String]::Copy('$([System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier)').Contains('musl'))">
+            true
+        </_IsMusl>
 
         <_LockRid Condition="'$(_LockRid)' == '' and '$(_BaseOs)' == 'linux' and '$(_IsMusl)' == 'true'">linux-musl-$(_Arch)</_LockRid>
         <_LockRid Condition="'$(_LockRid)' == '' and '$(_BaseOs)' != ''">$(_BaseOs)-$(_Arch)</_LockRid>
@@ -75,7 +81,6 @@
         <NuGetLockFilePath Condition="'$(_LockRid)' != ''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', 'packages.$(_LockRid).lock.json'))</NuGetLockFilePath>
 
     </PropertyGroup>
-
 
 
     <ItemGroup>
