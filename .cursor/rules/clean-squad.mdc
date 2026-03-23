@@ -10,6 +10,8 @@ globs: .github/agents/cs-*.agent.md
 
 Governing thought: Every Clean Squad agent applies first-principles thinking and chain-of-verification to every task, shares state through the `.thinking` folder, and follows explicit handover protocols.
 
+> Drift check: Review `.github/clean-squad/WORKFLOW.md` before changing Clean Squad process requirements; the workflow remains authoritative for phase boundaries and agent responsibilities.
+
 ## Rules (RFC 2119)
 
 - Every Clean Squad agent **MUST** apply first-principles thinking: question assumptions, decompose to fundamental truths, reason upward, validate against evidence. Why: Prevents inherited-convention bias and cargo-culting.
