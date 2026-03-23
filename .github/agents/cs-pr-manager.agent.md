@@ -1,6 +1,6 @@
 ---
 name: "cs PR Manager"
-description: "Clean Squad sub-agent managing the full PR lifecycle — creation, description authoring, review thread handling, merge readiness checks, and the 10-minute review timing rule."
+description: "Clean Squad sub-agent managing the full PR lifecycle — creation, description authoring, review thread handling, merge readiness checks, and the 300-second review timing rule."
 user-invocable: false
 ---
 

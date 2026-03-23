@@ -67,10 +67,10 @@ specificity and capability:
 
 ### Layer 1 — Copilot Instructions (Global Context)
 
-A file at `.github/copilot-instructions.md` provides global context that is
+A file at `.github/copilot‑instructions.md` provides global context that is
 automatically included in every Copilot chat interaction in the repository.
 
-- **Location**: `.github/copilot-instructions.md`
+- **Location**: `.github/copilot‑instructions.md`
 - **Scope**: All Copilot interactions in the repository
 - **Format**: Markdown
 - **Purpose**: High-level project context, coding standards, architectural
@@ -448,7 +448,7 @@ matching instructions.
 
 ```text
 .github/
-├── copilot-instructions.md          # Global repo context
+├── copilot‑instructions.md          # Global repo context
 ├── instructions/
 │   ├── shared-policies.instructions.md
 │   ├── testing.instructions.md
