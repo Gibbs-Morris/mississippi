@@ -12,6 +12,7 @@ Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/do
 
 - ADRs **MUST** live in `docs/Docusaurus/docs/adr/` and follow the MADR 4.0.0 template defined in this file. Why: Single published location ensures discoverability via the Docusaurus site.
 - ADR filenames **MUST** follow the pattern `NNNN-title-with-dashes.md` where `NNNN` is a zero-padded sequential number and the title uses lowercase dashes. Why: MADR convention; sequential numbers provide stable cross-references.
+- When a feature branch adds ADRs, their branch-local numbers **MUST** be treated as provisional until merge preparation; before merging, the author **MUST** rebase onto the latest `main`, renumber new ADRs as a contiguous block after the highest ADR on `main`, and update filenames, `ADR-NNNN` titles, `sidebar_position`, and relative ADR links. Why: Parallel PRs can race on sequential numbering and create filename/sidebar conflicts.
 - ADR frontmatter **MUST** include `title`, `description`, `sidebar_position` (matching the `NNNN` number), `status`, and `date`; `decision_makers`, `consulted`, and `informed` fields **SHOULD** be included when applicable. Why: Combines Docusaurus rendering requirements with MADR metadata.
 - The required MADR sections **MUST** be: `Context and Problem Statement`, `Considered Options`, and `Decision Outcome` (with `Chosen option:` sentence). Why: These three sections are the MADR 4.0.0 mandatory minimum.
 - Optional MADR sections (`Decision Drivers`, `Consequences`, `Confirmation`, `Pros and Cons of the Options`, `More Information`) **SHOULD** be included when they add value and **MAY** be omitted for simple decisions. Why: Keeps lightweight decisions lightweight while allowing rigour when needed.
@@ -28,6 +29,7 @@ All contributors creating or modifying ADRs; the cs ADR Keeper agent is the prim
 ## At-a-Glance Quick-Start
 
 - Create: copy the template below to `docs/Docusaurus/docs/adr/NNNN-title-with-dashes.md`
+- Treat ADR numbers on feature branches as provisional until the PR is rebased and ready to merge
 - Set `sidebar_position` to the `NNNN` number so ADRs sort chronologically
 - Fill in required sections: Context and Problem Statement, Considered Options, Decision Outcome
 - Set status to `proposed`; update to `accepted` after approval
