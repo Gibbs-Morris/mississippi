@@ -1,6 +1,6 @@
 ---
 name: "cs Expert Serialization"
-description: "Clean Squad domain expert for serialization formats, wire protocols, schema evolution, and data interchange. Evaluates versioning, compatibility, and performance of data formats."
+description: "Serialization domain expert for architecture and code review. Use when contracts, wire formats, schema evolution, or payload performance need scrutiny. Produces serialization guidance and compatibility findings. Not for UI or UX decisions."
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: "cs Reviewer Performance"
-description: "Clean Squad code reviewer focused on performance analysis. Evaluates allocations, algorithmic complexity, hot paths, and scalability implications."
+description: "Performance reviewer for planning and code review. Use when a plan or diff may affect allocations, complexity, latency, or scaling. Produces performance findings and hot-path guidance. Not for general style cleanup."
 user-invocable: false
 ---
 

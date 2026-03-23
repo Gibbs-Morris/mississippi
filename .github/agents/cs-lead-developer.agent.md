@@ -1,6 +1,6 @@
 ---
 name: "cs Lead Developer"
-description: "Clean Squad sub-agent that implements production code incrementally following Clean Code, TDD, and repository conventions. Writes code in small, testable increments."
+description: "Implementation owner for production-code increments. Use when an approved plan slice needs code changes in the repo. Produces the production implementation for the current increment. Not for independent test strategy signoff."
 user-invocable: false
 ---
 

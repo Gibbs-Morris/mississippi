@@ -1,6 +1,6 @@
 ---
 name: "cs Test Engineer"
-description: "Clean Squad sub-agent specializing in test design, coverage analysis, and mutation testing. Creates deterministic, comprehensive tests across L0/L1/L2 levels."
+description: "Test implementation specialist for implementation and QA. Use when code needs deterministic tests, coverage improvement, or mutation hardening. Produces tests and test-quality evidence. Not for final quality approval."
 user-invocable: false
 ---
 

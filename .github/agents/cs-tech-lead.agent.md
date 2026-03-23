@@ -1,6 +1,6 @@
 ---
 name: "cs Tech Lead"
-description: "Clean Squad sub-agent providing technical leadership perspective in Three Amigos and planning phases. Focuses on feasibility, risks, architecture constraints, and technology choices."
+description: "Technical feasibility reviewer for Three Amigos and planning. Use when the team needs implementation risk, complexity, and repo-constraint guidance. Produces feasibility, risk, and technical approach feedback. Not for end-state solution architecture."
 user-invocable: false
 ---
 

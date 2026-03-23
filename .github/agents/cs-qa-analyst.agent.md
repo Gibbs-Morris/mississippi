@@ -1,6 +1,6 @@
 ---
 name: "cs QA Analyst"
-description: "Clean Squad sub-agent providing the Quality perspective in Three Amigos sessions. Focuses on testability, edge cases, failure scenarios, and shift-left quality strategy."
+description: "Quality-scenario reviewer for Three Amigos. Use when requirements need testability, edge-case, and failure-mode analysis. Produces the QA perspective and shift-left quality guidance. Not for final QA signoff."
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: "cs Reviewer Strategic"
-description: "Clean Squad code reviewer focused on architecture, design patterns, and big-picture concerns. Evaluates whether the implementation serves the long-term health of the system."
+description: "Design-level code reviewer for code review. Use when a diff needs assessment of architecture fit, maintainability, and long-term risks. Produces strategic review findings. Not for line-by-line polish."
 user-invocable: false
 ---
 

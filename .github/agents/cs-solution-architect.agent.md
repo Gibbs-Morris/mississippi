@@ -1,6 +1,6 @@
 ---
 name: "cs Solution Architect"
-description: "Clean Squad sub-agent that designs solution architecture with component design, technology choices, data flow, and integration points. Produces architecture documents with Minto Pyramid structure."
+description: "Solution design owner for the architecture phase. Use when requirements are stable enough to choose components, contracts, and integration boundaries. Produces the solution design and technology decisions. Not for early feasibility triage."
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: "cs Commit Guardian"
-description: "Clean Squad sub-agent that enforces commit discipline — atomic changes, meaningful messages, passing builds, and clean diffs."
+description: "Commit-discipline reviewer for implementation increments. Use when an increment is ready to be checked for atomic scope, message quality, and clean validation. Produces commit-review findings and release-to-commit guidance. Not for writing the implementation itself."
 user-invocable: false
 ---
 

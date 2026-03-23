@@ -1,6 +1,6 @@
 ---
 name: "cs QA Lead"
-description: "Clean Squad sub-agent providing strategic QA leadership. Owns test strategy, validates coverage gates, coordinates shift-left testing, and ensures quality standards are met."
+description: "Strategic quality owner for planning and QA validation. Use when the team needs risk-based test-strategy review, coverage-gate judgment, or release-readiness assessment. Produces QA validation and quality-gate decisions. Not for writing or refactoring tests."
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: "cs Developer Evangelist"
-description: "Clean Squad adoption voice who evaluates features through the lens of conference talks, YouTube content, competitive positioning, and real-world developer adoption. Ensures the framework is demo-able, shareable, and solves genuine production problems better than alternatives."
+description: "Adoption reviewer for Three Amigos, planning, code review, and documentation. Use when a change needs demo value, competitive positioning, or story clarity assessment. Produces adoption guidance and narrative findings. Not for final requirements signoff."
 user-invocable: false
 ---
 

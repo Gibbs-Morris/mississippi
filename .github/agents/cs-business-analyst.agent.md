@@ -1,6 +1,6 @@
 ---
 name: "cs Business Analyst"
-description: "Clean Squad sub-agent providing the Product/Business perspective in Three Amigos sessions. Focuses on user value, acceptance criteria, and business rules."
+description: "Business-value reviewer for Three Amigos. Use when requirements need user-value, acceptance-criteria, and business-rule analysis. Produces the business perspective and acceptance guidance. Not for technical feasibility."
 user-invocable: false
 ---
 

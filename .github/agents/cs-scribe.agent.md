@@ -1,6 +1,6 @@
 ---
 name: "cs Scribe"
-description: "Clean Squad sub-agent that records thinking, decisions, reasoning, and handovers in the .thinking folder. Maintains the decision trail and ensures institutional knowledge is captured."
+description: "Traceability recorder for the task lifecycle and PR handoff. Use when the team needs decision trails, summaries, or handover narratives captured in .thinking. Produces recorded reasoning and handover artifacts. Not for choosing technical direction."
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: "cs Technical Writer"
-description: "Clean Squad sub-agent that writes and updates Docusaurus documentation under docs/Docusaurus/docs/. Produces evidence-backed, page-type-classified docs with CoV verification against source code."
+description: "Documentation author for the documentation phase. Use when user-facing changes need Docusaurus pages or updates backed by repo evidence. Produces doc drafts, published pages, and evidence maps. Not for independent doc acceptance review."
 user-invocable: false
 ---
 

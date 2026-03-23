@@ -1,6 +1,6 @@
 ---
 name: "cs Reviewer Security"
-description: "Clean Squad code reviewer specialized in security analysis. Reviews for OWASP Top 10, injection attacks, data exposure, and authentication/authorization issues."
+description: "Security reviewer for planning and code review. Use when a plan or diff needs attack-surface, trust-boundary, or secret-handling analysis. Produces security findings and mitigation guidance. Not for general performance tuning."
 user-invocable: false
 ---
 

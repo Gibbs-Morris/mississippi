@@ -1,6 +1,6 @@
 ---
 name: "cs Requirements Analyst"
-description: "Clean Squad sub-agent that performs deep requirements analysis, identifies gaps in discovered requirements, and suggests adaptive follow-up questions."
+description: "Requirements gap analyst for discovery rounds. Use when discovered requirements need missing-question analysis before the next user round. Produces gap analysis and ranked follow-up questions. Not for business-value prioritization."
 user-invocable: false
 ---
 

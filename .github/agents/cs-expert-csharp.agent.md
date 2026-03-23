@@ -1,6 +1,6 @@
 ---
 name: "cs Expert CSharp"
-description: "Clean Squad domain expert for C# language idioms, .NET runtime behavior, and framework conventions. Challenges designs from a C#-native perspective."
+description: "C# domain expert for architecture and code review. Use when a task needs .NET idioms, runtime behavior, or language-level design scrutiny. Produces C#-specific guidance and findings. Not for broader product prioritization."
 user-invocable: false
 ---
 

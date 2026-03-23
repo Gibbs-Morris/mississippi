@@ -1,6 +1,6 @@
 ---
 name: "cs DevOps Engineer"
-description: "Clean Squad sub-agent for CI/CD pipelines, deployment safety, infrastructure configuration, and operational readiness."
+description: "Delivery and operations specialist for implementation, QA, and PR readiness. Use when pipelines, deployment safety, infrastructure config, or observability need scrutiny. Produces DevOps findings and operational guidance. Not for business-rule analysis."
 user-invocable: false
 ---
 

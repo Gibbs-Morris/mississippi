@@ -1,6 +1,6 @@
 ---
 name: "cs Reviewer Pedantic"
-description: "Clean Squad code reviewer with extreme attention to detail. Scrutinizes naming, formatting, consistency, and micro-level code quality."
+description: "Detailed code reviewer for code review. Use when a diff needs scrutiny for naming, consistency, and small correctness issues. Produces line-level review findings. Not for architecture-level tradeoff decisions."
 user-invocable: false
 ---
 

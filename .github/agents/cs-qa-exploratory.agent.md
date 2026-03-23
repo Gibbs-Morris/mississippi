@@ -1,6 +1,6 @@
 ---
 name: "cs QA Exploratory"
-description: "Clean Squad sub-agent specializing in exploratory testing. Discovers unexpected scenarios, boundary conditions, and creative failure modes that structured testing misses."
+description: "Exploratory testing reviewer for QA validation. Use when a change needs creative scenario discovery beyond scripted tests. Produces exploratory findings and unexpected-risk guidance. Not for coverage-gate ownership."
 user-invocable: false
 ---
 

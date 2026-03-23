@@ -1,6 +1,6 @@
 ---
 name: "cs C4 Diagrammer"
-description: "Clean Squad sub-agent specializing in C4 model architecture diagrams. Produces Context, Container, and Component diagrams using Mermaid syntax."
+description: "Architecture diagram specialist for the architecture phase. Use when a solution design needs C4 context, container, or component views in Mermaid. Produces C4 diagrams or a component-omission rationale. Not for choosing the architecture itself."
 user-invocable: false
 ---
 

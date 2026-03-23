@@ -1,6 +1,6 @@
 ---
 name: "cs Plan Synthesizer"
-description: "Clean Squad sub-agent that synthesizes feedback from multiple plan review personas into a prioritized, deduplicated action list using MoSCoW categorization."
+description: "Plan review synthesizer for planning cycles. Use when multiple review outputs need deduplication and prioritization. Produces MoSCoW-organized review synthesis and action lists. Not for original plan authorship."
 user-invocable: false
 ---
 

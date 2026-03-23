@@ -1,6 +1,6 @@
 ---
 name: "cs Expert Cloud"
-description: "Clean Squad domain expert for cloud infrastructure, Azure services, cost optimization, and resilience patterns."
+description: "Cloud infrastructure reviewer for architecture, planning, and code review. Use when hosting, resilience, cost, or managed-service choices need scrutiny. Produces cloud architecture guidance and operational findings. Not for application-level naming decisions."
 user-invocable: false
 ---
 

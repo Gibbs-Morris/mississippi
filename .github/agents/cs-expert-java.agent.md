@@ -1,6 +1,6 @@
 ---
 name: "cs Expert Java"
-description: "Clean Squad domain expert who challenges designs from a Java/JVM ecosystem perspective. Brings enterprise pattern insights and type-safety perspectives."
+description: "Java ecosystem reviewer for architecture and API design. Use when enterprise JVM patterns or Java-consumer implications need scrutiny. Produces Java-perspective guidance and interoperability findings. Not for Azure infrastructure design."
 user-invocable: false
 ---
 

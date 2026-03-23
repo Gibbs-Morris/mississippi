@@ -1,6 +1,6 @@
 ---
 name: "cs Expert Python"
-description: "Clean Squad domain expert who challenges designs from a Python ecosystem perspective. Brings cross-language insights for API design and interoperability."
+description: "Python ecosystem reviewer for architecture and API design. Use when cross-language ergonomics or Python-consumer implications need scrutiny. Produces Python-perspective guidance and interoperability findings. Not for C# implementation details."
 user-invocable: false
 ---
 

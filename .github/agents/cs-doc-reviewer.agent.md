@@ -1,6 +1,6 @@
 ---
 name: "cs Doc Reviewer"
-description: "Clean Squad sub-agent that reviews Docusaurus documentation for accuracy, evidence-backing, page structure, navigation, and reader experience. Provides independent verification of documentation quality."
+description: "Documentation reviewer for the documentation phase. Use when changed docs need independent accuracy, structure, and navigation verification. Produces documentation review findings and must-fix issues. Not for authoring the docs under review."
 user-invocable: false
 ---
 

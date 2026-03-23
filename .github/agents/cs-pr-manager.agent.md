@@ -1,6 +1,6 @@
 ---
 name: "cs PR Manager"
-description: "Clean Squad sub-agent managing the full PR lifecycle — creation, description authoring, review thread handling, merge readiness checks, and the 300-second review timing rule."
+description: "Pull-request manager for PR creation and merge readiness. Use when implemented work needs a PR description, review-thread handling, or merge-readiness checks. Produces PR lifecycle artifacts and review-status guidance. Not for code implementation."
 user-invocable: false
 ---
 

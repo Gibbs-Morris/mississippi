@@ -1,6 +1,6 @@
 ---
 name: "cs ADR Keeper"
-description: "Clean Squad sub-agent that identifies and records Architecture Decision Records using the MADR 4.0.0 template. Publishes ADRs to docs/Docusaurus/docs/adr/ for Docusaurus rendering and maintains the decision trail throughout the SDLC."
+description: "Architecture decision recorder for the architecture phase. Use when a significant design choice needs a published ADR and supporting rationale. Produces ADRs and decision notes. Not for inventing architecture without evidence."
 user-invocable: false
 ---
 
