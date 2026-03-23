@@ -1,0 +1,14 @@
+{
+  "task": "tributary-blob-storage-provider",
+  "created": "2026-03-23T00:00:00Z",
+  "currentPhase": "implementation",
+  "status": "in-progress",
+  "branch": "feature/tributary-blob-storage-provider",
+  "prNumber": null,
+  "lastCommitSha": null,
+  "lastCommitTime": null,
+  "discoveryRound": 3,
+  "planReviewCycle": 3,
+  "implementationIncrement": 1,
+  "adrCount": 6
+}
