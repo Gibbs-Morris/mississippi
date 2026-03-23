@@ -22,6 +22,11 @@ internal sealed class SnapshotBlobStorageOptions
     public string BlobPrefix { get; set; } = SnapshotBlobDefaults.BlobPrefix;
 
     /// <summary>
+    ///     Gets or sets the configured payload compression mode for stored Blob frames.
+    /// </summary>
+    public SnapshotBlobCompression Compression { get; set; } = SnapshotBlobDefaults.Compression;
+
+    /// <summary>
     ///     Gets or sets the keyed service key used to resolve the <c>BlobServiceClient</c> from DI.
     /// </summary>
     public string BlobServiceClientServiceKey { get; set; } = SnapshotBlobDefaults.BlobServiceClientServiceKey;
@@ -30,6 +35,11 @@ internal sealed class SnapshotBlobStorageOptions
     ///     Gets or sets the page size hint used for stream-local blob listings.
     /// </summary>
     public int ListPageSizeHint { get; set; } = SnapshotBlobDefaults.ListPageSizeHint;
+
+    /// <summary>
+    ///     Gets or sets the maximum supported stored frame header size in bytes.
+    /// </summary>
+    public int MaxHeaderBytes { get; set; } = SnapshotBlobDefaults.MaxHeaderBytes;
 
     /// <summary>
     ///     Gets or sets the configured snapshot payload serializer format.

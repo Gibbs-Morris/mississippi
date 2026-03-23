@@ -31,9 +31,19 @@ internal sealed class SnapshotBlobStorageOptionsValidator : IValidateOptions<Sna
             failures.Add("BlobServiceClientServiceKey must be configured.");
         }
 
+        if (!Enum.IsDefined(options.Compression))
+        {
+            failures.Add($"Compression value '{options.Compression}' is not supported.");
+        }
+
         if (options.ListPageSizeHint <= 0)
         {
             failures.Add("ListPageSizeHint must be greater than zero.");
+        }
+
+        if (options.MaxHeaderBytes <= 0)
+        {
+            failures.Add("MaxHeaderBytes must be greater than zero.");
         }
 
         if (string.IsNullOrWhiteSpace(options.PayloadSerializerFormat))

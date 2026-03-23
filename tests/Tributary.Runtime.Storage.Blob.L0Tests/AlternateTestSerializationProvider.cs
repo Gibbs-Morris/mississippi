@@ -9,15 +9,15 @@ using Mississippi.Brooks.Serialization.Abstractions;
 namespace Mississippi.Tributary.Runtime.Storage.Blob.L0Tests;
 
 /// <summary>
-///     Test serializer descriptor used to exercise configured format selection.
+///     Alternate test serializer type used to prove concrete serializer identity persistence.
 /// </summary>
-internal class TestSerializationProvider : ISerializationProvider
+internal sealed class AlternateTestSerializationProvider : ISerializationProvider
 {
     /// <summary>
-    ///     Initializes a new instance of the <see cref="TestSerializationProvider" /> class.
+    ///     Initializes a new instance of the <see cref="AlternateTestSerializationProvider" /> class.
     /// </summary>
     /// <param name="format">The serializer format exposed for test matching.</param>
-    public TestSerializationProvider(
+    public AlternateTestSerializationProvider(
         string format
     ) =>
         Format = format;

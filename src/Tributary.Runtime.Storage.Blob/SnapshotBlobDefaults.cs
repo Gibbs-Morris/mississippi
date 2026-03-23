@@ -16,6 +16,11 @@ internal static class SnapshotBlobDefaults
     public const string BlobServiceClientServiceKey = "mississippi-blob-snapshots-client";
 
     /// <summary>
+    ///     The default payload compression mode used for stored Blob frames.
+    /// </summary>
+    public const SnapshotBlobCompression Compression = SnapshotBlobCompression.Off;
+
+    /// <summary>
     ///     The default container name for snapshot blobs.
     /// </summary>
     public const string ContainerName = "snapshots";
@@ -24,6 +29,11 @@ internal static class SnapshotBlobDefaults
     ///     The default logical root prefix for snapshot blobs inside the container.
     /// </summary>
     public const string BlobPrefix = "snapshots/";
+
+    /// <summary>
+    ///     The default maximum stored frame header size in bytes.
+    /// </summary>
+    public const int MaxHeaderBytes = 64 * 1024;
 
     /// <summary>
     ///     The default serializer format used to encode snapshot payload bytes.

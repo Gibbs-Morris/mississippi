@@ -15,6 +15,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.Brooks.Serialization.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Blob.Startup;
+using Mississippi.Tributary.Runtime.Storage.Blob.Storage;
 
 
 namespace Mississippi.Tributary.Runtime.Storage.Blob.L0Tests;
@@ -45,6 +46,7 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
         Assert.NotNull(provider.GetRequiredService<ISnapshotStorageProvider>());
         Assert.NotNull(provider.GetRequiredService<ISnapshotStorageReader>());
         Assert.NotNull(provider.GetRequiredService<ISnapshotStorageWriter>());
+        Assert.NotNull(provider.GetRequiredService<IBlobEnvelopeCodec>());
         Assert.NotNull(provider.GetRequiredService<SnapshotPayloadSerializerResolver>());
         Assert.NotNull(provider.GetRequiredKeyedService<BlobContainerClient>(SnapshotBlobDefaults.BlobContainerServiceKey));
         Assert.Single(provider.GetServices<IHostedService>());

@@ -36,9 +36,11 @@ internal static class SnapshotBlobStorageProviderRegistrations
         services.AddOptions<SnapshotBlobStorageOptions>();
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IValidateOptions<SnapshotBlobStorageOptions>, SnapshotBlobStorageOptionsValidator>());
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<SnapshotPayloadSerializerResolver>();
         services.AddSingleton<IBlobNameStrategy, BlobNameStrategy>();
         services.AddSingleton<IBlobContainerInitializerOperations, BlobContainerInitializerOperations>();
+        services.AddSingleton<IBlobEnvelopeCodec, BlobEnvelopeCodec>();
         services.AddSingleton<ISnapshotBlobOperations, SnapshotBlobOperations>();
         services.AddSingleton<ISnapshotBlobRepository, SnapshotBlobRepository>();
         services.RegisterSnapshotStorageProvider<SnapshotBlobStorageProvider>();

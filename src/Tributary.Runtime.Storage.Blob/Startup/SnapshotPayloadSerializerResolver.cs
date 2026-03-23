@@ -56,4 +56,29 @@ internal sealed class SnapshotPayloadSerializerResolver
                 $"Multiple ISerializationProvider registrations match payload serializer format '{configuredFormat}'. Register exactly one matching provider before startup."),
         };
     }
+
+    /// <summary>
+    ///     Resolves the configured serializer and its persisted concrete serializer identity.
+    /// </summary>
+    /// <returns>The resolved serializer descriptor.</returns>
+    public SnapshotPayloadSerializerDescriptor ResolveConfiguredSerializerDescriptor()
+    {
+        ISerializationProvider provider = ResolveConfiguredSerializer();
+        return new(provider, GetSerializerId(provider));
+    }
+
+    /// <summary>
+    ///     Gets the persisted serializer identity for the supplied provider.
+    /// </summary>
+    /// <param name="provider">The serialization provider.</param>
+    /// <returns>The concrete persisted serializer identity.</returns>
+    internal static string GetSerializerId(
+        ISerializationProvider provider
+    )
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+
+        Type providerType = provider.GetType();
+        return providerType.FullName ?? providerType.Name;
+    }
 }

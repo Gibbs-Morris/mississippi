@@ -21,7 +21,9 @@ public sealed class SnapshotBlobStorageOptionsTests
         Assert.Equal("snapshots/", SnapshotBlobDefaults.BlobPrefix);
         Assert.Equal("mississippi-blob-snapshots", SnapshotBlobDefaults.BlobContainerServiceKey);
         Assert.Equal("mississippi-blob-snapshots-client", SnapshotBlobDefaults.BlobServiceClientServiceKey);
+        Assert.Equal(SnapshotBlobCompression.Off, SnapshotBlobDefaults.Compression);
         Assert.Equal(500, SnapshotBlobDefaults.ListPageSizeHint);
+        Assert.Equal(64 * 1024, SnapshotBlobDefaults.MaxHeaderBytes);
         Assert.Equal("System.Text.Json", SnapshotBlobDefaults.PayloadSerializerFormat);
     }
 
@@ -36,8 +38,10 @@ public sealed class SnapshotBlobStorageOptionsTests
         Assert.Equal(SnapshotBlobDefaults.BlobPrefix, options.BlobPrefix);
         Assert.Equal(SnapshotBlobDefaults.ContainerName, options.ContainerName);
         Assert.Equal(SnapshotBlobDefaults.BlobServiceClientServiceKey, options.BlobServiceClientServiceKey);
+        Assert.Equal(SnapshotBlobDefaults.Compression, options.Compression);
         Assert.Equal(SnapshotBlobContainerInitializationMode.CreateIfMissing, options.ContainerInitializationMode);
         Assert.Equal(SnapshotBlobDefaults.ListPageSizeHint, options.ListPageSizeHint);
+        Assert.Equal(SnapshotBlobDefaults.MaxHeaderBytes, options.MaxHeaderBytes);
         Assert.Equal(SnapshotBlobDefaults.PayloadSerializerFormat, options.PayloadSerializerFormat);
     }
 
@@ -53,7 +57,9 @@ public sealed class SnapshotBlobStorageOptionsTests
             {
                 options.ContainerName = string.Empty;
                 options.BlobServiceClientServiceKey = string.Empty;
+                options.Compression = (SnapshotBlobCompression)99;
                 options.ListPageSizeHint = 0;
+                options.MaxHeaderBytes = 0;
                 options.PayloadSerializerFormat = string.Empty;
                 options.ContainerInitializationMode = (SnapshotBlobContainerInitializationMode)99;
             });
@@ -66,7 +72,9 @@ public sealed class SnapshotBlobStorageOptionsTests
 
         Assert.Contains("ContainerName", exception.Message, System.StringComparison.Ordinal);
         Assert.Contains("BlobServiceClientServiceKey", exception.Message, System.StringComparison.Ordinal);
+        Assert.Contains("Compression", exception.Message, System.StringComparison.Ordinal);
         Assert.Contains("ListPageSizeHint", exception.Message, System.StringComparison.Ordinal);
+        Assert.Contains("MaxHeaderBytes", exception.Message, System.StringComparison.Ordinal);
         Assert.Contains("PayloadSerializerFormat", exception.Message, System.StringComparison.Ordinal);
         Assert.Contains("ContainerInitializationMode", exception.Message, System.StringComparison.Ordinal);
     }
