@@ -3,7 +3,7 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob;
 /// <summary>
 ///     Controls payload compression behavior for Blob-backed snapshot storage.
 /// </summary>
-internal enum SnapshotBlobCompression
+public enum SnapshotBlobCompression
 {
     /// <summary>
     ///     Stores payload bytes without compression.

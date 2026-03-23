@@ -3,7 +3,7 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob;
 /// <summary>
 ///     Options controlling Blob-backed snapshot persistence.
 /// </summary>
-internal sealed class SnapshotBlobStorageOptions
+public sealed class SnapshotBlobStorageOptions
 {
     /// <summary>
     ///     Gets or sets the configured Blob container initialization behavior.

@@ -3,7 +3,7 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob;
 /// <summary>
 ///     Controls container initialization behavior during host startup.
 /// </summary>
-internal enum SnapshotBlobContainerInitializationMode
+public enum SnapshotBlobContainerInitializationMode
 {
     /// <summary>
     ///     Creates the configured container when it does not already exist.

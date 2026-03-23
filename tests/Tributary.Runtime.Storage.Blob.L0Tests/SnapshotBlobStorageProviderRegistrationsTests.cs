@@ -78,6 +78,38 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
     }
 
     /// <summary>
+    ///     Ensures the connection string overload honors a non-default Blob service client key override.
+    /// </summary>
+    [Fact]
+    public void AddBlobSnapshotStorageProviderWithConnectionStringShouldHonorBlobServiceClientServiceKeyOverride()
+    {
+        const string CustomBlobServiceClientServiceKey = "custom-blob-client";
+
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddSingleton<ISerializationProvider>(new TestSerializationProvider(SnapshotBlobDefaults.PayloadSerializerFormat));
+
+        services.AddBlobSnapshotStorageProvider(
+            "UseDevelopmentStorage=true",
+            options =>
+            {
+                options.ContainerName = "connection-string-custom-key-container";
+                options.BlobServiceClientServiceKey = CustomBlobServiceClientServiceKey;
+            });
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        SnapshotBlobStorageOptions options = provider.GetRequiredService<IOptions<SnapshotBlobStorageOptions>>().Value;
+        BlobServiceClient blobServiceClient = provider.GetRequiredKeyedService<BlobServiceClient>(CustomBlobServiceClientServiceKey);
+        BlobContainerClient containerClient = provider.GetRequiredKeyedService<BlobContainerClient>(SnapshotBlobDefaults.BlobContainerServiceKey);
+
+        Assert.Equal(CustomBlobServiceClientServiceKey, options.BlobServiceClientServiceKey);
+        Assert.Equal("connection-string-custom-key-container", options.ContainerName);
+        Assert.NotNull(blobServiceClient);
+        Assert.Equal("connection-string-custom-key-container", containerClient.Name);
+    }
+
+    /// <summary>
     ///     Ensures the options delegate overload configures options before registration completes.
     /// </summary>
     [Fact]

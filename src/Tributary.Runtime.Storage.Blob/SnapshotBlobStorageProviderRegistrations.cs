@@ -19,7 +19,7 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob;
 /// <summary>
 ///     Extension methods for registering Blob snapshot storage provider services.
 /// </summary>
-internal static class SnapshotBlobStorageProviderRegistrations
+public static class SnapshotBlobStorageProviderRegistrations
 {
     /// <summary>
     ///     Registers Blob snapshot storage provider services using an externally provided keyed <see cref="BlobServiceClient" />
@@ -27,7 +27,7 @@ internal static class SnapshotBlobStorageProviderRegistrations
     /// </summary>
     /// <param name="services">The service collection to update.</param>
     /// <returns>The updated service collection.</returns>
-    internal static IServiceCollection AddBlobSnapshotStorageProvider(
+    public static IServiceCollection AddBlobSnapshotStorageProvider(
         this IServiceCollection services
     )
     {
@@ -71,7 +71,7 @@ internal static class SnapshotBlobStorageProviderRegistrations
     /// <param name="blobConnectionString">Blob storage connection string used for client creation.</param>
     /// <param name="configureOptions">Optional options configuration applied during registration.</param>
     /// <returns>The configured service collection.</returns>
-    internal static IServiceCollection AddBlobSnapshotStorageProvider(
+    public static IServiceCollection AddBlobSnapshotStorageProvider(
         this IServiceCollection services,
         string blobConnectionString,
         Action<SnapshotBlobStorageOptions>? configureOptions = null
@@ -80,8 +80,11 @@ internal static class SnapshotBlobStorageProviderRegistrations
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(blobConnectionString);
 
+        SnapshotBlobStorageOptions effectiveOptions = new();
+        configureOptions?.Invoke(effectiveOptions);
+
         services.AddKeyedSingleton<BlobServiceClient>(
-            SnapshotBlobDefaults.BlobServiceClientServiceKey,
+            effectiveOptions.BlobServiceClientServiceKey,
             (
                 _,
                 _
@@ -101,7 +104,7 @@ internal static class SnapshotBlobStorageProviderRegistrations
     /// <param name="services">The service collection to update.</param>
     /// <param name="configureOptions">Options configuration action applied before registration.</param>
     /// <returns>The configured service collection.</returns>
-    internal static IServiceCollection AddBlobSnapshotStorageProvider(
+    public static IServiceCollection AddBlobSnapshotStorageProvider(
         this IServiceCollection services,
         Action<SnapshotBlobStorageOptions> configureOptions
     )
@@ -120,7 +123,7 @@ internal static class SnapshotBlobStorageProviderRegistrations
     /// <param name="services">The service collection to update.</param>
     /// <param name="configuration">Configuration section containing Blob snapshot storage settings.</param>
     /// <returns>The configured service collection.</returns>
-    internal static IServiceCollection AddBlobSnapshotStorageProvider(
+    public static IServiceCollection AddBlobSnapshotStorageProvider(
         this IServiceCollection services,
         IConfiguration configuration
     )
