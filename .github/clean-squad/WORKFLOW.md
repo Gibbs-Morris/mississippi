@@ -39,9 +39,15 @@ chain-of-verification to every task.
 ## Entry Point
 
 `@cs Product Owner` is the **only** agent the human user invokes. All other
-agents are sub-agents invoked programmatically by the Product Owner or by
-other sub-agents via `runSubagent`. The user never needs to invoke any other
-agent directly.
+agents are sub-agents invoked programmatically via `runSubagent`. All Clean
+Squad delegation **MUST** target only approved Clean Squad agents named in the
+`Agent Roster` section of this workflow. The user never needs to invoke any
+other agent directly.
+
+If no approved Clean Squad agent fits a task, the Product Owner **MUST** stop,
+record the blocker, and ask the user to either choose the nearest approved
+Clean Squad agent, approve a roster or workflow change first, or explicitly
+leave Clean Squad orchestration for that task.
 
 ## Shared State: The `.thinking` Folder
 
@@ -141,6 +147,9 @@ The Product Owner is an orchestrator, not an implementation agent.
 
 - The Product Owner MUST ask the user questions, sequence the workflow, update shared state, synthesize sub-agent outputs, and enforce quality gates.
 - The Product Owner MUST use `runSubagent` for specialist work including analysis, design, coding, testing, code review, QA validation, documentation, and PR management.
+- Before every `runSubagent` call, the Product Owner MUST validate that the selected agent is explicitly named in the `Agent Roster` section of this workflow.
+- Generic categories such as review personas and domain experts MUST resolve only to named agents in the `Agent Roster` section of this workflow.
+- If no approved Clean Squad agent clearly fits, the Product Owner MUST stop, record the blocker, and ask the user to either choose the nearest approved Clean Squad agent, approve a roster or workflow change first, or explicitly leave Clean Squad orchestration for that task.
 - The Product Owner MUST NOT bypass a specialist sub-agent by performing that specialist work directly.
 
 ### State File (`state.json`)
@@ -230,8 +239,9 @@ The Product Owner is an orchestrator, not an implementation agent.
   (Context and Container always; Component when a container has meaningful internal structure, otherwise an explicit omission rationale).
 4. For each significant architectural decision, Product Owner invokes
   **cs ADR Keeper** to produce ADRs in `docs/Docusaurus/docs/adr/`.
-5. Product Owner may invoke domain experts (distributed systems, cloud,
-   serialization) for specialist input on architecture.
+5. Product Owner may invoke approved domain experts from the `Agent Roster`
+   section (for example cs Expert Distributed, cs Expert Cloud, and
+   cs Expert Serialization) for specialist input on architecture.
 
 ### ADR Protocol
 
@@ -246,20 +256,20 @@ The Product Owner is an orchestrator, not an implementation agent.
 ## Phase 4: Planning & Review Cycles
 
 **Owner**: cs Product Owner
-**Sub-agents**: cs Plan Synthesizer, multiple review personas
+**Sub-agents**: cs Plan Synthesizer, approved review personas from the Agent Roster
 
 ### Process
 
 1. Product Owner combines architecture, requirements, and Three Amigos output
    into `draft-plan-v1.md`.
-2. Product Owner runs **review cycle 1**:
-   - Invokes each review persona (see roster below) as a sub-agent.
-   - Each reviewer reads the plan and produces feedback.
-   - Product Owner invokes **cs Plan Synthesizer** to deduplicate and categorize
-     feedback (Must / Should / Could / Won't).
-   - Product Owner revises the plan.
-3. Repeat for **3-5 review cycles** total.
-4. After final cycle, Product Owner writes `final-plan.md`.
+2. Product Owner runs **review cycle 1** by invoking each approved review
+  persona from the `Agent Roster` section as a sub-agent.
+3. Each reviewer reads the plan and produces feedback.
+4. Product Owner invokes **cs Plan Synthesizer** to deduplicate and categorize
+  feedback (Must / Should / Could / Won't).
+5. Product Owner revises the plan.
+6. Repeat for **3-5 review cycles** total.
+7. After final cycle, Product Owner writes `final-plan.md`.
 
 ### Review Personas for Planning
 
@@ -319,7 +329,7 @@ Each review cycle invokes these personas (subset varies by task complexity):
 ## Phase 6: Comprehensive Code Review
 
 **Owner**: cs Product Owner
-**Sub-agents**: All review personas, domain experts
+**Sub-agents**: Approved review personas and approved domain experts from the Agent Roster
 
 ### Process
 
@@ -335,10 +345,14 @@ Each review cycle invokes these personas (subset varies by task complexity):
    | 5 | cs Reviewer Performance | Allocations, complexity, hot paths |
    | 6 | cs Developer Evangelist | Demo-ability, shareability, competitive positioning (public API changes) |
 
-3. Product Owner invokes relevant domain experts based on the change type.
+3. Product Owner invokes relevant approved domain experts from the `Agent Roster` section based on the change type.
 4. Product Owner synthesizes all review output.
 5. For each finding: fix it or document why it was declined.
 6. Iterate until all reviewers are satisfied.
+
+The phrases review personas and domain experts in this workflow refer only to
+the named agents in the `Agent Roster` section below. They do not authorize
+delegation to other repo agents.
 
 ### Review Coverage Rule
 
@@ -499,6 +513,14 @@ Handovers are logged in `.thinking/<task>/handover-log.md`:
 ```
 
 ## Agent Roster (32 Agents)
+
+This section is the single authoritative roster of approved Clean Squad
+delegation targets. Any delegation term in this workflow, the shared Clean
+Squad instruction, or the Product Owner prompt must resolve only to the named
+agents in this roster. If no listed agent fits, the Product Owner must stop,
+record the blocker, and ask the user to either choose the nearest approved
+Clean Squad agent, approve a roster or workflow change first, or explicitly
+leave Clean Squad orchestration for that task.
 
 ### Entry Point (1)
 
