@@ -28,6 +28,7 @@
     <Project Path="src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Snapshots/">
+    <Project Path="src\Tributary.Runtime.Storage.Blob\Tributary.Runtime.Storage.Blob.csproj" />
     <Project Path="src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Tributary/">
@@ -104,6 +105,7 @@
     <Project Path="tests\Brooks.Serialization.Json.L0Tests\Brooks.Serialization.Json.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Snapshots/">
+    <Project Path="tests\Tributary.Runtime.Storage.Blob.L0Tests\Tributary.Runtime.Storage.Blob.L0Tests.csproj" />
     <Project Path="tests\Tributary.Runtime.Storage.Cosmos.L0Tests\Tributary.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Tributary/">
