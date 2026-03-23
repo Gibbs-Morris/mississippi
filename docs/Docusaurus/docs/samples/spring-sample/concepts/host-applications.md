@@ -93,21 +93,10 @@ These files are infrastructure/support concerns rather than domain business logi
 
 ## Spring.Gateway: The API Host
 
-The gateway host serves ASP.NET controllers and static client files, and connects to the Orleans silo as a client.
+The gateway host serves ASP.NET controllers, the Inlet SignalR hub, and the static files for the Blazor client. It also connects to the Orleans silo as a client.
 
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-// One call registers all generated API controllers and mappers
-builder.Services.AddSpringDomainServer();
-
-// Infrastructure: telemetry, Orleans client
-builder.Services.AddOpenTelemetry()
-    .WithTracing(/* ... */)
-    .WithMetrics(/* ... */);
-builder.AddKeyedAzureTableServiceClient("clustering");
-builder.UseOrleansClient(clientBuilder =>
-    clientBuilder.AddActivityPropagation());
 
 SpringAuthOptions springAuthOptions =
     builder.Configuration.GetSection("SpringAuth").Get<SpringAuthOptions>() ?? new();
@@ -125,6 +114,14 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("spring.write", policy => policy.RequireRole("banking-operator"))
     .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"))
     .AddPolicy("spring.auth-proof.claim", policy => policy.RequireClaim("spring.permission", "auth-proof"));
+
+// Infrastructure: telemetry, Orleans client
+builder.Services.AddOpenTelemetry()
+    .WithTracing(/* ... */)
+    .WithMetrics(/* ... */);
+builder.AddKeyedAzureTableServiceClient("clustering");
+builder.UseOrleansClient(clientBuilder =>
+    clientBuilder.AddActivityPropagation());
 
 // ASP.NET and Mississippi infrastructure
 builder.Services.AddControllers();
@@ -152,6 +149,16 @@ else
 builder.Services.ScanProjectionAssemblies(
     typeof(BankAccountBalanceProjection).Assembly);
 
+// Source-generated gateway registrations
+builder.Services.AddAuthProofAggregateMappers();
+builder.Services.AddBankAccountAggregateMappers();
+builder.Services.AddMoneyTransferSagaAggregateMappers();
+builder.Services.AddAuthProofProjectionMappers();
+builder.Services.AddBankAccountBalanceProjectionMappers();
+builder.Services.AddBankAccountLedgerProjectionMappers();
+builder.Services.AddFlaggedTransactionsProjectionMappers();
+builder.Services.AddMoneyTransferStatusProjectionMappers();
+
 WebApplication app = builder.Build();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
@@ -167,7 +174,7 @@ app.MapFallbackToFile("index.html");
 await app.RunAsync();
 ```
 
-The `AddSpringDomainServer()` call registers all source-generated API controller mappers and feature registrations for the gateway host. The gateway does not contain `CommandHandler` code, `EventReducer` code, or domain-specific types - it maps HTTP requests to Orleans grain calls.
+Spring.Gateway currently registers the generated aggregate and projection mapper extensions explicitly in `Program.cs`. Those mapper methods are source-generated from the annotations in `Spring.Domain`. The gateway still does not contain `CommandHandler` code, `EventReducer` code, or domain-specific business logic. It maps HTTP requests to Orleans grain calls and hosts the transport endpoints around that generated surface.
 
 ([Spring.Gateway/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs))
 
@@ -191,7 +198,7 @@ The gateway has no domain-specific code files. Its `Program.cs` configures middl
 
 ## Spring.Client: The Blazor UI
 
-The client is a Blazor WebAssembly application that dispatches commands and subscribes to projections through a Reservoir builder.
+The client is a Blazor WebAssembly application that dispatches commands and subscribes to projections through the Mississippi client builder.
 
 ```csharp
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -209,38 +216,35 @@ builder.Services.AddScoped(sp =>
     };
 });
 
-IReservoirBuilder reservoir = builder.AddReservoir();
-
-// Write-side and projection features
-reservoir.AddProjectionsFeature();
-reservoir.AddAuthProofAggregateFeature();
-reservoir.AddBankAccountAggregateFeature();
-reservoir.AddMoneyTransferSagaAggregateFeature();
-reservoir.AddAuthProofSagaFeature();
-reservoir.AddMoneyTransferSagaFeature();
-
-// UI features
-reservoir.AddDualEntitySelectionFeature();
-reservoir.AddDemoAccountsFeature();
-reservoir.AddAuthSimulationFeature();
-reservoir.AddReservoirBlazorBuiltIns();
-reservoir.AddReservoirDevTools(options =>
+builder.AddMississippiClient(client =>
 {
-    options.Enablement = ReservoirDevToolsEnablement.Always;
-    options.Name = "Spring Sample";
-    options.IsStrictStateRehydrationEnabled = true;
-});
+    client.AddMississippiSamplesSpringDomainClient();
+    client.Reservoir(reservoir =>
+    {
+        // UI features
+        reservoir.AddDualEntitySelectionFeature();
+        reservoir.AddDemoAccountsFeature();
+        reservoir.AddAuthSimulationFeature();
+        reservoir.AddReservoirBlazorBuiltIns();
+        reservoir.AddReservoirDevTools(options =>
+        {
+            options.Enablement = ReservoirDevToolsEnablement.Always;
+            options.Name = "Spring Sample";
+            options.IsStrictStateRehydrationEnabled = true;
+        });
 
-// Real-time projection updates via SignalR
-reservoir.AddInletClient();
-reservoir.AddInletBlazorSignalR(signalR => signalR
-    .WithHubPath("/hubs/inlet")
-    .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+        // Real-time projection updates via SignalR
+        reservoir.AddInletClient();
+        reservoir.AddInletBlazorSignalR(signalR => signalR
+            .WithHubPath("/hubs/inlet")
+            .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+    });
+});
 
 await builder.Build().RunAsync();
 ```
 
-The client now creates a single `IReservoirBuilder` with `builder.AddReservoir()` and composes both generated feature registrations and hand-written UI features on that builder. The client never directly calls Orleans grains or knows about event-sourcing internals.
+The client now starts with `builder.AddMississippiClient(...)`, uses the generated `AddMississippiSamplesSpringDomainClient()` domain compositor on `MississippiClientBuilder`, and then drops into `client.Reservoir(...)` for hand-written UI features plus Inlet registrations. The client still never directly calls Orleans grains or knows about event-sourcing internals.
 
 ([Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs))
 
@@ -264,10 +268,11 @@ Mississippi's generators produce builder-based client feature registrations and 
 | Method | Host | What It Registers |
 |--------|------|-------------------|
 | `AddSpringDomainSilo()` | Runtime | Aggregate grains, saga grains, `CommandHandler`s, `EventReducer`s, effects, projection grains |
-| `AddSpringDomainServer()` | Gateway | API controller mappers, command route mappings |
-| `Add{Aggregate}AggregateFeature()`, `Add{Saga}SagaFeature()`, `AddProjectionsFeature()` | Client | Builder-based client feature registrations for generated state, reducers, effects, and projection support |
+| `Add{Domain}Server()` | Gateway | Domain-level gateway registration convenience method for generated API/controller mapper registrations |
+| `Add{Aggregate}AggregateFeature()`, `Add{Saga}SagaFeature()`, `AddProjectionsFeature()` | Client | Reservoir-level client feature registrations for generated state, reducers, effects, and projection support |
+| `Add{Domain}Client()` | Client | Mississippi client-builder convenience method that aggregates the generated Reservoir-level feature registrations |
 
-The client-side generators now target `IReservoirBuilder`, so generated client features compose on the same Reservoir builder as hand-written client features. Domain-level client composition methods may also be generated by the domain client generator, but the Spring sample shows the per-feature builder composition explicitly.
+Gateway generators can emit a domain-level convenience method, but Spring.Gateway currently composes the generated mapper registrations explicitly in `Program.cs`. The client-side feature generators still target `IReservoirBuilder`, while the domain client generator now targets `MississippiClientBuilder` and routes its work through `client.Reservoir(...)`. Spring uses the generated domain client method for the write-side and projection slice, then adds hand-written UI and Inlet composition on the same Reservoir builder.
 
 `Spring.AppHost` is separate from those generated methods. It is an Aspire entry point that provisions Azurite, Cosmos emulator resources, Orleans configuration, and project startup order for local development.
 
@@ -288,7 +293,7 @@ The hosts are replaceable shells. The domain is the permanent asset. You could s
 
 ## Summary
 
-Mississippi's source generators transform domain annotations into infrastructure wiring. Runtime and gateway hosts still use a single generated domain-level method, while the Spring client shows the builder-based client direction: create one `IReservoirBuilder`, then compose generated and hand-written client features on it.
+Mississippi's source generators transform domain annotations into infrastructure wiring. Spring.Runtime stays a thin Orleans host, Spring.Gateway composes generated gateway mapper registrations around its transport infrastructure, and Spring.Client now starts with `AddMississippiClient()`, uses the generated domain-level client method, and composes the remaining client features through `client.Reservoir(...)`.
 
 ## Next Steps
 

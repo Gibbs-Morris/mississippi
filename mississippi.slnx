@@ -46,6 +46,7 @@
   <Folder Name="/Framework/Reservoir/">
     <Project Path="src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
     <Project Path="src\Reservoir.Core\Reservoir.Core.csproj" />
+    <Project Path="src\Hosting.Client\Hosting.Client.csproj" />
     <Project Path="src\Reservoir.Client\Reservoir.Client.csproj" />
     <Project Path="src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
   </Folder>
@@ -117,6 +118,7 @@
     <Project Path="tests\Refraction.Client.StateManagement.L0Tests\Refraction.Client.StateManagement.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Reservoir/">
+    <Project Path="tests\Hosting.Client.L0Tests\Hosting.Client.L0Tests.csproj" />
     <Project Path="tests\Reservoir.Abstractions.L0Tests\Reservoir.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Reservoir.Client.L0Tests\Reservoir.Client.L0Tests.csproj" />
     <Project Path="tests\Reservoir.Core.L0Tests\Reservoir.Core.L0Tests.csproj" />

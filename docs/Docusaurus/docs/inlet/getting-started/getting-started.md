@@ -3,7 +3,7 @@ id: inlet-getting-started
 title: Inlet Getting Started
 sidebar_label: Getting Started
 sidebar_position: 1
-description: Start with Inlet by composing its client registrations on top of the Reservoir builder.
+description: Start with Inlet by composing Mississippi client registrations through AddMississippiClient and Reservoir-only registrations through AddReservoir.
 ---
 
 # Inlet Getting Started
@@ -12,31 +12,76 @@ description: Start with Inlet by composing its client registrations on top of th
 
 Use this page when you need the first verified Inlet client startup path.
 
-For Blazor clients, Inlet now composes on top of `IReservoirBuilder`. The verified startup pattern is:
+For full Mississippi Blazor clients, the verified startup pattern is:
 
-- create the Reservoir builder with `AddReservoir()`
-- add Inlet client registrations on that builder
+- create the Mississippi client builder with `AddMississippiClient()`
+- compose Reservoir-level registrations inside `client.Reservoir(...)`
+- add Inlet client registrations on that Reservoir builder
 - optionally add SignalR-based projection synchronization through `AddInletBlazorSignalR(...)`
+
+## Choose The Right Entry Point
+
+- Full Mississippi client app: `builder.AddMississippiClient(...)`
+- Reservoir-only state-management app: `builder.AddReservoir()`
+
+Use `AddMississippiClient()` when the app is using Mississippi as the full client composition root. Stay with `AddReservoir()` when the app only wants Reservoir's client-state subsystem without the higher-level Mississippi client builder.
+
+This layering is intentional:
+
+```mermaid
+flowchart LR
+    A[AddMississippiClient] --> B[MississippiClientBuilder]
+    B --> C[Reservoir(...)]
+    C --> D[IReservoirBuilder]
+    D --> E[Features and Inlet]
+```
 
 ## First Working Setup
 
-This example matches the public Inlet client extensions and the Spring sample startup.
+This example matches the current Spring client startup shape.
 
 ```csharp
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
+using Mississippi.Hosting.Client;
 using Mississippi.Inlet.Client;
-using Mississippi.Reservoir.Abstractions;
-using Mississippi.Reservoir.Client;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
-IReservoirBuilder reservoir = builder.AddReservoir();
+builder.AddMississippiClient(client =>
+{
+    client.AddMyDomainClient();
+    client.Reservoir(reservoir =>
+    {
+        reservoir.AddInletClient();
+        reservoir.AddInletBlazorSignalR(signalR => signalR
+            .WithHubPath("/hubs/inlet")
+            .ScanProjectionDtos(typeof(MyProjectionDto).Assembly));
+    });
+});
+```
 
+## Migration From The Old Client Root
+
+Before:
+
+```csharp
+IReservoirBuilder reservoir = builder.AddReservoir();
+reservoir.AddMyDomainClient();
 reservoir.AddInletClient();
-reservoir.AddInletBlazorSignalR(signalR => signalR
-    .WithHubPath("/hubs/inlet")
-    .ScanProjectionDtos(typeof(MyProjectionDto).Assembly));
+```
+
+After:
+
+```csharp
+builder.AddMississippiClient(client =>
+{
+    client.AddMyDomainClient();
+    client.Reservoir(reservoir =>
+    {
+        reservoir.AddInletClient();
+    });
+});
 ```
 
 The builder-based receiver is verified in:
@@ -65,7 +110,7 @@ Depending on the generated surface for a domain, those methods can include:
 - `AddProjectionsFeature()`
 - `Add{Domain}Client()`
 
-All of those generated client methods extend `IReservoirBuilder`.
+The feature-level methods extend `IReservoirBuilder`. The domain-level method extends `MississippiClientBuilder` and routes its work through `client.Reservoir(...)`.
 
 ## When To Stay In Inlet
 
@@ -75,7 +120,7 @@ Move to [Reservoir](../../reservoir/index.md) when the issue is only about clien
 
 ## Summary
 
-Inlet client startup now begins on the Reservoir builder. Create `IReservoirBuilder` with `AddReservoir()`, then compose Inlet client, projection, and SignalR registrations on that builder.
+Inlet client startup for full Mississippi apps now begins with `AddMississippiClient()`, then composes Reservoir and Inlet registrations through `client.Reservoir(...)`. Reservoir-only apps should continue to begin with `AddReservoir()`.
 
 ## Next Steps
 

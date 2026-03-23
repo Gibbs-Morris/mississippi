@@ -1,16 +1,16 @@
 ---
 id: inlet-how-to
-title: How To Compose Inlet On Top Of Reservoir Builders
+title: How To Compose Inlet In Mississippi Client Apps
 sidebar_label: How To
 sidebar_position: 1
-description: Compose Reservoir, Inlet client features, SignalR support, and generated registrations in a Blazor client startup path.
+description: Compose Mississippi client, Reservoir, Inlet, SignalR support, and generated registrations in a Blazor client startup path.
 ---
 
-# How To Compose Inlet On Top Of Reservoir Builders
+# How To Compose Inlet In Mississippi Client Apps
 
 ## Overview
 
-Use this page when you need to wire a Blazor client that combines Reservoir, Inlet client support, built-in Reservoir features, SignalR projection updates, and generated client feature registrations.
+Use this page when you need to wire a Blazor client that combines the Mississippi client builder, Reservoir, Inlet client support, built-in Reservoir features, SignalR projection updates, and generated client feature registrations.
 
 ## Before You Begin
 
@@ -20,42 +20,45 @@ Use this page when you need to wire a Blazor client that combines Reservoir, Inl
 
 ## Steps
 
-1. Create the top-level Reservoir builder.
+1. Create the top-level Mississippi client builder.
 
-This step establishes the public builder that all client registrations now compose on.
+This step establishes the public client root for a full Mississippi app.
 
 ```csharp
-IReservoirBuilder reservoir = builder.AddReservoir();
+builder.AddMississippiClient(client =>
+{
+    // Additional composition steps go here.
+});
 ```
 
-1. Add generated or hand-written Reservoir features.
+1. Add generated domain composition and hand-written Reservoir features.
 
 This example uses the verified Spring client composition pattern.
 
 ```csharp
-reservoir.AddProjectionsFeature();
-reservoir.AddAuthProofAggregateFeature();
-reservoir.AddBankAccountAggregateFeature();
-reservoir.AddMoneyTransferSagaAggregateFeature();
-reservoir.AddAuthProofSagaFeature();
-reservoir.AddMoneyTransferSagaFeature();
-
-reservoir.AddDualEntitySelectionFeature();
-reservoir.AddDemoAccountsFeature();
-reservoir.AddAuthSimulationFeature();
-reservoir.AddReservoirBlazorBuiltIns();
-reservoir.AddReservoirDevTools(options =>
+client.AddMississippiSamplesSpringDomainClient();
+client.Reservoir(reservoir =>
 {
-    options.Enablement = ReservoirDevToolsEnablement.Always;
-    options.Name = "Spring Sample";
-    options.IsStrictStateRehydrationEnabled = true;
+    reservoir.AddDualEntitySelectionFeature();
+    reservoir.AddDemoAccountsFeature();
+    reservoir.AddAuthSimulationFeature();
+    reservoir.AddReservoirBlazorBuiltIns();
+    reservoir.AddReservoirDevTools(options =>
+    {
+        options.Enablement = ReservoirDevToolsEnablement.Always;
+        options.Name = "Spring Sample";
+        options.IsStrictStateRehydrationEnabled = true;
+    });
 });
 ```
 
-1. Add the Inlet client core.
+1. Add the Inlet client core inside `Reservoir(...)`.
 
 ```csharp
-reservoir.AddInletClient();
+client.Reservoir(reservoir =>
+{
+    reservoir.AddInletClient();
+});
 ```
 
 This registers the projection registry, `ProjectionsFeatureState`, `IInletStore`, and `IProjectionUpdateNotifier`.
@@ -73,9 +76,12 @@ Choose one of these patterns based on what your client code already has:
 This example uses the automatic fetcher path verified in `InletBlazorSignalRBuilder` and the Spring sample.
 
 ```csharp
-reservoir.AddInletBlazorSignalR(signalR => signalR
-    .WithHubPath("/hubs/inlet")
-    .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+client.Reservoir(reservoir =>
+{
+    reservoir.AddInletBlazorSignalR(signalR => signalR
+        .WithHubPath("/hubs/inlet")
+        .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+});
 ```
 
 The SignalR builder also supports:
@@ -94,40 +100,40 @@ await builder.Build().RunAsync();
 This excerpt matches the current Spring sample startup shape.
 
 ```csharp
-IReservoirBuilder reservoir = builder.AddReservoir();
-
-reservoir.AddProjectionsFeature();
-reservoir.AddAuthProofAggregateFeature();
-reservoir.AddBankAccountAggregateFeature();
-reservoir.AddMoneyTransferSagaAggregateFeature();
-reservoir.AddAuthProofSagaFeature();
-reservoir.AddMoneyTransferSagaFeature();
-
-reservoir.AddDualEntitySelectionFeature();
-reservoir.AddDemoAccountsFeature();
-reservoir.AddAuthSimulationFeature();
-reservoir.AddReservoirBlazorBuiltIns();
-reservoir.AddReservoirDevTools(options =>
+builder.AddMississippiClient(client =>
 {
-    options.Enablement = ReservoirDevToolsEnablement.Always;
-    options.Name = "Spring Sample";
-    options.IsStrictStateRehydrationEnabled = true;
-});
+    client.AddMississippiSamplesSpringDomainClient();
+    client.Reservoir(reservoir =>
+    {
+        reservoir.AddDualEntitySelectionFeature();
+        reservoir.AddDemoAccountsFeature();
+        reservoir.AddAuthSimulationFeature();
+        reservoir.AddReservoirBlazorBuiltIns();
+        reservoir.AddReservoirDevTools(options =>
+        {
+            options.Enablement = ReservoirDevToolsEnablement.Always;
+            options.Name = "Spring Sample";
+            options.IsStrictStateRehydrationEnabled = true;
+        });
 
-reservoir.AddInletClient();
-reservoir.AddInletBlazorSignalR(signalR => signalR
-    .WithHubPath("/hubs/inlet")
-    .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+        reservoir.AddInletClient();
+        reservoir.AddInletBlazorSignalR(signalR => signalR
+            .WithHubPath("/hubs/inlet")
+            .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+    });
+});
 ```
 
 Source code: [Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs)
 
 ## Verify The Result
 
-- Reservoir registrations should all hang off the same `IReservoirBuilder` value.
-- Inlet client registrations should extend that builder instead of calling unrelated `IServiceCollection` helpers.
+- Full Mississippi client startup should begin with `AddMississippiClient(...)`.
+- Reservoir registrations should all hang off the same `IReservoirBuilder` value inside `client.Reservoir(...)`.
+- Inlet client registrations should extend that Reservoir builder instead of calling unrelated `IServiceCollection` helpers.
 - SignalR configuration should be expressed inside `AddInletBlazorSignalR(...)`.
-- Generated client registration methods should read like builder extensions such as `AddProjectionsFeature()` or `Add{Aggregate}AggregateFeature()`.
+- Generated domain registration methods should read like `Add{Domain}Client()` on `MississippiClientBuilder`.
+- Generated feature registration methods should still read like `AddProjectionsFeature()` or `Add{Aggregate}AggregateFeature()` on `IReservoirBuilder`.
 
 ## Source Code
 
@@ -142,7 +148,7 @@ Source code: [Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississi
 
 ## Summary
 
-Compose Inlet on top of Reservoir by creating one `IReservoirBuilder`, adding your feature registrations, then layering `AddInletClient()` and optional `AddInletBlazorSignalR(...)` on the same builder.
+Compose Inlet in full Mississippi client apps by starting with `AddMississippiClient()`, then layering Reservoir and Inlet registrations inside `client.Reservoir(...)`. Stay with `AddReservoir()` only when the app is intentionally Reservoir-only.
 
 ## Next Steps
 

@@ -3,6 +3,7 @@
     <Description>Convenience SDK for integrating Mississippi in client applications.</Description>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Hosting.Client\Hosting.Client.csproj" />
     <ProjectReference Include="..\Inlet.Client\Inlet.Client.csproj" />
     <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
     <ProjectReference Include="..\Reservoir.Client\Reservoir.Client.csproj" />
