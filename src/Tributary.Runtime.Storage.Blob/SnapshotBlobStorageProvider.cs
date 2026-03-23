@@ -68,7 +68,6 @@ internal sealed class SnapshotBlobStorageProvider : ISnapshotStorageProvider
     )
     {
         ArgumentNullException.ThrowIfNull(retainModuli);
-
         Logger.PruningSnapshots(streamKey, retainModuli.Count);
         await Repository.PruneAsync(streamKey, retainModuli, cancellationToken).ConfigureAwait(false);
         Logger.PrunedSnapshots(streamKey);
@@ -83,7 +82,8 @@ internal sealed class SnapshotBlobStorageProvider : ISnapshotStorageProvider
         Logger.ReadingSnapshot(snapshotKey);
         try
         {
-            SnapshotEnvelope? snapshot = await Repository.ReadAsync(snapshotKey, cancellationToken).ConfigureAwait(false);
+            SnapshotEnvelope? snapshot =
+                await Repository.ReadAsync(snapshotKey, cancellationToken).ConfigureAwait(false);
             if (snapshot is null)
             {
                 Logger.SnapshotNotFound(snapshotKey);
@@ -108,7 +108,6 @@ internal sealed class SnapshotBlobStorageProvider : ISnapshotStorageProvider
     )
     {
         ArgumentNullException.ThrowIfNull(snapshot);
-
         Logger.WritingSnapshot(snapshotKey);
         try
         {

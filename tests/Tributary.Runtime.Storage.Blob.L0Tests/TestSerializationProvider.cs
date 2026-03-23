@@ -29,28 +29,33 @@ internal class TestSerializationProvider : ISerializationProvider
     public object Deserialize(
         Type type,
         ReadOnlyMemory<byte> payload
-    ) => throw new NotSupportedException();
+    ) =>
+        throw new NotSupportedException();
 
     /// <inheritdoc />
     public T Deserialize<T>(
         ReadOnlyMemory<byte> payload
-    ) => throw new NotSupportedException();
+    ) =>
+        throw new NotSupportedException();
 
     /// <inheritdoc />
     public ValueTask<T> DeserializeAsync<T>(
         Stream source,
         CancellationToken cancellationToken = default
-    ) => throw new NotSupportedException();
+    ) =>
+        throw new NotSupportedException();
 
     /// <inheritdoc />
     public ReadOnlyMemory<byte> Serialize<T>(
         T value
-    ) => throw new NotSupportedException();
+    ) =>
+        throw new NotSupportedException();
 
     /// <inheritdoc />
     public ValueTask SerializeAsync<T>(
         T value,
         Stream destination,
         CancellationToken cancellationToken = default
-    ) => throw new NotSupportedException();
+    ) =>
+        throw new NotSupportedException();
 }

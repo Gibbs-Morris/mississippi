@@ -25,6 +25,7 @@ It exists to keep reducer and snapshot mechanics explicit instead of coupling th
 - `Mississippi.Tributary.Abstractions`
 - `Mississippi.Tributary.Runtime`
 - `Mississippi.Tributary.Runtime.Storage.Abstractions`
+- `Mississippi.Tributary.Runtime.Storage.Blob`
 - `Mississippi.Tributary.Runtime.Storage.Cosmos`
 
 ## What This Area Owns
@@ -45,7 +46,7 @@ Start here when you need reducers, snapshots, or the layer that turns Brooks eve
 
 ## Current Coverage
 
-This section now includes typed boundary pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
+This section now includes typed boundary pages for getting started, concepts, package selection, reference, operations, troubleshooting, and snapshot storage providers.
 
 They make the reducer and snapshot boundary explicit while deeper guidance is still being written.
 
@@ -56,5 +57,6 @@ They make the reducer and snapshot boundary explicit while deeper guidance is st
 - [Tributary Concepts](./concepts/concepts.md) - Understand the reduction and snapshot boundary
 - [Tributary Reference](./reference/reference.md) - Review the currently verified package and ownership surface
 - [Tributary Operations](./operations/operations.md) - See the current operational scope and open evidence gaps
+- [Tributary Storage Providers](./storage-providers/index.md) - Compare the available snapshot storage implementations
 - [Brooks](../brooks/index.md) - See the underlying event stream layer
 - [Domain Modeling](../domain-modeling/index.md) - See the domain behavior layer that builds above Tributary

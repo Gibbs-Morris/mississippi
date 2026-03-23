@@ -30,10 +30,11 @@ internal sealed class BlobContainerInitializer : IHostedService
         ILogger<BlobContainerInitializer> logger
     )
     {
-        BlobContainerInitializerOperations = blobContainerInitializerOperations
-            ?? throw new ArgumentNullException(nameof(blobContainerInitializerOperations));
-        SnapshotPayloadSerializerResolver = snapshotPayloadSerializerResolver
-            ?? throw new ArgumentNullException(nameof(snapshotPayloadSerializerResolver));
+        BlobContainerInitializerOperations = blobContainerInitializerOperations ??
+                                             throw new ArgumentNullException(
+                                                 nameof(blobContainerInitializerOperations));
+        SnapshotPayloadSerializerResolver = snapshotPayloadSerializerResolver ??
+                                            throw new ArgumentNullException(nameof(snapshotPayloadSerializerResolver));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -53,21 +54,22 @@ internal sealed class BlobContainerInitializer : IHostedService
     {
         SnapshotBlobStorageOptions options = Options.Value;
         ISerializationProvider serializer;
-
         try
         {
             serializer = SnapshotPayloadSerializerResolver.ResolveConfiguredSerializer();
         }
         catch (InvalidOperationException exception)
         {
-            Logger.BlobStartupSerializerValidationFailed(options.ContainerName, options.PayloadSerializerFormat, exception);
+            Logger.BlobStartupSerializerValidationFailed(
+                options.ContainerName,
+                options.PayloadSerializerFormat,
+                exception);
             throw new InvalidOperationException(
                 $"Blob snapshot storage startup validation failed for container '{options.ContainerName}' because payload serializer format '{options.PayloadSerializerFormat}' is not usable. {exception.Message}",
                 exception);
         }
 
         Logger.ValidatedPayloadSerializer(options.PayloadSerializerFormat, serializer.Format);
-
         switch (options.ContainerInitializationMode)
         {
             case SnapshotBlobContainerInitializationMode.CreateIfMissing:
@@ -88,11 +90,9 @@ internal sealed class BlobContainerInitializer : IHostedService
                 }
 
                 break;
-
             case SnapshotBlobContainerInitializationMode.ValidateExists:
                 Logger.ValidatingBlobContainerExists(options.ContainerName);
                 bool containerExists;
-
                 try
                 {
                     containerExists = await BlobContainerInitializerOperations.ExistsAsync(cancellationToken);
@@ -115,7 +115,6 @@ internal sealed class BlobContainerInitializer : IHostedService
                 }
 
                 break;
-
             default:
                 throw new InvalidOperationException(
                     $"Container initialization mode '{options.ContainerInitializationMode}' is not supported.");

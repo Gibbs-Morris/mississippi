@@ -23,7 +23,8 @@ Use this page when you know the problem belongs to Tributary but you still need 
 2. Choose `Mississippi.Tributary.Runtime` for runtime reduction and snapshot behavior.
 3. Choose `Mississippi.Tributary.Runtime.Storage.Abstractions` for snapshot storage seams.
 4. Choose `Mississippi.Tributary.Runtime.Storage.Cosmos` for the Cosmos-backed snapshot storage implementation.
-5. Switch to [Brooks](../../brooks/index.md) or [Domain Modeling](../../domain-modeling/index.md) if the real problem is outside the reduction layer.
+5. Choose `Mississippi.Tributary.Runtime.Storage.Blob` for the Azure Blob-backed snapshot storage implementation.
+6. Switch to [Brooks](../../brooks/index.md) or [Domain Modeling](../../domain-modeling/index.md) if the real problem is outside the reduction layer.
 
 ## Verify The Result
 
@@ -36,4 +37,5 @@ Choose Tributary packages by reduction-layer responsibility, then move up or dow
 ## Next Steps
 
 - Use [Tributary Reference](../reference/reference.md) for the currently verified surface.
+- Use [Tributary Storage Providers](../storage-providers/index.md) when the decision is specifically about snapshot persistence.
 - Use [Tributary Troubleshooting](../troubleshooting/troubleshooting.md) if the boundary still is not clear.

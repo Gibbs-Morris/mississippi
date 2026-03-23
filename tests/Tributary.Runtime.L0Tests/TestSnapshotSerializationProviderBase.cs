@@ -23,14 +23,14 @@ internal abstract class TestSnapshotSerializationProviderBase : ISerializationPr
         Format = format;
 
     /// <summary>
-    ///     Gets or sets the value returned from deserialize calls.
-    /// </summary>
-    public object? DeserializedValue { get; set; }
-
-    /// <summary>
     ///     Gets the number of deserialize calls.
     /// </summary>
     public int DeserializeCallCount { get; private set; }
+
+    /// <summary>
+    ///     Gets or sets the value returned from deserialize calls.
+    /// </summary>
+    public object? DeserializedValue { get; set; }
 
     /// <inheritdoc />
     public string Format { get; }
@@ -48,7 +48,8 @@ internal abstract class TestSnapshotSerializationProviderBase : ISerializationPr
     {
         ArgumentNullException.ThrowIfNull(type);
         DeserializeCallCount++;
-        return DeserializedValue ?? throw new InvalidOperationException("No deserialized value was configured for the test provider.");
+        return DeserializedValue ??
+               throw new InvalidOperationException("No deserialized value was configured for the test provider.");
     }
 
     /// <inheritdoc />
@@ -66,17 +67,20 @@ internal abstract class TestSnapshotSerializationProviderBase : ISerializationPr
     public ValueTask<T> DeserializeAsync<T>(
         Stream source,
         CancellationToken cancellationToken = default
-    ) => ValueTask.FromResult(Deserialize<T>(ReadOnlyMemory<byte>.Empty));
+    ) =>
+        ValueTask.FromResult(Deserialize<T>(ReadOnlyMemory<byte>.Empty));
 
     /// <inheritdoc />
     public ReadOnlyMemory<byte> Serialize<T>(
         T value
-    ) => throw new NotSupportedException();
+    ) =>
+        throw new NotSupportedException();
 
     /// <inheritdoc />
     public ValueTask SerializeAsync<T>(
         T value,
         Stream destination,
         CancellationToken cancellationToken = default
-    ) => throw new NotSupportedException();
+    ) =>
+        throw new NotSupportedException();
 }

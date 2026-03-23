@@ -35,6 +35,16 @@ public sealed record SnapshotEnvelope
     public long DataSizeBytes { get; init; }
 
     /// <summary>
+    ///     Gets the concrete serializer identity that produced the payload when one is known.
+    /// </summary>
+    /// <remarks>
+    ///     Storage providers that persist serializer-specific framing metadata can round-trip this value
+    ///     so restore paths choose the same concrete serializer that produced the stored payload bytes.
+    /// </remarks>
+    [Id(4)]
+    public string PayloadSerializerId { get; init; } = string.Empty;
+
+    /// <summary>
     ///     Gets the hash of the event reducers used to create this snapshot.
     ///     Used for invalidation when event reducer logic changes.
     /// </summary>
@@ -44,14 +54,4 @@ public sealed record SnapshotEnvelope
     /// </remarks>
     [Id(2)]
     public string ReducerHash { get; init; } = string.Empty;
-
-    /// <summary>
-    ///     Gets the concrete serializer identity that produced the payload when one is known.
-    /// </summary>
-    /// <remarks>
-    ///     Storage providers that persist serializer-specific framing metadata can round-trip this value
-    ///     so restore paths choose the same concrete serializer that produced the stored payload bytes.
-    /// </remarks>
-    [Id(4)]
-    public string PayloadSerializerId { get; init; } = string.Empty;
 }

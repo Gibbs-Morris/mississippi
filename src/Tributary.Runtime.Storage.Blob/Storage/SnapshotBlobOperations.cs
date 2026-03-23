@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -24,7 +25,8 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
     /// </summary>
     /// <param name="blobContainerClient">The keyed Blob container client.</param>
     public SnapshotBlobOperations(
-        [FromKeyedServices(SnapshotBlobDefaults.BlobContainerServiceKey)] BlobContainerClient blobContainerClient
+        [FromKeyedServices(SnapshotBlobDefaults.BlobContainerServiceKey)]
+        BlobContainerClient blobContainerClient
     ) =>
         BlobContainerClient = blobContainerClient ?? throw new ArgumentNullException(nameof(blobContainerClient));
 
@@ -33,29 +35,26 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
     /// <inheritdoc />
     public async Task<bool> CreateIfAbsentAsync(
         string blobName,
-        System.IO.Stream content,
+        Stream content,
         CancellationToken cancellationToken = default
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
         ArgumentNullException.ThrowIfNull(content);
-
         BlobClient blobClient = BlobContainerClient.GetBlobClient(blobName);
-
         try
         {
             await blobClient.UploadAsync(
                     content,
                     new BlobUploadOptions
                     {
-                        Conditions = new BlobRequestConditions
+                        Conditions = new()
                         {
                             IfNoneMatch = ETag.All,
                         },
                     },
                     cancellationToken)
                 .ConfigureAwait(false);
-
             return true;
         }
         catch (RequestFailedException ex) when ((ex.Status == 409) || (ex.Status == 412))
@@ -71,7 +70,6 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
-
         BlobClient blobClient = BlobContainerClient.GetBlobClient(blobName);
         Response<bool> response = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -85,12 +83,10 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
-
         BlobClient blobClient = BlobContainerClient.GetBlobClient(blobName);
-
         try
         {
-            Response<BlobDownloadResult> response = await blobClient.DownloadContentAsync(cancellationToken: cancellationToken)
+            Response<BlobDownloadResult> response = await blobClient.DownloadContentAsync(cancellationToken)
                 .ConfigureAwait(false);
             return response.Value.Content.ToArray();
         }
@@ -109,7 +105,6 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
     {
         ArgumentNullException.ThrowIfNull(prefix);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSizeHint);
-
         return ListByPrefixCoreAsync(prefix, pageSizeHint, cancellationToken);
     }
 
@@ -120,14 +115,13 @@ internal sealed class SnapshotBlobOperations : ISnapshotBlobOperations
     )
     {
         AsyncPageable<BlobItem> blobs = BlobContainerClient.GetBlobsAsync(
-            traits: BlobTraits.None,
-            states: BlobStates.None,
-            prefix: prefix,
-            cancellationToken: cancellationToken);
-
+            BlobTraits.None,
+            BlobStates.None,
+            prefix,
+            cancellationToken);
         await foreach (Page<BlobItem> page in blobs.AsPages(default, pageSizeHint).WithCancellation(cancellationToken))
         {
-            yield return new SnapshotBlobPage(page.Values.Select(static blobItem => blobItem.Name).ToArray());
+            yield return new(page.Values.Select(static blobItem => blobItem.Name).ToArray());
         }
     }
 }

@@ -14,17 +14,6 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob.Storage;
 internal interface ISnapshotBlobRepository
 {
     /// <summary>
-    ///     Deletes a specific snapshot version when it exists.
-    /// </summary>
-    /// <param name="snapshotKey">The snapshot key to delete.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task that completes when the delete attempt finishes.</returns>
-    Task DeleteAsync(
-        SnapshotKey snapshotKey,
-        CancellationToken cancellationToken = default
-    );
-
-    /// <summary>
     ///     Deletes all snapshots for the supplied stream.
     /// </summary>
     /// <param name="streamKey">The stream to delete.</param>
@@ -36,12 +25,34 @@ internal interface ISnapshotBlobRepository
     );
 
     /// <summary>
+    ///     Deletes a specific snapshot version when it exists.
+    /// </summary>
+    /// <param name="snapshotKey">The snapshot key to delete.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task that completes when the delete attempt finishes.</returns>
+    Task DeleteAsync(
+        SnapshotKey snapshotKey,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
     ///     Returns the highest listed snapshot version for the given stream.
     /// </summary>
     /// <param name="streamKey">The snapshot stream key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The latest listed version, or <see langword="null" /> when none exist.</returns>
     Task<long?> GetLatestVersionAsync(
+        SnapshotStreamKey streamKey,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Lists snapshot versions for the given stream page by page.
+    /// </summary>
+    /// <param name="streamKey">The snapshot stream key.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An asynchronous sequence of parsed version pages.</returns>
+    IAsyncEnumerable<IReadOnlyList<long>> ListVersionsAsync(
         SnapshotStreamKey streamKey,
         CancellationToken cancellationToken = default
     );
@@ -92,17 +103,6 @@ internal interface ISnapshotBlobRepository
     Task WriteAsync(
         SnapshotKey snapshotKey,
         SnapshotEnvelope snapshot,
-        CancellationToken cancellationToken = default
-    );
-
-    /// <summary>
-    ///     Lists snapshot versions for the given stream page by page.
-    /// </summary>
-    /// <param name="streamKey">The snapshot stream key.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>An asynchronous sequence of parsed version pages.</returns>
-    IAsyncEnumerable<IReadOnlyList<long>> ListVersionsAsync(
-        SnapshotStreamKey streamKey,
         CancellationToken cancellationToken = default
     );
 

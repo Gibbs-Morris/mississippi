@@ -13,19 +13,19 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob.L0Tests;
 internal sealed class StubBlobContainerInitializerOperations : IBlobContainerInitializerOperations
 {
     /// <summary>
-    ///     Gets the exception thrown by <see cref="CreateIfNotExistsAsync" /> when configured.
-    /// </summary>
-    public Exception? CreateIfNotExistsException { get; init; }
-
-    /// <summary>
     ///     Gets the number of times <see cref="CreateIfNotExistsAsync" /> was invoked.
     /// </summary>
     public int CreateIfNotExistsCallCount { get; private set; }
 
     /// <summary>
-    ///     Gets a value indicating whether <see cref="ExistsAsync" /> returns <see langword="true" />.
+    ///     Gets the exception thrown by <see cref="CreateIfNotExistsAsync" /> when configured.
     /// </summary>
-    public bool ExistsResult { get; init; }
+    public Exception? CreateIfNotExistsException { get; init; }
+
+    /// <summary>
+    ///     Gets the number of times <see cref="ExistsAsync" /> was invoked.
+    /// </summary>
+    public int ExistsCallCount { get; private set; }
 
     /// <summary>
     ///     Gets the exception thrown by <see cref="ExistsAsync" /> when configured.
@@ -33,9 +33,9 @@ internal sealed class StubBlobContainerInitializerOperations : IBlobContainerIni
     public Exception? ExistsException { get; init; }
 
     /// <summary>
-    ///     Gets the number of times <see cref="ExistsAsync" /> was invoked.
+    ///     Gets a value indicating whether <see cref="ExistsAsync" /> returns <see langword="true" />.
     /// </summary>
-    public int ExistsCallCount { get; private set; }
+    public bool ExistsResult { get; init; }
 
     /// <inheritdoc />
     public Task CreateIfNotExistsAsync(

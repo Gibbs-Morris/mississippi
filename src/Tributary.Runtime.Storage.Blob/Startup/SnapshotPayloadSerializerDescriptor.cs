@@ -8,6 +8,4 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob.Startup;
 /// </summary>
 /// <param name="Provider">The resolved serialization provider.</param>
 /// <param name="SerializerId">The concrete serializer identity persisted in stored Blob headers.</param>
-internal sealed record SnapshotPayloadSerializerDescriptor(
-    ISerializationProvider Provider,
-    string SerializerId);
+internal sealed record SnapshotPayloadSerializerDescriptor(ISerializationProvider Provider, string SerializerId);

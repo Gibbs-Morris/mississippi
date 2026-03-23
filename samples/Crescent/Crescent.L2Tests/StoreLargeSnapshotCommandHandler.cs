@@ -6,7 +6,8 @@ namespace MississippiSamples.Crescent.L2Tests;
 /// <summary>
 ///     Command handler that emits a single event carrying the large snapshot payload.
 /// </summary>
-internal sealed class StoreLargeSnapshotCommandHandler : CommandHandlerBase<StoreLargeSnapshotCommand, LargeSnapshotAggregate>
+internal sealed class StoreLargeSnapshotCommandHandler
+    : CommandHandlerBase<StoreLargeSnapshotCommand, LargeSnapshotAggregate>
 {
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
@@ -15,7 +16,6 @@ internal sealed class StoreLargeSnapshotCommandHandler : CommandHandlerBase<Stor
     )
     {
         ArgumentNullException.ThrowIfNull(command);
-
         if (string.IsNullOrWhiteSpace(command.Marker))
         {
             return OperationResult.Fail<IReadOnlyList<object>>(

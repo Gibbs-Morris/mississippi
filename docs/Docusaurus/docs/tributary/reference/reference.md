@@ -8,6 +8,8 @@ description: Current reference surface for Tributary packages and reducer and sn
 
 # Tributary Reference
 
+## Overview
+
 Tributary is the Mississippi reducer and snapshot layer.
 
 ## Applies To
@@ -15,6 +17,7 @@ Tributary is the Mississippi reducer and snapshot layer.
 - `Mississippi.Tributary.Abstractions`
 - `Mississippi.Tributary.Runtime`
 - `Mississippi.Tributary.Runtime.Storage.Abstractions`
+- `Mississippi.Tributary.Runtime.Storage.Blob`
 - `Mississippi.Tributary.Runtime.Storage.Cosmos`
 
 ## Verified Ownership Boundary
@@ -32,6 +35,14 @@ Tributary is the Mississippi reducer and snapshot layer.
 
 This reference covers the verified subsystem boundary, representative packages, and reducer and snapshot contracts for Tributary.
 
+## Storage Providers
+
+Use the storage-provider pages for exact implementation-specific facts:
+
+- [Storage Providers Overview](../storage-providers/index.md)
+- [Azure Blob Provider](../storage-providers/blob.md)
+- [Cosmos DB Provider](../storage-providers/cosmos.md)
+
 ## Failure Behavior
 
 For reducer and snapshot failure behavior, refer to the [Tributary Operations](../operations/operations.md) page and standard Orleans grain persistence diagnostics.
@@ -43,4 +54,5 @@ Use this page as the current active reference for what Tributary owns and which 
 ## Next Steps
 
 - Read [Tributary Concepts](../concepts/concepts.md).
+- Use [Storage Providers Overview](../storage-providers/index.md) when you need implementation-specific snapshot persistence details.
 - Use [Tributary Operations](../operations/operations.md) for the current operational scope.

@@ -98,3 +98,31 @@ Results:
 
 - The remaining blocker from `review-branch-remediated.md` is addressed.
 - Branch should be re-reviewed.
+
+## 2026-03-23 Sample build blocker remediation
+
+### Scope
+
+- Fixed only the source-level sample build blockers reported by `dotnet build .\samples.slnx --configuration Release --no-restore --no-incremental --warnaserror`.
+- Kept the change limited to `samples/Crescent/Crescent.L2Tests/BlobSnapshotTrustSliceScenario.cs`.
+
+### Code Changes
+
+- Added a narrow `#pragma warning disable IDISP001` span around `BlobSnapshotTrustSliceScenario.StartAsync()` to match the existing sample fixture ownership-transfer pattern for Aspire app-host startup objects.
+- Extracted the awaited Orleans host creation into a local `initialOrleansHost` variable before `return new(...)`, which removed the `SA1118` multiline-parameter violation without changing behavior.
+
+### Validation
+
+Command run:
+
+```powershell
+dotnet build .\samples\Crescent\Crescent.L2Tests\Crescent.L2Tests.csproj --configuration Release --no-restore --no-incremental --warnaserror
+```
+
+Result:
+
+- `Crescent.L2Tests`: build succeeded with zero reported warnings/errors.
+
+### Notes
+
+- The previously captured full `samples.slnx` failure also included `MSB3061` locked-file errors under `samples/Crescent/Crescent.L0Tests/bin/Release/net10.0`. Those are environment/process-lock issues, not source-level blockers, and were intentionally left out of scope for this remediation.

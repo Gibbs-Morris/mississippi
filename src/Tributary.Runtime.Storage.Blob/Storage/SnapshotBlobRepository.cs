@@ -47,15 +47,12 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
 
     private SnapshotBlobStorageOptions Options { get; }
 
-    /// <inheritdoc />
-    public async Task DeleteAsync(
-        SnapshotKey snapshotKey,
-        CancellationToken cancellationToken = default
-    )
-    {
-        string blobName = BlobNameStrategy.GetBlobName(snapshotKey);
-        await BlobOperations.DeleteIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false);
-    }
+    private static bool ShouldRetain(
+        long version,
+        long latestVersion,
+        IReadOnlyCollection<int> retainModuli
+    ) =>
+        (version == latestVersion) || retainModuli.Any(modulus => (modulus != 0) && ((version % modulus) == 0));
 
     /// <inheritdoc />
     public async Task DeleteAllAsync(
@@ -73,13 +70,22 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     }
 
     /// <inheritdoc />
+    public async Task DeleteAsync(
+        SnapshotKey snapshotKey,
+        CancellationToken cancellationToken = default
+    )
+    {
+        string blobName = BlobNameStrategy.GetBlobName(snapshotKey);
+        await BlobOperations.DeleteIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task<long?> GetLatestVersionAsync(
         SnapshotStreamKey streamKey,
         CancellationToken cancellationToken = default
     )
     {
         long? latestVersion = null;
-
         await foreach (IReadOnlyList<long> page in ListVersionsAsync(streamKey, cancellationToken))
         {
             foreach (long version in page)
@@ -92,6 +98,28 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     }
 
     /// <inheritdoc />
+    public async IAsyncEnumerable<IReadOnlyList<long>> ListVersionsAsync(
+        SnapshotStreamKey streamKey,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    )
+    {
+        string streamPrefix = BlobNameStrategy.GetStreamPrefix(streamKey);
+        await foreach (SnapshotBlobPage page in BlobOperations.ListByPrefixAsync(
+                           streamPrefix,
+                           Options.ListPageSizeHint,
+                           cancellationToken))
+        {
+            yield return page.BlobNames
+                .Select(blobName => BlobNameStrategy.TryParseVersion(blobName, streamKey, out long version)
+                    ? (long?)version
+                    : null)
+                .Where(version => version.HasValue)
+                .Select(version => version!.Value)
+                .ToArray();
+        }
+    }
+
+    /// <inheritdoc />
     public async Task PruneAsync(
         SnapshotStreamKey streamKey,
         IReadOnlyCollection<int> retainModuli,
@@ -99,7 +127,6 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     )
     {
         ArgumentNullException.ThrowIfNull(retainModuli);
-
         long? latestVersion = await GetLatestVersionAsync(streamKey, cancellationToken).ConfigureAwait(false);
         if (!latestVersion.HasValue)
         {
@@ -127,7 +154,8 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     )
     {
         string blobName = BlobNameStrategy.GetBlobName(snapshotKey);
-        byte[]? storedFrame = await BlobOperations.DownloadIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false);
+        byte[]? storedFrame =
+            await BlobOperations.DownloadIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false);
         if (storedFrame is null)
         {
             return null;
@@ -159,33 +187,9 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     )
     {
         ArgumentNullException.ThrowIfNull(snapshot);
-
         byte[] storedFrame = BlobEnvelopeCodec.Encode(snapshotKey, snapshot);
-        using MemoryStream frameStream = new(storedFrame, writable: false);
+        using MemoryStream frameStream = new(storedFrame, false);
         await WriteIfAbsentAsync(snapshotKey, frameStream, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
-    public async IAsyncEnumerable<IReadOnlyList<long>> ListVersionsAsync(
-        SnapshotStreamKey streamKey,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default
-    )
-    {
-        string streamPrefix = BlobNameStrategy.GetStreamPrefix(streamKey);
-
-        await foreach (SnapshotBlobPage page in BlobOperations.ListByPrefixAsync(
-                           streamPrefix,
-                           Options.ListPageSizeHint,
-                           cancellationToken))
-        {
-            yield return page.BlobNames
-                .Select(blobName => BlobNameStrategy.TryParseVersion(blobName, streamKey, out long version)
-                    ? (long?)version
-                    : null)
-                .Where(version => version.HasValue)
-                .Select(version => version!.Value)
-                .ToArray();
-        }
     }
 
     /// <inheritdoc />
@@ -196,19 +200,12 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     )
     {
         ArgumentNullException.ThrowIfNull(content);
-
         string blobName = BlobNameStrategy.GetBlobName(snapshotKey);
-        bool created = await BlobOperations.CreateIfAbsentAsync(blobName, content, cancellationToken).ConfigureAwait(false);
+        bool created = await BlobOperations.CreateIfAbsentAsync(blobName, content, cancellationToken)
+            .ConfigureAwait(false);
         if (!created)
         {
             throw new SnapshotBlobDuplicateVersionException(snapshotKey);
         }
     }
-
-    private static bool ShouldRetain(
-        long version,
-        long latestVersion,
-        IReadOnlyCollection<int> retainModuli
-    ) => (version == latestVersion)
-         || retainModuli.Any(modulus => (modulus != 0) && ((version % modulus) == 0));
 }

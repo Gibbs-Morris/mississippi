@@ -18,9 +18,7 @@ internal sealed class SnapshotBlobStorageOptionsValidator : IValidateOptions<Sna
     )
     {
         ArgumentNullException.ThrowIfNull(options);
-
         List<string> failures = [];
-
         if (string.IsNullOrWhiteSpace(options.ContainerName))
         {
             failures.Add("ContainerName must be configured.");

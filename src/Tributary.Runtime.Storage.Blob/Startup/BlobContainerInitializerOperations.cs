@@ -19,7 +19,8 @@ internal sealed class BlobContainerInitializerOperations : IBlobContainerInitial
     /// </summary>
     /// <param name="blobContainerClient">The configured Blob container client.</param>
     public BlobContainerInitializerOperations(
-        [FromKeyedServices(SnapshotBlobDefaults.BlobContainerServiceKey)] BlobContainerClient blobContainerClient
+        [FromKeyedServices(SnapshotBlobDefaults.BlobContainerServiceKey)]
+        BlobContainerClient blobContainerClient
     ) =>
         BlobContainerClient = blobContainerClient ?? throw new ArgumentNullException(nameof(blobContainerClient));
 

@@ -24,7 +24,8 @@ internal sealed class TestLogEntry
         EventId eventId,
         string message,
         Exception? exception,
-        IReadOnlyDictionary<string, object?> state)
+        IReadOnlyDictionary<string, object?> state
+    )
     {
         Level = level;
         EventId = eventId;
@@ -34,24 +35,24 @@ internal sealed class TestLogEntry
     }
 
     /// <summary>
-    ///     Gets the captured log level.
-    /// </summary>
-    public LogLevel Level { get; }
-
-    /// <summary>
     ///     Gets the captured event identifier.
     /// </summary>
     public EventId EventId { get; }
 
     /// <summary>
-    ///     Gets the rendered log message.
-    /// </summary>
-    public string Message { get; }
-
-    /// <summary>
     ///     Gets the captured exception, if any.
     /// </summary>
     public Exception? Exception { get; }
+
+    /// <summary>
+    ///     Gets the captured log level.
+    /// </summary>
+    public LogLevel Level { get; }
+
+    /// <summary>
+    ///     Gets the rendered log message.
+    /// </summary>
+    public string Message { get; }
 
     /// <summary>
     ///     Gets the structured log state values.

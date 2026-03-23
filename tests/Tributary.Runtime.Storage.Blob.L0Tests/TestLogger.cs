@@ -21,12 +21,16 @@ internal sealed class TestLogger<T> : ILogger<T>
     public IReadOnlyList<TestLogEntry> Entries => entries;
 
     /// <inheritdoc />
-    public IDisposable BeginScope<TState>(TState state)
+    public IDisposable BeginScope<TState>(
+        TState state
+    )
         where TState : notnull =>
         new NullScope();
 
     /// <inheritdoc />
-    public bool IsEnabled(LogLevel logLevel) =>
+    public bool IsEnabled(
+        LogLevel logLevel
+    ) =>
         true;
 
     /// <inheritdoc />
@@ -35,20 +39,14 @@ internal sealed class TestLogger<T> : ILogger<T>
         EventId eventId,
         TState state,
         Exception? exception,
-        Func<TState, Exception?, string> formatter)
+        Func<TState, Exception?, string> formatter
+    )
     {
         ArgumentNullException.ThrowIfNull(formatter);
-
         Dictionary<string, object?> structuredState = state is IEnumerable<KeyValuePair<string, object?>> pairs
             ? pairs.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal)
             : [];
-
-        entries.Add(new TestLogEntry(
-            logLevel,
-            eventId,
-            formatter(state, exception),
-            exception,
-            structuredState));
+        entries.Add(new(logLevel, eventId, formatter(state, exception), exception, structuredState));
     }
 
     private sealed class NullScope : IDisposable

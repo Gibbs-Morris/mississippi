@@ -31,17 +31,13 @@ namespace MississippiSamples.Crescent.L2Tests;
 /// </summary>
 internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
 {
-    private readonly IDistributedApplicationTestingBuilder appHost;
-
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(10);
 
     private readonly DistributedApplication app;
 
+    private readonly IDistributedApplicationTestingBuilder appHost;
+
     private readonly List<IHost> orleansHosts = [];
-
-    private readonly string snapshotBlobPrefix;
-
-    private readonly string snapshotContainerName;
 
     private BlobSnapshotTrustSliceScenario(
         string snapshotContainerName,
@@ -53,8 +49,8 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
         IHost initialOrleansHost
     )
     {
-        this.snapshotContainerName = snapshotContainerName;
-        this.snapshotBlobPrefix = snapshotBlobPrefix;
+        this.SnapshotContainerName = snapshotContainerName;
+        this.SnapshotBlobPrefix = snapshotBlobPrefix;
         this.appHost = appHost;
         this.app = app;
         CosmosConnectionString = cosmosConnectionString;
@@ -71,179 +67,70 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
     /// <summary>
     ///     Gets the Azurite Blob connection string.
     /// </summary>
-    public string BlobConnectionString { get; private set; }
+    public string BlobConnectionString { get; }
 
     /// <summary>
     ///     Gets the Cosmos emulator connection string.
     /// </summary>
-    public string CosmosConnectionString { get; private set; }
+    public string CosmosConnectionString { get; }
 
     /// <summary>
     ///     Gets the snapshot blob prefix configured for the scenario.
     /// </summary>
-    public string SnapshotBlobPrefix => snapshotBlobPrefix;
+    public string SnapshotBlobPrefix { get; }
 
     /// <summary>
     ///     Gets the snapshot container name configured for the scenario.
     /// </summary>
-    public string SnapshotContainerName => snapshotContainerName;
+    public string SnapshotContainerName { get; }
+
+    private IHost CurrentOrleansHost =>
+        orleansHosts.Count > 0
+            ? orleansHosts[^1]
+            : throw new InvalidOperationException("The Orleans host is not started.");
 
     /// <summary>
     ///     Starts the dedicated Blob snapshot trust-slice scenario.
     /// </summary>
     /// <returns>A started scenario host.</returns>
+#pragma warning disable IDISP001 // Dispose created - appHost/app ownership transfers to the returned scenario instance
     public static async Task<BlobSnapshotTrustSliceScenario> StartAsync()
     {
         string uniqueId = Guid.NewGuid().ToString("N");
         string snapshotContainerName = $"blob-snapshot-{uniqueId[..18]}";
         string snapshotBlobPrefix = $"trust-slice/{uniqueId}/";
-
         IDistributedApplicationTestingBuilder appHost = await DistributedApplicationTestingBuilder
             .CreateAsync<Crescent_AppHost>();
-
         appHost.Services.ConfigureHttpClientDefaults(clientBuilder => clientBuilder.AddStandardResilienceHandler());
-
         DistributedApplication startedApp = await BuildStartedApplicationAsync(appHost);
         await startedApp.StartAsync().WaitAsync(DefaultTimeout);
-
         using CancellationTokenSource cancellationTokenSource = new(DefaultTimeout);
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-
         await startedApp.ResourceNotifications.WaitForResourceHealthyAsync("cosmos", cancellationToken)
             .WaitAsync(DefaultTimeout, cancellationToken);
         await startedApp.ResourceNotifications.WaitForResourceHealthyAsync("storage", cancellationToken)
             .WaitAsync(DefaultTimeout, cancellationToken);
-
         string cosmosConnectionString = await startedApp.GetConnectionStringAsync("cosmos", cancellationToken) ??
-                                        throw new InvalidOperationException("Failed to get the Cosmos connection string.");
+                                        throw new InvalidOperationException(
+                                            "Failed to get the Cosmos connection string.");
         string blobConnectionString = await startedApp.GetConnectionStringAsync("blobs", cancellationToken) ??
                                       throw new InvalidOperationException("Failed to get the Blob connection string.");
-
-        return new BlobSnapshotTrustSliceScenario(
+        IHost initialOrleansHost = await StartOrleansHostAsync(
+            cosmosConnectionString,
+            blobConnectionString,
+            snapshotContainerName,
+            snapshotBlobPrefix,
+            cancellationToken);
+        return new(
             snapshotContainerName,
             snapshotBlobPrefix,
             appHost,
             startedApp,
             cosmosConnectionString,
             blobConnectionString,
-            await StartOrleansHostAsync(cosmosConnectionString, blobConnectionString, snapshotContainerName, snapshotBlobPrefix, cancellationToken));
+            initialOrleansHost);
     }
-
-    /// <summary>
-    ///     Creates a Blob service client connected to the scenario Azurite instance.
-    /// </summary>
-    /// <returns>The Blob service client.</returns>
-    public BlobServiceClient CreateBlobServiceClient() => new(BlobConnectionString);
-
-    /// <summary>
-    ///     Restarts only the Orleans host while keeping the emulators running.
-    /// </summary>
-    /// <returns>A task representing the restart operation.</returns>
-    public async Task RestartOrleansAsync()
-    {
-        await StopOrleansAsync();
-        IHost restartedHost = await StartOrleansHostAsync(
-            CosmosConnectionString,
-            BlobConnectionString,
-            snapshotContainerName,
-            snapshotBlobPrefix,
-            CancellationToken.None);
-        orleansHosts.Add(restartedHost);
-    }
-
-    /// <summary>
-    ///     Persists the supplied large-snapshot state through the registered snapshot storage writer and returns the exact
-    ///     snapshot Blob for that version.
-    /// </summary>
-    /// <param name="entityId">The aggregate entity identifier.</param>
-    /// <param name="snapshotState">The snapshot state to persist.</param>
-    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
-    /// <returns>The exact Blob client for the persisted snapshot version.</returns>
-    public async Task<BlobClient> PersistSnapshotAsync(
-        string entityId,
-        LargeSnapshotAggregate snapshotState,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-        ArgumentNullException.ThrowIfNull(snapshotState);
-
-        using IServiceScope scope = CurrentOrleansHost.Services.CreateScope();
-        IServiceProvider services = scope.ServiceProvider;
-        IBrookGrainFactory brookGrainFactory = services.GetRequiredService<IBrookGrainFactory>();
-        IRootReducer<LargeSnapshotAggregate> rootReducer = services.GetRequiredService<IRootReducer<LargeSnapshotAggregate>>();
-        ISnapshotStateConverter<LargeSnapshotAggregate> snapshotStateConverter =
-            services.GetRequiredService<ISnapshotStateConverter<LargeSnapshotAggregate>>();
-        ISnapshotStorageWriter snapshotStorageWriter = services.GetRequiredService<ISnapshotStorageWriter>();
-
-        BrookPosition snapshotVersion = await brookGrainFactory
-            .GetBrookCursorGrain(BrookKey.ForType<LargeSnapshotAggregate>(entityId))
-            .GetLatestPositionAsync()
-            .ConfigureAwait(false);
-
-        if (snapshotVersion.NotSet)
-        {
-            throw new InvalidOperationException($"No events have been committed for aggregate '{entityId}'.");
-        }
-
-        string reducerHash = rootReducer.GetReducerHash();
-        SnapshotStreamKey snapshotStreamKey = new(
-            BrookNameHelper.GetBrookName<LargeSnapshotAggregate>(),
-            SnapshotStorageNameHelper.GetStorageName<LargeSnapshotAggregate>(),
-            entityId,
-            reducerHash);
-        SnapshotKey snapshotKey = new(snapshotStreamKey, snapshotVersion.Value);
-        BlobClient blobClient = CreateBlobServiceClient()
-            .GetBlobContainerClient(snapshotContainerName)
-            .GetBlobClient(GetBlobName(snapshotKey));
-
-        if (await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
-        {
-            return blobClient;
-        }
-
-        SnapshotEnvelope snapshotEnvelope = snapshotStateConverter.ToEnvelope(snapshotState, reducerHash);
-
-        try
-        {
-            await snapshotStorageWriter.WriteAsync(snapshotKey, snapshotEnvelope, cancellationToken).ConfigureAwait(false);
-        }
-        catch (InvalidOperationException)
-        {
-            if (!await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
-            {
-                throw;
-            }
-
-            // The background persister may have already committed the exact blob version; treat that as ready.
-        }
-
-        return blobClient;
-    }
-
-    /// <inheritdoc />
-    public async ValueTask DisposeAsync()
-    {
-        await StopOrleansAsync();
-        await app.StopAsync();
-        await app.DisposeAsync();
-
-        if (appHost is IAsyncDisposable asyncDisposable)
-        {
-            await asyncDisposable.DisposeAsync();
-            return;
-        }
-
-        if (appHost is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-    }
-
-    private IHost CurrentOrleansHost =>
-        orleansHosts.Count > 0
-            ? orleansHosts[^1]
-            : throw new InvalidOperationException("The Orleans host is not started.");
+#pragma warning restore IDISP001
 
     private static IHost BuildOrleansHost(
         string cosmosConnectionString,
@@ -253,7 +140,6 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
     )
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder();
-
         builder.Logging.ClearProviders();
         builder.Logging.AddSimpleConsole(options =>
         {
@@ -263,13 +149,11 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
         builder.Logging.SetMinimumLevel(LogLevel.Information);
         builder.Logging.AddFilter("Orleans", LogLevel.Warning);
         builder.Logging.AddFilter("Mississippi", LogLevel.Information);
-
         builder.Services.AddEventSourcingByService();
         builder.Services.AddJsonSerialization();
         builder.Services.AddSingleton<ISerializationProvider, CrescentBlobCustomJsonSerializationProvider>();
         builder.Services.AddSnapshotCaching();
         builder.Services.Configure<SnapshotRetentionOptions>(options => options.DefaultRetainModulus = 1);
-
         builder.Services.AddKeyedSingleton(
             BrookCosmosDefaults.CosmosClientServiceKey,
             (
@@ -277,19 +161,17 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
                 _
             ) => new CosmosClient(
                 cosmosConnectionString,
-                new CosmosClientOptions
+                new()
                 {
                     ConnectionMode = ConnectionMode.Gateway,
                     LimitToEndpoint = true,
                 }));
-
         builder.Services.AddKeyedSingleton(
             BrookCosmosDefaults.BlobLockingServiceKey,
             (
                 _,
                 _
             ) => new BlobServiceClient(blobConnectionString));
-
         builder.Services.AddCosmosBrookStorageProvider(options =>
         {
             options.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
@@ -297,7 +179,6 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
             options.QueryBatchSize = 50;
             options.MaxEventsPerBatch = 50;
         });
-
         builder.Services.AddBlobSnapshotStorageProvider(
             blobConnectionString,
             options =>
@@ -308,9 +189,7 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
                 options.PayloadSerializerFormat = CrescentBlobCustomJsonSerializationProvider.SerializerFormat;
                 options.ContainerInitializationMode = SnapshotBlobContainerInitializationMode.CreateIfMissing;
             });
-
         builder.Services.AddLargeSnapshotScenarioAggregate();
-
         builder.UseOrleans(silo =>
         {
             silo.UseLocalhostClustering()
@@ -319,12 +198,10 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
                     options.ClusterId = "aspire-l2tests";
                     options.ServiceId = "CrescentBlobSnapshotTrustSlice";
                 });
-
             silo.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
             silo.AddMemoryGrainStorage("PubSubStore");
             silo.AddEventSourcing();
         });
-
         return builder.Build();
     }
 
@@ -332,6 +209,19 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
         IDistributedApplicationTestingBuilder appHost
     ) =>
         appHost.BuildAsync().WaitAsync(DefaultTimeout);
+
+    private static string NormalizeBlobPrefix(
+        string? blobPrefix
+    )
+    {
+        if (string.IsNullOrWhiteSpace(blobPrefix))
+        {
+            return string.Empty;
+        }
+
+        string normalizedPrefix = blobPrefix.Trim().Replace('\\', '/').Trim('/');
+        return string.IsNullOrEmpty(normalizedPrefix) ? string.Empty : string.Concat(normalizedPrefix, "/");
+    }
 
     private static async Task<IHost> StartOrleansHostAsync(
         string cosmosConnectionString,
@@ -350,22 +240,117 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
         return host;
     }
 
-    private async Task StopOrleansAsync()
+    /// <summary>
+    ///     Creates a Blob service client connected to the scenario Azurite instance.
+    /// </summary>
+    /// <returns>The Blob service client.</returns>
+    public BlobServiceClient CreateBlobServiceClient() => new(BlobConnectionString);
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
     {
-        if (orleansHosts.Count == 0)
+        await StopOrleansAsync();
+        await app.StopAsync();
+        await app.DisposeAsync();
+        if (appHost is IAsyncDisposable asyncDisposable)
         {
+            await asyncDisposable.DisposeAsync();
             return;
         }
 
-        IHost currentHost = orleansHosts[^1];
-        orleansHosts.RemoveAt(orleansHosts.Count - 1);
-        await currentHost.StopAsync();
-        currentHost.Dispose();
+        if (appHost is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+    }
+
+    /// <summary>
+    ///     Persists the supplied large-snapshot state through the registered snapshot storage writer and returns the exact
+    ///     snapshot Blob for that version.
+    /// </summary>
+    /// <param name="entityId">The aggregate entity identifier.</param>
+    /// <param name="snapshotState">The snapshot state to persist.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The exact Blob client for the persisted snapshot version.</returns>
+    public async Task<BlobClient> PersistSnapshotAsync(
+        string entityId,
+        LargeSnapshotAggregate snapshotState,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        ArgumentNullException.ThrowIfNull(snapshotState);
+        using IServiceScope scope = CurrentOrleansHost.Services.CreateScope();
+        IServiceProvider services = scope.ServiceProvider;
+        IBrookGrainFactory brookGrainFactory = services.GetRequiredService<IBrookGrainFactory>();
+        IRootReducer<LargeSnapshotAggregate> rootReducer =
+            services.GetRequiredService<IRootReducer<LargeSnapshotAggregate>>();
+        ISnapshotStateConverter<LargeSnapshotAggregate> snapshotStateConverter =
+            services.GetRequiredService<ISnapshotStateConverter<LargeSnapshotAggregate>>();
+        ISnapshotStorageWriter snapshotStorageWriter = services.GetRequiredService<ISnapshotStorageWriter>();
+        BrookPosition snapshotVersion = await brookGrainFactory
+            .GetBrookCursorGrain(BrookKey.ForType<LargeSnapshotAggregate>(entityId))
+            .GetLatestPositionAsync()
+            .ConfigureAwait(false);
+        if (snapshotVersion.NotSet)
+        {
+            throw new InvalidOperationException($"No events have been committed for aggregate '{entityId}'.");
+        }
+
+        string reducerHash = rootReducer.GetReducerHash();
+        SnapshotStreamKey snapshotStreamKey = new(
+            BrookNameHelper.GetBrookName<LargeSnapshotAggregate>(),
+            SnapshotStorageNameHelper.GetStorageName<LargeSnapshotAggregate>(),
+            entityId,
+            reducerHash);
+        SnapshotKey snapshotKey = new(snapshotStreamKey, snapshotVersion.Value);
+        BlobClient blobClient = CreateBlobServiceClient()
+            .GetBlobContainerClient(SnapshotContainerName)
+            .GetBlobClient(GetBlobName(snapshotKey));
+        if (await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return blobClient;
+        }
+
+        SnapshotEnvelope snapshotEnvelope = snapshotStateConverter.ToEnvelope(snapshotState, reducerHash);
+        try
+        {
+            await snapshotStorageWriter.WriteAsync(snapshotKey, snapshotEnvelope, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (InvalidOperationException)
+        {
+            if (!await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
+            {
+                throw;
+            }
+
+            // The background persister may have already committed the exact blob version; treat that as ready.
+        }
+
+        return blobClient;
+    }
+
+    /// <summary>
+    ///     Restarts only the Orleans host while keeping the emulators running.
+    /// </summary>
+    /// <returns>A task representing the restart operation.</returns>
+    public async Task RestartOrleansAsync()
+    {
+        await StopOrleansAsync();
+        IHost restartedHost = await StartOrleansHostAsync(
+            CosmosConnectionString,
+            BlobConnectionString,
+            SnapshotContainerName,
+            SnapshotBlobPrefix,
+            CancellationToken.None);
+        orleansHosts.Add(restartedHost);
     }
 
     private string GetBlobName(
         SnapshotKey snapshotKey
-    ) => $"{GetStreamPrefix(snapshotKey.Stream)}v{snapshotKey.Version:D20}.snapshot";
+    ) =>
+        $"{GetStreamPrefix(snapshotKey.Stream)}v{snapshotKey.Version:D20}.snapshot";
 
     private string GetStreamPrefix(
         SnapshotStreamKey snapshotStreamKey
@@ -383,19 +368,19 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
         }
 
         string streamHash = Convert.ToHexString(SHA256.HashData(buffer.WrittenSpan));
-        return string.Concat(NormalizeBlobPrefix(snapshotBlobPrefix), streamHash, "/");
+        return string.Concat(NormalizeBlobPrefix(SnapshotBlobPrefix), streamHash, "/");
     }
 
-    private static string NormalizeBlobPrefix(
-        string? blobPrefix
-    )
+    private async Task StopOrleansAsync()
     {
-        if (string.IsNullOrWhiteSpace(blobPrefix))
+        if (orleansHosts.Count == 0)
         {
-            return string.Empty;
+            return;
         }
 
-        string normalizedPrefix = blobPrefix.Trim().Replace('\\', '/').Trim('/');
-        return string.IsNullOrEmpty(normalizedPrefix) ? string.Empty : string.Concat(normalizedPrefix, "/");
+        IHost currentHost = orleansHosts[^1];
+        orleansHosts.RemoveAt(orleansHosts.Count - 1);
+        await currentHost.StopAsync();
+        currentHost.Dispose();
     }
 }

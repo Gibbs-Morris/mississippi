@@ -15,7 +15,6 @@ internal sealed class LargeSnapshotStoredEventReducer : EventReducerBase<LargeSn
     )
     {
         ArgumentNullException.ThrowIfNull(@event);
-
         return (state ?? new()) with
         {
             Marker = @event.Marker,

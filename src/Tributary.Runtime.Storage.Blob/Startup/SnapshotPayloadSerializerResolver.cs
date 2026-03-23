@@ -24,14 +24,28 @@ internal sealed class SnapshotPayloadSerializerResolver
         IOptions<SnapshotBlobStorageOptions> options
     )
     {
-        SerializationProviders = serializationProviders?.ToArray()
-            ?? throw new ArgumentNullException(nameof(serializationProviders));
+        SerializationProviders = serializationProviders?.ToArray() ??
+                                 throw new ArgumentNullException(nameof(serializationProviders));
         Options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
     private IOptions<SnapshotBlobStorageOptions> Options { get; }
 
     private IReadOnlyCollection<ISerializationProvider> SerializationProviders { get; }
+
+    /// <summary>
+    ///     Gets the persisted serializer identity for the supplied provider.
+    /// </summary>
+    /// <param name="provider">The serialization provider.</param>
+    /// <returns>The concrete persisted serializer identity.</returns>
+    internal static string GetSerializerId(
+        ISerializationProvider provider
+    )
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+        Type providerType = provider.GetType();
+        return providerType.FullName ?? providerType.Name;
+    }
 
     /// <summary>
     ///     Resolves the single serializer matching the configured payload format.
@@ -43,16 +57,15 @@ internal sealed class SnapshotPayloadSerializerResolver
     public ISerializationProvider ResolveConfiguredSerializer()
     {
         string configuredFormat = Options.Value.PayloadSerializerFormat;
-        List<ISerializationProvider> matches = SerializationProviders
-            .Where(provider => string.Equals(provider.Format, configuredFormat, StringComparison.OrdinalIgnoreCase))
+        List<ISerializationProvider> matches = SerializationProviders.Where(provider =>
+                string.Equals(provider.Format, configuredFormat, StringComparison.OrdinalIgnoreCase))
             .ToList();
-
         return matches.Count switch
         {
             1 => matches[0],
             0 => throw new InvalidOperationException(
                 $"No ISerializationProvider is registered for payload serializer format '{configuredFormat}'. Register exactly one matching provider before startup."),
-            _ => throw new InvalidOperationException(
+            var _ => throw new InvalidOperationException(
                 $"Multiple ISerializationProvider registrations match payload serializer format '{configuredFormat}'. Register exactly one matching provider before startup."),
         };
     }
@@ -65,20 +78,5 @@ internal sealed class SnapshotPayloadSerializerResolver
     {
         ISerializationProvider provider = ResolveConfiguredSerializer();
         return new(provider, GetSerializerId(provider));
-    }
-
-    /// <summary>
-    ///     Gets the persisted serializer identity for the supplied provider.
-    /// </summary>
-    /// <param name="provider">The serialization provider.</param>
-    /// <returns>The concrete persisted serializer identity.</returns>
-    internal static string GetSerializerId(
-        ISerializationProvider provider
-    )
-    {
-        ArgumentNullException.ThrowIfNull(provider);
-
-        Type providerType = provider.GetType();
-        return providerType.FullName ?? providerType.Name;
     }
 }

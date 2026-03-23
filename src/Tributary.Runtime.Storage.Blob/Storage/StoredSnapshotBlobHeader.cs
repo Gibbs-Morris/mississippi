@@ -46,10 +46,10 @@ internal sealed record StoredSnapshotBlobHeader
     public string ReducerHash { get; init; } = string.Empty;
 
     /// <summary>
-    ///     Gets the stored payload segment size in bytes.
+    ///     Gets the persisted snapshot storage name.
     /// </summary>
-    [JsonPropertyName("storedPayloadBytes")]
-    public long StoredPayloadBytes { get; init; }
+    [JsonPropertyName("snapshotStorageName")]
+    public string SnapshotStorageName { get; init; } = string.Empty;
 
     /// <summary>
     ///     Gets the storage format version for the provider-owned frame.
@@ -58,10 +58,10 @@ internal sealed record StoredSnapshotBlobHeader
     public int StorageFormatVersion { get; init; }
 
     /// <summary>
-    ///     Gets the persisted snapshot storage name.
+    ///     Gets the stored payload segment size in bytes.
     /// </summary>
-    [JsonPropertyName("snapshotStorageName")]
-    public string SnapshotStorageName { get; init; } = string.Empty;
+    [JsonPropertyName("storedPayloadBytes")]
+    public long StoredPayloadBytes { get; init; }
 
     /// <summary>
     ///     Gets the uncompressed payload size in bytes.

@@ -55,7 +55,6 @@ internal sealed class CrescentBlobCustomJsonSerializationProvider : ISerializati
     )
     {
         ArgumentNullException.ThrowIfNull(destination);
-
         byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(value);
         await destination.WriteAsync(bytes, cancellationToken);
     }

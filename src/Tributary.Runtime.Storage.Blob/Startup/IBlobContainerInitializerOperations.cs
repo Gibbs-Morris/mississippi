@@ -14,12 +14,16 @@ internal interface IBlobContainerInitializerOperations
     /// </summary>
     /// <param name="cancellationToken">A token that can cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task CreateIfNotExistsAsync(CancellationToken cancellationToken);
+    Task CreateIfNotExistsAsync(
+        CancellationToken cancellationToken
+    );
 
     /// <summary>
     ///     Determines whether the configured container exists.
     /// </summary>
     /// <param name="cancellationToken">A token that can cancel the operation.</param>
     /// <returns><c>true</c> when the container exists; otherwise <c>false</c>.</returns>
-    Task<bool> ExistsAsync(CancellationToken cancellationToken);
+    Task<bool> ExistsAsync(
+        CancellationToken cancellationToken
+    );
 }

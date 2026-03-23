@@ -6,6 +6,21 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob;
 public sealed class SnapshotBlobStorageOptions
 {
     /// <summary>
+    ///     Gets or sets the logical root prefix inside the container for snapshot blobs.
+    /// </summary>
+    public string BlobPrefix { get; set; } = SnapshotBlobDefaults.BlobPrefix;
+
+    /// <summary>
+    ///     Gets or sets the keyed service key used to resolve the <c>BlobServiceClient</c> from DI.
+    /// </summary>
+    public string BlobServiceClientServiceKey { get; set; } = SnapshotBlobDefaults.BlobServiceClientServiceKey;
+
+    /// <summary>
+    ///     Gets or sets the configured payload compression mode for stored Blob frames.
+    /// </summary>
+    public SnapshotBlobCompression Compression { get; set; } = SnapshotBlobDefaults.Compression;
+
+    /// <summary>
     ///     Gets or sets the configured Blob container initialization behavior.
     /// </summary>
     public SnapshotBlobContainerInitializationMode ContainerInitializationMode { get; set; } =
@@ -15,21 +30,6 @@ public sealed class SnapshotBlobStorageOptions
     ///     Gets or sets the Blob container name used for snapshot persistence.
     /// </summary>
     public string ContainerName { get; set; } = SnapshotBlobDefaults.ContainerName;
-
-    /// <summary>
-    ///     Gets or sets the logical root prefix inside the container for snapshot blobs.
-    /// </summary>
-    public string BlobPrefix { get; set; } = SnapshotBlobDefaults.BlobPrefix;
-
-    /// <summary>
-    ///     Gets or sets the configured payload compression mode for stored Blob frames.
-    /// </summary>
-    public SnapshotBlobCompression Compression { get; set; } = SnapshotBlobDefaults.Compression;
-
-    /// <summary>
-    ///     Gets or sets the keyed service key used to resolve the <c>BlobServiceClient</c> from DI.
-    /// </summary>
-    public string BlobServiceClientServiceKey { get; set; } = SnapshotBlobDefaults.BlobServiceClientServiceKey;
 
     /// <summary>
     ///     Gets or sets the page size hint used for stream-local blob listings.

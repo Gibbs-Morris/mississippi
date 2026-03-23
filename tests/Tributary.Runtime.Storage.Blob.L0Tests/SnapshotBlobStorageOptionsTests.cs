@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -34,7 +36,6 @@ public sealed class SnapshotBlobStorageOptionsTests
     public void SnapshotBlobStorageOptionsShouldReturnDefaultValues()
     {
         SnapshotBlobStorageOptions options = new();
-
         Assert.Equal(SnapshotBlobDefaults.BlobPrefix, options.BlobPrefix);
         Assert.Equal(SnapshotBlobDefaults.ContainerName, options.ContainerName);
         Assert.Equal(SnapshotBlobDefaults.BlobServiceClientServiceKey, options.BlobServiceClientServiceKey);
@@ -64,18 +65,15 @@ public sealed class SnapshotBlobStorageOptionsTests
                 options.ContainerInitializationMode = (SnapshotBlobContainerInitializationMode)99;
             });
         services.AddSingleton<IValidateOptions<SnapshotBlobStorageOptions>, SnapshotBlobStorageOptionsValidator>();
-
         using ServiceProvider provider = services.BuildServiceProvider();
-
-        OptionsValidationException exception = Assert.Throws<OptionsValidationException>(
-            () => provider.GetRequiredService<IOptions<SnapshotBlobStorageOptions>>().Value);
-
-        Assert.Contains("ContainerName", exception.Message, System.StringComparison.Ordinal);
-        Assert.Contains("BlobServiceClientServiceKey", exception.Message, System.StringComparison.Ordinal);
-        Assert.Contains("Compression", exception.Message, System.StringComparison.Ordinal);
-        Assert.Contains("ListPageSizeHint", exception.Message, System.StringComparison.Ordinal);
-        Assert.Contains("MaxHeaderBytes", exception.Message, System.StringComparison.Ordinal);
-        Assert.Contains("PayloadSerializerFormat", exception.Message, System.StringComparison.Ordinal);
-        Assert.Contains("ContainerInitializationMode", exception.Message, System.StringComparison.Ordinal);
+        OptionsValidationException exception = Assert.Throws<OptionsValidationException>(() =>
+            provider.GetRequiredService<IOptions<SnapshotBlobStorageOptions>>().Value);
+        Assert.Contains("ContainerName", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("BlobServiceClientServiceKey", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("Compression", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("ListPageSizeHint", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("MaxHeaderBytes", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("PayloadSerializerFormat", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("ContainerInitializationMode", exception.Message, StringComparison.Ordinal);
     }
 }

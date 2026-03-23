@@ -12,4 +12,5 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob.Storage;
 internal sealed record DecodedSnapshotBlobFrame(
     StoredSnapshotBlobHeader Header,
     SnapshotEnvelope Snapshot,
-    SnapshotBlobCompression Compression);
+    SnapshotBlobCompression Compression
+);

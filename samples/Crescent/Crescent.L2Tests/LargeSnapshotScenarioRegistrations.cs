@@ -19,10 +19,10 @@ internal static class LargeSnapshotScenarioRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-
         services.AddAggregateSupport();
         services.AddEventType<LargeSnapshotStored>();
-        services.AddCommandHandler<StoreLargeSnapshotCommand, LargeSnapshotAggregate, StoreLargeSnapshotCommandHandler>();
+        services
+            .AddCommandHandler<StoreLargeSnapshotCommand, LargeSnapshotAggregate, StoreLargeSnapshotCommandHandler>();
         services.AddReducer<LargeSnapshotStored, LargeSnapshotAggregate, LargeSnapshotStoredEventReducer>();
         services.AddSnapshotStateConverter<LargeSnapshotAggregate>();
         return services;

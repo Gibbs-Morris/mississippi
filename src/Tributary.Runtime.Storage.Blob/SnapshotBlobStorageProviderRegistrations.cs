@@ -5,7 +5,6 @@ using Azure.Storage.Blobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Tributary.Runtime.Storage.Abstractions;
@@ -22,7 +21,8 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob;
 public static class SnapshotBlobStorageProviderRegistrations
 {
     /// <summary>
-    ///     Registers Blob snapshot storage provider services using an externally provided keyed <see cref="BlobServiceClient" />
+    ///     Registers Blob snapshot storage provider services using an externally provided keyed
+    ///     <see cref="BlobServiceClient" />
     ///     and previously configured <see cref="SnapshotBlobStorageOptions" />.
     /// </summary>
     /// <param name="services">The service collection to update.</param>
@@ -32,10 +32,10 @@ public static class SnapshotBlobStorageProviderRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-
         services.AddOptions<SnapshotBlobStorageOptions>();
         services.TryAddEnumerable(
-            ServiceDescriptor.Singleton<IValidateOptions<SnapshotBlobStorageOptions>, SnapshotBlobStorageOptionsValidator>());
+            ServiceDescriptor
+                .Singleton<IValidateOptions<SnapshotBlobStorageOptions>, SnapshotBlobStorageOptionsValidator>());
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<SnapshotPayloadSerializerResolver>();
         services.AddSingleton<IBlobNameStrategy, BlobNameStrategy>();
@@ -54,12 +54,12 @@ public static class SnapshotBlobStorageProviderRegistrations
                 _
             ) =>
             {
-                SnapshotBlobStorageOptions options = provider.GetRequiredService<IOptions<SnapshotBlobStorageOptions>>().Value;
+                SnapshotBlobStorageOptions options =
+                    provider.GetRequiredService<IOptions<SnapshotBlobStorageOptions>>().Value;
                 BlobServiceClient blobServiceClient =
                     provider.GetRequiredKeyedService<BlobServiceClient>(options.BlobServiceClientServiceKey);
                 return blobServiceClient.GetBlobContainerClient(options.ContainerName);
             });
-
         return services;
     }
 
@@ -79,17 +79,14 @@ public static class SnapshotBlobStorageProviderRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(blobConnectionString);
-
         SnapshotBlobStorageOptions effectiveOptions = new();
         configureOptions?.Invoke(effectiveOptions);
-
         services.AddKeyedSingleton<BlobServiceClient>(
             effectiveOptions.BlobServiceClientServiceKey,
             (
                 _,
                 _
-            ) => new BlobServiceClient(blobConnectionString));
-
+            ) => new(blobConnectionString));
         if (configureOptions != null)
         {
             services.Configure(configureOptions);
@@ -111,7 +108,6 @@ public static class SnapshotBlobStorageProviderRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configureOptions);
-
         services.Configure(configureOptions);
         return services.AddBlobSnapshotStorageProvider();
     }
@@ -130,7 +126,6 @@ public static class SnapshotBlobStorageProviderRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
-
         services.Configure<SnapshotBlobStorageOptions>(configuration);
         return services.AddBlobSnapshotStorageProvider();
     }

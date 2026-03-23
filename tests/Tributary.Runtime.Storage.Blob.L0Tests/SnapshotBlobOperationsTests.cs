@@ -20,39 +20,41 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob.L0Tests;
 /// </summary>
 public sealed class SnapshotBlobOperationsTests
 {
-    /// <summary>
-    ///     Verifies successful creates use the Blob SDK conditional-create wildcard.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    public async Task CreateIfAbsentAsyncShouldUseIfNoneMatchWildcardWhenUploadSucceeds()
+    private static BlobItem CreateBlobItem(
+        string name
+    ) =>
+        BlobsModelFactory.BlobItem(name, false, null!, null, new Dictionary<string, string>());
+
+    private static Page<BlobItem> CreatePage(
+        IReadOnlyList<BlobItem> items,
+        string? continuationToken
+    ) =>
+        Page<BlobItem>.FromValues(items, continuationToken, Mock.Of<Response>());
+
+    private sealed class RecordingAsyncPageable(params Page<BlobItem>[] pages) : AsyncPageable<BlobItem>
     {
-        const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
-        Mock<BlobContainerClient> container = new();
-        Mock<BlobClient> blob = new();
-        BlobUploadOptions? capturedOptions = null;
-        CancellationToken capturedCancellationToken = default;
+        public string? ContinuationToken { get; private set; }
 
-        container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
-        blob.Setup(client => client.UploadAsync(It.IsAny<Stream>(), It.IsAny<BlobUploadOptions>(), It.IsAny<CancellationToken>()))
-            .Callback<Stream, BlobUploadOptions, CancellationToken>((stream, options, cancellationToken) =>
+        public int? PageSizeHint { get; private set; }
+
+        public override IAsyncEnumerable<Page<BlobItem>> AsPages(
+            string? continuationToken = null,
+            int? pageSizeHint = null
+        )
+        {
+            ContinuationToken = continuationToken;
+            PageSizeHint = pageSizeHint;
+            return EnumeratePagesAsync();
+        }
+
+        private async IAsyncEnumerable<Page<BlobItem>> EnumeratePagesAsync()
+        {
+            foreach (Page<BlobItem> page in pages)
             {
-                capturedOptions = options;
-                capturedCancellationToken = cancellationToken;
-            })
-            .ReturnsAsync(Mock.Of<Response<BlobContentInfo>>());
-
-        SnapshotBlobOperations operations = new(container.Object);
-        using MemoryStream content = new([1, 2, 3]);
-        using CancellationTokenSource cancellationTokenSource = new();
-
-        bool created = await operations.CreateIfAbsentAsync(blobName, content, cancellationTokenSource.Token);
-
-        Assert.True(created);
-        Assert.NotNull(capturedOptions);
-        Assert.NotNull(capturedOptions.Conditions);
-        Assert.Equal(ETag.All, capturedOptions.Conditions.IfNoneMatch);
-        Assert.Equal(cancellationTokenSource.Token, capturedCancellationToken);
+                yield return page;
+                await Task.CompletedTask;
+            }
+        }
     }
 
     /// <summary>
@@ -70,17 +72,83 @@ public sealed class SnapshotBlobOperationsTests
         const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
         Mock<BlobContainerClient> container = new();
         Mock<BlobClient> blob = new();
-
         container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
-        blob.Setup(client => client.UploadAsync(It.IsAny<Stream>(), It.IsAny<BlobUploadOptions>(), It.IsAny<CancellationToken>()))
+        blob.Setup(client => client.UploadAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<BlobUploadOptions>(),
+                It.IsAny<CancellationToken>()))
             .ThrowsAsync(new RequestFailedException(statusCode, "duplicate"));
-
         SnapshotBlobOperations operations = new(container.Object);
         using MemoryStream content = new([1, 2, 3]);
-
         bool created = await operations.CreateIfAbsentAsync(blobName, content, CancellationToken.None);
-
         Assert.False(created);
+    }
+
+    /// <summary>
+    ///     Verifies successful creates use the Blob SDK conditional-create wildcard.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CreateIfAbsentAsyncShouldUseIfNoneMatchWildcardWhenUploadSucceeds()
+    {
+        const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
+        Mock<BlobContainerClient> container = new();
+        Mock<BlobClient> blob = new();
+        BlobUploadOptions? capturedOptions = null;
+        CancellationToken capturedCancellationToken = default;
+        container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
+        blob.Setup(client => client.UploadAsync(
+                It.IsAny<Stream>(),
+                It.IsAny<BlobUploadOptions>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<Stream, BlobUploadOptions, CancellationToken>((
+                stream,
+                options,
+                cancellationToken
+            ) =>
+            {
+                capturedOptions = options;
+                capturedCancellationToken = cancellationToken;
+            })
+            .ReturnsAsync(Mock.Of<Response<BlobContentInfo>>());
+        SnapshotBlobOperations operations = new(container.Object);
+        using MemoryStream content = new([1, 2, 3]);
+        using CancellationTokenSource cancellationTokenSource = new();
+        bool created = await operations.CreateIfAbsentAsync(blobName, content, cancellationTokenSource.Token);
+        Assert.True(created);
+        Assert.NotNull(capturedOptions);
+        Assert.NotNull(capturedOptions.Conditions);
+        Assert.Equal(ETag.All, capturedOptions.Conditions.IfNoneMatch);
+        Assert.Equal(cancellationTokenSource.Token, capturedCancellationToken);
+    }
+
+    /// <summary>
+    ///     Verifies exact-name deletes forward to the Blob SDK and return the delete result.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DeleteIfExistsAsyncShouldReturnDeleteResultFromTheBlobSdk()
+    {
+        const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
+        Mock<BlobContainerClient> container = new();
+        Mock<BlobClient> blob = new();
+        CancellationToken capturedCancellationToken = default;
+        container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
+        blob.Setup(client => client.DeleteIfExistsAsync(
+                It.IsAny<DeleteSnapshotsOption>(),
+                It.IsAny<BlobRequestConditions>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<DeleteSnapshotsOption, BlobRequestConditions, CancellationToken>((
+                _,
+                _,
+                cancellationToken
+            ) => capturedCancellationToken = cancellationToken)
+            .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
+        SnapshotBlobOperations operations = new(container.Object);
+        using CancellationTokenSource cancellationTokenSource = new();
+        bool deleted = await operations.DeleteIfExistsAsync(blobName, cancellationTokenSource.Token);
+        Assert.True(deleted);
+        Assert.Equal(cancellationTokenSource.Token, capturedCancellationToken);
     }
 
     /// <summary>
@@ -93,15 +161,14 @@ public sealed class SnapshotBlobOperationsTests
         const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
         Mock<BlobContainerClient> container = new();
         Mock<BlobClient> blob = new();
-
         container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
         blob.Setup(client => client.DownloadContentAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Response.FromValue(BlobsModelFactory.BlobDownloadResult(content: BinaryData.FromBytes([1, 2, 3])), Mock.Of<Response>()));
-
+            .ReturnsAsync(
+                Response.FromValue(
+                    BlobsModelFactory.BlobDownloadResult(BinaryData.FromBytes([1, 2, 3])),
+                    Mock.Of<Response>()));
         SnapshotBlobOperations operations = new(container.Object);
-
         byte[]? content = await operations.DownloadIfExistsAsync(blobName, CancellationToken.None);
-
         Assert.NotNull(content);
         Assert.Equal([1, 2, 3], content);
     }
@@ -116,42 +183,12 @@ public sealed class SnapshotBlobOperationsTests
         const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
         Mock<BlobContainerClient> container = new();
         Mock<BlobClient> blob = new();
-
         container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
         blob.Setup(client => client.DownloadContentAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new RequestFailedException(404, "missing"));
-
         SnapshotBlobOperations operations = new(container.Object);
-
         byte[]? content = await operations.DownloadIfExistsAsync(blobName, CancellationToken.None);
-
         Assert.Null(content);
-    }
-
-    /// <summary>
-    ///     Verifies exact-name deletes forward to the Blob SDK and return the delete result.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    public async Task DeleteIfExistsAsyncShouldReturnDeleteResultFromTheBlobSdk()
-    {
-        const string blobName = "snapshots/hash/v00000000000000000012.snapshot";
-        Mock<BlobContainerClient> container = new();
-        Mock<BlobClient> blob = new();
-        CancellationToken capturedCancellationToken = default;
-
-        container.Setup(client => client.GetBlobClient(blobName)).Returns(blob.Object);
-        blob.Setup(client => client.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<CancellationToken>()))
-            .Callback<DeleteSnapshotsOption, BlobRequestConditions, CancellationToken>((_, _, cancellationToken) => capturedCancellationToken = cancellationToken)
-            .ReturnsAsync(Response.FromValue(true, Mock.Of<Response>()));
-
-        SnapshotBlobOperations operations = new(container.Object);
-        using CancellationTokenSource cancellationTokenSource = new();
-
-        bool deleted = await operations.DeleteIfExistsAsync(blobName, cancellationTokenSource.Token);
-
-        Assert.True(deleted);
-        Assert.Equal(cancellationTokenSource.Token, capturedCancellationToken);
     }
 
     /// <summary>
@@ -178,9 +215,17 @@ public sealed class SnapshotBlobOperationsTests
                 ],
                 null));
         Mock<BlobContainerClient> container = new();
-
-        container.Setup(client => client.GetBlobsAsync(BlobTraits.None, BlobStates.None, It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<BlobTraits, BlobStates, string, CancellationToken>((traits, states, requestedPrefix, cancellationToken) =>
+        container.Setup(client => client.GetBlobsAsync(
+                BlobTraits.None,
+                BlobStates.None,
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<BlobTraits, BlobStates, string, CancellationToken>((
+                traits,
+                states,
+                requestedPrefix,
+                cancellationToken
+            ) =>
             {
                 Assert.Equal(BlobTraits.None, traits);
                 Assert.Equal(BlobStates.None, states);
@@ -188,12 +233,13 @@ public sealed class SnapshotBlobOperationsTests
                 capturedCancellationToken = cancellationToken;
             })
             .Returns(pageable);
-
         SnapshotBlobOperations operations = new(container.Object);
         using CancellationTokenSource cancellationTokenSource = new();
         List<SnapshotBlobPage> pages = [];
-
-        await foreach (SnapshotBlobPage page in operations.ListByPrefixAsync(prefix, pageSizeHint, cancellationTokenSource.Token))
+        await foreach (SnapshotBlobPage page in operations.ListByPrefixAsync(
+                           prefix,
+                           pageSizeHint,
+                           cancellationTokenSource.Token))
         {
             pages.Add(page);
         }
@@ -208,44 +254,5 @@ public sealed class SnapshotBlobOperationsTests
                 ["snapshots/hash/v00000000000000000009.snapshot", "snapshots/hash/v00000000000000000010.snapshot"],
                 page.BlobNames),
             page => Assert.Equal(["snapshots/hash/v00000000000000000011.snapshot"], page.BlobNames));
-    }
-
-    private static BlobItem CreateBlobItem(
-        string name
-    ) =>
-        BlobsModelFactory.BlobItem(name, false, null!, null, new Dictionary<string, string>());
-
-    private static Page<BlobItem> CreatePage(
-        IReadOnlyList<BlobItem> items,
-        string? continuationToken
-    ) =>
-        Page<BlobItem>.FromValues(items, continuationToken, Mock.Of<Response>());
-
-    private sealed class RecordingAsyncPageable(
-        params Page<BlobItem>[] pages
-    ) : AsyncPageable<BlobItem>
-    {
-        public string? ContinuationToken { get; private set; }
-
-        public int? PageSizeHint { get; private set; }
-
-        public override IAsyncEnumerable<Page<BlobItem>> AsPages(
-            string? continuationToken = null,
-            int? pageSizeHint = null
-        )
-        {
-            ContinuationToken = continuationToken;
-            PageSizeHint = pageSizeHint;
-            return EnumeratePagesAsync();
-        }
-
-        private async IAsyncEnumerable<Page<BlobItem>> EnumeratePagesAsync()
-        {
-            foreach (Page<BlobItem> page in pages)
-            {
-                yield return page;
-                await Task.CompletedTask;
-            }
-        }
     }
 }

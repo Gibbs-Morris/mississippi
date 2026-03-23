@@ -36,9 +36,10 @@ internal sealed class SnapshotStateConverter<TSnapshot> : ISnapshotStateConverte
         IEnumerable<ISerializationProvider> serializationProviders
     )
     {
-        DefaultSerializationProvider = serializationProvider ?? throw new ArgumentNullException(nameof(serializationProvider));
-        SerializationProviders = serializationProviders?.ToArray()
-            ?? throw new ArgumentNullException(nameof(serializationProviders));
+        DefaultSerializationProvider =
+            serializationProvider ?? throw new ArgumentNullException(nameof(serializationProvider));
+        SerializationProviders = serializationProviders?.ToArray() ??
+                                 throw new ArgumentNullException(nameof(serializationProviders));
     }
 
     /// <summary>
@@ -50,6 +51,15 @@ internal sealed class SnapshotStateConverter<TSnapshot> : ISnapshotStateConverte
     ///     Gets the registered serialization providers available for restore.
     /// </summary>
     private IReadOnlyList<ISerializationProvider> SerializationProviders { get; }
+
+    private static string GetSerializerId(
+        ISerializationProvider serializationProvider
+    )
+    {
+        ArgumentNullException.ThrowIfNull(serializationProvider);
+        Type providerType = serializationProvider.GetType();
+        return providerType.FullName ?? providerType.Name;
+    }
 
     /// <inheritdoc />
     public TSnapshot FromEnvelope(
@@ -79,16 +89,6 @@ internal sealed class SnapshotStateConverter<TSnapshot> : ISnapshotStateConverte
         };
     }
 
-    private static string GetSerializerId(
-        ISerializationProvider serializationProvider
-    )
-    {
-        ArgumentNullException.ThrowIfNull(serializationProvider);
-
-        Type providerType = serializationProvider.GetType();
-        return providerType.FullName ?? providerType.Name;
-    }
-
     private ISerializationProvider ResolveDeserializationProvider(
         SnapshotEnvelope envelope
     )
@@ -98,16 +98,17 @@ internal sealed class SnapshotStateConverter<TSnapshot> : ISnapshotStateConverte
             return DefaultSerializationProvider;
         }
 
-        List<ISerializationProvider> matches = SerializationProviders
-            .Where(provider => string.Equals(GetSerializerId(provider), envelope.PayloadSerializerId, StringComparison.Ordinal))
+        List<ISerializationProvider> matches = SerializationProviders.Where(provider => string.Equals(
+                GetSerializerId(provider),
+                envelope.PayloadSerializerId,
+                StringComparison.Ordinal))
             .ToList();
-
         return matches.Count switch
         {
             1 => matches[0],
             0 => throw new InvalidOperationException(
                 $"No ISerializationProvider is registered for persisted snapshot serializer id '{envelope.PayloadSerializerId}'."),
-            _ => throw new InvalidOperationException(
+            var _ => throw new InvalidOperationException(
                 $"Multiple ISerializationProvider registrations share persisted snapshot serializer id '{envelope.PayloadSerializerId}'. Register a single concrete provider for that identity."),
         };
     }

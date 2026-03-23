@@ -14,20 +14,6 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob;
 internal static partial class SnapshotBlobStorageProviderLoggerExtensions
 {
     /// <summary>
-    ///     Logs when deleting all snapshots for a stream.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="streamKey">The stream key.</param>
-    [LoggerMessage(
-        EventId = 2400,
-        Level = LogLevel.Information,
-        Message = "Deleting all Blob snapshots for stream '{streamKey}'.")]
-    public static partial void DeletingAllSnapshots(
-        this ILogger logger,
-        SnapshotStreamKey streamKey
-    );
-
-    /// <summary>
     ///     Logs when delete-all has completed for a stream.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
@@ -37,6 +23,31 @@ internal static partial class SnapshotBlobStorageProviderLoggerExtensions
         Level = LogLevel.Information,
         Message = "Deleted all Blob snapshots for stream '{streamKey}'.")]
     public static partial void DeletedAllSnapshots(
+        this ILogger logger,
+        SnapshotStreamKey streamKey
+    );
+
+    /// <summary>
+    ///     Logs when a snapshot delete has completed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2403, Level = LogLevel.Debug, Message = "Deleted Blob snapshot '{snapshotKey}'.")]
+    public static partial void DeletedSnapshot(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Logs when deleting all snapshots for a stream.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="streamKey">The stream key.</param>
+    [LoggerMessage(
+        EventId = 2400,
+        Level = LogLevel.Information,
+        Message = "Deleting all Blob snapshots for stream '{streamKey}'.")]
+    public static partial void DeletingAllSnapshots(
         this ILogger logger,
         SnapshotStreamKey streamKey
     );
@@ -53,14 +64,17 @@ internal static partial class SnapshotBlobStorageProviderLoggerExtensions
     );
 
     /// <summary>
-    ///     Logs when a snapshot delete has completed.
+    ///     Logs when prune has completed.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    /// <param name="snapshotKey">The snapshot key.</param>
-    [LoggerMessage(EventId = 2403, Level = LogLevel.Debug, Message = "Deleted Blob snapshot '{snapshotKey}'.")]
-    public static partial void DeletedSnapshot(
+    /// <param name="streamKey">The stream key.</param>
+    [LoggerMessage(
+        EventId = 2405,
+        Level = LogLevel.Information,
+        Message = "Pruned Blob snapshots for stream '{streamKey}'.")]
+    public static partial void PrunedSnapshots(
         this ILogger logger,
-        SnapshotKey snapshotKey
+        SnapshotStreamKey streamKey
     );
 
     /// <summary>
@@ -77,17 +91,6 @@ internal static partial class SnapshotBlobStorageProviderLoggerExtensions
         this ILogger logger,
         SnapshotStreamKey streamKey,
         int moduliCount
-    );
-
-    /// <summary>
-    ///     Logs when prune has completed.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="streamKey">The stream key.</param>
-    [LoggerMessage(EventId = 2405, Level = LogLevel.Information, Message = "Pruned Blob snapshots for stream '{streamKey}'.")]
-    public static partial void PrunedSnapshots(
-        this ILogger logger,
-        SnapshotStreamKey streamKey
     );
 
     /// <summary>
@@ -117,30 +120,11 @@ internal static partial class SnapshotBlobStorageProviderLoggerExtensions
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="snapshotKey">The snapshot key.</param>
-    [LoggerMessage(EventId = 2408, Level = LogLevel.Debug, Message = "Blob snapshot not found for key '{snapshotKey}'.")]
+    [LoggerMessage(
+        EventId = 2408,
+        Level = LogLevel.Debug,
+        Message = "Blob snapshot not found for key '{snapshotKey}'.")]
     public static partial void SnapshotNotFound(
-        this ILogger logger,
-        SnapshotKey snapshotKey
-    );
-
-    /// <summary>
-    ///     Logs when writing a snapshot.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="snapshotKey">The snapshot key.</param>
-    [LoggerMessage(EventId = 2409, Level = LogLevel.Debug, Message = "Writing Blob snapshot '{snapshotKey}'.")]
-    public static partial void WritingSnapshot(
-        this ILogger logger,
-        SnapshotKey snapshotKey
-    );
-
-    /// <summary>
-    ///     Logs when a snapshot write has completed.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    /// <param name="snapshotKey">The snapshot key.</param>
-    [LoggerMessage(EventId = 2410, Level = LogLevel.Debug, Message = "Blob snapshot written for key '{snapshotKey}'.")]
-    public static partial void SnapshotWritten(
         this ILogger logger,
         SnapshotKey snapshotKey
     );
@@ -162,6 +146,17 @@ internal static partial class SnapshotBlobStorageProviderLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when a snapshot write has completed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2410, Level = LogLevel.Debug, Message = "Blob snapshot written for key '{snapshotKey}'.")]
+    public static partial void SnapshotWritten(
+        this ILogger logger,
+        SnapshotKey snapshotKey
+    );
+
+    /// <summary>
     ///     Logs when a stored Blob exists but cannot be read as a valid snapshot frame.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
@@ -177,5 +172,16 @@ internal static partial class SnapshotBlobStorageProviderLoggerExtensions
         SnapshotKey snapshotKey,
         SnapshotBlobUnreadableFrameReason reason,
         Exception exception
+    );
+
+    /// <summary>
+    ///     Logs when writing a snapshot.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    [LoggerMessage(EventId = 2409, Level = LogLevel.Debug, Message = "Writing Blob snapshot '{snapshotKey}'.")]
+    public static partial void WritingSnapshot(
+        this ILogger logger,
+        SnapshotKey snapshotKey
     );
 }

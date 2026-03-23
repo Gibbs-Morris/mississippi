@@ -1282,6 +1282,7 @@
           "Mississippi.Crescent.AppHost": "[1.0.0, )",
           "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
           "Mississippi.Tributary.Runtime": "[1.0.0, )",
+          "Mississippi.Tributary.Runtime.Storage.Blob": "[1.0.0, )",
           "Mississippi.Tributary.Runtime.Storage.Cosmos": "[1.0.0, )",
           "Moq": "[4.20.72, )",
           "xunit": "[2.9.3, )"
@@ -1347,6 +1348,18 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Tributary.Runtime.Storage.Blob": {
+        "type": "Project",
+        "dependencies": {
+          "Azure.Storage.Blobs": "[12.27.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[10.0.3, )",
+          "Microsoft.Extensions.Options": "[10.0.3, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.3, )",
+          "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
+          "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Tributary.Runtime.Storage.Cosmos": {

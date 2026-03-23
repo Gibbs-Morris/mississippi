@@ -15,16 +15,16 @@ namespace MississippiSamples.Crescent.L2Tests;
 internal sealed record LargeSnapshotAggregate
 {
     /// <summary>
-    ///     Gets the large snapshot payload.
-    /// </summary>
-    [Id(0)]
-    public string Payload { get; init; } = string.Empty;
-
-    /// <summary>
     ///     Gets the logical marker used to prove restart survival.
     /// </summary>
     [Id(1)]
     public string Marker { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     Gets the large snapshot payload.
+    /// </summary>
+    [Id(0)]
+    public string Payload { get; init; } = string.Empty;
 
     /// <summary>
     ///     Gets the logical payload size recorded by the reducer.

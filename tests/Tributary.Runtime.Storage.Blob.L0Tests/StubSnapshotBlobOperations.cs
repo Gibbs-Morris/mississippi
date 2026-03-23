@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,17 +19,17 @@ internal sealed class StubSnapshotBlobOperations : ISnapshotBlobOperations
     /// <summary>
     ///     Gets the stored Blob payloads by Blob name.
     /// </summary>
-    public Dictionary<string, byte[]> Blobs { get; } = new(System.StringComparer.Ordinal);
-
-    /// <summary>
-    ///     Gets the Blob names captured for conditional-create calls.
-    /// </summary>
-    public List<string> CreatedBlobNames { get; } = [];
+    public Dictionary<string, byte[]> Blobs { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
     ///     Gets a value indicating whether conditional create should report success.
     /// </summary>
     public bool CreateIfAbsentResult { get; init; } = true;
+
+    /// <summary>
+    ///     Gets the Blob names captured for conditional-create calls.
+    /// </summary>
+    public List<string> CreatedBlobNames { get; } = [];
 
     /// <summary>
     ///     Gets the Blob names captured for delete calls.
@@ -63,7 +64,6 @@ internal sealed class StubSnapshotBlobOperations : ISnapshotBlobOperations
     )
     {
         CreatedBlobNames.Add(blobName);
-
         if (!CreateIfAbsentResult || Blobs.ContainsKey(blobName))
         {
             return false;
@@ -99,17 +99,14 @@ internal sealed class StubSnapshotBlobOperations : ISnapshotBlobOperations
     public async IAsyncEnumerable<SnapshotBlobPage> ListByPrefixAsync(
         string prefix,
         int pageSizeHint,
-        [EnumeratorCancellation]
-        CancellationToken cancellationToken = default
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
         ListPrefixes.Add(prefix);
         ListPageSizeHints.Add(pageSizeHint);
-
         IEnumerable<SnapshotBlobPage> pages = Pages.Count > 0
             ? Pages
             : CreatePagesFromStoredBlobs(prefix, pageSizeHint);
-
         foreach (SnapshotBlobPage page in pages)
         {
             yield return page;
@@ -122,14 +119,12 @@ internal sealed class StubSnapshotBlobOperations : ISnapshotBlobOperations
         int pageSizeHint
     )
     {
-        string[] matchingBlobNames = Blobs.Keys
-            .Where(blobName => blobName.StartsWith(prefix, System.StringComparison.Ordinal))
-            .OrderBy(blobName => blobName, System.StringComparer.Ordinal)
+        string[] matchingBlobNames = Blobs.Keys.Where(blobName => blobName.StartsWith(prefix, StringComparison.Ordinal))
+            .OrderBy(blobName => blobName, StringComparer.Ordinal)
             .ToArray();
-
         for (int index = 0; index < matchingBlobNames.Length; index += pageSizeHint)
         {
-            yield return new SnapshotBlobPage(matchingBlobNames.Skip(index).Take(pageSizeHint).ToArray());
+            yield return new(matchingBlobNames.Skip(index).Take(pageSizeHint).ToArray());
         }
     }
 }

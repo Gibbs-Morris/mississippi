@@ -56,6 +56,41 @@ public sealed class SnapshotStateConverterTests
     }
 
     /// <summary>
+    ///     Verifies that FromEnvelope throws when the envelope is null.
+    /// </summary>
+    [Fact]
+    public void FromEnvelopeThrowsWhenEnvelopeIsNull()
+    {
+        // Arrange
+        Mock<ISerializationProvider> serializationProviderMock = new();
+        SnapshotStateConverter<TestState> converter = new(serializationProviderMock.Object);
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => converter.FromEnvelope(null!));
+    }
+
+    /// <summary>
+    ///     Verifies that FromEnvelope fails when the persisted serializer identity is not registered.
+    /// </summary>
+    [Fact]
+    public void FromEnvelopeThrowsWhenPersistedSerializerIdentityIsUnknown()
+    {
+        PrimaryTestSnapshotSerializationProvider defaultProvider = new("application/json");
+        SnapshotEnvelope envelope = new()
+        {
+            Data = [5, 6, 7, 8],
+            DataContentType = "application/custom-json",
+            PayloadSerializerId = typeof(AlternateTestSnapshotSerializationProvider).FullName ??
+                                  nameof(AlternateTestSnapshotSerializationProvider),
+            ReducerHash = "hash",
+        };
+        SnapshotStateConverter<TestState> converter = new(defaultProvider, [defaultProvider]);
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => converter.FromEnvelope(envelope));
+        Assert.Contains("persisted snapshot serializer id", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies that FromEnvelope honors a persisted concrete serializer identity when one is present.
     /// </summary>
     [Fact]
@@ -84,47 +119,10 @@ public sealed class SnapshotStateConverterTests
             ReducerHash = "hash",
         };
         SnapshotStateConverter<TestState> converter = new(defaultProvider, [defaultProvider, persistedProvider]);
-
         TestState result = converter.FromEnvelope(envelope);
-
         Assert.Equal(expectedState.Value, result.Value);
         Assert.Equal(0, defaultProvider.DeserializeCallCount);
         Assert.Equal(1, persistedProvider.DeserializeCallCount);
-    }
-
-    /// <summary>
-    ///     Verifies that FromEnvelope fails when the persisted serializer identity is not registered.
-    /// </summary>
-    [Fact]
-    public void FromEnvelopeThrowsWhenPersistedSerializerIdentityIsUnknown()
-    {
-        PrimaryTestSnapshotSerializationProvider defaultProvider = new("application/json");
-        SnapshotEnvelope envelope = new()
-        {
-            Data = [5, 6, 7, 8],
-            DataContentType = "application/custom-json",
-            PayloadSerializerId = typeof(AlternateTestSnapshotSerializationProvider).FullName ?? nameof(AlternateTestSnapshotSerializationProvider),
-            ReducerHash = "hash",
-        };
-        SnapshotStateConverter<TestState> converter = new(defaultProvider, [defaultProvider]);
-
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => converter.FromEnvelope(envelope));
-
-        Assert.Contains("persisted snapshot serializer id", exception.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Verifies that FromEnvelope throws when the envelope is null.
-    /// </summary>
-    [Fact]
-    public void FromEnvelopeThrowsWhenEnvelopeIsNull()
-    {
-        // Arrange
-        Mock<ISerializationProvider> serializationProviderMock = new();
-        SnapshotStateConverter<TestState> converter = new(serializationProviderMock.Object);
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => converter.FromEnvelope(null!));
     }
 
     /// <summary>

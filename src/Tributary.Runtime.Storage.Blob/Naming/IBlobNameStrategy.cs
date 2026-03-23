@@ -9,21 +9,21 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob.Naming;
 internal interface IBlobNameStrategy
 {
     /// <summary>
-    ///     Gets the canonical persisted stream identity used for hashing and later frame metadata.
-    /// </summary>
-    /// <param name="streamKey">The logical snapshot stream key.</param>
-    /// <returns>The canonical stream identity string.</returns>
-    string GetCanonicalStreamIdentity(
-        SnapshotStreamKey streamKey
-    );
-
-    /// <summary>
     ///     Builds the Blob name for a specific snapshot version.
     /// </summary>
     /// <param name="snapshotKey">The snapshot key to encode.</param>
     /// <returns>The deterministic Blob name.</returns>
     string GetBlobName(
         SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Gets the canonical persisted stream identity used for hashing and later frame metadata.
+    /// </summary>
+    /// <param name="streamKey">The logical snapshot stream key.</param>
+    /// <returns>The canonical stream identity string.</returns>
+    string GetCanonicalStreamIdentity(
+        SnapshotStreamKey streamKey
     );
 
     /// <summary>
