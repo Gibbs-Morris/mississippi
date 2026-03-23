@@ -1,0 +1,7 @@
+label: Architecture Decision Records
+position: 99
+collapsed: true
+collapsible: true
+link:
+  type: doc
+  id: adr-index
