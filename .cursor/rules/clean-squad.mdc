@@ -34,7 +34,7 @@ Governing thought: Every Clean Squad agent applies first-principles thinking and
 
 All Clean Squad agents (files matching `.github/agents/cs-*.agent.md`).
 
-## CoV Template (Embed in Every Agent)
+## Shared CoV Template
 
 ```text
 ## CoV: <claim or task>
@@ -50,7 +50,7 @@ All Clean Squad agents (files matching `.github/agents/cs-*.agent.md`).
 4. Revised conclusion: <updated assessment incorporating verified answers>
 ```
 
-## First Principles Template (Embed in Every Agent)
+## Shared First Principles Template
 
 ```text
 ## First Principles: <problem>
