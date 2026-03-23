@@ -3,7 +3,7 @@ title: Architecture Decision Records
 description: Index of all Architecture Decision Records (ADRs) for the Mississippi framework, following the MADR 4.0.0 template.
 sidebar_position: 0
 slug: /adr
-id: adr-index
+id: adr-overview
 ---
 
 # Architecture Decision Records
