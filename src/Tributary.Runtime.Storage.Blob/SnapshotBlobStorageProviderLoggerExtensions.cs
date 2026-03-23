@@ -1,6 +1,9 @@
+using System;
+
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Blob.Storage;
 
 
 namespace Mississippi.Tributary.Runtime.Storage.Blob;
@@ -140,5 +143,39 @@ internal static partial class SnapshotBlobStorageProviderLoggerExtensions
     public static partial void SnapshotWritten(
         this ILogger logger,
         SnapshotKey snapshotKey
+    );
+
+    /// <summary>
+    ///     Logs when a write fails because the target snapshot version already exists.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The conflicting snapshot key.</param>
+    /// <param name="exception">The underlying conflict exception.</param>
+    [LoggerMessage(
+        EventId = 2411,
+        Level = LogLevel.Warning,
+        Message = "Blob snapshot write conflict for key '{snapshotKey}'.")]
+    public static partial void SnapshotWriteConflict(
+        this ILogger logger,
+        SnapshotKey snapshotKey,
+        Exception exception
+    );
+
+    /// <summary>
+    ///     Logs when a stored Blob exists but cannot be read as a valid snapshot frame.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="snapshotKey">The snapshot key.</param>
+    /// <param name="reason">The unreadable frame reason.</param>
+    /// <param name="exception">The underlying unreadable-frame exception.</param>
+    [LoggerMessage(
+        EventId = 2412,
+        Level = LogLevel.Error,
+        Message = "Stored Blob snapshot '{snapshotKey}' is unreadable with reason '{reason}'.")]
+    public static partial void UnreadableSnapshotBlob(
+        this ILogger logger,
+        SnapshotKey snapshotKey,
+        SnapshotBlobUnreadableFrameReason reason,
+        Exception exception
     );
 }

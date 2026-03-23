@@ -81,15 +81,23 @@ internal sealed class SnapshotBlobStorageProvider : ISnapshotStorageProvider
     )
     {
         Logger.ReadingSnapshot(snapshotKey);
-        SnapshotEnvelope? snapshot = await Repository.ReadAsync(snapshotKey, cancellationToken).ConfigureAwait(false);
-        if (snapshot is null)
+        try
         {
-            Logger.SnapshotNotFound(snapshotKey);
-            return null;
-        }
+            SnapshotEnvelope? snapshot = await Repository.ReadAsync(snapshotKey, cancellationToken).ConfigureAwait(false);
+            if (snapshot is null)
+            {
+                Logger.SnapshotNotFound(snapshotKey);
+                return null;
+            }
 
-        Logger.SnapshotFound(snapshotKey);
-        return snapshot;
+            Logger.SnapshotFound(snapshotKey);
+            return snapshot;
+        }
+        catch (SnapshotBlobUnreadableFrameException exception)
+        {
+            Logger.UnreadableSnapshotBlob(snapshotKey, exception.Reason, exception);
+            throw;
+        }
     }
 
     /// <inheritdoc />
@@ -102,7 +110,15 @@ internal sealed class SnapshotBlobStorageProvider : ISnapshotStorageProvider
         ArgumentNullException.ThrowIfNull(snapshot);
 
         Logger.WritingSnapshot(snapshotKey);
-        await Repository.WriteAsync(snapshotKey, snapshot, cancellationToken).ConfigureAwait(false);
-        Logger.SnapshotWritten(snapshotKey);
+        try
+        {
+            await Repository.WriteAsync(snapshotKey, snapshot, cancellationToken).ConfigureAwait(false);
+            Logger.SnapshotWritten(snapshotKey);
+        }
+        catch (SnapshotBlobDuplicateVersionException exception)
+        {
+            Logger.SnapshotWriteConflict(snapshotKey, exception);
+            throw;
+        }
     }
 }

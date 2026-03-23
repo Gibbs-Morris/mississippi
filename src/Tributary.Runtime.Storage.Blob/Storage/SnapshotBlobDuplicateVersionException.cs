@@ -48,7 +48,7 @@ internal sealed class SnapshotBlobDuplicateVersionException : InvalidOperationEx
     public SnapshotBlobDuplicateVersionException(
         SnapshotKey snapshotKey
     )
-        : base($"A snapshot blob already exists for '{snapshotKey}'.") =>
+        : base($"A snapshot blob already exists for '{snapshotKey}'. Blob snapshot storage does not overwrite an existing version; delete the existing blob or choose a new snapshot version.") =>
         SnapshotKey = snapshotKey;
 
     /// <summary>

@@ -52,22 +52,66 @@ internal sealed class BlobContainerInitializer : IHostedService
     )
     {
         SnapshotBlobStorageOptions options = Options.Value;
-        ISerializationProvider serializer = SnapshotPayloadSerializerResolver.ResolveConfiguredSerializer();
+        ISerializationProvider serializer;
+
+        try
+        {
+            serializer = SnapshotPayloadSerializerResolver.ResolveConfiguredSerializer();
+        }
+        catch (InvalidOperationException exception)
+        {
+            Logger.BlobStartupSerializerValidationFailed(options.ContainerName, options.PayloadSerializerFormat, exception);
+            throw new InvalidOperationException(
+                $"Blob snapshot storage startup validation failed for container '{options.ContainerName}' because payload serializer format '{options.PayloadSerializerFormat}' is not usable. {exception.Message}",
+                exception);
+        }
+
         Logger.ValidatedPayloadSerializer(options.PayloadSerializerFormat, serializer.Format);
 
         switch (options.ContainerInitializationMode)
         {
             case SnapshotBlobContainerInitializationMode.CreateIfMissing:
                 Logger.CreatingBlobContainer(options.ContainerName);
-                await BlobContainerInitializerOperations.CreateIfNotExistsAsync(cancellationToken);
+                try
+                {
+                    await BlobContainerInitializerOperations.CreateIfNotExistsAsync(cancellationToken);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    Logger.BlobContainerInitializationFailed(
+                        options.ContainerName,
+                        options.ContainerInitializationMode,
+                        exception);
+                    throw new InvalidOperationException(
+                        $"Blob snapshot storage startup failed while initializing container '{options.ContainerName}' using mode '{options.ContainerInitializationMode}'. Verify the BlobServiceClient registration, storage account credentials, and that the account permits creating containers.",
+                        exception);
+                }
+
                 break;
 
             case SnapshotBlobContainerInitializationMode.ValidateExists:
                 Logger.ValidatingBlobContainerExists(options.ContainerName);
-                if (!await BlobContainerInitializerOperations.ExistsAsync(cancellationToken))
+                bool containerExists;
+
+                try
+                {
+                    containerExists = await BlobContainerInitializerOperations.ExistsAsync(cancellationToken);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    Logger.BlobContainerInitializationFailed(
+                        options.ContainerName,
+                        options.ContainerInitializationMode,
+                        exception);
+                    throw new InvalidOperationException(
+                        $"Blob snapshot storage startup failed while validating container '{options.ContainerName}' using mode '{options.ContainerInitializationMode}'. Verify the BlobServiceClient registration, storage account credentials, and that the configured container name is correct.",
+                        exception);
+                }
+
+                if (!containerExists)
                 {
                     throw new InvalidOperationException(
-                        $"Azure Blob container '{options.ContainerName}' does not exist. Set ContainerInitializationMode to CreateIfMissing or provision the container before startup.");
+                        $"Azure Blob snapshot container '{options.ContainerName}' does not exist while ContainerInitializationMode is '{options.ContainerInitializationMode}'. Set ContainerInitializationMode to CreateIfMissing or provision the container before startup.");
                 }
 
                 break;

@@ -10,6 +10,7 @@ using Azure.Storage.Blobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Serialization.Abstractions;
@@ -159,6 +160,7 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
     [Fact]
     public async Task BlobContainerInitializerShouldFailWhenNoSerializerMatchesConfiguredFormat()
     {
+        TestLogger<BlobContainerInitializer> logger = new();
         ServiceCollection services = new();
         services.AddLogging();
         services.AddKeyedSingleton<BlobServiceClient>(
@@ -167,14 +169,22 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
         services.AddSingleton<ISerializationProvider>(new TestSerializationProvider("other-format"));
         services.AddBlobSnapshotStorageProvider(options => options.PayloadSerializerFormat = "missing-format");
         services.AddSingleton<IBlobContainerInitializerOperations>(new StubBlobContainerInitializerOperations());
+        services.AddSingleton<ILogger<BlobContainerInitializer>>(logger);
 
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         IHostedService hostedService = provider.GetRequiredService<IHostedService>();
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => hostedService.StartAsync(CancellationToken.None));
+        TestLogEntry validationLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2413);
 
+        Assert.Contains("startup validation failed", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("snapshots", exception.Message, StringComparison.Ordinal);
         Assert.Contains("missing-format", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(LogLevel.Error, validationLog.Level);
+        Assert.Equal("snapshots", Assert.IsType<string>(validationLog.State["containerName"]));
+        Assert.Equal("missing-format", Assert.IsType<string>(validationLog.State["payloadSerializerFormat"]));
+        Assert.IsType<InvalidOperationException>(validationLog.Exception);
     }
 
     /// <summary>
@@ -184,6 +194,7 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
     [Fact]
     public async Task BlobContainerInitializerShouldFailWhenMultipleSerializersMatchConfiguredFormat()
     {
+        TestLogger<BlobContainerInitializer> logger = new();
         ServiceCollection services = new();
         services.AddLogging();
         services.AddKeyedSingleton<BlobServiceClient>(
@@ -193,15 +204,22 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
         services.AddSingleton<ISerializationProvider>(new TestSerializationProvider("duplicate-format"));
         services.AddBlobSnapshotStorageProvider(options => options.PayloadSerializerFormat = "duplicate-format");
         services.AddSingleton<IBlobContainerInitializerOperations>(new StubBlobContainerInitializerOperations());
+        services.AddSingleton<ILogger<BlobContainerInitializer>>(logger);
 
         await using ServiceProvider provider = services.BuildServiceProvider();
 
         IHostedService hostedService = provider.GetRequiredService<IHostedService>();
         InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => hostedService.StartAsync(CancellationToken.None));
+        TestLogEntry validationLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2413);
 
+        Assert.Contains("startup validation failed", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("duplicate-format", exception.Message, StringComparison.Ordinal);
         Assert.Contains("Multiple", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(LogLevel.Error, validationLog.Level);
+        Assert.Equal("snapshots", Assert.IsType<string>(validationLog.State["containerName"]));
+        Assert.Equal("duplicate-format", Assert.IsType<string>(validationLog.State["payloadSerializerFormat"]));
+        Assert.IsType<InvalidOperationException>(validationLog.Exception);
     }
 
     /// <summary>
@@ -265,6 +283,7 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
             () => hostedService.StartAsync(CancellationToken.None));
 
         Assert.Contains("missing-container", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(SnapshotBlobContainerInitializationMode.ValidateExists), exception.Message, StringComparison.Ordinal);
         Assert.Equal(0, operations.CreateIfNotExistsCallCount);
         Assert.Equal(1, operations.ExistsCallCount);
     }
@@ -299,5 +318,97 @@ public sealed class SnapshotBlobStorageProviderRegistrationsTests
 
         Assert.Equal(0, operations.CreateIfNotExistsCallCount);
         Assert.Equal(1, operations.ExistsCallCount);
+    }
+
+    /// <summary>
+    ///     Ensures startup surfaces actionable diagnostics when container creation throws.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task BlobContainerInitializerShouldWrapCreateIfMissingOperationalFailures()
+    {
+        InvalidOperationException underlyingException = new("simulated create failure");
+        StubBlobContainerInitializerOperations operations = new()
+        {
+            CreateIfNotExistsException = underlyingException,
+        };
+        TestLogger<BlobContainerInitializer> logger = new();
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddKeyedSingleton<BlobServiceClient>(
+            SnapshotBlobDefaults.BlobServiceClientServiceKey,
+            new BlobServiceClient("UseDevelopmentStorage=true"));
+        services.AddSingleton<ISerializationProvider>(new TestSerializationProvider(SnapshotBlobDefaults.PayloadSerializerFormat));
+        services.AddBlobSnapshotStorageProvider(options =>
+        {
+            options.ContainerName = "create-failure-container";
+            options.ContainerInitializationMode = SnapshotBlobContainerInitializationMode.CreateIfMissing;
+        });
+        services.AddSingleton<IBlobContainerInitializerOperations>(operations);
+        services.AddSingleton<ILogger<BlobContainerInitializer>>(logger);
+
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        IHostedService hostedService = provider.GetRequiredService<IHostedService>();
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => hostedService.StartAsync(CancellationToken.None));
+        TestLogEntry initializationLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2414);
+
+        Assert.Contains("create-failure-container", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(SnapshotBlobContainerInitializationMode.CreateIfMissing), exception.Message, StringComparison.Ordinal);
+        Assert.Contains("BlobServiceClient registration", exception.Message, StringComparison.Ordinal);
+        Assert.Same(underlyingException, exception.InnerException);
+        Assert.Equal(LogLevel.Error, initializationLog.Level);
+        Assert.Equal("create-failure-container", Assert.IsType<string>(initializationLog.State["containerName"]));
+        Assert.Equal(
+            SnapshotBlobContainerInitializationMode.CreateIfMissing,
+            Assert.IsType<SnapshotBlobContainerInitializationMode>(initializationLog.State["initializationMode"]));
+        Assert.Same(underlyingException, initializationLog.Exception);
+    }
+
+    /// <summary>
+    ///     Ensures startup surfaces actionable diagnostics when container existence validation throws.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task BlobContainerInitializerShouldWrapValidateExistsOperationalFailures()
+    {
+        IOException underlyingException = new("simulated exists failure");
+        StubBlobContainerInitializerOperations operations = new()
+        {
+            ExistsException = underlyingException,
+        };
+        TestLogger<BlobContainerInitializer> logger = new();
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddKeyedSingleton<BlobServiceClient>(
+            SnapshotBlobDefaults.BlobServiceClientServiceKey,
+            new BlobServiceClient("UseDevelopmentStorage=true"));
+        services.AddSingleton<ISerializationProvider>(new TestSerializationProvider(SnapshotBlobDefaults.PayloadSerializerFormat));
+        services.AddBlobSnapshotStorageProvider(options =>
+        {
+            options.ContainerName = "validate-failure-container";
+            options.ContainerInitializationMode = SnapshotBlobContainerInitializationMode.ValidateExists;
+        });
+        services.AddSingleton<IBlobContainerInitializerOperations>(operations);
+        services.AddSingleton<ILogger<BlobContainerInitializer>>(logger);
+
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        IHostedService hostedService = provider.GetRequiredService<IHostedService>();
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => hostedService.StartAsync(CancellationToken.None));
+        TestLogEntry initializationLog = Assert.Single(logger.Entries, entry => entry.EventId.Id == 2414);
+
+        Assert.Contains("validate-failure-container", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(SnapshotBlobContainerInitializationMode.ValidateExists), exception.Message, StringComparison.Ordinal);
+        Assert.Contains("configured container name is correct", exception.Message, StringComparison.Ordinal);
+        Assert.Same(underlyingException, exception.InnerException);
+        Assert.Equal(LogLevel.Error, initializationLog.Level);
+        Assert.Equal("validate-failure-container", Assert.IsType<string>(initializationLog.State["containerName"]));
+        Assert.Equal(
+            SnapshotBlobContainerInitializationMode.ValidateExists,
+            Assert.IsType<SnapshotBlobContainerInitializationMode>(initializationLog.State["initializationMode"]));
+        Assert.Same(underlyingException, initializationLog.Exception);
     }
 }

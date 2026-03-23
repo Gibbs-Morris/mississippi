@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.Logging;
 
 
@@ -46,4 +48,38 @@ internal static partial class SnapshotBlobStartupLoggerExtensions
     public static partial void ValidatingBlobContainerExists(
         this ILogger<BlobContainerInitializer> logger,
         string containerName);
+
+    /// <summary>
+    ///     Logs that startup serializer validation failed.
+    /// </summary>
+    /// <param name="logger">The logger receiving the event.</param>
+    /// <param name="containerName">The configured container name.</param>
+    /// <param name="payloadSerializerFormat">The configured serializer format.</param>
+    /// <param name="exception">The underlying failure.</param>
+    [LoggerMessage(
+        EventId = 2413,
+        Level = LogLevel.Error,
+        Message = "Blob snapshot startup validation failed for container '{containerName}' because payload serializer format '{payloadSerializerFormat}' could not be resolved.")]
+    public static partial void BlobStartupSerializerValidationFailed(
+        this ILogger<BlobContainerInitializer> logger,
+        string containerName,
+        string payloadSerializerFormat,
+        Exception exception);
+
+    /// <summary>
+    ///     Logs that Blob container initialization or validation failed.
+    /// </summary>
+    /// <param name="logger">The logger receiving the event.</param>
+    /// <param name="containerName">The configured container name.</param>
+    /// <param name="initializationMode">The configured initialization mode.</param>
+    /// <param name="exception">The underlying failure.</param>
+    [LoggerMessage(
+        EventId = 2414,
+        Level = LogLevel.Error,
+        Message = "Blob snapshot startup failed for container '{containerName}' using mode '{initializationMode}'.")]
+    public static partial void BlobContainerInitializationFailed(
+        this ILogger<BlobContainerInitializer> logger,
+        string containerName,
+        SnapshotBlobContainerInitializationMode initializationMode,
+        Exception exception);
 }

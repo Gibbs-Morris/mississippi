@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,6 +13,11 @@ namespace Mississippi.Tributary.Runtime.Storage.Blob.L0Tests;
 internal sealed class StubBlobContainerInitializerOperations : IBlobContainerInitializerOperations
 {
     /// <summary>
+    ///     Gets the exception thrown by <see cref="CreateIfNotExistsAsync" /> when configured.
+    /// </summary>
+    public Exception? CreateIfNotExistsException { get; init; }
+
+    /// <summary>
     ///     Gets the number of times <see cref="CreateIfNotExistsAsync" /> was invoked.
     /// </summary>
     public int CreateIfNotExistsCallCount { get; private set; }
@@ -20,6 +26,11 @@ internal sealed class StubBlobContainerInitializerOperations : IBlobContainerIni
     ///     Gets a value indicating whether <see cref="ExistsAsync" /> returns <see langword="true" />.
     /// </summary>
     public bool ExistsResult { get; init; }
+
+    /// <summary>
+    ///     Gets the exception thrown by <see cref="ExistsAsync" /> when configured.
+    /// </summary>
+    public Exception? ExistsException { get; init; }
 
     /// <summary>
     ///     Gets the number of times <see cref="ExistsAsync" /> was invoked.
@@ -32,6 +43,11 @@ internal sealed class StubBlobContainerInitializerOperations : IBlobContainerIni
     )
     {
         CreateIfNotExistsCallCount++;
+        if (CreateIfNotExistsException is not null)
+        {
+            throw CreateIfNotExistsException;
+        }
+
         return Task.CompletedTask;
     }
 
@@ -41,6 +57,11 @@ internal sealed class StubBlobContainerInitializerOperations : IBlobContainerIni
     )
     {
         ExistsCallCount++;
+        if (ExistsException is not null)
+        {
+            throw ExistsException;
+        }
+
         return Task.FromResult(ExistsResult);
     }
 }
