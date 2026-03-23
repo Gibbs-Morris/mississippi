@@ -6,7 +6,7 @@ globs: docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md
 # Architecture Decision Records (MADR)
 
 **Source:** .github/instructions/adr.instructions.md
-**Last synced:** 2026-03-23 (pending current workspace changes)
+**Last synced:** 2026-03-23 (commit `1976a1006c789adbd0b66031af9b2d38f992890c`)
 
 Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/docs/adr/` for Docusaurus publishing, and are immutable once accepted.
 

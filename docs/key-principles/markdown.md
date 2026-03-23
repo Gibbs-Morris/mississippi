@@ -350,5 +350,5 @@ in 2014, and extended by GitHub Flavored Markdown for platform use. Core syntax
 covers headings, emphasis, lists, code blocks, links, images, tables, and task
 lists. YAML frontmatter provides metadata for static site generators and agent
  tooling. markdownlint enforces consistency for authored Markdown within the
- configured lint scope, excluding ignored paths such as `.scratchpad/**`,
- `.github/agents/**`, and `node_modules/**`.
+ currently configured local and CI lint scopes; do not assume non-product
+ folders are excluded unless the active workflow and lint configuration say so.

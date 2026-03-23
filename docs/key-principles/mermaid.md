@@ -366,8 +366,9 @@ VS Code provides Mermaid support through:
 1. **Built-in Markdown preview** — Mermaid diagrams render in the Markdown
    preview pane.
 2. **Extensions** — `bierner.markdown-mermaid` adds enhanced Mermaid rendering.
-3. **Copilot agents** — The `renderMermaidDiagram` tool available in this
-   repository allows agents to produce Mermaid diagrams programmatically.
+3. **Copilot tooling** — Some Copilot chat environments expose Mermaid-rendering
+    tools, but that capability comes from the host tooling rather than from this
+    repository itself.
 
 ### Preview Workflow
 
