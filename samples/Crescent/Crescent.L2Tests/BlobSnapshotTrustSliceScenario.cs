@@ -49,8 +49,8 @@ internal sealed class BlobSnapshotTrustSliceScenario : IAsyncDisposable
         IHost initialOrleansHost
     )
     {
-        this.SnapshotContainerName = snapshotContainerName;
-        this.SnapshotBlobPrefix = snapshotBlobPrefix;
+        SnapshotContainerName = snapshotContainerName;
+        SnapshotBlobPrefix = snapshotBlobPrefix;
         this.appHost = appHost;
         this.app = app;
         CosmosConnectionString = cosmosConnectionString;
