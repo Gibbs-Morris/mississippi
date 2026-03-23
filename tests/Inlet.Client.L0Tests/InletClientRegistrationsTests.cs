@@ -29,9 +29,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IInletStore store = provider.GetRequiredService<IInletStore>();
 
@@ -47,9 +48,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionUpdateNotifier notifier = provider.GetRequiredService<IProjectionUpdateNotifier>();
 
@@ -58,22 +60,27 @@ public sealed class InletClientRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInlet should register IStore as singleton.
+    ///     AddInlet should register IStore with scoped lifetime.
     /// </summary>
     [Fact]
-    public void AddInletRegistersIStoreAsSingleton()
+    public void AddInletRegistersIStoreAsScoped()
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
-        IStore store1 = provider.GetRequiredService<IStore>();
-        IStore store2 = provider.GetRequiredService<IStore>();
+        using IServiceScope scope1 = provider.CreateScope();
+        using IServiceScope scope2 = provider.CreateScope();
+        IStore scope1Store1 = scope1.ServiceProvider.GetRequiredService<IStore>();
+        IStore scope1Store2 = scope1.ServiceProvider.GetRequiredService<IStore>();
+        IStore scope2Store = scope2.ServiceProvider.GetRequiredService<IStore>();
 
         // Assert
-        Assert.Same(store1, store2);
+        Assert.Same(scope1Store1, scope1Store2);
+        Assert.NotSame(scope1Store1, scope2Store);
     }
 
     /// <summary>
@@ -84,9 +91,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IStore store = provider.GetRequiredService<IStore>();
 
@@ -102,9 +110,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddInletClient();
+        builder.AddInletClient();
         using ServiceProvider provider = services.BuildServiceProvider();
         IProjectionRegistry registry = provider.GetRequiredService<IProjectionRegistry>();
 
@@ -114,16 +123,16 @@ public sealed class InletClientRegistrationsTests
     }
 
     /// <summary>
-    ///     AddInlet should throw ArgumentNullException when services is null.
+    ///     AddInlet should throw ArgumentNullException when builder is null.
     /// </summary>
     [Fact]
-    public void AddInletWithNullServicesThrowsArgumentNullException()
+    public void AddInletWithNullBuilderThrowsArgumentNullException()
     {
         // Arrange
-        IServiceCollection? services = null;
+        IReservoirBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddInletClient());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddInletClient());
     }
 
     /// <summary>
@@ -134,15 +143,29 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        services.AddInletClient();
-        services.AddProjectionPath<TestProjection>("cascade/test");
+        builder.AddInletClient();
+        builder.AddProjectionPath<TestProjection>("cascade/test");
         using ServiceProvider provider = services.BuildServiceProvider();
         IEnumerable<IConfigureProjectionRegistry> configs = provider.GetServices<IConfigureProjectionRegistry>();
 
         // Assert
         Assert.Single(configs);
+    }
+
+    /// <summary>
+    ///     AddProjectionPath should throw ArgumentNullException when builder is null.
+    /// </summary>
+    [Fact]
+    public void AddProjectionPathWithNullBuilderThrowsArgumentNullException()
+    {
+        // Arrange
+        IReservoirBuilder? builder = null;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => builder!.AddProjectionPath<TestProjection>("cascade/test"));
     }
 
     /// <summary>
@@ -153,22 +176,10 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services.AddProjectionPath<TestProjection>(null!));
-    }
-
-    /// <summary>
-    ///     AddProjectionPath should throw ArgumentNullException when services is null.
-    /// </summary>
-    [Fact]
-    public void AddProjectionPathWithNullServicesThrowsArgumentNullException()
-    {
-        // Arrange
-        IServiceCollection? services = null;
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddProjectionPath<TestProjection>("cascade/test"));
+        Assert.Throws<ArgumentNullException>(() => builder.AddProjectionPath<TestProjection>(null!));
     }
 
     /// <summary>
@@ -179,8 +190,9 @@ public sealed class InletClientRegistrationsTests
     {
         // Arrange
         ServiceCollection services = [];
-        services.AddInletClient();
-        services.AddProjectionPath<TestProjection>("cascade/test");
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddInletClient();
+        builder.AddProjectionPath<TestProjection>("cascade/test");
         using ServiceProvider provider = services.BuildServiceProvider();
 
         // Act - Get the config and registry, then call Configure

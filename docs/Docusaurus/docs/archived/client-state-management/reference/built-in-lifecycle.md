@@ -20,15 +20,15 @@ Use this page to look up the built-in lifecycle surface, its actions, and its st
 
 ```csharp
 // Program.cs
-builder.Services.AddReservoir();
-builder.Services.AddReservoirBlazorBuiltIns(); // Registers navigation + lifecycle
+IReservoirBuilder reservoir = builder.AddReservoir();
+reservoir.AddReservoirBlazorBuiltIns(); // Registers navigation + lifecycle
 ```
 
 Or register lifecycle only:
 
 ```csharp
-builder.Services.AddReservoir();
-builder.Services.AddBuiltInLifecycle();
+IReservoirBuilder reservoir = builder.AddReservoir();
+reservoir.AddBuiltInLifecycle();
 ```
 
 ### 2. Dispatch Lifecycle Actions

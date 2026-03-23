@@ -7,6 +7,9 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
+using Mississippi.Hosting.Client;
+using Mississippi.Reservoir.Abstractions;
+
 
 namespace Mississippi.Inlet.Client.Generators.L0Tests;
 
@@ -37,6 +40,42 @@ public sealed class DomainClientRegistrationGeneratorTests
                                           }
                                           """;
 
+    private const string FeatureRegistrationStubs = """
+                                                    using Mississippi.Reservoir.Abstractions;
+
+                                                    namespace TestApp.Client.Features.OrderAggregate
+                                                    {
+                                                        internal static class OrderAggregateFeatureRegistration
+                                                        {
+                                                            public static IReservoirBuilder AddOrderAggregateFeature(this IReservoirBuilder builder) => builder;
+                                                        }
+                                                    }
+
+                                                    namespace TestApp.Client.Features.MoneyTransferSaga
+                                                    {
+                                                        internal static class MoneyTransferSagaFeatureRegistration
+                                                        {
+                                                            public static IReservoirBuilder AddMoneyTransferSagaFeature(this IReservoirBuilder builder) => builder;
+                                                        }
+                                                    }
+
+                                                    namespace TestApp.Client.Features
+                                                    {
+                                                        internal static class ProjectionsFeatureRegistration
+                                                        {
+                                                            public static IReservoirBuilder AddProjectionsFeature(this IReservoirBuilder builder) => builder;
+                                                        }
+                                                    }
+                                                    """;
+
+    private static void AssertHasNoCompilationErrors(
+        Compilation outputCompilation
+    )
+    {
+        ImmutableArray<Diagnostic> compilationDiagnostics = outputCompilation.GetDiagnostics();
+        Assert.DoesNotContain(compilationDiagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+    }
+
     private static (Compilation OutputCompilation, ImmutableArray<Diagnostic> Diagnostics, GeneratorDriverRunResult
         RunResult) RunGenerator(
             params string[] sources
@@ -58,6 +97,8 @@ public sealed class DomainClientRegistrationGeneratorTests
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(typeof(MississippiClientBuilder).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(IReservoirBuilder).Assembly.Location),
         ];
         string netstandardPath = RuntimeAssembly(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
@@ -107,17 +148,25 @@ public sealed class DomainClientRegistrationGeneratorTests
                                   public sealed record BalanceProjection;
                               }
                               """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, FeatureRegistrationStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainFeatureRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
         Assert.Contains("AddTestAppDomainClient", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddMoneyTransferSagaFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static MississippiClientBuilder AddTestAppDomainClient",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("this MississippiClientBuilder client", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("client.Reservoir(reservoir =>", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("reservoir.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("reservoir.AddMoneyTransferSagaFeature();", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("SagaSagaFeature", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddProjectionsFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("reservoir.AddProjectionsFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return client;", generatedCode, StringComparison.Ordinal);
+        AssertHasNoCompilationErrors(outputCompilation);
     }
 
     /// <summary>
@@ -135,13 +184,19 @@ public sealed class DomainClientRegistrationGeneratorTests
                                   public sealed record PlaceOrder;
                               }
                               """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
+        (Compilation outputCompilation, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, FeatureRegistrationStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainFeatureRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
         Assert.Contains("AddCoreLogicClient", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("services.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static MississippiClientBuilder AddCoreLogicClient",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("reservoir.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return client;", generatedCode, StringComparison.Ordinal);
+        AssertHasNoCompilationErrors(outputCompilation);
     }
 }

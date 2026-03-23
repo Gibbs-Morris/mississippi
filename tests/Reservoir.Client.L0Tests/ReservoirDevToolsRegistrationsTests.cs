@@ -28,8 +28,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
@@ -51,8 +51,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools();
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddReservoirDevTools();
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
@@ -74,8 +74,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
@@ -94,10 +94,10 @@ public sealed class ReservoirDevToolsRegistrationsTests
     public void AddReservoirDevToolsWithNullServicesThrows()
     {
         // Arrange
-        ServiceCollection? services = null;
+        IReservoirBuilder? builder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => services!.AddReservoirDevTools());
+        Assert.Throws<ArgumentNullException>(() => builder!.AddReservoirDevTools());
     }
 
     /// <summary>
@@ -115,8 +115,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
 
@@ -161,8 +161,8 @@ public sealed class ReservoirDevToolsRegistrationsTests
         // Arrange
         ServiceCollection services = [];
         services.AddLogging();
-        services.AddReservoir();
-        services.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
+        IReservoirBuilder builder = services.AddReservoir();
+        builder.AddReservoirDevTools(options => options.Enablement = ReservoirDevToolsEnablement.Always);
         services.AddSingleton(new Mock<IJSRuntime>().Object);
         await using ServiceProvider provider = services.BuildServiceProvider();
 

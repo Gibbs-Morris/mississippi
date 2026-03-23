@@ -55,6 +55,7 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 - `UxProjectionControllerBase<TProjection, TDto>` exposes `GET`, `GET at version`, and `GET version` endpoints.
 - `InletHub` manages client subscriptions by projection path and entity ID.
 - `InletSubscriptionGrain` deduplicates brook stream subscriptions per SignalR connection and sends only `(path, entityId, newVersion)` to the client.
+- In full Mississippi Blazor clients, `builder.AddMississippiClient()` creates `MississippiClientBuilder`, and `client.Reservoir(...)` exposes the `IReservoirBuilder` that `AddInletClient()` and `AddInletBlazorSignalR(...)` extend. Reservoir-only apps can still start directly from `builder.AddReservoir()`.
 - When `AddInletBlazorSignalR(...)` is configured, `InletSignalRActionEffect` fetches the updated DTO over HTTP and dispatches Reservoir actions.
 
 ## Guarantees
