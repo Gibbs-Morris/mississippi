@@ -349,5 +349,6 @@ documentation. It was created by John Gruber in 2004, formalised by CommonMark
 in 2014, and extended by GitHub Flavored Markdown for platform use. Core syntax
 covers headings, emphasis, lists, code blocks, links, images, tables, and task
 lists. YAML frontmatter provides metadata for static site generators and agent
-tooling. markdownlint enforces consistency. Every file in this repository that
-carries a `.md` extension must conform to these conventions.
+ tooling. markdownlint enforces consistency for authored Markdown within the
+ configured lint scope, excluding ignored paths such as `.scratchpad/**`,
+ `.github/agents/**`, and `node_modules/**`.
