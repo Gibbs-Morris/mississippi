@@ -8,7 +8,7 @@ namespace Mississippi.Hosting.Client;
 /// <summary>
 ///     Extension methods for composing Mississippi client applications from a WebAssembly host builder.
 /// </summary>
-public static class WebAssemblyHostBuilderExtensions
+public static class MississippiClientWebAssemblyHostBuilderRegistrations
 {
     /// <summary>
     ///     Adds the top-level Mississippi client builder to a WebAssembly host builder.

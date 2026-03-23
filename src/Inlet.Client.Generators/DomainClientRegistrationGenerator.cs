@@ -181,7 +181,9 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine($"    ///     Adds all generated client features for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
             sb.AppendLine("    /// <param name=\"client\">The Mississippi client builder.</param>");
-            sb.AppendLine($"    public static void {model.DomainMethodName}(this MississippiClientBuilder client)");
+            sb.AppendLine("    /// <returns>The Mississippi client builder for chaining.</returns>");
+            sb.AppendLine(
+                $"    public static MississippiClientBuilder {model.DomainMethodName}(this MississippiClientBuilder client)");
             sb.AppendLine("    {");
             sb.AppendLine("        ArgumentNullException.ThrowIfNull(client);");
             sb.AppendLine("        client.Reservoir(reservoir =>");
@@ -202,6 +204,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             }
 
             sb.AppendLine("        });");
+            sb.AppendLine("        return client;");
             sb.AppendLine("    }");
             sb.AppendLine();
         }

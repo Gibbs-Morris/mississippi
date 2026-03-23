@@ -155,12 +155,17 @@ public sealed class DomainClientRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains("AddTestAppDomainClient", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static MississippiClientBuilder AddTestAppDomainClient",
+            generatedCode,
+            StringComparison.Ordinal);
         Assert.Contains("this MississippiClientBuilder client", generatedCode, StringComparison.Ordinal);
         Assert.Contains("client.Reservoir(reservoir =>", generatedCode, StringComparison.Ordinal);
         Assert.Contains("reservoir.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("reservoir.AddMoneyTransferSagaFeature();", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("SagaSagaFeature", generatedCode, StringComparison.Ordinal);
         Assert.Contains("reservoir.AddProjectionsFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return client;", generatedCode, StringComparison.Ordinal);
         AssertHasNoCompilationErrors(outputCompilation);
     }
 
@@ -186,7 +191,12 @@ public sealed class DomainClientRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains("AddCoreLogicClient", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static MississippiClientBuilder AddCoreLogicClient",
+            generatedCode,
+            StringComparison.Ordinal);
         Assert.Contains("reservoir.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return client;", generatedCode, StringComparison.Ordinal);
         AssertHasNoCompilationErrors(outputCompilation);
     }
 }
