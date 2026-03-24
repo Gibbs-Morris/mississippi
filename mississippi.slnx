@@ -50,6 +50,9 @@
     <Project Path="src\Reservoir.Client\Reservoir.Client.csproj" />
     <Project Path="src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
   </Folder>
+  <Folder Name="/Framework/Hosting/">
+    <Project Path="src\Hosting.Runtime\Hosting.Runtime.csproj" />
+  </Folder>
   <Folder Name="/Framework/Inlet/">
     <Project Path="src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
     <Project Path="src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
@@ -88,7 +91,9 @@
     <Project Path="tests\Aqueduct.Gateway.L2Tests\Aqueduct.Gateway.L2Tests.csproj" />
     <Project Path="tests\Aqueduct.Gateway.L2Tests.AppHost\Aqueduct.Gateway.L2Tests.AppHost.csproj" />
   </Folder>
-  <Folder Name="/Tests/EventSourcing/" />
+  <Folder Name="/Tests/EventSourcing/">
+    <Project Path="tests\Hosting.Runtime.L0Tests\Hosting.Runtime.L0Tests.csproj" />
+  </Folder>
   <Folder Name="/Tests/EventSourcing/Aggregates/">
     <Project Path="tests\DomainModeling.Abstractions.L0Tests\DomainModeling.Abstractions.L0Tests.csproj" />
     <Project Path="tests\DomainModeling.Runtime.L0Tests\DomainModeling.Runtime.L0Tests.csproj" />

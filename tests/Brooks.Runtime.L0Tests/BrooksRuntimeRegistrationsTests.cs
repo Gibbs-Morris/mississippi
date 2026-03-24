@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.Options;
 using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime.Reader;
+
+using Orleans.Hosting;
 
 
 namespace Mississippi.Brooks.Runtime.L0Tests;
@@ -56,36 +59,32 @@ public sealed class BrooksRuntimeRegistrationsTests
     }
 
     /// <summary>
-    ///     Verifies that the HostApplicationBuilder extension accepts custom stream provider configuration.
+    ///     Verifies that the Orleans silo-builder extension accepts custom stream provider configuration.
     /// </summary>
     /// <remarks>
-    ///     This test verifies options registration without calling <c>Build()</c> on the host builder,
-    ///     because building the full host would require complete Orleans membership table configuration.
-    ///     The test validates the options are properly registered in the service collection.
+    ///     This test verifies options registration without building a full silo host.
+    ///     The test validates the options are properly registered in the silo service collection.
     /// </remarks>
     [Fact]
-    public void HostApplicationBuilderAddEventSourcingAcceptsCustomStreamProviderName()
+    public void SiloBuilderAddEventSourcingAcceptsCustomStreamProviderName()
     {
-        HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+        TestSiloBuilder builder = new();
         builder.AddEventSourcing(options => options.OrleansStreamProviderName = "CustomStreams");
 
-        // Build a minimal service provider for just the options without triggering full Orleans validation
         using ServiceProvider provider = builder.Services.BuildServiceProvider();
         BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
         Assert.Equal("CustomStreams", options.OrleansStreamProviderName);
     }
 
     /// <summary>
-    ///     Verifies that the HostApplicationBuilder extension registers services (sanity smoke test).
+    ///     Verifies that the service-collection onboarding path remains the supported Brooks runtime registration surface.
     /// </summary>
     [Fact]
-    public void HostApplicationBuilderAddEventSourcingAddsServicesAndConfiguresOrleans()
+    public void AddEventSourcingByServiceAddsServicesWithoutHostBuilderOnboarding()
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+        builder.Services.AddEventSourcingByService();
 
-        // The extension method should complete and register services
-        // Note: Host is responsible for configuring streams before calling this
-        builder.AddEventSourcing();
         IServiceCollection services = builder.Services;
         Assert.Contains(services, d => d.ServiceType == typeof(IBrookGrainFactory));
         Assert.Contains(services, d => d.ServiceType == typeof(IStreamIdFactory));

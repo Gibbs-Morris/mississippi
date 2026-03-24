@@ -33,47 +33,51 @@ The silo runs Orleans grains that execute commands, apply events, run effects, a
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// One call registers all domain aggregates, sagas, effects, and `EventReducer`s
-builder.Services.AddSpringDomainSilo();
+builder.AddMississippiRuntime(runtime =>
+{
+    // One call registers all domain aggregates, sagas, effects, and `EventReducer`s
+    runtime.AddMississippiSamplesSpringDomain();
 
-// Infrastructure: notification service stub
-builder.Services.AddSingleton<INotificationService, StubNotificationService>();
+    // Infrastructure: notification service stub
+    runtime.Services.AddSingleton<INotificationService, StubNotificationService>();
 
-// Infrastructure: telemetry, storage clients, event sourcing providers
-builder.Services.AddHttpClient();
-builder.Services.AddOpenTelemetry()
-    .WithTracing(/* ... */)
-    .WithMetrics(/* ... */);
+    // Infrastructure: telemetry, storage clients, event sourcing providers
+    runtime.Services.AddHttpClient();
+    runtime.Services.AddOpenTelemetry()
+        .WithTracing(/* ... */)
+        .WithMetrics(/* ... */);
+
+    // Mississippi infrastructure
+    runtime.Services.AddInletSilo();
+    runtime.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+    runtime.Services.AddJsonSerialization();
+    runtime.Services.AddSnapshotCaching();
+    runtime.Services.AddCosmosBrookStorageProvider(/* ... */);
+    runtime.Services.AddCosmosSnapshotStorageProvider(/* ... */);
+
+    // Orleans configuration
+    runtime.Orleans(siloBuilder =>
+    {
+        siloBuilder.AddActivityPropagation();
+        siloBuilder.UseAqueduct(options =>
+            options.StreamProviderName = "StreamProvider");
+        siloBuilder.AddEventSourcing(options =>
+            options.OrleansStreamProviderName = "StreamProvider");
+    });
+});
 
 builder.AddKeyedAzureTableServiceClient("clustering");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
 builder.AddAzureCosmosClient("cosmos", /* ... */);
-
-// Mississippi infrastructure
-builder.Services.AddInletSilo();
-builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-builder.Services.AddJsonSerialization();
-builder.Services.AddEventSourcingByService();
-builder.Services.AddSnapshotCaching();
-builder.Services.AddCosmosBrookStorageProvider(/* ... */);
-builder.Services.AddCosmosSnapshotStorageProvider(/* ... */);
-
-// Orleans configuration
-builder.UseOrleans(siloBuilder =>
-{
-    siloBuilder.AddActivityPropagation();
-    siloBuilder.UseAqueduct(options =>
-        options.StreamProviderName = "StreamProvider");
-    siloBuilder.AddEventSourcing(options =>
-        options.OrleansStreamProviderName = "StreamProvider");
-});
 
 WebApplication app = builder.Build();
 app.MapGet("/health", /* ... */);
 await app.RunAsync();
 ```
 
-The single line `builder.Services.AddSpringDomainSilo()` registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi - you do not write it manually.
+The single line `runtime.AddMississippiSamplesSpringDomain()` registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi, and the runtime builder owns the single supported Orleans attachment path for the host.
+
+`MississippiRuntimeBuilder.Services` remains available for advanced composition, but the supported runtime onboarding path now starts at `builder.AddMississippiRuntime(...)` and keeps Orleans customization inside `runtime.Orleans(...)`.
 
 ([Spring.Runtime/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs))
 
