@@ -59,6 +59,9 @@ StrykerOutput/
 .scratchpad/
 !.scratchpad/.gitignore
 
+# Local Clean Squad working state (ephemeral, do not commit)
+.thinking/
+
 # Temporary Claude files (ephemeral, do not commit)
 tmpclaude-*
 
