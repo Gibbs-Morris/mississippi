@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 using Orleans.Hosting;
 
@@ -13,6 +15,10 @@ namespace Mississippi.Hosting.Runtime;
 /// </summary>
 internal sealed class MississippiRuntimeBuilderState
 {
+    private IConfiguration Configuration { get; }
+
+    private IHostEnvironment HostEnvironment { get; }
+
     private IServiceCollection HostServices { get; }
 
     private List<Action<ISiloBuilder>> OrleansConfigurations { get; } = [];
@@ -21,11 +27,19 @@ internal sealed class MississippiRuntimeBuilderState
     ///     Initializes a new instance of the <see cref="MississippiRuntimeBuilderState" /> class.
     /// </summary>
     /// <param name="hostServices">The host service collection that owns runtime composition.</param>
+    /// <param name="configuration">The effective host configuration.</param>
+    /// <param name="hostEnvironment">The effective host environment.</param>
     internal MississippiRuntimeBuilderState(
-        IServiceCollection hostServices
+        IServiceCollection hostServices,
+        IConfiguration configuration,
+        IHostEnvironment hostEnvironment
     )
     {
         ArgumentNullException.ThrowIfNull(hostServices);
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(hostEnvironment);
+        Configuration = configuration;
+        HostEnvironment = hostEnvironment;
         HostServices = hostServices;
     }
 
@@ -43,6 +57,7 @@ internal sealed class MississippiRuntimeBuilderState
     )
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
+        MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(Configuration, HostEnvironment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(HostServices);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(siloBuilder.Services);
         foreach (Action<ISiloBuilder> configure in OrleansConfigurations)
@@ -50,6 +65,7 @@ internal sealed class MississippiRuntimeBuilderState
             configure(siloBuilder);
         }
 
+        MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(Configuration, HostEnvironment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(HostServices);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(siloBuilder.Services);
     }

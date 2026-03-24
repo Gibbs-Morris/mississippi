@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
+using System.Net;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 using Orleans.Hosting;
 
@@ -16,6 +18,8 @@ namespace Mississippi.Hosting.Runtime.L0Tests;
 /// </summary>
 public sealed class MississippiRuntimeBuilderTests
 {
+    private const string SecretValue = "super-secret-key";
+
     private sealed class TestSiloBuilder : ISiloBuilder
     {
         public IServiceCollection Services { get; } = new ServiceCollection();
@@ -40,6 +44,13 @@ public sealed class MississippiRuntimeBuilderTests
         return state;
     }
 
+    private static WebApplicationBuilder CreateBuilder()
+        => CreateBuilder(Environments.Development);
+
+    private static WebApplicationBuilder CreateBuilder(
+        string environmentName
+    ) => WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environmentName });
+
     private static void AddCompetingOrleansOwnershipMarker(
         IServiceCollection services
     )
@@ -60,7 +71,7 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void AddMississippiRuntimeConfigureOverloadReturnsOriginalBuilder()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         MississippiRuntimeBuilder? configuredBuilder = null;
         WebApplicationBuilder result = builder.AddMississippiRuntime(runtime => configuredBuilder = runtime);
         Assert.Same(builder, result);
@@ -74,7 +85,7 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void AddMississippiRuntimeReturnsRuntimeBuilder()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
         Assert.NotNull(runtimeBuilder);
         Assert.Same(builder.Services, runtimeBuilder.Services);
@@ -86,7 +97,7 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void AddMississippiRuntimeRejectsDuplicateAttachment()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         builder.AddMississippiRuntime();
         InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
         Assert.Contains("AddMississippiRuntime can only be called once per host", exception.Message, StringComparison.Ordinal);
@@ -98,11 +109,110 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void AddMississippiRuntimeRejectsSameHostGatewayComposition()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         AddGatewayHostModeMarker(builder.Services);
         InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
         Assert.Contains("runtime and gateway composition cannot share the same host", exception.Message, StringComparison.Ordinal);
         Assert.Contains("runtime-only path", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should reject loopback or emulator connection strings outside Development.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeRejectsLoopbackConnectionStringsOutsideDevelopment()
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.Configuration["ConnectionStrings:cosmos"] = $"AccountEndpoint=http://127.0.0.1:8081/;AccountKey={SecretValue};";
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
+
+        Assert.Contains("[config-trust]", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("ConnectionStrings:cosmos", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("127.0.0.1", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should allow loopback or emulator connection strings in Development.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeAllowsLoopbackConnectionStringsInDevelopment()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        builder.Configuration["ConnectionStrings:cosmos"] = $"AccountEndpoint=http://{IPAddress.Loopback}:8081/;AccountKey={SecretValue};";
+
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+
+        Assert.NotNull(runtimeBuilder);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should allow explicitly approved loopback endpoints outside Development.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeAllowsExplicitlyApprovedLoopbackOutsideDevelopment()
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.Configuration["Mississippi:Runtime:Trust:AllowLocalEndpointsOutsideDevelopment"] = bool.TrueString;
+        builder.Configuration["ConnectionStrings:cosmos"] = $"AccountEndpoint=http://localhost:8081/;AccountKey={SecretValue};";
+
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+
+        Assert.NotNull(runtimeBuilder);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should reject insecure external endpoint transport outside Development.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeRejectsInsecureExternalEndpointTransport()
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.Configuration["ConnectionStrings:cosmos"] = $"AccountEndpoint=http://prod.example.com/;AccountKey={SecretValue};";
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
+
+        Assert.Contains("[config-trust]", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("scheme 'http'", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("prod.example.com", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should reject derived insecure external transport from storage-style connection strings.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeRejectsDerivedInsecureExternalTransport()
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.Configuration["ConnectionStrings:storage"] =
+            $"DefaultEndpointsProtocol=http;AccountName=productionaccount;AccountKey={SecretValue};EndpointSuffix=core.windows.net";
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
+
+        Assert.Contains("[config-trust]", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("ConnectionStrings:storage", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("scheme 'http'", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("productionaccount", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should reject connection strings that mix local and external endpoint sets.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeRejectsConflictingEndpointSet()
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.Configuration["ConnectionStrings:storage"] =
+            $"BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;TableEndpoint=https://storage.example.com/;AccountKey={SecretValue};";
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
+
+        Assert.Contains("[config-trust]", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("mixes local or emulator hosts with external hosts", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -111,7 +221,7 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void OrleansQueuesConfigurationOnRuntimeState()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
         runtimeBuilder.Orleans(silo => silo.Services.AddSingleton<TestMarker>());
         MississippiRuntimeBuilderState state = GetState(builder.Services);
@@ -124,7 +234,7 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void ApplyOrleansConfigurationReplaysQueuedCallbacksInOrder()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
         runtimeBuilder.Orleans(silo => silo.Services.AddSingleton(new TestMarker()));
         runtimeBuilder.Orleans(silo => silo.Services.AddSingleton("queued-second"));
@@ -151,7 +261,7 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void ApplyOrleansConfigurationRejectsSameHostGatewayCompositionAddedAfterRuntimeAttachment()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         builder.AddMississippiRuntime();
         AddGatewayHostModeMarker(builder.Services);
 
@@ -168,7 +278,7 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void ApplyOrleansConfigurationRejectsCompetingOrleansOwnershipAddedAfterRuntimeAttachment()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         builder.AddMississippiRuntime();
         AddCompetingOrleansOwnershipMarker(builder.Services);
 
@@ -185,7 +295,7 @@ public sealed class MississippiRuntimeBuilderTests
     [Fact]
     public void ApplyOrleansConfigurationRejectsCompetingOrleansOwnershipAddedThroughQueuedCallback()
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = CreateBuilder();
         MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
         runtimeBuilder.Orleans(silo => AddCompetingOrleansOwnershipMarker(silo.Services));
 
@@ -194,5 +304,24 @@ public sealed class MississippiRuntimeBuilderTests
 
         Assert.Contains("runtime owns the top-level Orleans silo attachment", exception.Message, StringComparison.Ordinal);
         Assert.Contains("MississippiRuntimeBuilder.Orleans(...)", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Runtime-owned Orleans attachment should reject unsafe endpoint overrides added after runtime attachment.
+    /// </summary>
+    [Fact]
+    public void ApplyOrleansConfigurationRejectsUnsafeEndpointOverrideAddedAfterRuntimeAttachment()
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.AddMississippiRuntime();
+        builder.Configuration["ConnectionStrings:cosmos"] = $"AccountEndpoint=http://localhost:8081/;AccountKey={SecretValue};";
+
+        MississippiRuntimeBuilderState state = GetState(builder.Services);
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => state.ApplyOrleansConfiguration(new TestSiloBuilder()));
+
+        Assert.Contains("[config-trust]", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("ConnectionStrings:cosmos", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("localhost", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
     }
 }
