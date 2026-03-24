@@ -57,6 +57,8 @@ All agents share state through a filesystem folder:
 .thinking/
   <YYYY-MM-DD>-<task-slug>/        # One subfolder per task
     state.json                      # Workflow state (current phase, status)
+    workflow-audit.json             # Canonical append-only execution ledger
+    workflow-audit.md               # Derived detailed workflow audit report
     activity-log.md                 # Start/progress/blocker/completion log
     00-intake.md                    # Initial request & context
     01-discovery/
@@ -121,7 +123,7 @@ All agents share state through a filesystem folder:
         ...
       publication-report.md         # Final pages published with verification
     09-pr-merge/
-      pr-description.md             # PR description draft
+      pr-description.md             # PR description draft with Reviewer Audit Summary
       thread-log.md                 # Review thread tracking
       merge-readiness.md            # Merge readiness checklist
       polling-log.md                # Review polling rule log
@@ -140,6 +142,170 @@ retired.
 - Every Clean Squad agent MUST append a final entry before returning control, capturing outputs produced, status, blockers, and next action.
 - The Product Owner MUST treat this log as mandatory operational telemetry, not an optional summary.
 - Activity log entries SHOULD use a consistent structure: UTC timestamp, actor, phase, action, artifacts updated, blockers, and next action.
+
+### Workflow Audit Contract
+
+#### Canonical Artifacts and Authority
+
+- `.thinking/<task>/workflow-audit.json` is the authoritative execution record for one Clean Squad run.
+- `.thinking/<task>/workflow-audit.md` is a derived detailed audit compiled from a stable ledger snapshot.
+- `09-pr-merge/pr-description.md` contains the derived `Reviewer Audit Summary` and MUST source it from trusted audit inputs.
+- `sequence` is the only ordering authority for canonical workflow facts.
+- Timestamps are advisory for timing and diagnostics only and MUST NOT override `sequence`.
+- `activity-log.md`, `handover-log.md`, Mermaid output, PR prose, and other narrative files are supporting or derived evidence only and MUST NOT override canonical sequence facts.
+
+#### Active Writers and Handoff Invariants
+
+- The Product Owner writes canonical events for Phases 1 through 8.
+- The PR Manager writes canonical events for Phase 9.
+- The Scribe MUST NOT write canonical workflow facts.
+- Only one canonical writer may be active for a workflow boundary at a time.
+- The Product Owner to PR Manager handoff MUST be explicit before Phase 9 canonical writes begin.
+- Every canonical append MUST declare the expected prior `sequence`.
+- A canonical writer MUST fail closed if the ledger tail does not match the declared expected prior `sequence`.
+- Recovery MUST rebuild operational state from `workflow-audit.json`, never the reverse.
+
+#### Canonical Event Contract
+
+Every canonical event MUST include:
+
+1. monotonic `sequence`
+2. stable `logicalEventId` for retry safety
+3. `actor`
+4. `phase`
+5. `eventType`
+6. human-readable `summary`
+7. `reasonCode` when required
+8. `artifacts` when applicable
+9. `iterationId` for loops, retries, or repeated review cycles when applicable
+
+Canonical events MUST be append-only.
+
+#### State and Runtime Support Contract
+
+`state.json` is operational support state only. It MAY cache audit cursor data, but it MUST NOT replace or repair canonical facts from `workflow-audit.json`.
+
+The runtime audit support state MUST include:
+
+- workflow contract fingerprint or version
+- current audit sequence number
+- current audit owner
+- open wait state, if any
+- last successful audit compilation timestamp
+
+#### Provenance Contract
+
+Every derived audit artifact MUST bind to a provenance envelope containing at least:
+
+1. current HEAD SHA
+2. ledger watermark or max `sequence` included
+3. ledger digest or equivalent provenance token
+4. workflow contract fingerprint or version
+5. generation timestamp
+6. generator identity
+7. required CI-result identity set when merge readiness depends on CI
+
+Responsibilities:
+
+- The Scribe emits provenance for `workflow-audit.md`.
+- The PR Manager verifies provenance before publishing the `Reviewer Audit Summary`.
+- Merge readiness MUST NOT pass when provenance is stale, missing, or mismatched.
+
+#### Trust and Freshness Contract
+
+Freshness and merge readiness MUST bind to the current HEAD SHA and the required CI-result identity set for that SHA.
+
+Reviewer-facing audit output becomes stale on any of these events:
+
+1. commit or push that changes HEAD SHA
+2. force-push or rebase
+3. required check rerun
+4. replaced or superseded check result
+5. required-check state change
+6. canonical ledger event that changes reviewer-meaningful output
+
+Publication rules:
+
+1. Invalidate immediately on a relevant change.
+2. Republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication.
+3. Keep invalidation more granular than publication so the PR description does not churn on low-signal changes.
+
+#### Verdict Model
+
+| Verdict | Meaning | Reviewer Action |
+|---------|---------|-----------------|
+| `Conformant` | Required workflow obligations were satisfied and evidence is trusted | Continue review normally |
+| `ConformantWithDeviations` | Workflow obligations were satisfied, deviations were allowed and explained, and evidence is trusted | Review deviations, then continue if acceptable |
+| `NonConformant` | Trusted evidence shows the workflow contract was violated | Treat as a policy failure and do not accept the workflow as complete |
+| `Blocked` | The run ended before merge-ready completion | Do not treat the workflow as complete |
+| `Untrusted` | Evidence is stale, malformed, incomplete, provenance-broken, or otherwise not reliable | Stop and require audit regeneration or correction |
+
+#### Evidence Sufficiency Rules
+
+- Major completion claims MUST include sufficient artifact evidence.
+- Missing, malformed, or policy-violating evidence MUST NOT yield `Conformant` or `ConformantWithDeviations`.
+- Schema validation is required wherever the contract defines canonical or derived metadata structure.
+- Supporting logs MAY corroborate but MUST NOT repair missing canonical facts.
+- Missing evidence MUST map to `NonConformant`, `Blocked`, or `Untrusted` based on whether the failure is a policy violation, an incomplete run, or a trust failure.
+
+#### Timing Contract
+
+Required timing buckets:
+
+1. elapsed total
+2. active agent total
+3. human-wait total
+4. system-wait total
+
+Timing invariants:
+
+1. Human-wait and system-wait never count as active agent time.
+2. Timing buckets MUST be mutually exclusive.
+3. Unmatched, overlapping, or impossible timing intervals invalidate trust.
+4. Timing interpretation on the PR surface MUST render this exact sentence: `Active agent time excludes human replies and system wait such as CI or review polling.`
+
+#### Reviewer Audit Summary Contract
+
+The PR-facing artifact is named `Reviewer Audit Summary` and SHOULD fit within one screen on a typical desktop review view.
+
+It MUST present content in this exact order:
+
+1. verdict
+2. reviewer action guidance
+3. current blocker(s)
+4. provenance and freshness stamp
+5. condensed top-to-bottom Mermaid flow
+6. four-bucket timing summary
+7. the fixed timing interpretation sentence
+8. plain-language major deviations
+9. pointer to `workflow-audit.md`
+
+#### Detailed Audit Opening Contract
+
+`workflow-audit.md` MUST begin with a short why-this-matters opener that explains why the reader should trust or question the run before reading chronology.
+
+#### Required Failure Matrix
+
+Implementation and review MUST explicitly cover at least these cases with the expected verdict and reviewer-summary publication behavior.
+
+| Case | Expected verdict | Reviewer-summary publication behavior |
+|------|------------------|--------------------------------------|
+| clean happy path | `Conformant` | Publish or keep published when provenance is current. |
+| human clarification wait | `Conformant` | Publish or keep published when the human-wait interval is explicitly bounded and provenance is current. |
+| Phase 9 polling wait | `Conformant` | Publish or keep published when the system-wait interval is explicitly bounded and provenance is current. |
+| remediation loop | `ConformantWithDeviations` | Republish only when the reviewer-meaningful deviation summary changes and provenance is refreshed. |
+| allowed skip with valid reason | `ConformantWithDeviations` | Publish or republish with the allowed skip recorded as a plain-language deviation and provenance refreshed. |
+| declined review comment with rationale | `ConformantWithDeviations` | Publish or republish with the decline rationale reflected in reviewer-facing deviations and provenance refreshed. |
+| blocked run | `Blocked` | Do not publish a merge-ready summary; any existing reviewer summary MUST be treated as not sufficient for merge readiness until the block is cleared and a fresh summary is generated. |
+| stale reviewer summary | `Untrusted` | Invalidate immediately and require regeneration before merge readiness can pass. |
+| unmatched wait boundary | `Untrusted` | Invalidate immediately and require audit correction before republishing. |
+| overlapping wait intervals | `Untrusted` | Invalidate immediately and require audit correction before republishing. |
+| impossible timing totals | `Untrusted` | Invalidate immediately and require audit correction before republishing. |
+| duplicate logical event identity | `NonConformant` | Do not publish as trusted reviewer evidence until the canonical ledger is repaired and a fresh summary is generated. |
+| invalid chronology or handoff violation | `NonConformant` | Do not publish as trusted reviewer evidence until the chronology or handoff violation is corrected and a fresh summary is generated. |
+| unauthorized writer or unauthorized delegated actor | `NonConformant` | Do not publish as trusted reviewer evidence until the unauthorized action is corrected and a fresh summary is generated. |
+| missing required evidence for a major completion claim | `Blocked` when the run is incomplete; otherwise `Untrusted` when a completion claim lacks trustworthy evidence | Invalidate or withhold publication until the missing evidence is supplied and a fresh summary is generated. |
+| malformed canonical or derived provenance metadata | `Untrusted` | Invalidate immediately and require provenance repair before republishing. |
 
 ## Product Owner Execution Boundary
 
@@ -164,6 +330,13 @@ The Product Owner is an orchestrator, not an implementation agent.
   "prNumber": null,
   "lastCommitSha": null,
   "lastCommitTime": null,
+  "workflowContractFingerprint": "<workflow-contract-fingerprint>",
+  "audit": {
+    "currentSequence": 0,
+    "currentOwner": "cs Product Owner|cs PR Manager|null",
+    "openWait": null,
+    "lastCompiledAt": null
+  },
   "discoveryRound": 0,
   "planReviewCycle": 0,
   "implementationIncrement": 0,
@@ -477,23 +650,31 @@ The skip reason **MUST** be recorded in `scope-assessment.md` with evidence.
 
 ### Process
 
-1. Product Owner invokes **cs Scribe** to compile all decisions, thinking, and
-   reasoning into a coherent narrative.
+1. Product Owner invokes **cs Scribe** to compile `workflow-audit.md` from a
+  stable `workflow-audit.json` snapshot, including the why-this-matters
+  opener, provenance envelope, conformance verdict, and Mermaid views.
 2. Product Owner invokes **cs PR Manager** to:
    a. Create the PR with a complete description (business value, how it works,
-      files changed, testing evidence, breaking changes).
-   b. Monitor CI pipelines.
-  c. Handle review threads using the repository PR polling protocol.
+    files changed, testing evidence, breaking changes, and the `Reviewer Audit Summary`).
+  b. Verify the audit provenance and freshness against the current HEAD SHA,
+    ledger watermark, workflow contract fingerprint, and required CI-result
+    identity set before publishing reviewer-facing audit content.
+  c. Monitor CI pipelines.
+  d. Handle review threads using the repository PR polling protocol.
 3. Review thread handling:
    - For each human review comment: read it, decide scope-appropriateness,
      fix it or push back with reasoning. Reply to every thread. Resolve it.
-4. Merge readiness is confirmed when:
+4. `workflow-audit.md` and the `Reviewer Audit Summary` are derived artifacts
+  only. Missing canonical facts MUST be fixed in `workflow-audit.json`; they
+  MUST NOT be backfilled from `activity-log.md`, thread logs, or PR prose.
+5. Merge readiness is confirmed when:
 
 - [ ] PR exists
 - [ ] All CI pipelines are green
 - [ ] No unresolved review comments
 - [ ] No open review threads
 - [ ] Review polling rule satisfied
+- [ ] Reviewer Audit Summary provenance is current for the HEAD SHA, ledger watermark, workflow contract fingerprint, and required CI-result identity set
 
 ### Review Polling Rule
 
@@ -510,6 +691,9 @@ Protocol:
 4. If a poll returns zero new unaddressed comments: merge readiness is confirmed.
 5. If the iteration cap is reached: stop and report the remaining unresolved
   threads for human review.
+
+Poll waits and CI waits are `system-wait` time and MUST NOT count as active
+agent time.
 
 ### Review Thread Handling
 

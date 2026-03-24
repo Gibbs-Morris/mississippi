@@ -5,12 +5,23 @@ This document is a visual companion to [WORKFLOW.md](WORKFLOW.md).
 - It MUST mirror the current workflow exactly.
 - It MUST NOT add, remove, simplify, reinterpret, or improve any workflow step, loop, responsibility, or policy.
 - If this diagram and `WORKFLOW.md` ever differ, `WORKFLOW.md` is authoritative.
+- Where exact contract detail would make the diagram unreadable, this file MUST mirror that detail in explicit Markdown sections outside the Mermaid block without changing authority.
 
 ```mermaid
 flowchart TD
     Authority["Authority note:<br/>WORKFLOW.md is authoritative.<br/>This Mermaid file is a visual companion only."]
     Principles["Cross-cutting note:<br/>All agents apply first principles and CoV.<br/>cs Product Owner is the only human-facing agent."]
-    SharedState["Cross-cutting note:<br/>All agents share state through .thinking/&lt;task&gt;/.<br/>Activity-log and handover updates are mandatory."]
+    SharedState["Cross-cutting note:<br/>All agents share state through .thinking/&lt;task&gt;/.<br/>workflow-audit.json is the authoritative execution record.<br/>Activity-log and handover updates are mandatory secondary evidence."]
+    AuditOwnership["Cross-cutting note:<br/>cs Product Owner writes canonical audit events for Phases 1-8.<br/>cs PR Manager writes canonical audit events for Phase 9.<br/>cs Scribe publishes derived audit output only."]
+    AuditRules["Cross-cutting note:<br/>sequence is the only ordering authority.<br/>Timestamps are advisory for timing and diagnostics only and never override sequence.<br/>Narrative logs, Mermaid, and PR prose are supporting or derived evidence only."]
+    AuditHandoff["Cross-cutting note:<br/>Only one canonical writer may be active for a workflow boundary at a time.<br/>The Product Owner to PR Manager handoff is explicit before Phase 9 writes.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch."]
+    AuditEventContract["Cross-cutting note:<br/>Every canonical event includes sequence, logicalEventId, actor, phase, eventType, summary,<br/>reasonCode when required, artifacts when applicable, and iterationId for loops or retries."]
+    ProvenanceContract["Cross-cutting note:<br/>Every derived audit artifact binds to HEAD SHA, ledger watermark, ledger digest, workflow contract fingerprint,<br/>generation timestamp, generator identity, and required CI-result identity when merge readiness depends on CI.<br/>cs Scribe emits provenance; cs PR Manager verifies it before publishing the Reviewer Audit Summary.<br/>Merge readiness never passes with stale, missing, or mismatched provenance."]
+    VerdictContract["Cross-cutting note:<br/>Verdicts are Conformant, ConformantWithDeviations, NonConformant, Blocked, or Untrusted.<br/>Missing, malformed, or policy-violating evidence never yields a trusted conformant verdict."]
+    EvidenceContract["Cross-cutting note:<br/>Major completion claims require sufficient artifact evidence.<br/>Schema validation is required where the contract defines canonical or derived metadata structure.<br/>Supporting logs may corroborate but never repair missing canonical facts.<br/>Missing evidence maps to NonConformant, Blocked, or Untrusted based on policy violation, incomplete run, or trust failure."]
+    TimingContract["Cross-cutting note:<br/>Timing uses elapsed, active-agent, human-wait, and system-wait totals.<br/>Buckets are mutually exclusive; unmatched or overlapping waits and impossible totals invalidate trust."]
+    SummaryContract["Cross-cutting note:<br/>Reviewer Audit Summary order is verdict, action, blockers, provenance stamp, condensed Mermaid flow,<br/>four-bucket timing, fixed timing sentence, deviations, then pointer to workflow-audit.md.<br/>workflow-audit.md begins with a why-this-matters opener."]
+    FailureMatrix["Cross-cutting note:<br/>Failure matrix cases and outcomes are mirrored from WORKFLOW.md:<br/>happy path, human clarification wait, and Phase 9 polling wait -> Conformant and publish or keep published only with current provenance.<br/>remediation loop, allowed skip, and declined review comment -> ConformantWithDeviations and republish only when reviewer-facing deviations change with refreshed provenance.<br/>blocked run -> Blocked and no merge-ready summary is sufficient until cleared and regenerated.<br/>stale summary, unmatched wait boundary, overlapping waits, impossible timing totals, and malformed provenance -> Untrusted and invalidate immediately until corrected and regenerated.<br/>duplicate logicalEventId, invalid chronology or handoff, and unauthorized writer or delegated actor -> NonConformant and no trusted reviewer evidence publishes until repaired and regenerated.<br/>missing major-claim evidence -> Blocked when incomplete, otherwise Untrusted; invalidate or withhold publication until evidence exists and a fresh summary is generated."]
     Delegation["Cross-cutting note:<br/>Before every runSubagent, verify the approved Agent Roster in WORKFLOW.md.<br/>If no approved fit exists, stop, record the blocker, and ask the user how to proceed."]
 
     subgraph EntryPoint["Entry Point"]
@@ -18,7 +29,7 @@ flowchart TD
     end
 
     subgraph Phase1["Phase 1: Intake & Discovery"]
-        P1Setup["Create .thinking/&lt;date&gt;-&lt;task-slug&gt;/, state.json, activity-log.md, and 00-intake.md"]
+        P1Setup["Create .thinking/&lt;date&gt;-&lt;task-slug&gt;/, state.json, workflow-audit.json, activity-log.md, and 00-intake.md"]
         P1Ask["Ask 5 discovery questions"]
         P1Clear{"Requirements sufficiently clear?"}
         P1Analyze["Invoke cs Requirements Analyst for gap analysis and the next 5 questions"]
@@ -128,8 +139,8 @@ flowchart TD
     end
 
     subgraph Phase9["Phase 9: PR Creation & Merge Readiness"]
-        P9Scribe["Invoke cs Scribe to compile the thinking trail"]
-        P9Manager["Invoke cs PR Manager to create the PR and monitor CI"]
+        P9Scribe["Invoke cs Scribe to compile workflow-audit.md from a stable workflow-audit.json snapshot"]
+        P9Manager["Invoke cs PR Manager to create the PR, publish the Reviewer Audit Summary, and monitor CI"]
         P9Wait["After pushing to an open PR, wait 300 seconds"]
         P9Poll["Poll for unresolved review comments"]
         P9Comments{"New unaddressed comments?"}
@@ -165,6 +176,16 @@ flowchart TD
     Authority -.-> ProductOwner
     Principles -.-> ProductOwner
     SharedState -.-> P1Setup
+    AuditOwnership -.-> ProductOwner
+    AuditHandoff -.-> P9Manager
+    AuditEventContract -.-> P1Setup
+    ProvenanceContract -.-> P9Scribe
+    VerdictContract -.-> P9Ready
+    EvidenceContract -.-> P9Scribe
+    TimingContract -.-> P9Wait
+    SummaryContract -.-> P9Scribe
+    FailureMatrix -.-> P9Manager
+    AuditRules -.-> P9Manager
     Delegation -.-> ProductOwner
 
     P3AdrNote["Architecture note:<br/>For each significant architectural decision, invoke cs ADR Keeper to publish an ADR."]
@@ -173,7 +194,9 @@ flowchart TD
     P5Note["Implementation note:<br/>Each increment is small enough to review like its own PR and includes relevant tests.<br/>TDD is used where practical."]
     P6Note["Code review note:<br/>Every changed file is reviewed by at least cs Reviewer Pedantic and cs Reviewer Strategic."]
     P8Note["Documentation note:<br/>Documentation may be skipped only when all documented skip criteria are true and the evidence is recorded."]
-    P9Note["PR note:<br/>Merge readiness also requires a PR, green CI, no unresolved review comments, and no open review threads."]
+    P9Note["PR note:<br/>Merge readiness also requires a PR, green CI, no unresolved review comments, no open review threads,<br/>and a current Reviewer Audit Summary with verified provenance."]
+    P9Timing["Timing note:<br/>Active agent time excludes human replies and system wait such as CI or review polling."]
+    P9Derived["Audit note:<br/>workflow-audit.md and the Reviewer Audit Summary are derived only.<br/>Missing canonical facts are fixed in workflow-audit.json, not backfilled from secondary logs."]
 
     P3AdrNote -.-> P3Adr
     P3ExpertNote -.-> P3Design
@@ -182,4 +205,50 @@ flowchart TD
     P6Note -.-> P6Review
     P8Note -.-> P8UserFacing
     P9Note -.-> P9Ready
+    P9Timing -.-> P9Wait
+    P9Derived -.-> P9Scribe
 ```
+
+## Trust and Freshness Mirror
+
+This section explicitly mirrors the trust and freshness contract from [WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow differ, [WORKFLOW.md](WORKFLOW.md) governs.
+
+Freshness and merge readiness MUST bind to the current HEAD SHA and the required CI-result identity set for that SHA.
+
+Reviewer-facing audit output becomes stale on any of these events:
+
+1. commit or push that changes HEAD SHA
+2. force-push or rebase
+3. required check rerun
+4. replaced or superseded check result
+5. required-check state change
+6. canonical ledger event that changes reviewer-meaningful output
+
+Publication rules:
+
+1. Invalidate immediately on a relevant change.
+2. Republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication.
+3. Keep invalidation more granular than publication so the PR description does not churn on low-signal changes.
+
+## Required Failure Matrix Mirror
+
+This section explicitly mirrors the per-case failure matrix from [WORKFLOW.md](WORKFLOW.md) because rendering all cases at equivalent specificity inside the Mermaid flow would make the diagram materially less readable. The authoritative source remains [WORKFLOW.md](WORKFLOW.md).
+
+| Case | Expected verdict | Reviewer-summary publication behavior |
+|------|------------------|--------------------------------------|
+| clean happy path | `Conformant` | Publish or keep published when provenance is current. |
+| human clarification wait | `Conformant` | Publish or keep published when the human-wait interval is explicitly bounded and provenance is current. |
+| Phase 9 polling wait | `Conformant` | Publish or keep published when the system-wait interval is explicitly bounded and provenance is current. |
+| remediation loop | `ConformantWithDeviations` | Republish only when the reviewer-meaningful deviation summary changes and provenance is refreshed. |
+| allowed skip with valid reason | `ConformantWithDeviations` | Publish or republish with the allowed skip recorded as a plain-language deviation and provenance refreshed. |
+| declined review comment with rationale | `ConformantWithDeviations` | Publish or republish with the decline rationale reflected in reviewer-facing deviations and provenance refreshed. |
+| blocked run | `Blocked` | Do not publish a merge-ready summary; any existing reviewer summary MUST be treated as not sufficient for merge readiness until the block is cleared and a fresh summary is generated. |
+| stale reviewer summary | `Untrusted` | Invalidate immediately and require regeneration before merge readiness can pass. |
+| unmatched wait boundary | `Untrusted` | Invalidate immediately and require audit correction before republishing. |
+| overlapping wait intervals | `Untrusted` | Invalidate immediately and require audit correction before republishing. |
+| impossible timing totals | `Untrusted` | Invalidate immediately and require audit correction before republishing. |
+| duplicate logical event identity | `NonConformant` | Do not publish as trusted reviewer evidence until the canonical ledger is repaired and a fresh summary is generated. |
+| invalid chronology or handoff violation | `NonConformant` | Do not publish as trusted reviewer evidence until the chronology or handoff violation is corrected and a fresh summary is generated. |
+| unauthorized writer or unauthorized delegated actor | `NonConformant` | Do not publish as trusted reviewer evidence until the unauthorized action is corrected and a fresh summary is generated. |
+| missing required evidence for a major completion claim | `Blocked` when the run is incomplete; otherwise `Untrusted` when a completion claim lacks trustworthy evidence | Invalidate or withhold publication until the missing evidence is supplied and a fresh summary is generated. |
+| malformed canonical or derived provenance metadata | `Untrusted` | Invalidate immediately and require provenance repair before republishing. |
