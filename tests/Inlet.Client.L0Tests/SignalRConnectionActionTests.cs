@@ -17,7 +17,7 @@ public sealed class SignalRConnectionActionTests
     public void SignalRConnectedActionAllowsNullConnectionId()
     {
         // Arrange
-        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
         // Act
         SignalRConnectedAction action = new(null, timestamp);
@@ -64,7 +64,7 @@ public sealed class SignalRConnectionActionTests
     public void SignalRDisconnectedActionAllowsNullError()
     {
         // Arrange
-        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
         // Act
         SignalRDisconnectedAction action = new(null, timestamp);
@@ -114,7 +114,7 @@ public sealed class SignalRConnectionActionTests
     public void SignalRReconnectedActionAllowsNullConnectionId()
     {
         // Arrange
-        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
         // Act
         SignalRReconnectedAction action = new(null, timestamp);
@@ -131,7 +131,7 @@ public sealed class SignalRConnectionActionTests
     {
         // Arrange
         string connectionId = "conn-456";
-        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
         // Act
         SignalRReconnectedAction action = new(connectionId, timestamp);
