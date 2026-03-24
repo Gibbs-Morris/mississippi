@@ -1,5 +1,7 @@
 using System;
 
+using Microsoft.Extensions.Time.Testing;
+
 using Mississippi.Inlet.Client.Abstractions.Commands;
 
 
@@ -10,6 +12,8 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// </summary>
 public sealed class CommandHistoryEntryTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     CreateExecuting creates entry with Executing status.
     /// </summary>
@@ -19,7 +23,8 @@ public sealed class CommandHistoryEntryTests
         // Arrange
         string commandId = "cmd-123";
         string commandType = "TestCommand";
-        DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        FakeTimeProvider timeProvider = new(BaseTime);
+        DateTimeOffset startedAt = timeProvider.GetUtcNow();
 
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(commandId, commandType, startedAt);
@@ -36,12 +41,13 @@ public sealed class CommandHistoryEntryTests
     {
         // Arrange
         string commandId = "cmd-456";
+        FakeTimeProvider timeProvider = new(BaseTime);
 
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             commandId,
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         // Assert
         Assert.Equal(commandId, entry.CommandId);
@@ -55,9 +61,13 @@ public sealed class CommandHistoryEntryTests
     {
         // Arrange
         string commandType = "DepositCommand";
+        FakeTimeProvider timeProvider = new(BaseTime);
 
         // Act
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", commandType, DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
+            "cmd-123",
+            commandType,
+            timeProvider.GetUtcNow());
 
         // Assert
         Assert.Equal(commandType, entry.CommandType);
@@ -69,11 +79,13 @@ public sealed class CommandHistoryEntryTests
     [Fact]
     public void CreateExecutingSetsCompletedAtToNull()
     {
+        FakeTimeProvider timeProvider = new(BaseTime);
+
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         // Assert
         Assert.Null(entry.CompletedAt);
@@ -85,11 +97,13 @@ public sealed class CommandHistoryEntryTests
     [Fact]
     public void CreateExecutingSetsErrorCodeToNull()
     {
+        FakeTimeProvider timeProvider = new(BaseTime);
+
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         // Assert
         Assert.Null(entry.ErrorCode);
@@ -101,11 +115,13 @@ public sealed class CommandHistoryEntryTests
     [Fact]
     public void CreateExecutingSetsErrorMessageToNull()
     {
+        FakeTimeProvider timeProvider = new(BaseTime);
+
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         // Assert
         Assert.Null(entry.ErrorMessage);
@@ -118,7 +134,8 @@ public sealed class CommandHistoryEntryTests
     public void CreateExecutingSetsStartedAt()
     {
         // Arrange
-        DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        FakeTimeProvider timeProvider = new(BaseTime);
+        DateTimeOffset startedAt = timeProvider.GetUtcNow();
 
         // Act
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", startedAt);
@@ -134,13 +151,15 @@ public sealed class CommandHistoryEntryTests
     public void ToFailedAllowsNullErrorCode()
     {
         // Arrange
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, null, "Error");
+        CommandHistoryEntry failed = entry.ToFailed(timeProvider.GetUtcNow(), null, "Error");
 
         // Assert
         Assert.Null(failed.ErrorCode);
@@ -153,13 +172,15 @@ public sealed class CommandHistoryEntryTests
     public void ToFailedAllowsNullErrorMessage()
     {
         // Arrange
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, "ERR", null);
+        CommandHistoryEntry failed = entry.ToFailed(timeProvider.GetUtcNow(), "ERR", null);
 
         // Assert
         Assert.Null(failed.ErrorMessage);
@@ -173,13 +194,15 @@ public sealed class CommandHistoryEntryTests
     {
         // Arrange
         string commandId = "cmd-preserve";
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             commandId,
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, "ERR", "Error");
+        CommandHistoryEntry failed = entry.ToFailed(timeProvider.GetUtcNow(), "ERR", "Error");
 
         // Assert
         Assert.Equal(commandId, failed.CommandId);
@@ -192,11 +215,13 @@ public sealed class CommandHistoryEntryTests
     public void ToFailedReturnsEntryWithFailedStatus()
     {
         // Arrange
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
-        DateTimeOffset completedAt = DateTimeOffset.UtcNow.AddSeconds(5);
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
+        DateTimeOffset completedAt = timeProvider.GetUtcNow();
 
         // Act
         CommandHistoryEntry failed = entry.ToFailed(completedAt, "ERR001", "Error message");
@@ -212,11 +237,13 @@ public sealed class CommandHistoryEntryTests
     public void ToFailedSetsCompletedAt()
     {
         // Arrange
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
-        DateTimeOffset completedAt = new(2024, 1, 1, 12, 5, 0, TimeSpan.Zero);
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+        DateTimeOffset completedAt = timeProvider.GetUtcNow();
 
         // Act
         CommandHistoryEntry failed = entry.ToFailed(completedAt, "ERR001", "Error");
@@ -232,14 +259,16 @@ public sealed class CommandHistoryEntryTests
     public void ToFailedSetsErrorCode()
     {
         // Arrange
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
         string errorCode = "INSUFFICIENT_FUNDS";
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, errorCode, "Error");
+        CommandHistoryEntry failed = entry.ToFailed(timeProvider.GetUtcNow(), errorCode, "Error");
 
         // Assert
         Assert.Equal(errorCode, failed.ErrorCode);
@@ -252,14 +281,16 @@ public sealed class CommandHistoryEntryTests
     public void ToFailedSetsErrorMessage()
     {
         // Arrange
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
         string errorMessage = "Insufficient funds for withdrawal";
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry failed = entry.ToFailed(DateTimeOffset.UtcNow, "ERR001", errorMessage);
+        CommandHistoryEntry failed = entry.ToFailed(timeProvider.GetUtcNow(), "ERR001", errorMessage);
 
         // Assert
         Assert.Equal(errorMessage, failed.ErrorMessage);
@@ -273,13 +304,15 @@ public sealed class CommandHistoryEntryTests
     {
         // Arrange
         string commandId = "cmd-preserve";
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             commandId,
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
+        CommandHistoryEntry succeeded = entry.ToSucceeded(timeProvider.GetUtcNow());
 
         // Assert
         Assert.Equal(commandId, succeeded.CommandId);
@@ -293,10 +326,15 @@ public sealed class CommandHistoryEntryTests
     {
         // Arrange
         string commandType = "DepositCommand";
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", commandType, DateTimeOffset.UtcNow);
+        FakeTimeProvider timeProvider = new(BaseTime);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
+            "cmd-123",
+            commandType,
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
+        CommandHistoryEntry succeeded = entry.ToSucceeded(timeProvider.GetUtcNow());
 
         // Assert
         Assert.Equal(commandType, succeeded.CommandType);
@@ -309,11 +347,13 @@ public sealed class CommandHistoryEntryTests
     public void ToSucceededPreservesStartedAt()
     {
         // Arrange
-        DateTimeOffset startedAt = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        FakeTimeProvider timeProvider = new(BaseTime);
+        DateTimeOffset startedAt = timeProvider.GetUtcNow();
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", startedAt);
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
+        CommandHistoryEntry succeeded = entry.ToSucceeded(timeProvider.GetUtcNow());
 
         // Assert
         Assert.Equal(startedAt, succeeded.StartedAt);
@@ -326,13 +366,15 @@ public sealed class CommandHistoryEntryTests
     public void ToSucceededReturnsEntryWithSucceededStatus()
     {
         // Arrange
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromSeconds(5));
 
         // Act
-        CommandHistoryEntry succeeded = entry.ToSucceeded(DateTimeOffset.UtcNow);
+        CommandHistoryEntry succeeded = entry.ToSucceeded(timeProvider.GetUtcNow());
 
         // Assert
         Assert.Equal(CommandStatus.Succeeded, succeeded.Status);
@@ -345,11 +387,13 @@ public sealed class CommandHistoryEntryTests
     public void ToSucceededSetsCompletedAt()
     {
         // Arrange
+        FakeTimeProvider timeProvider = new(BaseTime);
         CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
             "cmd-123",
             "TestCommand",
-            DateTimeOffset.UtcNow);
-        DateTimeOffset completedAt = new(2024, 1, 1, 12, 5, 0, TimeSpan.Zero);
+            timeProvider.GetUtcNow());
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
+        DateTimeOffset completedAt = timeProvider.GetUtcNow();
 
         // Act
         CommandHistoryEntry succeeded = entry.ToSucceeded(completedAt);
