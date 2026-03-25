@@ -60,7 +60,7 @@ public sealed class BankAccountIntegrationTests
                 using HttpResponseMessage response = await client.GetAsync(projectionUri, timeoutToken);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    lastResult = await response.Content.ReadFromJsonAsync<BankAccountBalanceResponse>(cancellationToken: timeoutToken);
+                    lastResult = await response.Content.ReadFromJsonAsync<BankAccountBalanceResponse>(timeoutToken);
                     if (lastResult is not null && (lastResult.Balance == expectedBalance))
                     {
                         return lastResult;
@@ -70,7 +70,7 @@ public sealed class BankAccountIntegrationTests
                 await Task.Delay(PollingInterval, timeoutToken);
             }
         }
-            catch (OperationCanceledException) when (timeoutToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (timeoutToken.IsCancellationRequested)
         {
             return lastResult;
         }
@@ -100,7 +100,7 @@ public sealed class BankAccountIntegrationTests
                 using HttpResponseMessage response = await client.GetAsync(projectionUri, timeoutToken);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    lastResult = await response.Content.ReadFromJsonAsync<MoneyTransferStatusResponse>(cancellationToken: timeoutToken);
+                    lastResult = await response.Content.ReadFromJsonAsync<MoneyTransferStatusResponse>(timeoutToken);
                     if (lastResult is not null && predicate(lastResult))
                     {
                         return lastResult;
