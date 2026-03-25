@@ -642,11 +642,14 @@ Reviewer-facing audit output becomes stale on any of these events:
 
 Publication and recovery rules:
 
-1. The Product Owner MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait, by recording the canonical invalidation fact and ensuring the `Reviewer Audit Summary` is marked stale on the PR surface with the stale reason and the last known freshness stamp. The 300-second review-polling wait MUST NOT delay stale-marker publication.
-2. The Product Owner MUST maintain an active bounded stale-marker delegation for the current PR surface whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active so the PR Manager can apply the stale marker immediately at first observation without waiting for a new delegation round-trip.
-3. If HEAD SHA, the stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical output changes, the Product Owner MUST obtain a fresh `workflow-audit.md` compilation from cs Scribe using a new stable ledger snapshot before republishing reviewer-facing audit output.
-4. If only the required CI-result identity set changes for an unchanged HEAD SHA and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the `Reviewer Audit Summary` freshness stamp and merge-readiness evaluation without recompiling `workflow-audit.md`.
-5. The Product Owner MUST verify that the regenerated or reused `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and that the attached normalized required CI-result identity set is current, before republishing.
+1. The Product Owner MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait.
+2. The Product Owner MUST record the canonical invalidation fact when invalidating the `Reviewer Audit Summary`.
+3. The Product Owner MUST ensure the `Reviewer Audit Summary` is marked stale on the PR surface with the stale reason and the last known freshness stamp when freshness is invalidated.
+4. The 300-second review-polling wait MUST NOT delay stale-marker publication.
+5. The Product Owner MUST maintain an active bounded stale-marker delegation for the current PR surface whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active so the PR Manager can apply the stale marker immediately at first observation without waiting for a new delegation round-trip.
+6. If HEAD SHA, the stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical output changes, the Product Owner MUST obtain a fresh `workflow-audit.md` compilation from cs Scribe using a new stable ledger snapshot before republishing reviewer-facing audit output.
+7. If only the required CI-result identity set changes for an unchanged HEAD SHA and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the `Reviewer Audit Summary` freshness stamp and merge-readiness evaluation without recompiling `workflow-audit.md`.
+8. The Product Owner MUST verify that the regenerated or reused `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and that the attached normalized required CI-result identity set is current, before republishing.
 6. The Product Owner MUST republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication. The PR Manager MAY apply the PR-surface update only under bounded delegation whose `allowedActions` and `authorizedTargets` cover that specific mutation.
 7. Invalidation MUST be more granular than publication so the PR description does not churn on low-signal changes.
 
