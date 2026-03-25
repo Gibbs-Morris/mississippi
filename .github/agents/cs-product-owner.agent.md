@@ -422,7 +422,7 @@ Record each delegation and architectural milestone in `.thinking/<task>/activity
 
 You remain the canonical Phase 9 owner. cs PR Manager is a bounded specialist delegate only, and every reviewer-significant Phase 9 fact is recorded by you.
 
-1. Record a bounded delegation to **cs PR Manager** for each distinct PR-surface objective, including the expected artifact outputs in `.thinking/<task>/09-pr-merge/` and the closure condition.
+1. Record a bounded delegation to **cs PR Manager** for each distinct PR-surface objective that names the bounded task slice, expected artifact output or artifact bundle, completion signal, and closure condition.
 2. Invoke **cs Scribe** when Phase 9 audit compilation or recompilation is required by the workflow contract.
 3. Invoke **cs PR Manager** only for the delegated PR-surface execution and evidence-gathering slice. Do not delegate open-ended ownership.
 4. From the returned evidence, decide and append the resulting canonical Phase 9 facts yourself, including invalidation, reviewer-summary publication or republication, review-progress conclusions, blocked states, CI identity binding, merge-readiness evaluation, and run completion.
