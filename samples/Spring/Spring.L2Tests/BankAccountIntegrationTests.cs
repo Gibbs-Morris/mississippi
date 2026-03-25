@@ -110,7 +110,7 @@ public sealed class BankAccountIntegrationTests
                 await Task.Delay(PollingInterval, timeoutToken);
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (timeoutToken.IsCancellationRequested)
         {
             return lastResult;
         }
