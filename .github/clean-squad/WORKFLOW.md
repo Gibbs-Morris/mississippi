@@ -161,7 +161,7 @@ retired.
 - The PR Manager MUST NOT write canonical workflow facts and MAY execute only explicitly delegated, bounded Phase 9 specialist work.
 - The Scribe MUST NOT write canonical workflow facts.
 - Only one canonical writer may be active for the workflow run at a time.
-- Every active Phase 9 PR Manager execution slice MUST begin with explicit Product Owner delegation whose `workItemId` names the bounded task slice and whose `details` name the expected artifact output or artifact bundle, completion signal, closure condition, allowed mutation actions, and authorized targets.
+- Every active Phase 9 PR Manager execution slice MUST begin with explicit Product Owner delegation whose `workItemId` names the bounded task slice and whose `details` name the expected artifact output or artifact bundle, completion signal, closure condition, `details.allowedActions`, and `details.authorizedTargets`.
 - Stale-marker authority in Phase 9 MUST remain continuously delegated whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active; that bounded stale-marker delegation MUST stay active until the Product Owner canonically records that the summary is stale, republished fresh, or no longer present on the PR surface.
 - A Phase 9 delegation remains active only until the Product Owner records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that delegation and whose semantics satisfy its declared completion signal or closure condition.
 - Blocked Phase 9 startup, tool acquisition, or recovery MUST NOT transfer canonical ownership away from the Product Owner.
