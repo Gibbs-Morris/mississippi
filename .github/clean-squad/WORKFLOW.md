@@ -474,7 +474,7 @@ Relationship semantics:
 
 - `details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
-- `delegation-recorded`: `delegatedAgent`, `expectedOutput`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
+ - `delegation-recorded`: `delegatedAgent`, `expectedOutputPath`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
 - `deviation-recorded`: `deviationClass`, `rationalePath`
 - `blocked`: `blockerKind`, `blockedOn`
@@ -487,7 +487,7 @@ Relationship semantics:
 Delegation lifecycle rules:
 
 - For `delegation-recorded`, `workItemId` MUST name the bounded Phase 9 task slice.
-- `details.expectedOutput` MUST name the artifact output or artifact bundle the delegation authorizes.
+- `details.expectedOutputPath` MUST name the artifact output or artifact bundle the delegation authorizes.
 - `details.completionSignal` MUST name the canonical evidence or event pattern the Product Owner expects to treat the delegated slice as successfully handed back.
 - `details.closureCondition` MUST name the canonical condition that ends the delegation, including successful completion, block, cancellation, or supersession.
 - `details.allowedActions` MUST enumerate the exact mutation classes and Phase 9 operations authorized within that delegation, using stable values such as `stale-marker`, `reviewer-summary-publish`, `thread-reply`, `thread-resolve`, `pr-description-update`, `ci-evidence-read`, or `poll-review-comments`.
