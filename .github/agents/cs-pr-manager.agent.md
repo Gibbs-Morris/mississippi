@@ -88,7 +88,7 @@ Follow the template in `.github/PULL_REQUEST_TEMPLATE.md`:
 - **Quality Gates** — evidence of build/test/mutation
 - **Migration Notes** — breaking change guidance if applicable
 
-The PR description must also contain the `Reviewer Audit Summary` defined by `.github/clean-squad/WORKFLOW.md`, sourced from current policy-authoritative audit inputs only, with overflow detail left in `workflow-audit.md`.
+The PR description must also contain the `Reviewer Audit Summary` defined by `.github/clean-squad/WORKFLOW.md`, sourced from current policy-authoritative audit inputs only. Do not rely on `.thinking/` paths as reviewer-visible evidence; keep `.thinking/` references internal, inline any reviewer-needed detail directly in the PR body, and use reviewer-visible comments only when separately delegated or authorized.
 
 #### Audit Refresh Loop
 
@@ -179,8 +179,8 @@ Polling and CI waits are `system-wait` intervals; return explicit wait-boundary 
 - Publication mode: <stale marker only | refreshed summary using existing workflow-audit.md | regenerated summary using new workflow-audit.md>
 - Stale reason: <none | stale-head | stale-ci-identity | stale-reviewer-meaningful-change>
 - Freshness stamp: <current stamp, or last known stamp when publication mode is stale marker only>
-- Supporting audit: See `.thinking/<task>/workflow-audit.md`
-- Overflow handling: <none | detail moved to workflow-audit.md per the workflow contract>
+- Supporting audit: <internal trace artifact only; do not present `.thinking/` paths as reviewer-visible PR evidence>
+- Overflow handling: <none | reviewer-needed detail inlined in PR body | reviewer-visible follow-up comment only when separately delegated or authorized>
 
 ## Merge Readiness
 | Check | Status |
