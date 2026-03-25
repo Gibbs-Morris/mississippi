@@ -14,7 +14,7 @@ flowchart TD
     SharedState["Cross-cutting note:<br/>All agents share state through .thinking/&lt;task&gt;/.<br/>workflow-audit.json is the authoritative execution record.<br/>Activity-log and handover updates are mandatory secondary evidence."]
     AuditOwnership["Cross-cutting note:<br/>cs Product Owner writes canonical audit events for Phases 1-8.<br/>cs PR Manager writes canonical audit events for Phase 9.<br/>cs Scribe publishes derived audit output only."]
     AuditRules["Cross-cutting note:<br/>sequence is the only ordering authority.<br/>Canonical eventUtc timestamps are mandatory for timing and diagnostics only and never override sequence.<br/>Narrative logs, Mermaid, and PR prose are supporting or derived evidence only."]
-    AuditHandoff["Cross-cutting note:<br/>Only one canonical writer may be active for a workflow boundary at a time.<br/>The Product Owner to PR Manager handoff is explicit before Phase 9 writes.<br/>After handoff, canonical ownership stays with cs PR Manager even if startup is blocked before the first Phase 9 append.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch."]
+    AuditHandoff["Cross-cutting note:<br/>Only one canonical writer may be active for a workflow boundary at a time.<br/>The Product Owner to PR Manager handoff is explicit before Phase 9 writes.<br/>After handoff, canonical ownership stays with cs PR Manager even if startup is blocked before the first Phase 9 append.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch.<br/>The first canonical append uses sequence 1 with expected prior sequence 0."]
     AuditEventContract["Cross-cutting note:<br/>Every canonical event uses the v3 semantic envelope: sequence, eventUtc, logicalEventId, actor, phase, eventType,<br/>workItemId and rootWorkItemId when meaningful, spanId, causedBy, closes, outcome, summary, reasonCode,<br/>artifacts as evidence bindings, artifactTransitions for lifecycle meaning, iterationId, and provenance."]
     StateSupportContract["Cross-cutting note:<br/>state.json is runtime support only and mirrors the workflow state contract exactly.<br/>It includes workflowContractFingerprint, currentSequence, currentOwner, openWait, and lastCompiledAtUtc.<br/>It never repairs canonical facts from workflow-audit.json."]
     TrustModel["Cross-cutting note:<br/>Reviewer-facing audit output is policy-authoritative and freshness-verifiable within this repo,<br/>but not tamper-resistant or authenticated.<br/>Evidence-bearing artifacts require content digests or immutable external identities before publication."]
@@ -225,6 +225,8 @@ This section explicitly mirrors the v3 canonical event contract from [WORKFLOW.m
 - Reviewer-significant meaning MUST be explicit in structured fields. Cause, closure, outcome, artifact lineage, and provenance MUST NOT be reconstructed from chronology, prose, secondary logs, or path changes alone.
 - Every meaningful event carries `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, `outcome`, `artifactTransitions`, and `provenance` whenever the writer-obligation matrix requires them.
 - `artifacts` remains evidence binding only. Artifact lifecycle meaning lives in `artifactTransitions`.
+- `details` is always serialized in canonical order and MUST use `{}` when no event-type-specific members apply.
+- The first canonical append uses `sequence = 1` and expected prior `sequence = 0`.
 - Canonical event serialization keeps the full top-level property set in the declared order; absent conditional scalars or objects use `null`, absent conditional arrays use `[]`, and empty `details` uses `{}`.
 
 Canonical top-level shape mirror:
@@ -295,6 +297,8 @@ This section explicitly mirrors the semantic-family obligations from [WORKFLOW.m
 This section explicitly mirrors the trust and freshness contract from [WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow differ, [WORKFLOW.md](WORKFLOW.md) governs.
 
 Freshness and merge readiness MUST bind to the current HEAD SHA and the required CI-result identity set for that SHA.
+
+The required CI-result identity set comparison is structural: normalize ordering and deduplicate exact duplicates, then compare the parsed JSON structure rather than relying on raw byte-for-byte object serialization.
 
 Reviewer-facing audit output becomes stale on any of these events:
 

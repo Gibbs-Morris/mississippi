@@ -167,6 +167,7 @@ retired.
 - The Product Owner may re-invoke or escalate a blocked Phase 9 startup, but MUST NOT resume Phase 9 canonical writes after the explicit handoff.
 - Every canonical append MUST declare the expected prior `sequence`.
 - A canonical writer MUST fail closed if the ledger tail does not match the declared expected prior `sequence`.
+- The first canonical append MUST write `sequence = 1` and declare expected prior `sequence = 0`.
 - Recovery MUST rebuild operational state from `workflow-audit.json`, never the reverse.
 
 #### Canonical Event Contract
@@ -189,6 +190,7 @@ Every canonical event MUST include:
 10. `artifactTransitions` when artifact lifecycle meaning is asserted
 11. `iterationId` for loops, retries, or repeated review cycles when applicable
 12. `provenance` for every meaningful event defined by this contract
+13. `details` using `{}` when no event-type-specific members apply
 
 Meaningful events MUST additionally carry `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, and `outcome` whenever the writer-obligation matrix below marks them as required.
 
@@ -275,7 +277,7 @@ In the `Required` column, `conditional` means the property is always serialized 
 | `artifactTransitions` | conditional | Structured business-artifact state changes | Separate from evidence bindings |
 | `iterationId` | conditional | Loop or retry grouping identifier | Supports repeated review cycles or attempts |
 | `provenance` | conditional | Source and evidence binding for the claim | Required for every meaningful event defined by this contract |
-| `details` | conditional | Event-specific payload | MUST NOT restate shared semantics inconsistently |
+| `details` | yes | Event-specific payload | MUST always be serialized; use `{}` when no event-type-specific members apply, and MUST NOT restate shared semantics inconsistently |
 
 `eventUtc` rules:
 
@@ -437,7 +439,7 @@ Relationship semantics:
 }
 ```
 
-`details` MAY contain only event-type-specific keys defined by this contract:
+`details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. When no event-type-specific keys apply, `details` MUST be `{}`:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutput`
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
@@ -507,7 +509,7 @@ Normalization rules:
 - Include only checks required for merge readiness for the current HEAD SHA.
 - Sort `checks` by `provider`, then `workflow`, then `job`, then `runId`, then `attempt`.
 - Remove exact duplicates before comparison.
-- Compare the normalized ordered JSON value byte-for-byte when validating freshness or provenance.
+- Compare the normalized structure as parsed JSON when validating freshness or provenance; do not rely on raw byte-for-byte equality for object property order or whitespace.
 
 #### State and Runtime Support Contract
 
