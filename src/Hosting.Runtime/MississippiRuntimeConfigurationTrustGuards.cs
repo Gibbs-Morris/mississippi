@@ -365,10 +365,18 @@ internal static class MississippiRuntimeConfigurationTrustGuards
         MississippiRuntimeEndpointHostClass hostClass = ClassifyHost(endpointUri.Host);
         if (hostClass != MississippiRuntimeEndpointHostClass.External)
         {
-            if (!policy.AllowLocalEndpoints && !IsHostAllowed(endpointUri.Host, policy.AllowedExternalHosts))
+            bool isAllowlistedLocalHost = IsHostAllowed(endpointUri.Host, policy.AllowedExternalHosts);
+            if (!policy.AllowLocalEndpoints && !isAllowlistedLocalHost)
             {
                 throw new InvalidOperationException(
                     $"Mississippi runtime [config-trust] rejects source '{sourceKey}': a loopback, private, or local endpoint classification is only allowed in Development unless the host is explicitly allowlisted. Configure a trusted external endpoint, explicitly allow local endpoints for this environment, or allowlist the host in Mississippi:Runtime:Trust:AllowedExternalHosts.");
+            }
+
+            if (isAllowlistedLocalHost &&
+                !policy.AllowedExternalSchemes.Contains(endpointUri.Scheme, StringComparer.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    $"Mississippi runtime [config-trust] rejects source '{sourceKey}': scheme '{endpointUri.Scheme}' is not allowed for allowlisted internal endpoints. Configure a trusted scheme or explicitly approve it in Mississippi:Runtime:Trust:AllowedExternalSchemes.");
             }
 
             return;

@@ -175,10 +175,11 @@ public sealed class MississippiRuntimeBuilderTests
     }
 
     /// <summary>
-    ///     AddMississippiRuntime should allow explicitly allowlisted internal infrastructure endpoints outside Development.
+    ///     AddMississippiRuntime should allow explicitly allowlisted internal infrastructure endpoints over HTTPS outside
+    ///     Development.
     /// </summary>
     [Fact]
-    public void AddMississippiRuntimeAllowsAllowlistedInternalInfrastructureEndpointOutsideDevelopment()
+    public void AddMississippiRuntimeAllowsAllowlistedInternalInfrastructureEndpointOverHttpsOutsideDevelopment()
     {
         WebApplicationBuilder builder = CreateBuilder(Environments.Production);
         builder.Configuration["Mississippi:Runtime:Trust:AllowedExternalHosts:0"] = "10.0.0.15";
@@ -186,6 +187,25 @@ public sealed class MississippiRuntimeBuilderTests
             $"AccountEndpoint=https://10.0.0.15/;AccountKey={SecretValue};";
         MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
         Assert.NotNull(runtimeBuilder);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should reject allowlisted internal infrastructure endpoints over HTTP outside
+    ///     Development.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeRejectsAllowlistedInternalInfrastructureEndpointOverHttpOutsideDevelopment()
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.Configuration["Mississippi:Runtime:Trust:AllowedExternalHosts:0"] = "10.0.0.15";
+        builder.Configuration["ConnectionStrings:cosmos"] =
+            $"AccountEndpoint=http://10.0.0.15/;AccountKey={SecretValue};";
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
+        Assert.Contains("[config-trust]", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("scheme 'http'", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("10.0.0.15", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>
