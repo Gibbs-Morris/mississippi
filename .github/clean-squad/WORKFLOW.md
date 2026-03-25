@@ -169,6 +169,37 @@ If any artifact bound to an approved gate changes materially, that approval
 becomes stale and **MUST** be replaced with a fresh explicit decision before the
 workflow advances.
 
+### Canonical Gate Recording
+
+Every G0-G3 human gate decision **MUST** be recorded canonically in
+`workflow-audit.json` using the existing event contract:
+
+- The responsible human reply **MUST** first be captured by a `wait-ended`
+  event whose `details.waitKind` is `human` and whose provenance is
+  `human-input`.
+- The gate decision itself **MUST** then be recorded as a bounded `completed`
+  event caused by that human-input `wait-ended` event.
+- The gate-decision `completed` event **MUST** use a bounded `workItemId` and
+  `rootWorkItemId` of `gate.g0-review`, `gate.g1-review`, `gate.g2-review`, or
+  `gate.g3-review` as applicable.
+- The gate-decision `completed` event **MUST** include `details.gateId` and
+  `details.decision`, where `gateId` is one of `G0`, `G1`, `G2`, or `G3` and
+  `decision` is one of `APPROVED`, `CHANGES_REQUESTED`, `DEFERRED`, or
+  `CANCELLED`.
+- The gate-decision `completed` event **MUST** bind the exact reviewed artifact
+  package in `artifacts`, using `digestSha256` for local files or
+  `immutableId` plus `uri` for immutable external resources.
+- Gate decisions **MUST** map to canonical `outcome` values as follows:
+  - `APPROVED` -> `succeeded`
+  - `CHANGES_REQUESTED` -> `failed`
+  - `DEFERRED` -> `cancelled`
+  - `CANCELLED` -> `cancelled`
+- When a gate decision records `CHANGES_REQUESTED`, `DEFERRED`, or
+  `CANCELLED`, the Product Owner **MUST** record any resulting deviation,
+  stop, or resume semantics with the later canonical event that actually
+  changes workflow execution state rather than overloading the gate-decision
+  event itself.
+
 ## Shared State: The `.thinking` Folder
 
 All governed Clean Squad agents share state through a filesystem folder once
@@ -480,7 +511,7 @@ Allowed `eventType` values:
 Event-type usage rules:
 
 - `phase-completed` MUST be used only to close one of the nine top-level workflow phases and MUST correspond to a span opened by `phase-started`.
-- `completed` MUST be used only for terminal bounded work items that are not whole phases and not the overall workflow run, such as delegated review passes, remediation slices, validation attempts, commit creation, or PR-slice completion.
+- `completed` MUST be used only for terminal bounded work items that are not whole phases and not the overall workflow run, such as gate decisions, delegated review passes, remediation slices, validation attempts, commit creation, or PR-slice completion.
 - `run-completed` MUST be reserved for the final terminal event that records the disposition of the overall Clean Squad run and MUST NOT be used for individual phases or subordinate work items.
 
 Outcome vocabulary:
@@ -600,6 +631,7 @@ Relationship semantics:
 `details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutputPath`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
+- `completed`: `gateId`, `decision` when the completed event records a human gate decision
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
 - `deviation-recorded`: `deviationClass`, `rationalePath`
 - `blocked`: `blockerKind`, `blockedOn`
