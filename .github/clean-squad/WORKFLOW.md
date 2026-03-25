@@ -41,8 +41,10 @@ chain-of-verification to every task.
 ## Entry Points
 
 `@cs Entrepreneur` is an optional public-facing pre-governed intake path for
-rough ideas that need shaping before governed work begins. It produces one
-Story Pack candidate and **MUST NOT** create governed workflow state.
+rough ideas that need shaping before governed work begins. It normally
+produces one Story Pack candidate and MAY instead return an explicit stop
+outcome (`CHANGES_REQUESTED`, `DEFERRED`, or `CANCELLED`) before G0. In all
+cases it **MUST NOT** create governed workflow state or advance governed work.
 
 `@cs Product Owner` is the direct governed intake path and the sole governed
 orchestrator. The Product Owner accepts either direct free-form intake or an
@@ -70,9 +72,9 @@ leave Clean Squad orchestration for that task.
 
 ### Story Pack Contract
 
-When **cs Entrepreneur** is used, it produces exactly one Story Pack candidate
-for G0 human approval before Product Owner intake. The Story Pack candidate
-**MUST** include:
+When **cs Entrepreneur** is used and the idea is ready, it produces exactly one
+Story Pack candidate for G0 human approval before Product Owner intake. The
+Story Pack candidate **MUST** include:
 
 - `storyPackId`
 - idea title
@@ -87,6 +89,17 @@ for G0 human approval before Product Owner intake. The Story Pack candidate
 - INVEST assessment
 - agile story statement
 
+When **cs Entrepreneur** determines that the idea is not ready for governed
+intake, it MAY instead return one explicit stop outcome using the same closed
+decision vocabulary as the human advancement gates except `APPROVED`:
+
+- `CHANGES_REQUESTED`
+- `DEFERRED`
+- `CANCELLED`
+
+Only a Story Pack candidate proceeds to G0. A stop outcome ends or pauses the
+pre-governed intake path without creating governed workflow state.
+
 ### Human Advancement Gates
 
 Generated artifacts are proposed working drafts until the responsible human
@@ -96,7 +109,8 @@ Only `APPROVED` authorizes progression.
 
 #### G0 Intake Gate
 
-Applies only when **cs Entrepreneur** is used.
+Applies only when **cs Entrepreneur** is used and returns a Story Pack
+candidate.
 
 Bound artifact package:
 
