@@ -54,7 +54,7 @@ The PR Manager is a bounded Phase 9 specialist executor and evidence producer. C
 At Phase 9 entry or resume after a failed startup boundary:
 
 1. Verify that the explicit Product Owner delegation basis for the requested Phase 9 slice is already recorded in `workflow-audit.json`, treat the current Product Owner prompt as corroborating context only, and treat `state.json.audit.currentOwner` as corroborating support data only.
-2. Verify that the delegation's `allowedActions` and `authorizedTargets` cover the exact Phase 9 operation and resource about to be touched; existence of a delegation alone is insufficient authority.
+2. Verify that the delegation's `details.allowedActions` and `details.authorizedTargets` cover the exact Phase 9 operation and resource about to be touched; existence of a delegation alone is insufficient authority.
 3. Report whether the delegated slice is starting normally, resuming after blocked startup, or currently blocked, with enough evidence for Product Owner canonical recording.
 4. If tool, PR-context, or GitHub-access failure prevents specialist execution from starting, report the blocker through the task trail and have the Product Owner re-delegate or escalate without transferring canonical ownership.
 
