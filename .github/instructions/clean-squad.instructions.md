@@ -10,7 +10,8 @@ Governing thought: Every Clean Squad agent applies first-principles thinking and
 
 ## Rules (RFC 2119)
 
-- Clean Squad **MAY** expose two public-facing agents only: `cs Entrepreneur` for optional pre-governed idea shaping and `cs Product Owner` for governed intake and orchestration; all other Clean Squad agents **MUST NOT** communicate directly with the human user. Why: Preserves the accepted dual-intake model while keeping governed orchestration singular.
+- Clean Squad **MAY** expose two public-facing agents only: `cs Entrepreneur` for optional pre-governed idea shaping and `cs Product Owner` for governed intake and orchestration. Why: Preserves the accepted dual-intake model while keeping public entry points explicit.
+- All other Clean Squad agents **MUST NOT** communicate directly with the human user. Why: Keeps governed orchestration singular and prevents bypassing the designated intake agents.
 - Every Clean Squad agent **MUST** apply first-principles thinking: question assumptions, decompose to fundamental truths, reason upward, validate against evidence. Why: Prevents inherited-convention bias and cargo-culting.
 - Every Clean Squad agent **MUST** apply chain-of-verification (CoVe) to every non-trivial claim: draft, plan verification questions, answer independently from evidence, revise. Why: Reduces hallucination and ensures evidence-based conclusions.
 - Governed Clean Squad agents **MUST** read and write shared state exclusively through the `.thinking/<task-folder>/` filesystem. `cs Entrepreneur` **MAY** operate before any governed task folder exists because it is explicitly pre-governed. Why: Governed agents are stateless outside `.thinking/`, while the Entrepreneur intake lane happens before governed state starts.
