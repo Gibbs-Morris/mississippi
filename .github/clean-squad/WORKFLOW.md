@@ -189,15 +189,15 @@ Every G1-G3 human gate decision **MUST** be recorded canonically in
 - The gate decision itself **MUST** then be recorded as a bounded `completed`
   event caused by that human-input `wait-ended` event.
 - The gate-decision `completed` event **MUST** use a bounded `workItemId` and
-  `rootWorkItemId` of `gate.g0-review`, `gate.g1-review`, `gate.g2-review`, or
-  `gate.g3-review` as applicable.
+  `rootWorkItemId` of `gate.g1-review`, `gate.g2-review`, or `gate.g3-review`
+  as applicable.
 - The gate-decision `completed` event **MUST** include `details.gateId` and
   `details.decision`, and **MUST** also include `details.gateName` and
   `details.decidedBy`. `details.notes` MAY be included when the responsible
-  human supplies rationale. `gateId` is one of `G0`, `G1`, `G2`, or `G3`;
-  `decision` is one of `APPROVED`, `CHANGES_REQUESTED`, `DEFERRED`, or
-  `CANCELLED`; `gateName` is the human-readable gate label; and `decidedBy`
-  identifies the responsible human decider.
+  human supplies rationale. `gateId` is one of `G1`, `G2`, or `G3`; `decision`
+  is one of `APPROVED`, `CHANGES_REQUESTED`, `DEFERRED`, or `CANCELLED`;
+  `gateName` is the human-readable gate label; and `decidedBy` identifies the
+  responsible human decider.
 - The gate-decision `completed` event **MUST** bind the exact reviewed artifact
   package in `artifacts`, using at least one artifact with role
   `gate-package` plus `digestSha256` for local files or `immutableId` plus
