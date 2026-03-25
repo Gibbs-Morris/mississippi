@@ -8,16 +8,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Mississippi.Aqueduct.Gateway;
-using Mississippi.Brooks.Serialization.Json;
-using Mississippi.DomainModeling.Runtime;
+using Mississippi.Hosting.Gateway;
 using Mississippi.Inlet.Gateway;
-using Mississippi.Inlet.Runtime;
 
 using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
 using MississippiSamples.Spring.Gateway;
-using MississippiSamples.Spring.Gateway.Controllers.Aggregates.Mappers;
-using MississippiSamples.Spring.Gateway.Controllers.Projections.Mappers;
+using MississippiSamples.Spring.Gateway.Controllers.Mappers;
 using MississippiSamples.Spring.Gateway.McpTools;
 
 using OpenTelemetry;
@@ -67,9 +63,6 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 // Configure Orleans client - Aspire injects clustering config via environment variables
 builder.UseOrleansClient(clientBuilder => { clientBuilder.AddActivityPropagation(); });
 
-// Add controllers for aggregate API endpoints
-builder.Services.AddControllers();
-
 // Add OpenAPI documentation
 builder.Services.AddOpenApi(options =>
 {
@@ -85,51 +78,32 @@ builder.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
-
-// Add JSON serialization provider (required by aggregate infrastructure)
-builder.Services.AddJsonSerialization();
-
-// Add aggregate infrastructure support (IAggregateGrainFactory, IBrookEventConverter, etc.)
-builder.Services.AddAggregateSupport();
-
-// Add UX projection infrastructure support (IUxProjectionGrainFactory)
-builder.Services.AddUxProjections();
-
-// Add Aqueduct backplane for InletHub (registers IServerIdProvider and other dependencies)
-builder.Services.AddSignalR();
-builder.Services.AddAqueduct<InletHub>(options =>
+builder.AddMississippiGateway(gateway =>
 {
-    // Use the same stream provider configured by Aspire's WithMemoryStreaming
-    options.StreamProviderName = "StreamProvider";
-});
-
-// Add Inlet Gateway services for real-time projection updates
-if (springAuthOptions.Enabled)
-{
-    builder.Services.AddInletServer(options =>
+    gateway.AddJsonSerialization();
+    gateway.AddAqueduct<InletHub>(options =>
     {
-        options.GeneratedApiAuthorization.Mode =
-            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
-        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
-        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+        // Use the same stream provider configured by Aspire's WithMemoryStreaming
+        options.StreamProviderName = "StreamProvider";
     });
-}
-else
-{
-    builder.Services.AddInletServer();
-}
+    if (springAuthOptions.Enabled)
+    {
+        gateway.AddInletGateway(options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+        });
+    }
+    else
+    {
+        gateway.AddInletGateway();
+    }
 
-builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-
-// Add generated domain mapper registrations
-builder.Services.AddAuthProofAggregateMappers();
-builder.Services.AddBankAccountAggregateMappers();
-builder.Services.AddMoneyTransferSagaAggregateMappers();
-builder.Services.AddAuthProofProjectionMappers();
-builder.Services.AddBankAccountBalanceProjectionMappers();
-builder.Services.AddBankAccountLedgerProjectionMappers();
-builder.Services.AddFlaggedTransactionsProjectionMappers();
-builder.Services.AddMoneyTransferStatusProjectionMappers();
+    gateway.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+    gateway.AddMississippiSamplesSpringDomainGateway();
+});
 
 // Add MCP (Model Context Protocol) server with HTTP transport
 // Exposes banking domain operations as tools for AI agents via source-generated tool classes.

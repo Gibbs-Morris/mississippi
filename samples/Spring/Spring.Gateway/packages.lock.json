@@ -545,6 +545,16 @@
           "Mississippi.Reservoir.Client": "[1.0.0, )"
         }
       },
+      "Mississippi.Hosting.Gateway": {
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Aqueduct.Gateway": "[1.0.0, )",
+          "Mississippi.Brooks.Serialization.Json": "[1.0.0, )",
+          "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
+          "Mississippi.Inlet.Gateway": "[1.0.0, )",
+          "Mississippi.Inlet.Runtime": "[1.0.0, )"
+        }
+      },
       "Mississippi.Inlet.Abstractions": {
         "type": "Project"
       },
@@ -632,12 +642,9 @@
       "Mississippi.Sdk.Gateway": {
         "type": "Project",
         "dependencies": {
-          "Mississippi.Brooks.Serialization.Json": "[1.0.0, )",
           "Mississippi.DomainModeling.Gateway": "[1.0.0, )",
-          "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
-          "Mississippi.Inlet.Gateway": "[1.0.0, )",
-          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )",
-          "Mississippi.Tributary.Runtime": "[1.0.0, )"
+          "Mississippi.Hosting.Gateway": "[1.0.0, )",
+          "Mississippi.Inlet.Generators.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Spring.Client": {

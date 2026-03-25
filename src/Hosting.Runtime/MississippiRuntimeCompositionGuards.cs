@@ -12,6 +12,8 @@ namespace Mississippi.Hosting.Runtime;
 /// </summary>
 internal static class MississippiRuntimeCompositionGuards
 {
+    private const string GatewayHostModeMarkerFullName = "Mississippi.Hosting.Gateway.MississippiGatewayHostModeMarker";
+
     private static readonly string[] FrozenOwnershipAssemblyPrefixes =
     [
         "Orleans.Persistence",
@@ -34,29 +36,6 @@ internal static class MississippiRuntimeCompositionGuards
     ];
 
     /// <summary>
-    ///     Throws when unsupported same-host or competing Orleans ownership markers are present.
-    /// </summary>
-    /// <param name="services">The service collection to inspect.</param>
-    internal static void ThrowIfUnsupportedCompositionExists(
-        IServiceCollection services
-    )
-    {
-        ArgumentNullException.ThrowIfNull(services);
-
-        if (services.Any(descriptor => descriptor.ServiceType == typeof(MississippiGatewayHostModeMarker)))
-        {
-            throw new InvalidOperationException(
-                "Mississippi runtime and gateway composition cannot share the same host in this rollout. Remove the gateway host composition from this process and keep the runtime host on the supported runtime-only path.");
-        }
-
-        if (services.Any(descriptor => descriptor.ServiceType == typeof(MississippiCompetingOrleansOwnershipMarker)))
-        {
-            throw new InvalidOperationException(
-                "Mississippi runtime owns the top-level Orleans silo attachment after AddMississippiRuntime(...). Remove the competing Orleans host attachment and compose supported silo changes through MississippiRuntimeBuilder.Orleans(...).");
-        }
-    }
-
-    /// <summary>
     ///     Captures the current frozen Orleans ownership descriptor graph for later comparison.
     /// </summary>
     /// <param name="services">The silo service collection to inspect.</param>
@@ -66,9 +45,7 @@ internal static class MississippiRuntimeCompositionGuards
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-
-        return services
-            .Where(IsFrozenOwnershipDescriptor)
+        return services.Where(IsFrozenOwnershipDescriptor)
             .GroupBy(CreateDescriptorSignature, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
     }
@@ -85,7 +62,6 @@ internal static class MississippiRuntimeCompositionGuards
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(frozenOwnership);
-
         Dictionary<string, int> currentOwnership = CaptureFrozenOrleansOwnership(services)
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
         if (HaveEquivalentDescriptorCounts(frozenOwnership, currentOwnership))
@@ -98,25 +74,39 @@ internal static class MississippiRuntimeCompositionGuards
             $"Mississippi runtime freezes Orleans {categories} ownership after AddMississippiRuntime(...). Remove the conflicting ownership change from MississippiRuntimeBuilder.Orleans(...) and keep only additive silo tuning that preserves the Mississippi-managed runtime attachment.");
     }
 
-    private static bool HaveEquivalentDescriptorCounts(
-        IReadOnlyDictionary<string, int> expected,
-        Dictionary<string, int> actual
+    /// <summary>
+    ///     Throws when unsupported same-host or competing Orleans ownership markers are present.
+    /// </summary>
+    /// <param name="services">The service collection to inspect.</param>
+    internal static void ThrowIfUnsupportedCompositionExists(
+        IServiceCollection services
     )
     {
-        if (expected.Count != actual.Count)
+        ArgumentNullException.ThrowIfNull(services);
+        if (services.Any(IsGatewayHostModeMarker))
         {
-            return false;
+            throw new InvalidOperationException(
+                "Mississippi runtime and gateway composition cannot share the same host in this rollout. Remove the gateway host composition from this process and keep the runtime host on the supported runtime-only path.");
         }
 
-        foreach ((string key, int value) in expected)
+        if (services.Any(descriptor => descriptor.ServiceType == typeof(MississippiCompetingOrleansOwnershipMarker)))
         {
-            if (!actual.TryGetValue(key, out int currentValue) || currentValue != value)
-            {
-                return false;
-            }
+            throw new InvalidOperationException(
+                "Mississippi runtime owns the top-level Orleans silo attachment after AddMississippiRuntime(...). Remove the competing Orleans host attachment and compose supported silo changes through MississippiRuntimeBuilder.Orleans(...).");
         }
+    }
 
-        return true;
+    private static string CreateDescriptorSignature(
+        ServiceDescriptor descriptor
+    )
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        string serviceType = descriptor.ServiceType.AssemblyQualifiedName ??
+                             descriptor.ServiceType.FullName ?? descriptor.ServiceType.Name;
+        string implementation = descriptor.ImplementationType?.AssemblyQualifiedName ??
+                                descriptor.ImplementationInstance?.GetType().AssemblyQualifiedName ??
+                                descriptor.ImplementationFactory?.Method.ToString() ?? "null";
+        return string.Concat(serviceType, "|", descriptor.Lifetime, "|", implementation);
     }
 
     private static string DescribeFrozenOwnershipCategories(
@@ -125,7 +115,6 @@ internal static class MississippiRuntimeCompositionGuards
     )
     {
         HashSet<string> categories = [];
-
         foreach (string signature in expected.Keys.Concat(actual.Keys).Distinct(StringComparer.Ordinal))
         {
             expected.TryGetValue(signature, out int expectedCount);
@@ -170,27 +159,33 @@ internal static class MississippiRuntimeCompositionGuards
             0 => "provider, storage, clustering, and endpoint",
             1 => categories.Single(),
             2 => string.Join(" and ", categories.OrderBy(category => category, StringComparer.Ordinal)),
-            _ => string.Join(
-                ", ",
-                categories.OrderBy(category => category, StringComparer.Ordinal).Take(categories.Count - 1)) +
-                 ", and " +
-                 categories.OrderBy(category => category, StringComparer.Ordinal).Last(),
+            var _ => string.Join(
+                         ", ",
+                         categories.OrderBy(category => category, StringComparer.Ordinal).Take(categories.Count - 1)) +
+                     ", and " +
+                     categories.OrderBy(category => category, StringComparer.Ordinal).Last(),
         };
     }
 
-    private static string CreateDescriptorSignature(
-        ServiceDescriptor descriptor
+    private static bool HaveEquivalentDescriptorCounts(
+        IReadOnlyDictionary<string, int> expected,
+        Dictionary<string, int> actual
     )
     {
-        ArgumentNullException.ThrowIfNull(descriptor);
+        if (expected.Count != actual.Count)
+        {
+            return false;
+        }
 
-        string serviceType = descriptor.ServiceType.AssemblyQualifiedName ?? descriptor.ServiceType.FullName ?? descriptor.ServiceType.Name;
-        string implementation = descriptor.ImplementationType?.AssemblyQualifiedName
-                                ?? descriptor.ImplementationInstance?.GetType().AssemblyQualifiedName
-                                ?? descriptor.ImplementationFactory?.Method.ToString()
-                                ?? "null";
+        foreach ((string key, int value) in expected)
+        {
+            if (!actual.TryGetValue(key, out int currentValue) || (currentValue != value))
+            {
+                return false;
+            }
+        }
 
-        return string.Concat(serviceType, "|", descriptor.Lifetime, "|", implementation);
+        return true;
     }
 
     private static bool IsFrozenOwnershipDescriptor(
@@ -198,9 +193,17 @@ internal static class MississippiRuntimeCompositionGuards
     )
     {
         ArgumentNullException.ThrowIfNull(descriptor);
-
         string signature = CreateDescriptorSignature(descriptor);
         return FrozenOwnershipMarkers.Any(marker => signature.Contains(marker, StringComparison.Ordinal)) ||
                FrozenOwnershipAssemblyPrefixes.Any(prefix => signature.Contains(prefix, StringComparison.Ordinal));
+    }
+
+    private static bool IsGatewayHostModeMarker(
+        ServiceDescriptor descriptor
+    )
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        return (descriptor.ServiceType == typeof(MississippiGatewayHostModeMarker)) ||
+               string.Equals(descriptor.ServiceType.FullName, GatewayHostModeMarkerFullName, StringComparison.Ordinal);
     }
 }

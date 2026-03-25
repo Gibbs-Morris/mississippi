@@ -225,24 +225,10 @@
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )"
         }
       },
-      "Mississippi.Common.Abstractions": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.Orleans.Sdk": "[10.0.1, )"
-        }
-      },
       "Mississippi.DomainModeling.Abstractions": {
         "type": "Project",
         "dependencies": {
           "Mississippi.Brooks.Abstractions": "[1.0.0, )",
-          "Mississippi.Inlet.Abstractions": "[1.0.0, )"
-        }
-      },
-      "Mississippi.DomainModeling.Gateway": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Common.Abstractions": "[1.0.0, )",
-          "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )"
         }
       },
@@ -255,16 +241,6 @@
           "Mississippi.DomainModeling.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime": "[1.0.0, )"
-        }
-      },
-      "Mississippi.Hosting.Gateway": {
-        "type": "Project",
-        "dependencies": {
-          "Mississippi.Aqueduct.Gateway": "[1.0.0, )",
-          "Mississippi.Brooks.Serialization.Json": "[1.0.0, )",
-          "Mississippi.DomainModeling.Runtime": "[1.0.0, )",
-          "Mississippi.Inlet.Gateway": "[1.0.0, )",
-          "Mississippi.Inlet.Runtime": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Abstractions": {

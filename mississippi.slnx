@@ -51,6 +51,7 @@
     <Project Path="src\Reservoir.TestHarness\Reservoir.TestHarness.csproj" />
   </Folder>
   <Folder Name="/Framework/Hosting/">
+    <Project Path="src\Hosting.Gateway\Hosting.Gateway.csproj" />
     <Project Path="src\Hosting.Runtime\Hosting.Runtime.csproj" />
   </Folder>
   <Folder Name="/Framework/Inlet/">
@@ -92,6 +93,7 @@
     <Project Path="tests\Aqueduct.Gateway.L2Tests.AppHost\Aqueduct.Gateway.L2Tests.AppHost.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/">
+    <Project Path="tests\Hosting.Gateway.L0Tests\Hosting.Gateway.L0Tests.csproj" />
     <Project Path="tests\Hosting.Runtime.L0Tests\Hosting.Runtime.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Aggregates/">
