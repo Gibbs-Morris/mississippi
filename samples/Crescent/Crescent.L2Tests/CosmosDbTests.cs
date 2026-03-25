@@ -11,6 +11,8 @@ namespace MississippiSamples.Crescent.L2Tests;
 public sealed class CosmosDbTests : IAsyncDisposable
 #pragma warning restore CA1515
 {
+    private static readonly DateTime CreatedAtUtc = new(2026, 03, 25, 00, 00, 00, DateTimeKind.Utc);
+
     private readonly CosmosClient cosmosClient;
 
     /// <summary>
@@ -147,7 +149,7 @@ public sealed class CosmosDbTests : IAsyncDisposable
                 Id = $"{uniquePrefix}-{i}",
                 Name = $"Query Test {uniquePrefix}",
                 Value = i * 10,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CreatedAtUtc,
             };
             await container.CreateItemAsync(doc, new PartitionKey(doc.Id));
         }
@@ -181,7 +183,7 @@ public sealed class CosmosDbTests : IAsyncDisposable
             Id = testId,
             Name = "Read Test Document",
             Value = 123,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = CreatedAtUtc,
         };
         Container container = await GetOrCreateContainerAsync();
 
@@ -233,7 +235,7 @@ public sealed class CosmosDbTests : IAsyncDisposable
             Id = testId,
             Name = "Test Document",
             Value = 42,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = CreatedAtUtc,
         };
         Container container = await GetOrCreateContainerAsync();
 

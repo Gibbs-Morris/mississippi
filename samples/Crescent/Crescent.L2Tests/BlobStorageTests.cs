@@ -13,6 +13,7 @@ public sealed class BlobStorageTests
 #pragma warning restore CA1515
 {
     private const string TestContainerName = "test-container";
+    private static readonly DateTime ReadBlobTimestampUtc = new(2026, 03, 25, 00, 00, 00, DateTimeKind.Utc);
 
     private readonly CrescentFixture fixture;
 
@@ -113,7 +114,7 @@ public sealed class BlobStorageTests
         BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(TestContainerName);
         await containerClient.CreateIfNotExistsAsync();
         string blobName = $"read-test-{Guid.NewGuid()}.txt";
-        string expectedContent = $"Test content written at {DateTime.UtcNow:O}";
+        string expectedContent = $"Test content written at {ReadBlobTimestampUtc:O}";
         BlobClient blobClient = containerClient.GetBlobClient(blobName);
 
         // Write the blob first
