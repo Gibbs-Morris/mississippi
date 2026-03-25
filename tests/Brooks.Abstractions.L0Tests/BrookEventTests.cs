@@ -31,7 +31,7 @@ public sealed class BrookEventTests
     public void InitializeWithValues()
     {
         ImmutableArray<byte> data = ImmutableArray.Create((byte)1, (byte)2);
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset now = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
         BrookEvent e = new()
         {
             EventType = "T",

@@ -69,13 +69,14 @@ public sealed class LifecycleReducersTests
     public void OnAppInitShouldNotSetReadyAt()
     {
         // Arrange
+        DateTimeOffset initializedAt = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
         LifecycleState initialState = new()
         {
             Phase = LifecyclePhase.NotStarted,
             InitializedAt = null,
             ReadyAt = null,
         };
-        AppInitAction action = new(DateTimeOffset.UtcNow);
+        AppInitAction action = new(initializedAt);
 
         // Act
         LifecycleState result = LifecycleReducers.OnAppInit(initialState, action);
