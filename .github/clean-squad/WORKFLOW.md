@@ -211,7 +211,12 @@ Meaningful events MUST additionally carry `workItemId`, `rootWorkItemId`, `spanI
 Canonical JSON rules:
 
 - Files MUST be UTF-8 encoded JSON with no comments or trailing commas.
+- Canonical JSON MUST NOT include a UTF-8 BOM.
+- Canonical JSON MUST NOT contain insignificant whitespace outside JSON string values; emit the digest form as minified JSON with no spaces, tabs, or line breaks between tokens.
+- Canonical JSON MUST NOT end with a trailing newline; the digest is computed over the exact UTF-8 byte sequence of the canonical JSON text.
 - Object property order MUST match the order shown in this contract wherever a digest is calculated.
+- Nested object property order MUST match the order shown in this contract for `appendPrecondition`, `causedBy`, `closes`, `artifacts[]`, `artifactTransitions[]`, and `provenance`.
+- Arrays MUST preserve the semantic order required by this contract; `events` remain ordered by `sequence`, and nested arrays keep the writer-emitted order unless this contract defines an explicit normalization rule.
 - Every canonical event MUST emit the full top-level property set in the declared order even when some conditional semantics are absent.
 - `appendPrecondition` MUST always be serialized and MUST encode the expected prior `sequence` used for fail-closed append validation.
 - When a conditional scalar or object field is not semantically required, canonical JSON MUST emit that property as `null` rather than omitting it.
@@ -219,7 +224,7 @@ Canonical JSON rules:
 - When `details` has no event-type-specific members, canonical JSON MUST emit `details: {}`.
 - `schemaVersion = clean-squad-workflow-audit/v3` is the current normative schema. Earlier schema versions remain historical snapshots and MUST NOT have missing v3 semantics or timing backfilled from secondary logs.
 - `events` MUST be ordered by `sequence` ascending with no duplicate or skipped sequence values.
-- `ledgerDigestAlgorithm = sha256-canonical-json-v1` means SHA-256 over the canonical UTF-8 JSON bytes of the exact snapshot used for comparison or compilation.
+- `ledgerDigestAlgorithm = sha256-canonical-json-v1` means SHA-256 over the UTF-8 bytes of the canonical JSON form defined by these rules for the exact snapshot used for comparison or compilation.
 
 Each canonical event MUST use this property order and shape:
 

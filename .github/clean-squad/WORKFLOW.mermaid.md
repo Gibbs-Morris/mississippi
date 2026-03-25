@@ -229,6 +229,9 @@ This section explicitly mirrors the v3 canonical event contract from [WORKFLOW.m
 - `details` is always serialized in canonical order and MUST use `{}` when no event-type-specific members apply.
 - The first canonical append uses `sequence = 1` and expected prior `sequence = 0`.
 - Canonical event serialization keeps the full top-level property set in the declared order; absent conditional scalars or objects use `null`, absent conditional arrays use `[]`, and empty `details` uses `{}`.
+- The digest form is minified UTF-8 JSON with no BOM, no trailing newline, and no insignificant whitespace outside JSON string values.
+- Nested object property order matches the shapes defined in `WORKFLOW.md` for `appendPrecondition`, `causedBy`, `closes`, `artifacts[]`, `artifactTransitions[]`, and `provenance`.
+- `ledgerDigestAlgorithm = sha256-canonical-json-v1` hashes the UTF-8 bytes of that canonical JSON form for the exact snapshot being compared or compiled.
 
 Canonical top-level shape mirror:
 
