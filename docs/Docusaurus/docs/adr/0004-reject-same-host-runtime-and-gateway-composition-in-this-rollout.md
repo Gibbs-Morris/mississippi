@@ -87,7 +87,5 @@ This option acknowledges same-host composition as a first-class feature now.
 
 ## More Information
 
-- [Solution design](../../../../.thinking/2026-03-24-mississippi-builder-rollout/03-architecture/solution-design.md)
-- [Architecture revision notes](../../../../.thinking/2026-03-24-mississippi-builder-rollout/03-architecture/architecture-revision-notes.md)
-- [Decision log](../../../../.thinking/2026-03-24-mississippi-builder-rollout/decision-log.md)
+- Internal branch working notes informed this proposal but are intentionally not linked from the published ADR set.
 - [ADR-0003](0003-make-runtime-builder-the-only-orleans-silo-attachment-owner.md)

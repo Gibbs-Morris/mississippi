@@ -8,46 +8,68 @@ description: How Spring.Runtime, Spring.Gateway, and Spring.Client divide respon
 
 # Spring Host Architecture
 
-## Overview
+Spring keeps business logic in `Spring.Domain` and treats `Spring.Runtime`, `Spring.Gateway`, and `Spring.Client` as builder-first infrastructure shells. In the current rollout, all three hosts now start from a role-specific Mississippi builder, but runtime has the strongest framework-owned trust and ownership enforcement while gateway still leaves more responsibility in application `Program.cs` code.
 
-Spring has three runtime host applications plus one local-development orchestrator. The runtime hosts are thin shells that wire infrastructure, and none contains business logic. The domain project defines what the system does. The hosts define how it runs.
+## The problem this solves
 
-| Host | Role | References |
-|------|------|-----------|
-| `Spring.Runtime` | Orleans silo - runs grains, event sourcing, sagas | `Spring.Domain` + Mississippi Runtime SDK |
-| `Spring.Gateway` | ASP.NET API + Blazor host - serves endpoints and static files | `Spring.Domain` + Mississippi Gateway SDK |
-| `Spring.Client` | Blazor WebAssembly - UI shell with state management | `Spring.Domain` (compile-only) + Mississippi Client SDK |
-| `Spring.AppHost` | .NET Aspire orchestration for local development | Coordinates the runtime, gateway, storage, and emulator resources |
+Before the builder rollout, the three Spring hosts did not teach one consistent startup model. That made the public story harder to learn and easier to bypass with lower-level registration paths.
+
+The current shape fixes the main onboarding problem:
+
+- runtime starts from `builder.AddMississippiRuntime(...)`
+- gateway starts from `builder.AddMississippiGateway(...)`
+- client starts from `builder.AddMississippiClient(...)`
+
+That puts generated domain composition on the role builder instead of scattering it across manual service-registration calls.
+
+## Core idea
+
+Spring has three runtime hosts plus one local-development orchestrator.
+
+| Host | Entry point | Builder-owned composition | App-owned composition |
+| --- | --- | --- | --- |
+| `Spring.Runtime` | `builder.AddMississippiRuntime(...)` | Generated domain runtime registration, bounded Orleans callback queue, runtime service composition | Aspire resource clients, health endpoint, any advanced service additions through `runtime.Services` |
+| `Spring.Gateway` | `builder.AddMississippiGateway(...)` | JSON serialization, Aqueduct, Inlet gateway services, projection scanning, generated domain gateway registration | Authentication, authorization policies, Orleans client attachment, OpenAPI, static files, middleware, MCP |
+| `Spring.Client` | `builder.AddMississippiClient(...)` | Generated domain client registration, Reservoir composition boundary | Root components, `HttpClient`, UI features, dev tools |
+| `Spring.AppHost` | Aspire app host | Resource orchestration and startup order | Local-development orchestration only |
+
+This diagram shows the supported Spring topology in the rollout.
 
 ```mermaid
 flowchart LR
-    Client["Spring.Client\n(Blazor WASM)"] -->|HTTP + SignalR| Server["Spring.Gateway\n(API Host)"]
-    Server -->|Orleans Client| Silo["Spring.Runtime\n(Orleans Silo)"]
-    Silo -->|reads/writes| Storage["Cosmos DB\n+ Blob Storage"]
+    Client["Spring.Client\nBlazor WASM"] -->|HTTP + SignalR| Gateway["Spring.Gateway\nASP.NET gateway"]
+    Gateway -->|Orleans client| Runtime["Spring.Runtime\nOrleans silo"]
+    Runtime -->|event streams and snapshots| Storage["Cosmos + Azure Storage"]
 ```
 
-## Spring.Runtime: The Orleans Host
+## How it works
 
-The silo runs Orleans grains that execute commands, apply events, run effects, and manage saga orchestration. Its `Program.cs` is infrastructure wiring only.
+### Spring.Runtime
+
+`Spring.Runtime` is the Orleans silo host. It wires infrastructure, then hands domain registration and supported silo customization to `MississippiRuntimeBuilder`.
 
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+builder.AddKeyedAzureTableServiceClient("clustering");
+builder.AddKeyedAzureBlobServiceClient("grainstate");
+builder.AddAzureCosmosClient("cosmos", options =>
+{
+    options.ConnectionMode = ConnectionMode.Gateway;
+    options.LimitToEndpoint = true;
+});
+
 builder.AddMississippiRuntime(runtime =>
 {
-    // One call registers all domain aggregates, sagas, effects, and `EventReducer`s
     runtime.AddMississippiSamplesSpringDomain();
 
-    // Infrastructure: notification service stub
-    runtime.Services.AddSingleton<INotificationService, StubNotificationService>();
-
-    // Infrastructure: telemetry, storage clients, event sourcing providers
     runtime.Services.AddHttpClient();
+    runtime.Services.AddSingleton<INotificationService, StubNotificationService>();
     runtime.Services.AddOpenTelemetry()
         .WithTracing(/* ... */)
-        .WithMetrics(/* ... */);
-
-    // Mississippi infrastructure
+        .WithMetrics(/* ... */)
+        .WithLogging()
+        .UseOtlpExporter();
     runtime.Services.AddInletSilo();
     runtime.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
     runtime.Services.AddJsonSerialization();
@@ -55,49 +77,22 @@ builder.AddMississippiRuntime(runtime =>
     runtime.Services.AddCosmosBrookStorageProvider(/* ... */);
     runtime.Services.AddCosmosSnapshotStorageProvider(/* ... */);
 
-    // Orleans configuration
     runtime.Orleans(siloBuilder =>
     {
         siloBuilder.AddActivityPropagation();
-        siloBuilder.UseAqueduct(options =>
-            options.StreamProviderName = "StreamProvider");
-        siloBuilder.AddEventSourcing(options =>
-            options.OrleansStreamProviderName = "StreamProvider");
+        siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
+        siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
     });
 });
-
-builder.AddKeyedAzureTableServiceClient("clustering");
-builder.AddKeyedAzureBlobServiceClient("grainstate");
-builder.AddAzureCosmosClient("cosmos", /* ... */);
-
-WebApplication app = builder.Build();
-app.MapGet("/health", /* ... */);
-await app.RunAsync();
 ```
 
-The single line `runtime.AddMississippiSamplesSpringDomain()` registers every aggregate, saga, `CommandHandler`, `EventReducer`, effect, and projection defined in `Spring.Domain`. This method is **source-generated** by Mississippi, and the runtime builder owns the single supported Orleans attachment path for the host.
+`runtime.AddMississippiSamplesSpringDomain()` is the source-generated domain entry point for the Spring runtime. It is the supported path for attaching the Spring domain to the silo host.
 
-`MississippiRuntimeBuilder.Services` remains available for advanced composition, but the supported runtime onboarding path now starts at `builder.AddMississippiRuntime(...)` and keeps Orleans customization inside `runtime.Orleans(...)`.
+The runtime builder also owns the only supported top-level Orleans attachment path. Advanced silo changes stay inside `runtime.Orleans(...)`, not in separate host-level `UseOrleans(...)` calls.
 
-([Spring.Runtime/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs))
+### Spring.Gateway
 
-### What the Silo Owns
-
-Beyond `Program.cs`, the silo contains a small set of non-generated support files:
-
-- `Grains/GreeterGrain.cs` - A simple demo grain (not event-sourced) that demonstrates basic Orleans communication.
-- `Grains/GreeterGrainLoggerExtensions.cs` - Logging extension declarations used by the greeter grain.
-- `Services/StubNotificationService.cs` - A stub implementation of `INotificationService` that logs instead of sending real notifications.
-- `Services/StubNotificationServiceLoggerExtensions.cs` - Logging extension declarations used by the stub notification service.
-
-These files are infrastructure/support concerns rather than domain business logic.
-
-([GreeterGrain.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Grains/GreeterGrain.cs) |
-[StubNotificationService.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Services/StubNotificationService.cs))
-
-## Spring.Gateway: The API Host
-
-The gateway host serves ASP.NET controllers, the Inlet SignalR hub, and the static files for the Blazor client. It also connects to the Orleans silo as a client.
+`Spring.Gateway` is now builder-first as well. The canonical path is `builder.AddMississippiGateway(...)`, not manual `builder.Services.AddControllers()`, `AddInletServer(...)`, and per-mapper registration as the primary story.
 
 ```csharp
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -105,11 +100,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 SpringAuthOptions springAuthOptions =
     builder.Configuration.GetSection("SpringAuth").Get<SpringAuthOptions>() ?? new();
 builder.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = springAuthOptions.Scheme;
-        options.DefaultChallengeScheme = springAuthOptions.Scheme;
-    })
+builder.Services.AddAuthentication(/* ... */)
     .AddScheme<AuthenticationSchemeOptions, SpringLocalDevAuthenticationHandler>(
         springAuthOptions.Scheme,
         _ => { });
@@ -119,90 +110,48 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("spring.transfer", policy => policy.RequireRole("transfer-operator", "banking-operator"))
     .AddPolicy("spring.auth-proof.claim", policy => policy.RequireClaim("spring.permission", "auth-proof"));
 
-// Infrastructure: telemetry, Orleans client
 builder.Services.AddOpenTelemetry()
     .WithTracing(/* ... */)
-    .WithMetrics(/* ... */);
+    .WithMetrics(/* ... */)
+    .WithLogging()
+    .UseOtlpExporter();
 builder.AddKeyedAzureTableServiceClient("clustering");
-builder.UseOrleansClient(clientBuilder =>
-    clientBuilder.AddActivityPropagation());
-
-// ASP.NET and Mississippi infrastructure
-builder.Services.AddControllers();
+builder.UseOrleansClient(clientBuilder => clientBuilder.AddActivityPropagation());
 builder.Services.AddOpenApi(/* ... */);
-builder.Services.AddJsonSerialization();
-builder.Services.AddAggregateSupport();
-builder.Services.AddUxProjections();
-builder.Services.AddSignalR();
-builder.Services.AddAqueduct<InletHub>(options =>
-    options.StreamProviderName = "StreamProvider");
-if (springAuthOptions.Enabled)
+
+builder.AddMississippiGateway(gateway =>
 {
-    builder.Services.AddInletServer(options =>
+    gateway.AddJsonSerialization();
+    gateway.AddAqueduct<InletHub>(options =>
+        options.StreamProviderName = "StreamProvider");
+
+    if (springAuthOptions.Enabled)
     {
-        options.GeneratedApiAuthorization.Mode =
-            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
-        options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
-        options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
-    });
-}
-else
-{
-    builder.Services.AddInletServer();
-}
-builder.Services.ScanProjectionAssemblies(
-    typeof(BankAccountBalanceProjection).Assembly);
+        gateway.AddInletGateway(options =>
+        {
+            options.GeneratedApiAuthorization.Mode =
+                GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+            options.GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api";
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+        });
+    }
+    else
+    {
+        gateway.AddInletGateway();
+    }
 
-// Source-generated gateway registrations
-builder.Services.AddAuthProofAggregateMappers();
-builder.Services.AddBankAccountAggregateMappers();
-builder.Services.AddMoneyTransferSagaAggregateMappers();
-builder.Services.AddAuthProofProjectionMappers();
-builder.Services.AddBankAccountBalanceProjectionMappers();
-builder.Services.AddBankAccountLedgerProjectionMappers();
-builder.Services.AddFlaggedTransactionsProjectionMappers();
-builder.Services.AddMoneyTransferStatusProjectionMappers();
-
-WebApplication app = builder.Build();
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
-app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapOpenApi();
-app.MapScalarApiReference(/* ... */);
-app.MapControllers();
-app.MapInletHub();
-app.MapGet("/health", /* ... */);
-app.MapFallbackToFile("index.html");
-await app.RunAsync();
+    gateway.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+    gateway.AddMississippiSamplesSpringDomainGateway();
+});
 ```
 
-Spring.Gateway currently registers the generated aggregate and projection mapper extensions explicitly in `Program.cs`. Those mapper methods are source-generated from the annotations in `Spring.Domain`. The gateway still does not contain `CommandHandler` code, `EventReducer` code, or domain-specific business logic. It maps HTTP requests to Orleans grain calls and hosts the transport endpoints around that generated surface.
+`gateway.AddMississippiSamplesSpringDomainGateway()` is the source-generated domain gateway entry point. Spring no longer needs to present the explicit per-mapper registration path as the canonical gateway onboarding model.
 
-([Spring.Gateway/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs))
+What remains in application code is still important: Spring defines authentication and authorization policies, attaches the Orleans client, configures OpenAPI and MCP, and maps middleware endpoints directly in `Program.cs`.
 
-When `SpringAuth:Enabled` is true, the gateway enables generated API force mode with:
+### Spring.Client
 
-- `GeneratedApiAuthorization.Mode = RequireAuthorizationForAllGeneratedEndpoints`
-- `GeneratedApiAuthorization.DefaultPolicy = "spring.generated-api"`
-- `GeneratedApiAuthorization.AllowAnonymousOptOut = true`
-
-This applies a default authenticated policy to generated HTTP APIs while preserving explicit `GenerateAllowAnonymous` opt-outs.
-
-## Development Auth-Proof Mode
-
-Spring includes an opt-in development mode that proves generated endpoint authorization behavior.
-
-The complete setup, endpoint matrix (`200`/`401`/`403`), and troubleshooting guidance are documented on [Spring Auth-Proof Mode](../how-to/auth-proof-mode.md).
-
-### What the Gateway Owns
-
-The gateway has no domain-specific code files. Its `Program.cs` configures middleware and infrastructure. The API controllers that accept commands and return projections are **entirely source-generated** from the domain annotations.
-
-## Spring.Client: The Blazor UI
-
-The client is a Blazor WebAssembly application that dispatches commands and subscribes to projections through the Mississippi client builder.
+`Spring.Client` uses the same builder-first shape. The host starts with `builder.AddMississippiClient(...)`, then composes generated domain features and hand-written UI features through the client builder.
 
 ```csharp
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -212,9 +161,9 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped<AuthSimulationHeadersHandler>();
 builder.Services.AddScoped(sp =>
 {
-    AuthSimulationHeadersHandler authSimulationHeadersHandler = sp.GetRequiredService<AuthSimulationHeadersHandler>();
-    authSimulationHeadersHandler.InnerHandler = new HttpClientHandler();
-    return new HttpClient(authSimulationHeadersHandler)
+    AuthSimulationHeadersHandler handler = sp.GetRequiredService<AuthSimulationHeadersHandler>();
+    handler.InnerHandler = new HttpClientHandler();
+    return new HttpClient(handler)
     {
         BaseAddress = new(builder.HostEnvironment.BaseAddress),
     };
@@ -222,85 +171,69 @@ builder.Services.AddScoped(sp =>
 
 builder.AddMississippiClient(client =>
 {
-    client.AddMississippiSamplesSpringDomainClient();
-    client.Reservoir(reservoir =>
-    {
-        // UI features
-        reservoir.AddDualEntitySelectionFeature();
-        reservoir.AddDemoAccountsFeature();
-        reservoir.AddAuthSimulationFeature();
-        reservoir.AddReservoirBlazorBuiltIns();
-        reservoir.AddReservoirDevTools(options =>
+    client.AddMississippiSamplesSpringDomainClient()
+        .Reservoir(reservoir =>
         {
-            options.Enablement = ReservoirDevToolsEnablement.Always;
-            options.Name = "Spring Sample";
-            options.IsStrictStateRehydrationEnabled = true;
+            reservoir.AddDualEntitySelectionFeature();
+            reservoir.AddDemoAccountsFeature();
+            reservoir.AddAuthSimulationFeature();
+            reservoir.AddReservoirBlazorBuiltIns();
+            reservoir.AddReservoirDevTools(options =>
+            {
+                options.Enablement = ReservoirDevToolsEnablement.Always;
+                options.Name = "Spring Sample";
+                options.IsStrictStateRehydrationEnabled = true;
+            });
+            reservoir.AddInletBlazorSignalR(signalR => signalR
+                .WithHubPath("/hubs/inlet")
+                .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
         });
-
-        // Real-time projection updates via SignalR
-        reservoir.AddInletClient();
-        reservoir.AddInletBlazorSignalR(signalR => signalR
-            .WithHubPath("/hubs/inlet")
-            .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
-    });
 });
-
-await builder.Build().RunAsync();
 ```
 
-The client now starts with `builder.AddMississippiClient(...)`, uses the generated `AddMississippiSamplesSpringDomainClient()` domain compositor on `MississippiClientBuilder`, and then drops into `client.Reservoir(...)` for hand-written UI features plus Inlet registrations. The client still never directly calls Orleans grains or knows about event-sourcing internals.
+The client-side generated domain method targets `MississippiClientBuilder`, and `AddInletBlazorSignalR(...)` composes the core Inlet client services before it builds the SignalR feature. That is why the current Spring sample no longer needs a separate `reservoir.AddInletClient()` call on the happy path.
 
-([Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs))
+### Spring.AppHost
 
-### How the Client References the Domain
+`Spring.AppHost` stays outside the builder family. It provisions Azurite, Cosmos emulator resources, service discovery, and process startup order for local development. In this rollout it also reinforces the supported topology: separate runtime and gateway processes under one Aspire orchestrator.
 
-The client's `.csproj` file uses a compile-only reference to `Spring.Domain`:
+## Guarantees
 
-```xml
-<ProjectReference Include="..\Spring.Domain\Spring.Domain.csproj"
-                  ExcludeAssets="runtime" />
-```
+The current rollout guarantees these behaviors.
 
-The `ExcludeAssets="runtime"` flag means the source generators can see domain types at compile time (to generate client-side DTOs and dispatchers), but the domain assembly is **not deployed** to the browser. The client only ships the generated code.
+- Runtime host composition starts at `AddMississippiRuntime(...)` and can attach only once per host.
+- Runtime owns the top-level Orleans silo attachment. Preexisting host-level `UseOrleans(...)` composition is rejected, and later callback replay cannot take over frozen provider, storage, clustering, or endpoint ownership.
+- Runtime rechecks trust boundaries before startup and again when queued Orleans callbacks replay. Outside Development, private or internal infrastructure endpoints must be explicitly allowed, and allowlisted endpoints must still use an approved transport scheme.
+- Gateway host composition starts at `AddMississippiGateway(...)` and can attach only once per host.
+- Gateway rejects same-host runtime composition in this rollout.
+- Within `MississippiGatewayBuilder`, duplicate `AddAqueduct<THub>(...)`, duplicate `AddInletGateway(...)`, and duplicate generated domain attachment on the same builder path fail fast.
+- `AddInletGateway(...)` applies safe generated-endpoint authorization defaults before caller overrides run.
+- Client host composition starts at `AddMississippiClient(...)`, reuses one Reservoir composition boundary, and rejects duplicate generated domain attachment on the same client builder.
 
-([Spring.Client.csproj](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Spring.Client.csproj))
+## Non-guarantees
 
-## Source-Generated Registration Methods
+The builder family is not fully symmetric yet.
 
-Mississippi's generators produce builder-based client feature registrations and host-specific domain registrations from the annotations in `Spring.Domain`:
+- Runtime has stronger framework-owned trust and ownership enforcement than gateway today.
+- Gateway does not currently own the Orleans client attachment. Spring still calls `builder.UseOrleansClient(...)` directly in `Program.cs`.
+- Gateway does not currently provide a runtime-style trust guard that classifies external infrastructure endpoints before startup.
+- Gateway authentication policies, generated API policy names, OpenAPI setup, MCP composition, and middleware mapping are still application-owned concerns in Spring.
+- Same-process runtime and gateway composition is not supported in this rollout. Use separate processes coordinated by `Spring.AppHost`.
+- `Services` escape hatches remain available on the role builders for advanced composition, but those escape hatches are not the primary onboarding path.
 
-| Method | Host | What It Registers |
-|--------|------|-------------------|
-| `AddSpringDomainSilo()` | Runtime | Aggregate grains, saga grains, `CommandHandler`s, `EventReducer`s, effects, projection grains |
-| `Add{Domain}Server()` | Gateway | Domain-level gateway registration convenience method for generated API/controller mapper registrations |
-| `Add{Aggregate}AggregateFeature()`, `Add{Saga}SagaFeature()`, `AddProjectionsFeature()` | Client | Reservoir-level client feature registrations for generated state, reducers, effects, and projection support |
-| `Add{Domain}Client()` | Client | Mississippi client-builder convenience method that aggregates the generated Reservoir-level feature registrations |
+## Trade-offs
 
-Gateway generators can emit a domain-level convenience method, but Spring.Gateway currently composes the generated mapper registrations explicitly in `Program.cs`. The client-side feature generators still target `IReservoirBuilder`, while the domain client generator now targets `MississippiClientBuilder` and routes its work through `client.Reservoir(...)`. Spring uses the generated domain client method for the write-side and projection slice, then adds hand-written UI and Inlet composition on the same Reservoir builder.
+This shape deliberately favors a clearer public composition story over complete cross-role convergence.
 
-`Spring.AppHost` is separate from those generated methods. It is an Aspire entry point that provisions Azurite, Cosmos emulator resources, Orleans configuration, and project startup order for local development.
+- The builder-first path removes the legacy manual gateway walkthrough and makes generated domain registration easier to teach.
+- Runtime centralizes more safety policy in framework code, which gives it a stronger trust and ownership story.
+- Gateway remains more flexible because key host concerns still live in app code, but that also means the gateway safety model is less framework-owned than runtime today.
+- Keeping runtime and gateway in separate processes reduces rollout scope and avoids accidental mixed host modes, at the cost of not supporting a combined host API yet.
 
-For more details on domain registration generators, see [Domain Registration Generators](../../../archived/reference/domain-registration-generators.md).
+## Related tasks and reference
 
-## The Key Insight
-
-Compare the domain project to the host projects:
-
-| Metric | Spring.Domain | Spring.Runtime | Spring.Gateway | Spring.Client |
-|--------|:------------:|:-----------:|:-------------:|:-------------:|
-| Domain business logic ownership | All domain business logic | No domain business logic | No domain business logic | No domain business logic |
-| Business rules | All | None | None | None |
-| Infrastructure wiring | None | Compact host setup in `Program.cs` | Compact host setup in `Program.cs` | Compact host setup in `Program.cs` |
-| External dependencies | Primarily Mississippi abstractions, plus minimal framework/build dependencies (`Microsoft.Orleans.Sdk`, `Microsoft.Extensions.Http`) | Azure Storage, Cosmos, Orleans, OpenTelemetry | Orleans Client, ASP.NET, Blazor hosting | Blazor WASM, SignalR |
-
-The hosts are replaceable shells. The domain is the permanent asset. You could swap Cosmos for PostgreSQL by changing only the runtime host's storage configuration. You could replace Blazor with React by writing a new client that calls the same generated API. The business logic in `Spring.Domain` would not change.
-
-## Summary
-
-Mississippi's source generators transform domain annotations into infrastructure wiring. Spring.Runtime stays a thin Orleans host, Spring.Gateway composes generated gateway mapper registrations around its transport infrastructure, and Spring.Client now starts with `AddMississippiClient()`, uses the generated domain-level client method, and composes the remaining client features through `client.Reservoir(...)`.
-
-## Next Steps
-
-- [Overview](../index.md) - Return to the Spring Sample App overview
-- [Key Concepts](./key-concepts.md) - Revisit the concept reference for all patterns used
-- [Domain Registration Generators](../../../archived/reference/domain-registration-generators.md) - Deep dive into how generation works
+- [Overview](../index.md)
+- [Key Concepts](./key-concepts.md)
+- [Spring Auth-Proof Mode](../how-to/auth-proof-mode.md)
+- [ADR-0004: Reject Same-Host Runtime and Gateway Composition in This Rollout](../../../adr/0004-reject-same-host-runtime-and-gateway-composition-in-this-rollout.md)
+- [Domain Registration Generators](../../../archived/reference/domain-registration-generators.md)

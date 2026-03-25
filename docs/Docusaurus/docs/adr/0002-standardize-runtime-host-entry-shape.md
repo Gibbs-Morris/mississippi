@@ -1,6 +1,6 @@
 ---
 title: "ADR-0002: Standardize the Runtime Host Entry Shape"
-description: The runtime role targets `IHostApplicationBuilder` semantics and exposes two overloads: one that returns the runtime builder and one that returns the native host builder.
+description: "The runtime role targets `IHostApplicationBuilder` semantics and exposes two overloads: one that returns the runtime builder and one that returns the native host builder."
 sidebar_position: 2
 status: "proposed"
 date: 2026-03-24
@@ -96,7 +96,6 @@ This option preserves the existing service-registration-first seam.
 
 ## More Information
 
-- [Solution design](../../../../.thinking/2026-03-24-mississippi-builder-rollout/03-architecture/solution-design.md)
-- [Architecture revision notes](../../../../.thinking/2026-03-24-mississippi-builder-rollout/03-architecture/architecture-revision-notes.md)
+- Internal branch working notes informed this proposal but are intentionally not linked from the published ADR set.
 - [ADR-0001](0001-assign-hosting-package-ownership-for-role-builders.md)
 - [ADR-0003](0003-make-runtime-builder-the-only-orleans-silo-attachment-owner.md)
