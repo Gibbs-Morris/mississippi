@@ -21,29 +21,20 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///         <strong>Single Reducer Testing (L0):</strong>
 ///         Use the extension methods directly on reducers for isolated unit tests.
 ///     </para>
-///     <code>
-///         // Quick apply and assert
-///         var result = reducer.Apply(initialState, eventData);
-///         result.Balance.Should().Be(expected);
-///         // Or use ShouldProduce for expected output assertions
-///         reducer.ShouldProduce(initialState, eventData, expectedProjection);
-///     </code>
+///     <para>
+///         For isolated unit tests, apply a reducer directly to an initial state and assert on the
+///         returned projection, or use the test extension helpers that compare the produced state to
+///         an expected projection.
+///     </para>
 ///     <para>
 ///         <strong>Multi-Reducer Scenario Testing (L0):</strong>
 ///         Use the harness to compose multiple reducers and test event replay scenarios.
 ///     </para>
-///     <code>
-///         // Create a harness with all reducers for a projection
-///         var harness = ReducerTestExtensions.ForProjection&lt;BankAccountBalanceProjection&gt;()
-///             .WithReducer&lt;AccountOpenedBalanceReducer&gt;()
-///             .WithReducer&lt;FundsDepositedBalanceReducer&gt;()
-///             .WithReducer&lt;FundsWithdrawnBalanceReducer&gt;();
-///         // Run a scenario with Given/When/Then
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p =&gt; p.Balance.Should().Be(150m));
-///     </code>
+///     <para>
+///         For event replay scenarios, register the relevant reducers, create a scenario from the
+///         harness, establish the starting state with <c>Given</c>, apply the event under test with
+///         <c>When</c>, and verify the final projection with the fluent assertion helpers.
+///     </para>
 /// </remarks>
 /// <typeparam name="TProjection">The projection type being tested. Must have a parameterless constructor.</typeparam>
 /// <seealso cref="ProjectionScenario{TProjection}" />

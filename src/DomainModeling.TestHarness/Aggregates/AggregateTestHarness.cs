@@ -35,25 +35,15 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///         </item>
 ///     </list>
 ///     <para>
-///         <strong>Example:</strong>
-///     </para>
-///     <code>
-///         CommandHandlerTestExtensions.ForAggregate&lt;BankAccountAggregate&gt;()
-///             .WithHandler&lt;OpenAccountHandler&gt;()
-///             .WithHandler&lt;DepositFundsHandler&gt;()
-///             .WithReducer&lt;AccountOpenedReducer&gt;()
-///             .WithReducer&lt;FundsDepositedReducer&gt;()
-///             .CreateScenario()
-///             .Given(new AccountOpened { HolderName = "Test", InitialDeposit = 100m })
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
-///     </code>
-///     <para>
 ///         <strong>Unified Testing Approach:</strong>
 ///         This harness shares design patterns with
 ///         <see cref="ReducerTestHarness{TProjection}" />,
 ///         enabling consistent testing for both projections and aggregates.
+///     </para>
+///     <para>
+///         A typical test registers the relevant command handlers and reducers, creates a scenario,
+///         establishes prior state with <c>Given</c>, executes the command under test with
+///         <c>When</c>, then asserts on emitted events and the resulting aggregate state.
 ///     </para>
 /// </remarks>
 /// <typeparam name="TAggregate">The aggregate type being tested. Must have a parameterless constructor.</typeparam>
