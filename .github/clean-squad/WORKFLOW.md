@@ -352,6 +352,12 @@ Allowed `eventType` values:
 | `merge-readiness-evaluated` | publication-support | no | no | yes | no | yes |
 | `run-completed` | run-terminal | no | yes | yes | no | yes |
 
+Event-type usage rules:
+
+- `phase-completed` MUST be used only to close one of the nine top-level workflow phases and MUST correspond to a span opened by `phase-started`.
+- `completed` MUST be used only for terminal bounded work items that are not whole phases and not the overall workflow run, such as delegated review passes, remediation slices, validation attempts, commit creation, or PR-slice completion.
+- `run-completed` MUST be reserved for the final terminal event that records the disposition of the overall Clean Squad run and MUST NOT be used for individual phases or subordinate work items.
+
 Outcome vocabulary:
 
 | Value | Meaning |
