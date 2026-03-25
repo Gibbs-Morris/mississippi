@@ -157,7 +157,8 @@ workflow advances.
 
 ## Shared State: The `.thinking` Folder
 
-All agents share state through a filesystem folder:
+All governed Clean Squad agents share state through a filesystem folder once
+governed work begins:
 
 ```text
 .thinking/
@@ -237,15 +238,18 @@ All agents share state through a filesystem folder:
     decision-log.md                 # All decisions with reasoning
 ```
 
+`cs Entrepreneur` is explicitly pre-governed and MUST NOT create or use this
+shared state.
+
 Published ADRs live outside `.thinking/` under `docs/Docusaurus/docs/adr/` so
 they remain part of the long-term documentation set after the task folder is
 retired.
 
 ### Operational Logging Protocol
 
-- Every Clean Squad agent MUST append an entry to `.thinking/<task>/activity-log.md` before substantive work starts.
-- Every Clean Squad agent MUST append another entry after each material decision, delegation, blocker, or phase transition.
-- Every Clean Squad agent MUST append a final entry before returning control, capturing outputs produced, status, blockers, and next action.
+- Every governed Clean Squad agent MUST append an entry to `.thinking/<task>/activity-log.md` before substantive work starts.
+- Every governed Clean Squad agent MUST append another entry after each material decision, delegation, blocker, or phase transition.
+- Every governed Clean Squad agent MUST append a final entry before returning control, capturing outputs produced, status, blockers, and next action.
 - The Product Owner MUST treat this log as mandatory operational telemetry, not an optional summary.
 - Activity log entries SHOULD use a consistent structure: UTC timestamp, actor, phase, action, artifacts updated, blockers, and next action.
 
