@@ -161,7 +161,8 @@ retired.
 - The PR Manager MUST NOT write canonical workflow facts and MAY execute only explicitly delegated, bounded Phase 9 specialist work.
 - The Scribe MUST NOT write canonical workflow facts.
 - Only one canonical writer may be active for the workflow run at a time.
-- Every active Phase 9 PR Manager execution slice MUST begin with explicit Product Owner delegation whose `workItemId` names the bounded task slice and whose `details` name the expected artifact output or artifact bundle, completion signal, and closure condition.
+- Every active Phase 9 PR Manager execution slice MUST begin with explicit Product Owner delegation whose `workItemId` names the bounded task slice and whose `details` name the expected artifact output or artifact bundle, completion signal, closure condition, allowed mutation actions, and authorized targets.
+- Stale-marker authority in Phase 9 MUST remain continuously delegated whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active; that bounded stale-marker delegation MUST stay active until the Product Owner canonically records that the summary is stale, republished fresh, or no longer present on the PR surface.
 - A Phase 9 delegation remains active only until the Product Owner records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that delegation and whose semantics satisfy its declared completion signal or closure condition.
 - Blocked Phase 9 startup, tool acquisition, or recovery MUST NOT transfer canonical ownership away from the Product Owner.
 - A materially new PR-surface objective in Phase 9 MUST use a new bounded delegation; Phase 9 delegation MUST NOT become umbrella authority.
@@ -464,9 +465,9 @@ Relationship semantics:
 }
 ```
 
-`details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
+- `details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
-- `delegation-recorded`: `delegatedAgent`, `expectedOutput`, `completionSignal`, `closureCondition`
+- `delegation-recorded`: `delegatedAgent`, `expectedOutput`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
 - `deviation-recorded`: `deviationClass`, `rationalePath`
 - `blocked`: `blockerKind`, `blockedOn`
@@ -482,6 +483,10 @@ Delegation lifecycle rules:
 - `details.expectedOutput` MUST name the artifact output or artifact bundle the delegation authorizes.
 - `details.completionSignal` MUST name the canonical evidence or event pattern the Product Owner expects to treat the delegated slice as successfully handed back.
 - `details.closureCondition` MUST name the canonical condition that ends the delegation, including successful completion, block, cancellation, or supersession.
+- `details.allowedActions` MUST enumerate the exact mutation classes and Phase 9 operations authorized within that delegation, using stable values such as `stale-marker`, `reviewer-summary-publish`, `thread-reply`, `thread-resolve`, `pr-description-update`, `ci-evidence-read`, or `poll-review-comments`.
+- `details.authorizedTargets` MUST enumerate the exact resources the delegation covers, such as the PR number, summary section, freshness stamp, thread IDs, or CI identity set for the current HEAD SHA.
+- Delegation validation MUST reject returned evidence for any action or target outside `details.allowedActions` and `details.authorizedTargets`, even when the delegated artifact bundle otherwise looks complete.
+- The Phase 9 stale-marker delegation MUST be its own bounded capability slice whose `details.allowedActions` contains only `stale-marker` and whose `details.authorizedTargets` are limited to the current PR and reviewer-summary freshness marker.
 - A Phase 9 delegation remains active only until the Product Owner records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that `delegation-recorded` event and whose semantics satisfy the recorded `completionSignal` or `closureCondition`. After that closure, any further PR Manager work MUST use a new `delegation-recorded` event.
 
 Allowed `details.publicationState` values:
@@ -631,11 +636,12 @@ Reviewer-facing audit output becomes stale on any of these events:
 Publication and recovery rules:
 
 1. The Product Owner MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait, by recording the canonical invalidation fact and ensuring the `Reviewer Audit Summary` is marked stale on the PR surface with the stale reason and the last known freshness stamp. The 300-second review-polling wait MUST NOT delay stale-marker publication.
-2. If HEAD SHA, the stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical output changes, the Product Owner MUST obtain a fresh `workflow-audit.md` compilation from cs Scribe using a new stable ledger snapshot before republishing reviewer-facing audit output.
-3. If only the required CI-result identity set changes for an unchanged HEAD SHA and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the `Reviewer Audit Summary` freshness stamp and merge-readiness evaluation without recompiling `workflow-audit.md`.
-4. The Product Owner MUST verify that the regenerated or reused `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and that the attached normalized required CI-result identity set is current, before republishing.
-5. The Product Owner MUST republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication. The PR Manager MAY apply the PR-surface update only under bounded delegation.
-6. Invalidation MUST be more granular than publication so the PR description does not churn on low-signal changes.
+2. The Product Owner MUST maintain an active bounded stale-marker delegation for the current PR surface whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active so the PR Manager can apply the stale marker immediately at first observation without waiting for a new delegation round-trip.
+3. If HEAD SHA, the stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical output changes, the Product Owner MUST obtain a fresh `workflow-audit.md` compilation from cs Scribe using a new stable ledger snapshot before republishing reviewer-facing audit output.
+4. If only the required CI-result identity set changes for an unchanged HEAD SHA and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the `Reviewer Audit Summary` freshness stamp and merge-readiness evaluation without recompiling `workflow-audit.md`.
+5. The Product Owner MUST verify that the regenerated or reused `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and that the attached normalized required CI-result identity set is current, before republishing.
+6. The Product Owner MUST republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication. The PR Manager MAY apply the PR-surface update only under bounded delegation whose `allowedActions` and `authorizedTargets` cover that specific mutation.
+7. Invalidation MUST be more granular than publication so the PR description does not churn on low-signal changes.
 
 #### Verdict Model
 
@@ -1046,17 +1052,18 @@ The skip reason **MUST** be recorded in `scope-assessment.md` with evidence.
 ### Process
 
 1. The Product Owner remains the canonical Phase 9 owner and MUST record every reviewer-significant Phase 9 fact in `workflow-audit.json`.
-2. The Product Owner delegates only bounded Phase 9 PR-surface specialist work to **cs PR Manager** and MUST NOT give open-ended Phase 9 umbrella authority.
+2. The Product Owner delegates only bounded Phase 9 PR-surface specialist work to **cs PR Manager** and MUST NOT give open-ended Phase 9 umbrella authority; every such delegation MUST be capability-scoped through explicit `allowedActions` and `authorizedTargets`.
 3. At Phase 9 startup or recovery, if PR-surface work cannot begin normally, the Product Owner records the blocked or resumed state canonically without transferring ownership.
 4. The Product Owner invokes **cs Scribe** to compile `workflow-audit.md` and the condensed reviewer-flow inputs from a stable `workflow-audit.json` snapshot when Phase 9 audit compilation or recompilation is required.
 5. The PR Manager creates or updates the PR, collects CI and review evidence, and performs delegated PR-surface mutations only within the active bounded delegation.
 6. If freshness is already broken or later becomes broken, the Product Owner MUST immediately record the invalidation canonically and ensure the PR-surface reviewer summary is marked stale with the stale reason and the last known freshness stamp at first observation, even during the 300-second polling wait, then follow the freshness recovery rules before republishing.
-7. The PR Manager monitors CI pipelines and handles review threads using the repository PR polling protocol only while the corresponding `delegation-recorded` event remains active for that `workItemId`.
-8. Review thread handling:
+7. The Product Owner MUST keep the bounded stale-marker delegation active for the current PR while a fresh reviewer summary is published or a review-polling wait is active so stale-marker publication has no integrity window.
+8. The PR Manager monitors CI pipelines and handles review threads using the repository PR polling protocol only while the corresponding `delegation-recorded` event remains active for that `workItemId`, and only for actions and targets authorized in that delegation.
+9. Review thread handling:
    - For each human review comment: read it, decide scope-appropriateness, fix it or push back with reasoning, reply to the thread, and either resolve it or leave it open with rationale.
-9. `workflow-audit.md` and the `Reviewer Audit Summary` are derived artifacts only. Missing canonical facts MUST be fixed in `workflow-audit.json`; they MUST NOT be backfilled from `activity-log.md`, thread logs, or PR prose.
-10. Merge readiness is confirmed only when the Product Owner evaluates current delegated evidence and records the conclusion canonically.
-11. Merge readiness is confirmed when:
+10. `workflow-audit.md` and the `Reviewer Audit Summary` are derived artifacts only. Missing canonical facts MUST be fixed in `workflow-audit.json`; they MUST NOT be backfilled from `activity-log.md`, thread logs, or PR prose.
+11. Merge readiness is confirmed only when the Product Owner evaluates current delegated evidence and records the conclusion canonically.
+12. Merge readiness is confirmed when:
 
 - [ ] PR exists
 - [ ] All CI pipelines are green

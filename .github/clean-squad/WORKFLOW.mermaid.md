@@ -14,7 +14,7 @@ flowchart TD
     SharedState["Cross-cutting note:<br/>All agents share state through .thinking/&lt;task&gt;/.<br/>workflow-audit.json is the authoritative execution record.<br/>Activity-log and handover updates are mandatory secondary evidence."]
     AuditOwnership["Cross-cutting note:<br/>cs Product Owner writes canonical audit events for Phases 1-9.<br/>cs PR Manager executes only bounded delegated Phase 9 PR-surface work and does not write canonical facts.<br/>cs Scribe publishes derived audit output only."]
     AuditRules["Cross-cutting note:<br/>sequence is the only ordering authority.<br/>Canonical eventUtc timestamps are mandatory for timing and diagnostics only and never override sequence.<br/>Narrative logs, Mermaid, and PR prose are supporting or derived evidence only."]
-    AuditDelegation["Cross-cutting note:<br/>Only one canonical writer may be active for the workflow run at a time.<br/>Phase 9 specialist work starts only after explicit Product Owner delegation that names the bounded task slice, expected artifact output or artifact bundle, completion signal, and closure condition without transferring canonical ownership.<br/>Blocked startup or recovery never transfers canonical ownership away from cs Product Owner.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch.<br/>The first canonical append uses sequence 1 with expected prior sequence 0."]
+    AuditDelegation["Cross-cutting note:<br/>Only one canonical writer may be active for the workflow run at a time.<br/>Phase 9 specialist work starts only after explicit Product Owner delegation that names the bounded task slice, expected artifact output or artifact bundle, completion signal, closure condition, allowedActions, and authorizedTargets without transferring canonical ownership.<br/>Blocked startup or recovery never transfers canonical ownership away from cs Product Owner.<br/>A bounded stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active so stale publication has no integrity window.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch.<br/>The first canonical append uses sequence 1 with expected prior sequence 0."]
     AuditEventContract["Cross-cutting note:<br/>Every canonical event uses the v3 semantic envelope: sequence, eventUtc, logicalEventId, actor, phase, eventType,<br/>appendPrecondition, workItemId and rootWorkItemId when meaningful, spanId, causedBy, closes, outcome, summary, reasonCode,<br/>artifacts as evidence bindings, artifactTransitions for lifecycle meaning, iterationId, provenance, and details."]
     StateSupportContract["Cross-cutting note:<br/>state.json is runtime support only and mirrors the workflow state contract exactly.<br/>It includes workflowContractFingerprint, currentSequence, currentOwner, openWait, and lastCompiledAtUtc.<br/>currentOwner means canonical ownership only and never delegated execution ownership.<br/>It never repairs canonical facts from workflow-audit.json."]
     TrustModel["Cross-cutting note:<br/>Reviewer-facing audit output is policy-authoritative and freshness-verifiable within this repo,<br/>but not tamper-resistant or authenticated.<br/>Evidence-bearing artifacts require content digests or immutable external identities before publication."]
@@ -142,10 +142,10 @@ flowchart TD
 
     subgraph Phase9["Phase 9: PR Creation & Merge Readiness"]
         P9Manager["cs Product Owner remains the canonical Phase 9 owner and records every reviewer-significant Phase 9 fact"]
-        P9Startup["Record a bounded delegation to cs PR Manager that names the bounded task slice, expected artifact output or artifact bundle, completion signal, and closure condition; blocked startup or recovery never transfers ownership"]
+        P9Startup["Record a bounded delegation to cs PR Manager that names the bounded task slice, expected artifact output or artifact bundle, completion signal, closure condition, allowedActions, and authorizedTargets; blocked startup or recovery never transfers ownership"]
         P9Scribe["cs Product Owner invokes cs Scribe when HEAD, ledger, workflow contract, or reviewer-meaningful canonical facts require a fresh stable-snapshot audit"]
         P9Execute["cs PR Manager executes only the delegated PR-surface work and returns artifacts and evidence"]
-        P9Stale["At first observation, cs Product Owner records invalidation canonically and delegated PR-surface stale marking happens immediately; do not let the 300-second wait delay invalidation"]
+        P9Stale["At first observation, cs Product Owner records invalidation canonically and the continuously delegated stale-marker capability marks the PR surface stale immediately; do not let the 300-second wait delay invalidation"]
         P9Verify["cs Product Owner verifies workflow-audit provenance plus the current required CI identity set before republication or merge-readiness evaluation"]
         P9Publish["cs Product Owner decides publication or republication; cs PR Manager applies the PR-surface mutation only when delegated"]
         P9Wait["After pushing to an open PR, wait 300 seconds unless stale invalidation work preempts the wait"]
@@ -227,6 +227,7 @@ This section explicitly mirrors the v3 canonical event contract from [WORKFLOW.m
 - Reviewer-significant meaning MUST be explicit in structured fields. Cause, closure, outcome, artifact lineage, and provenance MUST NOT be reconstructed from chronology, prose, secondary logs, or path changes alone.
 - Every meaningful event carries `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, `outcome`, `artifactTransitions`, and `provenance` whenever the writer-obligation matrix requires them.
 - Every canonical event carries `appendPrecondition`, whose `expectedPriorSequence` encodes the fail-closed append expectation.
+- Every Phase 9 `delegation-recorded` event carries capability-scoped `allowedActions` and `authorizedTargets`, and the stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active.
 - `artifacts` remains evidence binding only. Artifact lifecycle meaning lives in `artifactTransitions`.
 - `details` is always serialized in canonical order and MUST use `{}` when no event-type-specific members apply.
 - The first canonical append uses `sequence = 1` and expected prior `sequence = 0`.
@@ -321,10 +322,11 @@ Reviewer-facing audit output becomes stale on any of these events:
 Publication and recovery rules:
 
 1. The Product Owner MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait, by recording the canonical invalidation fact and ensuring the Reviewer Audit Summary is marked stale on the PR surface with the stale reason and the last known freshness stamp.
-2. The Product Owner MUST regenerate `workflow-audit.md` from a fresh stable ledger snapshot only when HEAD, ledger snapshot, workflow contract fingerprint, or reviewer-meaningful canonical output changed.
-3. When only the required CI-result identity set changes for unchanged HEAD and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the Reviewer Audit Summary freshness stamp and merge-readiness evaluation without regenerating `workflow-audit.md`.
-4. The Product Owner MUST republish only after `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, `workflowContractFingerprint`, and any attached required CI-result identity set.
-5. Keep invalidation more granular than publication so the PR description does not churn on low-signal changes.
+2. The Product Owner MUST keep a bounded stale-marker delegation active for the current PR surface whenever a fresh Reviewer Audit Summary is published or a review-polling wait is active so stale-marker publication never waits on a new delegation round-trip.
+3. The Product Owner MUST regenerate `workflow-audit.md` from a fresh stable ledger snapshot only when HEAD, ledger snapshot, workflow contract fingerprint, or reviewer-meaningful canonical output changed.
+4. When only the required CI-result identity set changes for unchanged HEAD and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the Reviewer Audit Summary freshness stamp and merge-readiness evaluation without regenerating `workflow-audit.md`.
+5. The Product Owner MUST republish only after `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, `workflowContractFingerprint`, and any attached required CI-result identity set.
+6. Keep invalidation more granular than publication so the PR description does not churn on low-signal changes.
 
 ## State and Runtime Support Mirror
 
