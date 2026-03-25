@@ -316,16 +316,118 @@ function Invoke-ReSharperCleanup {
     Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho
 }
 
+function Get-SolutionProjectPaths {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SolutionPath
+    )
+
+    $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
+    if ([System.IO.Path]::GetExtension($resolvedSolution.Path) -ne '.sln') {
+        throw "Solution project discovery requires a generated '.sln' file. Received '$($resolvedSolution.Path)'."
+    }
+
+    $solutionDirectory = Split-Path -Parent $resolvedSolution.Path
+    $projectPaths =
+        foreach ($line in Get-Content -LiteralPath $resolvedSolution.Path) {
+            if ($line -match '^Project\("[^"]+"\)\s*=\s*"[^"]+",\s*"([^"]+\.csproj)",\s*"[^"]+"$') {
+                [System.IO.Path]::GetFullPath((Join-Path $solutionDirectory $Matches[1]))
+            }
+        }
+
+    return @($projectPaths | Sort-Object -Unique)
+}
+
+function Get-ExpectedSourceProjectNameFromTestProject {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$TestProjectPath
+    )
+
+    $testProjectName = [System.IO.Path]::GetFileNameWithoutExtension($TestProjectPath)
+    $expectedProjectName = $testProjectName -replace '\.L[0-9]+Tests$', '' -replace '\.Tests$', ''
+    return $expectedProjectName
+}
+
+function Resolve-MutationTargetFromTestProject {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$TestProjectPath
+    )
+
+    $resolvedTestProject = Resolve-Path -LiteralPath $TestProjectPath
+    $testProjectDirectory = Split-Path -Parent $resolvedTestProject.Path
+
+    [xml]$projectXml = Get-Content -LiteralPath $resolvedTestProject.Path
+    $sourceProjectReferences = @(
+        $projectXml.SelectNodes('//Project/ItemGroup/ProjectReference') |
+            ForEach-Object {
+                if ($_.Attributes -and $_.Attributes['Include']) {
+                    $candidatePath = [System.IO.Path]::GetFullPath((Join-Path $testProjectDirectory $_.Attributes['Include'].Value))
+                    if ($candidatePath -match '[\\/]src[\\/]' -and [System.IO.Path]::GetExtension($candidatePath) -eq '.csproj') {
+                        $candidatePath
+                    }
+                }
+            } |
+            Sort-Object -Unique
+    )
+
+    if ($sourceProjectReferences.Count -eq 0) {
+        return [pscustomobject]@{
+            TestProjectPath   = $resolvedTestProject.Path
+            SourceProjectPath = $null
+            SkipReason        = 'No source project references under src were found.'
+        }
+    }
+
+    $expectedProjectName = Get-ExpectedSourceProjectNameFromTestProject -TestProjectPath $resolvedTestProject.Path
+    $expectedMatches = @(
+        $sourceProjectReferences |
+            Where-Object { [System.IO.Path]::GetFileNameWithoutExtension($_) -ieq $expectedProjectName }
+    )
+
+    if ($expectedMatches.Count -eq 1) {
+        return [pscustomobject]@{
+            TestProjectPath   = $resolvedTestProject.Path
+            SourceProjectPath = $expectedMatches[0]
+            SkipReason        = $null
+        }
+    }
+
+    if ($sourceProjectReferences.Count -eq 1) {
+        return [pscustomobject]@{
+            TestProjectPath   = $resolvedTestProject.Path
+            SourceProjectPath = $sourceProjectReferences[0]
+            SkipReason        = $null
+        }
+    }
+
+    if ($expectedMatches.Count -gt 1) {
+        throw "Multiple source projects matched expected project name '$expectedProjectName' for test project '$($resolvedTestProject.Path)'."
+    }
+
+    return [pscustomobject]@{
+        TestProjectPath   = $resolvedTestProject.Path
+        SourceProjectPath = $null
+        SkipReason        = "Multiple source project references exist and none match expected project name '$expectedProjectName'."
+    }
+}
+
 function Get-TestProjects {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$SolutionPath
     )
 
-    $solutionDir = Split-Path -Parent $SolutionPath
-    $testProjects = Get-ChildItem -Path $solutionDir -Recurse -Filter "*Tests.csproj" | 
-        Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' } |
-        Select-Object -ExpandProperty FullName
+    $solutionProjects = @(Get-SolutionProjectPaths -SolutionPath $SolutionPath)
+    $testProjects = @(
+        $solutionProjects |
+            Where-Object {
+                ($_ -match '[\\/]tests[\\/]') -and
+                ([System.IO.Path]::GetFileNameWithoutExtension($_) -like '*Tests') -and
+                (Test-Path -LiteralPath $_ -PathType Leaf)
+            }
+    )
 
     return $testProjects
 }
@@ -333,19 +435,28 @@ function Get-TestProjects {
 function Invoke-StrykerMutationTestPerProject {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$ProjectPath,
+        [Parameter(Mandatory)][string]$SolutionPath,
+        [Parameter(Mandatory)][string]$TestProjectPath,
+        [Parameter(Mandatory)][string]$SourceProjectPath,
         [Parameter(Mandatory)][string]$OutputPath
     )
 
-    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ProjectPath)
+    $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
+    $resolvedTestProject = Resolve-Path -LiteralPath $TestProjectPath
+    $resolvedSourceProject = Resolve-Path -LiteralPath $SourceProjectPath
+
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedTestProject.Path)
     $projectOutputPath = Join-Path $OutputPath $projectName
     
     if (-not (Test-Path -LiteralPath $projectOutputPath)) {
         $null = New-Item -ItemType Directory -Path $projectOutputPath -Force
     }
 
-    Write-Host "  Running Stryker for project: $projectName" -ForegroundColor ([ConsoleColor]::Cyan)
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('stryker','--project',$projectName,'--output',$projectOutputPath) -ErrorMessage "Stryker mutation testing failed for project $projectName." -SuppressCommandEcho
+    Write-Host "  Running Stryker for test project: $projectName" -ForegroundColor ([ConsoleColor]::Cyan)
+    Write-Host "    Solution: $($resolvedSolution.Path)" -ForegroundColor ([ConsoleColor]::DarkGray)
+    Write-Host "    Test project: $($resolvedTestProject.Path)" -ForegroundColor ([ConsoleColor]::DarkGray)
+    Write-Host "    Source project: $($resolvedSourceProject.Path)" -ForegroundColor ([ConsoleColor]::DarkGray)
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('stryker','--solution',$resolvedSolution.Path,'--test-project',$resolvedTestProject.Path,'--project',$resolvedSourceProject.Path,'--output',$projectOutputPath) -ErrorMessage "Stryker mutation testing failed for test project $projectName." -SuppressCommandEcho
     
     return $projectOutputPath
 }
@@ -367,34 +478,66 @@ function Invoke-StrykerMutationTest {
     # Run Stryker per-project instead of at solution level to avoid compilation issues
     # with source generators (like LoggerMessage)
     Write-Host "Discovering test projects in solution..." -ForegroundColor ([ConsoleColor]::Cyan)
-    $testProjects = Get-TestProjects -SolutionPath $resolvedSolution.Path
+    $testProjects = @(Get-TestProjects -SolutionPath $resolvedSolution.Path)
     Write-Host "Found $($testProjects.Count) test projects" -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
+
+    if ($testProjects.Count -eq 0) {
+        throw "No test projects were found in solution '$($resolvedSolution.Path)'."
+    }
 
     $projectResults = @()
     foreach ($testProject in $testProjects) {
         try {
-            $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputFullPath
-            $projectResults += @{ Project = $testProject; Output = $projectOutput; Success = $true }
+            $mutationTarget = Resolve-MutationTargetFromTestProject -TestProjectPath $testProject
+            if (-not $mutationTarget.SourceProjectPath) {
+                Write-Warning "  - Skipped: $([System.IO.Path]::GetFileNameWithoutExtension($testProject)) - $($mutationTarget.SkipReason)"
+                $projectResults += @{ Project = $testProject; Output = $null; Success = $false; Skipped = $true; Error = $mutationTarget.SkipReason }
+                Write-Host
+                continue
+            }
+
+            $projectOutput = Invoke-StrykerMutationTestPerProject -SolutionPath $resolvedSolution.Path -TestProjectPath $mutationTarget.TestProjectPath -SourceProjectPath $mutationTarget.SourceProjectPath -OutputPath $outputFullPath
+            $projectResults += @{ Project = $testProject; SourceProject = $mutationTarget.SourceProjectPath; Output = $projectOutput; Success = $true; Skipped = $false }
             Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($testProject))" -ForegroundColor ([ConsoleColor]::Green)
         }
         catch {
             Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($testProject)) - $($_.Exception.Message)"
-            $projectResults += @{ Project = $testProject; Output = $null; Success = $false; Error = $_.Exception.Message }
+            $projectResults += @{ Project = $testProject; Output = $null; Success = $false; Skipped = $false; Error = $_.Exception.Message }
         }
         Write-Host
     }
 
-    # Check if any projects failed
-    $failedProjects = $projectResults | Where-Object { -not $_.Success }
+    $successfulProjects = @($projectResults | Where-Object { $_.Success })
+    $skippedProjects = @($projectResults | Where-Object { $_.Skipped })
+    $failedProjects = @($projectResults | Where-Object { -not $_.Success -and -not $_.Skipped })
+
+    if ($skippedProjects.Count -gt 0) {
+        Write-Host "WARNING: $($skippedProjects.Count) project(s) were skipped during mutation target resolution" -ForegroundColor ([ConsoleColor]::Yellow)
+        foreach ($skipped in $skippedProjects) {
+            Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($skipped.Project)): $($skipped.Error)" -ForegroundColor ([ConsoleColor]::Yellow)
+        }
+        Write-Host
+    }
+
+    if ($successfulProjects.Count -eq 0) {
+        throw "Mutation testing did not start for any Mississippi solution test project. Failed: $($failedProjects.Count). Skipped: $($skippedProjects.Count)."
+    }
+
     if ($failedProjects.Count -gt 0) {
         Write-Host "WARNING: $($failedProjects.Count) project(s) failed mutation testing" -ForegroundColor ([ConsoleColor]::Yellow)
         foreach ($failed in $failedProjects) {
             Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($failed.Project)): $($failed.Error)" -ForegroundColor ([ConsoleColor]::Yellow)
         }
+
+        throw "Mutation testing failed for $($failedProjects.Count) project(s) after $($successfulProjects.Count) successful run(s)."
     }
 
-    return $outputFullPath
+    return [pscustomobject]@{
+        OutputPath      = $outputFullPath
+        SuccessfulRuns  = $successfulProjects.Count
+        SkippedProjects = $skippedProjects.Count
+    }
 }
 
 function Invoke-MississippiSolutionBuild {
@@ -713,12 +856,12 @@ function Invoke-MississippiSolutionMutationTests {
 
     $timestamp = Get-Date -Format 'yyyy-MM-dd.HH-mm-ss'
     $outputDirectory = Join-Path $mutationRoot $timestamp
-    Invoke-StrykerMutationTest -SolutionPath $generatedSln -OutputPath $outputDirectory | Out-Null
+    $mutationResult = Invoke-StrykerMutationTest -SolutionPath $generatedSln -OutputPath $outputDirectory
 
     Write-Host 'SUCCESS: Mutation testing completed with acceptable scores' -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== MISSISSIPPI SOLUTION MUTATION TESTING COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
-    Write-Host 'Test quality validated | Mutation score meets project standards'
+    Write-Host "Test quality validated | Successful mutation runs: $($mutationResult.SuccessfulRuns) | Skipped projects: $($mutationResult.SkippedProjects)"
 }
 
 function Invoke-SolutionsPipeline {
