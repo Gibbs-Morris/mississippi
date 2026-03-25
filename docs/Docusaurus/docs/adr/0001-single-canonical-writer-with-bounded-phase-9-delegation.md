@@ -105,8 +105,13 @@ This option keeps the Product Owner involved in Phase 9 while also letting the s
 
 This ADR is based on the solution design and Three Amigos synthesis prepared for the canonical Clean Squad orchestrator refactor.
 
-- Primary design input: `.thinking/2026-03-25-canonical-clean-squad-orchestrator/03-architecture/solution-design.md`
-- Cross-functional synthesis: `.thinking/2026-03-25-canonical-clean-squad-orchestrator/02-three-amigos/synthesis.md`
-- ADR template and lifecycle rules: `.github/instructions/adr.instructions.md`
+The underlying solution design described the single canonical writer pattern for workflow events, clarified the distinct responsibilities of `cs Product Owner` and `cs PR Manager`, and analyzed failure and recovery scenarios around Phase 9 delegation.
+
+The Three Amigos synthesis captured cross-functional agreement on keeping a single canonical writer while allowing bounded Phase 9 delegation to a specialist without introducing multi-writer ledger semantics.
+
+Related durable references:
+
+- Published workflow contract: [Clean Squad workflow](../../../../.github/clean-squad/WORKFLOW.md)
+- ADR authoring mechanics, template, and lifecycle rules: [ADR instructions](../../../../.github/instructions/adr.instructions.md)
 
 The decision to reuse the existing event envelope for delegated provenance was intentionally kept inside this ADR rather than published as a separate record, because the current design does not show an independently justified architectural fork on schema shape.
