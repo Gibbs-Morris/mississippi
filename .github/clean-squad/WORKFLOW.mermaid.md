@@ -32,8 +32,7 @@ flowchart TD
         Entrepreneur --> StoryPack["Story Pack candidate"]
         StoryPack --> G0{"G0 Intake Gate<br/>Story Pack candidate"}
         G0 -->|APPROVED| ProductOwner
-        G0 -->|CHANGES_REQUESTED| Entrepreneur
-        G0 -->|DEFERRED or CANCELLED| Stop0(["Stop or hold before governed intake"])
+        G0 -->|NOT APPROVED| G0NotApproved["Stop or rework outside governed workflow<br/>(see G0 gate outcomes in WORKFLOW.md)"]
     end
 
     subgraph Phase1["Phase 1: Intake & Discovery"]
