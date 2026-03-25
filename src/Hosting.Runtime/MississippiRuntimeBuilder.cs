@@ -13,8 +13,6 @@ namespace Mississippi.Hosting.Runtime;
 /// </summary>
 public sealed class MississippiRuntimeBuilder
 {
-    private MississippiRuntimeBuilderState State { get; }
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="MississippiRuntimeBuilder" /> class.
     /// </summary>
@@ -36,6 +34,8 @@ public sealed class MississippiRuntimeBuilder
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public IServiceCollection Services { get; }
+
+    private MississippiRuntimeBuilderState State { get; }
 
     /// <summary>
     ///     Queues Orleans silo configuration within the Mississippi runtime builder flow.

@@ -75,7 +75,6 @@ builder.AddMississippiRuntime(runtime =>
 
     // Register notification service (stub for demo, replace with real provider in production)
     runtime.Services.AddSingleton<INotificationService, StubNotificationService>();
-
     runtime.Services.AddOpenTelemetry()
         .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
@@ -97,12 +96,10 @@ builder.AddMississippiRuntime(runtime =>
             .AddMeter("Microsoft.Orleans"))
         .WithLogging()
         .UseOtlpExporter();
-
     runtime.Services.AddInletSilo();
     runtime.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
     runtime.Services.AddJsonSerialization();
     runtime.Services.AddSnapshotCaching();
-
     runtime.Services.AddCosmosBrookStorageProvider(options =>
     {
         options.CosmosClientServiceKey = sharedCosmosKey;
@@ -111,7 +108,6 @@ builder.AddMississippiRuntime(runtime =>
         options.QueryBatchSize = 50;
         options.MaxEventsPerBatch = 50;
     });
-
     runtime.Services.AddCosmosSnapshotStorageProvider(options =>
     {
         options.CosmosClientServiceKey = sharedCosmosKey;
@@ -119,7 +115,6 @@ builder.AddMississippiRuntime(runtime =>
         options.ContainerId = "snapshots";
         options.QueryBatchSize = 100;
     });
-
     runtime.Orleans(siloBuilder =>
     {
         siloBuilder.AddActivityPropagation();

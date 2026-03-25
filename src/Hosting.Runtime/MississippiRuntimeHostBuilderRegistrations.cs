@@ -4,8 +4,6 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using Orleans.Hosting;
-
 
 namespace Mississippi.Hosting.Runtime;
 
@@ -24,9 +22,10 @@ public static class MississippiRuntimeHostBuilderRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
-        MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(builder.Configuration, builder.Environment.EnvironmentName);
+        MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(
+            builder.Configuration,
+            builder.Environment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(builder.Services);
-
         if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(MississippiRuntimeBuilderState)))
         {
             throw new InvalidOperationException(

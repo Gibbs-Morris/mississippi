@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.SignalR;
@@ -25,8 +24,9 @@ public sealed class MississippiGatewayBuilderTests
         IServiceCollection services
     )
     {
-        Type runtimeMarkerType = typeof(MississippiRuntimeBuilder).Assembly
-            .GetType("Mississippi.Hosting.Runtime.MississippiRuntimeHostModeMarker", throwOnError: true)!;
+        Type runtimeMarkerType = typeof(MississippiRuntimeBuilder).Assembly.GetType(
+            "Mississippi.Hosting.Runtime.MississippiRuntimeHostModeMarker",
+            true)!;
         object markerInstance = Activator.CreateInstance(runtimeMarkerType) ??
                                 throw new InvalidOperationException("Runtime host mode marker instance was null.");
         services.AddSingleton(runtimeMarkerType, markerInstance);

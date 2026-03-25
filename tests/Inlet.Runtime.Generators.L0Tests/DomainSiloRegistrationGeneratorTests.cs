@@ -6,7 +6,6 @@ using System.Linq;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Hosting.Runtime;
@@ -155,39 +154,15 @@ public sealed class DomainSiloRegistrationGeneratorTests
             .GetText()
             .ToString();
         Assert.Contains("AddTestAppDomain", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("public static MississippiRuntimeBuilder AddTestAppDomain", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static MississippiRuntimeBuilder AddTestAppDomain",
+            generatedCode,
+            StringComparison.Ordinal);
         Assert.Contains("this MississippiRuntimeBuilder runtime", generatedCode, StringComparison.Ordinal);
         Assert.Contains("runtime.Services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("runtime.Services.AddMoneyTransferSaga();", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("SagaSaga", generatedCode, StringComparison.Ordinal);
         Assert.Contains("runtime.Services.AddBalanceProjection();", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("return runtime;", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Generated silo domain registration uses a non-Domain root name when no Domain segment exists.
-    /// </summary>
-    [Fact]
-    public void GeneratedDomainRegistrationUsesNonDomainRootNameWhenDomainSegmentIsAbsent()
-    {
-        const string source = """
-                              using Mississippi.Inlet.Generators.Abstractions;
-
-                              namespace CoreLogic.Aggregates.Order
-                              {
-                                  [GenerateAggregateEndpoints]
-                                  public sealed record OrderAggregate;
-                              }
-                              """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, source);
-        string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
-            .GetText()
-            .ToString();
-        Assert.Contains("AddCoreLogic", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("public static MississippiRuntimeBuilder AddCoreLogic", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("runtime.Services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("return runtime;", generatedCode, StringComparison.Ordinal);
     }
 
@@ -215,11 +190,37 @@ public sealed class DomainSiloRegistrationGeneratorTests
             .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-
-        int addOrderAggregateCount = generatedCode.Split(
-            "runtime.Services.AddOrderAggregate();",
-            StringSplitOptions.None).Length - 1;
-
+        int addOrderAggregateCount = generatedCode.Split("runtime.Services.AddOrderAggregate();").Length - 1;
         Assert.Equal(1, addOrderAggregateCount);
+    }
+
+    /// <summary>
+    ///     Generated silo domain registration uses a non-Domain root name when no Domain segment exists.
+    /// </summary>
+    [Fact]
+    public void GeneratedDomainRegistrationUsesNonDomainRootNameWhenDomainSegmentIsAbsent()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace CoreLogic.Aggregates.Order
+                              {
+                                  [GenerateAggregateEndpoints]
+                                  public sealed record OrderAggregate;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains("AddCoreLogic", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static MississippiRuntimeBuilder AddCoreLogic",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("runtime.Services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("return runtime;", generatedCode, StringComparison.Ordinal);
     }
 }

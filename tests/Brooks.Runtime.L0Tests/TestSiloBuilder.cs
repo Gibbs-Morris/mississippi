@@ -21,12 +21,12 @@ internal sealed class TestSiloBuilder : ISiloBuilder
     }
 
     /// <summary>
-    ///     Gets the service collection exposed through the test double.
-    /// </summary>
-    public IServiceCollection Services { get; }
-
-    /// <summary>
     ///     Gets the configuration exposed through the test double.
     /// </summary>
     public IConfiguration Configuration { get; }
+
+    /// <summary>
+    ///     Gets the service collection exposed through the test double.
+    /// </summary>
+    public IServiceCollection Services { get; }
 }

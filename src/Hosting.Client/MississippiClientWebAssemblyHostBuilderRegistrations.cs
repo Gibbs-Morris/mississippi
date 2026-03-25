@@ -22,7 +22,6 @@ public static class MississippiClientWebAssemblyHostBuilderRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
-
         if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(MississippiClientHostModeMarker)))
         {
             throw new InvalidOperationException(

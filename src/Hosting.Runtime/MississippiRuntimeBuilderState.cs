@@ -15,14 +15,6 @@ namespace Mississippi.Hosting.Runtime;
 /// </summary>
 internal sealed class MississippiRuntimeBuilderState
 {
-    private IConfiguration Configuration { get; }
-
-    private IHostEnvironment HostEnvironment { get; }
-
-    private IServiceCollection HostServices { get; }
-
-    private List<Action<ISiloBuilder>> OrleansConfigurations { get; } = [];
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="MississippiRuntimeBuilderState" /> class.
     /// </summary>
@@ -48,6 +40,14 @@ internal sealed class MississippiRuntimeBuilderState
     /// </summary>
     internal IReadOnlyList<Action<ISiloBuilder>> QueuedOrleansConfigurations => OrleansConfigurations;
 
+    private IConfiguration Configuration { get; }
+
+    private IHostEnvironment HostEnvironment { get; }
+
+    private IServiceCollection HostServices { get; }
+
+    private List<Action<ISiloBuilder>> OrleansConfigurations { get; } = [];
+
     /// <summary>
     ///     Applies all queued Orleans configuration callbacks to the provided silo builder.
     /// </summary>
@@ -57,8 +57,11 @@ internal sealed class MississippiRuntimeBuilderState
     )
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
-        IReadOnlyDictionary<string, int> frozenOrleansOwnership = MississippiRuntimeCompositionGuards.CaptureFrozenOrleansOwnership(siloBuilder.Services);
-        MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(Configuration, HostEnvironment.EnvironmentName);
+        IReadOnlyDictionary<string, int> frozenOrleansOwnership =
+            MississippiRuntimeCompositionGuards.CaptureFrozenOrleansOwnership(siloBuilder.Services);
+        MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(
+            Configuration,
+            HostEnvironment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(HostServices);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(siloBuilder.Services);
         foreach (Action<ISiloBuilder> configure in OrleansConfigurations)
@@ -66,10 +69,14 @@ internal sealed class MississippiRuntimeBuilderState
             configure(siloBuilder);
         }
 
-        MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(Configuration, HostEnvironment.EnvironmentName);
+        MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(
+            Configuration,
+            HostEnvironment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(HostServices);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(siloBuilder.Services);
-        MississippiRuntimeCompositionGuards.ThrowIfFrozenOrleansOwnershipChanged(siloBuilder.Services, frozenOrleansOwnership);
+        MississippiRuntimeCompositionGuards.ThrowIfFrozenOrleansOwnershipChanged(
+            siloBuilder.Services,
+            frozenOrleansOwnership);
     }
 
     /// <summary>

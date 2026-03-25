@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -9,8 +8,6 @@ using Microsoft.Extensions.Options;
 using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime.Reader;
-
-using Orleans.Hosting;
 
 
 namespace Mississippi.Brooks.Runtime.L0Tests;
@@ -20,6 +17,19 @@ namespace Mississippi.Brooks.Runtime.L0Tests;
 /// </summary>
 public sealed class BrooksRuntimeRegistrationsTests
 {
+    /// <summary>
+    ///     Verifies that the service-collection onboarding path remains the supported Brooks runtime registration surface.
+    /// </summary>
+    [Fact]
+    public void AddEventSourcingByServiceAddsServicesWithoutHostBuilderOnboarding()
+    {
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+        builder.Services.AddEventSourcingByService();
+        IServiceCollection services = builder.Services;
+        Assert.Contains(services, d => d.ServiceType == typeof(IBrookGrainFactory));
+        Assert.Contains(services, d => d.ServiceType == typeof(IStreamIdFactory));
+    }
+
     /// <summary>
     ///     Verifies that <c>AddEventSourcingByService</c> uses default stream provider name.
     /// </summary>
@@ -70,23 +80,8 @@ public sealed class BrooksRuntimeRegistrationsTests
     {
         TestSiloBuilder builder = new();
         builder.AddEventSourcing(options => options.OrleansStreamProviderName = "CustomStreams");
-
         using ServiceProvider provider = builder.Services.BuildServiceProvider();
         BrookProviderOptions options = provider.GetRequiredService<IOptions<BrookProviderOptions>>().Value;
         Assert.Equal("CustomStreams", options.OrleansStreamProviderName);
-    }
-
-    /// <summary>
-    ///     Verifies that the service-collection onboarding path remains the supported Brooks runtime registration surface.
-    /// </summary>
-    [Fact]
-    public void AddEventSourcingByServiceAddsServicesWithoutHostBuilderOnboarding()
-    {
-        HostApplicationBuilder builder = Host.CreateApplicationBuilder(Array.Empty<string>());
-        builder.Services.AddEventSourcingByService();
-
-        IServiceCollection services = builder.Services;
-        Assert.Contains(services, d => d.ServiceType == typeof(IBrookGrainFactory));
-        Assert.Contains(services, d => d.ServiceType == typeof(IStreamIdFactory));
     }
 }
