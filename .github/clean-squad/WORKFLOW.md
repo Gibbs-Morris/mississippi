@@ -183,12 +183,16 @@ Every G0-G3 human gate decision **MUST** be recorded canonically in
   `rootWorkItemId` of `gate.g0-review`, `gate.g1-review`, `gate.g2-review`, or
   `gate.g3-review` as applicable.
 - The gate-decision `completed` event **MUST** include `details.gateId` and
-  `details.decision`, where `gateId` is one of `G0`, `G1`, `G2`, or `G3` and
+  `details.decision`, and **MUST** also include `details.gateName` and
+  `details.decidedBy`. `details.notes` MAY be included when the responsible
+  human supplies rationale. `gateId` is one of `G0`, `G1`, `G2`, or `G3`;
   `decision` is one of `APPROVED`, `CHANGES_REQUESTED`, `DEFERRED`, or
-  `CANCELLED`.
+  `CANCELLED`; `gateName` is the human-readable gate label; and `decidedBy`
+  identifies the responsible human decider.
 - The gate-decision `completed` event **MUST** bind the exact reviewed artifact
-  package in `artifacts`, using `digestSha256` for local files or
-  `immutableId` plus `uri` for immutable external resources.
+  package in `artifacts`, using at least one artifact with role
+  `gate-package` plus `digestSha256` for local files or `immutableId` plus
+  `uri` for immutable external resources.
 - Gate decisions **MUST** map to canonical `outcome` values as follows:
   - `APPROVED` -> `succeeded`
   - `CHANGES_REQUESTED` -> `failed`
@@ -561,7 +565,7 @@ Allowed `reasonCode` values:
 Artifact binding rules:
 
 - `path` values MUST be workspace-relative paths when the artifact exists in the repository or task folder.
-- `role` MUST describe the artifact purpose using a stable noun phrase such as `phase-output`, `review-synthesis`, `pr-description`, `thread-log`, `quality-gate-evidence`, or `scope-assessment`.
+- `role` MUST describe the artifact purpose using a stable noun phrase such as `phase-output`, `review-synthesis`, `pr-description`, `thread-log`, `quality-gate-evidence`, `gate-package`, or `scope-assessment`.
 - Evidence-bearing artifacts MUST bind either `digestSha256` for local files or `immutableId` plus `uri` for immutable external resources.
 - Path-only references are insufficient for reviewer-facing audit publication.
 
@@ -631,7 +635,7 @@ Relationship semantics:
 `details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutputPath`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
-- `completed`: `gateId`, `decision` when the completed event records a human gate decision
+- `completed`: `gateId`, `gateName`, `decision`, `decidedBy`, and optional `notes` when the completed event records a human gate decision
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
 - `deviation-recorded`: `deviationClass`, `rationalePath`
 - `blocked`: `blockerKind`, `blockedOn`
