@@ -14,6 +14,8 @@ public sealed class BlobStorageTests
 {
     private const string TestContainerName = "test-container";
 
+    private static readonly DateTime ReadBlobTimestampUtc = new(2024, 02, 03, 04, 05, 06, DateTimeKind.Utc);
+
     private readonly CrescentFixture fixture;
 
     /// <summary>
@@ -113,7 +115,7 @@ public sealed class BlobStorageTests
         BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(TestContainerName);
         await containerClient.CreateIfNotExistsAsync();
         string blobName = $"read-test-{Guid.NewGuid()}.txt";
-        string expectedContent = $"Test content written at {DateTime.UtcNow:O}";
+        string expectedContent = $"Test content written at {ReadBlobTimestampUtc:O}";
         BlobClient blobClient = containerClient.GetBlobClient(blobName);
 
         // Write the blob first
