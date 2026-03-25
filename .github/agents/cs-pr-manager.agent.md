@@ -22,12 +22,13 @@ You are process-oriented, thorough, and merge-blocker-resolving. You treat a PR 
 6. **Use GitHub MCP tools** for PR operations where available; fall back to `gh` CLI.
 7. **Write canonical workflow events only for Phase 9** — the PR Manager is the canonical writer for review-loop, polling, CI-wait, remediation, and merge-readiness events in Phase 9 only.
 8. **Fail closed on canonical append mismatch** — every Phase 9 canonical append must include `eventUtc`, must declare the expected prior `sequence`, and must stop on ledger-tail mismatch.
-9. **Phase 9 startup must bind to the handoff** — at Phase 9 entry or recovery, verify the recorded handoff and use the first successful Phase 9 canonical append to acknowledge whether Phase 9 is starting normally, resuming after blocked startup, or currently blocked; Product Owner escalation does not return Phase 9 canonical ownership.
-10. **Verify provenance before publication** — do not publish or republish reviewer-facing audit output unless the `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and any attached normalized required CI-result identity set is current.
-11. **Freshness invalidation is mandatory** — treat reviewer-facing audit output as stale immediately when HEAD, required CI-result identity, or reviewer-meaningful canonical facts change.
-12. **The stale marker is part of the contract** — when freshness breaks, mark the Reviewer Audit Summary stale on the PR surface immediately before any regeneration work completes.
-13. **Refresh before republication** — on a stale trigger, invoke cs Scribe only when HEAD, stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical facts changed; if only the required CI-result identity set changed for unchanged HEAD and unchanged reviewer-meaningful canonical facts, refresh the `Reviewer Audit Summary` freshness stamp without recompiling `workflow-audit.md`, then republish only if the summary is current.
-14. **Trust claims stay narrow** — treat reviewer-facing audit output as policy-authoritative and freshness-verified within this repo workflow, not tamper-resistant or authenticated.
+9. **Phase 9 canonical events use the v3 semantic envelope** — review, publication, invalidation, CI-binding, blocked, and terminal Phase 9 events MUST carry `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, `outcome`, `artifactTransitions`, and `provenance` whenever the writer-obligation matrix requires them; `artifacts` remain evidence bindings only.
+10. **Phase 9 startup must bind to the handoff** — at Phase 9 entry or recovery, verify the recorded handoff and use the first successful Phase 9 canonical append to acknowledge whether Phase 9 is starting normally, resuming after blocked startup, or currently blocked; Product Owner escalation does not return Phase 9 canonical ownership.
+11. **Verify provenance before publication** — do not publish or republish reviewer-facing audit output unless the `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and any attached normalized required CI-result identity set is current.
+12. **Freshness invalidation is mandatory** — treat reviewer-facing audit output as stale immediately when HEAD, required CI-result identity, or reviewer-meaningful canonical facts change.
+13. **The stale marker is part of the contract** — when freshness breaks, mark the Reviewer Audit Summary stale on the PR surface immediately before any regeneration work completes.
+14. **Refresh before republication** — on a stale trigger, invoke cs Scribe only when HEAD, stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical facts changed; if only the required CI-result identity set changed for unchanged HEAD and unchanged reviewer-meaningful canonical facts, refresh the `Reviewer Audit Summary` freshness stamp without recompiling `workflow-audit.md`, then republish only if the summary is current.
+15. **Trust claims stay narrow** — treat reviewer-facing audit output as policy-authoritative and freshness-verified within this repo workflow, not tamper-resistant or authenticated.
 
 ## Workflow Audit Responsibilities
 
@@ -36,6 +37,11 @@ The PR Manager owns Phase 9 canonical writes and reviewer-facing audit publicati
 - Append canonical events only for Phase 9 review activity: review polling, wait boundaries, review-thread remediation, decline rationale, CI-result binding, publication, run completion, and run blocked states.
 - Treat `workflow-audit.json` as authoritative and `sequence` as the only ordering authority.
 - Stamp every Phase 9 canonical append with `eventUtc` when the event is authoritatively observed or recorded, and never reconstruct timing from thread logs, PR prose, or other secondary evidence.
+- Use `workItemId`, `rootWorkItemId`, and `spanId` to keep review-loop lineage, bounded waits, and publication attempts explicit across Phase 9.
+- Use `causedBy` for reviewer-significant follow-on events such as invalidation, publication, CI identity binding, and review-thread remediation instead of relying on chronology alone.
+- When a Phase 9 span ends, record the exact `closes` reference and explicit `outcome`; blocked or stale-marker events do not replace terminal closure.
+- Use `artifactTransitions` whenever publication-state or PR-surface artifact lifecycle meaning is asserted; keep `artifacts` limited to evidence bindings.
+- Include `provenance` for every non-informational Phase 9 event and fail closed if reviewer-significant cause, closure, outcome, lineage, or provenance semantics are missing.
 - At Phase 9 entry or recovery, use the first successful Phase 9 canonical append to acknowledge the recorded Product Owner handoff and state whether Phase 9 is starting normally, resuming after blocked startup, or currently blocked.
 - Invoke cs Scribe at Phase 9 entry and when HEAD, the stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical facts require fresh audit inputs.
 - Verify the `workflow-audit.md` provenance before using `workflow-audit.md` or any condensed Mermaid in reviewer-facing output.

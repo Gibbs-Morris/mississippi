@@ -15,7 +15,7 @@ flowchart TD
     AuditOwnership["Cross-cutting note:<br/>cs Product Owner writes canonical audit events for Phases 1-8.<br/>cs PR Manager writes canonical audit events for Phase 9.<br/>cs Scribe publishes derived audit output only."]
     AuditRules["Cross-cutting note:<br/>sequence is the only ordering authority.<br/>Canonical eventUtc timestamps are mandatory for timing and diagnostics only and never override sequence.<br/>Narrative logs, Mermaid, and PR prose are supporting or derived evidence only."]
     AuditHandoff["Cross-cutting note:<br/>Only one canonical writer may be active for a workflow boundary at a time.<br/>The Product Owner to PR Manager handoff is explicit before Phase 9 writes.<br/>After handoff, canonical ownership stays with cs PR Manager even if startup is blocked before the first Phase 9 append.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch."]
-    AuditEventContract["Cross-cutting note:<br/>Every canonical event includes sequence, eventUtc, logicalEventId, actor, phase, eventType, summary,<br/>reasonCode when required, artifacts when applicable, and iterationId for loops or retries."]
+    AuditEventContract["Cross-cutting note:<br/>Every canonical event uses the v3 semantic envelope: sequence, eventUtc, logicalEventId, actor, phase, eventType,<br/>workItemId and rootWorkItemId when meaningful, spanId, causedBy, closes, outcome, summary, reasonCode,<br/>artifacts as evidence bindings, artifactTransitions for lifecycle meaning, iterationId, and provenance."]
     StateSupportContract["Cross-cutting note:<br/>state.json is runtime support only and mirrors the workflow state contract exactly.<br/>It includes workflowContractFingerprint, currentSequence, currentOwner, openWait, and lastCompiledAtUtc.<br/>It never repairs canonical facts from workflow-audit.json."]
     TrustModel["Cross-cutting note:<br/>Reviewer-facing audit output is policy-authoritative and freshness-verifiable within this repo,<br/>but not tamper-resistant or authenticated.<br/>Evidence-bearing artifacts require content digests or immutable external identities before publication."]
     ProvenanceContract["Cross-cutting note:<br/>Every detailed audit artifact binds to HEAD SHA, ledger watermark, ledgerDigest, workflowContractFingerprint,<br/>generation timestamp, and generator identity.<br/>When merge readiness depends on CI, cs PR Manager attaches the current normalized required CI-result identity set to the Reviewer Audit Summary freshness stamp.<br/>Required CI identity changes alone do not force detailed-audit recompilation, and merge readiness never passes with stale, missing, or mismatched provenance."]
@@ -216,6 +216,73 @@ flowchart TD
     P9Timing -.-> P9Wait
     P9Derived -.-> P9Scribe
 ```
+
+## Canonical Event Contract Mirror
+
+This section explicitly mirrors the v3 canonical event contract from [WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow differ, [WORKFLOW.md](WORKFLOW.md) governs.
+
+- `workflow-audit.json` now uses `schemaVersion = clean-squad-workflow-audit/v3`.
+- Reviewer-significant meaning MUST be explicit in structured fields. Cause, closure, outcome, artifact lineage, and provenance MUST NOT be reconstructed from chronology, prose, secondary logs, or path changes alone.
+- Every meaningful event carries `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, `outcome`, `artifactTransitions`, and `provenance` whenever the writer-obligation matrix requires them.
+- `artifacts` remains evidence binding only. Artifact lifecycle meaning lives in `artifactTransitions`.
+
+Canonical top-level shape mirror:
+
+```json
+{
+    "schemaVersion": "clean-squad-workflow-audit/v3",
+    "workflowContractFingerprint": "<sha256 of UTF-8 bytes of .github/clean-squad/WORKFLOW.md>",
+    "ledgerDigestAlgorithm": "sha256-canonical-json-v1",
+    "events": []
+}
+```
+
+Canonical event property-order mirror:
+
+```json
+{
+    "sequence": 1,
+    "eventUtc": "2026-03-25T00:00:00.0000000Z",
+    "logicalEventId": "phase-03-start",
+    "actor": "cs Product Owner",
+    "phase": "architecture",
+    "eventType": "phase-started",
+    "workItemId": "work.architecture.solution-design",
+    "rootWorkItemId": "work.architecture.solution-design",
+    "spanId": "span.architecture.solution-design.attempt-01",
+    "causedBy": {
+        "sequence": 12,
+        "logicalEventId": "phase-02-complete",
+        "relationship": "direct"
+    },
+    "closes": null,
+    "outcome": null,
+    "summary": "Architecture phase started.",
+    "reasonCode": null,
+    "artifacts": [],
+    "artifactTransitions": [],
+    "iterationId": null,
+    "provenance": {
+        "sourceKind": "system-triggered",
+        "recordedBy": "cs Product Owner",
+        "evidence": []
+    },
+    "details": {}
+}
+```
+
+## Writer Obligation Matrix Mirror
+
+This section explicitly mirrors the semantic-family obligations from [WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow differ, [WORKFLOW.md](WORKFLOW.md) governs.
+
+| Event Family | Required Fields | Invalid If Missing |
+|-------------|-----------------|--------------------|
+| lifecycle-start | `workItemId`, `rootWorkItemId`, `spanId`, `provenance` | The span cannot be tracked or closed. |
+| lifecycle-terminal | `workItemId`, `rootWorkItemId`, `closes`, `outcome`, `provenance` | Exact closure and disposition become ambiguous. |
+| causal-link | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance` | The event looks chronology-driven rather than canonically caused. |
+| artifact-transition | `workItemId`, `rootWorkItemId`, `artifactTransitions`, `provenance` | Artifact history becomes narrative-only. |
+| publication-state | `workItemId`, `rootWorkItemId`, `provenance` | Reviewer-summary freshness becomes untrustworthy. |
+| informational-only | Base fields only | This family MUST NOT be used for reviewer-significant facts. |
 
 ## Trust and Freshness Mirror
 

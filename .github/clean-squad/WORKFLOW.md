@@ -171,6 +171,10 @@ retired.
 
 #### Canonical Event Contract
 
+Canonical events MUST be append-only.
+
+Reviewer-significant meaning MUST live in the structured canonical event envelope. Writers and validators MUST NOT infer direct cause, exact closure, terminal outcome, artifact lineage, or provenance from sequence order, `summary` prose, supporting logs, or path changes alone.
+
 Every canonical event MUST include:
 
 1. monotonic `sequence`
@@ -181,10 +185,12 @@ Every canonical event MUST include:
 6. `eventType`
 7. human-readable `summary`
 8. `reasonCode` when required
-9. `artifacts` when applicable
-10. `iterationId` for loops, retries, or repeated review cycles when applicable
+9. `artifacts` when applicable as evidence bindings
+10. `artifactTransitions` when artifact lifecycle meaning is asserted
+11. `iterationId` for loops, retries, or repeated review cycles when applicable
+12. `provenance` for every non-informational event
 
-Canonical events MUST be append-only.
+Meaningful events MUST additionally carry `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, and `outcome` whenever the writer-obligation matrix below marks them as required.
 
 #### Normative Canonical JSON Contract
 
@@ -192,7 +198,7 @@ Canonical events MUST be append-only.
 
 ```json
 {
-  "schemaVersion": "clean-squad-workflow-audit/v2",
+  "schemaVersion": "clean-squad-workflow-audit/v3",
   "workflowContractFingerprint": "<sha256 of UTF-8 bytes of .github/clean-squad/WORKFLOW.md>",
   "ledgerDigestAlgorithm": "sha256-canonical-json-v1",
   "events": []
@@ -203,7 +209,7 @@ Canonical JSON rules:
 
 - Files MUST be UTF-8 encoded JSON with no comments or trailing commas.
 - Object property order MUST match the order shown in this contract wherever a digest is calculated.
-- `schemaVersion = clean-squad-workflow-audit/v2` is the current normative schema with mandatory canonical `eventUtc`; earlier schema versions remain historical snapshots and MUST NOT have missing timing backfilled from secondary logs.
+- `schemaVersion = clean-squad-workflow-audit/v3` is the current normative schema. Earlier schema versions remain historical snapshots and MUST NOT have missing v3 semantics or timing backfilled from secondary logs.
 - `events` MUST be ordered by `sequence` ascending with no duplicate or skipped sequence values.
 - `ledgerDigestAlgorithm = sha256-canonical-json-v1` means SHA-256 over the canonical UTF-8 JSON bytes of the exact snapshot used for comparison or compilation.
 
@@ -212,18 +218,58 @@ Each canonical event MUST use this property order and shape:
 ```json
 {
   "sequence": 1,
-  "eventUtc": "2026-03-24T18:48:12.5538742Z",
-  "logicalEventId": "phase-01-start",
+  "eventUtc": "2026-03-25T00:00:00.0000000Z",
+  "logicalEventId": "phase-03-start",
   "actor": "cs Product Owner",
-  "phase": "discovery",
+  "phase": "architecture",
   "eventType": "phase-started",
-  "summary": "Discovery started.",
+  "workItemId": "work.architecture.solution-design",
+  "rootWorkItemId": "work.architecture.solution-design",
+  "spanId": "span.architecture.solution-design.attempt-01",
+  "causedBy": {
+    "sequence": 12,
+    "logicalEventId": "phase-02-complete",
+    "relationship": "direct"
+  },
+  "closes": null,
+  "outcome": null,
+  "summary": "Architecture phase started.",
   "reasonCode": null,
   "artifacts": [],
+  "artifactTransitions": [],
   "iterationId": null,
+  "provenance": {
+    "sourceKind": "system-triggered",
+    "recordedBy": "cs Product Owner",
+    "evidence": []
+  },
   "details": {}
 }
 ```
+
+Field model:
+
+| Field | Required | Meaning | Notes |
+|-------|----------|---------|-------|
+| `sequence` | yes | Canonical ordering authority | Remains the only chronology authority |
+| `eventUtc` | yes | Canonical observation or emission time | Timing and diagnostics only |
+| `logicalEventId` | yes | Retry-safe semantic identity | Reuse only for an exact retry of the same semantic event |
+| `actor` | yes | Declared canonical writer | Must match the ownership boundary |
+| `phase` | yes | Workflow phase | Existing phase vocabulary is preserved |
+| `eventType` | yes | Coarse event taxonomy | Existing vocabulary is retained and strengthened |
+| `workItemId` | conditional | Stable canonical unit of work | Required for reviewer-significant and other meaningful events |
+| `rootWorkItemId` | conditional | Stable lineage root across retries, repetitions, and supersessions | Equals `workItemId` on the first attempt |
+| `spanId` | conditional | Specific bounded attempt or activity | Required for started and terminal activity |
+| `causedBy` | conditional | Single direct causal link | Required for meaningful derived events |
+| `closes` | conditional | Exact start or span closed by this event | Required on terminal events |
+| `outcome` | conditional | Terminal disposition | Required on terminal events |
+| `summary` | yes | Human-readable explanation | Must align with structured fields and never override them |
+| `reasonCode` | conditional | Controlled exception or rationale code | Required for deviations, blocks, omissions, and stale states |
+| `artifacts` | conditional | Evidence bindings to files or immutable external references | Evidence only, not lifecycle semantics |
+| `artifactTransitions` | conditional | Structured business-artifact state changes | Separate from evidence bindings |
+| `iterationId` | conditional | Loop or retry grouping identifier | Supports repeated review cycles or attempts |
+| `provenance` | conditional | Source and evidence binding for the claim | Required for non-informational events |
+| `details` | conditional | Event-specific payload | MUST NOT restate shared semantics inconsistently |
 
 `eventUtc` rules:
 
@@ -234,7 +280,7 @@ Each canonical event MUST use this property order and shape:
 `logicalEventId` retry rule:
 
 - Reuse the same `logicalEventId` only when retrying the same semantic event after a failed append or transient write failure.
-- If the event meaning, summary, phase, reason, artifact set, or details change materially, a new `logicalEventId` MUST be generated.
+- If the event meaning, lineage, cause, closure, outcome, reason, artifact set, provenance, or details change materially, a new `logicalEventId` MUST be generated.
 - Duplicate `logicalEventId` values with materially different content are invalid chronology.
 
 Allowed `phase` values:
@@ -253,23 +299,33 @@ Allowed `phase` values:
 
 Allowed `eventType` values:
 
+| Event Type | Semantic Family | Starts Span | Terminal | Requires Provenance | Allows Artifact Transitions | Reviewer Meaningful |
+|------------|-----------------|-------------|----------|---------------------|-----------------------------|---------------------|
+| `phase-started` | lifecycle-start | yes | no | yes | no | yes |
+| `phase-completed` | lifecycle-terminal | no | yes | yes | no | yes |
+| `delegation-recorded` | causal-link | no | no | yes | no | yes |
+| `artifact-published` | artifact-transition | no | no | yes | yes | yes |
+| `wait-started` | lifecycle-start | yes | no | yes | no | yes |
+| `wait-ended` | lifecycle-terminal | no | yes | yes | no | yes |
+| `deviation-recorded` | deviation | optional | optional | yes | optional | yes |
+| `blocked` | interruption | no | no | yes | optional | yes |
+| `handoff-recorded` | ownership | no | no | yes | no | yes |
+| `ci-identity-bound` | publication-support | no | no | yes | no | yes |
+| `review-thread-updated` | review-progress | optional | optional | yes | optional | yes |
+| `reviewer-summary-invalidated` | publication-state | no | no | yes | yes | yes |
+| `reviewer-summary-published` | publication-state | no | no | yes | yes | yes |
+| `merge-readiness-evaluated` | publication-support | no | no | yes | no | yes |
+| `run-completed` | run-terminal | no | yes | yes | no | yes |
+
+Outcome vocabulary:
+
 | Value | Meaning |
 |-------|---------|
-| `phase-started` | A workflow phase started |
-| `phase-completed` | A workflow phase completed |
-| `delegation-recorded` | An approved Clean Squad delegation was issued |
-| `artifact-published` | A required artifact was created, revised, accepted, or intentionally omitted |
-| `wait-started` | A human or system wait interval opened |
-| `wait-ended` | A human or system wait interval closed |
-| `deviation-recorded` | An allowed skip, decline, retry, or other deviation was recorded |
-| `blocked` | The run is blocked |
-| `handoff-recorded` | Canonical writer ownership transferred |
-| `ci-identity-bound` | The required CI-result identity set for the current HEAD was bound |
-| `review-thread-updated` | A review thread was replied to, resolved, or declined |
-| `reviewer-summary-invalidated` | The PR-surface reviewer summary was explicitly marked stale |
-| `reviewer-summary-published` | The PR-surface reviewer summary was published or refreshed |
-| `merge-readiness-evaluated` | Merge readiness was evaluated |
-| `run-completed` | The workflow run completed |
+| `succeeded` | The closed span completed successfully |
+| `failed` | The closed span ended unsuccessfully |
+| `skipped` | The span was intentionally not executed |
+| `cancelled` | The span was ended without completion |
+| `superseded` | The span was replaced by a later attempt or decision |
 
 Allowed `reasonCode` values:
 
@@ -312,6 +368,61 @@ Artifact binding rules:
 - Evidence-bearing artifacts MUST bind either `digestSha256` for local files or `immutableId` plus `uri` for immutable external resources.
 - Path-only references are insufficient for reviewer-facing audit publication.
 
+`artifactTransitions` MUST be an array of objects with this shape:
+
+```json
+{
+  "artifactId": "artifact.workflow-audit.md",
+  "transition": "revised",
+  "bindingPath": ".thinking/<task>/workflow-audit.md",
+  "predecessorArtifactId": "artifact.workflow-audit.md",
+  "predecessorSequence": 41,
+  "reasonCode": null
+}
+```
+
+Artifact transition rules:
+
+- `artifactTransitions` capture business-artifact lifecycle meaning and MUST NOT be replaced by path-only inference from `artifacts`.
+- `artifactId` MUST remain stable across revisions of the same business artifact.
+- `predecessorArtifactId` and `predecessorSequence` MUST be present when the transition asserts revision, replacement, or supersession lineage.
+- Allowed `transition` values are `created`, `revised`, `accepted`, `rejected`, `replaced`, `superseded`, and `omitted`.
+
+`provenance` MUST use this shape:
+
+```json
+{
+  "sourceKind": "system-triggered",
+  "recordedBy": "cs Product Owner",
+  "evidence": []
+}
+```
+
+Provenance rules:
+
+- `provenance` is required for every non-informational event and missing provenance is a validation failure.
+- `recordedBy` MUST match the canonical writer that authoritatively recorded the event.
+- `evidence` MUST use the same evidence-binding shape as `artifacts` when evidence exists.
+- Provenance MAY corroborate a claim, but it MUST NOT be used to reconstruct missing cause, closure, lineage, or outcome semantics.
+
+Relationship semantics:
+
+- `causedBy` is single-parent only. If an event has multiple antecedents, the writer MUST first record a synthetic decision or synthesis event and then point the later event at that single canonical cause.
+- `causedBy.relationship` MUST use one of: `direct`, `derived`, `human-input`, `tool-output`, or `system-triggered`.
+- `rootWorkItemId` preserves lineage across retries, supersessions, and review loops.
+- `closes` MUST carry both the referenced `spanId` and the start-event identity it closes.
+- `blocked` is not a terminal outcome. It is an interruption signal that MUST either be followed later by a terminal close for the same span or be paired immediately with a terminal event that records the actual disposition.
+
+`closes` MUST use this shape:
+
+```json
+{
+  "spanId": "span.architecture.solution-design.attempt-01",
+  "sequence": 13,
+  "logicalEventId": "phase-03-start"
+}
+```
+
 `details` MAY contain only event-type-specific keys defined by this contract:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutput`
@@ -319,6 +430,27 @@ Artifact binding rules:
 - `handoff-recorded`: `fromActor`, `toActor`
 - `ci-identity-bound`: `requiredCiIdentitySet`
 - `reviewer-summary-invalidated` and `reviewer-summary-published`: `publicationState`
+
+Writer-obligation matrix:
+
+| Event Family | Required Fields | Optional Fields | Invalid If Missing |
+|-------------|-----------------|-----------------|--------------------|
+| lifecycle-start | `workItemId`, `rootWorkItemId`, `spanId`, `provenance` | `causedBy`, `iterationId` | the span cannot be tracked or closed |
+| lifecycle-terminal | `workItemId`, `rootWorkItemId`, `closes`, `outcome`, `provenance` | `artifactTransitions`, `iterationId` | exact closure and disposition become ambiguous |
+| causal-link | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance` | `artifacts` | the derived event looks chronology-driven |
+| artifact-transition | `workItemId`, `rootWorkItemId`, `artifactTransitions`, `provenance` | `causedBy`, `artifacts` | artifact history becomes narrative-only |
+| publication-state | `workItemId`, `rootWorkItemId`, `provenance` | `artifactTransitions`, `causedBy` | reviewer-summary freshness becomes untrustworthy |
+| informational-only | base fields only | `provenance` optional | this family MUST NOT be used for reviewer-significant facts |
+
+Invariant catalog:
+
+- Every meaningful started span MUST close exactly once.
+- Every event that requires causality MUST declare exactly one direct cause.
+- Every terminal event MUST declare an explicit outcome from the approved vocabulary.
+- Artifact transition lineage MUST use stable identity and predecessor linkage where applicable.
+- Provenance MUST exist for every non-informational event.
+- Reviewer-summary freshness MUST invalidate immediately on reviewer-meaningful canonical changes.
+- Canonical meaning MUST NOT be inferred from prose, sequence order, secondary logs, or evidence bindings alone when structured v3 semantics are missing.
 
 #### Required CI Identity Normalization
 
