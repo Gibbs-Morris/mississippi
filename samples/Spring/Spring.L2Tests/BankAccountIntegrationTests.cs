@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 
 using Mississippi.DomainModeling.Abstractions;
 
@@ -47,22 +48,31 @@ public sealed class BankAccountIntegrationTests
         decimal expectedBalance
     )
     {
-        DateTime deadline = DateTime.UtcNow.Add(EventualConsistencyTimeout);
+        using CancellationTokenSource timeoutSource = new();
+        timeoutSource.CancelAfter(EventualConsistencyTimeout);
+        CancellationToken timeoutToken = timeoutSource.Token;
         BankAccountBalanceResponse? lastResult = null;
         Uri projectionUri = new($"api/projections/bank-account-balance/{bankAccountId}", UriKind.Relative);
-        while (DateTime.UtcNow < deadline)
+        try
         {
-            using HttpResponseMessage response = await client.GetAsync(projectionUri);
-            if (response.StatusCode == HttpStatusCode.OK)
+            while (!timeoutToken.IsCancellationRequested)
             {
-                lastResult = await response.Content.ReadFromJsonAsync<BankAccountBalanceResponse>();
-                if (lastResult is not null && (lastResult.Balance == expectedBalance))
+                using HttpResponseMessage response = await client.GetAsync(projectionUri, timeoutToken);
+                if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    return lastResult;
+                    lastResult = await response.Content.ReadFromJsonAsync<BankAccountBalanceResponse>();
+                    if (lastResult is not null && (lastResult.Balance == expectedBalance))
+                    {
+                        return lastResult;
+                    }
                 }
-            }
 
-            await Task.Delay(PollingInterval);
+                await Task.Delay(PollingInterval, timeoutToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            return lastResult;
         }
 
         // Return the last result even if it doesn't match, so the test can report what was found
@@ -78,22 +88,31 @@ public sealed class BankAccountIntegrationTests
         Func<MoneyTransferStatusResponse, bool> predicate
     )
     {
-        DateTime deadline = DateTime.UtcNow.Add(EventualConsistencyTimeout);
+        using CancellationTokenSource timeoutSource = new();
+        timeoutSource.CancelAfter(EventualConsistencyTimeout);
+        CancellationToken timeoutToken = timeoutSource.Token;
         MoneyTransferStatusResponse? lastResult = null;
         Uri projectionUri = new($"api/projections/money-transfer-status/{sagaId}", UriKind.Relative);
-        while (DateTime.UtcNow < deadline)
+        try
         {
-            using HttpResponseMessage response = await client.GetAsync(projectionUri);
-            if (response.StatusCode == HttpStatusCode.OK)
+            while (!timeoutToken.IsCancellationRequested)
             {
-                lastResult = await response.Content.ReadFromJsonAsync<MoneyTransferStatusResponse>();
-                if (lastResult is not null && predicate(lastResult))
+                using HttpResponseMessage response = await client.GetAsync(projectionUri, timeoutToken);
+                if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    return lastResult;
+                    lastResult = await response.Content.ReadFromJsonAsync<MoneyTransferStatusResponse>();
+                    if (lastResult is not null && predicate(lastResult))
+                    {
+                        return lastResult;
+                    }
                 }
-            }
 
-            await Task.Delay(PollingInterval);
+                await Task.Delay(PollingInterval, timeoutToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            return lastResult;
         }
 
         return lastResult;
