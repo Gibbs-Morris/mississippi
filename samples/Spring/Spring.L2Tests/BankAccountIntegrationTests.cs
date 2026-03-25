@@ -100,7 +100,7 @@ public sealed class BankAccountIntegrationTests
                 using HttpResponseMessage response = await client.GetAsync(projectionUri, timeoutToken);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    lastResult = await response.Content.ReadFromJsonAsync<MoneyTransferStatusResponse>();
+                    lastResult = await response.Content.ReadFromJsonAsync<MoneyTransferStatusResponse>(cancellationToken: timeoutToken);
                     if (lastResult is not null && predicate(lastResult))
                     {
                         return lastResult;
