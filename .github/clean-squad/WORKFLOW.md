@@ -472,7 +472,7 @@ Relationship semantics:
 }
 ```
 
-- `details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
+`details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutputPath`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
