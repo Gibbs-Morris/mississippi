@@ -142,7 +142,7 @@ flowchart TD
 
     subgraph Phase9["Phase 9: PR Creation & Merge Readiness"]
         P9Manager["cs Product Owner remains the canonical Phase 9 owner and records every reviewer-significant Phase 9 fact"]
-        P9Startup["Record a bounded delegation to cs PR Manager that names the bounded task slice, expected artifact output or artifact bundle, completion signal, closure condition, allowedActions, and authorizedTargets; blocked startup or recovery never transfers ownership"]
+        P9Startup["Record a bounded delegation to cs PR Manager that names the bounded task slice, details.expectedOutputPath, completion signal, closure condition, details.allowedActions, and details.authorizedTargets; blocked startup or recovery never transfers ownership"]
         P9Scribe["cs Product Owner invokes cs Scribe when HEAD, ledger, workflow contract, or reviewer-meaningful canonical facts require a fresh stable-snapshot audit"]
         P9Execute["cs PR Manager executes only the delegated PR-surface work and returns artifacts and evidence"]
         P9Stale["At first observation, cs Product Owner records invalidation canonically and the continuously delegated stale-marker capability marks the PR surface stale immediately; do not let the 300-second wait delay invalidation"]
