@@ -474,7 +474,7 @@ Relationship semantics:
 
 - `details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
- - `delegation-recorded`: `delegatedAgent`, `expectedOutputPath`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
+- `delegation-recorded`: `delegatedAgent`, `expectedOutputPath`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
 - `deviation-recorded`: `deviationClass`, `rationalePath`
 - `blocked`: `blockerKind`, `blockedOn`
@@ -650,8 +650,8 @@ Publication and recovery rules:
 6. If HEAD SHA, the stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical output changes, the Product Owner MUST obtain a fresh `workflow-audit.md` compilation from cs Scribe using a new stable ledger snapshot before republishing reviewer-facing audit output.
 7. If only the required CI-result identity set changes for an unchanged HEAD SHA and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the `Reviewer Audit Summary` freshness stamp and merge-readiness evaluation without recompiling `workflow-audit.md`.
 8. The Product Owner MUST verify that the regenerated or reused `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and that the attached normalized required CI-result identity set is current, before republishing.
-6. The Product Owner MUST republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication. The PR Manager MAY apply the PR-surface update only under bounded delegation whose `allowedActions` and `authorizedTargets` cover that specific mutation.
-7. Invalidation MUST be more granular than publication so the PR description does not churn on low-signal changes.
+9. The Product Owner MUST republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication. The PR Manager MAY apply the PR-surface update only under bounded delegation whose `allowedActions` and `authorizedTargets` cover that specific mutation.
+10. Invalidation MUST be more granular than publication so the PR description does not churn on low-signal changes.
 
 #### Verdict Model
 

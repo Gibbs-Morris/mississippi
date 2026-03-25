@@ -111,7 +111,7 @@ The Three Amigos synthesis captured cross-functional agreement on keeping a sing
 
 Related durable references:
 
-- Published workflow contract: [Clean Squad workflow](../../../../.github/clean-squad/WORKFLOW.md)
-- ADR authoring mechanics, template, and lifecycle rules: [ADR instructions](../../../../.github/instructions/adr.instructions.md)
+- Published workflow contract: `.github/clean-squad/WORKFLOW.md`
+- ADR authoring mechanics, template, and lifecycle rules: `.github/instructions/adr.instructions.md`
 
 The decision to reuse the existing event envelope for delegated provenance was intentionally kept inside this ADR rather than published as a separate record, because the current design does not show an independently justified architectural fork on schema shape.
