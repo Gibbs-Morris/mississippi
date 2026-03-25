@@ -22,6 +22,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Locking;
 /// </summary>
 public sealed class BlobDistributedLockManagerTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     Validates initial acquire path creates container and blob when missing.
     /// </summary>
@@ -57,7 +59,7 @@ public sealed class BlobDistributedLockManagerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-1"),
+                    BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-1"),
                     Mock.Of<Response>()))
             .Verifiable();
         BlobDistributedLockManager sut = new(
@@ -115,7 +117,7 @@ public sealed class BlobDistributedLockManagerTests
             ) => captured = d)
             .ReturnsAsync(
                 Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-3"),
+                    BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-3"),
                     Mock.Of<Response>()));
         BlobDistributedLockManager sut = new(
             svc.Object,
@@ -171,7 +173,7 @@ public sealed class BlobDistributedLockManagerTests
                 }
 
                 return Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-2"),
+                    BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-2"),
                     Mock.Of<Response>());
             });
         BlobDistributedLockManager sut = new(
@@ -220,7 +222,7 @@ public sealed class BlobDistributedLockManagerTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(
                 Response.FromValue(
-                    BlobsModelFactory.BlobLease(new("\"etag\""), DateTimeOffset.UtcNow, "lease-first"),
+                    BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-first"),
                     Mock.Of<Response>()))
             .Verifiable();
         BlobDistributedLockManager sut = new(

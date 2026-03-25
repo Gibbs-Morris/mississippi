@@ -11,6 +11,8 @@ namespace Mississippi.DomainModeling.Abstractions.L0Tests.Subscriptions;
 /// </summary>
 public sealed class UxProjectionSubscriptionTypesTests
 {
+    private static readonly DateTimeOffset ProjectionTimestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     UxProjectionChangedEvent should create with all required properties.
     /// </summary>
@@ -19,16 +21,15 @@ public sealed class UxProjectionSubscriptionTypesTests
     {
         UxProjectionKey projectionKey = new("user-123");
         BrookPosition newVersion = new(42);
-        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
         UxProjectionChangedEvent changedEvent = new()
         {
             ProjectionKey = projectionKey,
             NewVersion = newVersion,
-            Timestamp = timestamp,
+            Timestamp = ProjectionTimestamp,
         };
         Assert.Equal(projectionKey, changedEvent.ProjectionKey);
         Assert.Equal(newVersion, changedEvent.NewVersion);
-        Assert.Equal(timestamp, changedEvent.Timestamp);
+        Assert.Equal(ProjectionTimestamp, changedEvent.Timestamp);
     }
 
     /// <summary>

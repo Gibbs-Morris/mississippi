@@ -26,6 +26,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Brooks;
 /// </summary>
 public sealed class EventBrookWriterRollbackTests
 {
+    private static readonly DateTimeOffset MapperFallbackTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     When initial append fails with no processed events, rollback should clean up the pending cursor entry without
     ///     aggregate
@@ -135,7 +137,7 @@ public sealed class EventBrookWriterRollbackTests
                 Data = e.Data.ToArray(),
                 DataContentType = e.DataContentType,
                 Source = e.Source,
-                Time = e.Time ?? DateTimeOffset.UtcNow,
+                Time = e.Time ?? MapperFallbackTime,
             });
         Mock<IBrookRecoveryService> recovery = new();
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))

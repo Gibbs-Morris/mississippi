@@ -1,11 +1,12 @@
 using System;
 using System.Diagnostics;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Azure;
 using Azure.Storage.Blobs.Models;
+
+using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Brooks.Runtime.Storage.Cosmos.Locking;
 
@@ -19,16 +20,7 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Locking;
 /// </summary>
 public sealed class BlobDistributedLockTests
 {
-    private static void SetPrivateField<T>(
-        object instance,
-        string fieldName,
-        T value
-    )
-    {
-        FieldInfo? field = instance.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-        Assert.NotNull(field);
-        field!.SetValue(instance, value);
-    }
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
     /// <summary>
     ///     DisposeAsync should release the lease and ignore failures during disposal.
@@ -69,6 +61,7 @@ public sealed class BlobDistributedLockTests
     {
         // Arrange
         Mock<IBlobLeaseClient> leaseClient = new();
+        FakeTimeProvider timeProvider = new(BaseTime);
         leaseClient.Setup(l => l.RenewAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<Response<BlobLease>>());
         await using BlobDistributedLock sut = new(
@@ -77,10 +70,9 @@ public sealed class BlobDistributedLockTests
             5,
             15,
             "test-lock-key",
-            Stopwatch.StartNew());
-
-        // Force lastRenewalTime far in the past to exceed threshold
-        SetPrivateField(sut, "lastRenewalTime", DateTimeOffset.UtcNow - TimeSpan.FromHours(1));
+            Stopwatch.StartNew(),
+            timeProvider);
+        timeProvider.Advance(TimeSpan.FromHours(1));
 
         // Act
         await sut.RenewAsync();
@@ -98,6 +90,7 @@ public sealed class BlobDistributedLockTests
     {
         // Arrange
         Mock<IBlobLeaseClient> leaseClient = new();
+        FakeTimeProvider timeProvider = new(BaseTime);
 
         // leaseDurationSeconds=15, thresholdSeconds=5
         await using BlobDistributedLock sut = new(
@@ -106,7 +99,8 @@ public sealed class BlobDistributedLockTests
             5,
             15,
             "test-lock-key",
-            Stopwatch.StartNew());
+            Stopwatch.StartNew(),
+            timeProvider);
 
         // Act
         await sut.RenewAsync();
@@ -131,6 +125,7 @@ public sealed class BlobDistributedLockTests
     {
         // Arrange
         Mock<IBlobLeaseClient> leaseClient = new();
+        FakeTimeProvider timeProvider = new(BaseTime);
         leaseClient.Setup(l => l.RenewAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new RequestFailedException(status, "conflict"));
         await using BlobDistributedLock sut = new(
@@ -139,8 +134,9 @@ public sealed class BlobDistributedLockTests
             1,
             2,
             "test-lock-key",
-            Stopwatch.StartNew());
-        SetPrivateField(sut, "lastRenewalTime", DateTimeOffset.UtcNow - TimeSpan.FromMinutes(5));
+            Stopwatch.StartNew(),
+            timeProvider);
+        timeProvider.Advance(TimeSpan.FromMinutes(5));
 
         // Act + Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.RenewAsync());

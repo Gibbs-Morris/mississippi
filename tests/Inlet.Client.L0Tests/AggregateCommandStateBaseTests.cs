@@ -12,6 +12,8 @@ namespace Mississippi.Inlet.Client.L0Tests;
 /// </summary>
 public sealed class AggregateCommandStateBaseTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     ///     CommandHistory can be set via init.
     /// </summary>
@@ -19,10 +21,7 @@ public sealed class AggregateCommandStateBaseTests
     public void CommandHistoryCanBeSet()
     {
         // Arrange
-        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting(
-            "cmd-123",
-            "TestCommand",
-            DateTimeOffset.UtcNow);
+        CommandHistoryEntry entry = CommandHistoryEntry.CreateExecuting("cmd-123", "TestCommand", BaseTime);
         ImmutableList<CommandHistoryEntry> history = ImmutableList.Create(entry);
 
         // Act
