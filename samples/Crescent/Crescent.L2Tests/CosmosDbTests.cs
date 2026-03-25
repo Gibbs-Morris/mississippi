@@ -11,7 +11,7 @@ namespace MississippiSamples.Crescent.L2Tests;
 public sealed class CosmosDbTests : IAsyncDisposable
 #pragma warning restore CA1515
 {
-    private static readonly DateTime CreatedAtUtc = new(2026, 03, 25, 00, 00, 00, DateTimeKind.Utc);
+    private static readonly DateTime CreatedAtUtc = new(2024, 02, 03, 04, 05, 06, DateTimeKind.Utc);
 
     private readonly CosmosClient cosmosClient;
 
