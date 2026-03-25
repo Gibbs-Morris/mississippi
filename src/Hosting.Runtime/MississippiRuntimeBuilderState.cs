@@ -46,6 +46,11 @@ internal sealed class MississippiRuntimeBuilderState
 
     private IServiceCollection HostServices { get; }
 
+    private IReadOnlyDictionary<string, int> FrozenHostOrleansOwnership { get; set; } =
+        new Dictionary<string, int>(StringComparer.Ordinal);
+
+    private bool HasFrozenHostOrleansOwnership { get; set; }
+
     private HashSet<string> RegisteredDomains { get; } = new(StringComparer.Ordinal);
 
     private List<Action<ISiloBuilder>> OrleansConfigurations { get; } = [];
@@ -65,6 +70,13 @@ internal sealed class MississippiRuntimeBuilderState
             Configuration,
             HostEnvironment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(HostServices);
+        if (HasFrozenHostOrleansOwnership)
+        {
+            MississippiRuntimeCompositionGuards.ThrowIfFrozenOrleansOwnershipChanged(
+                HostServices,
+                FrozenHostOrleansOwnership);
+        }
+
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(siloBuilder.Services);
         foreach (Action<ISiloBuilder> configure in OrleansConfigurations)
         {
@@ -75,10 +87,26 @@ internal sealed class MississippiRuntimeBuilderState
             Configuration,
             HostEnvironment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(HostServices);
+        if (HasFrozenHostOrleansOwnership)
+        {
+            MississippiRuntimeCompositionGuards.ThrowIfFrozenOrleansOwnershipChanged(
+                HostServices,
+                FrozenHostOrleansOwnership);
+        }
+
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(siloBuilder.Services);
         MississippiRuntimeCompositionGuards.ThrowIfFrozenOrleansOwnershipChanged(
             siloBuilder.Services,
             frozenOrleansOwnership);
+    }
+
+    /// <summary>
+    ///     Freezes the Mississippi-owned host Orleans attachment state after runtime registration.
+    /// </summary>
+    internal void FreezeHostOrleansOwnership()
+    {
+        FrozenHostOrleansOwnership = MississippiRuntimeCompositionGuards.CaptureFrozenOrleansOwnership(HostServices);
+        HasFrozenHostOrleansOwnership = true;
     }
 
     /// <summary>

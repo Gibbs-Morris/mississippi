@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Hosting.Runtime;
+using Mississippi.Inlet.Gateway;
 using Mississippi.Inlet.Runtime.Abstractions;
 
 
@@ -42,20 +43,32 @@ public sealed class MississippiGatewayBuilderTests
     private sealed class TestHub : Hub;
 
     /// <summary>
-    ///     AddAqueduct should configure Aqueduct options only once.
+    ///     AddAqueduct should apply Aqueduct configuration options.
     /// </summary>
     [Fact]
-    public void AddAqueductConfiguresOptionsOnce()
+    public void AddAqueductAppliesConfigurationOptions()
     {
         WebApplicationBuilder builder = CreateBuilder();
         builder.AddMississippiGateway(gateway =>
-        {
-            gateway.AddAqueduct<TestHub>(options => options.StreamProviderName = "StreamProvider");
-            gateway.AddAqueduct<TestHub>(options => options.StreamProviderName = "IgnoredSecondCall");
-        });
+            gateway.AddAqueduct<TestHub>(options => options.StreamProviderName = "StreamProvider"));
         using ServiceProvider provider = builder.Services.BuildServiceProvider();
         AqueductOptions options = provider.GetRequiredService<IOptions<AqueductOptions>>().Value;
         Assert.Equal("StreamProvider", options.StreamProviderName);
+    }
+
+    /// <summary>
+    ///     AddAqueduct should reject duplicate subsystem composition on the same builder.
+    /// </summary>
+    [Fact]
+    public void AddAqueductRejectsDuplicateSubsystemComposition()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiGatewayBuilder gatewayBuilder = builder.AddMississippiGateway();
+        gatewayBuilder.AddAqueduct<TestHub>();
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            gatewayBuilder.AddAqueduct<TestHub>(options => options.StreamProviderName = "duplicate"));
+        Assert.Contains("gateway Aqueduct composition", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("AddAqueduct<THub>(...)", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -66,9 +79,49 @@ public sealed class MississippiGatewayBuilderTests
     {
         WebApplicationBuilder builder = CreateBuilder();
         builder.AddMississippiGateway(gateway => gateway.AddInletGateway());
+        using ServiceProvider provider = builder.Services.BuildServiceProvider();
+        InletServerOptions options = provider.GetRequiredService<IOptions<InletServerOptions>>().Value;
         Assert.Contains(builder.Services, descriptor => descriptor.ServiceType == typeof(IAggregateGrainFactory));
         Assert.Contains(builder.Services, descriptor => descriptor.ServiceType == typeof(IUxProjectionGrainFactory));
         Assert.Contains(builder.Services, descriptor => descriptor.ServiceType == typeof(IProjectionBrookRegistry));
+        Assert.Equal(
+            GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints,
+            options.GeneratedApiAuthorization.Mode);
+        Assert.False(options.GeneratedApiAuthorization.AllowAnonymousOptOut);
+    }
+
+    /// <summary>
+    ///     AddInletGateway should allow callers to explicitly opt out of the safe default authorization posture.
+    /// </summary>
+    [Fact]
+    public void AddInletGatewayAllowsExplicitAuthorizationOverride()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        builder.AddMississippiGateway(gateway => gateway.AddInletGateway(options =>
+        {
+            options.GeneratedApiAuthorization.Mode = GeneratedApiAuthorizationMode.Disabled;
+            options.GeneratedApiAuthorization.AllowAnonymousOptOut = true;
+        }));
+        using ServiceProvider provider = builder.Services.BuildServiceProvider();
+        InletServerOptions options = provider.GetRequiredService<IOptions<InletServerOptions>>().Value;
+        Assert.Equal(GeneratedApiAuthorizationMode.Disabled, options.GeneratedApiAuthorization.Mode);
+        Assert.True(options.GeneratedApiAuthorization.AllowAnonymousOptOut);
+    }
+
+    /// <summary>
+    ///     AddInletGateway should reject duplicate subsystem composition on the same builder.
+    /// </summary>
+    [Fact]
+    public void AddInletGatewayRejectsDuplicateSubsystemComposition()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiGatewayBuilder gatewayBuilder = builder.AddMississippiGateway();
+        gatewayBuilder.AddInletGateway();
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            gatewayBuilder.AddInletGateway(options =>
+                options.GeneratedApiAuthorization.Mode = GeneratedApiAuthorizationMode.Disabled));
+        Assert.Contains("gateway Inlet gateway composition", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("AddInletGateway(...)", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

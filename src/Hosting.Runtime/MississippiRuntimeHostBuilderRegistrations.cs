@@ -25,17 +25,20 @@ public static class MississippiRuntimeHostBuilderRegistrations
         MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(
             builder.Configuration,
             builder.Environment.EnvironmentName);
-        MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(builder.Services);
         if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(MississippiRuntimeBuilderState)))
         {
             throw new InvalidOperationException(
                 "AddMississippiRuntime can only be called once per host. Compose additional runtime configuration through the existing MississippiRuntimeBuilder instance.");
         }
 
+        MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(builder.Services);
+        MississippiRuntimeCompositionGuards.ThrowIfCompetingOrleansHostAttachmentExists(builder.Services);
+
         MississippiRuntimeBuilderState state = new(builder.Services, builder.Configuration, builder.Environment);
         builder.Services.AddSingleton(MississippiRuntimeHostModeMarker.Instance);
         builder.Services.AddSingleton(state);
         builder.UseOrleans(state.ApplyOrleansConfiguration);
+        state.FreezeHostOrleansOwnership();
         return new(builder.Services, state);
     }
 

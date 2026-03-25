@@ -175,6 +175,20 @@ public sealed class MississippiRuntimeBuilderTests
     }
 
     /// <summary>
+    ///     AddMississippiRuntime should allow explicitly allowlisted internal infrastructure endpoints outside Development.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeAllowsAllowlistedInternalInfrastructureEndpointOutsideDevelopment()
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.Configuration["Mississippi:Runtime:Trust:AllowedExternalHosts:0"] = "10.0.0.15";
+        builder.Configuration["ConnectionStrings:cosmos"] =
+            $"AccountEndpoint=https://10.0.0.15/;AccountKey={SecretValue};";
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+        Assert.NotNull(runtimeBuilder);
+    }
+
+    /// <summary>
     ///     AddMississippiRuntime should reject insecure external endpoint transport outside Development.
     /// </summary>
     [Fact]
@@ -188,6 +202,34 @@ public sealed class MississippiRuntimeBuilderTests
         Assert.Contains("[config-trust]", exception.Message, StringComparison.Ordinal);
         Assert.Contains("scheme 'http'", exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("prod.example.com", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should reject internal infrastructure endpoints outside Development unless they are
+    ///     explicitly allowlisted.
+    /// </summary>
+    /// <param name="endpoint">The configured endpoint URI under test.</param>
+    /// <param name="redactedHost">The host value that must not leak into the exception message.</param>
+    [Theory]
+    [InlineData("https://10.0.0.15/", "10.0.0.15")]
+    [InlineData("https://169.254.169.254/", "169.254.169.254")]
+    [InlineData("https://[fd00::1]/", "fd00::1")]
+    [InlineData("https://[fe80::1]/", "fe80::1")]
+    public void AddMississippiRuntimeRejectsInternalInfrastructureEndpointsOutsideDevelopment(
+        string endpoint,
+        string redactedHost
+    )
+    {
+        WebApplicationBuilder builder = CreateBuilder(Environments.Production);
+        builder.Configuration["ConnectionStrings:cosmos"] =
+            $"AccountEndpoint={endpoint};AccountKey={SecretValue};";
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
+        Assert.Contains("[config-trust]", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("ConnectionStrings:cosmos", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("allowlisted", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(redactedHost, exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
     }
 
@@ -206,6 +248,39 @@ public sealed class MississippiRuntimeBuilderTests
         Assert.Contains("ConnectionStrings:cosmos", exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("127.0.0.1", exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(SecretValue, exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     AddMississippiRuntime should reject preexisting Orleans host attachment that bypasses the runtime builder.
+    /// </summary>
+    [Fact]
+    public void AddMississippiRuntimeRejectsPreexistingUseOrleansAttachment()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        builder.UseOrleans(_ => { });
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => builder.AddMississippiRuntime());
+        Assert.Contains(
+            "runtime owns the top-level Orleans silo attachment",
+            exception.Message,
+            StringComparison.Ordinal);
+        Assert.Contains("MississippiRuntimeBuilder.Orleans(...)", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Runtime-owned Orleans attachment should reject a later external UseOrleans callback added after runtime
+    ///     attachment.
+    /// </summary>
+    [Fact]
+    public void ApplyOrleansConfigurationRejectsLaterUseOrleansAttachmentAddedAfterRuntimeAttachment()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        builder.AddMississippiRuntime();
+        builder.UseOrleans(silo => silo.UseLocalhostClustering());
+        InvalidOperationException? exception = Record.Exception(() =>
+                                                 GetState(builder.Services).ApplyOrleansConfiguration(
+                                                     new TestSiloBuilder())) as InvalidOperationException;
+        Assert.NotNull(exception);
+        AssertFrozenOwnershipViolation(exception, "clustering");
     }
 
     /// <summary>

@@ -58,7 +58,7 @@ public sealed class MississippiGatewayBuilder
     {
         if (HasAqueductBeenAdded)
         {
-            return this;
+            throw CreateDuplicateSubsystemException("Aqueduct", "AddAqueduct<THub>(...)");
         }
 
         HasAqueductBeenAdded = true;
@@ -80,7 +80,7 @@ public sealed class MississippiGatewayBuilder
         ArgumentNullException.ThrowIfNull(configure);
         if (HasAqueductBeenAdded)
         {
-            return this;
+            throw CreateDuplicateSubsystemException("Aqueduct", "AddAqueduct<THub>(...)");
         }
 
         HasAqueductBeenAdded = true;
@@ -106,12 +106,16 @@ public sealed class MississippiGatewayBuilder
         ArgumentNullException.ThrowIfNull(configure);
         if (HasInletGatewayBeenAdded)
         {
-            return this;
+            throw CreateDuplicateSubsystemException("Inlet gateway", "AddInletGateway(...)");
         }
 
         HasInletGatewayBeenAdded = true;
         Services.AddControllers();
-        Services.AddInletServer(configure);
+        Services.AddInletServer(options =>
+        {
+            ApplySafeDefaultGeneratedApiAuthorization(options);
+            configure(options);
+        });
         Services.AddAggregateSupport();
         Services.AddUxProjections();
         return this;
@@ -188,4 +192,20 @@ public sealed class MississippiGatewayBuilder
         Services.ScanProjectionAssemblies(assemblies);
         return this;
     }
+
+    private static void ApplySafeDefaultGeneratedApiAuthorization(
+        InletServerOptions options
+    )
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        options.GeneratedApiAuthorization.Mode = GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+        options.GeneratedApiAuthorization.AllowAnonymousOptOut = false;
+    }
+
+    private static InvalidOperationException CreateDuplicateSubsystemException(
+        string subsystemName,
+        string registrationMethodName
+    ) =>
+        new(
+            $"Mississippi gateway {subsystemName} composition can only be attached once per builder. Remove the duplicate {registrationMethodName} call and keep each gateway subsystem on a single builder path.");
 }

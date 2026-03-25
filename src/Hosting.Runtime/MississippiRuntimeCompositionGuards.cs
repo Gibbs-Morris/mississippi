@@ -14,6 +14,8 @@ internal static class MississippiRuntimeCompositionGuards
 {
     private const string GatewayHostModeMarkerFullName = "Mississippi.Hosting.Gateway.MississippiGatewayHostModeMarker";
 
+    private const string OrleansBuilderMarkerFullName = "Microsoft.Extensions.Hosting.OrleansBuilderMarker";
+
     private static readonly string[] FrozenOwnershipAssemblyPrefixes =
     [
         "Orleans.Persistence",
@@ -90,6 +92,22 @@ internal static class MississippiRuntimeCompositionGuards
         }
 
         if (services.Any(descriptor => descriptor.ServiceType == typeof(MississippiCompetingOrleansOwnershipMarker)))
+        {
+            throw new InvalidOperationException(
+                "Mississippi runtime owns the top-level Orleans silo attachment after AddMississippiRuntime(...). Remove the competing Orleans host attachment and compose supported silo changes through MississippiRuntimeBuilder.Orleans(...).");
+        }
+    }
+
+    /// <summary>
+    ///     Throws when Orleans has already been attached to the host outside Mississippi runtime composition.
+    /// </summary>
+    /// <param name="services">The host service collection to inspect.</param>
+    internal static void ThrowIfCompetingOrleansHostAttachmentExists(
+        IServiceCollection services
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        if (services.Any(IsOrleansBuilderMarker))
         {
             throw new InvalidOperationException(
                 "Mississippi runtime owns the top-level Orleans silo attachment after AddMississippiRuntime(...). Remove the competing Orleans host attachment and compose supported silo changes through MississippiRuntimeBuilder.Orleans(...).");
@@ -205,5 +223,13 @@ internal static class MississippiRuntimeCompositionGuards
         ArgumentNullException.ThrowIfNull(descriptor);
         return (descriptor.ServiceType == typeof(MississippiGatewayHostModeMarker)) ||
                string.Equals(descriptor.ServiceType.FullName, GatewayHostModeMarkerFullName, StringComparison.Ordinal);
+    }
+
+    private static bool IsOrleansBuilderMarker(
+        ServiceDescriptor descriptor
+    )
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        return string.Equals(descriptor.ServiceType.FullName, OrleansBuilderMarkerFullName, StringComparison.Ordinal);
     }
 }

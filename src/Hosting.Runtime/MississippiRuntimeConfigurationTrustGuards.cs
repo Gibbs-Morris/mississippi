@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -88,7 +89,7 @@ internal static class MississippiRuntimeConfigurationTrustGuards
             return MississippiRuntimeEndpointHostClass.Local;
         }
 
-        if (IPAddress.TryParse(host, out IPAddress? address) && IPAddress.IsLoopback(address))
+        if (IPAddress.TryParse(host, out IPAddress? address) && IsLocalOrInternalAddress(address))
         {
             return MississippiRuntimeEndpointHostClass.Local;
         }
@@ -137,6 +138,55 @@ internal static class MississippiRuntimeConfigurationTrustGuards
     ) =>
         allowedHosts.Any(allowedHost => string.Equals(host, allowedHost, StringComparison.OrdinalIgnoreCase) ||
                                         host.EndsWith($".{allowedHost}", StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsLocalOrInternalAddress(
+        IPAddress address
+    )
+    {
+        ArgumentNullException.ThrowIfNull(address);
+        if (IPAddress.IsLoopback(address))
+        {
+            return true;
+        }
+
+        if (address.AddressFamily == AddressFamily.InterNetworkV6)
+        {
+            if (address.IsIPv4MappedToIPv6)
+            {
+                return IsLocalOrInternalAddress(address.MapToIPv4());
+            }
+
+            byte[] ipv6Bytes = address.GetAddressBytes();
+            return address.IsIPv6LinkLocal ||
+                   IsIpv6SiteLocal(ipv6Bytes) ||
+                   IsIpv6UniqueLocal(ipv6Bytes) ||
+                   ipv6Bytes.All(static value => value == 0);
+        }
+
+        if (address.AddressFamily != AddressFamily.InterNetwork)
+        {
+            return false;
+        }
+
+        byte[] ipv4Bytes = address.GetAddressBytes();
+        return (ipv4Bytes[0] == 0) ||
+               (ipv4Bytes[0] == 10) ||
+               ((ipv4Bytes[0] == 100) && (ipv4Bytes[1] >= 64) && (ipv4Bytes[1] <= 127)) ||
+               ((ipv4Bytes[0] == 169) && (ipv4Bytes[1] == 254)) ||
+               ((ipv4Bytes[0] == 172) && (ipv4Bytes[1] >= 16) && (ipv4Bytes[1] <= 31)) ||
+               ((ipv4Bytes[0] == 192) && (ipv4Bytes[1] == 168)) ||
+               ((ipv4Bytes[0] == 198) && ((ipv4Bytes[1] == 18) || (ipv4Bytes[1] == 19)));
+    }
+
+    private static bool IsIpv6SiteLocal(
+        byte[] bytes
+    ) =>
+        (bytes[0] == 0xfe) && ((bytes[1] & 0xc0) == 0xc0);
+
+    private static bool IsIpv6UniqueLocal(
+        byte[] bytes
+    ) =>
+        (bytes[0] & 0xfe) == 0xfc;
 
     private static bool LooksLikeConnectionStringValue(
         string value
@@ -315,10 +365,10 @@ internal static class MississippiRuntimeConfigurationTrustGuards
         MississippiRuntimeEndpointHostClass hostClass = ClassifyHost(endpointUri.Host);
         if (hostClass != MississippiRuntimeEndpointHostClass.External)
         {
-            if (!policy.AllowLocalEndpoints)
+            if (!policy.AllowLocalEndpoints && !IsHostAllowed(endpointUri.Host, policy.AllowedExternalHosts))
             {
                 throw new InvalidOperationException(
-                    $"Mississippi runtime [config-trust] rejects source '{sourceKey}': a loopback or local endpoint classification is only allowed in Development. Configure a trusted external endpoint or explicitly allow local endpoints for this environment.");
+                    $"Mississippi runtime [config-trust] rejects source '{sourceKey}': a loopback, private, or local endpoint classification is only allowed in Development unless the host is explicitly allowlisted. Configure a trusted external endpoint, explicitly allow local endpoints for this environment, or allowlist the host in Mississippi:Runtime:Trust:AllowedExternalHosts.");
             }
 
             return;
