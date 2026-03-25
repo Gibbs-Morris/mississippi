@@ -13,6 +13,7 @@ public sealed class BlobStorageTests
 #pragma warning restore CA1515
 {
     private const string TestContainerName = "test-container";
+
     private static readonly DateTime ReadBlobTimestampUtc = new(2024, 02, 03, 04, 05, 06, DateTimeKind.Utc);
 
     private readonly CrescentFixture fixture;
