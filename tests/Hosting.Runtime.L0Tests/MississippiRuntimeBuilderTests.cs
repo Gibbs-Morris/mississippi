@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+using Orleans.Configuration;
 using Orleans.Hosting;
 
 
@@ -50,6 +51,16 @@ public sealed class MississippiRuntimeBuilderTests
     private static WebApplicationBuilder CreateBuilder(
         string environmentName
     ) => WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environmentName });
+
+    private static void AssertFrozenOwnershipViolation(
+        InvalidOperationException exception,
+        string expectedCategory
+    )
+    {
+        Assert.Contains(expectedCategory, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("MississippiRuntimeBuilder.Orleans(...)", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("additive silo tuning", exception.Message, StringComparison.Ordinal);
+    }
 
     private static void AddCompetingOrleansOwnershipMarker(
         IServiceCollection services
@@ -256,6 +267,26 @@ public sealed class MississippiRuntimeBuilderTests
     }
 
     /// <summary>
+    ///     Runtime-owned Orleans attachment should allow additive silo tuning that does not mutate frozen ownership.
+    /// </summary>
+    [Fact]
+    public void ApplyOrleansConfigurationAllowsAdditiveSiloTuningThatPreservesOwnership()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+        runtimeBuilder.Orleans(silo => silo.Configure<SiloOptions>(options => options.SiloName = "allowed-runtime-silo"));
+
+        MississippiRuntimeBuilderState state = GetState(builder.Services);
+        TestSiloBuilder siloBuilder = new();
+
+        state.ApplyOrleansConfiguration(siloBuilder);
+
+        Assert.Contains(
+            siloBuilder.Services,
+            descriptor => descriptor.ServiceType.FullName?.Contains(nameof(SiloOptions), StringComparison.Ordinal) == true);
+    }
+
+    /// <summary>
     ///     Runtime-owned Orleans attachment should reject same-host gateway composition added after runtime attachment.
     /// </summary>
     [Fact]
@@ -304,6 +335,70 @@ public sealed class MississippiRuntimeBuilderTests
 
         Assert.Contains("runtime owns the top-level Orleans silo attachment", exception.Message, StringComparison.Ordinal);
         Assert.Contains("MississippiRuntimeBuilder.Orleans(...)", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Runtime-owned Orleans attachment should reject endpoint ownership overrides introduced through queued callback execution.
+    /// </summary>
+    [Fact]
+    public void ApplyOrleansConfigurationRejectsEndpointOwnershipOverrideAddedThroughQueuedCallback()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+        runtimeBuilder.Orleans(silo => silo.ConfigureEndpoints(11111, 30000));
+
+        MississippiRuntimeBuilderState state = GetState(builder.Services);
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => state.ApplyOrleansConfiguration(new TestSiloBuilder()));
+
+        AssertFrozenOwnershipViolation(exception, "endpoint");
+    }
+
+    /// <summary>
+    ///     Runtime-owned Orleans attachment should reject clustering ownership overrides introduced through queued callback execution.
+    /// </summary>
+    [Fact]
+    public void ApplyOrleansConfigurationRejectsClusteringOwnershipOverrideAddedThroughQueuedCallback()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+        runtimeBuilder.Orleans(silo => silo.UseLocalhostClustering());
+
+        MississippiRuntimeBuilderState state = GetState(builder.Services);
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => state.ApplyOrleansConfiguration(new TestSiloBuilder()));
+
+        AssertFrozenOwnershipViolation(exception, "clustering");
+    }
+
+    /// <summary>
+    ///     Runtime-owned Orleans attachment should reject storage ownership overrides introduced through queued callback execution.
+    /// </summary>
+    [Fact]
+    public void ApplyOrleansConfigurationRejectsStorageOwnershipOverrideAddedThroughQueuedCallback()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+        runtimeBuilder.Orleans(silo => silo.AddMemoryGrainStorage("forbidden-store"));
+
+        MississippiRuntimeBuilderState state = GetState(builder.Services);
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => state.ApplyOrleansConfiguration(new TestSiloBuilder()));
+
+        AssertFrozenOwnershipViolation(exception, "storage");
+    }
+
+    /// <summary>
+    ///     Runtime-owned Orleans attachment should reject provider ownership overrides introduced through queued callback execution.
+    /// </summary>
+    [Fact]
+    public void ApplyOrleansConfigurationRejectsProviderOwnershipOverrideAddedThroughQueuedCallback()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+        runtimeBuilder.Orleans(silo => silo.AddMemoryStreams("forbidden-provider"));
+
+        MississippiRuntimeBuilderState state = GetState(builder.Services);
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => state.ApplyOrleansConfiguration(new TestSiloBuilder()));
+
+        AssertFrozenOwnershipViolation(exception, "provider");
     }
 
     /// <summary>

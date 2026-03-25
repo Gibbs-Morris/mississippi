@@ -57,6 +57,7 @@ internal sealed class MississippiRuntimeBuilderState
     )
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
+        IReadOnlyDictionary<string, int> frozenOrleansOwnership = MississippiRuntimeCompositionGuards.CaptureFrozenOrleansOwnership(siloBuilder.Services);
         MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(Configuration, HostEnvironment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(HostServices);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(siloBuilder.Services);
@@ -68,6 +69,7 @@ internal sealed class MississippiRuntimeBuilderState
         MississippiRuntimeConfigurationTrustGuards.ThrowIfUnsafeConfigurationExists(Configuration, HostEnvironment.EnvironmentName);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(HostServices);
         MississippiRuntimeCompositionGuards.ThrowIfUnsupportedCompositionExists(siloBuilder.Services);
+        MississippiRuntimeCompositionGuards.ThrowIfFrozenOrleansOwnershipChanged(siloBuilder.Services, frozenOrleansOwnership);
     }
 
     /// <summary>
