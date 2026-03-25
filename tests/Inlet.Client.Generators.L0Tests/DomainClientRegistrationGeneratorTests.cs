@@ -159,6 +159,7 @@ public sealed class DomainClientRegistrationGeneratorTests
             "public static MississippiClientBuilder AddTestAppDomainClient",
             generatedCode,
             StringComparison.Ordinal);
+        Assert.DoesNotContain("public static void AddTestAppDomainClient", generatedCode, StringComparison.Ordinal);
         Assert.Contains("this MississippiClientBuilder client", generatedCode, StringComparison.Ordinal);
         Assert.Contains("client.Reservoir(reservoir =>", generatedCode, StringComparison.Ordinal);
         Assert.Contains("reservoir.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
@@ -195,6 +196,7 @@ public sealed class DomainClientRegistrationGeneratorTests
             "public static MississippiClientBuilder AddCoreLogicClient",
             generatedCode,
             StringComparison.Ordinal);
+        Assert.DoesNotContain("public static void AddCoreLogicClient", generatedCode, StringComparison.Ordinal);
         Assert.Contains("reservoir.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("return client;", generatedCode, StringComparison.Ordinal);
         AssertHasNoCompilationErrors(outputCompilation);

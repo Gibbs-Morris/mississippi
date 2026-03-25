@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -55,6 +56,19 @@ public sealed class MississippiClientBuilderTests
         MississippiClientBuilder clientBuilder = builder.AddMississippiClient();
         Assert.NotNull(clientBuilder);
         Assert.Same(services, clientBuilder.Services);
+    }
+
+    /// <summary>
+    ///     AddMississippiClient should reject duplicate client attachment on the same host.
+    /// </summary>
+    [Fact]
+    public void AddMississippiClientRejectsDuplicateAttachment()
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder builder = CreateBuilder(services);
+        builder.AddMississippiClient();
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => builder.AddMississippiClient());
+        Assert.Contains("AddMississippiClient can only be called once per host", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>
