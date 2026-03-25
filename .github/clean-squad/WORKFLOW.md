@@ -327,7 +327,7 @@ Allowed `phase` values:
 | `planning` | Phase 4 plan drafting and review cycles |
 | `implementation` | Phase 5 implementation and commit gating |
 | `code-review` | Phase 6 review and remediation |
-| `qa` | Phase 7 QA validation |
+| `qa-validation` | Phase 7 QA validation |
 | `documentation` | Phase 8 documentation and doc review |
 | `pr-merge` | Phase 9 PR creation, CI, polling, and merge readiness |
 
@@ -337,6 +337,7 @@ Allowed `eventType` values:
 |------------|-----------------|-------------|----------|---------------------|-----------------------------|---------------------|
 | `phase-started` | lifecycle-start | yes | no | yes | no | yes |
 | `phase-completed` | lifecycle-terminal | no | yes | yes | no | yes |
+| `completed` | lifecycle-terminal | no | yes | yes | no | yes |
 | `delegation-recorded` | causal-link | no | no | yes | no | yes |
 | `artifact-published` | artifact-transition | no | no | yes | yes | yes |
 | `wait-started` | lifecycle-start | yes | no | yes | no | yes |
@@ -560,7 +561,7 @@ Normalization rules:
   "task": "<task-slug>",
   "createdUtc": "<ISO-8601 UTC>",
   "lastUpdatedUtc": "<ISO-8601 UTC>",
-  "currentPhase": "discovery|three-amigos|architecture|planning|implementation|code-review|qa|documentation|pr-merge",
+  "currentPhase": "discovery|three-amigos|architecture|planning|implementation|code-review|qa-validation|documentation|pr-merge",
   "status": "in-progress|blocked|complete",
   "branch": "<branch-name-or-null>",
   "prNumber": null,

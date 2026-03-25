@@ -168,7 +168,7 @@ Treat `state.json` as runtime support data only:
   "task": "<task-slug>",
   "createdUtc": "<ISO-8601 UTC>",
   "lastUpdatedUtc": "<ISO-8601 UTC>",
-  "currentPhase": "discovery|three-amigos|architecture|planning|implementation|code-review|qa|documentation|pr-merge",
+  "currentPhase": "discovery|three-amigos|architecture|planning|implementation|code-review|qa-validation|documentation|pr-merge",
   "status": "<in-progress|blocked|complete>",
   "branch": "<branch-name-or-null>",
   "prNumber": null,
