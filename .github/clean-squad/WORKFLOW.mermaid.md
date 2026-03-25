@@ -12,18 +12,18 @@ flowchart TD
     Authority["Authority note:<br/>WORKFLOW.md is authoritative.<br/>This Mermaid file is a visual companion only."]
     Principles["Cross-cutting note:<br/>All agents apply first principles and CoV.<br/>cs Product Owner is the only human-facing agent."]
     SharedState["Cross-cutting note:<br/>All agents share state through .thinking/&lt;task&gt;/.<br/>workflow-audit.json is the authoritative execution record.<br/>Activity-log and handover updates are mandatory secondary evidence."]
-    AuditOwnership["Cross-cutting note:<br/>cs Product Owner writes canonical audit events for Phases 1-8.<br/>cs PR Manager writes canonical audit events for Phase 9.<br/>cs Scribe publishes derived audit output only."]
+    AuditOwnership["Cross-cutting note:<br/>cs Product Owner writes canonical audit events for Phases 1-9.<br/>cs PR Manager executes only bounded delegated Phase 9 PR-surface work and does not write canonical facts.<br/>cs Scribe publishes derived audit output only."]
     AuditRules["Cross-cutting note:<br/>sequence is the only ordering authority.<br/>Canonical eventUtc timestamps are mandatory for timing and diagnostics only and never override sequence.<br/>Narrative logs, Mermaid, and PR prose are supporting or derived evidence only."]
-    AuditHandoff["Cross-cutting note:<br/>Only one canonical writer may be active for a workflow boundary at a time.<br/>The Product Owner to PR Manager handoff is explicit before Phase 9 writes.<br/>After handoff, canonical ownership stays with cs PR Manager even if startup is blocked before the first Phase 9 append.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch.<br/>The first canonical append uses sequence 1 with expected prior sequence 0."]
+    AuditDelegation["Cross-cutting note:<br/>Only one canonical writer may be active for the workflow run at a time.<br/>Phase 9 specialist work starts only after explicit Product Owner delegation that names the bounded task slice, expected artifact output or artifact bundle, completion signal, closure condition, details.allowedActions, and details.authorizedTargets without transferring canonical ownership.<br/>Blocked startup or recovery never transfers canonical ownership away from cs Product Owner.<br/>A bounded stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active so stale publication has no integrity window.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch.<br/>The first canonical append uses sequence 1 with expected prior sequence 0."]
     AuditEventContract["Cross-cutting note:<br/>Every canonical event uses the v3 semantic envelope: sequence, eventUtc, logicalEventId, actor, phase, eventType,<br/>appendPrecondition, workItemId and rootWorkItemId when meaningful, spanId, causedBy, closes, outcome, summary, reasonCode,<br/>artifacts as evidence bindings, artifactTransitions for lifecycle meaning, iterationId, provenance, and details."]
-    StateSupportContract["Cross-cutting note:<br/>state.json is runtime support only and mirrors the workflow state contract exactly.<br/>It includes workflowContractFingerprint, currentSequence, currentOwner, openWait, and lastCompiledAtUtc.<br/>It never repairs canonical facts from workflow-audit.json."]
+    StateSupportContract["Cross-cutting note:<br/>state.json is runtime support only and mirrors the workflow state contract exactly.<br/>It includes workflowContractFingerprint, currentSequence, currentOwner, openWait, and lastCompiledAtUtc.<br/>currentOwner means canonical ownership only and never delegated execution ownership.<br/>It never repairs canonical facts from workflow-audit.json."]
     TrustModel["Cross-cutting note:<br/>Reviewer-facing audit output is policy-authoritative and freshness-verifiable within this repo,<br/>but not tamper-resistant or authenticated.<br/>Evidence-bearing artifacts require content digests or immutable external identities before publication."]
-    ProvenanceContract["Cross-cutting note:<br/>Every detailed audit artifact binds to HEAD SHA, ledger watermark, ledgerDigest, workflowContractFingerprint,<br/>generation timestamp, and generator identity.<br/>When merge readiness depends on CI, cs PR Manager attaches the current normalized required CI-result identity set to the Reviewer Audit Summary freshness stamp.<br/>Required CI identity changes alone do not force detailed-audit recompilation, and merge readiness never passes with stale, missing, or mismatched provenance."]
+    ProvenanceContract["Cross-cutting note:<br/>Every detailed audit artifact binds to HEAD SHA, ledger watermark, ledgerDigest, workflowContractFingerprint,<br/>generation timestamp, and generator identity.<br/>When merge readiness depends on CI, cs Product Owner verifies and attaches the current normalized required CI-result identity set before publication or directed PR-surface publication.<br/>Required CI identity changes alone do not force detailed-audit recompilation, and merge readiness never passes with stale, missing, or mismatched provenance."]
     VerdictContract["Cross-cutting note:<br/>Verdicts are Conformant, ConformantWithDeviations, NonConformant, Blocked, or Untrusted.<br/>Missing, malformed, or policy-violating evidence never yields a conformant verdict from current policy-authoritative evidence."]
     EvidenceContract["Cross-cutting note:<br/>Major completion claims require sufficient artifact evidence.<br/>Schema validation is required where the contract defines canonical or derived metadata structure.<br/>Supporting logs may corroborate but never repair missing canonical facts.<br/>Missing evidence maps to NonConformant, Blocked, or Untrusted based on policy violation, incomplete run, or trust failure."]
     TimingContract["Cross-cutting note:<br/>Timing uses elapsed, active-agent, human-wait, and system-wait totals derived from canonical eventUtc values.<br/>Buckets are mutually exclusive; unmatched or overlapping waits and impossible totals invalidate trust."]
     SummaryContract["Cross-cutting note:<br/>Reviewer Audit Summary order is verdict, action, blockers, provenance stamp, condensed Mermaid flow,<br/>four-bucket timing, fixed timing sentence, deviations, then pointer to workflow-audit.md.<br/>Keep only current blockers, the condensed topology, and at most three deviations on the PR surface; overflow detail lives in workflow-audit.md.<br/>workflow-audit.md begins with a why-this-matters opener."]
-    FailureMatrix["Cross-cutting note:<br/>Failure matrix cases and outcomes are mirrored from WORKFLOW.md:<br/>happy path, human clarification wait, and Phase 9 polling wait -> Conformant and publish or keep published only with current provenance.<br/>remediation loop, allowed skip, and declined review comment -> ConformantWithDeviations and republish only when reviewer-facing deviations change with refreshed provenance.<br/>blocked run -> Blocked and no merge-ready summary is sufficient until cleared and regenerated.<br/>stale summary, unmatched wait boundary, overlapping waits, impossible timing totals, and malformed provenance -> Untrusted and invalidate immediately until corrected and regenerated.<br/>duplicate logicalEventId, invalid chronology or handoff, and unauthorized writer or delegated actor -> NonConformant and no trusted reviewer evidence publishes until repaired and regenerated.<br/>missing major-claim evidence -> Blocked when incomplete, otherwise Untrusted; invalidate or withhold publication until evidence exists and a fresh summary is generated."]
+    FailureMatrix["Cross-cutting note:<br/>Failure matrix cases and outcomes are mirrored from WORKFLOW.md:<br/>happy path, human clarification wait, and Phase 9 polling wait -> Conformant and publish or keep published only with current provenance.<br/>remediation loop, allowed skip, and declined review comment -> ConformantWithDeviations and republish only when reviewer-facing deviations change with refreshed provenance.<br/>blocked run -> Blocked and no merge-ready summary is sufficient until cleared and regenerated.<br/>stale summary, unmatched wait boundary, overlapping waits, impossible timing totals, and malformed provenance -> Untrusted and invalidate immediately until corrected and regenerated.<br/>duplicate logicalEventId, invalid chronology or delegation-basis violation, and unauthorized writer or delegated actor -> NonConformant and no trusted reviewer evidence publishes until repaired and regenerated.<br/>missing major-claim evidence -> Blocked when incomplete, otherwise Untrusted; invalidate or withhold publication until evidence exists and a fresh summary is generated."]
     Delegation["Cross-cutting note:<br/>Before every runSubagent, verify the approved Agent Roster in WORKFLOW.md.<br/>If no approved fit exists, stop, record the blocker, and ask the user how to proceed."]
 
     subgraph EntryPoint["Entry Point"]
@@ -141,27 +141,29 @@ flowchart TD
     end
 
     subgraph Phase9["Phase 9: PR Creation & Merge Readiness"]
-        P9Manager["Invoke cs PR Manager to own Phase 9 after the explicit handoff"]
-        P9Startup["At startup or recovery, cs PR Manager acknowledges the handoff in the first successful Phase 9 append and states whether Phase 9 is starting, resuming, or blocked"]
-        P9Scribe["cs PR Manager invokes cs Scribe at Phase 9 entry and when HEAD, ledger, workflow contract, or reviewer-meaningful canonical facts require a fresh stable-snapshot audit"]
-        P9Stale["At first observation, mark the Reviewer Audit Summary stale with the stale reason and last known freshness stamp; do not let the 300-second wait delay invalidation"]
-        P9Verify["Verify workflow-audit provenance plus the current required CI identity set before republication or merge-readiness evaluation"]
-        P9Publish["Publish or republish the Reviewer Audit Summary only after provenance verification passes"]
+        P9Manager["cs Product Owner remains the canonical Phase 9 owner and records every reviewer-significant Phase 9 fact"]
+        P9Startup["Record a bounded delegation to cs PR Manager that names the bounded task slice, details.expectedOutputPath, completion signal, closure condition, details.allowedActions, and details.authorizedTargets; blocked startup or recovery never transfers ownership"]
+        P9Scribe["cs Product Owner invokes cs Scribe when HEAD, ledger, workflow contract, or reviewer-meaningful canonical facts require a fresh stable-snapshot audit"]
+        P9Execute["cs PR Manager executes only the delegated PR-surface work and returns artifacts and evidence"]
+        P9Stale["At first observation, cs Product Owner records invalidation canonically and the continuously delegated stale-marker capability marks the PR surface stale immediately; do not let the 300-second wait delay invalidation"]
+        P9Verify["cs Product Owner verifies workflow-audit provenance plus the current required CI identity set before republication or merge-readiness evaluation"]
+        P9Publish["cs Product Owner decides publication or republication; cs PR Manager applies the PR-surface mutation only when delegated"]
         P9Wait["After pushing to an open PR, wait 300 seconds unless stale invalidation work preempts the wait"]
         P9Poll["Poll for unresolved review comments"]
         P9Comments{"New unaddressed comments?"}
         P9Scope{"Comment is in scope?"}
         P9Address["Fix, commit, push, reply with evidence, and resolve the thread"]
         P9OutOfScope["Reply with reasoned explanation and leave the thread open for the reviewer"]
+        P9Record["cs Product Owner records the resulting canonical fact, closes or reissues the delegation, and decides whether publication or merge readiness changed"]
         P9Cap{"Iteration cap reached?"}
-        P9Ready["Merge readiness confirmed"]
+        P9Ready["cs Product Owner evaluates merge readiness from current evidence and records the conclusion canonically"]
         P9Stop(["Stop and report remaining unresolved threads for human review"])
         P9Done([Done])
 
-        P9Manager --> P9Startup --> P9Scribe --> P9Stale --> P9Verify --> P9Publish --> P9Wait --> P9Poll --> P9Comments
+        P9Manager --> P9Startup --> P9Scribe --> P9Execute --> P9Stale --> P9Verify --> P9Publish --> P9Wait --> P9Poll --> P9Comments
         P9Comments -- Yes --> P9Scope
-        P9Scope -- Yes --> P9Address --> P9Cap
-        P9Scope -- No --> P9OutOfScope --> P9Cap
+        P9Scope -- Yes --> P9Address --> P9Record --> P9Cap
+        P9Scope -- No --> P9OutOfScope --> P9Record --> P9Cap
         P9Cap -- No --> P9Wait
         P9Cap -- Yes --> P9Stop
         P9Comments -- No --> P9Ready --> P9Done
@@ -183,7 +185,7 @@ flowchart TD
     Principles -.-> ProductOwner
     SharedState -.-> P1Setup
     AuditOwnership -.-> ProductOwner
-    AuditHandoff -.-> P9Manager
+    AuditDelegation -.-> P9Manager
     AuditEventContract -.-> P1Setup
     StateSupportContract -.-> P1Setup
     TrustModel -.-> P9Publish
@@ -225,6 +227,7 @@ This section explicitly mirrors the v3 canonical event contract from [WORKFLOW.m
 - Reviewer-significant meaning MUST be explicit in structured fields. Cause, closure, outcome, artifact lineage, and provenance MUST NOT be reconstructed from chronology, prose, secondary logs, or path changes alone.
 - Every meaningful event carries `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, `outcome`, `artifactTransitions`, and `provenance` whenever the writer-obligation matrix requires them.
 - Every canonical event carries `appendPrecondition`, whose `expectedPriorSequence` encodes the fail-closed append expectation.
+- Every Phase 9 `delegation-recorded` event carries capability-scoped `details.allowedActions` and `details.authorizedTargets`, and the stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active.
 - `artifacts` remains evidence binding only. Artifact lifecycle meaning lives in `artifactTransitions`.
 - `details` is always serialized in canonical order and MUST use `{}` when no event-type-specific members apply.
 - The first canonical append uses `sequence = 1` and expected prior `sequence = 0`.
@@ -293,7 +296,7 @@ This section explicitly mirrors the semantic-family obligations from [WORKFLOW.m
 | artifact-transition | `workItemId`, `rootWorkItemId`, `artifactTransitions`, `provenance` | `causedBy`, `artifacts`, `details`, `iterationId` | Artifact history becomes narrative-only. |
 | deviation | `workItemId`, `rootWorkItemId`, `causedBy`, `reasonCode`, `provenance`, `details` | `spanId`, `artifactTransitions`, `iterationId` | The deviation basis and remediation path become prose-only. |
 | interruption | `workItemId`, `rootWorkItemId`, `causedBy`, `reasonCode`, `provenance`, `details` | `spanId`, `artifactTransitions`, `iterationId` | The interruption cannot be tied to the affected work or blocker. |
-| ownership | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `artifacts`, `iterationId` | Canonical writer or handoff ownership becomes ambiguous. |
+| ownership | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `artifacts`, `iterationId` | Canonical writer or delegated-execution ownership becomes ambiguous. |
 | publication-support | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `artifacts`, `iterationId` | The CI or merge-readiness basis cannot be audited deterministically. |
 | review-progress | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `spanId`, `artifacts`, `artifactTransitions`, `iterationId`, `reasonCode` | The exact review-thread action cannot be audited deterministically. |
 | publication-state | `workItemId`, `rootWorkItemId`, `provenance`, `details` | `artifactTransitions`, `causedBy`, `artifacts`, `iterationId` | Reviewer-summary freshness becomes untrustworthy. |
@@ -318,11 +321,12 @@ Reviewer-facing audit output becomes stale on any of these events:
 
 Publication and recovery rules:
 
-1. The PR Manager MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait, by marking the Reviewer Audit Summary stale on the PR surface with the stale reason and the last known freshness stamp.
-2. The PR Manager MUST regenerate `workflow-audit.md` from a fresh stable ledger snapshot only when HEAD, ledger snapshot, workflow contract fingerprint, or reviewer-meaningful canonical output changed.
-3. When only the required CI-result identity set changes for unchanged HEAD and unchanged reviewer-meaningful canonical facts, the PR Manager MUST refresh the Reviewer Audit Summary freshness stamp and merge-readiness evaluation without regenerating `workflow-audit.md`.
-4. The PR Manager MUST republish only after `workflow-audit.md` provenance matches the current HEAD SHA, ledgerDigest, workflowContractFingerprint, and any attached required CI-result identity set.
-5. Keep invalidation more granular than publication so the PR description does not churn on low-signal changes.
+1. The Product Owner MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait, by recording the canonical invalidation fact and ensuring the Reviewer Audit Summary is marked stale on the PR surface with the stale reason and the last known freshness stamp.
+2. The Product Owner MUST keep a bounded stale-marker delegation active for the current PR surface whenever a fresh Reviewer Audit Summary is published or a review-polling wait is active so stale-marker publication never waits on a new delegation round-trip.
+3. The Product Owner MUST regenerate `workflow-audit.md` from a fresh stable ledger snapshot only when HEAD, ledger snapshot, workflow contract fingerprint, or reviewer-meaningful canonical output changed.
+4. When only the required CI-result identity set changes for unchanged HEAD and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the Reviewer Audit Summary freshness stamp and merge-readiness evaluation without regenerating `workflow-audit.md`.
+5. The Product Owner MUST republish only after `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, `workflowContractFingerprint`, and any attached required CI-result identity set.
+6. Keep invalidation more granular than publication so the PR description does not churn on low-signal changes.
 
 ## State and Runtime Support Mirror
 
@@ -335,7 +339,7 @@ This section explicitly mirrors the `state.json` runtime support contract from [
     "task": "<task-slug>",
     "createdUtc": "<ISO-8601 UTC>",
     "lastUpdatedUtc": "<ISO-8601 UTC>",
-    "currentPhase": "discovery|three-amigos|architecture|planning|implementation|code-review|qa|documentation|pr-merge",
+    "currentPhase": "discovery|three-amigos|architecture|planning|implementation|code-review|qa-validation|documentation|pr-merge",
     "status": "in-progress|blocked|complete",
     "branch": "<branch-name-or-null>",
     "prNumber": null,
@@ -344,7 +348,7 @@ This section explicitly mirrors the `state.json` runtime support contract from [
     "workflowContractFingerprint": "<same value used by workflow-audit.json>",
     "audit": {
         "currentSequence": 0,
-        "currentOwner": "cs Product Owner|cs PR Manager|null",
+        "currentOwner": "cs Product Owner|null",
         "openWait": null,
         "lastCompiledAtUtc": null
     },
@@ -373,7 +377,7 @@ This section explicitly mirrors the per-case failure matrix from [WORKFLOW.md](W
 | overlapping wait intervals | `Untrusted` | Invalidate immediately and require audit correction before republishing. |
 | impossible timing totals | `Untrusted` | Invalidate immediately and require audit correction before republishing. |
 | duplicate logical event identity | `NonConformant` | Do not publish as trusted reviewer evidence until the canonical ledger is repaired and a fresh summary is generated. |
-| invalid chronology or handoff violation | `NonConformant` | Do not publish as trusted reviewer evidence until the chronology or handoff violation is corrected and a fresh summary is generated. |
+| invalid chronology or delegation-basis violation | `NonConformant` | Do not publish as trusted reviewer evidence until the chronology or delegation-basis violation is corrected and a fresh summary is generated. |
 | unauthorized writer or unauthorized delegated actor | `NonConformant` | Do not publish as trusted reviewer evidence until the unauthorized action is corrected and a fresh summary is generated. |
 | missing required evidence for a major completion claim | `Blocked` when the run is incomplete; otherwise `Untrusted` when a completion claim lacks trustworthy evidence | Invalidate or withhold publication until the missing evidence is supplied and a fresh summary is generated. |
 | malformed canonical or derived provenance metadata | `Untrusted` | Invalidate immediately and require provenance repair before republishing. |
