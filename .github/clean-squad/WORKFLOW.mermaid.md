@@ -10,7 +10,7 @@ This document is a visual companion to [WORKFLOW.md](WORKFLOW.md).
 ```mermaid
 flowchart TD
     Authority["Authority note:<br/>WORKFLOW.md is authoritative.<br/>This Mermaid file is a visual companion only."]
-    Principles["Cross-cutting note:<br/>All agents apply first principles and CoV.<br/>cs Product Owner is the only human-facing agent."]
+    Principles["Cross-cutting note:<br/>All agents apply first principles and CoV.<br/>cs Entrepreneur is the optional pre-governed public intake agent.<br/>cs Product Owner is the sole governed orchestrator."]
     SharedState["Cross-cutting note:<br/>All agents share state through .thinking/&lt;task&gt;/.<br/>workflow-audit.json is the authoritative execution record.<br/>Activity-log and handover updates are mandatory secondary evidence."]
     AuditOwnership["Cross-cutting note:<br/>cs Product Owner writes canonical audit events for Phases 1-9.<br/>cs PR Manager executes only bounded delegated Phase 9 PR-surface work and does not write canonical facts.<br/>cs Scribe publishes derived audit output only."]
     AuditRules["Cross-cutting note:<br/>sequence is the only ordering authority.<br/>Canonical eventUtc timestamps are mandatory for timing and diagnostics only and never override sequence.<br/>Narrative logs, Mermaid, and PR prose are supporting or derived evidence only."]
@@ -26,8 +26,14 @@ flowchart TD
     FailureMatrix["Cross-cutting note:<br/>Failure matrix cases and outcomes are mirrored from WORKFLOW.md:<br/>happy path, human clarification wait, and Phase 9 polling wait -> Conformant and publish or keep published only with current provenance.<br/>remediation loop, allowed skip, and declined review comment -> ConformantWithDeviations and republish only when reviewer-facing deviations change with refreshed provenance.<br/>blocked run -> Blocked and no merge-ready summary is sufficient until cleared and regenerated.<br/>stale summary, unmatched wait boundary, overlapping waits, impossible timing totals, and malformed provenance -> Untrusted and invalidate immediately until corrected and regenerated.<br/>duplicate logicalEventId, invalid chronology or delegation-basis violation, and unauthorized writer or delegated actor -> NonConformant and no trusted reviewer evidence publishes until repaired and regenerated.<br/>missing major-claim evidence -> Blocked when incomplete, otherwise Untrusted; invalidate or withhold publication until evidence exists and a fresh summary is generated."]
     Delegation["Cross-cutting note:<br/>Before every runSubagent, verify the approved Agent Roster in WORKFLOW.md.<br/>If no approved fit exists, stop, record the blocker, and ask the user how to proceed."]
 
-    subgraph EntryPoint["Entry Point"]
-        User([User request]) --> ProductOwner["cs Product Owner is the only human entry point"]
+    subgraph EntryPoint["Public Intake"]
+        User([User request]) -->|rough idea| Entrepreneur["cs Entrepreneur shapes one Story Pack candidate before governed intake"]
+        User -->|direct governed intake| ProductOwner["cs Product Owner starts governed work and remains the sole governed orchestrator"]
+        Entrepreneur --> StoryPack["Story Pack candidate"]
+        StoryPack --> G0{"G0 Intake Gate<br/>Story Pack candidate"}
+        G0 -->|APPROVED| ProductOwner
+        G0 -->|CHANGES_REQUESTED| Entrepreneur
+        G0 -->|DEFERRED or CANCELLED| Stop0(["Stop or hold before governed intake"])
     end
 
     subgraph Phase1["Phase 1: Intake & Discovery"]
@@ -156,7 +162,8 @@ flowchart TD
         P9OutOfScope["Reply with reasoned explanation and leave the thread open for the reviewer"]
         P9Record["cs Product Owner records the resulting canonical fact, closes or reissues the delegation, and decides whether publication or merge readiness changed"]
         P9Cap{"Iteration cap reached?"}
-        P9Ready["cs Product Owner evaluates merge readiness from current evidence and records the conclusion canonically"]
+        P9Ready["cs Product Owner assembles the merge-readiness package and evaluates current evidence canonically"]
+        G3{"G3 Merge Gate<br/>Merge-readiness package + rolled-up review, QA, and documentation conclusions"}
         P9Stop(["Stop and report remaining unresolved threads for human review"])
         P9Done([Done])
 
@@ -166,14 +173,26 @@ flowchart TD
         P9Scope -- No --> P9OutOfScope --> P9Record --> P9Cap
         P9Cap -- No --> P9Wait
         P9Cap -- Yes --> P9Stop
-        P9Comments -- No --> P9Ready --> P9Done
+        P9Comments -- No --> P9Ready --> G3
+        G3 --|APPROVED| P9Done
+        G3 --|CHANGES_REQUESTED| ProductOwner
+        G3 --|DEFERRED or CANCELLED| Stop3(["Stop or hold after late-stage review"])
     end
 
-    P2Gaps -- No --> P3Architect
-    P2Questions --> P3Architect
+    G1{"G1 Scope Gate<br/>requirements-synthesis.md + synthesis.md"}
+    G2{"G2 Plan Gate<br/>solution-design.md + binding C4/ADR artifacts + final-plan.md"}
+
+    P2Gaps -- No --> G1
+    P2Questions --> G1
+    G1 --|APPROVED| P3Architect
+    G1 --|CHANGES_REQUESTED| ProductOwner
+    G1 --|DEFERRED or CANCELLED| Stop1(["Stop or hold after scope review"])
     P1Synthesis --> P2Invoke
     P3Adr --> P4Draft
-    P4Final --> P5Branch
+    P4Final --> G2
+    G2 --|APPROVED| P5Branch
+    G2 --|CHANGES_REQUESTED| ProductOwner
+    G2 --|DEFERRED or CANCELLED| Stop2(["Stop or hold before implementation"])
     P5Full --> P6Diff
     P6Findings -- No --> P7Lead
     P7Remediate --> P5Tests
@@ -283,6 +302,19 @@ Canonical event property-order mirror:
     "details": {}
 }
 ```
+
+## Human Advancement Gates Mirror
+
+This section mirrors the sparse human advancement gates from
+[WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow
+differ, [WORKFLOW.md](WORKFLOW.md) governs.
+
+- `G0` applies only when `cs Entrepreneur` is used and binds the Story Pack candidate before governed intake starts.
+- `G1` binds `01-discovery/requirements-synthesis.md` and `02-three-amigos/synthesis.md` before architecture and planning proceed.
+- `G2` binds `03-architecture/solution-design.md`, the binding C4 artifacts, the binding ADR artifacts, and `04-planning/final-plan.md` before implementation proceeds.
+- `G3` binds `09-pr-merge/merge-readiness.md` plus the current rolled-up code-review, QA, and documentation conclusions before PR-ready or merge-ready progression continues.
+- Every gate uses the same outcomes: `APPROVED`, `CHANGES_REQUESTED`, `DEFERRED`, and `CANCELLED`.
+- Any material change to a bound artifact makes the prior approval stale and requires a fresh explicit decision before advancement.
 
 ## Writer Obligation Matrix Mirror
 
