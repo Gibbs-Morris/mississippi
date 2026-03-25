@@ -184,13 +184,14 @@ Every canonical event MUST include:
 4. `actor`
 5. `phase`
 6. `eventType`
-7. human-readable `summary`
-8. `reasonCode` when required
-9. `artifacts` when applicable as evidence bindings
-10. `artifactTransitions` when artifact lifecycle meaning is asserted
-11. `iterationId` for loops, retries, or repeated review cycles when applicable
-12. `provenance` for every meaningful event defined by this contract
-13. `details` using `{}` when no event-type-specific members apply
+7. `appendPrecondition` with the expected prior `sequence`
+8. human-readable `summary`
+9. `reasonCode` when required
+10. `artifacts` when applicable as evidence bindings
+11. `artifactTransitions` when artifact lifecycle meaning is asserted
+12. `iterationId` for loops, retries, or repeated review cycles when applicable
+13. `provenance` for every meaningful event defined by this contract
+14. `details` using `{}` when no event-type-specific members apply
 
 Meaningful events MUST additionally carry `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, and `outcome` whenever the writer-obligation matrix below marks them as required.
 
@@ -212,6 +213,7 @@ Canonical JSON rules:
 - Files MUST be UTF-8 encoded JSON with no comments or trailing commas.
 - Object property order MUST match the order shown in this contract wherever a digest is calculated.
 - Every canonical event MUST emit the full top-level property set in the declared order even when some conditional semantics are absent.
+- `appendPrecondition` MUST always be serialized and MUST encode the expected prior `sequence` used for fail-closed append validation.
 - When a conditional scalar or object field is not semantically required, canonical JSON MUST emit that property as `null` rather than omitting it.
 - When a conditional array field is not semantically required, canonical JSON MUST emit that property as `[]` rather than omitting it.
 - When `details` has no event-type-specific members, canonical JSON MUST emit `details: {}`.
@@ -229,6 +231,9 @@ Each canonical event MUST use this property order and shape:
   "actor": "cs Product Owner",
   "phase": "architecture",
   "eventType": "phase-started",
+  "appendPrecondition": {
+    "expectedPriorSequence": 0
+  },
   "workItemId": "work.architecture.solution-design",
   "rootWorkItemId": "work.architecture.solution-design",
   "spanId": "span.architecture.solution-design.attempt-01",
@@ -265,6 +270,7 @@ In the `Required` column, `conditional` means the property is always serialized 
 | `actor` | yes | Declared canonical writer | Must match the ownership boundary |
 | `phase` | yes | Workflow phase | Existing phase vocabulary is preserved |
 | `eventType` | yes | Coarse event taxonomy | Existing vocabulary is retained and strengthened |
+| `appendPrecondition` | yes | Fail-closed append expectation | MUST encode the expected prior `sequence` for this append |
 | `workItemId` | conditional | Stable canonical unit of work | Required for reviewer-significant and other meaningful events |
 | `rootWorkItemId` | conditional | Stable lineage root across retries, repetitions, and supersessions | Equals `workItemId` on the first attempt |
 | `spanId` | conditional | Specific bounded attempt or activity | Required when the event starts a span or names a bounded active attempt; terminal events identify the ended span through `closes` |
@@ -290,6 +296,20 @@ In the `Required` column, `conditional` means the property is always serialized 
 - Reuse the same `logicalEventId` only when retrying the same semantic event after a failed append or transient write failure.
 - If the event meaning, lineage, cause, closure, outcome, reason, artifact set, provenance, or details change materially, a new `logicalEventId` MUST be generated.
 - Duplicate `logicalEventId` values with materially different content are invalid chronology.
+
+`appendPrecondition` MUST use this shape:
+
+```json
+{
+  "expectedPriorSequence": 0
+}
+```
+
+Append-precondition rules:
+
+- `appendPrecondition.expectedPriorSequence` MUST equal the actual ledger-tail `sequence` immediately before the append is attempted.
+- Writers MUST fail closed when the ledger tail does not match `appendPrecondition.expectedPriorSequence`.
+- The first canonical append MUST use `sequence = 1` with `appendPrecondition.expectedPriorSequence = 0`.
 
 Allowed `phase` values:
 
@@ -439,7 +459,7 @@ Relationship semantics:
 }
 ```
 
-`details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. When no event-type-specific keys apply, `details` MUST be `{}`:
+`details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutput`
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
