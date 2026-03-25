@@ -165,6 +165,7 @@ retired.
  Stale-marker authority in Phase 9 MUST remain continuously delegated whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active; that bounded stale-marker delegation MUST stay active until the Product Owner canonically records that the summary is stale, republished fresh, or no longer present on the PR surface.
  A Phase 9 delegation remains active only until the Product Owner records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that delegation and whose semantics satisfy its declared `details.completionSignal` or `details.closureCondition`.
  Blocked Phase 9 startup, tool acquisition, or recovery MUST NOT transfer canonical ownership away from the Product Owner.
+
 - A materially new PR-surface objective in Phase 9 MUST use a new bounded delegation; Phase 9 delegation MUST NOT become umbrella authority.
 - Every canonical append MUST declare the expected prior `sequence`.
 - A canonical writer MUST fail closed if the ledger tail does not match the declared expected prior `sequence`.
@@ -1062,7 +1063,7 @@ The skip reason **MUST** be recorded in `scope-assessment.md` with evidence.
 ### Process
 
 1. The Product Owner remains the canonical Phase 9 owner and MUST record every reviewer-significant Phase 9 fact in `workflow-audit.json`.
-2. The Product Owner delegates only bounded Phase 9 PR-surface specialist work to **cs PR Manager** and MUST NOT give open-ended Phase 9 umbrella authority; every such delegation MUST be capability-scoped through explicit `allowedActions` and `authorizedTargets`.
+2. The Product Owner delegates only bounded Phase 9 PR-surface specialist work to **cs PR Manager** and MUST NOT give open-ended Phase 9 umbrella authority; every such delegation MUST be capability-scoped through explicit `details.allowedActions` and `details.authorizedTargets`.
 3. At Phase 9 startup or recovery, if PR-surface work cannot begin normally, the Product Owner records the blocked or resumed state canonically without transferring ownership.
 4. The Product Owner invokes **cs Scribe** to compile `workflow-audit.md` and the condensed reviewer-flow inputs from a stable `workflow-audit.json` snapshot when Phase 9 audit compilation or recompilation is required.
 5. The PR Manager creates or updates the PR, collects CI and review evidence, and performs delegated PR-surface mutations only within the active bounded delegation.
