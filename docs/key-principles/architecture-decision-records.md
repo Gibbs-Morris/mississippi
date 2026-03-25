@@ -141,12 +141,16 @@ even when circumstances change later.
 
 Michael Nygard's original template is deliberately minimal:
 
+The example below is a historical baseline used by older ADR toolchains. In
+Mississippi, this numbered heading and inline lifecycle text are legacy
+compatibility context, not the live authoring contract for new ADRs.
+
 ```markdown
-# ADR-NNNN: Title of Decision
+# Title of Decision
 
 ## Status
 
-Accepted | Proposed | Deprecated | Superseded by ADR-XXXX
+Accepted | Proposed | Deprecated | Superseded by another ADR
 
 ## Context
 
@@ -175,12 +179,16 @@ identity and final-at-merge statuses instead of a mutable in-body status flow.
 maintained as an open-source project, extends Nygard's template with
 additional sections for teams that want more rigour:
 
+This generic example is useful for understanding the wider MADR ecosystem, but
+Mississippi does not treat the numbered heading or inline mutable status text
+below as the repository's current publication model.
+
 ```markdown
-# ADR-NNNN: Title in the Form of a Short Noun Phrase
+# Title in the Form of a Short Noun Phrase
 
 ## Status
 
-Proposed | Accepted | Deprecated | Superseded by [ADR-XXXX](XXXX-title.md)
+Proposed | Accepted | Deprecated | Superseded by another ADR
 
 ## Context and Problem Statement
 
@@ -334,35 +342,43 @@ through metadata, not by rewriting historical body content:
 
 ## Key-Line 4: The ADR Lifecycle
 
-### Status Values
+### Published Status Values
 
-ADRs have a defined lifecycle, but Mississippi keeps the published lifecycle
-final at merge time:
+ADRs have a defined lifecycle, but Mississippi publishes only final states to
+`main`:
 
 ```text
-┌──────────┐
-│ Accepted │
-└─────┬────┘
-    │
-    ├──────────────▶ Deprecated
-    │
-    └──────────────▶ Superseded by a newer ADR relationship
+Pull request discussion and draft iteration
+          |
+          v
+Merged ADR publishes one final status:
+- accepted
+- rejected
+- deprecated
 
-Rejected
+Later change in direction:
+- publish a new ADR
+- add reciprocal supersession metadata
 ```
 
 | Status | Meaning |
 |--------|---------|
-| **Accepted** | The decision has been approved and is in effect. This is the steady state for active decisions. |
-| **Rejected** | The team intentionally declined the option and preserved the reasoning for future reference. |
-| **Deprecated** | The ADR remains historical but is no longer the recommended active decision. |
+| **Accepted** | The merged ADR records the adopted decision and remains the historical record for that choice. |
+| **Rejected** | The merged ADR records an option the team intentionally declined and kept for future context. |
+| **Deprecated** | The merged ADR is published as historical guidance that is no longer the recommended active decision. |
+
+`Superseded` is not a published status value in Mississippi. A later ADR can
+supersede an earlier one, but that relationship is expressed through
+`supersedes` and `superseded_by` metadata rather than by teaching a separate
+status transition model.
 
 ### The Immutability Rule
 
 Mississippi does not publish `proposed` ADRs to `main`; discussion happens in
 the pull request, and the merged ADR already carries its final status. Once an
-ADR reaches its merged final state, its Context and Decision sections are not
-modified. If understanding improves or circumstances change:
+ADR reaches `main`, its `status` is already final for that record, and its
+Context and Problem Statement plus Decision Outcome sections are not modified.
+If understanding improves or circumstances change:
 
 1. **Minor clarifications** (typos, formatting) are acceptable.
 2. **Substantive changes** to the decision require a new ADR that supersedes
