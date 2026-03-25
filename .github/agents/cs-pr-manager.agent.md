@@ -116,7 +116,7 @@ When review comments arrive:
 
 For Product Owner canonical audit recording during review-thread handling, return evidence that includes:
 
-- only the Phase 9 event basis for the delegated slice, including the matched `allowedActions` and `authorizedTargets`
+- only the Phase 9 event basis for the delegated slice, including the matched `details.allowedActions` and `details.authorizedTargets`
 - stable `logicalEventId` values for retry safety
 - `iterationId` when a polling or remediation cycle repeats
 - `reasonCode` for declines, skips, blockers, or other deviations
