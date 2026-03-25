@@ -171,8 +171,17 @@ workflow advances.
 
 ### Canonical Gate Recording
 
-Every G0-G3 human gate decision **MUST** be recorded canonically in
+Every G1-G3 human gate decision **MUST** be recorded canonically in
 `workflow-audit.json` using the existing event contract:
+
+- G0 is the pre-governed exception. Because it happens before governed intake
+  begins, G0 **MUST NOT** require prior existence of `.thinking/<task>/` or
+  `workflow-audit.json`.
+- When governed work starts from a G0-approved Story Pack candidate, the
+  Product Owner **MUST** carry the G0 approval evidence into governed state by
+  capturing the approved Story Pack candidate and the human G0 approval in
+  `00-intake.md` and by binding that evidence in the initial governed canonical
+  event's `artifacts` or `provenance.evidence`.
 
 - The responsible human reply **MUST** first be captured by a `wait-ended`
   event whose `details.waitKind` is `human` and whose provenance is
