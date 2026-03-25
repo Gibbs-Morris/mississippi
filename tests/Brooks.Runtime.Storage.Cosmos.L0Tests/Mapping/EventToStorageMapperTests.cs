@@ -30,7 +30,7 @@ public sealed class EventToStorageMapperTests
             DataContentType = "application/json",
             Data = ImmutableArray.Create<byte>(1, 2, 3),
             DataSizeBytes = 3,
-            Time = DateTimeOffset.UtcNow,
+            Time = DateTimeOffset.FromUnixTimeSeconds(3),
         };
         EventToStorageMapper mapper = new();
 

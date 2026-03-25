@@ -21,7 +21,8 @@ public sealed class SignalRConnectionReducersTests
         {
             LastError = "Previous error",
         };
-        SignalRConnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRConnectedAction action = new("conn-123", timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnConnected(state, action);
@@ -41,7 +42,8 @@ public sealed class SignalRConnectionReducersTests
         {
             ReconnectAttemptCount = 5,
         };
-        SignalRConnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRConnectedAction action = new("conn-123", timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnConnected(state, action);
@@ -59,7 +61,8 @@ public sealed class SignalRConnectionReducersTests
         // Arrange
         SignalRConnectionState state = new();
         string connectionId = "conn-456";
-        SignalRConnectedAction action = new(connectionId, DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRConnectedAction action = new(connectionId, timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnConnected(state, action);
@@ -94,7 +97,8 @@ public sealed class SignalRConnectionReducersTests
     {
         // Arrange
         SignalRConnectionState state = new();
-        SignalRConnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRConnectedAction action = new("conn-123", timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnConnected(state, action);
@@ -151,7 +155,8 @@ public sealed class SignalRConnectionReducersTests
         {
             ConnectionId = "conn-123",
         };
-        SignalRDisconnectedAction action = new(null, DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRDisconnectedAction action = new(null, timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnDisconnected(state, action);
@@ -187,7 +192,8 @@ public sealed class SignalRConnectionReducersTests
         // Arrange
         SignalRConnectionState state = new();
         string error = "Connection lost";
-        SignalRDisconnectedAction action = new(error, DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRDisconnectedAction action = new(error, timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnDisconnected(state, action);
@@ -207,7 +213,8 @@ public sealed class SignalRConnectionReducersTests
         {
             Status = SignalRConnectionStatus.Connected,
         };
-        SignalRDisconnectedAction action = new(null, DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRDisconnectedAction action = new(null, timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnDisconnected(state, action);
@@ -245,7 +252,8 @@ public sealed class SignalRConnectionReducersTests
         {
             LastError = "Previous error",
         };
-        SignalRReconnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRReconnectedAction action = new("conn-123", timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnReconnected(state, action);
@@ -265,7 +273,8 @@ public sealed class SignalRConnectionReducersTests
         {
             ReconnectAttemptCount = 3,
         };
-        SignalRReconnectedAction action = new("conn-123", DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRReconnectedAction action = new("conn-123", timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnReconnected(state, action);
@@ -283,7 +292,8 @@ public sealed class SignalRConnectionReducersTests
         // Arrange
         SignalRConnectionState state = new();
         string connectionId = "conn-new";
-        SignalRReconnectedAction action = new(connectionId, DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRReconnectedAction action = new(connectionId, timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnReconnected(state, action);
@@ -303,7 +313,8 @@ public sealed class SignalRConnectionReducersTests
         {
             Status = SignalRConnectionStatus.Reconnecting,
         };
-        SignalRReconnectedAction action = new("conn-789", DateTimeOffset.UtcNow);
+        DateTimeOffset timestamp = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+        SignalRReconnectedAction action = new("conn-789", timestamp);
 
         // Act
         SignalRConnectionState result = SignalRConnectionReducers.OnReconnected(state, action);

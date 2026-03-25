@@ -23,6 +23,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Storage;
 /// </summary>
 public sealed class CosmosRepositoryTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     private static bool CaptureMaxItemCount(
         QueryRequestOptions options,
         out int count
@@ -187,14 +189,14 @@ public sealed class CosmosRepositoryTests
                 EventId = "e1",
                 EventType = "A",
                 Data = new byte[] { 1 },
-                Time = DateTimeOffset.UtcNow,
+                Time = BaseTime,
             },
             new()
             {
                 EventId = "e2",
                 EventType = "B",
                 Data = new byte[] { 2 },
-                Time = DateTimeOffset.UtcNow,
+                Time = BaseTime.AddSeconds(1),
             },
         };
 

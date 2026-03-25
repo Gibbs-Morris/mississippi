@@ -20,6 +20,8 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Batching;
 /// </summary>
 public sealed class BatchSizeEstimatorTests
 {
+    private static readonly DateTimeOffset BaseTime = new(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
     private static BrookEvent Clone(
         BrookEvent source
     ) =>
@@ -71,7 +73,7 @@ public sealed class BatchSizeEstimatorTests
             Source = "src",
             EventType = "type",
             Data = CreatePayload(512, 0x33),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime,
         };
         BrookEvent[] events =
         [
@@ -342,7 +344,7 @@ public sealed class BatchSizeEstimatorTests
             EventType = "BIG",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.CreateRange(largeData),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime.AddSeconds(1),
         };
 
         // Act
@@ -409,7 +411,7 @@ public sealed class BatchSizeEstimatorTests
             EventType = "T",
             DataContentType = "application/octet-stream",
             Data = ImmutableArray.CreateRange(Enumerable.Range(0, 100).Select(i => (byte)i)),
-            Time = DateTimeOffset.UtcNow,
+            Time = BaseTime.AddSeconds(2),
         };
 
         // Act

@@ -234,12 +234,12 @@ public class BrookEventConverterTests
         {
             new TestEvent("value1"),
         };
-        DateTimeOffset before = DateTimeOffset.UtcNow;
+        DateTimeOffset systemTimeLowerBound = TimeProvider.System.GetUtcNow();
         ImmutableArray<BrookEvent> result = converter.ToStorageEvents(source, domainEvents);
-        DateTimeOffset after = DateTimeOffset.UtcNow;
+        DateTimeOffset systemTimeUpperBound = TimeProvider.System.GetUtcNow();
         Assert.Single(result);
         Assert.NotNull(result[0].Time);
-        Assert.InRange(result[0].Time!.Value, before, after);
+        Assert.InRange(result[0].Time!.Value, systemTimeLowerBound, systemTimeUpperBound);
     }
 
     /// <summary>
