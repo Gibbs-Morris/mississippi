@@ -225,6 +225,7 @@ This section explicitly mirrors the v3 canonical event contract from [WORKFLOW.m
 - Reviewer-significant meaning MUST be explicit in structured fields. Cause, closure, outcome, artifact lineage, and provenance MUST NOT be reconstructed from chronology, prose, secondary logs, or path changes alone.
 - Every meaningful event carries `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, `outcome`, `artifactTransitions`, and `provenance` whenever the writer-obligation matrix requires them.
 - `artifacts` remains evidence binding only. Artifact lifecycle meaning lives in `artifactTransitions`.
+- Canonical event serialization keeps the full top-level property set in the declared order; absent conditional scalars or objects use `null`, absent conditional arrays use `[]`, and empty `details` uses `{}`.
 
 Canonical top-level shape mirror:
 
@@ -275,14 +276,19 @@ Canonical event property-order mirror:
 
 This section explicitly mirrors the semantic-family obligations from [WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow differ, [WORKFLOW.md](WORKFLOW.md) governs.
 
-| Event Family | Required Fields | Invalid If Missing |
-|-------------|-----------------|--------------------|
-| lifecycle-start | `workItemId`, `rootWorkItemId`, `spanId`, `provenance` | The span cannot be tracked or closed. |
-| lifecycle-terminal | `workItemId`, `rootWorkItemId`, `closes`, `outcome`, `provenance` | Exact closure and disposition become ambiguous. |
-| causal-link | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance` | The event looks chronology-driven rather than canonically caused. |
-| artifact-transition | `workItemId`, `rootWorkItemId`, `artifactTransitions`, `provenance` | Artifact history becomes narrative-only. |
-| publication-state | `workItemId`, `rootWorkItemId`, `provenance` | Reviewer-summary freshness becomes untrustworthy. |
-| informational-only | Base fields only | This family MUST NOT be used for reviewer-significant facts. |
+| Event Family | Required Fields | Optional Fields | Invalid If Missing |
+|-------------|-----------------|-----------------|--------------------|
+| lifecycle-start | `workItemId`, `rootWorkItemId`, `spanId`, `provenance` | `causedBy`, `iterationId` | The span cannot be tracked or closed. |
+| lifecycle-terminal | `workItemId`, `rootWorkItemId`, `closes`, `outcome`, `provenance` | `causedBy`, `artifacts`, `artifactTransitions`, `iterationId` | Exact closure and disposition become ambiguous. |
+| causal-link | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance` | `artifacts`, `details`, `iterationId` | The derived event looks chronology-driven rather than canonically caused. |
+| artifact-transition | `workItemId`, `rootWorkItemId`, `artifactTransitions`, `provenance` | `causedBy`, `artifacts`, `details`, `iterationId` | Artifact history becomes narrative-only. |
+| deviation | `workItemId`, `rootWorkItemId`, `causedBy`, `reasonCode`, `provenance`, `details` | `spanId`, `artifactTransitions`, `iterationId` | The deviation basis and remediation path become prose-only. |
+| interruption | `workItemId`, `rootWorkItemId`, `causedBy`, `reasonCode`, `provenance`, `details` | `spanId`, `artifactTransitions`, `iterationId` | The interruption cannot be tied to the affected work or blocker. |
+| ownership | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `artifacts`, `iterationId` | Canonical writer or handoff ownership becomes ambiguous. |
+| publication-support | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `artifacts`, `iterationId` | The CI or merge-readiness basis cannot be audited deterministically. |
+| review-progress | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `spanId`, `artifacts`, `artifactTransitions`, `iterationId`, `reasonCode` | The exact review-thread action cannot be audited deterministically. |
+| publication-state | `workItemId`, `rootWorkItemId`, `provenance`, `details` | `artifactTransitions`, `causedBy`, `artifacts`, `iterationId` | Reviewer-summary freshness becomes untrustworthy. |
+| run-terminal | `workItemId`, `rootWorkItemId`, `closes`, `outcome`, `provenance` | `causedBy`, `artifacts`, `artifactTransitions`, `iterationId` | Run completion cannot be tied to the exact ended span or disposition. |
 
 ## Trust and Freshness Mirror
 

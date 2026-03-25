@@ -188,7 +188,7 @@ Every canonical event MUST include:
 9. `artifacts` when applicable as evidence bindings
 10. `artifactTransitions` when artifact lifecycle meaning is asserted
 11. `iterationId` for loops, retries, or repeated review cycles when applicable
-12. `provenance` for every non-informational event
+12. `provenance` for every meaningful event defined by this contract
 
 Meaningful events MUST additionally carry `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, and `outcome` whenever the writer-obligation matrix below marks them as required.
 
@@ -209,6 +209,10 @@ Canonical JSON rules:
 
 - Files MUST be UTF-8 encoded JSON with no comments or trailing commas.
 - Object property order MUST match the order shown in this contract wherever a digest is calculated.
+- Every canonical event MUST emit the full top-level property set in the declared order even when some conditional semantics are absent.
+- When a conditional scalar or object field is not semantically required, canonical JSON MUST emit that property as `null` rather than omitting it.
+- When a conditional array field is not semantically required, canonical JSON MUST emit that property as `[]` rather than omitting it.
+- When `details` has no event-type-specific members, canonical JSON MUST emit `details: {}`.
 - `schemaVersion = clean-squad-workflow-audit/v3` is the current normative schema. Earlier schema versions remain historical snapshots and MUST NOT have missing v3 semantics or timing backfilled from secondary logs.
 - `events` MUST be ordered by `sequence` ascending with no duplicate or skipped sequence values.
 - `ledgerDigestAlgorithm = sha256-canonical-json-v1` means SHA-256 over the canonical UTF-8 JSON bytes of the exact snapshot used for comparison or compilation.
@@ -249,6 +253,8 @@ Each canonical event MUST use this property order and shape:
 
 Field model:
 
+In the `Required` column, `conditional` means the property is always serialized in canonical order but is semantically mandatory only for the event families named in the writer-obligation matrix.
+
 | Field | Required | Meaning | Notes |
 |-------|----------|---------|-------|
 | `sequence` | yes | Canonical ordering authority | Remains the only chronology authority |
@@ -259,7 +265,7 @@ Field model:
 | `eventType` | yes | Coarse event taxonomy | Existing vocabulary is retained and strengthened |
 | `workItemId` | conditional | Stable canonical unit of work | Required for reviewer-significant and other meaningful events |
 | `rootWorkItemId` | conditional | Stable lineage root across retries, repetitions, and supersessions | Equals `workItemId` on the first attempt |
-| `spanId` | conditional | Specific bounded attempt or activity | Required for started and terminal activity |
+| `spanId` | conditional | Specific bounded attempt or activity | Required when the event starts a span or names a bounded active attempt; terminal events identify the ended span through `closes` |
 | `causedBy` | conditional | Single direct causal link | Required for meaningful derived events |
 | `closes` | conditional | Exact start or span closed by this event | Required on terminal events |
 | `outcome` | conditional | Terminal disposition | Required on terminal events |
@@ -268,7 +274,7 @@ Field model:
 | `artifacts` | conditional | Evidence bindings to files or immutable external references | Evidence only, not lifecycle semantics |
 | `artifactTransitions` | conditional | Structured business-artifact state changes | Separate from evidence bindings |
 | `iterationId` | conditional | Loop or retry grouping identifier | Supports repeated review cycles or attempts |
-| `provenance` | conditional | Source and evidence binding for the claim | Required for non-informational events |
+| `provenance` | conditional | Source and evidence binding for the claim | Required for every meaningful event defined by this contract |
 | `details` | conditional | Event-specific payload | MUST NOT restate shared semantics inconsistently |
 
 `eventUtc` rules:
@@ -400,10 +406,18 @@ Artifact transition rules:
 
 Provenance rules:
 
-- `provenance` is required for every non-informational event and missing provenance is a validation failure.
+- `provenance` is required for every meaningful event in this contract and missing provenance is a validation failure.
 - `recordedBy` MUST match the canonical writer that authoritatively recorded the event.
 - `evidence` MUST use the same evidence-binding shape as `artifacts` when evidence exists.
 - Provenance MAY corroborate a claim, but it MUST NOT be used to reconstruct missing cause, closure, lineage, or outcome semantics.
+
+Allowed `provenance.sourceKind` values:
+
+| Value | Meaning |
+|-------|---------|
+| `human-input` | The canonical claim records a user answer, approval, or other directly captured human input |
+| `tool-output` | The canonical claim is bound to deterministic tool, CI, or API output |
+| `system-triggered` | The canonical claim records an internally observed workflow transition or automation-triggered state change |
 
 Relationship semantics:
 
@@ -427,20 +441,36 @@ Relationship semantics:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutput`
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
+- `deviation-recorded`: `deviationClass`, `rationalePath`
+- `blocked`: `blockerKind`, `blockedOn`
 - `handoff-recorded`: `fromActor`, `toActor`
 - `ci-identity-bound`: `requiredCiIdentitySet`
+- `review-thread-updated`: `threadId`, `action`, `commitSha`
 - `reviewer-summary-invalidated` and `reviewer-summary-published`: `publicationState`
+- `merge-readiness-evaluated`: `decision`, `blockingReasons`
+
+Allowed `details.publicationState` values:
+
+| Value | Meaning |
+|-------|---------|
+| `stale` | The previously published reviewer summary is no longer fresh for the current canonical facts or CI identity |
+| `fresh` | The currently published reviewer summary is verified as current for the canonical facts and attached CI identity |
 
 Writer-obligation matrix:
 
 | Event Family | Required Fields | Optional Fields | Invalid If Missing |
 |-------------|-----------------|-----------------|--------------------|
 | lifecycle-start | `workItemId`, `rootWorkItemId`, `spanId`, `provenance` | `causedBy`, `iterationId` | the span cannot be tracked or closed |
-| lifecycle-terminal | `workItemId`, `rootWorkItemId`, `closes`, `outcome`, `provenance` | `artifactTransitions`, `iterationId` | exact closure and disposition become ambiguous |
-| causal-link | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance` | `artifacts` | the derived event looks chronology-driven |
-| artifact-transition | `workItemId`, `rootWorkItemId`, `artifactTransitions`, `provenance` | `causedBy`, `artifacts` | artifact history becomes narrative-only |
-| publication-state | `workItemId`, `rootWorkItemId`, `provenance` | `artifactTransitions`, `causedBy` | reviewer-summary freshness becomes untrustworthy |
-| informational-only | base fields only | `provenance` optional | this family MUST NOT be used for reviewer-significant facts |
+| lifecycle-terminal | `workItemId`, `rootWorkItemId`, `closes`, `outcome`, `provenance` | `causedBy`, `artifacts`, `artifactTransitions`, `iterationId` | exact closure and disposition become ambiguous |
+| causal-link | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance` | `artifacts`, `details`, `iterationId` | the derived event looks chronology-driven |
+| artifact-transition | `workItemId`, `rootWorkItemId`, `artifactTransitions`, `provenance` | `causedBy`, `artifacts`, `details`, `iterationId` | artifact history becomes narrative-only |
+| deviation | `workItemId`, `rootWorkItemId`, `causedBy`, `reasonCode`, `provenance`, `details` | `spanId`, `artifactTransitions`, `iterationId` | the deviation basis and remediation path become prose-only |
+| interruption | `workItemId`, `rootWorkItemId`, `causedBy`, `reasonCode`, `provenance`, `details` | `spanId`, `artifactTransitions`, `iterationId` | the interruption cannot be tied to the affected work or blocker |
+| ownership | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `artifacts`, `iterationId` | canonical writer or handoff ownership becomes ambiguous |
+| publication-support | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `artifacts`, `iterationId` | the CI or merge-readiness basis cannot be audited deterministically |
+| review-progress | `workItemId`, `rootWorkItemId`, `causedBy`, `provenance`, `details` | `spanId`, `artifacts`, `artifactTransitions`, `iterationId`, `reasonCode` | the exact review-thread action cannot be audited deterministically |
+| publication-state | `workItemId`, `rootWorkItemId`, `provenance`, `details` | `artifactTransitions`, `causedBy`, `artifacts`, `iterationId` | reviewer-summary freshness becomes untrustworthy |
+| run-terminal | `workItemId`, `rootWorkItemId`, `closes`, `outcome`, `provenance` | `causedBy`, `artifacts`, `artifactTransitions`, `iterationId` | run completion cannot be tied to the exact ended span or disposition |
 
 Invariant catalog:
 
@@ -448,7 +478,7 @@ Invariant catalog:
 - Every event that requires causality MUST declare exactly one direct cause.
 - Every terminal event MUST declare an explicit outcome from the approved vocabulary.
 - Artifact transition lineage MUST use stable identity and predecessor linkage where applicable.
-- Provenance MUST exist for every non-informational event.
+- Provenance MUST exist for every meaningful event defined by this contract.
 - Reviewer-summary freshness MUST invalidate immediately on reviewer-meaningful canonical changes.
 - Canonical meaning MUST NOT be inferred from prose, sequence order, secondary logs, or evidence bindings alone when structured v3 semantics are missing.
 
