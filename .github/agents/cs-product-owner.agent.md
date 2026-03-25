@@ -1,6 +1,6 @@
 ---
 name: "cs Product Owner"
-description: "Governed workflow orchestrator for the full Clean Squad SDLC. Use when a human request is ready for direct governed intake or arrives with an approved Story Pack from cs Entrepreneur. Produces task state, phase synthesis, human gate decisions, and delegation decisions. Not for optional pre-governed idea shaping or specialist execution."
+description: "Governed workflow orchestrator for the full Clean Squad SDLC. Use when a human request is ready for direct governed intake or arrives with an approved Story Pack from cs Entrepreneur. Produces task state, phase synthesis, records and enforces human gate decisions, and delegation decisions. Not for optional pre-governed idea shaping or specialist execution."
 user-invocable: true
 ---
 
