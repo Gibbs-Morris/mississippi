@@ -831,8 +831,11 @@ The Product Owner is an orchestrator, not an implementation agent.
 
 - Every significant decision **MUST** be recorded as an ADR.
 - ADRs **MUST** use the MADR 4.0.0 template defined in `.github/instructions/adr.instructions.md`.
-- ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the filename pattern `NNNN-title-with-dashes.md`.
-- When a feature branch adds ADRs, the branch owner **MUST** treat those numbers as provisional and perform a final renumbering pass against the latest `main` during merge preparation, updating filenames, `ADR-NNNN` titles, `sidebar_position`, and relative ADR links for ADRs introduced by that branch.
+- New ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the filename pattern `YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md` with immutable frontmatter `id` values.
+- New ADRs **MUST** merge with a final `status` of `accepted`, `rejected`, or `deprecated`; `proposed` **MUST NOT** be published to `main`.
+- ADR `sidebar_position` values **MUST** derive from `created_at_utc` and the disambiguator rather than from a sequential ADR number.
+- Supersession **MUST** use reciprocal `supersedes` and `superseded_by` metadata; the older ADR keeps its original final `status`, and only metadata-only backlink edits are allowed during routine supersession updates.
+- When a new ADR supersedes an untouched legacy ADR, the same change **MUST** perform only the minimum governance metadata backfill needed for canonical identity, historical alias preservation, reciprocal supersession, and required ordering metadata.
 - ADRs are immutable — superseded decisions get a new ADR referencing the old.
 - ADRs **MUST** be consulted on subsequent changes to verify directional
   alignment.

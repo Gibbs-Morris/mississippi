@@ -16,13 +16,13 @@ blindly preserved as cargo cult.
 
 ## Governing Thought
 
-Architecture Decision Records (ADRs) are short, structured documents — stored
-as Markdown files alongside the code they govern — that capture the context,
-decision, and consequences of significant architectural choices. By treating
-decisions as immutable, version-controlled artefacts with a defined lifecycle
-(proposed, accepted, deprecated, superseded), teams preserve institutional
-knowledge, prevent costly re-litigation, and enable new members to understand
-not just what was decided but why.
+Architecture Decision Records (ADRs) are short, structured documents - stored
+as Markdown files alongside the code they govern - that capture the context,
+decision, and consequences of significant architectural choices. In
+Mississippi, published ADRs use immutable frontmatter identity, deterministic
+ordering metadata, final-at-merge status values, and explicit supersession
+relationships so teams preserve institutional knowledge without merge-order
+choreography or post-merge status edits.
 
 ---
 
@@ -57,6 +57,25 @@ versus which have been superseded.
 How should a team capture, organise, and maintain architectural decisions so
 that the reasoning is preserved, discoverable, version-controlled, and useful
 to both current and future team members?
+
+## Mississippi Publication Contract
+
+Mississippi publishes ADRs from `docs/Docusaurus/docs/adr/` under an explicit
+governance contract:
+
+| Field or Rule | Mississippi Contract |
+|---------------|----------------------|
+| Canonical identity | Frontmatter `id` is canonical and immutable after merge |
+| New filename pattern | `YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md` |
+| Ordering | `sidebar_position = unixEpochMilliseconds(created_at_utc) * 100 + disambiguator` |
+| Published statuses | `accepted`, `rejected`, `deprecated` |
+| Supersession | Reciprocal `supersedes` and `superseded_by` metadata |
+| Legacy alias bridge | `legacy_refs` preserves historical `ADR-NNNN` references when legacy ADRs are backfilled |
+
+The filename is never the canonical identifier. Human prose references should
+prefer linked `ADR YYYY-MM-DD: Title` text. If a decision changes later, a new
+ADR supersedes the earlier one and the older ADR receives only the bounded
+metadata update needed to reflect that relationship.
 
 ---
 
@@ -118,7 +137,7 @@ even when circumstances change later.
 
 ## Key-Line 2: ADR Format and Structure
 
-### The Nygard Template (Minimal)
+### The Nygard Template (Minimal Historical Baseline)
 
 Michael Nygard's original template is deliberately minimal:
 
@@ -142,9 +161,13 @@ What is the change that we're proposing and/or doing?
 What becomes easier or more difficult to do because of this change?
 ```
 
-This four-section format — Status, Context, Decision, Consequences — is the
+This four-section format - Status, Context, Decision, Consequences - is the
 most widely adopted because it is simple enough that teams actually write ADRs,
 and structured enough that the records are useful.
+
+Mississippi treats this as background context, not as the exact repository
+publication contract. New Mississippi ADRs are published with frontmatter
+identity and final-at-merge statuses instead of a mutable in-body status flow.
 
 ### The MADR Template (Markdown Any Decision Records)
 
@@ -208,6 +231,12 @@ Chosen alternative: "Alternative N", because [justification].
 MADR is available at <https://adr.github.io/madr/> and provides a GitHub
 template repository for quick adoption.
 
+Mississippi uses MADR 4.0.0 as the body template while layering repository
+specific frontmatter and lifecycle rules on top of it. The required sections
+remain `Context and Problem Statement`, `Considered Options`, and
+`Decision Outcome`, but the merged record carries its publication contract in
+frontmatter rather than in a mutable `Status` section.
+
 ### Choosing a Template
 
 | Factor | Nygard (Minimal) | MADR (Extended) |
@@ -258,35 +287,48 @@ docs/
     └── 0005-cqrs-command-query-separation.md
 ```
 
-### Naming Convention
+Mississippi publishes ADRs under `docs/Docusaurus/docs/adr/`. The repository
+now keeps a mixed corpus during migration: legacy ADRs may still use sequential
+filenames, while new ADRs use a merge-safe timestamped filename and immutable
+frontmatter identity.
 
-ADR files follow a sequential numbering scheme:
+### Naming Convention in Mississippi
+
+New Mississippi ADRs use a human-readable filename plus a canonical frontmatter
+identifier:
 
 ```text
-NNNN-short-descriptive-title.md
+YYYY-MM-DD-short-descriptive-title--HHmmssSSS[-NN].md
 ```
 
-- **NNNN**: Zero-padded sequential number (0001, 0002, ...).
+- **YYYY-MM-DD**: UTC calendar date for human discovery.
 - **short-descriptive-title**: Lowercase, hyphen-separated summary of the
   decision.
+- **HHmmssSSS[-NN]**: UTC time plus an optional disambiguator for collisions.
 
-The number provides a stable, unambiguous identifier for cross-referencing.
-The title provides human-readable context in directory listings.
+The filename is not the canonical identity. Mississippi stores that identity in
+frontmatter `id`, using the format `adr-YYYYMMDDTHHmmssSSSZ-NN`. This keeps
+cross-reference stability separate from filenames and avoids renumbering work
+when multiple ADR pull requests merge in parallel.
 
 ### Linking Between ADRs
 
-ADRs frequently reference each other. Use relative Markdown links:
+ADRs frequently reference each other. Use relative Markdown links. In
+Mississippi prose, prefer linked title-and-date references:
 
 ```markdown
-Superseded by [ADR-0012: Migrate from JSON to Protobuf](0012-migrate-to-protobuf.md).
+[ADR 2026-03-25: Redesign ADR Governance Publication Model](./2026-03-25-redesign-adr-governance-publication-model--215831956.md)
 ```
 
-When an ADR supersedes another, both records should be updated:
+When an ADR supersedes another in Mississippi, both records should be updated
+through metadata, not by rewriting historical body content:
 
-- The **original** ADR's status changes to "Superseded by ADR-NNNN" with a
-  link.
-- The **new** ADR's context references the original: "This supersedes
-  [ADR-0004](0004-json-serialization-format.md)."
+- The **new** ADR adds a `supersedes` entry with the target ADR `id` and
+  relative `path`.
+- The **original** ADR gains the matching `superseded_by` entry while keeping
+  its original final `status`.
+- Historical `ADR-NNNN` references may remain inside untouched legacy records
+  until a deliberate metadata backfill touches them.
 
 ---
 
@@ -294,36 +336,39 @@ When an ADR supersedes another, both records should be updated:
 
 ### Status Values
 
-ADRs have a defined lifecycle expressed through their status field:
+ADRs have a defined lifecycle, but Mississippi keeps the published lifecycle
+final at merge time:
 
 ```text
-┌──────────┐     ┌──────────┐
-│ Proposed  │────▶│ Accepted │
-└──────────┘     └─────┬────┘
-                       │
-              ┌────────┴────────┐
-              ▼                 ▼
-       ┌────────────┐   ┌─────────────────┐
-       │ Deprecated │   │ Superseded by   │
-       │            │   │ ADR-NNNN        │
-       └────────────┘   └─────────────────┘
+┌──────────┐
+│ Accepted │
+└─────┬────┘
+    │
+    ├──────────────▶ Deprecated
+    │
+    └──────────────▶ Superseded by a newer ADR relationship
+
+Rejected
 ```
 
 | Status | Meaning |
 |--------|---------|
-| **Proposed** | The decision is under discussion. The ADR is in a PR awaiting review and approval. |
 | **Accepted** | The decision has been approved and is in effect. This is the steady state for active decisions. |
-| **Deprecated** | The decision is no longer relevant (e.g., the feature was removed). The record remains for historical context. |
-| **Superseded** | A newer decision replaces this one. The status includes a link to the replacement ADR. |
+| **Rejected** | The team intentionally declined the option and preserved the reasoning for future reference. |
+| **Deprecated** | The ADR remains historical but is no longer the recommended active decision. |
 
 ### The Immutability Rule
 
-Once an ADR reaches "Accepted" status, its Context and Decision sections are
-not modified. If understanding improves or circumstances change:
+Mississippi does not publish `proposed` ADRs to `main`; discussion happens in
+the pull request, and the merged ADR already carries its final status. Once an
+ADR reaches its merged final state, its Context and Decision sections are not
+modified. If understanding improves or circumstances change:
 
 1. **Minor clarifications** (typos, formatting) are acceptable.
 2. **Substantive changes** to the decision require a new ADR that supersedes
-   the original.
+  the original.
+3. **Supersession updates** on the older ADR are metadata-only changes such as
+  `superseded_by`; they do not rewrite the historical body.
 
 This rule exists because the original ADR captured the reasoning at a specific
 point in time. Editing it retroactively destroys that historical record. A
@@ -470,9 +515,10 @@ ADRs can be validated in CI pipelines:
 
 | Check | Purpose |
 |-------|---------|
-| **Status field present** | Every ADR has a valid status |
-| **Sequential numbering** | No gaps or duplicates in ADR numbers |
-| **Cross-reference integrity** | Superseded ADRs link to valid replacements |
+| **Canonical identity** | Every ADR has the correct immutable `id` contract |
+| **Derived ordering** | `sidebar_position` matches `created_at_utc` and the disambiguator |
+| **Supersession integrity** | Reciprocal metadata points to valid ADR targets without cycles |
+| **Legacy backfill boundary** | Legacy governance edits stay metadata-only and within the allow-list |
 | **Markdown lint** | ADR files pass the same lint rules as other docs |
 | **Template compliance** | Required sections are present |
 
@@ -484,7 +530,8 @@ The recommended workflow for ADR adoption:
 2. The PR description summarises the decision and links to the ADR file.
 3. Team members review the ADR in the PR — comments, alternatives, and
    consequences are discussed inline.
-4. Once approved, the ADR is merged with status "Accepted".
+4. Once approved, the ADR is merged with its final publication status already
+  set to `accepted`, `rejected`, or `deprecated`.
 5. The PR serves as the discussion record; the ADR serves as the decision
    record.
 
@@ -514,7 +561,7 @@ Start with:
 | Practice | Effect |
 |----------|--------|
 | **Write retrospective ADRs** for existing decisions | Builds the initial corpus and demonstrates value |
-| **Reference ADRs in PRs** | "This implements ADR-0003" connects code to decisions |
+| **Reference ADRs in PRs** | "This implements ADR 2026-03-25: Title" connects code to decisions without relying on sequence allocation |
 | **Review ADRs in onboarding** | New members read the decision log as part of joining |
 | **Include ADR check in PR review** | "Does this change warrant an ADR?" becomes a review habit |
 | **Keep ADRs short** | 1–2 pages maximum; brevity encourages writing |
@@ -555,8 +602,10 @@ The essentials:
 - **One decision per ADR**, structured as Context → Decision → Consequences.
 - **Stored as Markdown** in the repository, version-controlled and reviewed in
   PRs.
-- **Immutable once accepted** — changes produce new ADRs that supersede the
-  original.
+- **Canonical identity lives in frontmatter** - filenames stay readable, but
+  `id` owns machine-readable identity.
+- **Merged ADRs are final** - changes produce new ADRs that supersede the
+  original instead of post-merge status flips.
 - **Short and honest** — 1–2 pages with explicit trade-offs and negative
   consequences.
 - **Start simple** — Nygard's four-section template, one directory, one rule.
