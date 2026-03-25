@@ -140,8 +140,27 @@ public sealed class MississippiGatewayBuilderTests
         WebApplicationBuilder builder = CreateBuilder();
         MississippiGatewayBuilder gatewayBuilder = builder.AddMississippiGateway();
         bool callbackExecuted = false;
-        MississippiGatewayBuilder result = gatewayBuilder.RegisterDomainMappers(_ => callbackExecuted = true);
+        MississippiGatewayBuilder result = gatewayBuilder.RegisterDomainMappers(
+            "TestApp.Domain",
+            "AddTestAppDomainGateway",
+            _ => callbackExecuted = true);
         Assert.True(callbackExecuted);
         Assert.Same(gatewayBuilder, result);
+    }
+
+    /// <summary>
+    ///     RegisterDomainMappers should reject duplicate gateway domain composition on the same builder.
+    /// </summary>
+    [Fact]
+    public void RegisterDomainMappersRejectsDuplicateDomainAttachment()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiGatewayBuilder gatewayBuilder = builder.AddMississippiGateway();
+        gatewayBuilder.RegisterDomainMappers("TestApp.Domain", "AddTestAppDomainGateway", _ => { });
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            gatewayBuilder.RegisterDomainMappers("TestApp.Domain", "AddTestAppDomainGateway", _ => { }));
+        Assert.Contains("gateway domain composition", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("TestApp.Domain", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("AddTestAppDomainGateway(...)", exception.Message, StringComparison.Ordinal);
     }
 }

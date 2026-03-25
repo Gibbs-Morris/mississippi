@@ -159,11 +159,14 @@ public sealed class DomainSiloRegistrationGeneratorTests
             generatedCode,
             StringComparison.Ordinal);
         Assert.Contains("this MississippiRuntimeBuilder runtime", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("runtime.Services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("runtime.Services.AddMoneyTransferSaga();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "return runtime.RegisterDomainServices(\"TestApp.Domain\", \"AddTestAppDomain\", services =>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("services.AddMoneyTransferSaga();", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("SagaSaga", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("runtime.Services.AddBalanceProjection();", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("return runtime;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("services.AddBalanceProjection();", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -190,7 +193,7 @@ public sealed class DomainSiloRegistrationGeneratorTests
             .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        int addOrderAggregateCount = generatedCode.Split("runtime.Services.AddOrderAggregate();").Length - 1;
+        int addOrderAggregateCount = generatedCode.Split("services.AddOrderAggregate();").Length - 1;
         Assert.Equal(1, addOrderAggregateCount);
     }
 
@@ -220,7 +223,10 @@ public sealed class DomainSiloRegistrationGeneratorTests
             "public static MississippiRuntimeBuilder AddCoreLogic",
             generatedCode,
             StringComparison.Ordinal);
-        Assert.Contains("runtime.Services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("return runtime;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "return runtime.RegisterDomainServices(\"CoreLogic\", \"AddCoreLogic\", services =>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
     }
 }

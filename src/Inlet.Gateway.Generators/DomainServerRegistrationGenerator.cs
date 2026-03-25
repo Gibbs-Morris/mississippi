@@ -162,7 +162,8 @@ public sealed class DomainServerRegistrationGenerator : IIncrementalGenerator
                 $"    public static MississippiGatewayBuilder {model.DomainMethodName}Gateway(this MississippiGatewayBuilder gateway)");
             sb.AppendLine("    {");
             sb.AppendLine("        ArgumentNullException.ThrowIfNull(gateway);");
-            sb.AppendLine("        return gateway.RegisterDomainMappers(services =>");
+            sb.AppendLine(
+                $"        return gateway.RegisterDomainMappers(\"{model.DomainRoot}\", \"{model.DomainMethodName}Gateway\", services =>");
             sb.AppendLine("        {");
             foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
             {

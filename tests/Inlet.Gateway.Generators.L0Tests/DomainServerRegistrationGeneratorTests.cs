@@ -231,7 +231,10 @@ public sealed class DomainServerRegistrationGeneratorTests
             .ToString();
         Assert.Contains("AddTestAppDomainGateway", generatedCode, StringComparison.Ordinal);
         Assert.Contains("this MississippiGatewayBuilder gateway", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("return gateway.RegisterDomainMappers", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "return gateway.RegisterDomainMappers(\"TestApp.Domain\", \"AddTestAppDomainGateway\", services =>",
+            generatedCode,
+            StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregateMappers();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddBalanceProjectionMappers();", generatedCode, StringComparison.Ordinal);
     }

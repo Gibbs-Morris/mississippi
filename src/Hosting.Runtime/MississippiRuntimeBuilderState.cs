@@ -46,6 +46,8 @@ internal sealed class MississippiRuntimeBuilderState
 
     private IServiceCollection HostServices { get; }
 
+    private HashSet<string> RegisteredDomains { get; } = new(StringComparer.Ordinal);
+
     private List<Action<ISiloBuilder>> OrleansConfigurations { get; } = [];
 
     /// <summary>
@@ -77,6 +79,27 @@ internal sealed class MississippiRuntimeBuilderState
         MississippiRuntimeCompositionGuards.ThrowIfFrozenOrleansOwnershipChanged(
             siloBuilder.Services,
             frozenOrleansOwnership);
+    }
+
+    /// <summary>
+    ///     Throws when a generated runtime domain registration is attached more than once.
+    /// </summary>
+    /// <param name="domainName">The normalized domain name being attached.</param>
+    /// <param name="registrationMethodName">The generated registration method name.</param>
+    internal void EnsureDomainRegistrationAvailable(
+        string domainName,
+        string registrationMethodName
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(domainName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrationMethodName);
+        if (RegisteredDomains.Add(domainName))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Mississippi runtime domain composition for '{domainName}' can only be attached once per builder. Remove the duplicate {registrationMethodName}(...) call and keep each domain on a single runtime builder path.");
     }
 
     /// <summary>

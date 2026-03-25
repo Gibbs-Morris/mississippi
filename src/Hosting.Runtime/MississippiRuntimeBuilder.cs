@@ -50,4 +50,26 @@ public sealed class MississippiRuntimeBuilder
         State.QueueOrleansConfiguration(configure);
         return this;
     }
+
+    /// <summary>
+    ///     Registers generated runtime services for a single domain exactly once per builder.
+    /// </summary>
+    /// <param name="domainName">The normalized domain name being attached.</param>
+    /// <param name="registrationMethodName">The generated registration method name.</param>
+    /// <param name="configure">The runtime service registration callback.</param>
+    /// <returns>The Mississippi runtime builder for chaining.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public MississippiRuntimeBuilder RegisterDomainServices(
+        string domainName,
+        string registrationMethodName,
+        Action<IServiceCollection> configure
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(domainName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrationMethodName);
+        ArgumentNullException.ThrowIfNull(configure);
+        State.EnsureDomainRegistrationAvailable(domainName, registrationMethodName);
+        configure(Services);
+        return this;
+    }
 }

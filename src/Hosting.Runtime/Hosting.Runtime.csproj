@@ -11,7 +11,6 @@
     <ProjectReference Include="..\Brooks.Runtime\Brooks.Runtime.csproj" />
     <ProjectReference Include="..\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
-    <ProjectReference Include="..\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
     <ProjectReference Include="..\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
     <ProjectReference Include="..\Inlet.Runtime\Inlet.Runtime.csproj" />
     <ProjectReference Include="..\Tributary.Runtime\Tributary.Runtime.csproj" />

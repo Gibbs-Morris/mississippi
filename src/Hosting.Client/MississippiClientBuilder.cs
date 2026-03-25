@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -36,6 +37,8 @@ public sealed class MississippiClientBuilder
 
     private WebAssemblyHostBuilder Builder { get; }
 
+    private HashSet<string> RegisteredDomains { get; } = new(StringComparer.Ordinal);
+
     private IReservoirBuilder? ReservoirBuilder { get; set; }
 
     /// <summary>
@@ -48,6 +51,33 @@ public sealed class MississippiClientBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
+        configure(GetOrCreateReservoirBuilder());
+        return this;
+    }
+
+    /// <summary>
+    ///     Registers generated client features for a single domain exactly once per builder.
+    /// </summary>
+    /// <param name="domainName">The normalized domain name being attached.</param>
+    /// <param name="registrationMethodName">The generated registration method name.</param>
+    /// <param name="configure">The client feature registration callback.</param>
+    /// <returns>The Mississippi client builder for chaining.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public MississippiClientBuilder RegisterDomainFeatures(
+        string domainName,
+        string registrationMethodName,
+        Action<IReservoirBuilder> configure
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(domainName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrationMethodName);
+        ArgumentNullException.ThrowIfNull(configure);
+        if (!RegisteredDomains.Add(domainName))
+        {
+            throw new InvalidOperationException(
+                $"Mississippi client domain composition for '{domainName}' can only be attached once per builder. Remove the duplicate {registrationMethodName}(...) call and keep each domain on a single client builder path.");
+        }
+
         configure(GetOrCreateReservoirBuilder());
         return this;
     }

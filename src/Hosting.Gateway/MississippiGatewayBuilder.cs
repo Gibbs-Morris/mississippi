@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
 
@@ -40,6 +41,8 @@ public sealed class MississippiGatewayBuilder
     public IServiceCollection Services { get; }
 
     private bool HasAqueductBeenAdded { get; set; }
+
+    private HashSet<string> RegisteredDomains { get; } = new(StringComparer.Ordinal);
 
     private bool HasInletGatewayBeenAdded { get; set; }
 
@@ -141,6 +144,33 @@ public sealed class MississippiGatewayBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(configure);
+        configure(Services);
+        return this;
+    }
+
+    /// <summary>
+    ///     Registers generated domain-specific mapper services exactly once per gateway builder.
+    /// </summary>
+    /// <param name="domainName">The normalized domain name being attached.</param>
+    /// <param name="registrationMethodName">The generated registration method name.</param>
+    /// <param name="configure">The mapper registration callback.</param>
+    /// <returns>The Mississippi gateway builder for chaining.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public MississippiGatewayBuilder RegisterDomainMappers(
+        string domainName,
+        string registrationMethodName,
+        Action<IServiceCollection> configure
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(domainName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrationMethodName);
+        ArgumentNullException.ThrowIfNull(configure);
+        if (!RegisteredDomains.Add(domainName))
+        {
+            throw new InvalidOperationException(
+                $"Mississippi gateway domain composition for '{domainName}' can only be attached once per builder. Remove the duplicate {registrationMethodName}(...) call and keep each domain on a single gateway builder path.");
+        }
+
         configure(Services);
         return this;
     }

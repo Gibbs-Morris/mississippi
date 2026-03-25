@@ -109,4 +109,21 @@ public sealed class MississippiClientBuilderTests
         Assert.Same(firstBuilder, secondBuilder);
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<IStore>());
     }
+
+    /// <summary>
+    ///     RegisterDomainFeatures should reject duplicate client domain composition on the same builder.
+    /// </summary>
+    [Fact]
+    public void RegisterDomainFeaturesRejectsDuplicateDomainAttachment()
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder builder = CreateBuilder(services);
+        MississippiClientBuilder clientBuilder = builder.AddMississippiClient();
+        clientBuilder.RegisterDomainFeatures("TestApp.Domain", "AddTestAppDomainClient", _ => { });
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            clientBuilder.RegisterDomainFeatures("TestApp.Domain", "AddTestAppDomainClient", _ => { }));
+        Assert.Contains("client domain composition", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("TestApp.Domain", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("AddTestAppDomainClient(...)", exception.Message, StringComparison.Ordinal);
+    }
 }

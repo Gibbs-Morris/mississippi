@@ -238,6 +238,23 @@ public sealed class MississippiRuntimeBuilderTests
     }
 
     /// <summary>
+    ///     RegisterDomainServices should reject duplicate runtime domain composition on the same builder.
+    /// </summary>
+    [Fact]
+    public void RegisterDomainServicesRejectsDuplicateDomainAttachment()
+    {
+        WebApplicationBuilder builder = CreateBuilder();
+        MississippiRuntimeBuilder runtimeBuilder = builder.AddMississippiRuntime();
+        runtimeBuilder.RegisterDomainServices("TestApp.Domain", "AddTestAppDomain", services =>
+            services.AddSingleton<TestMarker>());
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            runtimeBuilder.RegisterDomainServices("TestApp.Domain", "AddTestAppDomain", _ => { }));
+        Assert.Contains("runtime domain composition", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("TestApp.Domain", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("AddTestAppDomain(...)", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Runtime-owned Orleans attachment should allow additive silo tuning that does not mutate frozen ownership.
     /// </summary>
     [Fact]

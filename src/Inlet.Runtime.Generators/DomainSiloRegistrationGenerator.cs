@@ -188,22 +188,25 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 $"    public static MississippiRuntimeBuilder {model.DomainMethodName}(this MississippiRuntimeBuilder runtime)");
             sb.AppendLine("    {");
             sb.AppendLine("        ArgumentNullException.ThrowIfNull(runtime);");
+            sb.AppendLine(
+                $"        return runtime.RegisterDomainServices(\"{model.DomainRoot}\", \"{model.DomainMethodName}\", services =>");
+            sb.AppendLine("        {");
             foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        runtime.Services.Add{aggregate}Aggregate();");
+                sb.AppendLine($"            services.Add{aggregate}Aggregate();");
             }
 
             foreach (string saga in model.SagaNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        runtime.Services.Add{saga}Saga();");
+                sb.AppendLine($"            services.Add{saga}Saga();");
             }
 
             foreach (string projection in model.ProjectionNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        runtime.Services.Add{projection}Projection();");
+                sb.AppendLine($"            services.Add{projection}Projection();");
             }
 
-            sb.AppendLine("        return runtime;");
+            sb.AppendLine("        });");
             sb.AppendLine("    }");
             sb.AppendLine();
         }
