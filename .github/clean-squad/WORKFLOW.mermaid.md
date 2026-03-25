@@ -227,7 +227,7 @@ This section explicitly mirrors the v3 canonical event contract from [WORKFLOW.m
 - Reviewer-significant meaning MUST be explicit in structured fields. Cause, closure, outcome, artifact lineage, and provenance MUST NOT be reconstructed from chronology, prose, secondary logs, or path changes alone.
 - Every meaningful event carries `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, `outcome`, `artifactTransitions`, and `provenance` whenever the writer-obligation matrix requires them.
 - Every canonical event carries `appendPrecondition`, whose `expectedPriorSequence` encodes the fail-closed append expectation.
-- Every Phase 9 `delegation-recorded` event carries capability-scoped `allowedActions` and `authorizedTargets`, and the stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active.
+- Every Phase 9 `delegation-recorded` event carries capability-scoped `details.allowedActions` and `details.authorizedTargets`, and the stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active.
 - `artifacts` remains evidence binding only. Artifact lifecycle meaning lives in `artifactTransitions`.
 - `details` is always serialized in canonical order and MUST use `{}` when no event-type-specific members apply.
 - The first canonical append uses `sequence = 1` and expected prior `sequence = 0`.
