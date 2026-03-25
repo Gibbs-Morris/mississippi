@@ -67,7 +67,7 @@ Chosen option: "Keep `cs Product Owner` as the sole canonical writer and delegat
 Compliance with this ADR will be confirmed by reviewing the ownership-coupled normative files for these invariants:
 
 - `workflow-audit.json` has exactly one canonical writer for all nine phases.
-- Phase 9 specialist work starts with a `delegation-recorded` event that names `cs PR Manager` and binds expected artifact output.
+- Phase 9 specialist work starts with a `delegation-recorded` event that names `cs PR Manager` and sets `details.expectedOutputPath` plus the related `details.*` expected artifact fields.
 - `cs PR Manager` no longer has canonical-writing authority.
 - `state.json` remains runtime support only and does not gain secondary-writer or delegate ownership fields.
 - The workflow text and Mermaid mirror express the same ownership model.
