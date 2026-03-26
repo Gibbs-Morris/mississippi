@@ -60,6 +60,11 @@ Derive these outputs:
 - `slug`: `/adr/2026-03-25-redesign-adr-governance-publication-model--215831956`
 - `sidebar_position`: `177447591195600`
 
+`00` is the implicit default disambiguator. Keep the `-NN` suffix out of the
+filename stem and `slug` unless a timestamp collision requires a non-zero
+disambiguator, but always include the disambiguator in `id` and in the derived
+`sidebar_position` formula.
+
 If you are authoring manually instead of using a future scaffold, copy that
 pattern exactly: choose the immutable UTC timestamp first, then derive the
 filename, `id`, `slug`, and ordering metadata from it.
