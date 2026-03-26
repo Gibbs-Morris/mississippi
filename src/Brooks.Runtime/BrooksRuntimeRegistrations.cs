@@ -31,17 +31,10 @@ public static class BrooksRuntimeRegistrations
     ///     <para>
     ///         This method does NOT configure streams or storage - the host application
     ///         is responsible for that. Use <paramref name="configureOptions" /> to tell
-    ///         Brooks which stream provider to use:
+    ///         Brooks which stream provider to use. The host must configure Orleans streams
+    ///         (for example, using AddMemoryStreams) and storage before calling this method,
+    ///         then specify the stream provider name via the options delegate.
     ///     </para>
-    ///     <code>
-    ///     // Host configures infrastructure
-    ///     siloBuilder.AddMemoryStreams("MyStreams");
-    ///     siloBuilder.AddMemoryGrainStorage("PubSubStore");
-    ///
-    ///     // Tell Brooks which stream provider to use
-    ///     siloBuilder.AddEventSourcing(options =&gt;
-    ///         options.OrleansStreamProviderName = "MyStreams");
-    ///     </code>
     /// </remarks>
     public static ISiloBuilder AddEventSourcing(
         this ISiloBuilder builder,
