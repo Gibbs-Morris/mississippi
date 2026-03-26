@@ -26,6 +26,16 @@ Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/do
 - Once an ADR is merged to `main` with any final `status` (for example `accepted`, `rejected`, or `deprecated`), its Context and Decision Outcome sections **MUST NOT** be modified; if a decision changes, a new ADR **MUST** be created, and the older ADR **MUST** keep its original final `status` while receiving reciprocal supersession metadata only. Why: Immutability preserves historical reasoning without overloading lifecycle text.
 - New-model ADR `status` values **MUST** be one of `accepted`, `rejected`, or `deprecated`; `proposed` **MUST NOT** appear on `main`, and `superseded` **MUST NOT** be represented as a status value. Why: Merged ADRs are final at publication time, while supersession is an explicit relationship rather than a lifecycle state.
 - Supersession relationships **MUST** use reciprocal `supersedes` and `superseded_by` metadata entries containing both `id` and relative `path`; authors **MUST NOT** encode supersession solely in free-form status text. Why: Explicit graph metadata is machine-checkable and keeps older ADR bodies immutable.
+- Non-empty `supersedes` and `superseded_by` lists **MUST** encode each entry as an object with `id` and relative `path` properties, not as plain strings. For example:
+
+  ```yaml
+  supersedes:
+    - id: adr-20250101T120000000Z-01
+      path: 2025-01-01-old-decision--120000000-01.md
+  superseded_by:
+    - id: adr-20250202T090000000Z-01
+      path: 2025-02-02-new-decision--090000000-01.md
+  ```
 - When a new ADR supersedes an untouched legacy ADR, authors **MUST** perform the minimum governance metadata backfill in the same change and **MUST NOT** edit the legacy ADR body. Why: Mixed-corpus supersession must remain reviewer-auditable and bounded to metadata-only cutover work.
 - Legacy governance backfill **MUST** stay within this allow-list: canonical governance frontmatter, `legacy_refs`, reciprocal `supersedes` and `superseded_by` metadata, and derived ordering metadata explicitly required by the contract. Why: Day-one migration is intentionally narrow so governance rollout does not become historical ADR rewriting.
 - ADR cross-references **MUST** use relative Markdown links. Why: Keeps links valid across environments.
