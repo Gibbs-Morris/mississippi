@@ -250,7 +250,7 @@ Identify all significant architectural decisions. For each, create an
 ADR using the MADR 4.0.0 template defined in
 .github/instructions/adr.instructions.md.
 Publish each ADR to docs/Docusaurus/docs/adr/YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md,
-derive immutable frontmatter `id`, `created_at_utc`, and `sidebar_position`
+derive immutable frontmatter `id`, `slug`, `created_at_utc`, and `sidebar_position`
 from the ADR contract, and set a final merged status of `accepted`, `rejected`,
 or `deprecated`. When an ADR supersedes an older one, use reciprocal
 `supersedes` and `superseded_by` metadata rather than status-text linkage. Write any supporting reasoning notes to
