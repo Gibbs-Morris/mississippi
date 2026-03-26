@@ -107,4 +107,4 @@ When an ADR supersedes another one:
 
 - [Documentation Home](../index.md) - Return to the product-area docs landing page
 - [MADR 4.0.0 specification](https://adr.github.io/madr/) - Review the source template and section requirements
-- [Architecture Decision Records key principles](https://github.com/Gibbs-Morris/mississippi/blob/main/docs/key-principles/architecture-decision-records.md) - See the framework's long-lived ADR rationale and usage guidance
+- Architecture Decision Records key principles (repository markdown) - See `docs/key-principles/architecture-decision-records.md` in the checked-out branch for the framework's long-lived ADR rationale and usage guidance

@@ -361,14 +361,15 @@ through metadata, not by rewriting historical body content:
 
 ### Published Status Values
 
-ADRs have a defined lifecycle, but Mississippi publishes only final states to
-`main`:
+ADRs have a defined lifecycle. New-model Mississippi ADRs publish only final
+states to `main`, but the current repository still contains legacy ADRs during
+the mixed-corpus migration:
 
 ```text
 Pull request discussion and draft iteration
           |
           v
-Merged ADR publishes one final status:
+Merged new-model ADR publishes one final status:
 - accepted
 - rejected
 - deprecated
@@ -391,10 +392,11 @@ status transition model.
 
 ### The Immutability Rule
 
-Mississippi does not publish `proposed` ADRs to `main`; discussion happens in
-the pull request, and the merged ADR already carries its final status. Once an
-ADR reaches `main`, its `status` is already final for that record, and its
-Context and Problem Statement plus Decision Outcome sections are not modified.
+For new-model ADRs, Mississippi does not publish `proposed` ADRs to `main`; discussion happens in
+the pull request, and the merged ADR already carries its final status. Once a
+new-model ADR reaches `main`, its `status` is already final for that record,
+and its Context and Problem Statement plus Decision Outcome sections are not
+modified.
 If understanding improves or circumstances change:
 
 1. **Minor clarifications** (typos, formatting) are acceptable.
