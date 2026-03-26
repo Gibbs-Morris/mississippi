@@ -19,6 +19,7 @@ Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/do
 - New ADR frontmatter **MUST** include `id`, `title`, `description`, `sidebar_position`, `status`, `date`, `created_at_utc`, `supersedes`, and `superseded_by`; `decision_makers`, `consulted`, and `informed` fields **SHOULD** be included when applicable; backfilled legacy ADRs **SHOULD** add `legacy_refs` when preserving historical aliases. Why: The new governance model separates canonical identity, ordering, lifecycle, and supersession into explicit metadata.
 - New ADR `id` values **MUST** use the format `adr-YYYYMMDDTHHmmssSSSZ-NN`, remain immutable after merge, and act as the only canonical machine-readable identity; filenames and titles **MUST NOT** be treated as canonical identifiers. Why: Canonical frontmatter identity survives rename pressure and branch concurrency.
 - New ADR `sidebar_position` values **MUST** be derived from `created_at_utc` with the repository ordering formula `unixEpochMilliseconds(created_at_utc) * 100 + disambiguator`; handwritten drift **MUST NOT** be treated as authoritative. Why: Docusaurus still needs a numeric sort key, but deterministic ordering must derive from immutable UTC metadata rather than sequence allocation.
+- Authors creating new ADRs **MUST** choose the final merged `status` before review closes and **MUST NOT** plan a follow-up status-only edit after merge. Why: The publication model requires ADRs to be final at merge time rather than mutating later just to express outcome.
 - The required MADR sections **MUST** be: `Context and Problem Statement`, `Considered Options`, and `Decision Outcome` (with `Chosen option:` sentence). Why: These three sections are the MADR 4.0.0 mandatory minimum.
 - Optional MADR sections (`Decision Drivers`, `Consequences`, `Confirmation`, `Pros and Cons of the Options`, `More Information`) **SHOULD** be included when they add value and **MAY** be omitted for simple decisions. Why: Keeps lightweight decisions lightweight while allowing rigour when needed.
 - New ADRs, substantively revised mutable ADRs, and new superseding ADRs **SHOULD** include Mermaid when they explain a multi-step flow or a multi-component structural relationship that prose alone would make materially harder to understand; trivial, metadata-only, and link-only edits **SHOULD NOT** trigger new diagram work. Why: Diagram effort should track comprehension benefit, not create churn for small edits.
@@ -28,6 +29,8 @@ Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/do
 - Accepted ADRs **MUST NOT** have their Context or Decision Outcome sections modified; if a decision changes, a new ADR **MUST** be created, and the older ADR **MUST** keep its original final `status` while receiving reciprocal supersession metadata only. Why: Immutability preserves historical reasoning without overloading lifecycle text.
 - New-model ADR `status` values **MUST** be one of `accepted`, `rejected`, or `deprecated`; `proposed` **MUST NOT** appear on `main`, and `superseded` **MUST NOT** be represented as a status value. Why: Merged ADRs are final at publication time, while supersession is an explicit relationship rather than a lifecycle state.
 - Supersession relationships **MUST** use reciprocal `supersedes` and `superseded_by` metadata entries containing both `id` and relative `path`; authors **MUST NOT** encode supersession solely in free-form status text. Why: Explicit graph metadata is machine-checkable and keeps older ADR bodies immutable.
+- When a new ADR supersedes an untouched legacy ADR, authors **MUST** perform the minimum governance metadata backfill in the same change and **MUST NOT** edit the legacy ADR body. Why: Mixed-corpus supersession must remain reviewer-auditable and bounded to metadata-only cutover work.
+- Legacy governance backfill **MUST** stay within this allow-list: canonical governance frontmatter, `legacy_refs`, reciprocal `supersedes` and `superseded_by` metadata, and derived ordering metadata explicitly required by the contract. Why: Day-one migration is intentionally narrow so governance rollout does not become historical ADR rewriting.
 - ADR cross-references **MUST** use relative Markdown links. Why: Keeps links valid across environments.
 - New prose references to ADRs **SHOULD** use linked `ADR YYYY-MM-DD: Title` text; historical `ADR-NNNN` references **MAY** remain inside untouched legacy artifacts. Why: Human references should remain readable while the canonical machine identity lives in metadata.
 - ADRs **SHOULD** be written during or before the decision, not after. Why: Writing forces clarity; retrospective ADRs lose context.
@@ -47,6 +50,31 @@ All contributors creating or modifying ADRs; the cs ADR Keeper agent is the prim
 - If a qualifying ADR intentionally omits Mermaid, include a short omission rationale
 - Set the final merged status before review closes: `accepted`, `rejected`, or `deprecated`
 - If the ADR supersedes an older ADR, add reciprocal `supersedes` and `superseded_by` metadata using relative paths
+- If the target ADR is an untouched legacy record, backfill only the minimum governance metadata in the same change
+
+## Contributor Happy Path
+
+1. Create a new ADR from the template below using the timestamped filename pattern.
+2. Choose an immutable `created_at_utc`, then derive `id` and `sidebar_position` from that value.
+3. Set the final merged `status` before review closes: `accepted`, `rejected`, or `deprecated`.
+4. Use linked `ADR YYYY-MM-DD: Title` prose references and keep canonical `id` usage in metadata and relationships.
+5. If the ADR supersedes another decision, add reciprocal `supersedes` and `superseded_by` entries with relative paths.
+6. If the superseded ADR is an untouched legacy record, add only the minimum governance metadata backfill in the same change.
+
+## Decision Aid
+
+- Use `accepted` when the repository adopts the decision.
+- Use `rejected` when the repository intentionally records a declined option.
+- Use `deprecated` when the ADR remains historical but is no longer the recommended active decision and is not being represented only through direct supersession.
+
+## Legacy Backfill Boundary
+
+For governance cutover work on legacy ADRs, only these metadata changes are in scope:
+
+- canonical governance frontmatter required by the new model
+- `legacy_refs` preserving historical `ADR-NNNN` aliases
+- reciprocal `supersedes` and `superseded_by` entries
+- derived ordering metadata explicitly required by the new contract
 
 ## Qualifying Test
 
