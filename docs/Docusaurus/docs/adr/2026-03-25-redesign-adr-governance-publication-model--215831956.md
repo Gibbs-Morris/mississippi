@@ -129,7 +129,7 @@ backfill or reciprocal supersession pair.
 Current repository evidence for the legacy model appears in these published documents:
 
 - [ADR overview](./index.md)
-- [ADR 2026-03-25: Keep A Single Canonical Writer With Bounded Phase 9 Delegation](./0001-single-canonical-writer-with-bounded-phase-9-delegation.md)
+- [ADR-0001: Keep A Single Canonical Writer With Bounded Phase 9 Delegation](./0001-single-canonical-writer-with-bounded-phase-9-delegation.md)
 
 External reference:
 
