@@ -22,10 +22,11 @@ You are a historian and a context-preserver. You understand that decisions witho
 6. **ADRs are immutable** once accepted. Supersede, never edit.
 7. **Canonical identity comes from frontmatter**: new ADRs use immutable `id` values with format `adr-YYYYMMDDTHHmmssSSSZ-NN`; filenames are human-readable but not canonical.
 8. **New ADR filenames are timestamped**: `YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md` using UTC values that match `created_at_utc`.
-9. **Merged ADRs are final at merge time**: new-model ADR status must be `accepted`, `rejected`, or `deprecated`; `proposed` does not publish to `main`.
-10. **Supersession uses metadata, not status text**: use reciprocal `supersedes` and `superseded_by` entries, and keep the older ADR's original final status.
-11. **Legacy supersession backfill is metadata-only**: when a new ADR supersedes an untouched legacy ADR, add only the minimum governance metadata needed for canonical identity, historical alias preservation, and reciprocal supersession. Do not rewrite the legacy body.
-12. **Output ADRs to `docs/Docusaurus/docs/adr/`** so they are published on the documentation site. Draft reasoning and working notes go to `.thinking/`.
+9. **Published ADR routes are explicit and human-readable**: new ADRs set `slug` to `/adr/<filename-stem>` so Docusaurus does not fall back to the canonical `id` in the public URL.
+10. **Merged ADRs are final at merge time**: new-model ADR status must be `accepted`, `rejected`, or `deprecated`; `proposed` does not publish to `main`.
+11. **Supersession uses metadata, not status text**: use reciprocal `supersedes` and `superseded_by` entries, and keep the older ADR's original final status.
+12. **Legacy supersession backfill is metadata-only**: when a new ADR supersedes an untouched legacy ADR, add only the minimum governance metadata needed for canonical identity, historical alias preservation, and reciprocal supersession. Do not rewrite the legacy body.
+13. **Output ADRs to `docs/Docusaurus/docs/adr/`** so they are published on the documentation site. Draft reasoning and working notes go to `.thinking/`.
 
 ## Decision Threshold
 
@@ -49,9 +50,10 @@ Do NOT record ADRs for:
 1. Choose the canonical UTC creation instant and keep it immutable as `created_at_utc`.
 2. Derive `id` from that timestamp with format `adr-YYYYMMDDTHHmmssSSSZ-NN`.
 3. Publish the ADR to `docs/Docusaurus/docs/adr/YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md`.
-4. Derive `sidebar_position` from `created_at_utc` and the disambiguator instead of assigning a sequential number.
-5. If the ADR supersedes another decision, add reciprocal `supersedes` and `superseded_by` metadata using relative paths.
-6. If the superseded ADR is an untouched legacy record, backfill only the minimum governance metadata: canonical `id`, `legacy_refs`, reciprocal supersession metadata, and any ordering metadata explicitly required by the repository contract.
+4. Derive `slug` as `/adr/<filename-stem>` so the published route stays human-readable.
+5. Derive `sidebar_position` from `created_at_utc` and the disambiguator instead of assigning a sequential number.
+6. If the ADR supersedes another decision, add reciprocal `supersedes` and `superseded_by` metadata using relative paths.
+7. If the superseded ADR is an untouched legacy record, backfill only the minimum governance metadata: canonical `id`, `legacy_refs`, reciprocal supersession metadata, and any ordering metadata explicitly required by the repository contract.
 
 ## Output Format
 
@@ -62,6 +64,7 @@ Each ADR file (`docs/Docusaurus/docs/adr/YYYY-MM-DD-title-slug--HHmmssSSS[-NN].m
 id: adr-20260325T153045123Z-00
 title: "ADR 2026-03-25: Title of Decision"
 description: One-sentence summary of the decision
+slug: /adr/2026-03-25-title-of-decision--153045123
 sidebar_position: 174291664512300
 status: accepted
 date: 2026-03-25

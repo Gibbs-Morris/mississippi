@@ -19,10 +19,10 @@ blindly preserved as cargo cult.
 Architecture Decision Records (ADRs) are short, structured documents - stored
 as Markdown files alongside the code they govern - that capture the context,
 decision, and consequences of significant architectural choices. In
-Mississippi, published ADRs use immutable frontmatter identity, deterministic
-ordering metadata, final-at-merge status values, and explicit supersession
-relationships so teams preserve institutional knowledge without merge-order
-choreography or post-merge status edits.
+Mississippi, published ADRs use immutable frontmatter identity, explicit
+human-readable slugs, deterministic ordering metadata, final-at-merge status
+values, and explicit supersession relationships so teams preserve institutional
+knowledge without merge-order choreography or post-merge status edits.
 
 ---
 
@@ -67,6 +67,7 @@ governance contract:
 |---------------|----------------------|
 | Canonical identity | Frontmatter `id` is canonical and immutable after merge |
 | New filename pattern | `YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md` |
+| Published route | Frontmatter `slug` is `/adr/<filename-stem>` |
 | Ordering | `sidebar_position = unixEpochMilliseconds(created_at_utc) * 100 + disambiguator` |
 | Published statuses | `accepted`, `rejected`, `deprecated` |
 | Supersession | Reciprocal `supersedes` and `superseded_by` metadata |
@@ -76,6 +77,10 @@ The filename is never the canonical identifier. Human prose references should
 prefer linked `ADR YYYY-MM-DD: Title` text. If a decision changes later, a new
 ADR supersedes the earlier one and the older ADR receives only the bounded
 metadata update needed to reflect that relationship.
+
+Published routes are also explicit. New Mississippi ADRs set frontmatter
+`slug` to `/adr/<filename-stem>`, which keeps the public URL human-readable and
+prevents Docusaurus from falling back to the canonical `id` in the route.
 
 That contract is the live Mississippi authoring model for new ADRs. The
 historical Nygard and adr-tools examples later in this document are background
@@ -325,6 +330,12 @@ frontmatter `id`, using the format `adr-YYYYMMDDTHHmmssSSSZ-NN`. This keeps
 cross-reference stability separate from filenames and avoids renumbering work
 when multiple ADR pull requests merge in parallel.
 
+Mississippi also stores the published route in frontmatter `slug`, derived from
+the filename stem. For a file named
+`2026-03-25-redesign-adr-governance-publication-model--215831956.md`, the
+published route is `/adr/2026-03-25-redesign-adr-governance-publication-model--215831956`.
+This keeps routes readable and deterministic without making them canonical.
+
 ### Linking Between ADRs
 
 ADRs frequently reference each other. Use relative Markdown links. In
@@ -527,7 +538,8 @@ Repository: <https://github.com/npryce/adr-tools>
 Mississippi does not currently use `adr init docs/decisions`, repository-wide
 sequential numbering, or `adr new -s 3` as its live governance workflow. New
 Mississippi ADRs are authored in `docs/Docusaurus/docs/adr/` with timestamped
-filenames, immutable frontmatter `id`, and reciprocal supersession metadata.
+filenames, immutable frontmatter `id`, explicit frontmatter `slug`, and
+reciprocal supersession metadata.
 
 ### Log4brains
 
@@ -550,6 +562,7 @@ claim that every check has already landed in every branch:
 | Check | Purpose |
 |-------|---------|
 | **Canonical identity** | Every ADR has the correct immutable `id` contract |
+| **Published route** | Every new ADR `slug` matches the filename stem instead of defaulting to the canonical `id` |
 | **Derived ordering** | `sidebar_position` matches `created_at_utc` and the disambiguator |
 | **Supersession integrity** | Reciprocal metadata points to valid ADR targets without cycles |
 | **Legacy backfill boundary** | Legacy governance edits stay metadata-only and within the allow-list |
@@ -646,6 +659,8 @@ The essentials:
   PRs.
 - **Canonical identity lives in frontmatter** - filenames stay readable, but
   `id` owns machine-readable identity.
+- **Published routes stay readable** - `slug` mirrors the filename stem so the
+  public URL does not degrade to the canonical `id`.
 - **Merged ADRs are final** - changes produce new ADRs that supersede the
   original instead of post-merge status flips.
 - **Short and honest** — 1–2 pages with explicit trade-offs and negative

@@ -2,6 +2,7 @@
 id: adr-20260325T215831956Z-00
 title: "ADR 2026-03-25: Redesign ADR Governance Publication Model"
 description: Replace sequential ADR numbering and mutable merged status with a merge-safe, final-at-merge governance model.
+slug: /adr/2026-03-25-redesign-adr-governance-publication-model--215831956
 sidebar_position: 177447591195600
 status: accepted
 date: 2026-03-25
@@ -74,6 +75,7 @@ This ADR defines the target governance model. The redesign is fully realized onl
 
 - New ADRs use immutable frontmatter `id` as canonical identity.
 - New ADR filenames use the date-and-time slug pattern and are not treated as canonical identity.
+- New ADR `slug` values are derived from the filename stem and keep published routes human-readable instead of defaulting to canonical `id` values.
 - New ADR `sidebar_position` values are derived from `created_at_utc` and validated.
 - Merged ADR `status` values are final-only and do not include `proposed`.
 - Supersession uses reciprocal `supersedes` and `superseded_by` metadata.
@@ -121,13 +123,13 @@ until the validator, protected checks, and mixed-corpus exemplar rollout are
 landed in the repository.
 
 Use this ADR as the smallest published new-model example for filename, `id`,
-and `sidebar_position` derivation. It does not yet demonstrate a legacy
+`slug`, and `sidebar_position` derivation. It does not yet demonstrate a legacy
 backfill or reciprocal supersession pair.
 
 Current repository evidence for the legacy model appears in these published documents:
 
 - [ADR overview](./index.md)
-- [ADR-0001](./0001-single-canonical-writer-with-bounded-phase-9-delegation.md)
+- [ADR 2026-03-25: Keep A Single Canonical Writer With Bounded Phase 9 Delegation](./0001-single-canonical-writer-with-bounded-phase-9-delegation.md)
 
 External reference:
 

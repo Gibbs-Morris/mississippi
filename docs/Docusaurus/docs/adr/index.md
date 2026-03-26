@@ -29,6 +29,7 @@ every invariant.
 
 - Canonical identity lives in frontmatter `id`, not in the filename.
 - New ADR filenames follow `YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md`.
+- New ADR published routes come from explicit `slug` values that mirror the filename stem: `/adr/YYYY-MM-DD-title-slug--HHmmssSSS[-NN]`.
 - New ADRs carry immutable `created_at_utc` metadata, and `sidebar_position` is derived from that timestamp plus the disambiguator.
 - New ADRs merged to `main` use final `status` values only: `accepted`, `rejected`, or `deprecated`.
 - Supersession is represented with reciprocal `supersedes` and `superseded_by` metadata, not by changing an older ADR body.
@@ -38,7 +39,7 @@ every invariant.
 ## Contributor Happy Path
 
 1. Create a new ADR using the timestamped filename pattern.
-2. Choose an immutable `created_at_utc`, then derive `id` and `sidebar_position` from it.
+2. Choose an immutable `created_at_utc`, then derive `id`, `slug`, and `sidebar_position` from it.
 3. Set the final merged `status` before review closes.
 4. Use relative links plus linked `ADR YYYY-MM-DD: Title` prose references.
 5. If the ADR supersedes a legacy record, backfill only the minimum governance metadata in the same change.
@@ -56,11 +57,12 @@ Derive these outputs:
 
 - filename: `2026-03-25-redesign-adr-governance-publication-model--215831956.md`
 - `id`: `adr-20260325T215831956Z-00`
+- `slug`: `/adr/2026-03-25-redesign-adr-governance-publication-model--215831956`
 - `sidebar_position`: `177447591195600`
 
 If you are authoring manually instead of using a future scaffold, copy that
 pattern exactly: choose the immutable UTC timestamp first, then derive the
-filename, `id`, and ordering metadata from it.
+filename, `id`, `slug`, and ordering metadata from it.
 
 ## When to Write an ADR
 
