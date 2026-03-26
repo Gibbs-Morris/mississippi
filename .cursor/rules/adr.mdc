@@ -6,7 +6,7 @@ alwaysApply: false
 # Architecture Decision Records (MADR)
 
 **Source:** .github/instructions/adr.instructions.md
-**Last synced:** 2026-03-25 (working tree)
+**Last synced:** 2026-03-26 (commit `5dc6814b`)
 
 Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/docs/adr/` for Docusaurus publishing, and merge as final records whose canonical identity comes from immutable frontmatter while published routes stay human-readable through explicit slugs.
 
