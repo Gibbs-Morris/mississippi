@@ -9,10 +9,10 @@ created_at_utc: 2026-03-25T21:58:31.956Z
 supersedes: []
 superseded_by: []
 decision_makers:
-  - cs ADR Keeper
+  - Mississippi architecture maintainers
 consulted:
-  - Architecture redesign artifacts
-  - Three Amigos synthesis participants
+  - Three Amigos participants
+  - ADR governance redesign reviewers
 informed:
   - Repository contributors
 ---
@@ -29,7 +29,7 @@ That model does not scale cleanly under parallel pull requests. The repository n
 flowchart TD
     Author[Contributor or agent author] --> Guide[Guidance surfaces]
     Guide --> ADR[ADR markdown file]
-    ADR --> Validate[Validation gate]
+  ADR --> Validate[Planned validation gate]
     Validate -->|valid| Publish[Docusaurus publication]
     Publish --> Corpus[Published ADR corpus]
     Corpus --> Reader[Readers and future ADR authors]
@@ -56,13 +56,13 @@ flowchart TD
 
 ## Decision Outcome
 
-Chosen option: "Adopt a new governance model with explicit frontmatter identity, human-readable timestamped filenames, derived ordering, final-only merged statuses, explicit supersession metadata, and staged legacy backfill", because it removes the root merge hazard, makes merged ADRs final as published, preserves deterministic ordering, and creates a machine-checkable supersession model without forcing risky full-corpus renaming.
+Chosen option: "Adopt a new governance model with explicit frontmatter identity, human-readable timestamped filenames, derived ordering, final-only merged statuses, explicit supersession metadata, and staged legacy backfill", because it removes the root merge hazard, makes merged ADRs final as published, preserves deterministic ordering, and establishes a supersession model that can be machine-checked once the enforcement rollout lands without forcing risky full-corpus renaming.
 
 ### Consequences
 
 - Good, because ADR identity is no longer coupled to merge order or filename renumbering.
 - Good, because new ADRs become final records at merge time, which restores immutability as an operational rule instead of a post-merge aspiration.
-- Good, because supersession becomes explicit metadata that validators can check for reciprocity, cycles, and missing targets.
+- Good, because supersession becomes explicit metadata that future validators can check for reciprocity, cycles, and missing targets once enforcement is in place.
 - Good, because legacy migration can be staged instead of requiring a risky repository-wide rename.
 - Bad, because the repository will temporarily contain a mixed corpus of legacy and new-model ADRs.
 - Bad, because instructions, overview pages, templates, prompts, and validation must all be updated together for full adoption.
@@ -70,7 +70,7 @@ Chosen option: "Adopt a new governance model with explicit frontmatter identity,
 
 ### Confirmation
 
-Compliance with this ADR will be confirmed when the repository adopts validation and guidance updates that enforce these rules:
+This ADR defines the target governance model. The redesign is fully realized only when the repository lands validation and guidance updates that enforce these rules:
 
 - New ADRs use immutable frontmatter `id` as canonical identity.
 - New ADR filenames use the date-and-time slug pattern and are not treated as canonical identity.
@@ -114,7 +114,15 @@ This option separates identity, filename, ordering, lifecycle, and supersession 
 
 ## More Information
 
-This ADR is grounded in the 2026-03-25 architecture redesign artifacts for ADR governance, which established the repository-wide contract for identity, ordering, lifecycle, supersession, migration, and validation.
+This ADR captures the target repository-wide contract for identity, ordering,
+lifecycle, supersession, migration, and validation. The documentation updates
+that introduced it intentionally narrow claims to guidance and exemplar status
+until the validator, protected checks, and mixed-corpus exemplar rollout are
+landed in the repository.
+
+Use this ADR as the smallest published new-model example for filename, `id`,
+and `sidebar_position` derivation. It does not yet demonstrate a legacy
+backfill or reciprocal supersession pair.
 
 Current repository evidence for the legacy model appears in these published documents:
 

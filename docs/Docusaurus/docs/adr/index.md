@@ -21,6 +21,12 @@ An ADR is a short, structured document that records a single architectural decis
 
 ## Mississippi Publication Contract
 
+This page describes the target publication contract for new Mississippi ADRs.
+Repository-wide validation, full mixed-corpus exemplar coverage, and other
+enforcement surfaces are follow-on rollout work, so authors and reviewers must
+currently apply these rules deliberately rather than assuming CI already proves
+every invariant.
+
 - Canonical identity lives in frontmatter `id`, not in the filename.
 - New ADR filenames follow `YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md`.
 - New ADRs carry immutable `created_at_utc` metadata, and `sidebar_position` is derived from that timestamp plus the disambiguator.
@@ -36,6 +42,25 @@ An ADR is a short, structured document that records a single architectural decis
 3. Set the final merged `status` before review closes.
 4. Use relative links plus linked `ADR YYYY-MM-DD: Title` prose references.
 5. If the ADR supersedes a legacy record, backfill only the minimum governance metadata in the same change.
+
+## Worked Example
+
+Use [ADR 2026-03-25: Redesign ADR Governance Publication Model](./2026-03-25-redesign-adr-governance-publication-model--215831956.md) as the concrete new-model example.
+
+Given this input:
+
+- `created_at_utc: 2026-03-25T21:58:31.956Z`
+- disambiguator: `00`
+
+Derive these outputs:
+
+- filename: `2026-03-25-redesign-adr-governance-publication-model--215831956.md`
+- `id`: `adr-20260325T215831956Z-00`
+- `sidebar_position`: `177447591195600`
+
+If you are authoring manually instead of using a future scaffold, copy that
+pattern exactly: choose the immutable UTC timestamp first, then derive the
+filename, `id`, and ordering metadata from it.
 
 ## When to Write an ADR
 
@@ -57,6 +82,11 @@ Write an ADR when a decision:
 
 New-model ADRs do not publish `proposed` status to `main`; the decision outcome is final at merge time. If a decision changes later, a new ADR supersedes the earlier one, and the older ADR keeps its original final status while gaining reciprocal supersession metadata.
 
+Use these distinctions when choosing between `deprecated` and supersession:
+
+- Keep the older ADR `accepted` and add `superseded_by` when a newer ADR directly replaces that accepted decision.
+- Use `deprecated` when the ADR itself remains published historical guidance that is no longer the recommended active choice and that change is not being expressed only through a direct superseding replacement.
+
 ## Referencing and Supersession
 
 Use relative Markdown links when referencing other ADRs. In prose, prefer linked `ADR YYYY-MM-DD: Title` text instead of sequential-number shorthand.
@@ -75,4 +105,4 @@ When an ADR supersedes another one:
 
 - [Documentation Home](../index.md) - Return to the product-area docs landing page
 - [MADR 4.0.0 specification](https://adr.github.io/madr/) - Review the source template and section requirements
-- [Architecture Decision Records key principles](../../../key-principles/architecture-decision-records.md) - See the framework's long-lived ADR rationale and usage guidance
+- [Architecture Decision Records key principles](https://github.com/Gibbs-Morris/mississippi/blob/main/docs/key-principles/architecture-decision-records.md) - See the framework's long-lived ADR rationale and usage guidance

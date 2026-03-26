@@ -77,6 +77,10 @@ prefer linked `ADR YYYY-MM-DD: Title` text. If a decision changes later, a new
 ADR supersedes the earlier one and the older ADR receives only the bounded
 metadata update needed to reflect that relationship.
 
+That contract is the live Mississippi authoring model for new ADRs. The
+historical Nygard and adr-tools examples later in this document are background
+context for the broader ADR ecosystem, not alternate Mississippi instructions.
+
 ---
 
 ## Key-Line 1: What an ADR Is
@@ -255,9 +259,11 @@ frontmatter rather than in a mutable `Status` section.
 | **Team maturity** | Good for teams starting out | Good for teams with ADR practice |
 | **Traceability** | Basic status field | Links and cross-references |
 
-The best template is the one the team will actually use. Start with Nygard's
-minimal format. If the team finds they consistently need more structure, adopt
-MADR. A short ADR that exists is infinitely more valuable than a comprehensive
+The best template is the one the team will actually use. For a greenfield
+repository adopting ADRs from scratch, Nygard's minimal format is a reasonable
+starting point. In Mississippi, the live repository contract is MADR 4.0.0 body
+structure plus repository-specific frontmatter in `docs/Docusaurus/docs/adr/`.
+A short ADR that exists is infinitely more valuable than a comprehensive
 template that nobody fills out.
 
 ---
@@ -493,7 +499,11 @@ Document both positive and negative consequences. Be honest about trade-offs:
 ### adr-tools (Nygard's CLI)
 
 **adr-tools**, created by Nat Pryce, is a command-line toolkit for managing
-ADRs:
+ADRs.
+
+The example below reflects the older sequential-number ADR ecosystem. It is
+useful background if you maintain repositories that still follow that model,
+but it is not Mississippi's current publication contract for new ADRs:
 
 ```bash
 # Initialise the ADR directory
@@ -514,6 +524,11 @@ adr generate graph | dot -Tpng -o adr-graph.png
 
 Repository: <https://github.com/npryce/adr-tools>
 
+Mississippi does not currently use `adr init docs/decisions`, repository-wide
+sequential numbering, or `adr new -s 3` as its live governance workflow. New
+Mississippi ADRs are authored in `docs/Docusaurus/docs/adr/` with timestamped
+filenames, immutable frontmatter `id`, and reciprocal supersession metadata.
+
 ### Log4brains
 
 **Log4brains** is a more modern tool that generates a searchable, static
@@ -527,7 +542,10 @@ Repository: <https://github.com/thomvaill/log4brains>
 
 ### CI Integration
 
-ADRs can be validated in CI pipelines:
+ADRs can be validated in CI pipelines once a repository chooses to wire those
+checks into its enforcement boundary. For Mississippi, the list below describes
+the target validation surface for the redesigned governance model rather than a
+claim that every check has already landed in every branch:
 
 | Check | Purpose |
 |-------|---------|
@@ -564,13 +582,21 @@ The most common failure mode for ADR adoption is ambition. Teams create
 elaborate templates, governance processes, and review boards — and then nobody
 writes ADRs because the overhead is too high.
 
-Start with:
+For teams adopting ADRs generically, start with:
 
 1. **One template** — Nygard's four-section format.
 2. **One directory** — `docs/decisions/` in the main repository.
 3. **One rule** — Any decision that changes system structure or is hard to
    reverse gets an ADR.
 4. **One workflow** — ADRs are created in PRs and reviewed like code.
+
+For Mississippi contributors, do not apply that generic baseline literally.
+Start with the published Mississippi contract instead:
+
+1. **One template** — MADR 4.0.0 body sections plus Mississippi frontmatter.
+2. **One directory** — `docs/Docusaurus/docs/adr/`.
+3. **One example** — the published governance ADR linked from the ADR overview.
+4. **One workflow** — create the ADR in a PR and choose its final merged status before review closes.
 
 ### Building the Habit
 
@@ -624,7 +650,9 @@ The essentials:
   original instead of post-merge status flips.
 - **Short and honest** — 1–2 pages with explicit trade-offs and negative
   consequences.
-- **Start simple** — Nygard's four-section template, one directory, one rule.
+- **Use one clear authoring contract** — in Mississippi, MADR 4.0.0 plus
+  repository frontmatter in `docs/Docusaurus/docs/adr/`; in other repositories,
+  Nygard's minimal template remains a reasonable baseline.
 - **Build the habit** — retrospective ADRs, PR references, onboarding reading.
 
 The decision to adopt ADRs is itself worth an ADR.
