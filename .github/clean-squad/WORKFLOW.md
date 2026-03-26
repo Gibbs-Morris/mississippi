@@ -1,9 +1,11 @@
 # Clean Squad: End-to-End SDLC Workflow
 
-The Clean Squad is a family of 32 GitHub Copilot agents that takes an idea from
-initial request through to a merge-ready pull request. There is exactly one
-entry point — the **cs Product Owner** — who orchestrates all work by delegating
-to specialist sub-agents. Every agent applies first-principles thinking and
+The Clean Squad is a family of 33 GitHub Copilot agents that takes an idea from
+initial request through to a merge-ready pull request. It offers two public
+intake paths: **cs Entrepreneur** for optional pre-governed idea shaping and
+**cs Product Owner** for direct governed intake. Once governed work begins,
+**cs Product Owner** is the sole orchestrator who delegates to specialist
+sub-agents. Every agent applies first-principles thinking and
 chain-of-verification to every task.
 
 ## Foundational Principles (Embedded in Every Agent)
@@ -36,22 +38,185 @@ chain-of-verification to every task.
 
 **Clean Squad** — reflecting Clean Agile and Clean Code principles.
 
-## Entry Point
+## Entry Points
 
-`@cs Product Owner` is the **only** agent the human user invokes. All other
-agents are sub-agents invoked programmatically via `runSubagent`. All Clean
-Squad delegation **MUST** target only approved Clean Squad agents named in the
-`Agent Roster` section of this workflow. The user never needs to invoke any
-other agent directly.
+`@cs Entrepreneur` is an optional public-facing pre-governed intake path for
+rough ideas that need shaping before governed work begins. It normally
+produces one Story Pack candidate and MAY instead return an explicit stop
+outcome (`CHANGES_REQUESTED`, `DEFERRED`, or `CANCELLED`) before G0. In all
+cases it **MUST NOT** create governed workflow state or advance governed work.
+
+`@cs Product Owner` is the direct governed intake path and the sole governed
+orchestrator. The Product Owner accepts either direct free-form intake or an
+G0-approved Story Pack candidate and then runs the full governed workflow.
+
+All governed Clean Squad delegation **MUST** target only approved Clean Squad
+agents named in the `Agent Roster` section of this workflow. The user never
+needs to invoke any other agent directly unless they intentionally choose the
+optional Entrepreneur intake path before governed work starts.
 
 If no approved Clean Squad agent fits a task, the Product Owner **MUST** stop,
 record the blocker, and ask the user to either choose the nearest approved
 Clean Squad agent, approve a roster or workflow change first, or explicitly
 leave Clean Squad orchestration for that task.
 
+## Intake and Human Advancement Gates
+
+### Intake Modes
+
+- Direct governed intake: the human starts with **cs Product Owner** when the
+  problem, intended value, and direction are already clear enough to begin
+  governed discovery.
+- Optional pre-governed shaping: the human starts with **cs Entrepreneur** when
+  the idea is still fuzzy and needs pressure-testing before governed intake.
+
+### Story Pack Contract
+
+When **cs Entrepreneur** is used and the idea is ready, it produces exactly one
+Story Pack candidate for G0 human approval before Product Owner intake. The
+Story Pack candidate **MUST** include:
+
+- `storyPackId`
+- idea title
+- problem statement
+- target user or beneficiary
+- business value
+- proposed capability
+- assumptions
+- open questions
+- scope boundaries
+- recommended downstream emphasis
+- INVEST assessment
+- agile story statement
+
+When **cs Entrepreneur** determines that the idea is not ready for governed
+intake, it MAY instead return one explicit stop outcome using the same closed
+decision vocabulary as the human advancement gates except `APPROVED`:
+
+- `CHANGES_REQUESTED`
+- `DEFERRED`
+- `CANCELLED`
+
+Only a Story Pack candidate proceeds to G0. A stop outcome ends or pauses the
+pre-governed intake path without creating governed workflow state.
+
+### Human Advancement Gates
+
+Generated artifacts are proposed working drafts until the responsible human
+explicitly approves the bound artifact package. Every gate uses the same closed
+decision set: `APPROVED`, `CHANGES_REQUESTED`, `DEFERRED`, or `CANCELLED`.
+Only `APPROVED` authorizes progression.
+
+#### G0 Intake Gate
+
+Applies only when **cs Entrepreneur** is used and returns a Story Pack
+candidate.
+
+Bound artifact package:
+
+- Story Pack candidate
+
+Approved next step:
+
+- **cs Product Owner** may create governed workflow state and start discovery.
+
+#### G1 Scope Gate
+
+Applies after discovery and Three Amigos synthesis.
+
+Bound artifact package:
+
+- `01-discovery/requirements-synthesis.md`
+- `02-three-amigos/synthesis.md`
+
+Approved next step:
+
+- architecture and planning may proceed.
+
+#### G2 Plan Gate
+
+Applies before implementation starts.
+
+Bound artifact package:
+
+- `03-architecture/solution-design.md`
+- binding C4 artifacts from `03-architecture/`
+- binding ADR artifacts from `docs/Docusaurus/docs/adr/`
+- `04-planning/final-plan.md`
+
+Approved next step:
+
+- implementation and downstream specialist work may proceed.
+
+#### G3 Merge Gate
+
+Applies after late-stage delivery evidence has been assembled.
+
+Bound artifact package:
+
+- `09-pr-merge/merge-readiness.md`
+- current code-review conclusion and remediation status
+- current QA conclusion
+- current documentation conclusion
+
+Approved next step:
+
+- PR-ready and merge-ready progression may continue.
+
+### Stale Approval Rule
+
+If any artifact bound to an approved gate changes materially, that approval
+becomes stale and **MUST** be replaced with a fresh explicit decision before the
+workflow advances.
+
+### Canonical Gate Recording
+
+Every G1-G3 human gate decision **MUST** be recorded canonically in
+`workflow-audit.json` using the existing event contract:
+
+- G0 is the pre-governed exception. Because it happens before governed intake
+  begins, G0 **MUST NOT** require prior existence of `.thinking/<task>/` or
+  `workflow-audit.json`.
+- When governed work starts from a G0-approved Story Pack candidate, the
+  Product Owner **MUST** carry the G0 approval evidence into governed state by
+  capturing the approved Story Pack candidate and the human G0 approval in
+  `00-intake.md` and by binding that evidence in the initial governed canonical
+  event's `artifacts` or `provenance.evidence`.
+
+- The responsible human reply **MUST** first be captured by a `wait-ended`
+  event whose `details.waitKind` is `human` and whose provenance is
+  `human-input`.
+- The gate decision itself **MUST** then be recorded as a bounded `completed`
+  event caused by that human-input `wait-ended` event.
+- The gate-decision `completed` event **MUST** use a bounded `workItemId` and
+  `rootWorkItemId` of `gate.g1-review`, `gate.g2-review`, or `gate.g3-review`
+  as applicable.
+- The gate-decision `completed` event **MUST** include `details.gateId` and
+  `details.decision`, and **MUST** also include `details.gateName` and
+  `details.decidedBy`. `details.notes` MAY be included when the responsible
+  human supplies rationale. `gateId` is one of `G1`, `G2`, or `G3`; `decision`
+  is one of `APPROVED`, `CHANGES_REQUESTED`, `DEFERRED`, or `CANCELLED`;
+  `gateName` is the human-readable gate label; and `decidedBy` identifies the
+  responsible human decider.
+- The gate-decision `completed` event **MUST** bind the exact reviewed artifact
+  package in `artifacts`, using at least one artifact with role
+  `gate-package` plus `digestSha256` for local files or `immutableId` plus
+  `uri` for immutable external resources.
+- Gate decisions **MUST** map to canonical `outcome` values as follows:
+  - `APPROVED` -> `succeeded`
+  - `CHANGES_REQUESTED` -> `failed`
+  - `DEFERRED` -> `cancelled`
+  - `CANCELLED` -> `cancelled`
+- When a gate decision records `CHANGES_REQUESTED`, `DEFERRED`, or
+  `CANCELLED`, the Product Owner **MUST** record any resulting deviation,
+  stop, or resume semantics with the later canonical event that actually
+  changes workflow execution state rather than overloading the gate-decision
+  event itself.
+
 ## Shared State: The `.thinking` Folder
 
-All agents share state through a filesystem folder:
+All governed Clean Squad agents share state through a filesystem folder once
+governed work begins:
 
 ```text
 .thinking/
@@ -131,15 +296,18 @@ All agents share state through a filesystem folder:
     decision-log.md                 # All decisions with reasoning
 ```
 
+`cs Entrepreneur` is explicitly pre-governed and MUST NOT create or use this
+shared state.
+
 Published ADRs live outside `.thinking/` under `docs/Docusaurus/docs/adr/` so
 they remain part of the long-term documentation set after the task folder is
 retired.
 
 ### Operational Logging Protocol
 
-- Every Clean Squad agent MUST append an entry to `.thinking/<task>/activity-log.md` before substantive work starts.
-- Every Clean Squad agent MUST append another entry after each material decision, delegation, blocker, or phase transition.
-- Every Clean Squad agent MUST append a final entry before returning control, capturing outputs produced, status, blockers, and next action.
+- Every governed Clean Squad agent MUST append an entry to `.thinking/<task>/activity-log.md` before substantive work starts.
+- Every governed Clean Squad agent MUST append another entry after each material decision, delegation, blocker, or phase transition.
+- Every governed Clean Squad agent MUST append a final entry before returning control, capturing outputs produced, status, blockers, and next action.
 - The Product Owner MUST treat this log as mandatory operational telemetry, not an optional summary.
 - Activity log entries SHOULD use a consistent structure: UTC timestamp, actor, phase, action, artifacts updated, blockers, and next action.
 
@@ -356,7 +524,7 @@ Allowed `eventType` values:
 Event-type usage rules:
 
 - `phase-completed` MUST be used only to close one of the nine top-level workflow phases and MUST correspond to a span opened by `phase-started`.
-- `completed` MUST be used only for terminal bounded work items that are not whole phases and not the overall workflow run, such as delegated review passes, remediation slices, validation attempts, commit creation, or PR-slice completion.
+- `completed` MUST be used only for terminal bounded work items that are not whole phases and not the overall workflow run, such as gate decisions, delegated review passes, remediation slices, validation attempts, commit creation, or PR-slice completion.
 - `run-completed` MUST be reserved for the final terminal event that records the disposition of the overall Clean Squad run and MUST NOT be used for individual phases or subordinate work items.
 
 Outcome vocabulary:
@@ -406,7 +574,7 @@ Allowed `reasonCode` values:
 Artifact binding rules:
 
 - `path` values MUST be workspace-relative paths when the artifact exists in the repository or task folder.
-- `role` MUST describe the artifact purpose using a stable noun phrase such as `phase-output`, `review-synthesis`, `pr-description`, `thread-log`, `quality-gate-evidence`, or `scope-assessment`.
+- `role` MUST describe the artifact purpose using a stable noun phrase such as `phase-output`, `review-synthesis`, `pr-description`, `thread-log`, `quality-gate-evidence`, `gate-package`, or `scope-assessment`.
 - Evidence-bearing artifacts MUST bind either `digestSha256` for local files or `immutableId` plus `uri` for immutable external resources.
 - Path-only references are insufficient for reviewer-facing audit publication.
 
@@ -476,6 +644,7 @@ Relationship semantics:
 `details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutputPath`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
+- `completed`: `gateId`, `gateName`, `decision`, `decidedBy`, and optional `notes` when the completed event records a human gate decision
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
 - `deviation-recorded`: `deviationClass`, `rationalePath`
 - `blocked`: `blockerKind`, `blockedOn`
@@ -762,7 +931,8 @@ The Product Owner is an orchestrator, not an implementation agent.
 
 ### Process
 
-1. User describes their idea to the Product Owner.
+1. The human reaches the Product Owner either through direct free-form intake
+  or with a G0-approved Story Pack candidate from **cs Entrepreneur**.
 2. Product Owner creates `.thinking/<date>-<slug>/` and writes `00-intake.md`.
 3. Product Owner asks the first group of **5 questions** (using built-in
    persona knowledge — business, technical, QA perspectives).
@@ -799,6 +969,9 @@ The Product Owner is an orchestrator, not an implementation agent.
 3. Product Owner writes `02-three-amigos/synthesis.md` combining all four.
 4. If any sub-agent identifies critical gaps, Product Owner asks the user
    additional questions before proceeding.
+5. Before Phase 3 begins, the Product Owner **MUST** obtain G1 approval for
+  `01-discovery/requirements-synthesis.md` and
+  `02-three-amigos/synthesis.md`.
 
 ### Perspective Outputs
 
@@ -857,6 +1030,9 @@ The Product Owner is an orchestrator, not an implementation agent.
 5. Product Owner revises the plan.
 6. Repeat for **3-5 review cycles** total.
 7. After final cycle, Product Owner writes `final-plan.md`.
+8. Before Phase 5 begins, the Product Owner **MUST** obtain G2 approval for
+  `03-architecture/solution-design.md`, the binding C4 artifacts, the binding
+  ADR artifacts, and `04-planning/final-plan.md`.
 
 ### Review Personas for Planning
 
@@ -1076,8 +1252,12 @@ The skip reason **MUST** be recorded in `scope-assessment.md` with evidence.
 9. Review thread handling:
    - For each human review comment: read it, decide scope-appropriateness, fix it or push back with reasoning, reply to the thread, and either resolve it or leave it open with rationale.
 10. `workflow-audit.md` and the `Reviewer Audit Summary` are derived artifacts only. Missing canonical facts MUST be fixed in `workflow-audit.json`; they MUST NOT be backfilled from `activity-log.md`, thread logs, or PR prose.
-11. Merge readiness is confirmed only when the Product Owner evaluates current delegated evidence and records the conclusion canonically.
-12. Merge readiness is confirmed when:
+11. Before PR-ready or merge-ready progression continues, the Product Owner
+  **MUST** obtain G3 approval for `09-pr-merge/merge-readiness.md`, the
+  current code-review conclusion, the current QA conclusion, and the current
+  documentation conclusion.
+12. Merge readiness is confirmed only when the Product Owner evaluates current delegated evidence and records the conclusion canonically.
+13. Merge readiness is confirmed when:
 
 - [ ] PR exists
 - [ ] All CI pipelines are green
@@ -1141,7 +1321,7 @@ Handovers are logged in `.thinking/<task>/handover-log.md`:
 - **Output**: <expected result and location>
 ```
 
-## Agent Roster (32 Agents)
+## Agent Roster (33 Agents)
 
 This section is the single authoritative roster of approved Clean Squad
 delegation targets. Any delegation term in this workflow, the shared Clean
@@ -1151,11 +1331,12 @@ record the blocker, and ask the user to either choose the nearest approved
 Clean Squad agent, approve a roster or workflow change first, or explicitly
 leave Clean Squad orchestration for that task.
 
-### Entry Point (1)
+### Public Intake (2)
 
 | Agent | Role |
 |-------|------|
-| cs Product Owner | Sole human interface; orchestrates the entire SDLC |
+| cs Entrepreneur | Optional public-facing pre-governed idea shaper; produces one Story Pack candidate and never opens governed workflow state |
+| cs Product Owner | Direct governed intake path; sole governed orchestrator for the full SDLC |
 
 ### Discovery & Requirements (3)
 
