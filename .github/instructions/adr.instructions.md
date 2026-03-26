@@ -36,6 +36,7 @@ Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/do
     - id: adr-20250202T090000000Z-01
       path: 2025-02-02-new-decision--090000000-01.md
   ```
+
 - When a new ADR supersedes an untouched legacy ADR, authors **MUST** perform the minimum governance metadata backfill in the same change and **MUST NOT** edit the legacy ADR body. Why: Mixed-corpus supersession must remain reviewer-auditable and bounded to metadata-only cutover work.
 - Legacy governance backfill **MUST** stay within this allow-list: canonical governance frontmatter, `legacy_refs`, reciprocal `supersedes` and `superseded_by` metadata, and derived ordering metadata explicitly required by the contract. Why: Day-one migration is intentionally narrow so governance rollout does not become historical ADR rewriting.
 - ADR cross-references **MUST** use relative Markdown links. Why: Keeps links valid across environments.
