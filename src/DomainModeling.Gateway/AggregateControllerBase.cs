@@ -17,30 +17,8 @@ namespace Mississippi.DomainModeling.Gateway;
 /// <remarks>
 ///     <para>
 ///         Inherit from this controller to expose aggregate commands as a RESTful API.
-///         The derived class must apply a route attribute and can customize behavior
-///         or add additional endpoints.
-///     </para>
-///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserController : AggregateControllerBase&lt;UserAggregate&gt;
-///             {
-///                 private readonly IUserService _service;
-///                 public UserController(
-///                     IUserService service,
-///                     ILogger&lt;UserController&gt; logger) : base(logger)
-///                 {
-///                     _service = service;
-///                 }
-///                 [HttpPost("register")]
-///                 public Task&lt;ActionResult&lt;OperationResult&gt;&gt; RegisterAsync(
-///                     [FromRoute] string entityId,
-///                     [FromBody] RegisterUser command,
-///                     CancellationToken ct = default)
-///                     =&gt; ExecuteAsync(entityId, command, _service.RegisterAsync, ct);
-///             }
-///         </code>
+///         The derived class must apply a route attribute, inject required services,
+///         and call <c>ExecuteAsync</c> to delegate command execution to service methods.
 ///     </para>
 ///     <para>
 ///         This base class provides:
@@ -49,6 +27,9 @@ namespace Mississippi.DomainModeling.Gateway;
 ///             <item>Consistent error handling and HTTP response formatting.</item>
 ///             <item>The <c>ExecuteAsync</c> helper method that delegates to service methods.</item>
 ///         </list>
+///     </para>
+///     <para>
+///         See sample applications in the repository for concrete usage patterns.
 ///     </para>
 /// </remarks>
 [ApiController]
