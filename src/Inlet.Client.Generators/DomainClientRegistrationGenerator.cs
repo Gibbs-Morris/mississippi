@@ -186,7 +186,8 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
                 $"    public static MississippiClientBuilder {model.DomainMethodName}(this MississippiClientBuilder client)");
             sb.AppendLine("    {");
             sb.AppendLine("        ArgumentNullException.ThrowIfNull(client);");
-            sb.AppendLine("        client.Reservoir(reservoir =>");
+            sb.AppendLine(
+                $"        return client.RegisterDomainFeatures(\"{model.DomainRoot}\", \"{model.DomainMethodName}\", reservoir =>");
             sb.AppendLine("        {");
             foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
             {
@@ -204,7 +205,6 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             }
 
             sb.AppendLine("        });");
-            sb.AppendLine("        return client;");
             sb.AppendLine("    }");
             sb.AppendLine();
         }

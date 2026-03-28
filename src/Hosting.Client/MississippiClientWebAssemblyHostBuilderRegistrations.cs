@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace Mississippi.Hosting.Client;
@@ -20,6 +22,13 @@ public static class MississippiClientWebAssemblyHostBuilderRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
+        if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(MississippiClientHostModeMarker)))
+        {
+            throw new InvalidOperationException(
+                "AddMississippiClient can only be called once per host. Compose additional client configuration through the existing MississippiClientBuilder instance.");
+        }
+
+        builder.Services.AddSingleton(MississippiClientHostModeMarker.Instance);
         return new(builder);
     }
 

@@ -5,8 +5,10 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
         <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\src\Hosting.Runtime\Hosting.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Runtime.Generators\Inlet.Runtime.Generators.csproj" />
     </ItemGroup>
 </Project>

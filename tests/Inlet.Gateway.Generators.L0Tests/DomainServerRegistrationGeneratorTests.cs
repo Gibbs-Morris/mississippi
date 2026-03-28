@@ -198,4 +198,44 @@ public sealed class DomainServerRegistrationGeneratorTests
         Assert.Contains("Controllers.Projections.Mappers;", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("Controllers.Aggregates.Mappers;", generatedCode, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    ///     Generated gateway domain registration composes aggregate and projection mapper registrations through the gateway
+    ///     builder.
+    /// </summary>
+    [Fact]
+    public void GeneratedGatewayDomainRegistrationComposesAllGatewayMapperRegistrations()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Aggregates.Order.Commands
+                              {
+                                  [GenerateCommand]
+                                  public sealed record PlaceOrder;
+                              }
+
+                              namespace TestApp.Domain.Projections.Balance
+                              {
+                                  [GenerateProjectionEndpoints]
+                                  [ProjectionPath("balances/{id}")]
+                                  public sealed record BalanceProjection;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainGatewayRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains("AddTestAppDomainGateway", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("this MississippiGatewayBuilder gateway", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "return gateway.RegisterDomainMappers(\"TestApp.Domain\", \"AddTestAppDomainGateway\", services =>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("services.AddOrderAggregateMappers();", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("services.AddBalanceProjectionMappers();", generatedCode, StringComparison.Ordinal);
+    }
 }

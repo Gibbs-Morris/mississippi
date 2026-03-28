@@ -1,7 +1,6 @@
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
@@ -54,39 +53,6 @@ public static class BrooksRuntimeRegistrations
             builder.Services.Configure(configureOptions);
         }
 
-        return builder;
-    }
-
-    /// <summary>
-    ///     Adds Brooks runtime services to the host application builder.
-    ///     This is a convenience method that adds Brooks runtime services to both the service collection
-    ///     and configures the Orleans silo.
-    /// </summary>
-    /// <param name="builder">The host application builder.</param>
-    /// <param name="configureOptions">
-    ///     Optional action to configure <see cref="BrookProviderOptions" />.
-    ///     Use this to specify which stream provider name Brooks should use.
-    /// </param>
-    /// <returns>The modified host builder for chaining.</returns>
-    /// <remarks>
-    ///     <para>
-    ///         The host is responsible for configuring Orleans streams before calling this method.
-    ///         Use <paramref name="configureOptions" /> to specify the stream provider name that
-    ///         Brooks should use for event notifications.
-    ///     </para>
-    /// </remarks>
-    public static HostApplicationBuilder AddEventSourcing(
-        this HostApplicationBuilder builder,
-        Action<BrookProviderOptions>? configureOptions = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-
-        // Add services to DI container
-        builder.Services.AddEventSourcingByService();
-
-        // Configure Orleans silo with options
-        builder.UseOrleans(silo => silo.AddEventSourcing(configureOptions));
         return builder;
     }
 

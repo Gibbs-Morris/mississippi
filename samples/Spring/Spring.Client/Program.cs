@@ -37,31 +37,30 @@ builder.Services.AddScoped(sp =>
 #pragma warning restore IDISP014
 builder.AddMississippiClient(client =>
 {
-    client.AddMississippiSamplesSpringDomainClient();
-    client.Reservoir(reservoir =>
-    {
-        // Navigation/UI: entity selection
-        reservoir.AddDualEntitySelectionFeature();
-        reservoir.AddDemoAccountsFeature();
-        reservoir.AddAuthSimulationFeature();
-
-        // Built-in Reservoir features: navigation, lifecycle
-        reservoir.AddReservoirBlazorBuiltIns();
-
-        // DevTools integration: enable Redux DevTools in development
-        reservoir.AddReservoirDevTools(options =>
+    client.AddMississippiSamplesSpringDomainClient()
+        .Reservoir(reservoir =>
         {
-            options.Enablement = ReservoirDevToolsEnablement.Always;
-            options.Name = "Spring Sample";
-            options.IsStrictStateRehydrationEnabled = true;
-        });
+            // Navigation/UI: entity selection
+            reservoir.AddDualEntitySelectionFeature();
+            reservoir.AddDemoAccountsFeature();
+            reservoir.AddAuthSimulationFeature();
 
-        // Configure Inlet with SignalR effect for real-time projection updates
-        // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
-        reservoir.AddInletClient();
-        reservoir.AddInletBlazorSignalR(signalR => signalR
-            .WithHubPath("/hubs/inlet")
-            .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
-    });
+            // Built-in Reservoir features: navigation, lifecycle
+            reservoir.AddReservoirBlazorBuiltIns();
+
+            // DevTools integration: enable Redux DevTools in development
+            reservoir.AddReservoirDevTools(options =>
+            {
+                options.Enablement = ReservoirDevToolsEnablement.Always;
+                options.Name = "Spring Sample";
+                options.IsStrictStateRehydrationEnabled = true;
+            });
+
+            // Configure Inlet with SignalR effect for real-time projection updates
+            // ScanProjectionDtos automatically discovers [ProjectionPath] types and wires up fetching
+            reservoir.AddInletBlazorSignalR(signalR => signalR
+                .WithHubPath("/hubs/inlet")
+                .ScanProjectionDtos(typeof(BankAccountBalanceProjectionDto).Assembly));
+        });
 });
 await builder.Build().RunAsync();

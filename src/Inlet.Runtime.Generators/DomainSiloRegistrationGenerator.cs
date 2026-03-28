@@ -164,7 +164,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using System;");
-        sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
+        sb.AppendLine("using Mississippi.Hosting.Runtime;");
         sb.AppendLine();
         string outputNamespace = targetRootNamespace.EndsWith(".Registrations", StringComparison.Ordinal)
             ? targetRootNamespace
@@ -172,38 +172,41 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
         sb.AppendLine($"namespace {outputNamespace};");
         sb.AppendLine();
         sb.AppendLine("/// <summary>");
-        sb.AppendLine("///     Extension methods for registering complete silo domain feature sets.");
+        sb.AppendLine("///     Extension methods for registering complete runtime domain feature sets.");
         sb.AppendLine("/// </summary>");
         sb.AppendLine("[System.CodeDom.Compiler.GeneratedCode(\"DomainSiloRegistrationGenerator\", \"1.0.0\")]");
-        sb.AppendLine("public static class DomainSiloRegistrations");
+        sb.AppendLine("public static class DomainRuntimeRegistrations");
         sb.AppendLine("{");
         foreach (DomainRegistrationModel model in models.OrderBy(m => m.DomainMethodName, StringComparer.Ordinal))
         {
             sb.AppendLine("    /// <summary>");
-            sb.AppendLine($"    ///     Adds all generated silo registrations for the {model.DomainRoot} domain.");
+            sb.AppendLine($"    ///     Adds all generated runtime registrations for the {model.DomainRoot} domain.");
             sb.AppendLine("    /// </summary>");
-            sb.AppendLine("    /// <param name=\"services\">The service collection.</param>");
-            sb.AppendLine("    /// <returns>The service collection for chaining.</returns>");
+            sb.AppendLine("    /// <param name=\"runtime\">The Mississippi runtime builder.</param>");
+            sb.AppendLine("    /// <returns>The Mississippi runtime builder for chaining.</returns>");
             sb.AppendLine(
-                $"    public static IServiceCollection {model.DomainMethodName}(this IServiceCollection services)");
+                $"    public static MississippiRuntimeBuilder {model.DomainMethodName}(this MississippiRuntimeBuilder runtime)");
             sb.AppendLine("    {");
-            sb.AppendLine("        ArgumentNullException.ThrowIfNull(services);");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(runtime);");
+            sb.AppendLine(
+                $"        return runtime.RegisterDomainServices(\"{model.DomainRoot}\", \"{model.DomainMethodName}\", services =>");
+            sb.AppendLine("        {");
             foreach (string aggregate in model.AggregateNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        services.Add{aggregate}Aggregate();");
+                sb.AppendLine($"            services.Add{aggregate}Aggregate();");
             }
 
             foreach (string saga in model.SagaNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        services.Add{saga}Saga();");
+                sb.AppendLine($"            services.Add{saga}Saga();");
             }
 
             foreach (string projection in model.ProjectionNames.OrderBy(n => n, StringComparer.Ordinal))
             {
-                sb.AppendLine($"        services.Add{projection}Projection();");
+                sb.AppendLine($"            services.Add{projection}Projection();");
             }
 
-            sb.AppendLine("        return services;");
+            sb.AppendLine("        });");
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -268,7 +271,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                     ? sagas.OrderBy(n => n, StringComparer.Ordinal).ToArray()
                     : [];
                 return new DomainRegistrationModel(
-                    NamingConventions.GetDomainRegistrationMethodName(domain) + "Silo",
+                    NamingConventions.GetDomainRegistrationMethodName(domain),
                     domain,
                     aggregateNames,
                     projectionNames,
@@ -367,7 +370,7 @@ public sealed class DomainSiloRegistrationGenerator : IIncrementalGenerator
                 }
 
                 string source = GenerateRegistrationsSource(result.Domains, result.TargetRootNamespace);
-                spc.AddSource("DomainSiloRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
+                spc.AddSource("DomainRuntimeRegistrations.g.cs", SourceText.From(source, Encoding.UTF8));
             });
     }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -42,6 +43,23 @@ public sealed class MississippiClientBuilderTests
         Assert.Same(builder, result);
         Assert.NotNull(configuredBuilder);
         Assert.Same(services, configuredBuilder.Services);
+    }
+
+    /// <summary>
+    ///     AddMississippiClient should reject duplicate client attachment on the same host.
+    /// </summary>
+    [Fact]
+    public void AddMississippiClientRejectsDuplicateAttachment()
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder builder = CreateBuilder(services);
+        builder.AddMississippiClient();
+        InvalidOperationException exception =
+            Assert.Throws<InvalidOperationException>(() => builder.AddMississippiClient());
+        Assert.Contains(
+            "AddMississippiClient can only be called once per host",
+            exception.Message,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -90,5 +108,22 @@ public sealed class MississippiClientBuilderTests
         Assert.NotNull(firstBuilder);
         Assert.Same(firstBuilder, secondBuilder);
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<IStore>());
+    }
+
+    /// <summary>
+    ///     RegisterDomainFeatures should reject duplicate client domain composition on the same builder.
+    /// </summary>
+    [Fact]
+    public void RegisterDomainFeaturesRejectsDuplicateDomainAttachment()
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder builder = CreateBuilder(services);
+        MississippiClientBuilder clientBuilder = builder.AddMississippiClient();
+        clientBuilder.RegisterDomainFeatures("TestApp.Domain", "AddTestAppDomainClient", _ => { });
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            clientBuilder.RegisterDomainFeatures("TestApp.Domain", "AddTestAppDomainClient", _ => { }));
+        Assert.Contains("client domain composition", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("TestApp.Domain", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("AddTestAppDomainClient(...)", exception.Message, StringComparison.Ordinal);
     }
 }

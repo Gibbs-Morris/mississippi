@@ -10,6 +10,7 @@ using Mississippi.Aqueduct.Runtime;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
+using Mississippi.Hosting.Runtime;
 using Mississippi.Inlet.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
@@ -28,45 +29,6 @@ using Orleans.Runtime;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-// Register HttpClient factory for effects that call external APIs
-builder.Services.AddHttpClient();
-
-// Register notification service (stub for demo, replace with real provider in production)
-builder.Services.AddSingleton<INotificationService, StubNotificationService>();
-
-// Register Spring domain aggregates
-builder.Services.AddAuthProofAggregate();
-builder.Services.AddBankAccountAggregate();
-builder.Services.AddTransactionInvestigationQueueAggregate();
-builder.Services.AddAuthProofProjection();
-builder.Services.AddBankAccountBalanceProjection();
-builder.Services.AddBankAccountLedgerProjection();
-builder.Services.AddFlaggedTransactionsProjection();
-builder.Services.AddMoneyTransferStatusProjection();
-builder.Services.AddAuthProofSaga();
-builder.Services.AddMoneyTransferSaga();
-builder.Services.AddOpenTelemetry()
-    .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddSource("Microsoft.Orleans.Runtime")
-        .AddSource("Microsoft.Orleans.Application"))
-    .WithMetrics(metrics => metrics.AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddRuntimeInstrumentation()
-
-        // Mississippi framework meters
-        .AddMeter("Mississippi.Brooks.Runtime")
-        .AddMeter("Mississippi.DomainModeling.Runtime")
-        .AddMeter("Mississippi.Tributary.Runtime")
-        .AddMeter("Mississippi.Storage.Cosmos")
-        .AddMeter("Mississippi.Storage.Snapshots")
-        .AddMeter("Mississippi.Storage.Locking")
-
-        // Orleans meters
-        .AddMeter("Microsoft.Orleans"))
-    .WithLogging()
-    .UseOtlpExporter();
 
 // Add Aspire-managed Azure Storage clients for Orleans clustering and grain state
 // These are configured by the AppHost via WithReference
@@ -104,46 +66,66 @@ builder.Services.AddKeyedSingleton(
         sp,
         _
     ) => sp.GetRequiredService<CosmosClient>());
-
-// Add Inlet Silo services for projection subscription management
-builder.Services.AddInletSilo();
-builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
-
-// Add event sourcing infrastructure
-builder.Services.AddJsonSerialization();
-builder.Services.AddEventSourcingByService();
-builder.Services.AddSnapshotCaching();
-
-// Configure Cosmos storage for Brooks (event streams)
-builder.Services.AddCosmosBrookStorageProvider(options =>
+builder.AddMississippiRuntime(runtime =>
 {
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "events";
-    options.QueryBatchSize = 50;
-    options.MaxEventsPerBatch = 50;
-});
+    runtime.AddMississippiSamplesSpringDomain();
 
-// Configure Cosmos storage for Snapshots
-builder.Services.AddCosmosSnapshotStorageProvider(options =>
-{
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "snapshots";
-    options.QueryBatchSize = 100;
-});
+    // Register HttpClient factory for effects that call external APIs
+    runtime.Services.AddHttpClient();
 
-// Configure Orleans silo - Aspire injects clustering config via environment variables
-builder.UseOrleans(siloBuilder =>
-{
-    siloBuilder.AddActivityPropagation();
+    // Register notification service (stub for demo, replace with real provider in production)
+    runtime.Services.AddSingleton<INotificationService, StubNotificationService>();
+    runtime.Services.AddOpenTelemetry()
+        .WithTracing(tracing => tracing.AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddSource("Microsoft.Orleans.Runtime")
+            .AddSource("Microsoft.Orleans.Application"))
+        .WithMetrics(metrics => metrics.AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddRuntimeInstrumentation()
 
-    // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane
-    siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
+            // Mississippi framework meters
+            .AddMeter("Mississippi.Brooks.Runtime")
+            .AddMeter("Mississippi.DomainModeling.Runtime")
+            .AddMeter("Mississippi.Tributary.Runtime")
+            .AddMeter("Mississippi.Storage.Cosmos")
+            .AddMeter("Mississippi.Storage.Snapshots")
+            .AddMeter("Mississippi.Storage.Locking")
 
-    // Configure event sourcing to use the Aspire-configured stream provider
-    // Must match the stream provider name configured in AppHost via WithMemoryStreaming
-    siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
+            // Orleans meters
+            .AddMeter("Microsoft.Orleans"))
+        .WithLogging()
+        .UseOtlpExporter();
+    runtime.Services.AddInletSilo();
+    runtime.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).Assembly);
+    runtime.Services.AddJsonSerialization();
+    runtime.Services.AddSnapshotCaching();
+    runtime.Services.AddCosmosBrookStorageProvider(options =>
+    {
+        options.CosmosClientServiceKey = sharedCosmosKey;
+        options.DatabaseId = "spring-db";
+        options.ContainerId = "events";
+        options.QueryBatchSize = 50;
+        options.MaxEventsPerBatch = 50;
+    });
+    runtime.Services.AddCosmosSnapshotStorageProvider(options =>
+    {
+        options.CosmosClientServiceKey = sharedCosmosKey;
+        options.DatabaseId = "spring-db";
+        options.ContainerId = "snapshots";
+        options.QueryBatchSize = 100;
+    });
+    runtime.Orleans(siloBuilder =>
+    {
+        siloBuilder.AddActivityPropagation();
+
+        // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane.
+        siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
+
+        // Configure event sourcing to use the Aspire-configured stream provider.
+        // Must match the stream provider name configured in AppHost via WithMemoryStreaming.
+        siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
+    });
 });
 WebApplication app = builder.Build();
 

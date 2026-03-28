@@ -6,6 +6,9 @@ using System.Linq;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.Extensions.DependencyInjection;
+
+using Mississippi.Hosting.Runtime;
 
 
 namespace Mississippi.Inlet.Runtime.Generators.L0Tests;
@@ -93,6 +96,8 @@ public sealed class DomainSiloRegistrationGeneratorTests
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Collections.Immutable.dll")),
+            MetadataReference.CreateFromFile(typeof(IServiceCollection).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(MississippiRuntimeBuilder).Assembly.Location),
         ];
         string netstandardPath = RuntimeAssembly(runtimeDirectory, "netstandard.dll");
         if (File.Exists(netstandardPath))
@@ -145,14 +150,51 @@ public sealed class DomainSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainSiloRegistrations", StringComparison.Ordinal))
+            .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains("AddTestAppDomainSilo", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddTestAppDomain", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static MississippiRuntimeBuilder AddTestAppDomain",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("this MississippiRuntimeBuilder runtime", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "return runtime.RegisterDomainServices(\"TestApp.Domain\", \"AddTestAppDomain\", services =>",
+            generatedCode,
+            StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddMoneyTransferSaga();", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("SagaSaga", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddBalanceProjection();", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated domain registration should emit one call per normalized runtime registration name.
+    /// </summary>
+    [Fact]
+    public void GeneratedDomainRegistrationDeduplicatesNormalizedRegistrationNames()
+    {
+        const string source = """
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Aggregates.Order
+                              {
+                                  [GenerateAggregateEndpoints]
+                                  public sealed record OrderAggregate;
+
+                                  [GenerateAggregateEndpoints]
+                                  public sealed record Order;
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees
+            .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        int addOrderAggregateCount = generatedCode.Split("services.AddOrderAggregate();").Length - 1;
+        Assert.Equal(1, addOrderAggregateCount);
     }
 
     /// <summary>
@@ -173,10 +215,18 @@ public sealed class DomainSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
-            .First(tree => tree.FilePath.Contains("DomainSiloRegistrations", StringComparison.Ordinal))
+            .First(tree => tree.FilePath.Contains("DomainRuntimeRegistrations", StringComparison.Ordinal))
             .GetText()
             .ToString();
-        Assert.Contains("AddCoreLogicSilo", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("AddCoreLogic", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "public static MississippiRuntimeBuilder AddCoreLogic",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "return runtime.RegisterDomainServices(\"CoreLogic\", \"AddCoreLogic\", services =>",
+            generatedCode,
+            StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregate();", generatedCode, StringComparison.Ordinal);
     }
 }
