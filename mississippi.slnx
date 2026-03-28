@@ -21,6 +21,7 @@
     <Project Path="src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <Project Path="src\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
     <Project Path="src\Brooks.Runtime\Brooks.Runtime.csproj" />
+    <Project Path="src\Brooks.Runtime.Storage.Azure\Brooks.Runtime.Storage.Azure.csproj" />
     <Project Path="src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj" />
   </Folder>
   <Folder Name="/Framework/EventSourcing/Serialization/">
@@ -98,6 +99,7 @@
     <Project Path="tests\Brooks.Abstractions.L0Tests\Brooks.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Brooks.Runtime.Storage.Abstractions.L0Tests\Brooks.Runtime.Storage.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Brooks.Runtime.L0Tests\Brooks.Runtime.L0Tests.csproj" />
+    <Project Path="tests\Brooks.Runtime.Storage.Azure.L0Tests\Brooks.Runtime.Storage.Azure.L0Tests.csproj" />
     <Project Path="tests\Brooks.Runtime.Storage.Cosmos.L0Tests\Brooks.Runtime.Storage.Cosmos.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Serialization/">
