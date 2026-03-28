@@ -367,8 +367,9 @@ function Invoke-StrykerMutationTest {
     # Run Stryker per-project instead of at solution level to avoid compilation issues
     # with source generators (like LoggerMessage)
     Write-Host "Discovering test projects in solution..." -ForegroundColor ([ConsoleColor]::Cyan)
-    $testProjects = Get-TestProjects -SolutionPath $resolvedSolution.Path
-    Write-Host "Found $($testProjects.Count) test projects" -ForegroundColor ([ConsoleColor]::Green)
+    $testProjects = Get-TestProjects -SolutionPath $resolvedSolution.Path |
+        Where-Object { $_ -notmatch '\.L[234]Tests\.csproj$' }
+    Write-Host "Found $($testProjects.Count) mutation-eligible test projects (excluding L2-L4)" -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
 
     $projectResults = @()
