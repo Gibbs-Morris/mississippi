@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Runtime.Storage.Abstractions;
+using Mississippi.Brooks.Runtime.Storage.Azure.Brooks;
+using Mississippi.Brooks.Runtime.Storage.Azure.Locking;
+using Mississippi.Brooks.Runtime.Storage.Azure.Storage;
 
 
 namespace Mississippi.Brooks.Runtime.Storage.Azure;
@@ -29,6 +32,33 @@ public static class BrookStorageProviderRegistrations
 
         services.AddOptions<BrookStorageOptions>().ValidateOnStart();
         services.AddSingleton<IValidateOptions<BrookStorageOptions>, BrookStorageOptionsValidator>();
+        services.AddSingleton<IStreamPathEncoder, Sha256StreamPathEncoder>();
+        services.AddSingleton<IAzureBrookEventDocumentCodec, AzureBrookEventDocumentCodec>();
+        services.AddSingleton<IAzureBrookRepository>(serviceProvider =>
+        {
+            IOptions<BrookStorageOptions> options = serviceProvider.GetRequiredService<IOptions<BrookStorageOptions>>();
+            BlobServiceClient blobServiceClient = AzureBlobServiceClientResolver.Resolve(
+                serviceProvider,
+                options.Value.BlobServiceClientServiceKey);
+            return new AzureBrookRepository(
+                blobServiceClient,
+                options,
+                serviceProvider.GetRequiredService<IStreamPathEncoder>(),
+                serviceProvider.GetRequiredService<IAzureBrookEventDocumentCodec>());
+        });
+        services.AddSingleton<IDistributedLockManager>(serviceProvider =>
+        {
+            IOptions<BrookStorageOptions> options = serviceProvider.GetRequiredService<IOptions<BrookStorageOptions>>();
+            BlobServiceClient blobServiceClient = AzureBlobServiceClientResolver.Resolve(
+                serviceProvider,
+                options.Value.BlobServiceClientServiceKey);
+            return new BlobDistributedLockManager(
+                blobServiceClient,
+                options,
+                serviceProvider.GetRequiredService<IStreamPathEncoder>());
+        });
+        services.AddSingleton<IBrookRecoveryService, BrookRecoveryService>();
+        services.AddSingleton<IEventBrookWriter, EventBrookWriter>();
         services.AddSingleton<IBrookStorageProvider, BrookStorageProvider>();
         services.RegisterBrookStorageProvider<BrookStorageProvider>();
         services.AddHostedService<AzureBrookStorageInitializer>();
