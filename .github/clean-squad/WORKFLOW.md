@@ -1,11 +1,11 @@
 # Clean Squad: End-to-End SDLC Workflow
 
-The Clean Squad is a family of 33 GitHub Copilot agents that takes an idea from
+The Clean Squad is a family of 39 GitHub Copilot agents that takes an idea from
 initial request through to a merge-ready pull request. It offers two public
 intake paths: **cs Entrepreneur** for optional pre-governed idea shaping and
-**cs Product Owner** for direct governed intake. Once governed work begins,
-**cs Product Owner** is the sole orchestrator who delegates to specialist
-sub-agents. Every agent applies first-principles thinking and
+**cs River Orchestrator** for direct governed intake. Once governed work begins,
+**cs River Orchestrator** is the sole orchestrator who delegates to specialist
+sub-agents and records authoritative workflow state. Every agent applies first-principles thinking and
 chain-of-verification to every task.
 
 ## Foundational Principles (Embedded in Every Agent)
@@ -46,8 +46,8 @@ produces one Story Pack candidate and MAY instead return an explicit stop
 outcome (`CHANGES_REQUESTED`, `DEFERRED`, or `CANCELLED`) before G0. In all
 cases it **MUST NOT** create governed workflow state or advance governed work.
 
-`@cs Product Owner` is the direct governed intake path and the sole governed
-orchestrator. The Product Owner accepts either direct free-form intake or an
+`@cs River Orchestrator` is the direct governed intake path and the sole governed
+orchestrator. `cs River Orchestrator` accepts either direct free-form intake or a
 G0-approved Story Pack candidate and then runs the full governed workflow.
 
 All governed Clean Squad delegation **MUST** target only approved Clean Squad
@@ -55,7 +55,7 @@ agents named in the `Agent Roster` section of this workflow. The user never
 needs to invoke any other agent directly unless they intentionally choose the
 optional Entrepreneur intake path before governed work starts.
 
-If no approved Clean Squad agent fits a task, the Product Owner **MUST** stop,
+If no approved Clean Squad agent fits a task, `cs River Orchestrator` **MUST** stop,
 record the blocker, and ask the user to either choose the nearest approved
 Clean Squad agent, approve a roster or workflow change first, or explicitly
 leave Clean Squad orchestration for that task.
@@ -64,7 +64,7 @@ leave Clean Squad orchestration for that task.
 
 ### Intake Modes
 
-- Direct governed intake: the human starts with **cs Product Owner** when the
+- Direct governed intake: the human starts with **cs River Orchestrator** when the
   problem, intended value, and direction are already clear enough to begin
   governed discovery.
 - Optional pre-governed shaping: the human starts with **cs Entrepreneur** when
@@ -73,7 +73,7 @@ leave Clean Squad orchestration for that task.
 ### Story Pack Contract
 
 When **cs Entrepreneur** is used and the idea is ready, it produces exactly one
-Story Pack candidate for G0 human approval before Product Owner intake. The
+Story Pack candidate for G0 human approval before River Orchestrator intake. The
 Story Pack candidate **MUST** include:
 
 - `storyPackId`
@@ -118,7 +118,7 @@ Bound artifact package:
 
 Approved next step:
 
-- **cs Product Owner** may create governed workflow state and start discovery.
+- **cs River Orchestrator** may create governed workflow state and start discovery.
 
 #### G1 Scope Gate
 
@@ -177,8 +177,8 @@ Every G1-G3 human gate decision **MUST** be recorded canonically in
 - G0 is the pre-governed exception. Because it happens before governed intake
   begins, G0 **MUST NOT** require prior existence of `.thinking/<task>/` or
   `workflow-audit.json`.
-- When governed work starts from a G0-approved Story Pack candidate, the
-  Product Owner **MUST** carry the G0 approval evidence into governed state by
+- When governed work starts from a G0-approved Story Pack candidate, `cs River Orchestrator`
+  **MUST** carry the G0 approval evidence into governed state by
   capturing the approved Story Pack candidate and the human G0 approval in
   `00-intake.md` and by binding that evidence in the initial governed canonical
   event's `artifacts` or `provenance.evidence`.
@@ -208,7 +208,7 @@ Every G1-G3 human gate decision **MUST** be recorded canonically in
   - `DEFERRED` -> `cancelled`
   - `CANCELLED` -> `cancelled`
 - When a gate decision records `CHANGES_REQUESTED`, `DEFERRED`, or
-  `CANCELLED`, the Product Owner **MUST** record any resulting deviation,
+  `CANCELLED`, `cs River Orchestrator` **MUST** record any resulting deviation,
   stop, or resume semantics with the later canonical event that actually
   changes workflow execution state rather than overloading the gate-decision
   event itself.
@@ -274,6 +274,7 @@ governed work begins:
       exploratory-findings.md       # Exploratory testing
       coverage-report.md            # Coverage analysis
       mutation-report.md            # Mutation testing results
+      qa-readiness.md               # Unified QA readiness conclusion
     08-documentation/
       scope-assessment.md           # Branch diff analysis for doc needs
       page-plan.md                  # Planned pages with types and paths
@@ -305,10 +306,10 @@ retired.
 
 ### Operational Logging Protocol
 
-- Every governed Clean Squad agent MUST append an entry to `.thinking/<task>/activity-log.md` before substantive work starts.
-- Every governed Clean Squad agent MUST append another entry after each material decision, delegation, blocker, or phase transition.
-- Every governed Clean Squad agent MUST append a final entry before returning control, capturing outputs produced, status, blockers, and next action.
-- The Product Owner MUST treat this log as mandatory operational telemetry, not an optional summary.
+- `cs River Orchestrator` MUST write every entry to `.thinking/<task>/activity-log.md`.
+- Governed specialists MUST NOT append to `activity-log.md` directly.
+- Every governed specialist MUST return a structured status envelope that gives `cs River Orchestrator` enough detail to log start, progress, blocker, completion, artifacts updated, and next action.
+- `activity-log.md` remains mandatory operational telemetry, not an optional summary.
 - Activity log entries SHOULD use a consistent structure: UTC timestamp, actor, phase, action, artifacts updated, blockers, and next action.
 
 ### Workflow Audit Contract
@@ -325,14 +326,14 @@ retired.
 
 #### Active Writer and Delegation Invariants
 
-- The Product Owner writes canonical events for Phases 1 through 9.
+- `cs River Orchestrator` writes canonical events for Phases 1 through 9.
 - The PR Manager MUST NOT write canonical workflow facts and MAY execute only explicitly delegated, bounded Phase 9 specialist work.
 - The Scribe MUST NOT write canonical workflow facts.
 - Only one canonical writer may be active for the workflow run at a time.
-- Every active Phase 9 PR Manager execution slice MUST begin with explicit Product Owner delegation whose `workItemId` names the bounded task slice and whose `details` name `details.expectedOutputPath` (the expected artifact output or artifact bundle), `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`.
-- Stale-marker authority in Phase 9 MUST remain continuously delegated whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active; that bounded stale-marker delegation MUST stay active until the Product Owner canonically records that the summary is stale, republished fresh, or no longer present on the PR surface.
-- A Phase 9 delegation remains active only until the Product Owner records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that delegation and whose semantics satisfy its declared `details.completionSignal` or `details.closureCondition`.
-- Blocked Phase 9 startup, tool acquisition, or recovery MUST NOT transfer canonical ownership away from the Product Owner.
+- Every active Phase 9 PR Manager execution slice MUST begin with explicit `cs River Orchestrator` delegation whose `workItemId` names the bounded task slice and whose `details` name `details.expectedOutputPath` (the expected artifact output or artifact bundle), `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`.
+- Stale-marker authority in Phase 9 MUST remain continuously delegated whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active; that bounded stale-marker delegation MUST stay active until `cs River Orchestrator` canonically records that the summary is stale, republished fresh, or no longer present on the PR surface.
+- A Phase 9 delegation remains active only until `cs River Orchestrator` records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that delegation and whose semantics satisfy its declared `details.completionSignal` or `details.closureCondition`.
+- Blocked Phase 9 startup, tool acquisition, or recovery MUST NOT transfer canonical ownership away from `cs River Orchestrator`.
 
 - A materially new PR-surface objective in Phase 9 MUST use a new bounded delegation; Phase 9 delegation MUST NOT become umbrella authority.
 - Every canonical append MUST declare the expected prior `sequence`.
@@ -403,7 +404,7 @@ Each canonical event MUST use this property order and shape:
   "sequence": 1,
   "eventUtc": "2026-03-25T00:00:00.0000000Z",
   "logicalEventId": "phase-03-start",
-  "actor": "cs Product Owner",
+  "actor": "cs River Orchestrator",
   "phase": "architecture",
   "eventType": "phase-started",
   "appendPrecondition": {
@@ -426,7 +427,7 @@ Each canonical event MUST use this property order and shape:
   "iterationId": null,
   "provenance": {
     "sourceKind": "system-triggered",
-    "recordedBy": "cs Product Owner",
+    "recordedBy": "cs River Orchestrator",
     "evidence": []
   },
   "details": {}
@@ -603,7 +604,7 @@ Artifact transition rules:
 ```json
 {
   "sourceKind": "system-triggered",
-  "recordedBy": "cs Product Owner",
+  "recordedBy": "cs River Orchestrator",
   "evidence": []
 }
 ```
@@ -658,13 +659,13 @@ Delegation lifecycle rules:
 
 - For `delegation-recorded`, `workItemId` MUST name the bounded Phase 9 task slice.
 - `details.expectedOutputPath` MUST name the artifact output or artifact bundle the delegation authorizes.
-- `details.completionSignal` MUST name the canonical evidence or event pattern the Product Owner expects to treat the delegated slice as successfully handed back.
+- `details.completionSignal` MUST name the canonical evidence or event pattern `cs River Orchestrator` expects to treat the delegated slice as successfully handed back.
 - `details.closureCondition` MUST name the canonical condition that ends the delegation, including successful completion, block, cancellation, or supersession.
 - `details.allowedActions` MUST enumerate the exact mutation classes and Phase 9 operations authorized within that delegation, using stable values such as `stale-marker`, `reviewer-summary-publish`, `thread-reply`, `thread-resolve`, `pr-description-update`, `ci-evidence-read`, or `poll-review-comments`.
 - `details.authorizedTargets` MUST enumerate the exact resources the delegation covers, such as the PR number, summary section, freshness stamp, thread IDs, or CI identity set for the current HEAD SHA.
 - Delegation validation MUST reject returned evidence for any action or target outside `details.allowedActions` and `details.authorizedTargets`, even when the delegated artifact bundle otherwise looks complete.
 - The Phase 9 stale-marker delegation MUST be its own bounded capability slice whose `details.allowedActions` contains only `stale-marker` and whose `details.authorizedTargets` are limited to the current PR and reviewer-summary freshness marker.
-- A Phase 9 delegation remains active only until the Product Owner records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that `delegation-recorded` event and whose semantics satisfy the recorded `completionSignal` or `closureCondition`. After that closure, any further PR Manager work MUST use a new `delegation-recorded` event.
+- A Phase 9 delegation remains active only until `cs River Orchestrator` records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that `delegation-recorded` event and whose semantics satisfy the recorded `completionSignal` or `closureCondition`. After that closure, any further PR Manager work MUST use a new `delegation-recorded` event.
 
 Allowed `details.publicationState` values:
 
@@ -746,7 +747,7 @@ Normalization rules:
   "workflowContractFingerprint": "<same value used by workflow-audit.json>",
   "audit": {
     "currentSequence": 0,
-    "currentOwner": "cs Product Owner|null",
+    "currentOwner": "cs River Orchestrator|null",
     "openWait": null,
     "lastCompiledAtUtc": null
   },
@@ -757,7 +758,14 @@ Normalization rules:
 }
 ```
 
-`state.json.audit.currentOwner` means canonical ownership only. For in-progress workflow states it MUST be `cs Product Owner`. `null` is allowed only when support state is absent or uninitialized, and `currentOwner` MUST NOT represent delegated execution ownership.
+`state.json.audit.currentOwner` means canonical ownership only. For in-progress workflow states it MUST be `cs River Orchestrator`. `null` is allowed only when support state is absent or uninitialized, and `currentOwner` MUST NOT represent delegated execution ownership.
+
+### Hard Cutover for Legacy Governed Runs
+
+- This redesign is a breaking governed-workflow contract change.
+- Governed task folders whose canonical owner is not `cs River Orchestrator` are historical evidence only after rollout.
+- Pre-cutover governed runs MUST NOT be resumed or migrated in place.
+- Any attempted resume of a pre-cutover governed run MUST fail closed and instruct restart under `cs River Orchestrator`.
 
 If `audit.openWait` is not null, it MUST use this shape:
 
@@ -793,8 +801,8 @@ Additional provenance rules:
 Responsibilities:
 
 - The Scribe emits provenance for `workflow-audit.md`.
-- The Product Owner verifies `workflow-audit.md` provenance and attaches or verifies the current normalized required CI-result identity set before publishing or directing publication of the `Reviewer Audit Summary`.
-- The PR Manager MAY execute the PR-surface publication or stale-marker mutation only under explicit Product Owner delegation and MUST return the resulting evidence.
+- `cs River Orchestrator` verifies `workflow-audit.md` provenance and attaches or verifies the current normalized required CI-result identity set before publishing or directing publication of the `Reviewer Audit Summary`.
+- The PR Manager MAY execute the PR-surface publication or stale-marker mutation only under explicit `cs River Orchestrator` delegation and MUST return the resulting evidence.
 - Merge readiness MUST NOT pass when provenance is stale, missing, or mismatched.
 
 #### Trust and Freshness Contract
@@ -812,15 +820,15 @@ Reviewer-facing audit output becomes stale on any of these events:
 
 Publication and recovery rules:
 
-1. The Product Owner MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait.
-2. The Product Owner MUST record the canonical invalidation fact when invalidating the `Reviewer Audit Summary`.
-3. The Product Owner MUST ensure the `Reviewer Audit Summary` is marked stale on the PR surface with the stale reason and the last known freshness stamp when freshness is invalidated.
+1. `cs River Orchestrator` MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait.
+2. `cs River Orchestrator` MUST record the canonical invalidation fact when invalidating the `Reviewer Audit Summary`.
+3. `cs River Orchestrator` MUST ensure the `Reviewer Audit Summary` is marked stale on the PR surface with the stale reason and the last known freshness stamp when freshness is invalidated.
 4. The 300-second review-polling wait MUST NOT delay stale-marker publication.
-5. The Product Owner MUST maintain an active bounded stale-marker delegation for the current PR surface whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active so the PR Manager can apply the stale marker immediately at first observation without waiting for a new delegation round-trip.
-6. If HEAD SHA, the stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical output changes, the Product Owner MUST obtain a fresh `workflow-audit.md` compilation from cs Scribe using a new stable ledger snapshot before republishing reviewer-facing audit output.
-7. If only the required CI-result identity set changes for an unchanged HEAD SHA and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the `Reviewer Audit Summary` freshness stamp and merge-readiness evaluation without recompiling `workflow-audit.md`.
-8. The Product Owner MUST verify that the regenerated or reused `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and that the attached normalized required CI-result identity set is current, before republishing.
-9. The Product Owner MUST republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication. The PR Manager MAY apply the PR-surface update only under bounded delegation whose `details.allowedActions` and `details.authorizedTargets` cover that specific mutation.
+5. `cs River Orchestrator` MUST maintain an active bounded stale-marker delegation for the current PR surface whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active so the PR Manager can apply the stale marker immediately at first observation without waiting for a new delegation round-trip.
+6. If HEAD SHA, the stable ledger snapshot, `workflowContractFingerprint`, or reviewer-meaningful canonical output changes, `cs River Orchestrator` MUST obtain a fresh `workflow-audit.md` compilation from cs Scribe using a new stable ledger snapshot before republishing reviewer-facing audit output.
+7. If only the required CI-result identity set changes for an unchanged HEAD SHA and unchanged reviewer-meaningful canonical facts, `cs River Orchestrator` MUST refresh the `Reviewer Audit Summary` freshness stamp and merge-readiness evaluation without recompiling `workflow-audit.md`.
+8. `cs River Orchestrator` MUST verify that the regenerated or reused `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`, and that the attached normalized required CI-result identity set is current, before republishing.
+9. `cs River Orchestrator` MUST republish only when reviewer-meaningful content changes or merge-readiness validation requires a fresh publication. The PR Manager MAY apply the PR-surface update only under bounded delegation whose `details.allowedActions` and `details.authorizedTargets` cover that specific mutation.
 10. Invalidation MUST be more granular than publication so the PR description does not churn on low-signal changes.
 
 #### Verdict Model
@@ -880,7 +888,7 @@ Overflow policy:
 - The PR surface MUST keep only current blockers, the condensed Mermaid topology, and at most three plain-language deviations.
 - If the summary would exceed one screen, overflow detail MUST move to `workflow-audit.md` and the PR surface MUST keep only a short pointer to that detail.
 
-When freshness is broken, the PR surface MUST show a stale marker in place of a merge-ready reviewer summary until the Product Owner directs a fresh republication.
+When freshness is broken, the PR surface MUST show a stale marker in place of a merge-ready reviewer summary until `cs River Orchestrator` directs a fresh republication.
 
 #### Detailed Audit Opening Contract
 
@@ -909,16 +917,17 @@ Implementation and review MUST explicitly cover at least these cases with the ex
 | missing required evidence for a major completion claim | `Blocked` when the run is incomplete; otherwise `Untrusted` when a completion claim lacks trustworthy evidence | Invalidate or withhold publication until the missing evidence is supplied and a fresh summary is generated. |
 | malformed canonical or derived provenance metadata | `Untrusted` | Invalidate immediately and require provenance repair before republishing. |
 
-## Product Owner Execution Boundary
+## River Orchestrator Execution Boundary
 
-The Product Owner is an orchestrator, not an implementation agent.
+`cs River Orchestrator` is an orchestrator and workflow recorder, not a specialist implementation agent.
 
-- The Product Owner MUST ask the user questions, sequence the workflow, update shared state, synthesize sub-agent outputs, and enforce quality gates.
-- The Product Owner MUST use `runSubagent` for specialist work including analysis, design, coding, testing, code review, QA validation, documentation, and PR management.
-- Before every `runSubagent` call, the Product Owner MUST validate that the selected agent is explicitly named in the `Agent Roster` section of this workflow.
+- `cs River Orchestrator` MUST ask the user questions, sequence the workflow, update shared state, append canonical workflow facts, write `activity-log.md`, and enforce quality gates.
+- `cs River Orchestrator` MUST use `runSubagent` for specialist work including analysis, synthesis, design, coding, testing, code review, QA validation, documentation, and PR management.
+- Before every `runSubagent` call, `cs River Orchestrator` MUST validate that the selected agent is explicitly named in the `Agent Roster` section of this workflow.
 - Generic categories such as review personas and domain experts MUST resolve only to named agents in the `Agent Roster` section of this workflow.
-- If no approved Clean Squad agent clearly fits, the Product Owner MUST stop, record the blocker, and ask the user to either choose the nearest approved Clean Squad agent, approve a roster or workflow change first, or explicitly leave Clean Squad orchestration for that task.
-- The Product Owner MUST NOT bypass a specialist sub-agent by performing that specialist work directly.
+- If no approved Clean Squad agent clearly fits, `cs River Orchestrator` MUST stop, record the blocker, and ask the user to either choose the nearest approved Clean Squad agent, approve a roster or workflow change first, or explicitly leave Clean Squad orchestration for that task.
+- `cs River Orchestrator` MUST NOT bypass a specialist sub-agent by performing that specialist work directly.
+- `cs River Orchestrator` is the only governed agent that may communicate directly with the human user.
 
 ### State File (`state.json`)
 
@@ -926,22 +935,22 @@ The Product Owner is an orchestrator, not an implementation agent.
 
 ## Phase 1: Intake & Discovery
 
-**Owner**: cs Product Owner (drives conversation with human user)
-**Sub-agents**: cs Requirements Analyst
+**Owner**: cs River Orchestrator (drives conversation with human user)
+**Sub-agents**: cs Requirements Analyst, cs Discovery Synthesizer
 
 ### Process
 
-1. The human reaches the Product Owner either through direct free-form intake
+1. The human reaches `cs River Orchestrator` either through direct free-form intake
   or with a G0-approved Story Pack candidate from **cs Entrepreneur**.
-2. Product Owner creates `.thinking/<date>-<slug>/` and writes `00-intake.md`.
-3. Product Owner asks the first group of **5 questions** (using built-in
+2. `cs River Orchestrator` creates `.thinking/<date>-<slug>/` and writes `00-intake.md`.
+3. `cs River Orchestrator` asks the first group of **5 questions** (using built-in
    persona knowledge — business, technical, QA perspectives).
-4. After the user answers, Product Owner records answers and invokes
+4. After the user answers, `cs River Orchestrator` records answers and invokes
    **cs Requirements Analyst** to analyze gaps and suggest the next 5 questions.
-5. Product Owner asks the next 5 questions to the user.
-6. Repeat until requirements are sufficiently clear (Product Owner decides,
+5. `cs River Orchestrator` asks the next 5 questions to the user.
+6. Repeat until requirements are sufficiently clear (`cs River Orchestrator` decides,
    typically 3-6 rounds = 15-30 questions).
-7. Product Owner writes `requirements-synthesis.md`.
+7. `cs River Orchestrator` invokes **cs Discovery Synthesizer** to write `requirements-synthesis.md` from the gathered discovery evidence.
 
 ### Adaptive Questioning Rules
 
@@ -958,18 +967,18 @@ The Product Owner is an orchestrator, not an implementation agent.
 
 ## Phase 2: Three Amigos + Adoption
 
-**Owner**: cs Product Owner
-**Sub-agents**: cs Business Analyst, cs Tech Lead, cs QA Analyst, cs Developer Evangelist
+**Owner**: cs River Orchestrator
+**Sub-agents**: cs Business Analyst, cs Tech Lead, cs QA Analyst, cs Developer Evangelist, cs Three Amigos Synthesizer
 
 ### Process
 
-1. Product Owner invokes each perspective sub-agent with the requirements
+1. `cs River Orchestrator` invokes each perspective sub-agent with the requirements
    synthesis, one at a time.
 2. Each sub-agent reads requirements and produces their perspective document.
-3. Product Owner writes `02-three-amigos/synthesis.md` combining all four.
-4. If any sub-agent identifies critical gaps, Product Owner asks the user
+3. `cs River Orchestrator` invokes **cs Three Amigos Synthesizer** to write `02-three-amigos/synthesis.md` combining all four.
+4. If any sub-agent identifies critical gaps, `cs River Orchestrator` asks the user
    additional questions before proceeding.
-5. Before Phase 3 begins, the Product Owner **MUST** obtain G1 approval for
+5. Before Phase 3 begins, `cs River Orchestrator` **MUST** obtain G1 approval for
   `01-discovery/requirements-synthesis.md` and
   `02-three-amigos/synthesis.md`.
 
@@ -984,50 +993,50 @@ The Product Owner is an orchestrator, not an implementation agent.
 
 ## Phase 3: Architecture & Design
 
-**Owner**: cs Product Owner
+**Owner**: cs River Orchestrator
 **Sub-agents**: cs Solution Architect, cs C4 Diagrammer, cs ADR Keeper
 
 ### Process
 
-1. Product Owner invokes **cs Solution Architect** with synthesized requirements.
+1. `cs River Orchestrator` invokes **cs Solution Architect** with synthesized requirements.
 2. Solution Architect produces `solution-design.md` with technology choices,
    component design, and integration points.
-3. Product Owner invokes **cs C4 Diagrammer** to produce C4 model diagrams
+3. `cs River Orchestrator` invokes **cs C4 Diagrammer** to produce C4 model diagrams
   (Context and Container always; Component when a container has meaningful internal structure, otherwise an explicit omission rationale).
-4. For each significant architectural decision, Product Owner invokes
+4. For each significant architectural decision, `cs River Orchestrator` invokes
   **cs ADR Keeper** to produce ADRs in `docs/Docusaurus/docs/adr/`.
-5. Product Owner may invoke approved domain experts from the `Agent Roster`
+5. `cs River Orchestrator` may invoke approved domain experts from the `Agent Roster`
    section (for example cs Expert Distributed, cs Expert Cloud, and
    cs Expert Serialization) for specialist input on architecture.
 
 ### ADR Protocol
 
 - Every significant decision **MUST** be recorded as an ADR.
-- ADRs **MUST** use the MADR 4.0.0 template defined in `.github/instructions/adr.instructions.md`.
-- ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the filename pattern `NNNN-title-with-dashes.md`.
-- When a feature branch adds ADRs, the branch owner **MUST** treat those numbers as provisional and perform a final renumbering pass against the latest `main` during merge preparation, updating filenames, `ADR-NNNN` titles, `sidebar_position`, and relative ADR links for ADRs introduced by that branch.
+- ADRs **MUST** use the canonical frontmatter and MADR-based structure defined in `.github/instructions/adr.instructions.md`.
+- ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the timestamped filename and frontmatter identity rules defined in `.github/instructions/adr.instructions.md`.
+- Branches **MUST NOT** rely on provisional sequential ADR numbering; ADR identity lives in timestamped filenames plus frontmatter metadata.
 - ADRs are immutable — superseded decisions get a new ADR referencing the old.
 - ADRs **MUST** be consulted on subsequent changes to verify directional
   alignment.
 
 ## Phase 4: Planning & Review Cycles
 
-**Owner**: cs Product Owner
+**Owner**: cs River Orchestrator
 **Sub-agents**: cs Plan Synthesizer, approved review personas from the Agent Roster
 
 ### Process
 
-1. Product Owner combines architecture, requirements, and Three Amigos output
+1. `cs River Orchestrator` combines architecture, requirements, and Three Amigos output
    into `draft-plan-v1.md`.
-2. Product Owner runs **review cycle 1** by invoking each approved review
+2. `cs River Orchestrator` runs **review cycle 1** by invoking each approved review
   persona from the `Agent Roster` section as a sub-agent.
 3. Each reviewer reads the plan and produces feedback.
-4. Product Owner invokes **cs Plan Synthesizer** to deduplicate and categorize
+4. `cs River Orchestrator` invokes **cs Plan Synthesizer** to deduplicate and categorize
   feedback (Must / Should / Could / Won't).
-5. Product Owner revises the plan.
+5. `cs River Orchestrator` revises the plan.
 6. Repeat for **3-5 review cycles** total.
-7. After final cycle, Product Owner writes `final-plan.md`.
-8. Before Phase 5 begins, the Product Owner **MUST** obtain G2 approval for
+7. After final cycle, `cs River Orchestrator` writes `final-plan.md`.
+8. Before Phase 5 begins, `cs River Orchestrator` **MUST** obtain G2 approval for
   `03-architecture/solution-design.md`, the binding C4 artifacts, the binding
   ADR artifacts, and `04-planning/final-plan.md`.
 
@@ -1049,26 +1058,26 @@ Each review cycle invokes these personas (subset varies by task complexity):
 
 ## Phase 5: Implementation
 
-**Owner**: cs Product Owner
+**Owner**: cs River Orchestrator
 **Sub-agents**: cs Lead Developer, cs Test Engineer, cs Commit Guardian
 
 ### Process
 
-1. Product Owner creates a feature branch from `main`.
+1. `cs River Orchestrator` creates a feature branch from `main`.
 2. For each increment:
-   a. Product Owner invokes **cs Lead Developer** with the next slice of work
+  a. `cs River Orchestrator` invokes **cs Lead Developer** with the next slice of work
       from the plan.
    b. Lead Developer writes production code (small, focused increment).
   c. Lead Developer performs semantic consistency review for touched code
     elements (types or members),
     updates stale comments or XML documentation when needed, and records the
     reviewed-member evidence in `changes.md`.
-  d. Product Owner invokes **cs Test Engineer** to write/validate tests and
+  d. `cs River Orchestrator` invokes **cs Test Engineer** to write/validate tests and
     independently verify semantic consistency for touched code elements
     against the changed behavior, recording the result in `test-results.md`.
   e. Build is run and verified clean (zero warnings).
   f. Tests are run and verified passing.
-  g. Product Owner invokes **cs Commit Guardian** to review the final staged
+  g. `cs River Orchestrator` invokes **cs Commit Guardian** to review the final staged
     diff, validate the semantic consistency evidence chain, and emit a
     `PASS`, `WARNING`, or `BLOCKER` verdict in `commit-review.md`.
   h. If semantic drift or missing semantic-review evidence is found, Lead
@@ -1119,13 +1128,13 @@ elements were in semantic-review scope.
 
 ## Phase 6: Comprehensive Code Review
 
-**Owner**: cs Product Owner
-**Sub-agents**: Approved review personas and approved domain experts from the Agent Roster
+**Owner**: cs River Orchestrator
+**Sub-agents**: Approved review personas, approved domain experts from the Agent Roster, cs Code Review Synthesizer
 
 ### Process
 
-1. Product Owner uses `git diff main...HEAD` to identify all changed files.
-2. Product Owner invokes review personas in sequence:
+1. `cs River Orchestrator` uses `git diff main...HEAD` to identify all changed files.
+2. `cs River Orchestrator` invokes review personas in sequence:
 
    | Priority | Agent | Style |
    |----------|-------|-------|
@@ -1136,8 +1145,8 @@ elements were in semantic-review scope.
    | 5 | cs Reviewer Performance | Allocations, complexity, hot paths |
    | 6 | cs Developer Evangelist | Demo-ability, shareability, competitive positioning (public API changes) |
 
-3. Product Owner invokes relevant approved domain experts from the `Agent Roster` section based on the change type.
-4. Product Owner synthesizes all review output.
+3. `cs River Orchestrator` invokes relevant approved domain experts from the `Agent Roster` section based on the change type.
+4. `cs River Orchestrator` invokes **cs Code Review Synthesizer** to synthesize all review output.
 5. For each finding: fix it or document why it was declined.
 6. Iterate until all reviewers are satisfied.
 
@@ -1152,22 +1161,23 @@ reviewers. Domain experts review files within their expertise.
 
 ## Phase 7: QA Validation
 
-**Owner**: cs Product Owner
-**Sub-agents**: cs QA Lead, cs QA Exploratory, cs Test Engineer
+**Owner**: cs River Orchestrator
+**Sub-agents**: cs QA Lead, cs QA Exploratory, cs Test Engineer, cs QA Synthesizer
 
 ### Process
 
-1. Product Owner invokes **cs QA Lead** to review test strategy and coverage.
-2. Product Owner invokes **cs QA Exploratory** to apply exploratory testing
+1. `cs River Orchestrator` invokes **cs QA Lead** to review test strategy and coverage.
+2. `cs River Orchestrator` invokes **cs QA Exploratory** to apply exploratory testing
    perspective.
-3. Product Owner invokes **cs Test Engineer** for mutation testing (Mississippi
+3. `cs River Orchestrator` invokes **cs Test Engineer** for mutation testing (Mississippi
    projects only).
-4. Any gaps identified are fed back to implementation.
+4. `cs River Orchestrator` invokes **cs QA Synthesizer** to produce `07-qa/qa-readiness.md`.
+5. Any gaps identified are fed back to implementation.
 
 ## Phase 8: Documentation
 
-**Owner**: cs Product Owner
-**Sub-agents**: cs Technical Writer, cs Doc Reviewer, cs Developer Evangelist
+**Owner**: cs River Orchestrator
+**Sub-agents**: cs Documentation Scope Synthesizer, cs Technical Writer, cs Doc Reviewer, cs Developer Evangelist
 
 ### Purpose
 
@@ -1177,7 +1187,7 @@ deliverable, not an afterthought.
 
 ### Process
 
-1. Product Owner assesses documentation scope:
+1. `cs River Orchestrator` invokes **cs Documentation Scope Synthesizer** to assess documentation scope:
    - Run `git diff --name-status --find-renames main...HEAD` to identify all
      changed source files.
    - Identify new public APIs, changed behavior, new concepts, and affected
@@ -1186,13 +1196,13 @@ deliverable, not an afterthought.
      record the skip reason in `.thinking/<task>/08-documentation/scope-assessment.md`
      and proceed to Phase 9.
 
-2. Product Owner invokes **cs Technical Writer** to create/update documentation:
+2. `cs River Orchestrator` invokes **cs Technical Writer** to create/update documentation:
    - The writer reads all `.thinking/<task>/` artifacts and the branch diff.
    - The writer builds an evidence map, classifies page types, and drafts pages.
    - Draft pages are written to `.thinking/<task>/08-documentation/drafts/`.
    - Verified pages are published to `docs/Docusaurus/docs/`.
 
-3. Product Owner runs a **documentation review cycle** (repeat 1-3 times):
+3. `cs River Orchestrator` runs a **documentation review cycle** (repeat 1-3 times):
    a. Invoke **cs Doc Reviewer** to independently review every new or updated
       doc page against source code and tests.
    b. Doc Reviewer writes findings to
@@ -1206,7 +1216,7 @@ deliverable, not an afterthought.
       - Record the fix in the remediation log.
    f. Repeat until the Doc Reviewer returns no Must Fix findings.
 
-4. Product Owner validates documentation quality gates:
+4. `cs River Orchestrator` validates documentation quality gates:
    - [ ] All new public APIs have documentation
    - [ ] All changed behaviors reflected in existing docs
    - [ ] Page types are correct
@@ -1232,29 +1242,30 @@ The skip reason **MUST** be recorded in `scope-assessment.md` with evidence.
 
 ## Phase 9: PR Creation & Merge Readiness
 
-**Owner**: cs Product Owner
+**Owner**: cs River Orchestrator
 **Entry condition**: Phase 8 is complete and any required Phase 9 delegation basis is recorded
-**Sub-agents**: cs PR Manager, cs Scribe
+**Sub-agents**: cs PR Manager, cs Scribe, cs Merge Readiness Evaluator
 
 ### Process
 
-1. The Product Owner remains the canonical Phase 9 owner and MUST record every reviewer-significant Phase 9 fact in `workflow-audit.json`.
-2. The Product Owner delegates only bounded Phase 9 PR-surface specialist work to **cs PR Manager** and MUST NOT give open-ended Phase 9 umbrella authority; every such delegation MUST be capability-scoped through explicit `details.allowedActions` and `details.authorizedTargets`.
-3. At Phase 9 startup or recovery, if PR-surface work cannot begin normally, the Product Owner records the blocked or resumed state canonically without transferring ownership.
-4. The Product Owner invokes **cs Scribe** to compile `workflow-audit.md` and the condensed reviewer-flow inputs from a stable `workflow-audit.json` snapshot when Phase 9 audit compilation or recompilation is required.
+1. `cs River Orchestrator` remains the canonical Phase 9 owner and MUST record every reviewer-significant Phase 9 fact in `workflow-audit.json`.
+2. `cs River Orchestrator` delegates only bounded Phase 9 PR-surface specialist work to **cs PR Manager** and MUST NOT give open-ended Phase 9 umbrella authority; every such delegation MUST be capability-scoped through explicit `details.allowedActions` and `details.authorizedTargets`.
+3. At Phase 9 startup or recovery, if PR-surface work cannot begin normally, `cs River Orchestrator` records the blocked or resumed state canonically without transferring ownership.
+4. `cs River Orchestrator` invokes **cs Scribe** to compile `workflow-audit.md` and the condensed reviewer-flow inputs from a stable `workflow-audit.json` snapshot when Phase 9 audit compilation or recompilation is required.
 5. The PR Manager creates or updates the PR, collects CI and review evidence, and performs delegated PR-surface mutations only within the active bounded delegation.
-6. If freshness is already broken or later becomes broken, the Product Owner MUST immediately record the invalidation canonically and ensure the PR-surface reviewer summary is marked stale with the stale reason and the last known freshness stamp at first observation, even during the 300-second polling wait, then follow the freshness recovery rules before republishing.
-7. The Product Owner MUST keep the bounded stale-marker delegation active for the current PR while a fresh reviewer summary is published or a review-polling wait is active so stale-marker publication has no integrity window.
+6. If freshness is already broken or later becomes broken, `cs River Orchestrator` MUST immediately record the invalidation canonically and ensure the PR-surface reviewer summary is marked stale with the stale reason and the last known freshness stamp at first observation, even during the 300-second polling wait, then follow the freshness recovery rules before republishing.
+7. `cs River Orchestrator` MUST keep the bounded stale-marker delegation active for the current PR while a fresh reviewer summary is published or a review-polling wait is active so stale-marker publication has no integrity window.
 8. The PR Manager monitors CI pipelines and handles review threads using the repository PR polling protocol only while the corresponding `delegation-recorded` event remains active for that `workItemId`, and only for actions and targets authorized in that delegation.
 9. Review thread handling:
    - For each human review comment: read it, decide scope-appropriateness, fix it or push back with reasoning, reply to the thread, and either resolve it or leave it open with rationale.
 10. `workflow-audit.md` and the `Reviewer Audit Summary` are derived artifacts only. Missing canonical facts MUST be fixed in `workflow-audit.json`; they MUST NOT be backfilled from `activity-log.md`, thread logs, or PR prose.
-11. Before PR-ready or merge-ready progression continues, the Product Owner
+11. `cs River Orchestrator` invokes **cs Merge Readiness Evaluator** to produce `09-pr-merge/merge-readiness.md` from the current PR, QA, documentation, and review evidence.
+12. Before PR-ready or merge-ready progression continues, `cs River Orchestrator`
   **MUST** obtain G3 approval for `09-pr-merge/merge-readiness.md`, the
   current code-review conclusion, the current QA conclusion, and the current
   documentation conclusion.
-12. Merge readiness is confirmed only when the Product Owner evaluates current delegated evidence and records the conclusion canonically.
-13. Merge readiness is confirmed when:
+13. Merge readiness is confirmed only when `cs River Orchestrator` evaluates current delegated evidence and records the conclusion canonically.
+14. Merge readiness is confirmed when:
 
 - [ ] PR exists
 - [ ] All CI pipelines are green
@@ -1275,12 +1286,12 @@ Protocol:
 2. Poll for unresolved review comments.
 3. If new comments exist: address them one-at-a-time, push the fixes, then
    restart the 300-second wait.
-4. If a poll returns zero new unaddressed comments: end the polling loop and return the current evidence set to the Product Owner for merge-readiness evaluation.
+4. If a poll returns zero new unaddressed comments: end the polling loop and return the current evidence set to `cs River Orchestrator` for merge-readiness evaluation.
 5. If the iteration cap is reached: stop and report the remaining unresolved
   threads for human review.
 
-A freshness-breaking observation interrupts the current 300-second wait. The Product
-Owner MUST record the invalidation canonically and ensure the stale marker is published immediately, then resume or restart the
+A freshness-breaking observation interrupts the current 300-second wait. `cs River Orchestrator`
+MUST record the invalidation canonically and ensure the stale marker is published immediately, then resume or restart the
 polling loop only after the required freshness recovery work is complete.
 
 Poll waits and CI waits are `system-wait` time and MUST NOT count as active
@@ -1318,12 +1329,35 @@ Handovers are logged in `.thinking/<task>/handover-log.md`:
 - **Output**: <expected result and location>
 ```
 
-## Agent Roster (33 Agents)
+## Representative Walkthrough Metrics
+
+These are contract-level before/after comparisons for the redesign, not runtime performance benchmarks.
+
+| Flow | Before | After | Simplification signal |
+|------|--------|-------|-----------------------|
+| Direct governed intake | The previous governed orchestrator owned governed intake, wrote canonical facts, and also directly authored discovery synthesis while every governed specialist could append `activity-log.md`. | `cs River Orchestrator` owns governed intake, writes canonical facts, delegates discovery synthesis to `cs Discovery Synthesizer`, and is the sole direct `activity-log.md` writer. | One governed human-facing orchestrator remains, direct artifact ownership is explicit, and operational log ownership drops from many governed writers to one. |
+| `cs Entrepreneur` → governed handoff | An approved Story Pack moved from `cs Entrepreneur` to the previous governed orchestrator, after which canonical ownership and supporting-log behavior diverged immediately because governed specialists could all append `activity-log.md`. | An approved Story Pack moves from `cs Entrepreneur` to `cs River Orchestrator`, which owns `workflow-audit.json`, `state.json`, and `activity-log.md` from the first governed append onward. | The public handoff still uses one pre-governed step, but governed writer identity is singular from the first canonical event onward. |
+| Phase 9 stale-summary recovery | The previous governed orchestrator coordinated invalidation, delegated PR-surface mutation, requested Scribe recompilation when needed, and evaluated merge readiness directly. | `cs River Orchestrator` coordinates invalidation, keeps stale-marker delegation alive, invokes `cs Scribe` for recompilation, invokes `cs PR Manager` for bounded PR-surface mutation, and invokes `cs Merge Readiness Evaluator` for the readiness artifact. | One canonical owner remains, while PR mutation, derived-audit compilation, and readiness evaluation are split into bounded leaves with one owned output each. |
+
+## Scenario Coverage Matrix
+
+The redesign is intended to stay easy to reason about during fresh starts, resumptions, and late-stage recovery.
+
+| Scenario | Governing section(s) |
+|----------|----------------------|
+| Fresh governed intake through `cs River Orchestrator` | `Mandatory First Action`, `Phase 1: Intake & Discovery` |
+| `cs Entrepreneur` handoff after G0 approval | `Public Entry Paths`, `Human Advancement Gates`, `Phase 1: Intake & Discovery` |
+| Blocked/resume flow under River-owned canonical state | `Workflow Audit Contract`, `State File (state.json)`, `Phase 9: PR Creation & Merge Readiness` |
+| Legacy-run reset / hard cutover for pre-cutover governed runs | `Hard Cutover for Legacy Governed Runs` |
+| Reviewer-summary stale invalidation and republication | `Trust and Freshness Contract`, `Phase 9: PR Creation & Merge Readiness`, `Review Polling Rule in Phase 9` |
+| Merge-readiness evaluation from current late-stage evidence | `Phase 9: PR Creation & Merge Readiness`, `Agent Roster` (`cs Merge Readiness Evaluator`) |
+
+## Agent Roster (39 Agents)
 
 This section is the single authoritative roster of approved Clean Squad
 delegation targets. Any delegation term in this workflow, the shared Clean
-Squad instruction, or the Product Owner prompt must resolve only to the named
-agents in this roster. If no listed agent fits, the Product Owner must stop,
+Squad instruction, or the River Orchestrator prompt must resolve only to the named
+agents in this roster. If no listed agent fits, `cs River Orchestrator` must stop,
 record the blocker, and ask the user to either choose the nearest approved
 Clean Squad agent, approve a roster or workflow change first, or explicitly
 leave Clean Squad orchestration for that task.
@@ -1333,13 +1367,14 @@ leave Clean Squad orchestration for that task.
 | Agent | Role |
 |-------|------|
 | cs Entrepreneur | Optional public-facing pre-governed idea shaper; produces one Story Pack candidate and never opens governed workflow state |
-| cs Product Owner | Direct governed intake path; sole governed orchestrator for the full SDLC |
+| cs River Orchestrator | Direct governed intake path; sole governed orchestrator and direct workflow writer for the full SDLC |
 
-### Discovery & Requirements (3)
+### Discovery & Requirements (4)
 
 | Agent | Role |
 |-------|------|
 | cs Requirements Analyst | Deep requirements analysis, gap identification |
+| cs Discovery Synthesizer | Discovery evidence synthesizer; produces requirements synthesis from gathered intake evidence |
 | cs Business Analyst | Business value, user needs, acceptance criteria |
 | cs QA Analyst | Testability, edge cases, quality scenarios |
 
@@ -1357,6 +1392,15 @@ leave Clean Squad orchestration for that task.
 | Agent | Role |
 |-------|------|
 | cs Plan Synthesizer | Synthesizes multi-persona review feedback |
+
+### Workflow Synthesis (4)
+
+| Agent | Role |
+|-------|------|
+| cs Three Amigos Synthesizer | Synthesizes business, technical, QA, and adoption perspectives into one bounded artifact |
+| cs Code Review Synthesizer | Deduplicates and synthesizes code review findings into remediation-ready guidance |
+| cs QA Synthesizer | Produces QA readiness conclusions from QA evidence and findings |
+| cs Documentation Scope Synthesizer | Produces documentation scope and impact assessment from diff and task evidence |
 
 ### Implementation (3)
 
@@ -1414,12 +1458,13 @@ leave Clean Squad orchestration for that task.
 | cs Technical Writer | Docusaurus docs authoring, evidence-backed pages |
 | cs Doc Reviewer | Documentation accuracy, completeness, and navigation review |
 
-### PR & Records (2)
+### PR & Records (3)
 
 | Agent | Role |
 |-------|------|
 | cs Scribe | Records thinking, decisions, reasoning, handovers |
 | cs PR Manager | PR lifecycle, thread management, merge readiness |
+| cs Merge Readiness Evaluator | Produces merge-readiness recommendation artifacts from current review, QA, docs, and PR evidence |
 
 ## Quality Bar
 
