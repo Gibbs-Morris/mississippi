@@ -502,14 +502,15 @@ Append-precondition rules:
 
 Canonical append order:
 
-1. Read `state.json.audit.currentSequence` as the current trusted watermark.
-2. Compute the next `sequence` as watermark + 1.
-3. Serialize the new canonical event to a temporary file inside `workflow-audit/`.
-4. Flush and close the temporary file.
-5. Atomically rename the temporary file to the final seven-digit sequence filename.
-6. Only after the final event file exists, update `state.json.audit.currentSequence`.
+1. Derive the authoritative ledger-tail `sequence` by scanning `workflow-audit/` for the highest contiguous seven-digit event file, starting from `0000001.json`, and use `0` when only `meta.json` exists.
+2. If `state.json.audit.currentSequence` is present, verify that it equals the authoritative ledger-tail `sequence`; otherwise fail closed and require manual repair before any append.
+3. Compute the next `sequence` as authoritative ledger tail + 1.
+4. Serialize the new canonical event to a temporary file inside `workflow-audit/`.
+5. Flush and close the temporary file.
+6. Atomically rename the temporary file to the final seven-digit sequence filename.
+7. Only after the final event file exists, update `state.json.audit.currentSequence` to mirror the new authoritative ledger tail.
 
-If any step fails, fail closed and do not advance the watermark.
+If any step fails, fail closed and do not advance `state.json.audit.currentSequence`.
 
 Stable snapshot and digest rules:
 
