@@ -26,26 +26,14 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 {
     private bool servicesConfigured;
 
-    private sealed record EmptyWorkbenchSnapshot(
-        int EmptyStateCount,
-        string QueueEmptyMessage,
-        string DetailEmptyMessage,
-        int VisibleQueueItems,
-        bool IsReviewDisabled,
-        bool IsApplyActionDisabled
-    );
-
-    private sealed record FeedbackStripSnapshot(
-        string Message,
-        string State
-    );
-
-    private static void AssertReplacementLeafControls<TComponent>(
+    private static void AssertReplacementActionBarsAndLeafControls<TComponent>(
         IRenderedComponent<TComponent> cut,
         bool isReviewDialogOpen
     )
         where TComponent : IComponent
     {
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-workbench__detail-actions"));
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='review-open']"));
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
         Assert.NotNull(cut.Find(".rf-status-badge[data-testid='selected-stage']"));
@@ -53,15 +41,45 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
         if (!isReviewDialogOpen)
         {
+            Assert.Empty(cut.FindAll(".rf-action-bar.ls-review-dialog__actions"));
             return;
         }
 
         Assert.NotNull(cut.Find("[data-testid='review-dialog']"));
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-review-dialog__actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-review-dialog__actions"));
         Assert.Collection(
-            cut.FindAll(".ls-review-dialog__actions .rf-command-button"),
+            cut.FindAll(".rf-action-bar.ls-review-dialog__actions .rf-command-button"),
             button => Assert.Equal("Cancel", button.TextContent.Trim()),
             button => Assert.Equal("Save review", button.TextContent.Trim()));
-        Assert.NotNull(cut.Find(".ls-review-dialog__actions .rf-command-button[data-testid='review-save']"));
+        Assert.NotNull(
+            cut.Find(".rf-action-bar.ls-review-dialog__actions .rf-command-button[data-testid='review-save']"));
+    }
+
+    private static EmptyWorkbenchSnapshot CaptureEmptyWorkbenchSnapshot<TComponent>(
+        IRenderedComponent<TComponent> cut
+    )
+        where TComponent : IComponent
+    {
+        cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='queue-empty-state']");
+        cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='detail-empty-state']");
+        return new(
+            cut.FindAll(".rf-empty-state").Count,
+            cut.Find("[data-testid='queue-empty-state']").TextContent.Trim(),
+            cut.Find("[data-testid='detail-empty-state']").TextContent.Trim(),
+            cut.FindAll("[data-testid^='queue-select-']").Count,
+            cut.Find("[data-testid='review-open']").HasAttribute("disabled"),
+            cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
+    }
+
+    private static FeedbackStripSnapshot CaptureFeedbackStripSnapshot<TComponent>(
+        IRenderedComponent<TComponent> cut
+    )
+        where TComponent : IComponent
+    {
+        IElement feedbackBanner = cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']");
+
+        return new(feedbackBanner.TextContent.Trim(), feedbackBanner.GetAttribute("data-state") ?? string.Empty);
     }
 
     private static WorkbenchSnapshot CaptureSnapshot<TComponent>(
@@ -86,31 +104,6 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         return validationSummary.TextContent.Trim();
     }
 
-    private static EmptyWorkbenchSnapshot CaptureEmptyWorkbenchSnapshot<TComponent>(
-        IRenderedComponent<TComponent> cut
-    )
-        where TComponent : IComponent
-    {
-        cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='queue-empty-state']");
-        cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='detail-empty-state']");
-
-        return new(
-            cut.FindAll(".rf-empty-state").Count,
-            cut.Find("[data-testid='queue-empty-state']").TextContent.Trim(),
-            cut.Find("[data-testid='detail-empty-state']").TextContent.Trim(),
-            cut.FindAll("[data-testid^='queue-select-']").Count,
-            cut.Find("[data-testid='review-open']").HasAttribute("disabled"),
-            cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
-    }
-
-    private static FeedbackStripSnapshot CaptureFeedbackStripSnapshot<TComponent>(
-        IRenderedComponent<TComponent> cut
-    )
-        where TComponent : IComponent =>
-        new(
-            cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']").TextContent.Trim(),
-            cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']").GetAttribute("data-state") ?? string.Empty);
-
     private static void DriveParityBrandAndFilterFlow<TComponent>(
         IRenderedComponent<TComponent> cut
     )
@@ -118,6 +111,15 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
     {
         cut.Find("[data-testid='brand-signal']").Click();
         cut.Find("#ls-queue-search").Input("Litware");
+    }
+
+    private static void DriveParityEmptyStateFlow<TComponent>(
+        IRenderedComponent<TComponent> cut
+    )
+        where TComponent : IComponent
+    {
+        cut.Find("#ls-queue-search").Input("Northwind");
+        cut.Find("[data-testid='stage-filter']").Change("Ready");
     }
 
     private static void DriveParitySaveFlow<TComponent>(
@@ -147,15 +149,6 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         cut.Find("[data-testid='review-save']").Click();
     }
 
-    private static void DriveParityEmptyStateFlow<TComponent>(
-        IRenderedComponent<TComponent> cut
-    )
-        where TComponent : IComponent
-    {
-        cut.Find("#ls-queue-search").Input("Northwind");
-        cut.Find("[data-testid='stage-filter']").Change("Ready");
-    }
-
     private void ConfigureServices()
     {
         if (servicesConfigured)
@@ -182,6 +175,17 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         ConfigureServices();
         return Render<LightSpeedReservoirWorkbenchPage>();
     }
+
+    private sealed record EmptyWorkbenchSnapshot(
+        int EmptyStateCount,
+        string QueueEmptyMessage,
+        string DetailEmptyMessage,
+        int VisibleQueueItems,
+        bool IsReviewDisabled,
+        bool IsApplyActionDisabled
+    );
+
+    private sealed record FeedbackStripSnapshot(string Message, string State);
 
     private sealed record WorkbenchSnapshot(
         string Brand,
@@ -269,7 +273,7 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
     }
 
     /// <summary>
-    ///     The Reservoir parity route matches the base route for the increment-5 review-dialog leaf controls.
+    ///     The Reservoir parity route matches the base route for the increment-8 review-dialog action bars and leaf controls.
     /// </summary>
     [Fact]
     public void ReservoirWorkbenchRouteMatchesBaseRouteForReviewDialogLeafControls()
@@ -284,8 +288,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 
         // Assert
         Assert.Equal(CaptureSnapshot(baseRoute), CaptureSnapshot(reservoirRoute));
-        AssertReplacementLeafControls(baseRoute, true);
-        AssertReplacementLeafControls(reservoirRoute, true);
+        AssertReplacementActionBarsAndLeafControls(baseRoute, true);
+        AssertReplacementActionBarsAndLeafControls(reservoirRoute, true);
     }
 
     /// <summary>
@@ -350,8 +354,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         Assert.True(baseRoute.Find("[data-testid='apply-action']").HasAttribute("disabled"));
         Assert.False(reservoirRoute.Find("[data-testid='review-open']").HasAttribute("disabled"));
         Assert.True(reservoirRoute.Find("[data-testid='apply-action']").HasAttribute("disabled"));
-        AssertReplacementLeafControls(baseRoute, false);
-        AssertReplacementLeafControls(reservoirRoute, false);
+        AssertReplacementActionBarsAndLeafControls(baseRoute, false);
+        AssertReplacementActionBarsAndLeafControls(reservoirRoute, false);
     }
 
     /// <summary>

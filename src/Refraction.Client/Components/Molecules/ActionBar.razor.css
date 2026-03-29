@@ -1,0 +1,6 @@
+.rf-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rf-raw-space-3);
+    justify-content: flex-end;
+}

@@ -18,6 +18,11 @@ namespace Mississippi.Refraction.Client.L0Tests.Samples.LightSpeed;
 /// </summary>
 public sealed class LightSpeedHeroRouteTests : BunitContext
 {
+    private static IElement FindFeedbackBanner(
+        IRenderedComponent<LightSpeedIndexPage> cut
+    ) =>
+        cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']");
+
     private IRenderedComponent<LightSpeedIndexPage> RenderHeroRoute()
     {
         Services.AddLogging();
@@ -25,11 +30,6 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         JSInterop.Mode = JSRuntimeMode.Loose;
         return Render<LightSpeedIndexPage>();
     }
-
-    private static IElement FindFeedbackBanner(
-        IRenderedComponent<LightSpeedIndexPage> cut
-    ) =>
-        cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']");
 
     /// <summary>
     ///     LightSpeed applies the selected action and exposes the stable post-action state.
@@ -49,10 +49,7 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         Assert.Equal("Actioned", cut.Find("[data-testid='selected-stage']").TextContent.Trim());
         Assert.Equal("Response package released", cut.Find("[data-testid='selected-checkpoint']").TextContent.Trim());
         Assert.Equal("success", feedbackBanner.GetAttribute("data-state"));
-        Assert.Contains(
-            "OPS-1047 action completed",
-            feedbackBanner.TextContent,
-            StringComparison.Ordinal);
+        Assert.Contains("OPS-1047 action completed", feedbackBanner.TextContent, StringComparison.Ordinal);
         Assert.True(cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
     }
 
@@ -102,6 +99,8 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         Assert.Equal(2, cut.FindAll(".rf-surface-panel").Count);
         Assert.Equal(2, cut.FindAll(".rf-command-button").Count);
         Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-workbench__detail-actions"));
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='review-open']"));
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
         Assert.False(cut.Find("[data-testid='review-open']").HasAttribute("disabled"));
@@ -114,7 +113,9 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
     }
 
     /// <summary>
-    ///     LightSpeed renders the increment-5 replacement command buttons inside the base-only review dialog actions.
+    ///     LightSpeed renders the increment-8 replacement action bars with the replacement command buttons inside the
+    ///     base-only
+    ///     review dialog actions.
     /// </summary>
     [Fact]
     public void LightSpeedRendersReplacementLeafControlsInsideReviewDialog()
@@ -129,11 +130,16 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         Assert.NotNull(cut.Find("[data-testid='review-dialog']"));
         Assert.Equal(4, cut.FindAll(".rf-command-button").Count);
         Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-review-dialog__actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-review-dialog__actions"));
         Assert.Collection(
-            cut.FindAll(".ls-review-dialog__actions .rf-command-button"),
+            cut.FindAll(".rf-action-bar.ls-review-dialog__actions .rf-command-button"),
             button => Assert.Equal("Cancel", button.TextContent.Trim()),
             button => Assert.Equal("Save review", button.TextContent.Trim()));
-        Assert.NotNull(cut.Find(".ls-review-dialog__actions .rf-command-button[data-testid='review-save']"));
+        Assert.NotNull(
+            cut.Find(".rf-action-bar.ls-review-dialog__actions .rf-command-button[data-testid='review-save']"));
     }
 
     /// <summary>
@@ -174,10 +180,7 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         Assert.Equal("Pending review", cut.Find("[data-testid='selected-stage']").TextContent.Trim());
         Assert.Equal(expectedCheckpoint, cut.Find("[data-testid='selected-checkpoint']").TextContent.Trim());
         Assert.Equal("success", feedbackBanner.GetAttribute("data-state"));
-        Assert.Contains(
-            "OPS-1042 updated.",
-            feedbackBanner.TextContent,
-            StringComparison.Ordinal);
+        Assert.Contains("OPS-1042 updated.", feedbackBanner.TextContent, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -285,9 +288,6 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         Assert.Equal("Dispatch", cut.Find("[data-testid='selected-disposition']").TextContent.Trim());
         Assert.Equal("Ready", cut.Find("[data-testid='selected-stage']").TextContent.Trim());
         Assert.Equal("success", feedbackBanner.GetAttribute("data-state"));
-        Assert.Contains(
-            "OPS-1042 updated.",
-            feedbackBanner.TextContent,
-            StringComparison.Ordinal);
+        Assert.Contains("OPS-1042 updated.", feedbackBanner.TextContent, StringComparison.Ordinal);
     }
 }

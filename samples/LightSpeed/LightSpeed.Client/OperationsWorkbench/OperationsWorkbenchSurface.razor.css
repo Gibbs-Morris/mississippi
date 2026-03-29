@@ -298,12 +298,6 @@
     line-height: 1.65;
 }
 
-.ls-workbench__detail-actions {
-    display: flex;
-    gap: var(--rf-raw-space-3);
-    justify-content: flex-end;
-}
-
 ::deep(.ls-command-button) {
     padding: var(--rf-raw-space-3) var(--rf-raw-space-4);
     border: var(--rf-raw-stroke-hairline) solid color-mix(in srgb, var(--rf-component-command-background) 75%, transparent);
@@ -441,10 +435,7 @@
     font-size: var(--rf-raw-text-sm);
 }
 
-.ls-review-dialog__actions {
-    display: flex;
-    gap: var(--rf-raw-space-3);
-    justify-content: flex-end;
+::deep(.ls-review-dialog__actions) {
     margin-top: var(--rf-raw-space-6);
 }
 
@@ -460,8 +451,9 @@
         grid-template-columns: 1fr;
     }
 
-    .ls-workbench__detail-actions,
-    .ls-review-dialog__actions {
+    ::deep(.ls-workbench__detail-actions),
+    ::deep(.ls-review-dialog__actions) {
         flex-direction: column;
+        align-items: stretch;
     }
 }

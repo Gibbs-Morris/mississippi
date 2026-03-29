@@ -172,7 +172,8 @@
         </ChildContent>
 
         <Footer>
-            <div class="ls-workbench__detail-actions">
+            <ActionBar aria-label="Selected review actions"
+                       class="ls-workbench__detail-actions">
                 <CommandButton class="ls-command-button ls-command-button--secondary"
                                data-testid="review-open"
                                IsDisabled="@(Model.SelectedWorkItem is null)"
@@ -184,7 +185,7 @@
                                IsDisabled="@(!Model.CanActSelectedWorkItem)"
                                Label="Apply action"
                                OnClick="OnActionRequested"/>
-            </div>
+            </ActionBar>
         </Footer>
     </SurfacePanel>
 </div>
@@ -281,7 +282,8 @@
                 </div>
             </div>
 
-            <footer class="ls-review-dialog__actions">
+            <ActionBar aria-label="Review dialog actions"
+                       class="ls-review-dialog__actions">
                 <CommandButton class="ls-command-button ls-command-button--secondary"
                                Label="Cancel"
                                OnClick="OnReviewCanceled"/>
@@ -289,7 +291,7 @@
                                data-testid="review-save"
                                Label="Save review"
                                OnClick="OnReviewSaved"/>
-            </footer>
+            </ActionBar>
         </div>
     </section>
 }

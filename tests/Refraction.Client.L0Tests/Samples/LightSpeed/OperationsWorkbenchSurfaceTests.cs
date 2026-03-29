@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using AngleSharp.Dom;
+
 using Bunit;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -110,8 +112,9 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
     }
 
     /// <summary>
-    ///     OperationsWorkbenchSurface renders the increment-5 command buttons and status badges through the shared workbench
-    ///     surface.
+    ///     OperationsWorkbenchSurface renders the increment-8 action bar with the replacement command buttons and status
+    ///     badges
+    ///     through the shared workbench surface.
     /// </summary>
     [Fact]
     public void OperationsWorkbenchSurfaceRendersReplacementLeafControls()
@@ -138,6 +141,8 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
         Assert.Single(cut.FindAll(".rf-surface-panel__footer"));
         Assert.Equal(2, cut.FindAll(".rf-command-button").Count);
         Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-workbench__detail-actions"));
         Assert.NotNull(cut.Find(".rf-command-button.ls-command-button--secondary[data-testid='review-open']"));
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
         Assert.False(cut.Find("[data-testid='review-open']").HasAttribute("disabled"));
@@ -147,6 +152,32 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
         Assert.NotEmpty(cut.FindAll("[data-testid^='queue-select-']"));
         Assert.Empty(cut.FindAll(".rf-telemetry-strip"));
         Assert.Empty(cut.FindAll(".rf-pane"));
+    }
+
+    /// <summary>
+    ///     OperationsWorkbenchSurface renders the increment-8 action bars with the replacement command buttons inside the
+    ///     shared review dialog actions.
+    /// </summary>
+    [Fact]
+    public void OperationsWorkbenchSurfaceRendersReplacementLeafControlsInsideReviewDialog()
+    {
+        // Act
+        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface(CreateViewModel(true));
+
+        // Assert
+        Assert.NotNull(cut.Find("[data-testid='review-dialog']"));
+        Assert.Equal(4, cut.FindAll(".rf-command-button").Count);
+        Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-review-dialog__actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-review-dialog__actions"));
+        Assert.Collection(
+            cut.FindAll(".rf-action-bar.ls-review-dialog__actions .rf-command-button"),
+            button => Assert.Equal("Cancel", button.TextContent.Trim()),
+            button => Assert.Equal("Save review", button.TextContent.Trim()));
+        Assert.NotNull(
+            cut.Find(".rf-action-bar.ls-review-dialog__actions .rf-command-button[data-testid='review-save']"));
     }
 
     /// <summary>
@@ -164,10 +195,9 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
     )
     {
         // Act
-        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface(CreateViewModel(
-            feedbackMessage: feedbackMessage,
-            feedbackTone: feedbackTone));
-        var feedbackStrip = cut.Find("[data-testid='feedback-banner']");
+        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface(
+            CreateViewModel(feedbackMessage: feedbackMessage, feedbackTone: feedbackTone));
+        IElement feedbackStrip = cut.Find("[data-testid='feedback-banner']");
 
         // Assert
         Assert.Contains("rf-telemetry-strip", feedbackStrip.ClassList);
@@ -176,29 +206,6 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
         Assert.Equal("polite", feedbackStrip.GetAttribute("aria-live"));
         Assert.Equal("status", feedbackStrip.GetAttribute("role"));
         Assert.Equal(feedbackTone, feedbackStrip.GetAttribute("data-state"));
-        Assert.Contains(
-            feedbackMessage,
-            feedbackStrip.TextContent,
-            StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     OperationsWorkbenchSurface renders the increment-5 command buttons inside the shared review dialog actions.
-    /// </summary>
-    [Fact]
-    public void OperationsWorkbenchSurfaceRendersReplacementLeafControlsInsideReviewDialog()
-    {
-        // Act
-        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface(CreateViewModel(true));
-
-        // Assert
-        Assert.NotNull(cut.Find("[data-testid='review-dialog']"));
-        Assert.Equal(4, cut.FindAll(".rf-command-button").Count);
-        Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
-        Assert.Collection(
-            cut.FindAll(".ls-review-dialog__actions .rf-command-button"),
-            button => Assert.Equal("Cancel", button.TextContent.Trim()),
-            button => Assert.Equal("Save review", button.TextContent.Trim()));
-        Assert.NotNull(cut.Find(".ls-review-dialog__actions .rf-command-button[data-testid='review-save']"));
+        Assert.Contains(feedbackMessage, feedbackStrip.TextContent, StringComparison.Ordinal);
     }
 }
