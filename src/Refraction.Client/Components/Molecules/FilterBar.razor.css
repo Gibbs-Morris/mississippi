@@ -1,0 +1,5 @@
+.rf-filter-bar {
+    display: grid;
+    gap: var(--rf-raw-space-4);
+    align-items: end;
+}

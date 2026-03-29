@@ -45,7 +45,7 @@
 
 <div class="ls-workbench__layout">
     <SurfacePanel Title="Operations queue">
-        <div class="ls-workbench__filters">
+        <FilterBar class="ls-workbench__filters">
             <div class="ls-workbench__filter-field">
                 <InputField Id="ls-queue-search"
                             Label="Search queue"
@@ -67,7 +67,7 @@
                     }
                 </select>
             </div>
-        </div>
+        </FilterBar>
 
         <div class="ls-workbench__queue-shell">
             @if (Model.VisibleWorkItems.Count == 0)

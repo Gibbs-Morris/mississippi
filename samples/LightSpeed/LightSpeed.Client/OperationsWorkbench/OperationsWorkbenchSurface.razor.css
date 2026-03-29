@@ -125,7 +125,7 @@
     gap: var(--rf-raw-space-6);
 }
 
-.ls-workbench__filters {
+::deep(.ls-workbench__filters) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(10rem, 14rem);
     gap: var(--rf-raw-space-4);
@@ -446,8 +446,11 @@
 
     .ls-workbench__layout,
     .ls-review-dialog__form-grid,
-    .ls-workbench__filters,
     .ls-workbench__detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    ::deep(.ls-workbench__filters) {
         grid-template-columns: 1fr;
     }
 

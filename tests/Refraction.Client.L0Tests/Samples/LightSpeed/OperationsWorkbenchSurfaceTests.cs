@@ -112,49 +112,6 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
     }
 
     /// <summary>
-    ///     OperationsWorkbenchSurface renders the increment-8 action bar with the replacement command buttons and status
-    ///     badges
-    ///     through the shared workbench surface.
-    /// </summary>
-    [Fact]
-    public void OperationsWorkbenchSurfaceRendersReplacementLeafControls()
-    {
-        // Act
-        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface();
-
-        // Assert
-        Assert.NotNull(cut.Find(".rf-status-summary-bar.ls-workbench__summary[data-testid='status-summary-bar']"));
-        Assert.Equal("status", cut.Find(".rf-status-summary-bar").GetAttribute("role"));
-        Assert.Contains("Queue 4", cut.Find(".rf-status-summary-bar").TextContent, StringComparison.Ordinal);
-        Assert.Contains("Ready 1", cut.Find(".rf-status-summary-bar").TextContent, StringComparison.Ordinal);
-        Assert.Contains("Actioned 1", cut.Find(".rf-status-summary-bar").TextContent, StringComparison.Ordinal);
-        Assert.Contains(
-            "Selected Pending review",
-            cut.Find(".rf-status-summary-bar").TextContent,
-            StringComparison.Ordinal);
-        Assert.Contains("Theme Horizon", cut.Find(".rf-status-summary-bar").TextContent, StringComparison.Ordinal);
-        Assert.Equal(2, cut.FindAll(".rf-surface-panel").Count);
-        Assert.Collection(
-            cut.FindAll(".rf-surface-panel__title"),
-            title => Assert.Equal("Operations queue", title.TextContent.Trim()),
-            title => Assert.Equal("Selected review", title.TextContent.Trim()));
-        Assert.Single(cut.FindAll(".rf-surface-panel__footer"));
-        Assert.Equal(2, cut.FindAll(".rf-command-button").Count);
-        Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
-        Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));
-        Assert.NotNull(cut.Find(".rf-action-bar.ls-workbench__detail-actions"));
-        Assert.NotNull(cut.Find(".rf-command-button.ls-command-button--secondary[data-testid='review-open']"));
-        Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
-        Assert.False(cut.Find("[data-testid='review-open']").HasAttribute("disabled"));
-        Assert.True(cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
-        Assert.NotNull(cut.Find(".rf-status-badge[data-testid='selected-stage']"));
-        Assert.Equal("OPS-1042", cut.Find("[data-testid='selected-id']").TextContent.Trim());
-        Assert.NotEmpty(cut.FindAll("[data-testid^='queue-select-']"));
-        Assert.Empty(cut.FindAll(".rf-telemetry-strip"));
-        Assert.Empty(cut.FindAll(".rf-pane"));
-    }
-
-    /// <summary>
     ///     OperationsWorkbenchSurface renders the increment-8 action bars with the replacement command buttons inside the
     ///     shared review dialog actions.
     /// </summary>
@@ -207,5 +164,52 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
         Assert.Equal("status", feedbackStrip.GetAttribute("role"));
         Assert.Equal(feedbackTone, feedbackStrip.GetAttribute("data-state"));
         Assert.Contains(feedbackMessage, feedbackStrip.TextContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     OperationsWorkbenchSurface renders the increment-9 filter bar plus the replacement action bar, command buttons,
+    ///     and status badges through the shared workbench surface.
+    /// </summary>
+    [Fact]
+    public void OperationsWorkbenchSurfaceRendersReplacementWorkbenchSurfacesAndLeafControls()
+    {
+        // Act
+        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface();
+        IElement filterBar = cut.Find(".rf-filter-bar.ls-workbench__filters");
+
+        // Assert
+        Assert.NotNull(cut.Find(".rf-status-summary-bar.ls-workbench__summary[data-testid='status-summary-bar']"));
+        Assert.Equal("status", cut.Find(".rf-status-summary-bar").GetAttribute("role"));
+        Assert.Contains("Queue 4", cut.Find(".rf-status-summary-bar").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Ready 1", cut.Find(".rf-status-summary-bar").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Actioned 1", cut.Find(".rf-status-summary-bar").TextContent, StringComparison.Ordinal);
+        Assert.Contains(
+            "Selected Pending review",
+            cut.Find(".rf-status-summary-bar").TextContent,
+            StringComparison.Ordinal);
+        Assert.Contains("Theme Horizon", cut.Find(".rf-status-summary-bar").TextContent, StringComparison.Ordinal);
+        Assert.Equal(2, cut.FindAll(".rf-surface-panel").Count);
+        Assert.Collection(
+            cut.FindAll(".rf-surface-panel__title"),
+            title => Assert.Equal("Operations queue", title.TextContent.Trim()),
+            title => Assert.Equal("Selected review", title.TextContent.Trim()));
+        Assert.Single(cut.FindAll(".rf-surface-panel__footer"));
+        Assert.Single(cut.FindAll(".rf-filter-bar.ls-workbench__filters"));
+        Assert.NotNull(filterBar);
+        Assert.NotNull(filterBar.QuerySelector("#ls-queue-search"));
+        Assert.NotNull(filterBar.QuerySelector("[data-testid='stage-filter']"));
+        Assert.Equal(2, cut.FindAll(".rf-command-button").Count);
+        Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
+        Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.NotNull(cut.Find(".rf-action-bar.ls-workbench__detail-actions"));
+        Assert.NotNull(cut.Find(".rf-command-button.ls-command-button--secondary[data-testid='review-open']"));
+        Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
+        Assert.False(cut.Find("[data-testid='review-open']").HasAttribute("disabled"));
+        Assert.True(cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
+        Assert.NotNull(cut.Find(".rf-status-badge[data-testid='selected-stage']"));
+        Assert.Equal("OPS-1042", cut.Find("[data-testid='selected-id']").TextContent.Trim());
+        Assert.NotEmpty(cut.FindAll("[data-testid^='queue-select-']"));
+        Assert.Empty(cut.FindAll(".rf-telemetry-strip"));
+        Assert.Empty(cut.FindAll(".rf-pane"));
     }
 }

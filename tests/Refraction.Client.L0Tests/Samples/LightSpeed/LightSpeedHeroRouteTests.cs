@@ -85,7 +85,8 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
     }
 
     /// <summary>
-    ///     LightSpeed renders the base-only workbench shell with an initial selection.
+    ///     LightSpeed renders the base-only workbench shell with the increment-9 replacement filter bar and an initial
+    ///     selection.
     /// </summary>
     [Fact]
     public void LightSpeedRendersBaseOnlyWorkbenchShellWithInitialSelection()
@@ -97,6 +98,8 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         Assert.Equal("horizon", cut.Find(".rf-root").GetAttribute("data-rf-brand"));
         Assert.NotNull(cut.Find("[data-testid='status-summary-bar']"));
         Assert.Equal(2, cut.FindAll(".rf-surface-panel").Count);
+        Assert.Single(cut.FindAll(".rf-filter-bar.ls-workbench__filters"));
+        Assert.NotNull(cut.Find(".rf-filter-bar.ls-workbench__filters"));
         Assert.Equal(2, cut.FindAll(".rf-command-button").Count);
         Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
         Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));

@@ -26,12 +26,18 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 {
     private bool servicesConfigured;
 
-    private static void AssertReplacementActionBarsAndLeafControls<TComponent>(
+    private static void AssertReplacementWorkbenchSurfacesAndLeafControls<TComponent>(
         IRenderedComponent<TComponent> cut,
         bool isReviewDialogOpen
     )
         where TComponent : IComponent
     {
+        IElement filterBar = cut.Find(".rf-filter-bar.ls-workbench__filters");
+
+        Assert.Single(cut.FindAll(".rf-filter-bar.ls-workbench__filters"));
+        Assert.NotNull(filterBar);
+        Assert.NotNull(filterBar.QuerySelector("#ls-queue-search"));
+        Assert.NotNull(filterBar.QuerySelector("[data-testid='stage-filter']"));
         Assert.Single(cut.FindAll(".rf-action-bar.ls-workbench__detail-actions"));
         Assert.NotNull(cut.Find(".rf-action-bar.ls-workbench__detail-actions"));
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='review-open']"));
@@ -78,7 +84,6 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         where TComponent : IComponent
     {
         IElement feedbackBanner = cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']");
-
         return new(feedbackBanner.TextContent.Trim(), feedbackBanner.GetAttribute("data-state") ?? string.Empty);
     }
 
@@ -273,7 +278,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
     }
 
     /// <summary>
-    ///     The Reservoir parity route matches the base route for the increment-8 review-dialog action bars and leaf controls.
+    ///     The Reservoir parity route matches the base route for the increment-9 filter bar plus the review-dialog action
+    ///     bars and leaf controls.
     /// </summary>
     [Fact]
     public void ReservoirWorkbenchRouteMatchesBaseRouteForReviewDialogLeafControls()
@@ -288,8 +294,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 
         // Assert
         Assert.Equal(CaptureSnapshot(baseRoute), CaptureSnapshot(reservoirRoute));
-        AssertReplacementActionBarsAndLeafControls(baseRoute, true);
-        AssertReplacementActionBarsAndLeafControls(reservoirRoute, true);
+        AssertReplacementWorkbenchSurfacesAndLeafControls(baseRoute, true);
+        AssertReplacementWorkbenchSurfacesAndLeafControls(reservoirRoute, true);
     }
 
     /// <summary>
@@ -334,7 +340,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
     }
 
     /// <summary>
-    ///     The Reservoir parity route renders the same initial workbench surface as the base-only route.
+    ///     The Reservoir parity route renders the same initial workbench surface as the base-only route, including the
+    ///     increment-9 replacement filter bar seam.
     /// </summary>
     [Fact]
     public void ReservoirWorkbenchRouteMatchesBaseRouteOnInitialRender()
@@ -354,8 +361,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         Assert.True(baseRoute.Find("[data-testid='apply-action']").HasAttribute("disabled"));
         Assert.False(reservoirRoute.Find("[data-testid='review-open']").HasAttribute("disabled"));
         Assert.True(reservoirRoute.Find("[data-testid='apply-action']").HasAttribute("disabled"));
-        AssertReplacementActionBarsAndLeafControls(baseRoute, false);
-        AssertReplacementActionBarsAndLeafControls(reservoirRoute, false);
+        AssertReplacementWorkbenchSurfacesAndLeafControls(baseRoute, false);
+        AssertReplacementWorkbenchSurfacesAndLeafControls(reservoirRoute, false);
     }
 
     /// <summary>
