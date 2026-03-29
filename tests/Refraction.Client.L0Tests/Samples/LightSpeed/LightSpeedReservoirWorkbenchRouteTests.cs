@@ -346,6 +346,10 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         // Assert
         Assert.Equal(baseRoute.Find("h1").TextContent.Trim(), reservoirRoute.Find("h1").TextContent.Trim());
         Assert.Equal(baseSnapshot, reservoirSnapshot);
+        Assert.False(baseRoute.Find("[data-testid='review-open']").HasAttribute("disabled"));
+        Assert.True(baseRoute.Find("[data-testid='apply-action']").HasAttribute("disabled"));
+        Assert.False(reservoirRoute.Find("[data-testid='review-open']").HasAttribute("disabled"));
+        Assert.True(reservoirRoute.Find("[data-testid='apply-action']").HasAttribute("disabled"));
         AssertReplacementLeafControls(baseRoute, false);
         AssertReplacementLeafControls(reservoirRoute, false);
     }

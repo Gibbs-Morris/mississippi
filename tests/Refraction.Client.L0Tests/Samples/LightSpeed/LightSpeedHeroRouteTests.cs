@@ -104,6 +104,8 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='review-open']"));
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
+        Assert.False(cut.Find("[data-testid='review-open']").HasAttribute("disabled"));
+        Assert.True(cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
         Assert.NotNull(cut.Find(".rf-status-badge[data-testid='selected-stage']"));
         Assert.Empty(cut.FindAll(".rf-telemetry-strip"));
         Assert.Empty(cut.FindAll(".rf-pane"));

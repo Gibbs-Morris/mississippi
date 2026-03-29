@@ -140,6 +140,8 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
         Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
         Assert.NotNull(cut.Find(".rf-command-button.ls-command-button--secondary[data-testid='review-open']"));
         Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
+        Assert.False(cut.Find("[data-testid='review-open']").HasAttribute("disabled"));
+        Assert.True(cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
         Assert.NotNull(cut.Find(".rf-status-badge[data-testid='selected-stage']"));
         Assert.Equal("OPS-1042", cut.Find("[data-testid='selected-id']").TextContent.Trim());
         Assert.NotEmpty(cut.FindAll("[data-testid^='queue-select-']"));
