@@ -1,0 +1,23 @@
+@* SurfacePanel - titled content surface with optional footer *@
+
+<section class="@RootCssClass"
+         data-state="@State"
+         @attributes="UnmatchedAttributes">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <header class="rf-surface-panel__header">
+            <h2 class="rf-surface-panel__title">@Title</h2>
+        </header>
+    }
+
+    <div class="rf-surface-panel__content">
+        @ChildContent
+    </div>
+
+    @if (Footer is not null)
+    {
+        <footer class="rf-surface-panel__footer">
+            @Footer
+        </footer>
+    }
+</section>

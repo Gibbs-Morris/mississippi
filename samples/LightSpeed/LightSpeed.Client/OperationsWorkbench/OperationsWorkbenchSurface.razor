@@ -25,13 +25,13 @@
     </section>
 </header>
 
-<TelemetryStrip AdditionalAttributes="@SummaryStripAttributes">
+<StatusSummaryBar AdditionalAttributes="@StatusSummaryBarAttributes">
     <span class="ls-workbench__metric">Queue @Model.QueueCount</span>
     <span class="ls-workbench__metric">Ready @Model.ReadyItemCount</span>
     <span class="ls-workbench__metric">Actioned @Model.ActionedItemCount</span>
     <span class="ls-workbench__metric">Selected @Model.CurrentSelectionStage</span>
     <span class="ls-workbench__metric">Theme @Model.CurrentBrandLabel</span>
-</TelemetryStrip>
+</StatusSummaryBar>
 
 @if (!string.IsNullOrWhiteSpace(Model.FeedbackMessage))
 {
@@ -44,7 +44,7 @@
 }
 
 <div class="ls-workbench__layout">
-    <Pane Title="Operations queue">
+    <SurfacePanel Title="Operations queue">
         <div class="ls-workbench__filters">
             <div class="ls-workbench__filter-field">
                 <InputField Id="ls-queue-search"
@@ -116,9 +116,9 @@
                 </table>
             }
         </div>
-    </Pane>
+    </SurfacePanel>
 
-    <Pane Title="Selected review">
+    <SurfacePanel Title="Selected review">
         <ChildContent>
             @if (Model.SelectedWorkItem is null)
             {
@@ -192,7 +192,7 @@
                 </button>
             </div>
         </Footer>
-    </Pane>
+    </SurfacePanel>
 </div>
 
 @if (Model.IsReviewDialogOpen)

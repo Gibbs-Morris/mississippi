@@ -91,10 +91,10 @@ public sealed partial class OperationsWorkbenchSurface
     [Parameter]
     public EventCallback<string> OnStageFilterChanged { get; set; }
 
-    private IReadOnlyDictionary<string, object> SummaryStripAttributes { get; } = new Dictionary<string, object>
+    private IReadOnlyDictionary<string, object> StatusSummaryBarAttributes { get; } = new Dictionary<string, object>
     {
         ["class"] = "ls-workbench__summary",
-        ["data-testid"] = "summary-strip",
+        ["data-testid"] = "status-summary-bar",
     };
 
     private Task HandleDraftDispositionChangedAsync(
