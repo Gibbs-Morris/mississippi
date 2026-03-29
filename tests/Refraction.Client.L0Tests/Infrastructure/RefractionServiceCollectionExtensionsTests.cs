@@ -29,6 +29,16 @@ public sealed class RefractionServiceCollectionExtensionsTests
     }
 
     /// <summary>
+    ///     AddRefraction rejects a null service collection.
+    /// </summary>
+    [Fact]
+    public void AddRefractionRejectsNullServiceCollection()
+    {
+        // Act and assert
+        Assert.Throws<ArgumentNullException>(() => RefractionServiceCollectionExtensions.AddRefraction(null!));
+    }
+
+    /// <summary>
     ///     AddRefraction preserves a host-registered theme catalog.
     /// </summary>
     [Fact]

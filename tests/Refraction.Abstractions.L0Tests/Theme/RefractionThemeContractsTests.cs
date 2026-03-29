@@ -48,6 +48,31 @@ public sealed class RefractionThemeContractsTests
     }
 
     /// <summary>
+    ///     RefractionBrandId rejects null input.
+    /// </summary>
+    [Fact]
+    public void RefractionBrandIdRejectsNullInput()
+    {
+        // Act and assert
+        Assert.Throws<ArgumentNullException>(() => new RefractionBrandId(null!));
+    }
+
+    /// <summary>
+    ///     RefractionBrandId rejects empty or whitespace-only input.
+    /// </summary>
+    /// <param name="value">The invalid brand identifier.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void RefractionBrandIdRejectsWhitespaceOnlyInput(
+        string value
+    )
+    {
+        // Act and assert
+        Assert.Throws<ArgumentException>(() => new RefractionBrandId(value));
+    }
+
+    /// <summary>
     ///     RefractionThemeDescriptor carries the metadata needed by runtime theme selection.
     /// </summary>
     [Fact]
@@ -83,5 +108,23 @@ public sealed class RefractionThemeContractsTests
         Assert.Equal(RefractionDensity.Comfortable, selection.Density);
         Assert.Equal(RefractionContrastMode.System, selection.Contrast);
         Assert.Equal(RefractionMotionMode.System, selection.Motion);
+    }
+
+    /// <summary>
+    ///     RefractionPreferenceSnapshot carries deterministic preference inputs.
+    /// </summary>
+    [Fact]
+    public void RefractionPreferenceSnapshotCarriesDeterministicPreferences()
+    {
+        // Act
+        RefractionPreferenceSnapshot snapshot = new()
+        {
+            PrefersHighContrast = true,
+            PrefersReducedMotion = true,
+        };
+
+        // Assert
+        Assert.True(snapshot.PrefersHighContrast);
+        Assert.True(snapshot.PrefersReducedMotion);
     }
 }

@@ -2,11 +2,15 @@ using System;
 
 using Bunit;
 
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using Mississippi.Refraction.Abstractions.Theme;
 using Mississippi.Refraction.Client.Infrastructure;
+
+using Moq;
 
 
 namespace Mississippi.Refraction.Client.L0Tests.Infrastructure;
@@ -69,6 +73,31 @@ public sealed class RefractionRootTests : BunitContext
     }
 
     /// <summary>
+    ///     RefractionRoot suppresses the theme stylesheet when theme assets are disabled.
+    /// </summary>
+    [Fact]
+    public void RefractionRootSuppressesThemeStylesheetWhenThemeAssetsDisabled()
+    {
+        // Arrange
+        Services.AddLogging();
+        Services.AddSingleton<IRefractionThemeCatalog>(new TestRefractionThemeCatalog());
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        using IRenderedComponent<HeadOutlet> headOutlet = Render<HeadOutlet>();
+
+        // Act
+        using IRenderedComponent<RefractionRoot> cut = Render<RefractionRoot>(parameters => parameters.Add(
+            component => component.IncludeThemeAssets,
+            false));
+
+        // Assert
+        Assert.NotNull(cut.Instance);
+        Assert.DoesNotContain(
+            "_content/Mississippi.Refraction.Client/themes/refraction.css",
+            headOutlet.Markup,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     RefractionRoot falls back atomically to the default brand when the selection is unknown.
     /// </summary>
     [Fact]
@@ -92,6 +121,30 @@ public sealed class RefractionRootTests : BunitContext
         Assert.Equal("compact", cut.Find(".rf-root").GetAttribute("data-rf-density"));
         Assert.Equal("standard", cut.Find(".rf-root").GetAttribute("data-rf-contrast"));
         Assert.Equal("standard", cut.Find(".rf-root").GetAttribute("data-rf-motion"));
+    }
+
+    /// <summary>
+    ///     RefractionRoot falls back to the default brand when the selection contains the default brand identifier value type.
+    /// </summary>
+    [Fact]
+    public void RefractionRootFallsBackToDefaultBrandWhenBrandIdValueIsDefault()
+    {
+        // Arrange
+        Services.AddLogging();
+        Services.AddSingleton<IRefractionThemeCatalog>(new TestRefractionThemeCatalog());
+
+        // Act
+        using IRenderedComponent<RefractionRoot> cut = Render<RefractionRoot>(parameters => parameters.Add(
+            component => component.Selection,
+            new RefractionThemeSelection
+            {
+                BrandId = default(RefractionBrandId),
+                Density = RefractionDensity.Comfortable,
+            }));
+
+        // Assert
+        Assert.Equal("horizon", cut.Find(".rf-root").GetAttribute("data-rf-brand"));
+        Assert.Equal("comfortable", cut.Find(".rf-root").GetAttribute("data-rf-density"));
     }
 
     /// <summary>
@@ -124,5 +177,124 @@ public sealed class RefractionRootTests : BunitContext
         Assert.Equal("horizon", cut.Find(".rf-root").GetAttribute("data-rf-brand"));
         Assert.Equal("high", cut.Find(".rf-root").GetAttribute("data-rf-contrast"));
         Assert.Equal("reduced", cut.Find(".rf-root").GetAttribute("data-rf-motion"));
+    }
+
+    /// <summary>
+    ///     RefractionRoot keeps explicit selection values instead of replacing them with preference-derived values.
+    /// </summary>
+    [Fact]
+    public void RefractionRootPreservesExplicitSelectionModes()
+    {
+        // Arrange
+        Services.AddLogging();
+        Services.AddSingleton<IRefractionThemeCatalog>(new TestRefractionThemeCatalog());
+
+        // Act
+        using IRenderedComponent<RefractionRoot> cut = Render<RefractionRoot>(parameters => parameters.Add(
+                component => component.Preferences,
+                new()
+                {
+                    PrefersHighContrast = true,
+                    PrefersReducedMotion = true,
+                })
+            .Add(
+                component => component.Selection,
+                new()
+                {
+                    BrandId = new RefractionBrandId("signal"),
+                    Contrast = RefractionContrastMode.Standard,
+                    Motion = RefractionMotionMode.Standard,
+                }));
+
+        // Assert
+        Assert.Equal("signal", cut.Find(".rf-root").GetAttribute("data-rf-brand"));
+        Assert.Equal("standard", cut.Find(".rf-root").GetAttribute("data-rf-contrast"));
+        Assert.Equal("standard", cut.Find(".rf-root").GetAttribute("data-rf-motion"));
+    }
+
+    /// <summary>
+    ///     RefractionRoot cascades the resolved runtime theme state to descendants.
+    /// </summary>
+    [Fact]
+    public void RefractionRootCascadesResolvedRuntimeThemeState()
+    {
+        // Arrange
+        Services.AddLogging();
+        Services.AddSingleton<IRefractionThemeCatalog>(new TestRefractionThemeCatalog());
+
+        // Act
+        using IRenderedComponent<RefractionRoot> cut = Render<RefractionRoot>(parameters => parameters.Add(
+                component => component.Preferences,
+                new()
+                {
+                    PrefersHighContrast = true,
+                    PrefersReducedMotion = true,
+                })
+            .Add(
+                component => component.Selection,
+                new()
+                {
+                    BrandId = new RefractionBrandId("signal"),
+                    Density = RefractionDensity.Compact,
+                }));
+
+        // Assert
+        IRenderedComponent<CascadingValue<RefractionThemeSelection>> selectionCascade =
+            cut.FindComponent<CascadingValue<RefractionThemeSelection>>();
+        IRenderedComponent<CascadingValue<RefractionThemeDescriptor>> descriptorCascade =
+            cut.FindComponent<CascadingValue<RefractionThemeDescriptor>>();
+        IRenderedComponent<CascadingValue<bool>> reducedMotionCascade = cut.FindComponent<CascadingValue<bool>>();
+        RefractionThemeSelection? resolvedSelection = selectionCascade.Instance.Value;
+        RefractionThemeDescriptor? resolvedDescriptor = descriptorCascade.Instance.Value;
+
+        Assert.NotNull(resolvedSelection);
+        Assert.NotNull(resolvedDescriptor);
+
+        Assert.Equal("RefractionThemeSelection", selectionCascade.Instance.Name);
+        Assert.Equal("signal", resolvedSelection.BrandId?.Value);
+        Assert.Equal(RefractionContrastMode.High, resolvedSelection.Contrast);
+        Assert.Equal(RefractionDensity.Compact, resolvedSelection.Density);
+        Assert.Equal(RefractionMotionMode.Reduced, resolvedSelection.Motion);
+
+        Assert.Equal("RefractionThemeDescriptor", descriptorCascade.Instance.Name);
+        Assert.Equal("signal", resolvedDescriptor.BrandId.Value);
+        Assert.Equal("Signal", resolvedDescriptor.DisplayName);
+
+        Assert.Equal("RefractionReducedMotion", reducedMotionCascade.Instance.Name);
+        Assert.True(reducedMotionCascade.Instance.Value);
+    }
+
+    /// <summary>
+    ///     RefractionRoot logs a warning when a requested brand is unknown.
+    /// </summary>
+    [Fact]
+    public void RefractionRootLogsWarningWhenThemeUnknown()
+    {
+        // Arrange
+        Mock<ILogger<RefractionRoot>> loggerMock = new();
+        loggerMock.Setup(logger => logger.IsEnabled(LogLevel.Warning)).Returns(true);
+        Services.AddSingleton<ILogger<RefractionRoot>>(loggerMock.Object);
+        Services.AddSingleton<IRefractionThemeCatalog>(new TestRefractionThemeCatalog());
+
+        // Act
+        using IRenderedComponent<RefractionRoot> cut = Render<RefractionRoot>(parameters => parameters.Add(
+            component => component.Selection,
+            new RefractionThemeSelection
+            {
+                BrandId = new RefractionBrandId("missing-brand"),
+            }));
+
+        // Assert
+        Assert.NotNull(cut.Instance);
+        loggerMock.Verify(
+            logger => logger.Log(
+                LogLevel.Warning,
+                It.Is<EventId>(id => id.Id == 1200),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString()!.Contains("missing-brand", StringComparison.Ordinal)
+                    && state.ToString()!.Contains("horizon", StringComparison.Ordinal)),
+                It.Is<Exception?>(exception => exception == null),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }
