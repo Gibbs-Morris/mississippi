@@ -17,6 +17,10 @@
     <ProjectReference Include="..\Refraction.Abstractions\Refraction.Abstractions.csproj" />
     <ProjectReference Include="..\Reservoir.Core\Reservoir.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Infrastructure\RefractionPagesServiceCollectionExtensions.cs" />
+    <Compile Remove="Scenes\SceneBase.cs" />
+  </ItemGroup>
   <PropertyGroup>
     <Description>Page composition helpers for Refraction-powered applications.</Description>
   </PropertyGroup>

@@ -373,7 +373,10 @@
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.5, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.104, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
-          "Mississippi.Refraction.Client": "[1.0.0, )"
+          "Mississippi.Refraction.Client": "[1.0.0, )",
+          "Mississippi.Refraction.Client.StateManagement": "[1.0.0, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
       "Mississippi.Refraction.Abstractions": {
@@ -388,6 +391,29 @@
           "Microsoft.AspNetCore.Components": "[10.0.5, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.5, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Refraction.Client.StateManagement": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "[10.0.5, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.5, )",
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )",
+          "Mississippi.Refraction.Client": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
+        }
+      },
+      "Mississippi.Reservoir.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.5, )"
+        }
+      },
+      "Mississippi.Reservoir.Core": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.5, )",
+          "Mississippi.Reservoir.Abstractions": "[1.0.0, )"
         }
       },
       "Microsoft.AspNetCore.Components": {

@@ -7,6 +7,9 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Refraction.Client\Refraction.Client.csproj" />
         <ProjectReference Include="..\..\src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Refraction.Client.StateManagement\Refraction.Client.StateManagement.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
         <ProjectReference Include="..\..\samples\LightSpeed\LightSpeed.Client\LightSpeed.Client.csproj" />
     </ItemGroup>
 

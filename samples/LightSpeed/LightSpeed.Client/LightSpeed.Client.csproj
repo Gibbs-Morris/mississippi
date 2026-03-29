@@ -1,12 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Mississippi.Refraction.Client.L0Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Refraction.Client\Refraction.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Refraction.Abstractions\Refraction.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Refraction.Client.StateManagement\Refraction.Client.StateManagement.csproj" />
+    <ProjectReference Include="..\..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Features\ReservoirOperationsWorkbench\ReservoirOperationsWorkbenchAction.cs" />
+    <Compile Remove="OperationsWorkbench\OperationsWorkbenchModels.cs" />
   </ItemGroup>
 
 </Project>
