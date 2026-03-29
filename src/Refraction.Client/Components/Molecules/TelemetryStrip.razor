@@ -1,8 +1,8 @@
 @* TelemetryStrip - read-only status display *@
 
-<div class="rf-telemetry-strip"
+<div class="@RootCssClass"
      role="@RefractionAriaRoles.Status"
      data-state="@State"
-     @attributes="AdditionalAttributes">
+    @attributes="UnmatchedAttributes">
     @ChildContent
 </div>

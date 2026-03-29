@@ -35,12 +35,12 @@
 
 @if (!string.IsNullOrWhiteSpace(Model.FeedbackMessage))
 {
-    <section class="ls-workbench__feedback ls-workbench__feedback--@Model.FeedbackTone"
-             aria-live="polite"
-             data-testid="feedback-banner"
-             role="status">
+    <TelemetryStrip aria-live="polite"
+                    class="@($"ls-workbench__feedback ls-workbench__feedback--{Model.FeedbackTone}")"
+                    data-testid="feedback-banner"
+                    State="@Model.FeedbackTone">
         @Model.FeedbackMessage
-    </section>
+    </TelemetryStrip>
 }
 
 <div class="ls-workbench__layout">

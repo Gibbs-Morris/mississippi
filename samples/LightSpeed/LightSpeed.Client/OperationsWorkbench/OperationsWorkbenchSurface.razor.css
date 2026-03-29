@@ -103,7 +103,7 @@
     align-items: center;
 }
 
-.ls-workbench__feedback {
+::deep(.ls-workbench__feedback) {
     margin-bottom: var(--rf-raw-space-4);
     padding: var(--rf-raw-space-3) var(--rf-raw-space-4);
     border: var(--rf-raw-stroke-hairline) solid color-mix(in srgb, var(--rf-color-text-muted) 60%, transparent);
@@ -111,11 +111,11 @@
     background: color-mix(in srgb, var(--rf-color-surface-elevated) 80%, transparent);
 }
 
-.ls-workbench__feedback--success {
+::deep(.ls-workbench__feedback--success) {
     border-color: color-mix(in srgb, var(--rf-color-status-success) 70%, transparent);
 }
 
-.ls-workbench__feedback--warning {
+::deep(.ls-workbench__feedback--warning) {
     border-color: color-mix(in srgb, var(--rf-color-status-warning) 70%, transparent);
 }
 

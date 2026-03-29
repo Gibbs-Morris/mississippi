@@ -28,8 +28,8 @@ internal static class OperationsWorkbenchViewModelFactory
     /// <param name="draftResponseSummaryError">The draft response-summary error.</param>
     /// <param name="draftReviewNotes">The draft review-notes value.</param>
     /// <param name="draftReviewNotesError">The draft review-notes error.</param>
-    /// <param name="feedbackMessage">The banner feedback message.</param>
-    /// <param name="feedbackTone">The banner feedback tone.</param>
+    /// <param name="feedbackMessage">The feedback message rendered in the shared telemetry strip.</param>
+    /// <param name="feedbackTone">The feedback tone rendered by the shared telemetry strip.</param>
     /// <param name="validationMessages">The validation-summary messages.</param>
     /// <returns>The view model rendered by the shared operations-workbench surface.</returns>
     public static OperationsWorkbenchViewModel Create(

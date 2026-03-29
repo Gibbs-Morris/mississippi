@@ -26,6 +26,11 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         return Render<LightSpeedIndexPage>();
     }
 
+    private static IElement FindFeedbackBanner(
+        IRenderedComponent<LightSpeedIndexPage> cut
+    ) =>
+        cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']");
+
     /// <summary>
     ///     LightSpeed applies the selected action and exposes the stable post-action state.
     /// </summary>
@@ -40,11 +45,13 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         cut.Find("[data-testid='apply-action']").Click();
 
         // Assert
+        IElement feedbackBanner = FindFeedbackBanner(cut);
         Assert.Equal("Actioned", cut.Find("[data-testid='selected-stage']").TextContent.Trim());
         Assert.Equal("Response package released", cut.Find("[data-testid='selected-checkpoint']").TextContent.Trim());
+        Assert.Equal("success", feedbackBanner.GetAttribute("data-state"));
         Assert.Contains(
             "OPS-1047 action completed",
-            cut.Find("[data-testid='feedback-banner']").TextContent,
+            feedbackBanner.TextContent,
             StringComparison.Ordinal);
         Assert.True(cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
     }
@@ -160,12 +167,14 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         cut.Find("[data-testid='review-save']").Click();
 
         // Assert
+        IElement feedbackBanner = FindFeedbackBanner(cut);
         Assert.Equal(disposition, cut.Find("[data-testid='selected-disposition']").TextContent.Trim());
         Assert.Equal("Pending review", cut.Find("[data-testid='selected-stage']").TextContent.Trim());
         Assert.Equal(expectedCheckpoint, cut.Find("[data-testid='selected-checkpoint']").TextContent.Trim());
+        Assert.Equal("success", feedbackBanner.GetAttribute("data-state"));
         Assert.Contains(
             "OPS-1042 updated.",
-            cut.Find("[data-testid='feedback-banner']").TextContent,
+            feedbackBanner.TextContent,
             StringComparison.Ordinal);
     }
 
@@ -252,6 +261,11 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
             "Review notes are required when the work item is held.",
             validationSummary.TextContent,
             StringComparison.Ordinal);
+        Assert.Equal("warning", FindFeedbackBanner(cut).GetAttribute("data-state"));
+        Assert.Contains(
+            "Resolve the validation errors before saving the review.",
+            FindFeedbackBanner(cut).TextContent,
+            StringComparison.Ordinal);
 
         // Act
         cut.Find("#ls-review-analyst").Input("Iris Valdez");
@@ -263,13 +277,15 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         cut.Find("[data-testid='review-save']").Click();
 
         // Assert
+        IElement feedbackBanner = FindFeedbackBanner(cut);
         Assert.Empty(cut.FindAll("[data-testid='validation-summary']"));
         Assert.Equal("Iris Valdez", cut.Find("[data-testid='selected-analyst']").TextContent.Trim());
         Assert.Equal("Dispatch", cut.Find("[data-testid='selected-disposition']").TextContent.Trim());
         Assert.Equal("Ready", cut.Find("[data-testid='selected-stage']").TextContent.Trim());
+        Assert.Equal("success", feedbackBanner.GetAttribute("data-state"));
         Assert.Contains(
             "OPS-1042 updated.",
-            cut.Find("[data-testid='feedback-banner']").TextContent,
+            feedbackBanner.TextContent,
             StringComparison.Ordinal);
     }
 }

@@ -79,12 +79,12 @@ public sealed record OperationsWorkbenchViewModel
     public string? DraftReviewNotesError { get; init; }
 
     /// <summary>
-    ///     Gets the banner feedback message.
+    ///     Gets the feedback message rendered in the shared telemetry strip.
     /// </summary>
     public string? FeedbackMessage { get; init; }
 
     /// <summary>
-    ///     Gets the feedback tone used to style the banner.
+    ///     Gets the feedback tone rendered by the shared telemetry strip.
     /// </summary>
     public required string FeedbackTone { get; init; }
 

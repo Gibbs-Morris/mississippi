@@ -86,6 +86,21 @@ public sealed class TelemetryStripTests : BunitContext
     }
 
     /// <summary>
+    ///     TelemetryStrip merges an additional CSS class with the component root class.
+    /// </summary>
+    [Fact]
+    public void TelemetryStripMergesAdditionalCssClassWithRootClass()
+    {
+        // Act
+        using IRenderedComponent<TelemetryStrip> cut = Render<TelemetryStrip>(parameters => parameters
+            .AddUnmatched("class", "telemetry-host")
+            .AddUnmatched("data-testid", "strip-1"));
+
+        // Assert
+        Assert.NotNull(cut.Find(".rf-telemetry-strip.telemetry-host[data-testid='strip-1']"));
+    }
+
+    /// <summary>
     ///     TelemetryStrip renders child content.
     /// </summary>
     [Fact]

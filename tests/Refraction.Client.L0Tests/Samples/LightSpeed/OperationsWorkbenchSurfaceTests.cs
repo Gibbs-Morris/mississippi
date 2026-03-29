@@ -43,7 +43,9 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
     }
 
     private static OperationsWorkbenchViewModel CreateViewModel(
-        bool isReviewDialogOpen = false
+        bool isReviewDialogOpen = false,
+        string? feedbackMessage = null,
+        string feedbackTone = "info"
     )
     {
         IReadOnlyList<OperationsWorkbenchItem> allWorkItems = OperationsWorkbenchScenario.CreateSeedData();
@@ -64,8 +66,8 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
             null,
             selectedWorkItem.ReviewNotes,
             null,
-            null,
-            "info",
+            feedbackMessage,
+            feedbackTone,
             []);
     }
 
@@ -143,6 +145,39 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
         Assert.NotEmpty(cut.FindAll("[data-testid^='queue-select-']"));
         Assert.Empty(cut.FindAll(".rf-telemetry-strip"));
         Assert.Empty(cut.FindAll(".rf-pane"));
+    }
+
+    /// <summary>
+    ///     OperationsWorkbenchSurface renders the increment-7 replacement telemetry strip when feedback is present.
+    /// </summary>
+    /// <param name="feedbackTone">The feedback tone projected into the replacement telemetry strip.</param>
+    /// <param name="feedbackMessage">The feedback message rendered by the replacement telemetry strip.</param>
+    [Theory]
+    [InlineData("info", "Operational readiness remains stable across the active queue.")]
+    [InlineData("warning", "Resolve the validation errors before saving the review.")]
+    [InlineData("success", "OPS-1042 updated. The work item is now Ready.")]
+    public void OperationsWorkbenchSurfaceRendersReplacementTelemetryStrip(
+        string feedbackTone,
+        string feedbackMessage
+    )
+    {
+        // Act
+        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface(CreateViewModel(
+            feedbackMessage: feedbackMessage,
+            feedbackTone: feedbackTone));
+        var feedbackStrip = cut.Find("[data-testid='feedback-banner']");
+
+        // Assert
+        Assert.Contains("rf-telemetry-strip", feedbackStrip.ClassList);
+        Assert.Contains("ls-workbench__feedback", feedbackStrip.ClassList);
+        Assert.Contains($"ls-workbench__feedback--{feedbackTone}", feedbackStrip.ClassList);
+        Assert.Equal("polite", feedbackStrip.GetAttribute("aria-live"));
+        Assert.Equal("status", feedbackStrip.GetAttribute("role"));
+        Assert.Equal(feedbackTone, feedbackStrip.GetAttribute("data-state"));
+        Assert.Contains(
+            feedbackMessage,
+            feedbackStrip.TextContent,
+            StringComparison.Ordinal);
     }
 
     /// <summary>

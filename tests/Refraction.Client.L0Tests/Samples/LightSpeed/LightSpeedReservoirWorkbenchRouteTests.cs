@@ -35,6 +35,11 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         bool IsApplyActionDisabled
     );
 
+    private sealed record FeedbackStripSnapshot(
+        string Message,
+        string State
+    );
+
     private static void AssertReplacementLeafControls<TComponent>(
         IRenderedComponent<TComponent> cut,
         bool isReviewDialogOpen
@@ -97,6 +102,14 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
             cut.Find("[data-testid='review-open']").HasAttribute("disabled"),
             cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
     }
+
+    private static FeedbackStripSnapshot CaptureFeedbackStripSnapshot<TComponent>(
+        IRenderedComponent<TComponent> cut
+    )
+        where TComponent : IComponent =>
+        new(
+            cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']").TextContent.Trim(),
+            cut.Find(".rf-telemetry-strip.ls-workbench__feedback[data-testid='feedback-banner']").GetAttribute("data-state") ?? string.Empty);
 
     private static void DriveParityBrandAndFilterFlow<TComponent>(
         IRenderedComponent<TComponent> cut
@@ -291,6 +304,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 
         // Assert
         Assert.Equal(CaptureValidationSummary(baseRoute), CaptureValidationSummary(reservoirRoute));
+        Assert.Equal(CaptureFeedbackStripSnapshot(baseRoute), CaptureFeedbackStripSnapshot(reservoirRoute));
+        Assert.Equal("warning", CaptureFeedbackStripSnapshot(baseRoute).State);
 
         // Act
         DriveParitySaveFlow(baseRoute);
@@ -302,6 +317,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 
         // Assert
         Assert.Equal(CaptureSnapshot(baseRoute), CaptureSnapshot(reservoirRoute));
+        Assert.Equal(CaptureFeedbackStripSnapshot(baseRoute), CaptureFeedbackStripSnapshot(reservoirRoute));
+        Assert.Equal("success", CaptureFeedbackStripSnapshot(baseRoute).State);
         Assert.Contains(
             "OPS-1047 action completed",
             baseRoute.Find("[data-testid='feedback-banner']").TextContent,
