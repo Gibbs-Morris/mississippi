@@ -1,0 +1,9 @@
+[data-rf-motion='reduced'] {
+    --rf-raw-duration-instant: 0ms;
+    --rf-raw-duration-fast: 0ms;
+    --rf-raw-duration-normal: 0ms;
+    --rf-raw-duration-slow: 0ms;
+
+    --rf-raw-easing-smooth: linear;
+    --rf-raw-easing-bounce: linear;
+}

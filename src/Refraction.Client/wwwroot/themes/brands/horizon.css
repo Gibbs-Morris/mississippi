@@ -1,0 +1,7 @@
+[data-rf-brand='horizon'] {
+    --rf-raw-neo-blue-n1: hsl(200, 100%, 80%);
+    --rf-raw-neo-blue-n2: hsl(200, 95%, 70%);
+    --rf-raw-neo-blue-n3: hsl(200, 90%, 60%);
+    --rf-raw-neo-blue-n4: hsl(200, 85%, 45%);
+    --rf-raw-neo-blue-n5: hsl(200, 80%, 30%);
+}

@@ -1,0 +1,20 @@
+@if (IncludeThemeAssets)
+{
+    <HeadContent>
+        <link href="@ThemeStylesheetPath" rel="stylesheet"/>
+    </HeadContent>
+}
+
+<CascadingValue Value="@ResolvedSelection" Name="RefractionThemeSelection">
+    <CascadingValue Value="@ResolvedTheme" Name="RefractionThemeDescriptor">
+        <CascadingValue Value="@IsReducedMotion" Name="RefractionReducedMotion">
+            <div class="rf-root"
+                 data-rf-brand="@ResolvedTheme.CssScopeName"
+                 data-rf-contrast="@ContrastAttributeValue"
+                 data-rf-density="@DensityAttributeValue"
+                 data-rf-motion="@MotionAttributeValue">
+                @ChildContent
+            </div>
+        </CascadingValue>
+    </CascadingValue>
+</CascadingValue>

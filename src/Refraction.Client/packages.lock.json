@@ -132,6 +132,12 @@
         "resolved": "10.0.5",
         "contentHash": "aSoRoF4QtBhg5wkAYXA+k+Jv+eY3bN98hf19MIQs3XM0wkzjY02B4AqpxptZOidNjf2552YSbnCnck0Gsl5DcQ=="
       },
+      "Mississippi.Refraction.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.5, )"
+        }
+      },
       "Microsoft.Extensions.Configuration": {
         "type": "CentralTransitive",
         "requested": "[10.0.5, )",

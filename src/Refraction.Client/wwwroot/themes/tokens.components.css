@@ -1,0 +1,17 @@
+[data-rf-brand] {
+    --rf-component-command-background: var(--rf-color-action-primary);
+    --rf-component-command-foreground: var(--rf-color-surface-void);
+    --rf-component-command-hover-background: var(--rf-color-action-hover);
+
+    --rf-component-field-background: var(--rf-color-surface-elevated);
+    --rf-component-field-border: var(--rf-color-text-muted);
+    --rf-component-field-focus-border: var(--rf-color-focus-ring);
+
+    --rf-component-panel-background: var(--rf-color-surface-glass);
+    --rf-component-panel-border: var(--rf-color-text-muted);
+    --rf-component-panel-title: var(--rf-color-text-primary);
+
+    --rf-component-table-background: var(--rf-color-surface-void);
+    --rf-component-table-border: var(--rf-color-text-muted);
+    --rf-component-table-row-selected: var(--rf-color-surface-elevated);
+}

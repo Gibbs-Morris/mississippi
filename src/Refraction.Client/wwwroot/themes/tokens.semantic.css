@@ -1,0 +1,22 @@
+[data-rf-brand] {
+    --rf-color-surface-void: var(--rf-raw-neutral-900);
+    --rf-color-surface-glass: hsla(200, 40%, 20%, var(--rf-raw-alpha-soft));
+    --rf-color-surface-elevated: var(--rf-raw-neutral-800);
+
+    --rf-color-action-primary: var(--rf-raw-neo-blue-n3);
+    --rf-color-action-hover: var(--rf-raw-neo-blue-n2);
+    --rf-color-action-pressed: var(--rf-raw-neo-blue-n4);
+
+    --rf-color-text-primary: var(--rf-raw-neutral-100);
+    --rf-color-text-secondary: var(--rf-raw-neutral-400);
+    --rf-color-text-muted: var(--rf-raw-neutral-500);
+    --rf-color-text-accent: var(--rf-raw-neo-blue-n2);
+
+    --rf-color-status-warning: var(--rf-raw-amber);
+    --rf-color-status-error: var(--rf-raw-red);
+    --rf-color-status-success: var(--rf-raw-green);
+
+    --rf-color-focus-ring: var(--rf-raw-neo-blue-n2);
+    --rf-focus-ring-width: 2px;
+    --rf-focus-ring-offset: 2px;
+}

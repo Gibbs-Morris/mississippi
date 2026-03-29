@@ -1,4 +1,9 @@
+using System;
+
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+using Mississippi.Refraction.Abstractions.Theme;
 
 
 namespace Mississippi.Refraction.Client.Infrastructure;
@@ -15,23 +20,21 @@ public static class RefractionServiceCollectionExtensions
     /// <returns>The service collection for chaining.</returns>
     /// <remarks>
     ///     <para>
-    ///         Refraction components are pure presentation and do not require services for basic usage.
-    ///         This method registers optional services for advanced scenarios:
+    ///         Refraction components are pure presentation and do not require store coupling for basic usage.
+    ///         This method registers the default Slice 1 runtime foundation for theme selection:
     ///     </para>
     ///     <list type="bullet">
     ///         <item>
-    ///             <description>Theme management</description>
-    ///         </item>
-    ///         <item>
-    ///             <description>Focus tracking</description>
-    ///         </item>
-    ///         <item>
-    ///             <description>Motion preferences</description>
+    ///             <description>default theme catalog resolution</description>
     ///         </item>
     ///     </list>
     /// </remarks>
     public static IServiceCollection AddRefraction(
         this IServiceCollection services
-    ) =>
-        services;
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<IRefractionThemeCatalog, DefaultRefractionThemeCatalog>();
+        return services;
+    }
 }

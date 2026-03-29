@@ -210,7 +210,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components": "[10.0.5, )",
-          "Microsoft.AspNetCore.Components.Web": "[10.0.5, )"
+          "Microsoft.AspNetCore.Components.Web": "[10.0.5, )",
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )"
         }
       },
       "Mississippi.Refraction.Client.StateManagement": {

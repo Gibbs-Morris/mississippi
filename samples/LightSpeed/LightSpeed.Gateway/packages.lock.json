@@ -68,7 +68,10 @@
         "type": "Project"
       },
       "Mississippi.Refraction.Client": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )"
+        }
       },
       "Mississippi.Refraction.Client.StateManagement": {
         "type": "Project",

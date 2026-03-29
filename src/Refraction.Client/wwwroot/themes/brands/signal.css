@@ -1,0 +1,8 @@
+[data-rf-brand='signal'] {
+    --rf-raw-neo-blue-n1: hsl(162, 100%, 84%);
+    --rf-raw-neo-blue-n2: hsl(162, 96%, 72%);
+    --rf-raw-neo-blue-n3: hsl(162, 88%, 56%);
+    --rf-raw-neo-blue-n4: hsl(162, 80%, 42%);
+    --rf-raw-neo-blue-n5: hsl(162, 72%, 30%);
+    --rf-raw-alpha-soft: 0.12;
+}

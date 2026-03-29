@@ -3,6 +3,7 @@ using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Mississippi.Refraction.Abstractions.Theme;
 using Mississippi.Refraction.Client.Infrastructure;
 
 
@@ -25,6 +26,47 @@ public sealed class RefractionServiceCollectionExtensionsTests
         // Assert
         Assert.NotNull(method);
         Assert.True(method!.IsStatic);
+    }
+
+    /// <summary>
+    ///     AddRefraction preserves a host-registered theme catalog.
+    /// </summary>
+    [Fact]
+    public void AddRefractionPreservesHostThemeCatalog()
+    {
+        // Arrange
+        ServiceCollection services = new();
+        TestRefractionThemeCatalog catalog = new();
+        services.AddSingleton<IRefractionThemeCatalog>(catalog);
+
+        // Act
+        services.AddRefraction();
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        // Assert
+        Assert.Same(catalog, provider.GetRequiredService<IRefractionThemeCatalog>());
+    }
+
+    /// <summary>
+    ///     AddRefraction registers the default Refraction theme catalog.
+    /// </summary>
+    [Fact]
+    public void AddRefractionRegistersDefaultThemeCatalog()
+    {
+        // Arrange
+        ServiceCollection services = new();
+
+        // Act
+        services.AddRefraction();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IRefractionThemeCatalog catalog = provider.GetRequiredService<IRefractionThemeCatalog>();
+
+        // Assert
+        Assert.Equal("horizon", catalog.DefaultTheme.BrandId.Value);
+        Assert.Collection(
+            catalog.Themes,
+            theme => Assert.True(theme.IsDefault),
+            theme => Assert.False(theme.IsDefault));
     }
 
     /// <summary>

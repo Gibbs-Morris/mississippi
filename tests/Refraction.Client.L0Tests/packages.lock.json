@@ -362,11 +362,18 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "Mississippi.Refraction.Abstractions": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.5, )"
+        }
+      },
       "Mississippi.Refraction.Client": {
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components": "[10.0.5, )",
-          "Microsoft.AspNetCore.Components.Web": "[10.0.5, )"
+          "Microsoft.AspNetCore.Components.Web": "[10.0.5, )",
+          "Mississippi.Refraction.Abstractions": "[1.0.0, )"
         }
       },
       "Microsoft.AspNetCore.Components": {

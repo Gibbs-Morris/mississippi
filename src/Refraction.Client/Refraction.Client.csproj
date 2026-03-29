@@ -12,6 +12,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Components" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Refraction.Abstractions\Refraction.Abstractions.csproj" />
+  </ItemGroup>
   <PropertyGroup>
     <Description>Refraction runtime for projection-driven reactive application flows.</Description>
   </PropertyGroup>

@@ -1,0 +1,15 @@
+[data-rf-contrast='high'] {
+    --rf-color-surface-void: #000;
+    --rf-color-surface-glass: #000;
+    --rf-color-surface-elevated: #000;
+
+    --rf-color-text-primary: #fff;
+    --rf-color-text-secondary: #f5f5f5;
+    --rf-color-text-muted: #d9d9d9;
+    --rf-color-focus-ring: #fff;
+
+    --rf-focus-ring-width: 3px;
+    --rf-focus-ring-offset: 3px;
+    --rf-raw-stroke-hairline: 2px;
+    --rf-raw-stroke-default: 2px;
+}
