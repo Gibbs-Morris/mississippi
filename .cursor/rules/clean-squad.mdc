@@ -6,7 +6,7 @@ alwaysApply: false
 # Clean Squad Shared Protocol
 
 **Source:** .github/instructions/clean-squad.instructions.md
-**Last synced:** 2026-03-29
+**Last synced:** 2026-03-29 (commit pending)
 
 Governing thought: Every Clean Squad agent applies first-principles thinking and chain-of-verification to every task; governed work shares state through the `.thinking` folder, while the optional Entrepreneur intake stays pre-governed and follows explicit handover protocols.
 
