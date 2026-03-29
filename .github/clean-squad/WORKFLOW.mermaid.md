@@ -173,8 +173,8 @@ flowchart TD
         P9Scope -- No --> P9OutOfScope --> P9Record --> P9Cap
         P9Cap -- No --> P9Wait
         P9Cap -- Yes --> P9Stop
-        P9Comments -- No --> G3
-        G3 --|APPROVED| P9Ready --> P9Done
+            P9Comments -- No --> P9Ready --> G3
+            G3 --|APPROVED| P9Done
         G3 --|CHANGES_REQUESTED| ProductOwner
         G3 --|DEFERRED or CANCELLED| Stop3(["Stop or hold after late-stage review"])
     end
