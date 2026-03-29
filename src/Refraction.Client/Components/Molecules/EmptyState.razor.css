@@ -1,0 +1,28 @@
+.rf-empty-state {
+    display: grid;
+    gap: var(--rf-raw-space-2);
+    place-items: center;
+    min-height: 12rem;
+    padding: var(--rf-raw-space-6);
+    border: var(--rf-raw-stroke-hairline) dashed color-mix(in srgb, var(--rf-component-panel-border) 70%, transparent);
+    border-radius: 0.75rem;
+    background: color-mix(in srgb, var(--rf-component-panel-background) 55%, transparent);
+    color: var(--rf-color-text-secondary);
+    text-align: center;
+}
+
+.rf-empty-state__title {
+    margin: 0;
+    color: var(--rf-color-text-primary);
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.rf-empty-state__message {
+    margin: 0;
+    max-width: 28rem;
+    line-height: 1.6;
+}

@@ -26,6 +26,15 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 {
     private bool servicesConfigured;
 
+    private sealed record EmptyWorkbenchSnapshot(
+        int EmptyStateCount,
+        string QueueEmptyMessage,
+        string DetailEmptyMessage,
+        int VisibleQueueItems,
+        bool IsReviewDisabled,
+        bool IsApplyActionDisabled
+    );
+
     private static void AssertReplacementLeafControls<TComponent>(
         IRenderedComponent<TComponent> cut,
         bool isReviewDialogOpen
@@ -37,7 +46,6 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         Assert.NotNull(cut.Find(".rf-status-badge[data-testid='selected-stage']"));
         Assert.Equal(isReviewDialogOpen ? 4 : 2, cut.FindAll(".rf-command-button").Count);
         Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
-
         if (!isReviewDialogOpen)
         {
             return;
@@ -71,6 +79,23 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
     {
         IElement validationSummary = cut.Find("[data-testid='validation-summary']");
         return validationSummary.TextContent.Trim();
+    }
+
+    private static EmptyWorkbenchSnapshot CaptureEmptyWorkbenchSnapshot<TComponent>(
+        IRenderedComponent<TComponent> cut
+    )
+        where TComponent : IComponent
+    {
+        cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='queue-empty-state']");
+        cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='detail-empty-state']");
+
+        return new(
+            cut.FindAll(".rf-empty-state").Count,
+            cut.Find("[data-testid='queue-empty-state']").TextContent.Trim(),
+            cut.Find("[data-testid='detail-empty-state']").TextContent.Trim(),
+            cut.FindAll("[data-testid^='queue-select-']").Count,
+            cut.Find("[data-testid='review-open']").HasAttribute("disabled"),
+            cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
     }
 
     private static void DriveParityBrandAndFilterFlow<TComponent>(
@@ -107,6 +132,15 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         cut.Find("[data-testid='review-disposition']").Change("Hold");
         cut.Find("[data-testid='review-notes']").Input(string.Empty);
         cut.Find("[data-testid='review-save']").Click();
+    }
+
+    private static void DriveParityEmptyStateFlow<TComponent>(
+        IRenderedComponent<TComponent> cut
+    )
+        where TComponent : IComponent
+    {
+        cut.Find("#ls-queue-search").Input("Northwind");
+        cut.Find("[data-testid='stage-filter']").Change("Ready");
     }
 
     private void ConfigureServices()
@@ -147,7 +181,8 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
     );
 
     /// <summary>
-    ///     The Reservoir parity route clears validation state and restores persisted review values when the dialog is reopened.
+    ///     The Reservoir parity route clears validation state and restores persisted review values when the dialog is
+    ///     reopened.
     /// </summary>
     [Fact]
     public void ReservoirWorkbenchRouteCancelingReviewClearsValidationStateWhenDialogReopens()
@@ -193,6 +228,51 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 
         // Assert
         Assert.Equal(CaptureSnapshot(baseRoute), CaptureSnapshot(reservoirRoute));
+    }
+
+    /// <summary>
+    ///     The Reservoir parity route matches the base route for the increment-6 empty-state filtering experience.
+    /// </summary>
+    [Fact]
+    public void ReservoirWorkbenchRouteMatchesBaseRouteForEmptyStateFiltering()
+    {
+        // Arrange
+        using IRenderedComponent<LightSpeedIndexPage> baseRoute = RenderBaseOnlyRoute();
+        using IRenderedComponent<LightSpeedReservoirWorkbenchPage> reservoirRoute = RenderReservoirWorkbenchRoute();
+
+        // Act
+        DriveParityEmptyStateFlow(baseRoute);
+        DriveParityEmptyStateFlow(reservoirRoute);
+
+        // Assert
+        Assert.Equal(CaptureEmptyWorkbenchSnapshot(baseRoute), CaptureEmptyWorkbenchSnapshot(reservoirRoute));
+
+        // Act
+        baseRoute.Find("[data-testid='stage-filter']").Change("Pending review");
+        reservoirRoute.Find("[data-testid='stage-filter']").Change("Pending review");
+
+        // Assert
+        Assert.Equal(CaptureSnapshot(baseRoute), CaptureSnapshot(reservoirRoute));
+    }
+
+    /// <summary>
+    ///     The Reservoir parity route matches the base route for the increment-5 review-dialog leaf controls.
+    /// </summary>
+    [Fact]
+    public void ReservoirWorkbenchRouteMatchesBaseRouteForReviewDialogLeafControls()
+    {
+        // Arrange
+        using IRenderedComponent<LightSpeedIndexPage> baseRoute = RenderBaseOnlyRoute();
+        using IRenderedComponent<LightSpeedReservoirWorkbenchPage> reservoirRoute = RenderReservoirWorkbenchRoute();
+
+        // Act
+        baseRoute.Find("[data-testid='review-open']").Click();
+        reservoirRoute.Find("[data-testid='review-open']").Click();
+
+        // Assert
+        Assert.Equal(CaptureSnapshot(baseRoute), CaptureSnapshot(reservoirRoute));
+        AssertReplacementLeafControls(baseRoute, true);
+        AssertReplacementLeafControls(reservoirRoute, true);
     }
 
     /// <summary>
@@ -249,32 +329,13 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         // Assert
         Assert.Equal(baseRoute.Find("h1").TextContent.Trim(), reservoirRoute.Find("h1").TextContent.Trim());
         Assert.Equal(baseSnapshot, reservoirSnapshot);
-        AssertReplacementLeafControls(baseRoute, isReviewDialogOpen: false);
-        AssertReplacementLeafControls(reservoirRoute, isReviewDialogOpen: false);
+        AssertReplacementLeafControls(baseRoute, false);
+        AssertReplacementLeafControls(reservoirRoute, false);
     }
 
     /// <summary>
-    ///     The Reservoir parity route matches the base route for the increment-5 review-dialog leaf controls.
-    /// </summary>
-    [Fact]
-    public void ReservoirWorkbenchRouteMatchesBaseRouteForReviewDialogLeafControls()
-    {
-        // Arrange
-        using IRenderedComponent<LightSpeedIndexPage> baseRoute = RenderBaseOnlyRoute();
-        using IRenderedComponent<LightSpeedReservoirWorkbenchPage> reservoirRoute = RenderReservoirWorkbenchRoute();
-
-        // Act
-        baseRoute.Find("[data-testid='review-open']").Click();
-        reservoirRoute.Find("[data-testid='review-open']").Click();
-
-        // Assert
-        Assert.Equal(CaptureSnapshot(baseRoute), CaptureSnapshot(reservoirRoute));
-        AssertReplacementLeafControls(baseRoute, isReviewDialogOpen: true);
-        AssertReplacementLeafControls(reservoirRoute, isReviewDialogOpen: true);
-    }
-
-    /// <summary>
-    ///     The Reservoir parity route clears selection and shows the empty state when combined filters remove every visible work item.
+    ///     The Reservoir parity route clears selection and shows the empty state when combined filters remove every visible
+    ///     work item.
     /// </summary>
     [Fact]
     public void ReservoirWorkbenchRouteShowsEmptyStateWhenFiltersRemoveAllVisibleWorkItems()
@@ -287,10 +348,13 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         cut.Find("[data-testid='stage-filter']").Change("Ready");
 
         // Assert
+        Assert.Equal(2, cut.FindAll(".rf-empty-state").Count);
+        Assert.NotNull(cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='queue-empty-state']"));
         Assert.Contains(
             "No work items match the current search and stage filter.",
             cut.Find("[data-testid='queue-empty-state']").TextContent,
             StringComparison.Ordinal);
+        Assert.NotNull(cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='detail-empty-state']"));
         Assert.Contains(
             "Select a queue item to inspect the current response plan.",
             cut.Find("[data-testid='detail-empty-state']").TextContent,

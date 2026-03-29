@@ -13,10 +13,35 @@ using MississippiSamples.LightSpeed.Client.OperationsWorkbench;
 namespace Mississippi.Refraction.Client.L0Tests.Samples.LightSpeed;
 
 /// <summary>
-///     Verifies the shared LightSpeed operations-workbench surface used by the increment-5 leaf-control replacement slice.
+///     Verifies the shared LightSpeed operations-workbench surface used by the bounded workbench replacement slices.
 /// </summary>
 public sealed class OperationsWorkbenchSurfaceTests : BunitContext
 {
+    private static OperationsWorkbenchViewModel CreateEmptyStateViewModel()
+    {
+        IReadOnlyList<OperationsWorkbenchItem> allWorkItems = OperationsWorkbenchScenario.CreateSeedData();
+        OperationsWorkbenchItem draftWorkItem = allWorkItems[0];
+        return OperationsWorkbenchViewModelFactory.Create(
+            allWorkItems,
+            "Northwind",
+            OperationsWorkbenchScenario.ReadyStage,
+            null,
+            OperationsWorkbenchScenario.DefaultBrand,
+            "Operational readiness",
+            "Review the active queue and respond with a stable action plan.",
+            false,
+            draftWorkItem.AssignedAnalyst,
+            null,
+            draftWorkItem.Disposition,
+            draftWorkItem.ResponseSummary,
+            null,
+            draftWorkItem.ReviewNotes,
+            null,
+            null,
+            "info",
+            []);
+    }
+
     private static OperationsWorkbenchViewModel CreateViewModel(
         bool isReviewDialogOpen = false
     )
@@ -54,6 +79,32 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
         return Render<OperationsWorkbenchSurface>(parameters => parameters.Add(
             component => component.Model,
             model ?? CreateViewModel()));
+    }
+
+    /// <summary>
+    ///     OperationsWorkbenchSurface renders the increment-6 replacement empty states through the shared workbench surface.
+    /// </summary>
+    [Fact]
+    public void OperationsWorkbenchSurfaceRendersReplacementEmptyStates()
+    {
+        // Act
+        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface(CreateEmptyStateViewModel());
+
+        // Assert
+        Assert.Equal(2, cut.FindAll(".rf-empty-state").Count);
+        Assert.NotNull(cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='queue-empty-state']"));
+        Assert.Contains(
+            "No work items match the current search and stage filter.",
+            cut.Find("[data-testid='queue-empty-state']").TextContent,
+            StringComparison.Ordinal);
+        Assert.NotNull(cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='detail-empty-state']"));
+        Assert.Contains(
+            "Select a queue item to inspect the current response plan.",
+            cut.Find("[data-testid='detail-empty-state']").TextContent,
+            StringComparison.Ordinal);
+        Assert.Empty(cut.FindAll("[data-testid^='queue-select-']"));
+        Assert.True(cut.Find("[data-testid='review-open']").HasAttribute("disabled"));
+        Assert.True(cut.Find("[data-testid='apply-action']").HasAttribute("disabled"));
     }
 
     /// <summary>
@@ -101,8 +152,7 @@ public sealed class OperationsWorkbenchSurfaceTests : BunitContext
     public void OperationsWorkbenchSurfaceRendersReplacementLeafControlsInsideReviewDialog()
     {
         // Act
-        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface(
-            CreateViewModel(isReviewDialogOpen: true));
+        using IRenderedComponent<OperationsWorkbenchSurface> cut = RenderWorkbenchSurface(CreateViewModel(true));
 
         // Assert
         Assert.NotNull(cut.Find("[data-testid='review-dialog']"));

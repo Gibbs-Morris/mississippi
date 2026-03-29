@@ -1,0 +1,12 @@
+@* EmptyState - presentational enterprise empty-result surface *@
+
+<div class="@RootCssClass"
+     data-state="@State"
+     @attributes="UnmatchedAttributes">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <p class="rf-empty-state__title">@Title</p>
+    }
+
+    <p class="rf-empty-state__message">@Message</p>
+</div>

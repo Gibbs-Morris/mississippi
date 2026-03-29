@@ -72,9 +72,9 @@
         <div class="ls-workbench__queue-shell">
             @if (Model.VisibleWorkItems.Count == 0)
             {
-                <div class="ls-workbench__empty-state" data-testid="queue-empty-state">
-                    No work items match the current search and stage filter.
-                </div>
+                <EmptyState class="ls-workbench__empty-state"
+                            data-testid="queue-empty-state"
+                            Message="No work items match the current search and stage filter."/>
             }
             else
             {
@@ -121,9 +121,9 @@
         <ChildContent>
             @if (Model.SelectedWorkItem is null)
             {
-                <div class="ls-workbench__empty-state" data-testid="detail-empty-state">
-                    Select a queue item to inspect the current response plan.
-                </div>
+                <EmptyState class="ls-workbench__empty-state"
+                            data-testid="detail-empty-state"
+                            Message="Select a queue item to inspect the current response plan."/>
             }
             else
             {

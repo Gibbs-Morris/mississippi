@@ -183,10 +183,13 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         cut.Find("[data-testid='stage-filter']").Change("Ready");
 
         // Assert
+        Assert.Equal(2, cut.FindAll(".rf-empty-state").Count);
+        Assert.NotNull(cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='queue-empty-state']"));
         Assert.Contains(
             "No work items match the current search and stage filter.",
             cut.Find("[data-testid='queue-empty-state']").TextContent,
             StringComparison.Ordinal);
+        Assert.NotNull(cut.Find(".rf-empty-state.ls-workbench__empty-state[data-testid='detail-empty-state']"));
         Assert.Contains(
             "Select a queue item to inspect the current response plan.",
             cut.Find("[data-testid='detail-empty-state']").TextContent,
