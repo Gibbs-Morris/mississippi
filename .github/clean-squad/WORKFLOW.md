@@ -172,11 +172,11 @@ workflow advances.
 ### Canonical Gate Recording
 
 Every G1-G3 human gate decision **MUST** be recorded canonically in
-`workflow-audit.json` using the existing event contract:
+`workflow-audit/` using the existing event contract:
 
 - G0 is the pre-governed exception. Because it happens before governed intake
   begins, G0 **MUST NOT** require prior existence of `.thinking/<task>/` or
-  `workflow-audit.json`.
+  `workflow-audit/`.
 - When governed work starts from a G0-approved Story Pack candidate, `cs River Orchestrator`
   **MUST** carry the G0 approval evidence into governed state by
   capturing the approved Story Pack candidate and the human G0 approval in
@@ -222,7 +222,10 @@ governed work begins:
 .thinking/
   <YYYY-MM-DD>-<task-slug>/        # One subfolder per task
     state.json                      # Workflow state (current phase, status)
-    workflow-audit.json             # Canonical append-only execution ledger
+    workflow-audit/                 # Canonical append-only execution ledger
+      meta.json                     # Immutable run header
+      0000001.json                  # Immutable canonical event file
+      0000002.json                  # Immutable canonical event file
     workflow-audit.md               # Derived detailed workflow audit report
     activity-log.md                 # Start/progress/blocker/completion log
     00-intake.md                    # Initial request & context
@@ -308,7 +311,7 @@ retired.
 
 - `cs River Orchestrator` MUST write every entry to `.thinking/<task>/activity-log.md`.
 - Governed specialists MUST NOT append to `activity-log.md` directly.
-- Every governed specialist MUST return a structured status envelope that gives `cs River Orchestrator` enough detail to log start, progress, blocker, completion, artifacts updated, and next action.
+- Every governed specialist MUST return a structured, metadata-sized status envelope that gives `cs River Orchestrator` enough detail to log start, progress, blocker, completion, artifacts updated, and next action; substantive delegated outputs MUST already be persisted to the declared artifact path or bundle path.
 - `activity-log.md` remains mandatory operational telemetry, not an optional summary.
 - Activity log entries SHOULD use a consistent structure: UTC timestamp, actor, phase, action, artifacts updated, blockers, and next action.
 
@@ -316,13 +319,15 @@ retired.
 
 #### Canonical Artifacts and Authority
 
-- `.thinking/<task>/workflow-audit.json` is the authoritative execution record for one Clean Squad run.
+- `.thinking/<task>/workflow-audit/` is the authoritative execution record for one Clean Squad run.
+- `.thinking/<task>/workflow-audit/meta.json` stores immutable run metadata for that ledger.
+- `.thinking/<task>/workflow-audit/0000001.json`, `0000002.json`, and later seven-digit sequence files each store one immutable canonical event.
 - `.thinking/<task>/workflow-audit.md` is a derived detailed audit compiled from a stable ledger snapshot.
 - `09-pr-merge/pr-description.md` contains the derived `Reviewer Audit Summary` and MUST source it from current policy-authoritative audit inputs with matching freshness and evidence bindings.
 - `sequence` is the only ordering authority for canonical workflow facts.
 - Canonical `eventUtc` timestamps are mandatory for timing and diagnostics, but MUST NOT override `sequence` for chronology.
 - `activity-log.md`, `handover-log.md`, Mermaid output, PR prose, and other narrative files are supporting or derived evidence only and MUST NOT override canonical sequence facts.
-- Within this repository today, `workflow-audit.json` and its derived audit artifacts are policy-authoritative and freshness-verifiable, but they are NOT tamper-resistant, cryptographically authenticated, or proof of actor identity beyond the declared Clean Squad role recorded in the ledger.
+- Within this repository today, `workflow-audit/` and its derived audit artifacts are policy-authoritative and freshness-verifiable, but they are NOT tamper-resistant, cryptographically authenticated, or proof of actor identity beyond the declared Clean Squad role recorded in the ledger.
 
 #### Active Writer and Delegation Invariants
 
@@ -331,6 +336,10 @@ retired.
 - The Scribe MUST NOT write canonical workflow facts.
 - Only one canonical writer may be active for the workflow run at a time.
 - Every active Phase 9 PR Manager execution slice MUST begin with explicit `cs River Orchestrator` delegation whose `workItemId` names the bounded task slice and whose `details` name `details.expectedOutputPath` (the expected artifact output or artifact bundle), `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`.
+- `details.expectedOutputPath` MUST name either one fresh output path or one fresh bundle directory under `.thinking/<task>/` unless the bounded delegation explicitly authorizes a different target.
+- Delegated specialists MUST write substantive outputs only to the declared path or bundle and MUST return only a concise summary, a metadata-sized status envelope, artifact paths, and blocker or next-action metadata.
+- If a delegated artifact changes materially, the next pass MUST publish a new path instead of silently overwriting the previously handed-back delegated artifact in place.
+- Before recording delegated completion canonically, `cs River Orchestrator` MUST verify that every returned artifact path exists and either equals the declared single expected path or is contained within the declared bundle directory, unless the bounded delegation explicitly authorizes a different target.
 - Stale-marker authority in Phase 9 MUST remain continuously delegated whenever a fresh `Reviewer Audit Summary` is published or a review-polling wait is active; that bounded stale-marker delegation MUST stay active until `cs River Orchestrator` canonically records that the summary is stale, republished fresh, or no longer present on the PR surface.
 - A Phase 9 delegation remains active only until `cs River Orchestrator` records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that delegation and whose semantics satisfy its declared `details.completionSignal` or `details.closureCondition`.
 - Blocked Phase 9 startup, tool acquisition, or recovery MUST NOT transfer canonical ownership away from `cs River Orchestrator`.
@@ -339,7 +348,7 @@ retired.
 - Every canonical append MUST declare the expected prior `sequence`.
 - A canonical writer MUST fail closed if the ledger tail does not match the declared expected prior `sequence`.
 - The first canonical append MUST write `sequence = 1` and declare expected prior `sequence = 0`.
-- Recovery MUST rebuild operational state from `workflow-audit.json`, never the reverse.
+- Recovery MUST rebuild operational state from `workflow-audit/`, never the reverse.
 
 #### Canonical Event Contract
 
@@ -366,38 +375,42 @@ Every canonical event MUST include:
 
 Meaningful events MUST additionally carry `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, and `outcome` whenever the writer-obligation matrix below marks them as required.
 
-#### Normative Canonical JSON Contract
+#### Normative Canonical Ledger File Contract
 
-`workflow-audit.json` MUST use this top-level shape:
+`workflow-audit/meta.json` MUST use this top-level shape:
 
 ```json
 {
-  "schemaVersion": "clean-squad-workflow-audit/v3",
+  "schemaVersion": "clean-squad-workflow-audit/v4",
   "workflowContractFingerprint": "<sha256 of UTF-8 bytes of .github/clean-squad/WORKFLOW.md>",
-  "ledgerDigestAlgorithm": "sha256-canonical-json-v1",
-  "events": []
+  "ledgerDigestAlgorithm": "sha256-canonical-ledger-files-v1",
+  "sequenceFilePattern": "0000001.json (fixed-width seven digits)",
+  "createdUtc": "<ISO-8601 UTC>"
 }
 ```
 
 Canonical JSON rules:
 
-- Files MUST be UTF-8 encoded JSON with no comments or trailing commas.
-- Canonical JSON MUST NOT include a UTF-8 BOM.
-- Canonical JSON MUST NOT contain insignificant whitespace outside JSON string values; emit the digest form as minified JSON with no spaces, tabs, or line breaks between tokens.
-- Canonical JSON MUST NOT end with a trailing newline; the digest is computed over the exact UTF-8 byte sequence of the canonical JSON text.
-- Object property order MUST match the order shown in this contract wherever a digest is calculated.
+- `workflow-audit/` MUST be flat in this schema version; only `meta.json` and seven-digit zero-padded numeric event files ending in `.json` are permitted.
+- `meta.json` and every canonical event file MUST be UTF-8 encoded JSON with no comments or trailing commas.
+- Canonical JSON files MUST NOT include a UTF-8 BOM.
+- Canonical JSON MUST NOT contain insignificant whitespace outside JSON string values; emit `meta.json` and each canonical event file in minified form with no spaces, tabs, or line breaks between tokens.
+- Canonical JSON files MUST NOT end with a trailing newline; digest computation uses their exact UTF-8 byte sequences.
+- `meta.json` property order MUST match the order shown in this contract wherever a digest is calculated.
+- Event-file names MUST be derived solely from the next trusted integer `sequence` and MUST use fixed-width seven-digit zero-padded names such as `0000001.json`.
+- Event-file property order MUST match the order shown in this contract wherever a digest is calculated.
 - Nested object property order MUST match the order shown in this contract for `appendPrecondition`, `causedBy`, `closes`, `artifacts[]`, `artifactTransitions[]`, and `provenance`.
-- Arrays MUST preserve the semantic order required by this contract; `events` remain ordered by `sequence`, and nested arrays keep the writer-emitted order unless this contract defines an explicit normalization rule.
+- Arrays MUST preserve the semantic order required by this contract, and nested arrays keep the writer-emitted order unless this contract defines an explicit normalization rule.
 - Every canonical event MUST emit the full top-level property set in the declared order even when some conditional semantics are absent.
 - `appendPrecondition` MUST always be serialized and MUST encode the expected prior `sequence` used for fail-closed append validation.
 - When a conditional scalar or object field is not semantically required, canonical JSON MUST emit that property as `null` rather than omitting it.
 - When a conditional array field is not semantically required, canonical JSON MUST emit that property as `[]` rather than omitting it.
 - When `details` has no event-type-specific members, canonical JSON MUST emit `details: {}`.
-- `schemaVersion = clean-squad-workflow-audit/v3` is the current normative schema. Earlier schema versions remain historical snapshots and MUST NOT have missing v3 semantics or timing backfilled from secondary logs.
-- `events` MUST be ordered by `sequence` ascending with no duplicate or skipped sequence values.
-- `ledgerDigestAlgorithm = sha256-canonical-json-v1` means SHA-256 over the UTF-8 bytes of the canonical JSON form defined by these rules for the exact snapshot used for comparison or compilation.
+- Unexpected sibling files, duplicate sequences, skipped sequences, or filename and payload mismatches make the ledger malformed.
+- `schemaVersion = clean-squad-workflow-audit/v4` is the current normative schema. Earlier schema versions remain historical snapshots and MUST NOT have missing v4 semantics or timing backfilled from secondary logs.
+- `ledgerDigestAlgorithm = sha256-canonical-ledger-files-v1` means SHA-256 over the exact stable directory snapshot defined by this contract.
 
-Each canonical event MUST use this property order and shape:
+Each immutable canonical event file MUST use this property order and shape:
 
 ```json
 {
@@ -465,7 +478,7 @@ In the `Required` column, `conditional` means the property is always serialized 
 
 - `eventUtc` MUST be an ISO-8601 UTC timestamp string with a trailing `Z`.
 - `eventUtc` records when the canonical writer authoritatively observed or emitted the event.
-- Timing buckets MUST be derived only from canonical `eventUtc` values and explicit wait boundaries in `workflow-audit.json`.
+- Timing buckets MUST be derived only from canonical `eventUtc` values and explicit wait boundaries recorded in immutable event files under `workflow-audit/`.
 
 `logicalEventId` retry rule:
 
@@ -486,6 +499,26 @@ Append-precondition rules:
 - `appendPrecondition.expectedPriorSequence` MUST equal the actual ledger-tail `sequence` immediately before the append is attempted.
 - Writers MUST fail closed when the ledger tail does not match `appendPrecondition.expectedPriorSequence`.
 - The first canonical append MUST use `sequence = 1` with `appendPrecondition.expectedPriorSequence = 0`.
+
+Canonical append order:
+
+1. Read `state.json.audit.currentSequence` as the current trusted watermark.
+2. Compute the next `sequence` as watermark + 1.
+3. Serialize the new canonical event to a temporary file inside `workflow-audit/`.
+4. Flush and close the temporary file.
+5. Atomically rename the temporary file to the final seven-digit sequence filename.
+6. Only after the final event file exists, update `state.json.audit.currentSequence`.
+
+If any step fails, fail closed and do not advance the watermark.
+
+Stable snapshot and digest rules:
+
+- A stable snapshot at watermark `N` consists of `meta.json` plus every event file from `0000001.json` through the file for watermark `N` in strict ascending order, after the watermark is captured first.
+- Files created after watermark capture are not part of that snapshot.
+- Gaps, duplicates, malformed event files, filename or payload mismatches, or unexpected sibling files fail closed.
+- Secondary artifacts such as `activity-log.md` or `state.json` MUST NOT repair canonical gaps.
+- `ledgerDigestAlgorithm = sha256-canonical-ledger-files-v1` hashes the exact UTF-8 bytes of canonical `meta.json`, then a single line-feed separator, then the exact UTF-8 bytes of each canonical event file in ascending sequence order separated by a single line-feed.
+- Digest computation MUST begin only after the contiguous `1..N` file set has been verified for the captured watermark.
 
 Allowed `phase` values:
 
@@ -658,12 +691,13 @@ Relationship semantics:
 Delegation lifecycle rules:
 
 - For `delegation-recorded`, `workItemId` MUST name the bounded Phase 9 task slice.
-- `details.expectedOutputPath` MUST name the artifact output or artifact bundle the delegation authorizes.
+- `details.expectedOutputPath` MUST name the fresh single artifact path or fresh bundle directory the delegation authorizes.
 - `details.completionSignal` MUST name the canonical evidence or event pattern `cs River Orchestrator` expects to treat the delegated slice as successfully handed back.
 - `details.closureCondition` MUST name the canonical condition that ends the delegation, including successful completion, block, cancellation, or supersession.
 - `details.allowedActions` MUST enumerate the exact mutation classes and Phase 9 operations authorized within that delegation, using stable values such as `stale-marker`, `reviewer-summary-publish`, `thread-reply`, `thread-resolve`, `pr-description-update`, `ci-evidence-read`, or `poll-review-comments`.
 - `details.authorizedTargets` MUST enumerate the exact resources the delegation covers, such as the PR number, summary section, freshness stamp, thread IDs, or CI identity set for the current HEAD SHA.
 - Delegation validation MUST reject returned evidence for any action or target outside `details.allowedActions` and `details.authorizedTargets`, even when the delegated artifact bundle otherwise looks complete.
+- Material revisions to previously handed-back delegated artifacts SHOULD be expressed through `artifactTransitions` with stable `artifactId` plus predecessor linkage, and they MUST publish a new artifact path instead of silently overwriting the earlier delegated output.
 - The Phase 9 stale-marker delegation MUST be its own bounded capability slice whose `details.allowedActions` contains only `stale-marker` and whose `details.authorizedTargets` are limited to the current PR and reviewer-summary freshness marker.
 - A Phase 9 delegation remains active only until `cs River Orchestrator` records a later canonical event for the same `workItemId` whose `causedBy.logicalEventId` references that `delegation-recorded` event and whose semantics satisfy the recorded `completionSignal` or `closureCondition`. After that closure, any further PR Manager work MUST use a new `delegation-recorded` event.
 
@@ -698,7 +732,7 @@ Invariant catalog:
 - Artifact transition lineage MUST use stable identity and predecessor linkage where applicable.
 - Provenance MUST exist for every meaningful event defined by this contract.
 - Reviewer-summary freshness MUST invalidate immediately on reviewer-meaningful canonical changes.
-- Canonical meaning MUST NOT be inferred from prose, sequence order, secondary logs, or evidence bindings alone when structured v3 semantics are missing.
+- Canonical meaning MUST NOT be inferred from prose, sequence order, secondary logs, or evidence bindings alone when structured v4 semantics are missing.
 
 #### Required CI Identity Normalization
 
@@ -729,7 +763,7 @@ Normalization rules:
 
 #### State and Runtime Support Contract
 
-`state.json` is operational support state only. It MAY cache audit cursor data, but it MUST NOT replace or repair canonical facts from `workflow-audit.json`.
+`state.json` is operational support state only. It MAY cache audit cursor data, but it MUST NOT replace or repair canonical facts from `workflow-audit/`.
 
 `state.json` MUST use this shape:
 
@@ -744,7 +778,7 @@ Normalization rules:
   "prNumber": null,
   "lastCommitSha": null,
   "lastCommitTimeUtc": null,
-  "workflowContractFingerprint": "<same value used by workflow-audit.json>",
+  "workflowContractFingerprint": "<same value used by workflow-audit/meta.json>",
   "audit": {
     "currentSequence": 0,
     "currentOwner": "cs River Orchestrator|null",
@@ -760,12 +794,16 @@ Normalization rules:
 
 `state.json.audit.currentOwner` means canonical ownership only. For in-progress workflow states it MUST be `cs River Orchestrator`. `null` is allowed only when support state is absent or uninitialized, and `currentOwner` MUST NOT represent delegated execution ownership.
 
+`state.json.audit.currentSequence` MUST equal the highest durable seven-digit event file in `workflow-audit/`, or `0` when only `meta.json` exists and no canonical event files have been appended yet.
+
+Resume or recovery MUST fail closed when `workflow-audit/` is missing `meta.json`, contains duplicate or skipped sequence files, contains an unexpected sibling file, contains a filename or payload mismatch, or when `state.json.audit.currentSequence` disagrees with the highest durable canonical event file.
+
 ### Hard Cutover for Legacy Governed Runs
 
 - This redesign is a breaking governed-workflow contract change.
 - Governed task folders whose canonical owner is not `cs River Orchestrator` are historical evidence only after rollout.
 - Pre-cutover governed runs MUST NOT be resumed or migrated in place.
-- Any attempted resume of a pre-cutover governed run MUST fail closed and instruct restart under `cs River Orchestrator`.
+- Any attempted resume of a pre-cutover governed run or single-file `workflow-audit.json` ledger MUST fail closed and instruct restart under `cs River Orchestrator`.
 
 If `audit.openWait` is not null, it MUST use this shape:
 
@@ -860,7 +898,7 @@ Required timing buckets:
 
 Timing invariants:
 
-1. Timing buckets MUST be derived only from canonical `eventUtc` values in `workflow-audit.json`.
+1. Timing buckets MUST be derived only from canonical `eventUtc` values recorded in immutable event files under `workflow-audit/`.
 2. Human-wait and system-wait never count as active agent time.
 3. Timing buckets MUST be mutually exclusive.
 4. Unmatched, overlapping, or impossible timing intervals invalidate trust.
@@ -1013,8 +1051,8 @@ Implementation and review MUST explicitly cover at least these cases with the ex
 
 - Every significant decision **MUST** be recorded as an ADR.
 - ADRs **MUST** use the canonical frontmatter and MADR-based structure defined in `.github/instructions/adr.instructions.md`.
-- ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the timestamped filename and frontmatter identity rules defined in `.github/instructions/adr.instructions.md`.
-- Branches **MUST NOT** rely on provisional sequential ADR numbering; ADR identity lives in timestamped filenames plus frontmatter metadata.
+- ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the sequential `NNNN-title-with-dashes.md` filename pattern and frontmatter identity rules defined in `.github/instructions/adr.instructions.md`.
+- Branches **MAY** use provisional sequential ADR numbering during development, but final ADR numbering and any renumbering **MUST** follow `.github/instructions/adr.instructions.md` before merge.
 - ADRs are immutable — superseded decisions get a new ADR referencing the old.
 - ADRs **MUST** be consulted on subsequent changes to verify directional
   alignment.
@@ -1248,17 +1286,17 @@ The skip reason **MUST** be recorded in `scope-assessment.md` with evidence.
 
 ### Process
 
-1. `cs River Orchestrator` remains the canonical Phase 9 owner and MUST record every reviewer-significant Phase 9 fact in `workflow-audit.json`.
+1. `cs River Orchestrator` remains the canonical Phase 9 owner and MUST record every reviewer-significant Phase 9 fact in immutable event files under `workflow-audit/`.
 2. `cs River Orchestrator` delegates only bounded Phase 9 PR-surface specialist work to **cs PR Manager** and MUST NOT give open-ended Phase 9 umbrella authority; every such delegation MUST be capability-scoped through explicit `details.allowedActions` and `details.authorizedTargets`.
 3. At Phase 9 startup or recovery, if PR-surface work cannot begin normally, `cs River Orchestrator` records the blocked or resumed state canonically without transferring ownership.
-4. `cs River Orchestrator` invokes **cs Scribe** to compile `workflow-audit.md` and the condensed reviewer-flow inputs from a stable `workflow-audit.json` snapshot when Phase 9 audit compilation or recompilation is required.
+4. `cs River Orchestrator` invokes **cs Scribe** to compile `workflow-audit.md` and the condensed reviewer-flow inputs from a stable `workflow-audit/` snapshot when Phase 9 audit compilation or recompilation is required.
 5. The PR Manager creates or updates the PR, collects CI and review evidence, and performs delegated PR-surface mutations only within the active bounded delegation.
 6. If freshness is already broken or later becomes broken, `cs River Orchestrator` MUST immediately record the invalidation canonically and ensure the PR-surface reviewer summary is marked stale with the stale reason and the last known freshness stamp at first observation, even during the 300-second polling wait, then follow the freshness recovery rules before republishing.
 7. `cs River Orchestrator` MUST keep the bounded stale-marker delegation active for the current PR while a fresh reviewer summary is published or a review-polling wait is active so stale-marker publication has no integrity window.
 8. The PR Manager monitors CI pipelines and handles review threads using the repository PR polling protocol only while the corresponding `delegation-recorded` event remains active for that `workItemId`, and only for actions and targets authorized in that delegation.
 9. Review thread handling:
    - For each human review comment: read it, decide scope-appropriateness, fix it or push back with reasoning, reply to the thread, and either resolve it or leave it open with rationale.
-10. `workflow-audit.md` and the `Reviewer Audit Summary` are derived artifacts only. Missing canonical facts MUST be fixed in `workflow-audit.json`; they MUST NOT be backfilled from `activity-log.md`, thread logs, or PR prose.
+10. `workflow-audit.md` and the `Reviewer Audit Summary` are derived artifacts only. Missing canonical facts MUST be fixed in `workflow-audit/`; they MUST NOT be backfilled from `activity-log.md`, thread logs, or PR prose.
 11. `cs River Orchestrator` invokes **cs Merge Readiness Evaluator** to produce `09-pr-merge/merge-readiness.md` from the current PR, QA, documentation, and review evidence.
 12. Before PR-ready or merge-ready progression continues, `cs River Orchestrator`
   **MUST** obtain G3 approval for `09-pr-merge/merge-readiness.md`, the
@@ -1336,7 +1374,7 @@ These are contract-level before/after comparisons for the redesign, not runtime 
 | Flow | Before | After | Simplification signal |
 |------|--------|-------|-----------------------|
 | Direct governed intake | The previous governed orchestrator owned governed intake, wrote canonical facts, and also directly authored discovery synthesis while every governed specialist could append `activity-log.md`. | `cs River Orchestrator` owns governed intake, writes canonical facts, delegates discovery synthesis to `cs Discovery Synthesizer`, and is the sole direct `activity-log.md` writer. | One governed human-facing orchestrator remains, direct artifact ownership is explicit, and operational log ownership drops from many governed writers to one. |
-| `cs Entrepreneur` → governed handoff | An approved Story Pack moved from `cs Entrepreneur` to the previous governed orchestrator, after which canonical ownership and supporting-log behavior diverged immediately because governed specialists could all append `activity-log.md`. | An approved Story Pack moves from `cs Entrepreneur` to `cs River Orchestrator`, which owns `workflow-audit.json`, `state.json`, and `activity-log.md` from the first governed append onward. | The public handoff still uses one pre-governed step, but governed writer identity is singular from the first canonical event onward. |
+| `cs Entrepreneur` → governed handoff | An approved Story Pack moved from `cs Entrepreneur` to the previous governed orchestrator, after which canonical ownership and supporting-log behavior diverged immediately because governed specialists could all append `activity-log.md`. | An approved Story Pack moves from `cs Entrepreneur` to `cs River Orchestrator`, which owns `workflow-audit/`, `state.json`, and `activity-log.md` from the first governed append onward. | The public handoff still uses one pre-governed step, but governed writer identity is singular from the first canonical event onward. |
 | Phase 9 stale-summary recovery | The previous governed orchestrator coordinated invalidation, delegated PR-surface mutation, requested Scribe recompilation when needed, and evaluated merge readiness directly. | `cs River Orchestrator` coordinates invalidation, keeps stale-marker delegation alive, invokes `cs Scribe` for recompilation, invokes `cs PR Manager` for bounded PR-surface mutation, and invokes `cs Merge Readiness Evaluator` for the readiness artifact. | One canonical owner remains, while PR mutation, derived-audit compilation, and readiness evaluation are split into bounded leaves with one owned output each. |
 
 ## Scenario Coverage Matrix
