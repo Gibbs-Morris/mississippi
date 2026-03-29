@@ -1,4 +1,313 @@
 @page "/"
 @namespace MississippiSamples.LightSpeed.Client.Pages
 
-<p>Hello world</p>
+@{
+    List<WorkbenchItem> visibleWorkItems = GetFilteredWorkItems();
+}
+
+<RefractionRoot Selection="@ThemeSelection">
+<main class="ls-workbench">
+<header class="ls-workbench__hero">
+    <div class="ls-workbench__hero-copy">
+        <p class="ls-workbench__eyebrow">Refraction reboot · base-only proof</p>
+        <h1 class="ls-workbench__title">Operations workbench</h1>
+        <p class="ls-workbench__subtitle">
+            Search, filter, select, review, edit, validate, act, and switch brands live without store coupling.
+        </p>
+    </div>
+
+    <section class="ls-workbench__brand-switcher" aria-label="Brand switcher">
+        <span class="ls-workbench__brand-label">Brand</span>
+        @foreach (string brandOption in BrandOptions)
+        {
+            <button type="button"
+                    class="ls-brand-button @(IsActiveBrand(brandOption) ? "is-active" : string.Empty)"
+                    aria-pressed="@IsActiveBrand(brandOption)"
+                    data-testid="brand-@brandOption"
+                    @onclick="() => HandleBrandChangedAsync(brandOption)">
+                @GetBrandLabel(brandOption)
+            </button>
+        }
+    </section>
+</header>
+
+<TelemetryStrip AdditionalAttributes="@SummaryStripAttributes">
+    <span class="ls-workbench__metric">Queue @AllWorkItems.Count</span>
+    <span class="ls-workbench__metric">Ready @ReadyItemCount</span>
+    <span class="ls-workbench__metric">Actioned @ActionedItemCount</span>
+    <span class="ls-workbench__metric">Selected @CurrentSelectionStage</span>
+    <span class="ls-workbench__metric">Theme @CurrentBrandLabel</span>
+</TelemetryStrip>
+
+@if (!string.IsNullOrWhiteSpace(FeedbackMessage))
+{
+    <section class="ls-workbench__feedback ls-workbench__feedback--@FeedbackTone"
+             aria-live="polite"
+             data-testid="feedback-banner"
+             role="status">
+        @FeedbackMessage
+    </section>
+}
+
+<div class="ls-workbench__layout">
+    <Pane Title="Operations queue">
+        <div class="ls-workbench__filters">
+            <div class="ls-workbench__filter-field">
+                <InputField Id="ls-queue-search"
+                            Label="Search queue"
+                            Placeholder="Search by id, customer, queue, or analyst"
+                            Value="@SearchText"
+                            ValueChanged="HandleSearchChangedAsync"/>
+            </div>
+
+            <div class="ls-workbench__filter-field">
+                <label class="ls-workbench__field-label" for="ls-stage-filter">Stage</label>
+                <select id="ls-stage-filter"
+                        class="ls-workbench__select"
+                        data-testid="stage-filter"
+                        value="@SelectedStageFilter"
+                        @onchange="HandleStageFilterChangedAsync">
+                    @foreach (string stageOption in StageFilterOptions)
+                    {
+                        <option value="@stageOption">@stageOption</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="ls-workbench__queue-shell">
+            @if (visibleWorkItems.Count == 0)
+            {
+                <div class="ls-workbench__empty-state" data-testid="queue-empty-state">
+                    No work items match the current search and stage filter.
+                </div>
+            }
+            else
+            {
+                <table class="ls-workbench__table">
+                    <thead>
+                    <tr>
+                        <th scope="col">Work item</th>
+                        <th scope="col">Queue</th>
+                        <th scope="col">Analyst</th>
+                        <th scope="col">Stage</th>
+                        <th scope="col">Checkpoint</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (WorkbenchItem item in visibleWorkItems)
+                    {
+                        <tr class="ls-workbench__table-row @(item.Id == SelectedWorkItem?.Id ? "is-selected" : string.Empty)"
+                            data-selected="@(item.Id == SelectedWorkItem?.Id)">
+                            <td>
+                                <button type="button"
+                                        class="ls-workbench__row-button"
+                                        data-testid="queue-select-@item.Id"
+                                        @onclick="() => HandleSelectionChangedAsync(item.Id)">
+                                    <span class="ls-workbench__row-title">@item.Id</span>
+                                    <span class="ls-workbench__row-subtitle">@item.Customer</span>
+                                </button>
+                            </td>
+                            <td>@item.Queue</td>
+                            <td>@item.AssignedAnalyst</td>
+                            <td>
+                                <span class="ls-state-badge ls-state-badge--@GetStageCssSuffix(item.Stage)">
+                                    @item.Stage
+                                </span>
+                            </td>
+                            <td>@item.LastCheckpoint</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </Pane>
+
+    <Pane Title="Selected review">
+        <ChildContent>
+            @if (SelectedWorkItem is null)
+            {
+                <div class="ls-workbench__empty-state" data-testid="detail-empty-state">
+                    Select a queue item to inspect the current response plan.
+                </div>
+            }
+            else
+            {
+                <section class="ls-workbench__detail" data-testid="detail-panel">
+                    <header class="ls-workbench__detail-header">
+                        <div>
+                            <p class="ls-workbench__detail-kicker">@SelectedWorkItem.Queue</p>
+                            <h2 class="ls-workbench__detail-title">@SelectedWorkItem.Customer</h2>
+                        </div>
+
+                        <span class="ls-state-badge ls-state-badge--@GetStageCssSuffix(SelectedWorkItem.Stage)"
+                              data-testid="selected-stage">
+                            @SelectedWorkItem.Stage
+                        </span>
+                    </header>
+
+                    <dl class="ls-workbench__detail-grid">
+                        <div>
+                            <dt>Work item</dt>
+                            <dd data-testid="selected-id">@SelectedWorkItem.Id</dd>
+                        </div>
+                        <div>
+                            <dt>Analyst</dt>
+                            <dd data-testid="selected-analyst">@SelectedWorkItem.AssignedAnalyst</dd>
+                        </div>
+                        <div>
+                            <dt>Disposition</dt>
+                            <dd data-testid="selected-disposition">@SelectedWorkItem.Disposition</dd>
+                        </div>
+                        <div>
+                            <dt>Checkpoint</dt>
+                            <dd data-testid="selected-checkpoint">@SelectedWorkItem.LastCheckpoint</dd>
+                        </div>
+                    </dl>
+
+                    <section class="ls-workbench__detail-section">
+                        <h3>Response summary</h3>
+                        <p data-testid="selected-summary">@SelectedWorkItem.ResponseSummary</p>
+                    </section>
+
+                    <section class="ls-workbench__detail-section">
+                        <h3>Review notes</h3>
+                        <p data-testid="selected-notes">@SelectedWorkItem.ReviewNotes</p>
+                    </section>
+                </section>
+            }
+        </ChildContent>
+
+        <Footer>
+            <div class="ls-workbench__detail-actions">
+                <button type="button"
+                        class="ls-command-button ls-command-button--secondary"
+                        data-testid="review-open"
+                        disabled="@(SelectedWorkItem is null)"
+                        @onclick="HandleReviewRequestedAsync">
+                    Review and edit
+                </button>
+
+                <button type="button"
+                        class="ls-command-button"
+                        data-testid="apply-action"
+                        disabled="@(!CanActSelectedWorkItem)"
+                        @onclick="HandleActionRequestedAsync">
+                    Apply action
+                </button>
+            </div>
+        </Footer>
+    </Pane>
+</div>
+
+@if (IsReviewDialogOpen)
+{
+    <section aria-labelledby="ls-review-dialog-title"
+             aria-modal="true"
+             class="ls-review-dialog"
+             data-testid="review-dialog"
+             role="dialog">
+        <div class="ls-review-dialog__backdrop"></div>
+        <div class="ls-review-dialog__surface">
+            <header class="ls-review-dialog__header">
+                <div>
+                    <p class="ls-review-dialog__eyebrow">Review and validate</p>
+                    <h2 id="ls-review-dialog-title">Update the response plan</h2>
+                </div>
+
+                <button type="button"
+                        aria-label="Close review dialog"
+                        class="ls-review-dialog__close"
+                        @onclick="HandleReviewCanceledAsync">
+                    ×
+                </button>
+            </header>
+
+            @if (ValidationMessages.Count > 0)
+            {
+                <div aria-live="assertive"
+                     class="ls-review-dialog__validation-summary"
+                     data-testid="validation-summary"
+                     role="alert">
+                    <p>Resolve the following before saving:</p>
+                    <ul>
+                        @foreach (string validationMessage in ValidationMessages)
+                        {
+                            <li>@validationMessage</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <div class="ls-review-dialog__form-grid">
+                <div class="ls-workbench__field">
+                    <InputField Id="ls-review-analyst"
+                                Label="Assigned analyst"
+                                Placeholder="Assign analyst"
+                                Value="@DraftAssignedAnalyst"
+                                ValueChanged="HandleDraftAssignedAnalystChangedAsync"/>
+                    @if (!string.IsNullOrWhiteSpace(DraftAssignedAnalystError))
+                    {
+                        <p class="ls-workbench__field-error">@DraftAssignedAnalystError</p>
+                    }
+                </div>
+
+                <div class="ls-workbench__field">
+                    <label class="ls-workbench__field-label" for="ls-review-disposition">Disposition</label>
+                    <select id="ls-review-disposition"
+                            class="ls-workbench__select"
+                            data-testid="review-disposition"
+                            value="@DraftDisposition"
+                            @onchange="HandleDraftDispositionChangedAsync">
+                        @foreach (string dispositionOption in DispositionOptions)
+                        {
+                            <option value="@dispositionOption">@dispositionOption</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="ls-workbench__field ls-workbench__field--full-width">
+                    <InputField Id="ls-review-summary"
+                                Label="Response summary"
+                                Placeholder="Summarize the operational plan"
+                                Value="@DraftResponseSummary"
+                                ValueChanged="HandleDraftResponseSummaryChangedAsync"/>
+                    @if (!string.IsNullOrWhiteSpace(DraftResponseSummaryError))
+                    {
+                        <p class="ls-workbench__field-error">@DraftResponseSummaryError</p>
+                    }
+                </div>
+
+                <div class="ls-workbench__field ls-workbench__field--full-width">
+                    <label class="ls-workbench__field-label" for="ls-review-notes">Review notes</label>
+                    <textarea id="ls-review-notes"
+									  class="ls-workbench__textarea"
+									  data-testid="review-notes"
+									  value="@DraftReviewNotes"
+									  @oninput="HandleDraftReviewNotesChangedAsync"></textarea>
+                    @if (!string.IsNullOrWhiteSpace(DraftReviewNotesError))
+                    {
+                        <p class="ls-workbench__field-error">@DraftReviewNotesError</p>
+                    }
+                </div>
+            </div>
+
+            <footer class="ls-review-dialog__actions">
+                <button type="button"
+                        class="ls-command-button ls-command-button--secondary"
+                        @onclick="HandleReviewCanceledAsync">
+                    Cancel
+                </button>
+                <button type="button"
+                        class="ls-command-button"
+                        data-testid="review-save"
+                        @onclick="HandleReviewSavedAsync">
+                    Save review
+                </button>
+            </footer>
+        </div>
+    </section>
+}
+</main>
+</RefractionRoot>

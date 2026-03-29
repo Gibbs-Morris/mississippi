@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
-using Mississippi.Reservoir.Client;
+using Mississippi.Refraction.Client.Infrastructure;
 
 using MississippiSamples.LightSpeed.Client;
 
@@ -9,5 +9,5 @@ using MississippiSamples.LightSpeed.Client;
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
-builder.AddReservoir().AddReservoirDevTools();
+builder.Services.AddRefraction();
 await builder.Build().RunAsync();
