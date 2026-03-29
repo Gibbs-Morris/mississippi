@@ -1,0 +1,14 @@
+.rf-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--rf-raw-space-1) var(--rf-raw-space-3);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rf-color-text-muted) 18%, transparent);
+    color: var(--rf-color-text-primary);
+    font-family: var(--rf-raw-font-mono);
+    font-size: var(--rf-raw-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}

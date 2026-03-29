@@ -93,10 +93,38 @@ public sealed class LightSpeedHeroRouteTests : BunitContext
         Assert.Equal("horizon", cut.Find(".rf-root").GetAttribute("data-rf-brand"));
         Assert.NotNull(cut.Find("[data-testid='status-summary-bar']"));
         Assert.Equal(2, cut.FindAll(".rf-surface-panel").Count);
+        Assert.Equal(2, cut.FindAll(".rf-command-button").Count);
+        Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
+        Assert.NotNull(cut.Find(".rf-command-button[data-testid='review-open']"));
+        Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
+        Assert.NotNull(cut.Find(".rf-status-badge[data-testid='selected-stage']"));
         Assert.Empty(cut.FindAll(".rf-telemetry-strip"));
         Assert.Empty(cut.FindAll(".rf-pane"));
         Assert.Equal("OPS-1042", cut.Find("[data-testid='selected-id']").TextContent.Trim());
         Assert.NotEmpty(cut.FindAll("[data-testid^='queue-select-']"));
+    }
+
+    /// <summary>
+    ///     LightSpeed renders the increment-5 replacement command buttons inside the base-only review dialog actions.
+    /// </summary>
+    [Fact]
+    public void LightSpeedRendersReplacementLeafControlsInsideReviewDialog()
+    {
+        // Arrange
+        using IRenderedComponent<LightSpeedIndexPage> cut = RenderHeroRoute();
+
+        // Act
+        cut.Find("[data-testid='review-open']").Click();
+
+        // Assert
+        Assert.NotNull(cut.Find("[data-testid='review-dialog']"));
+        Assert.Equal(4, cut.FindAll(".rf-command-button").Count);
+        Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
+        Assert.Collection(
+            cut.FindAll(".ls-review-dialog__actions .rf-command-button"),
+            button => Assert.Equal("Cancel", button.TextContent.Trim()),
+            button => Assert.Equal("Save review", button.TextContent.Trim()));
+        Assert.NotNull(cut.Find(".ls-review-dialog__actions .rf-command-button[data-testid='review-save']"));
     }
 
     /// <summary>

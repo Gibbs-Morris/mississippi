@@ -1,0 +1,32 @@
+.rf-command-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--rf-raw-space-3) var(--rf-raw-space-4);
+    border: var(--rf-raw-stroke-hairline) solid color-mix(in srgb, var(--rf-component-command-background) 75%, transparent);
+    border-radius: 0.75rem;
+    background: var(--rf-component-command-background);
+    color: var(--rf-component-command-foreground);
+    cursor: pointer;
+    font-family: var(--rf-raw-font-sans);
+    font-size: var(--rf-raw-text-base);
+    font-weight: 600;
+    line-height: 1.2;
+    transition:
+        background-color var(--rf-raw-duration-fast) var(--rf-raw-easing-smooth),
+        border-color var(--rf-raw-duration-fast) var(--rf-raw-easing-smooth),
+        transform var(--rf-raw-duration-fast) var(--rf-raw-easing-smooth);
+}
+
+.rf-command-button:hover:not(:disabled),
+.rf-command-button:focus-visible:not(:disabled) {
+    background: var(--rf-component-command-hover-background);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.rf-command-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}

@@ -105,9 +105,8 @@
                             <td>@item.Queue</td>
                             <td>@item.AssignedAnalyst</td>
                             <td>
-                                <span class="ls-state-badge ls-state-badge--@OperationsWorkbenchScenario.GetStageCssSuffix(item.Stage)">
-                                    @item.Stage
-                                </span>
+                                <StatusBadge class="@($"ls-state-badge ls-state-badge--{OperationsWorkbenchScenario.GetStageCssSuffix(item.Stage)}")"
+                                             Label="@item.Stage"/>
                             </td>
                             <td>@item.LastCheckpoint</td>
                         </tr>
@@ -135,10 +134,9 @@
                             <h2 class="ls-workbench__detail-title">@Model.SelectedWorkItem.Customer</h2>
                         </div>
 
-                        <span class="ls-state-badge ls-state-badge--@OperationsWorkbenchScenario.GetStageCssSuffix(Model.SelectedWorkItem.Stage)"
-                              data-testid="selected-stage">
-                            @Model.SelectedWorkItem.Stage
-                        </span>
+                        <StatusBadge class="@($"ls-state-badge ls-state-badge--{OperationsWorkbenchScenario.GetStageCssSuffix(Model.SelectedWorkItem.Stage)}")"
+                                     data-testid="selected-stage"
+                                     Label="@Model.SelectedWorkItem.Stage"/>
                     </header>
 
                     <dl class="ls-workbench__detail-grid">
@@ -175,21 +173,17 @@
 
         <Footer>
             <div class="ls-workbench__detail-actions">
-                <button type="button"
-                        class="ls-command-button ls-command-button--secondary"
-                        data-testid="review-open"
-                        disabled="@(Model.SelectedWorkItem is null)"
-                        @onclick="OnReviewRequested">
-                    Review and edit
-                </button>
+                <CommandButton class="ls-command-button ls-command-button--secondary"
+                               data-testid="review-open"
+                               IsDisabled="@(Model.SelectedWorkItem is null)"
+                               Label="Review and edit"
+                               OnClick="OnReviewRequested"/>
 
-                <button type="button"
-                        class="ls-command-button"
-                        data-testid="apply-action"
-                        disabled="@(!Model.CanActSelectedWorkItem)"
-                        @onclick="OnActionRequested">
-                    Apply action
-                </button>
+                <CommandButton class="ls-command-button"
+                               data-testid="apply-action"
+                               IsDisabled="@(!Model.CanActSelectedWorkItem)"
+                               Label="Apply action"
+                               OnClick="OnActionRequested"/>
             </div>
         </Footer>
     </SurfacePanel>
@@ -288,17 +282,13 @@
             </div>
 
             <footer class="ls-review-dialog__actions">
-                <button type="button"
-                        class="ls-command-button ls-command-button--secondary"
-                        @onclick="OnReviewCanceled">
-                    Cancel
-                </button>
-                <button type="button"
-                        class="ls-command-button"
-                        data-testid="review-save"
-                        @onclick="OnReviewSaved">
-                    Save review
-                </button>
+                <CommandButton class="ls-command-button ls-command-button--secondary"
+                               Label="Cancel"
+                               OnClick="OnReviewCanceled"/>
+                <CommandButton class="ls-command-button"
+                               data-testid="review-save"
+                               Label="Save review"
+                               OnClick="OnReviewSaved"/>
             </footer>
         </div>
     </section>

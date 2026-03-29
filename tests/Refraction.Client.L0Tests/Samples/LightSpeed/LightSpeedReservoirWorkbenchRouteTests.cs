@@ -26,6 +26,31 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
 {
     private bool servicesConfigured;
 
+    private static void AssertReplacementLeafControls<TComponent>(
+        IRenderedComponent<TComponent> cut,
+        bool isReviewDialogOpen
+    )
+        where TComponent : IComponent
+    {
+        Assert.NotNull(cut.Find(".rf-command-button[data-testid='review-open']"));
+        Assert.NotNull(cut.Find(".rf-command-button[data-testid='apply-action']"));
+        Assert.NotNull(cut.Find(".rf-status-badge[data-testid='selected-stage']"));
+        Assert.Equal(isReviewDialogOpen ? 4 : 2, cut.FindAll(".rf-command-button").Count);
+        Assert.Equal(5, cut.FindAll(".rf-status-badge").Count);
+
+        if (!isReviewDialogOpen)
+        {
+            return;
+        }
+
+        Assert.NotNull(cut.Find("[data-testid='review-dialog']"));
+        Assert.Collection(
+            cut.FindAll(".ls-review-dialog__actions .rf-command-button"),
+            button => Assert.Equal("Cancel", button.TextContent.Trim()),
+            button => Assert.Equal("Save review", button.TextContent.Trim()));
+        Assert.NotNull(cut.Find(".ls-review-dialog__actions .rf-command-button[data-testid='review-save']"));
+    }
+
     private static WorkbenchSnapshot CaptureSnapshot<TComponent>(
         IRenderedComponent<TComponent> cut
     )
@@ -224,6 +249,28 @@ public sealed class LightSpeedReservoirWorkbenchRouteTests : BunitContext
         // Assert
         Assert.Equal(baseRoute.Find("h1").TextContent.Trim(), reservoirRoute.Find("h1").TextContent.Trim());
         Assert.Equal(baseSnapshot, reservoirSnapshot);
+        AssertReplacementLeafControls(baseRoute, isReviewDialogOpen: false);
+        AssertReplacementLeafControls(reservoirRoute, isReviewDialogOpen: false);
+    }
+
+    /// <summary>
+    ///     The Reservoir parity route matches the base route for the increment-5 review-dialog leaf controls.
+    /// </summary>
+    [Fact]
+    public void ReservoirWorkbenchRouteMatchesBaseRouteForReviewDialogLeafControls()
+    {
+        // Arrange
+        using IRenderedComponent<LightSpeedIndexPage> baseRoute = RenderBaseOnlyRoute();
+        using IRenderedComponent<LightSpeedReservoirWorkbenchPage> reservoirRoute = RenderReservoirWorkbenchRoute();
+
+        // Act
+        baseRoute.Find("[data-testid='review-open']").Click();
+        reservoirRoute.Find("[data-testid='review-open']").Click();
+
+        // Assert
+        Assert.Equal(CaptureSnapshot(baseRoute), CaptureSnapshot(reservoirRoute));
+        AssertReplacementLeafControls(baseRoute, isReviewDialogOpen: true);
+        AssertReplacementLeafControls(reservoirRoute, isReviewDialogOpen: true);
     }
 
     /// <summary>

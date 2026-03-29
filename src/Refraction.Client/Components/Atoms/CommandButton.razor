@@ -1,0 +1,10 @@
+@* CommandButton - presentational enterprise command trigger *@
+
+<button type="button"
+        class="@RootCssClass"
+        data-state="@State"
+        disabled="@IsDisabled"
+        @onclick="HandleClickAsync"
+        @attributes="UnmatchedAttributes">
+    @Label
+</button>
