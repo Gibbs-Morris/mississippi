@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Consumer-facing metadata and stable contract identity for DomainModeling replica sinks.</Description>
+  </PropertyGroup>
+</Project>

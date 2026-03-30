@@ -17,6 +17,12 @@
     <Project Path="src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
     <Project Path="src\DomainModeling.Gateway\DomainModeling.Gateway.csproj" />
   </Folder>
+  <Folder Name="/Framework/EventSourcing/ReplicaSinks/">
+    <Project Path="src\DomainModeling.ReplicaSinks.Abstractions\DomainModeling.ReplicaSinks.Abstractions.csproj" />
+    <Project Path="src\DomainModeling.ReplicaSinks.Runtime\DomainModeling.ReplicaSinks.Runtime.csproj" />
+    <Project Path="src\DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions\DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions.csproj" />
+    <Project Path="src\DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap\DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap.csproj" />
+  </Folder>
   <Folder Name="/Framework/EventSourcing/Brooks/">
     <Project Path="src\Brooks.Abstractions\Brooks.Abstractions.csproj" />
     <Project Path="src\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
@@ -93,6 +99,11 @@
     <Project Path="tests\DomainModeling.Abstractions.L0Tests\DomainModeling.Abstractions.L0Tests.csproj" />
     <Project Path="tests\DomainModeling.Runtime.L0Tests\DomainModeling.Runtime.L0Tests.csproj" />
     <Project Path="tests\DomainModeling.Gateway.L0Tests\DomainModeling.Gateway.L0Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/EventSourcing/ReplicaSinks/">
+    <Project Path="tests\DomainModeling.ReplicaSinks.Abstractions.L0Tests\DomainModeling.ReplicaSinks.Abstractions.L0Tests.csproj" />
+    <Project Path="tests\DomainModeling.ReplicaSinks.Runtime.L0Tests\DomainModeling.ReplicaSinks.Runtime.L0Tests.csproj" />
+    <Project Path="tests\DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap.L0Tests\DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap.L0Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Brooks/">
     <Project Path="tests\Brooks.Abstractions.L0Tests\Brooks.Abstractions.L0Tests.csproj" />

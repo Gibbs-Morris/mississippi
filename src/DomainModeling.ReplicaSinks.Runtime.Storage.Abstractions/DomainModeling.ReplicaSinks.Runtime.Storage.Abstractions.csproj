@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\DomainModeling.ReplicaSinks.Abstractions\DomainModeling.ReplicaSinks.Abstractions.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Description>Provider-facing contracts, registration metadata, and destination identity for replica sinks.</Description>
+  </PropertyGroup>
+</Project>
