@@ -50,6 +50,24 @@ public sealed class ReplicaSinkLatestStateProcessorTests
             provider,
             new(new("client", targetName), ReplicaProvisioningMode.CreateIfMissing));
 
+    private static ReplicaSinkBindingDescriptor CreateDirectBinding<TProjection>(
+        string sinkKey,
+        string targetName,
+        IReplicaSinkProvider provider
+    )
+        where TProjection : class =>
+        new(
+            new(typeof(TProjection).FullName ?? typeof(TProjection).Name, sinkKey, targetName),
+            typeof(TProjection),
+            ReplicaWriteMode.LatestState,
+            null,
+            typeof(TProjection).FullName ?? typeof(TProjection).Name,
+            null,
+            true,
+            new(sinkKey, "client", provider.Format, provider.GetType(), ReplicaProvisioningMode.CreateIfMissing),
+            provider,
+            new(new("client", targetName), ReplicaProvisioningMode.CreateIfMissing));
+
     private static ReplicaSinkLatestStateProcessor CreateProcessor(
         IReadOnlyList<ReplicaSinkBindingDescriptor> bindings,
         IReplicaSinkDeliveryStateStore stateStore,
@@ -220,6 +238,8 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     {
         public List<(Type ProjectionType, string EntityId, long SourcePosition)> ReadRequests { get; } = [];
 
+        private Dictionary<ReplicaStateKey, Exception> Failures { get; } = [];
+
         private Dictionary<ReplicaStateKey, ReplicaSinkSourceState> States { get; } = [];
 
         public ValueTask<ReplicaSinkSourceState> ReadAsync(
@@ -230,6 +250,11 @@ public sealed class ReplicaSinkLatestStateProcessorTests
         )
         {
             ReadRequests.Add((projectionType, entityId, sourcePosition));
+            if (Failures.TryGetValue((projectionType, entityId, sourcePosition), out Exception? failure))
+            {
+                throw failure;
+            }
+
             if (!States.TryGetValue((projectionType, entityId, sourcePosition), out ReplicaSinkSourceState? state))
             {
                 throw new ReplicaSinkSourceStateUnavailableException(projectionType, entityId, sourcePosition, null);
@@ -245,6 +270,17 @@ public sealed class ReplicaSinkLatestStateProcessorTests
             ReplicaSinkSourceState state
         ) =>
             States[(projectionType, entityId, sourcePosition)] = state;
+
+        public void SetFailure(
+            Type projectionType,
+            string entityId,
+            long sourcePosition,
+            Exception failure
+        )
+        {
+            ArgumentNullException.ThrowIfNull(failure);
+            Failures[(projectionType, entityId, sourcePosition)] = failure;
+        }
 
         public void SetValue(
             Type projectionType,
@@ -540,6 +576,46 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     }
 
     /// <summary>
+    ///     FlushAsync coalesces to the highest desired source position before directly materializing the projection.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldDirectlyMaterializeProjectionAfterSupersessionDecision()
+    {
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.Applied,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateDirectBinding<TestProjection>(
+            "sink-a",
+            "orders-direct",
+            provider);
+        TestProjection projection = new()
+        {
+            Id = "projection-31",
+        };
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(typeof(TestProjection), "entity-1", 31, projection);
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor([binding], stateStore, sourceAccessor);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 30, CancellationToken.None);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 31, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkDeliveryState? state = await stateStore.ReadAsync(
+            GetDeliveryKey(binding, "entity-1"),
+            CancellationToken.None);
+        ReplicaWriteRequest request = Assert.Single(provider.Requests);
+        Assert.NotNull(state);
+        Assert.Equal(31, state.DesiredSourcePosition);
+        Assert.Equal(31, state.CommittedSourcePosition);
+        Assert.False(request.IsDeleted);
+        Assert.Equal(31, request.SourcePosition);
+        Assert.Same(projection, request.Payload);
+        Assert.Single(sourceAccessor.ReadRequests);
+        Assert.Equal(31, sourceAccessor.ReadRequests.Single().SourcePosition);
+    }
+
+    /// <summary>
     ///     FlushAsync persists dead-letter state when the provider signals a terminal write failure.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -592,6 +668,52 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     }
 
     /// <summary>
+    ///     FlushAsync persists a sanitized dead-letter record when unexpected mapping failures occur.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldPersistSanitizedDeadLetterForUnexpectedMappingFailure()
+    {
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.Applied,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            _ => throw new InvalidOperationException("sensitive mapping failure"));
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            18,
+            new TestProjection
+            {
+                Id = "projection-18",
+            });
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor([binding], stateStore, sourceAccessor);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 18, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkDeliveryState? state = await stateStore.ReadAsync(
+            GetDeliveryKey(binding, "entity-1"),
+            CancellationToken.None);
+        Assert.NotNull(state);
+        Assert.Equal(18, state.DesiredSourcePosition);
+        Assert.Null(state.CommittedSourcePosition);
+        Assert.Null(state.Retry);
+        Assert.NotNull(state.DeadLetter);
+        Assert.Equal(18, state.DeadLetter.SourcePosition);
+        Assert.Equal("mapping_failure", state.DeadLetter.FailureCode);
+        Assert.Equal(
+            "Projection materialization failed unexpectedly. (InvalidOperationException).",
+            state.DeadLetter.FailureSummary);
+        Assert.DoesNotContain("sensitive mapping failure", state.DeadLetter.FailureSummary, StringComparison.Ordinal);
+        Assert.Empty(provider.Requests);
+    }
+
+    /// <summary>
     ///     FlushAsync persists retry state when the provider signals a retryable write failure.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -640,6 +762,108 @@ public sealed class ReplicaSinkLatestStateProcessorTests
         Assert.Equal(1, state.Retry.AttemptCount);
         Assert.Equal("transient_failure", state.Retry.FailureCode);
         Assert.Equal(timeProvider.GetUtcNow().AddMinutes(1), state.Retry.NextRetryAtUtc);
+    }
+
+    /// <summary>
+    ///     FlushAsync keeps the last committed checkpoint while persisting a sanitized retry record for a newer desired
+    ///     position.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldKeepCommittedPositionWhilePersistingSanitizedRetryForNewerDesiredPosition()
+    {
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.Applied,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            10,
+            new TestProjection
+            {
+                Id = "projection-10",
+            });
+        sourceAccessor.SetFailure(
+            typeof(TestProjection),
+            "entity-1",
+            11,
+            new InvalidOperationException("sensitive source-state failure"));
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor([binding], stateStore, sourceAccessor);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 10, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 11, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkDeliveryState? state = await stateStore.ReadAsync(
+            GetDeliveryKey(binding, "entity-1"),
+            CancellationToken.None);
+        Assert.NotNull(state);
+        Assert.Equal(11, state.DesiredSourcePosition);
+        Assert.Equal(10, state.CommittedSourcePosition);
+        Assert.NotNull(state.Retry);
+        Assert.Equal(11, state.Retry.SourcePosition);
+        Assert.Equal("source_state_read_failed", state.Retry.FailureCode);
+        Assert.Equal(
+            "Projection source state read failed unexpectedly. (InvalidOperationException).",
+            state.Retry.FailureSummary);
+        Assert.DoesNotContain("sensitive source-state failure", state.Retry.FailureSummary, StringComparison.Ordinal);
+        Assert.Null(state.DeadLetter);
+        Assert.Single(provider.Requests);
+        Assert.Equal(10, provider.Requests.Single().SourcePosition);
+    }
+
+    /// <summary>
+    ///     FlushAsync checkpoints terminal provider outcomes when the target reports the write as superseded.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldCheckpointSupersededIgnoredTerminalOutcome()
+    {
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.SupersededIgnored,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            22,
+            new TestProjection
+            {
+                Id = "projection-22",
+            });
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor([binding], stateStore, sourceAccessor);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 22, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkDeliveryState? state = await stateStore.ReadAsync(
+            GetDeliveryKey(binding, "entity-1"),
+            CancellationToken.None);
+        Assert.NotNull(state);
+        Assert.Equal(22, state.DesiredSourcePosition);
+        Assert.Equal(22, state.CommittedSourcePosition);
+        Assert.Null(state.Retry);
+        Assert.Null(state.DeadLetter);
+        Assert.Single(provider.Requests);
+        Assert.Equal(22, provider.Requests.Single().SourcePosition);
     }
 
     /// <summary>
