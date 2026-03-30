@@ -2,6 +2,7 @@ using System;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -15,6 +16,20 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap;
 /// </summary>
 public static class BootstrapReplicaSinkRegistrations
 {
+    /// <summary>
+    ///     Adds the bootstrap in-memory delivery-state store used by the Increment 03a proof path.
+    /// </summary>
+    /// <param name="services">The service collection to update.</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddBootstrapReplicaSinkDeliveryStateStore(
+        this IServiceCollection services
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<IReplicaSinkDeliveryStateStore, BootstrapReplicaSinkDeliveryStateStore>();
+        return services;
+    }
+
     /// <summary>
     ///     Adds the bootstrap replica sink provider for the specified named sink.
     /// </summary>
@@ -73,6 +88,7 @@ public static class BootstrapReplicaSinkRegistrations
     )
     {
         services.AddLogging();
+        services.AddBootstrapReplicaSinkDeliveryStateStore();
         services.AddKeyedSingleton<IReplicaSinkProvider>(
             sinkKey,
             (

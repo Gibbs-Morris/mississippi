@@ -62,6 +62,11 @@ internal sealed class ReplicaSinkBindingDescriptor
     public ReplicaSinkBindingIdentity BindingIdentity { get; }
 
     /// <summary>
+    ///     Gets the logical binding identity.
+    /// </summary>
+    public ReplicaSinkBindingIdentity Identity => BindingIdentity;
+
+    /// <summary>
     ///     Gets the stable contract identity string.
     /// </summary>
     public string ContractIdentity { get; }
@@ -102,6 +107,11 @@ internal sealed class ReplicaSinkBindingDescriptor
     public string TargetName => BindingIdentity.TargetName;
 
     /// <summary>
+    ///     Gets the validated target descriptor.
+    /// </summary>
+    public ReplicaTargetDescriptor Target => ValidatedTargetDescriptor;
+
+    /// <summary>
     ///     Gets a value indicating whether direct materialization is used.
     /// </summary>
     public bool UsesDirectMaterialization { get; }
@@ -115,4 +125,30 @@ internal sealed class ReplicaSinkBindingDescriptor
     ///     Gets the configured write mode.
     /// </summary>
     public ReplicaWriteMode WriteMode { get; }
+
+    /// <summary>
+    ///     Materializes the outbound replica payload for this binding.
+    /// </summary>
+    /// <param name="projection">The projection instance to materialize.</param>
+    /// <returns>The outbound payload.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="projection" /> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when mapped materialization is requested without a mapper.</exception>
+    public object Map(
+        object projection
+    )
+    {
+        ArgumentNullException.ThrowIfNull(projection);
+        if (UsesDirectMaterialization)
+        {
+            return projection;
+        }
+
+        if (MapperDelegate is null)
+        {
+            throw new InvalidOperationException(
+                $"Replica sink binding '{BindingIdentity}' does not have a mapper delegate for mapped materialization.");
+        }
+
+        return MapperDelegate(projection);
+    }
 }

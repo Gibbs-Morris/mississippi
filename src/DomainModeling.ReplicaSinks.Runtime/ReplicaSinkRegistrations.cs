@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 
 using Mississippi.DomainModeling.ReplicaSinks.Abstractions;
 using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions;
+using Mississippi.DomainModeling.Runtime;
 
 
 namespace Mississippi.DomainModeling.ReplicaSinks.Runtime;
@@ -33,6 +34,11 @@ public static class ReplicaSinkRegistrations
             serviceProvider.GetServices<ReplicaSinkProjectionDescriptor>(),
             serviceProvider.GetServices<ReplicaSinkRegistrationDescriptor>()));
         services.TryAddSingleton<IReplicaSinkStartupValidator, ReplicaSinkStartupValidator>();
+        services.AddUxProjections();
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<IReplicaSinkSourceStateAccessor, ReplicaSinkUxProjectionSourceStateAccessor>();
+        services.TryAddSingleton<IReplicaSinkLatestStateProcessorHook, NullReplicaSinkLatestStateProcessorHook>();
+        services.TryAddSingleton<IReplicaSinkLatestStateProcessor, ReplicaSinkLatestStateProcessor>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ReplicaSinkStartupValidationService>());
         return services;
     }

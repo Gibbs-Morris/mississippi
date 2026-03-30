@@ -36,8 +36,8 @@ internal sealed class ReplicaSinkProjectionRegistry : IReplicaSinkProjectionRegi
 
     private IReadOnlyList<ReplicaSinkStartupDiagnostic> Diagnostics { get; }
 
-    private static ( IReadOnlyList<ReplicaSinkBindingDescriptor> BindingDescriptors,
-        IReadOnlyList<ReplicaSinkStartupDiagnostic> Diagnostics ) BuildCache(
+    private static (IReadOnlyList<ReplicaSinkBindingDescriptor> BindingDescriptors,
+        IReadOnlyList<ReplicaSinkStartupDiagnostic> Diagnostics) BuildCache(
             IServiceProvider serviceProvider,
             IEnumerable<ReplicaSinkProjectionDescriptor>? projectionBindings,
             IEnumerable<ReplicaSinkRegistrationDescriptor>? registrationDescriptors
@@ -99,8 +99,8 @@ internal sealed class ReplicaSinkProjectionRegistry : IReplicaSinkProjectionRegi
             .Select(pair => ReplicaSinkStartupDiagnostics.CreateDuplicateLogicalBinding(pair.Key))
             .ToList();
         List<ReplicaSinkBindingDescriptor> provisionalDescriptors = [];
-        List<( ReplicaSinkBindingIdentity BindingIdentity, string PhysicalTargetKey, ReplicaSinkRegistrationDescriptor
-            RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor )> physicalTargetCandidates = [];
+        List<(ReplicaSinkBindingIdentity BindingIdentity, string PhysicalTargetKey, ReplicaSinkRegistrationDescriptor
+            RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor)> physicalTargetCandidates = [];
         foreach (ReplicaSinkProjectionDescriptor binding in discoveredBindings)
         {
             ReplicaSinkBindingIdentity bindingIdentity = CreateBindingIdentity(binding);
@@ -209,9 +209,8 @@ internal sealed class ReplicaSinkProjectionRegistry : IReplicaSinkProjectionRegi
         }
 
         HashSet<ReplicaSinkBindingIdentity> overlappingBindingIdentities = [];
-        foreach (IGrouping<string, ( ReplicaSinkBindingIdentity BindingIdentity, string PhysicalTargetKey,
-                     ReplicaSinkRegistrationDescriptor RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor
-                     )> group in physicalTargetCandidates
+        foreach (IGrouping<string, (ReplicaSinkBindingIdentity BindingIdentity, string PhysicalTargetKey,
+                 ReplicaSinkRegistrationDescriptor RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor)> group in physicalTargetCandidates
                      .GroupBy(candidate => candidate.PhysicalTargetKey, StringComparer.Ordinal)
                      .Where(group => group.Count() > 1)
                      .OrderBy(group => group.Key, StringComparer.Ordinal))
@@ -221,9 +220,8 @@ internal sealed class ReplicaSinkProjectionRegistry : IReplicaSinkProjectionRegi
                     group.Select(candidate => candidate.BindingIdentity),
                     group.First().RegistrationDescriptor,
                     group.First().TargetDescriptor));
-            foreach (( ReplicaSinkBindingIdentity BindingIdentity, string PhysicalTargetKey,
-                     ReplicaSinkRegistrationDescriptor RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor
-                     ) candidate in group)
+            foreach ((ReplicaSinkBindingIdentity BindingIdentity, string PhysicalTargetKey,
+                     ReplicaSinkRegistrationDescriptor RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor) candidate in group)
             {
                 overlappingBindingIdentities.Add(candidate.BindingIdentity);
             }
