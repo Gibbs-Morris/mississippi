@@ -81,6 +81,13 @@ public sealed class CosmosReplicaSinkProviderTests
         private readonly Dictionary<string, CosmosReplicaSinkTargetDeliveryDocument> deliveries =
             new(StringComparer.Ordinal);
 
+        private readonly Queue<IReadOnlyList<CosmosReplicaSinkDeliveryStateDocument>> deliveryStateQueryPages = new();
+
+        private readonly Dictionary<string, CosmosReplicaSinkDeliveryStateDocument> deliveryStates =
+            new(StringComparer.Ordinal);
+
+        private readonly Queue<IReadOnlyList<CosmosReplicaSinkTargetDeliveryDocument>> targetDeliveryQueryPages = new();
+
         private readonly Dictionary<string, CosmosReplicaSinkTargetMarkerDocument>
             targets = new(StringComparer.Ordinal);
 
@@ -97,6 +104,8 @@ public sealed class CosmosReplicaSinkProviderTests
         public Mock<Container> Container { get; }
 
         public bool ContainerExists { get; set; }
+
+        public string ContainerPartitionKeyPath { get; set; } = ReplicaSinkCosmosDefaults.PartitionKeyPath;
 
         private Mock<CosmosClient> Client { get; }
 
@@ -159,6 +168,40 @@ public sealed class CosmosReplicaSinkProviderTests
             return new(TestSinkKey, options, operations, NullLogger<CosmosReplicaSinkProvider>.Instance);
         }
 
+        public CosmosReplicaSinkContainerOperations CreateContainerOperations(
+            CosmosReplicaSinkOptions? options = null
+        )
+        {
+            options ??= new()
+            {
+                ClientKey = TestClientKey,
+                DatabaseId = ReplicaSinkCosmosDefaults.DatabaseId,
+                ContainerId = ReplicaSinkCosmosDefaults.ContainerId,
+                ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing,
+            };
+
+            return new(
+                TestSinkKey,
+                options,
+                Client.Object,
+                Container.Object,
+                new PassThroughRetryPolicy(),
+                TimeProvider,
+                NullLogger<CosmosReplicaSinkContainerOperations>.Instance);
+        }
+
+        public void QueueDeliveryStateQueryPage(
+            params CosmosReplicaSinkDeliveryStateDocument[] documents
+        ) => deliveryStateQueryPages.Enqueue(documents);
+
+        public void QueueTargetDeliveryQueryPage(
+            params CosmosReplicaSinkTargetDeliveryDocument[] documents
+        ) => targetDeliveryQueryPages.Enqueue(documents);
+
+        public void SeedTarget(
+            string targetName
+        ) => targets[targetName] = CosmosReplicaSinkTargetMarkerDocument.Create(targetName, TimeProvider.GetUtcNow());
+
         private void Setup()
         {
             Client.Setup(c => c.GetDatabase(It.IsAny<string>())).Returns(Database.Object);
@@ -181,7 +224,7 @@ public sealed class CosmosReplicaSinkProviderTests
                     int? _,
                     RequestOptions? _,
                     CancellationToken _
-                ) => CreateContainerResponse(new(properties.Id, properties.PartitionKeyPath)));
+                ) => CreateContainerResponse(new(properties.Id, ContainerPartitionKeyPath)));
             Container.Setup(c => c.ReadContainerAsync(
                     It.IsAny<ContainerRequestOptions>(),
                     It.IsAny<CancellationToken>()))
@@ -194,7 +237,7 @@ public sealed class CosmosReplicaSinkProviderTests
 
                     return Task.FromResult(
                         CreateContainerResponse(
-                            new(ReplicaSinkCosmosDefaults.ContainerId, ReplicaSinkCosmosDefaults.PartitionKeyPath)));
+                            new(ReplicaSinkCosmosDefaults.ContainerId, ContainerPartitionKeyPath)));
                 });
             Container.Setup(c => c.ReadItemAsync<CosmosReplicaSinkTargetMarkerDocument>(
                     It.IsAny<string>(),
@@ -234,6 +277,40 @@ public sealed class CosmosReplicaSinkProviderTests
                     }
 
                     targets[document.TargetName] = document;
+                    return Task.FromResult(CreateItemResponse(document));
+                });
+            Container.Setup(c => c.ReadItemAsync<CosmosReplicaSinkDeliveryStateDocument>(
+                    It.IsAny<string>(),
+                    It.IsAny<PartitionKey>(),
+                    It.IsAny<ItemRequestOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns((
+                    string id,
+                    PartitionKey partitionKey,
+                    ItemRequestOptions? _,
+                    CancellationToken _
+                ) =>
+                {
+                    CosmosReplicaSinkDeliveryStateDocument? document = deliveryStates.Values.SingleOrDefault(doc =>
+                        string.Equals(doc.Id, id, StringComparison.Ordinal) &&
+                        partitionKey.Equals(new(doc.ReplicaPartitionKey)));
+                    return document is null
+                        ? Task.FromException<ItemResponse<CosmosReplicaSinkDeliveryStateDocument>>(CreateNotFound())
+                        : Task.FromResult(CreateItemResponse(document));
+                });
+            Container.Setup(c => c.UpsertItemAsync(
+                    It.IsAny<CosmosReplicaSinkDeliveryStateDocument>(),
+                    It.IsAny<PartitionKey>(),
+                    It.IsAny<ItemRequestOptions>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns((
+                    CosmosReplicaSinkDeliveryStateDocument document,
+                    PartitionKey? _,
+                    ItemRequestOptions? _,
+                    CancellationToken _
+                ) =>
+                {
+                    deliveryStates[document.DeliveryKey] = document;
                     return Task.FromResult(CreateItemResponse(document));
                 });
             Container.Setup(c => c.ReadItemAsync<CosmosReplicaSinkTargetDeliveryDocument>(
@@ -276,14 +353,309 @@ public sealed class CosmosReplicaSinkProviderTests
                     It.IsAny<QueryRequestOptions>()))
                 .Returns(() =>
                 {
-                    IReadOnlyList<CosmosReplicaSinkTargetDeliveryDocument> documents = deliveries.Values
-                        .OrderByDescending(doc => doc.LatestSourcePosition)
-                        .ThenByDescending(doc => doc.LastUpdatedAtUtc, StringComparer.Ordinal)
-                        .ThenBy(doc => doc.DeliveryKey, StringComparer.Ordinal)
-                        .ToArray();
+                    IReadOnlyList<CosmosReplicaSinkTargetDeliveryDocument> documents =
+                        targetDeliveryQueryPages.Count > 0
+                            ? targetDeliveryQueryPages.Dequeue()
+                            : deliveries.Values
+                                .OrderByDescending(doc => doc.LatestSourcePosition)
+                                .ThenByDescending(doc => doc.LastUpdatedAtUtc, StringComparer.Ordinal)
+                                .ThenBy(doc => doc.DeliveryKey, StringComparer.Ordinal)
+                                .ToArray();
+
                     return new FakeFeedIterator<CosmosReplicaSinkTargetDeliveryDocument>([documents]);
                 });
+            Container.Setup(c => c.GetItemQueryIterator<CosmosReplicaSinkDeliveryStateDocument>(
+                    It.IsAny<QueryDefinition>(),
+                    It.IsAny<string>(),
+                    It.IsAny<QueryRequestOptions>()))
+                .Returns(() =>
+                {
+                    IReadOnlyList<CosmosReplicaSinkDeliveryStateDocument> documents =
+                        deliveryStateQueryPages.Count > 0
+                            ? deliveryStateQueryPages.Dequeue()
+                            : deliveryStates.Values.ToArray();
+
+                    return new FakeFeedIterator<CosmosReplicaSinkDeliveryStateDocument>([documents]);
+                });
         }
+    }
+
+    /// <summary>
+    ///     Ensures the provider exposes the stable Cosmos format and forwards container provisioning.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkProviderShouldExposeFormatAndEnsureContainer()
+    {
+        TestCosmosEnvironment environment = new()
+        {
+            ContainerExists = false,
+        };
+        CosmosReplicaSinkProvider provider = environment.CreateProvider();
+
+        await provider.EnsureContainerAsync(CancellationToken.None);
+
+        Assert.Equal(ReplicaSinkCosmosDefaults.FormatName, provider.Format);
+        Assert.True(environment.ContainerExists);
+    }
+
+    /// <summary>
+    ///     Ensures missing inspections report an absent target rather than throwing.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkProviderShouldInspectMissingTargetsAsAbsent()
+    {
+        TestCosmosEnvironment environment = new();
+        CosmosReplicaSinkProvider provider = environment.CreateProvider();
+        ReplicaTargetDescriptor target = CreateTarget(ReplicaProvisioningMode.CreateIfMissing);
+
+        ReplicaTargetInspection inspection = await provider.InspectAsync(target, CancellationToken.None);
+
+        Assert.False(inspection.TargetExists);
+        Assert.Equal(0, inspection.WriteCount);
+        Assert.Null(inspection.LatestSourcePosition);
+        Assert.Null(inspection.LatestPayload);
+    }
+
+    /// <summary>
+    ///     Ensures already-provisioned targets validate successfully without requiring another create path.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkProviderShouldValidateExistingProvisionedTargets()
+    {
+        TestCosmosEnvironment environment = new();
+        CosmosReplicaSinkProvider provider = environment.CreateProvider();
+        ReplicaTargetDescriptor createIfMissingTarget = CreateTarget(ReplicaProvisioningMode.CreateIfMissing);
+        ReplicaTargetDescriptor validateOnlyTarget = CreateTarget(ReplicaProvisioningMode.ValidateOnly);
+
+        await provider.EnsureTargetAsync(createIfMissingTarget, CancellationToken.None);
+        await provider.EnsureTargetAsync(validateOnlyTarget, CancellationToken.None);
+        ReplicaTargetInspection inspection = await provider.InspectAsync(validateOnlyTarget, CancellationToken.None);
+
+        Assert.True(inspection.TargetExists);
+        Assert.Equal(0, inspection.WriteCount);
+        Assert.Null(inspection.LatestSourcePosition);
+        Assert.Null(inspection.LatestPayload);
+    }
+
+    /// <summary>
+    ///     Ensures validate-only container checks fail when the configured container is missing.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkProviderShouldRejectValidateOnlyWhenContainerIsMissing()
+    {
+        TestCosmosEnvironment environment = new()
+        {
+            ContainerExists = false,
+        };
+        CosmosReplicaSinkOptions options = new()
+        {
+            ClientKey = TestClientKey,
+            ProvisioningMode = ReplicaProvisioningMode.ValidateOnly,
+        };
+        CosmosReplicaSinkProvider provider = environment.CreateProvider(options);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await provider.EnsureContainerAsync(CancellationToken.None));
+
+        Assert.Contains(TestSinkKey, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(ReplicaProvisioningMode.ValidateOnly), exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Ensures provider-level dead-letter and due-retry reads forward to the durable delivery-state partition.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkProviderShouldReadDeadLettersAndDueRetries()
+    {
+        TestCosmosEnvironment environment = new();
+        CosmosReplicaSinkProvider provider = environment.CreateProvider();
+        ReplicaSinkDeliveryState newerDeadLetter = new(
+            "delivery-dead-b",
+            11,
+            deadLetter: new(11, 1, "dead-b", "Dead B", new(2026, 3, 29, 12, 1, 0, TimeSpan.Zero)));
+        ReplicaSinkDeliveryState olderDeadLetter = new(
+            "delivery-dead-a",
+            10,
+            deadLetter: new(10, 1, "dead-a", "Dead A", new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero)));
+        ReplicaSinkDeliveryState dueRetryA = new(
+            "delivery-retry-a",
+            20,
+            null,
+            null,
+            new(
+                20,
+                1,
+                "retry-a",
+                "Retry A",
+                new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero),
+                new(2026, 3, 29, 12, 4, 0, TimeSpan.Zero)));
+        ReplicaSinkDeliveryState dueRetryB = new(
+            "delivery-retry-b",
+            21,
+            null,
+            null,
+            new(
+                21,
+                1,
+                "retry-b",
+                "Retry B",
+                new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero),
+                new(2026, 3, 29, 12, 5, 0, TimeSpan.Zero)));
+
+        environment.QueueDeliveryStateQueryPage(
+            CosmosReplicaSinkDeliveryStateDocument.FromDomain(newerDeadLetter),
+            CosmosReplicaSinkDeliveryStateDocument.FromDomain(olderDeadLetter));
+        environment.QueueDeliveryStateQueryPage(
+            CosmosReplicaSinkDeliveryStateDocument.FromDomain(dueRetryA),
+            CosmosReplicaSinkDeliveryStateDocument.FromDomain(dueRetryB));
+
+        IReadOnlyList<ReplicaSinkDeliveryState> deadLetters = await provider.ReadDeadLettersAsync(
+            2,
+            CancellationToken.None);
+        IReadOnlyList<ReplicaSinkDeliveryState> dueRetries = await provider.ReadDueRetriesAsync(
+            new(2026, 3, 29, 12, 5, 0, TimeSpan.Zero),
+            2,
+            CancellationToken.None);
+
+        Assert.Equal(["delivery-dead-b", "delivery-dead-a"], deadLetters.Select(static state => state.DeliveryKey));
+        Assert.Equal(["delivery-retry-a", "delivery-retry-b"], dueRetries.Select(static state => state.DeliveryKey));
+    }
+
+    /// <summary>
+    ///     Ensures zero-count state queries short-circuit to empty results.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkProviderShouldReturnEmptyCollectionsForZeroCountStateReads()
+    {
+        TestCosmosEnvironment environment = new();
+        CosmosReplicaSinkProvider provider = environment.CreateProvider();
+
+        IReadOnlyList<ReplicaSinkDeliveryState> deadLetters = await provider.ReadDeadLettersAsync(
+            0,
+            CancellationToken.None);
+        IReadOnlyList<ReplicaSinkDeliveryState> dueRetries = await provider.ReadDueRetriesAsync(
+            new(2026, 3, 29, 12, 5, 0, TimeSpan.Zero),
+            0,
+            CancellationToken.None);
+
+        Assert.Empty(deadLetters);
+        Assert.Empty(dueRetries);
+    }
+
+    /// <summary>
+    ///     Ensures missing durable delivery-state documents round-trip as null.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkProviderShouldReadMissingDeliveryStateAsNull()
+    {
+        TestCosmosEnvironment environment = new();
+        CosmosReplicaSinkProvider provider = environment.CreateProvider();
+
+        ReplicaSinkDeliveryState? state = await provider.ReadStateAsync("missing-delivery", CancellationToken.None);
+
+        Assert.Null(state);
+    }
+
+    /// <summary>
+    ///     Ensures target creation tolerates idempotent conflicts that indicate the marker already exists.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkContainerOperationsShouldIgnoreTargetCreationConflicts()
+    {
+        TestCosmosEnvironment environment = new();
+        CosmosReplicaSinkContainerOperations operations = environment.CreateContainerOperations();
+
+        await operations.CreateTargetAsync(TestTargetName, CancellationToken.None);
+        await operations.CreateTargetAsync(TestTargetName, CancellationToken.None);
+
+        Assert.True(await operations.TargetExistsAsync(TestTargetName, CancellationToken.None));
+    }
+
+    /// <summary>
+    ///     Ensures invalid container partition keys are rejected during container validation.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkContainerOperationsShouldRejectInvalidPartitionKeys()
+    {
+        TestCosmosEnvironment environment = new()
+        {
+            ContainerPartitionKeyPath = "/wrong-partition",
+        };
+        CosmosReplicaSinkContainerOperations operations = environment.CreateContainerOperations();
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await operations.EnsureContainerAsync(ReplicaProvisioningMode.CreateIfMissing, CancellationToken.None));
+
+        Assert.Contains(ReplicaSinkCosmosDefaults.PartitionKeyPath, exception.Message, StringComparison.Ordinal);
+        Assert.Contains("/wrong-partition", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Ensures inspection chooses the newest delivery snapshot using source position, timestamp, and delivery-key tiebreakers.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CosmosReplicaSinkContainerOperationsShouldSelectNewestDeliveryAcrossTieBreakers()
+    {
+        TestCosmosEnvironment environment = new();
+        CosmosReplicaSinkContainerOperations operations = environment.CreateContainerOperations();
+        ReplicaTargetDescriptor target = CreateTarget(ReplicaProvisioningMode.CreateIfMissing);
+        CosmosReplicaSinkTargetDeliveryDocument baseline = CosmosReplicaSinkTargetDeliveryDocument.Create(
+            new(target, "order-b", 10, ReplicaWriteMode.LatestState, TestContractIdentity, "baseline"),
+            1,
+            new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero));
+        CosmosReplicaSinkTargetDeliveryDocument lowerSource = CosmosReplicaSinkTargetDeliveryDocument.Create(
+            new(target, "order-low", 9, ReplicaWriteMode.LatestState, TestContractIdentity, "lower-source"),
+            2,
+            new(2026, 3, 29, 12, 5, 0, TimeSpan.Zero));
+        CosmosReplicaSinkTargetDeliveryDocument olderTimestamp = CosmosReplicaSinkTargetDeliveryDocument.Create(
+            new(target, "order-old-time", 10, ReplicaWriteMode.LatestState, TestContractIdentity, "older-time"),
+            3,
+            new(2026, 3, 29, 11, 59, 0, TimeSpan.Zero));
+        CosmosReplicaSinkTargetDeliveryDocument greaterKey = CosmosReplicaSinkTargetDeliveryDocument.Create(
+            new(target, "order-c", 10, ReplicaWriteMode.LatestState, TestContractIdentity, "greater-key"),
+            4,
+            new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero));
+        CosmosReplicaSinkTargetDeliveryDocument smallerKey = CosmosReplicaSinkTargetDeliveryDocument.Create(
+            new(target, "order-a", 10, ReplicaWriteMode.LatestState, TestContractIdentity, "smaller-key"),
+            5,
+            new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero));
+        CosmosReplicaSinkTargetDeliveryDocument newerTimestamp = CosmosReplicaSinkTargetDeliveryDocument.Create(
+            new(target, "order-new-time", 10, ReplicaWriteMode.LatestState, TestContractIdentity, "newer-time"),
+            6,
+            new(2026, 3, 29, 12, 1, 0, TimeSpan.Zero));
+        CosmosReplicaSinkTargetDeliveryDocument higherSource = CosmosReplicaSinkTargetDeliveryDocument.Create(
+            new(target, "order-high", 11, ReplicaWriteMode.LatestState, TestContractIdentity, "higher-source"),
+            7,
+            new(2026, 3, 29, 11, 0, 0, TimeSpan.Zero));
+
+        environment.SeedTarget(TestTargetName);
+        environment.QueueTargetDeliveryQueryPage(
+            baseline,
+            lowerSource,
+            olderTimestamp,
+            greaterKey,
+            smallerKey,
+            newerTimestamp,
+            higherSource);
+
+        CosmosReplicaSinkTargetInspectionSnapshot inspection = await operations.InspectTargetAsync(
+            TestTargetName,
+            CancellationToken.None);
+
+        Assert.True(inspection.TargetExists);
+        Assert.Equal(28, inspection.WriteCount);
+        Assert.Equal(11, inspection.LatestSourcePosition);
+        Assert.Equal("higher-source", inspection.LatestPayload);
     }
 
     /// <summary>

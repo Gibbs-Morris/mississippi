@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mississippi.DomainModeling.ReplicaSinks.Abstractions;
@@ -20,6 +21,20 @@ namespace MississippiTests.DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap
 /// </summary>
 public sealed class BootstrapReplicaSinkProviderTests
 {
+    /// <summary>
+    ///     Ensures the bootstrap state-store registration remains idempotent when it already owns the shared service.
+    /// </summary>
+    [Fact]
+    public void AddBootstrapReplicaSinkDeliveryStateStoreShouldAllowReentrantBootstrapOwnership()
+    {
+        ServiceCollection services = [];
+        services.AddBootstrapReplicaSinkDeliveryStateStore();
+        services.AddBootstrapReplicaSinkDeliveryStateStore();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IReplicaSinkDeliveryStateStore stateStore = provider.GetRequiredService<IReplicaSinkDeliveryStateStore>();
+        Assert.IsType<BootstrapReplicaSinkDeliveryStateStore>(stateStore);
+    }
+
     /// <summary>
     ///     Ensures the standalone bootstrap delivery-state store registration resolves the proof store.
     /// </summary>
@@ -58,6 +73,21 @@ public sealed class BootstrapReplicaSinkProviderTests
     }
 
     /// <summary>
+    ///     Ensures registration rejects invalid sink and client keys before creating provider state.
+    /// </summary>
+    [Fact]
+    public void AddBootstrapReplicaSinkShouldRejectInvalidRegistrationKeys()
+    {
+        ServiceCollection services = [];
+        IConfiguration configuration = new ConfigurationBuilder().AddInMemoryCollection().Build();
+        Assert.Throws<ArgumentException>(() => services.AddBootstrapReplicaSink(" ", "bootstrap-client", _ => { }));
+        Assert.Throws<ArgumentException>(() => services.AddBootstrapReplicaSink("bootstrap", " ", _ => { }));
+        Assert.Throws<ArgumentException>(() =>
+            services.AddBootstrapReplicaSink(" ", "bootstrap-client", configuration));
+        Assert.Throws<ArgumentException>(() => services.AddBootstrapReplicaSink("bootstrap", " ", configuration));
+    }
+
+    /// <summary>
     ///     Ensures configuration binding uses named options and preserves the explicit client key parameter.
     /// </summary>
     [Fact]
@@ -81,39 +111,6 @@ public sealed class BootstrapReplicaSinkProviderTests
     }
 
     /// <summary>
-    ///     Ensures the bootstrap delivery-state store round-trips durable latest-state snapshots.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    public async Task BootstrapReplicaSinkDeliveryStateStoreShouldRoundTripPersistedState()
-    {
-        ServiceCollection services = [];
-        services.AddBootstrapReplicaSinkDeliveryStateStore();
-        await using ServiceProvider provider = services.BuildServiceProvider();
-        IReplicaSinkDeliveryStateStore stateStore = provider.GetRequiredService<IReplicaSinkDeliveryStateStore>();
-        ReplicaSinkDeliveryState state = new(
-            "delivery-key",
-            42,
-            42,
-            41,
-            new(
-                42,
-                2,
-                "transient_failure",
-                "Transient failure.",
-                new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero),
-                new DateTimeOffset(2026, 3, 29, 12, 1, 0, TimeSpan.Zero)));
-        await stateStore.WriteAsync(state, CancellationToken.None);
-        ReplicaSinkDeliveryState? roundTripped = await stateStore.ReadAsync("delivery-key", CancellationToken.None);
-        Assert.NotNull(roundTripped);
-        Assert.Equal(42, roundTripped.DesiredSourcePosition);
-        Assert.Equal(42, roundTripped.BootstrapUpperBoundSourcePosition);
-        Assert.Equal(41, roundTripped.CommittedSourcePosition);
-        Assert.NotNull(roundTripped.Retry);
-        Assert.Equal("transient_failure", roundTripped.Retry.FailureCode);
-    }
-
-    /// <summary>
     ///     Ensures the bootstrap delivery-state store pages persisted dead-letter snapshots in newest-first order.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -127,26 +124,17 @@ public sealed class BootstrapReplicaSinkProviderTests
         await stateStore.WriteAsync(
             new(
                 "delivery-a",
-                desiredSourcePosition: 10,
-                deadLetter: new(
-                    10,
-                    1,
-                    "dead_letter_a",
-                    "Dead letter A.",
-                    new(2026, 3, 30, 12, 0, 0, TimeSpan.Zero))),
+                10,
+                deadLetter: new(10, 1, "dead_letter_a", "Dead letter A.", new(2026, 3, 30, 12, 0, 0, TimeSpan.Zero))),
             CancellationToken.None);
         await stateStore.WriteAsync(
             new(
                 "delivery-b",
-                desiredSourcePosition: 11,
-                deadLetter: new(
-                    11,
-                    1,
-                    "dead_letter_b",
-                    "Dead letter B.",
-                    new(2026, 3, 30, 12, 1, 0, TimeSpan.Zero))),
+                11,
+                deadLetter: new(11, 1, "dead_letter_b", "Dead letter B.", new(2026, 3, 30, 12, 1, 0, TimeSpan.Zero))),
             CancellationToken.None);
-        ReplicaSinkDeliveryStatePage firstPage = await stateStore.ReadDeadLetterPageAsync(1, null, CancellationToken.None);
+        ReplicaSinkDeliveryStatePage firstPage =
+            await stateStore.ReadDeadLetterPageAsync(1, null, CancellationToken.None);
         ReplicaSinkDeliveryStatePage secondPage = await stateStore.ReadDeadLetterPageAsync(
             1,
             firstPage.ContinuationToken,
@@ -217,6 +205,168 @@ public sealed class BootstrapReplicaSinkProviderTests
             2,
             CancellationToken.None);
         Assert.Equal(["delivery-b", "delivery-a"], dueStates.Select(static state => state.DeliveryKey).ToArray());
+    }
+
+    /// <summary>
+    ///     Ensures the bootstrap delivery-state store round-trips durable latest-state snapshots.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task BootstrapReplicaSinkDeliveryStateStoreShouldRoundTripPersistedState()
+    {
+        ServiceCollection services = [];
+        services.AddBootstrapReplicaSinkDeliveryStateStore();
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        IReplicaSinkDeliveryStateStore stateStore = provider.GetRequiredService<IReplicaSinkDeliveryStateStore>();
+        ReplicaSinkDeliveryState state = new(
+            "delivery-key",
+            42,
+            42,
+            41,
+            new(
+                42,
+                2,
+                "transient_failure",
+                "Transient failure.",
+                new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 3, 29, 12, 1, 0, TimeSpan.Zero)));
+        await stateStore.WriteAsync(state, CancellationToken.None);
+        ReplicaSinkDeliveryState? roundTripped = await stateStore.ReadAsync("delivery-key", CancellationToken.None);
+        Assert.NotNull(roundTripped);
+        Assert.Equal(42, roundTripped.DesiredSourcePosition);
+        Assert.Equal(42, roundTripped.BootstrapUpperBoundSourcePosition);
+        Assert.Equal(41, roundTripped.CommittedSourcePosition);
+        Assert.NotNull(roundTripped.Retry);
+        Assert.Equal("transient_failure", roundTripped.Retry.FailureCode);
+    }
+
+    /// <summary>
+    ///     Ensures the provider constructor rejects null and whitespace arguments.
+    /// </summary>
+    [Fact]
+    public void BootstrapReplicaSinkProviderConstructorShouldRejectInvalidArguments()
+    {
+        BootstrapReplicaSinkOptions options = new();
+        Assert.Throws<ArgumentNullException>(() => new BootstrapReplicaSinkProvider(
+            null!,
+            options,
+            NullLogger<BootstrapReplicaSinkProvider>.Instance));
+        Assert.Throws<ArgumentNullException>(() => new BootstrapReplicaSinkProvider(
+            "bootstrap",
+            null!,
+            NullLogger<BootstrapReplicaSinkProvider>.Instance));
+        Assert.Throws<ArgumentNullException>(() => new BootstrapReplicaSinkProvider("bootstrap", options, null!));
+        Assert.Throws<ArgumentException>(() => new BootstrapReplicaSinkProvider(
+            " ",
+            options,
+            NullLogger<BootstrapReplicaSinkProvider>.Instance));
+    }
+
+    /// <summary>
+    ///     Ensures the provider exposes the stable bootstrap format name.
+    /// </summary>
+    [Fact]
+    public void BootstrapReplicaSinkProviderShouldExposeBootstrapFormat()
+    {
+        BootstrapReplicaSinkProvider provider = new(
+            "bootstrap",
+            new()
+            {
+                ClientKey = "bootstrap-client",
+            },
+            NullLogger<BootstrapReplicaSinkProvider>.Instance);
+
+        Assert.Equal(BootstrapReplicaSinkProvider.FormatName, provider.Format);
+    }
+
+    /// <summary>
+    ///     Ensures inspecting an unknown target reports the target as absent.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task BootstrapReplicaSinkProviderShouldInspectMissingTargetsAsAbsent()
+    {
+        ServiceCollection services = [];
+        services.AddBootstrapReplicaSink(
+            "bootstrap",
+            "bootstrap-client",
+            options => options.ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing);
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        IReplicaSinkProvider sinkProvider = provider.GetRequiredKeyedService<IReplicaSinkProvider>("bootstrap");
+        ReplicaTargetDescriptor target = new(
+            new("bootstrap-client", "orders-read"),
+            ReplicaProvisioningMode.CreateIfMissing);
+
+        ReplicaTargetInspection inspection = await sinkProvider.InspectAsync(target, CancellationToken.None);
+
+        Assert.False(inspection.TargetExists);
+        Assert.Equal(0, inspection.WriteCount);
+        Assert.Null(inspection.LatestSourcePosition);
+        Assert.Null(inspection.LatestPayload);
+    }
+
+    /// <summary>
+    ///     Ensures already-provisioned targets validate successfully even when subsequent calls use validate-only mode.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task BootstrapReplicaSinkProviderShouldValidateExistingProvisionedTargets()
+    {
+        ServiceCollection services = [];
+        services.AddBootstrapReplicaSink(
+            "bootstrap",
+            "bootstrap-client",
+            options => options.ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing);
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        IReplicaSinkProvider sinkProvider = provider.GetRequiredKeyedService<IReplicaSinkProvider>("bootstrap");
+        ReplicaTargetDescriptor createIfMissingTarget = new(
+            new("bootstrap-client", "orders-read"),
+            ReplicaProvisioningMode.CreateIfMissing);
+        ReplicaTargetDescriptor validateOnlyTarget = new(
+            new("bootstrap-client", "orders-read"),
+            ReplicaProvisioningMode.ValidateOnly);
+
+        await sinkProvider.EnsureTargetAsync(createIfMissingTarget, CancellationToken.None);
+        await sinkProvider.EnsureTargetAsync(validateOnlyTarget, CancellationToken.None);
+        ReplicaTargetInspection inspection = await sinkProvider.InspectAsync(validateOnlyTarget, CancellationToken.None);
+
+        Assert.True(inspection.TargetExists);
+        Assert.Equal(0, inspection.WriteCount);
+        Assert.Null(inspection.LatestSourcePosition);
+        Assert.Null(inspection.LatestPayload);
+    }
+
+    /// <summary>
+    ///     Ensures failed validate-only onboarding leaves the target in an unprovisioned state that still rejects writes.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task BootstrapReplicaSinkProviderShouldRejectWritesWhenValidationLeavesSeededUnprovisionedState()
+    {
+        ServiceCollection services = [];
+        services.AddBootstrapReplicaSink(
+            "bootstrap",
+            "bootstrap-client",
+            options => options.ProvisioningMode = ReplicaProvisioningMode.ValidateOnly);
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        IReplicaSinkProvider sinkProvider = provider.GetRequiredKeyedService<IReplicaSinkProvider>("bootstrap");
+        ReplicaTargetDescriptor target = new(
+            new("bootstrap-client", "orders-read"),
+            ReplicaProvisioningMode.ValidateOnly);
+        ReplicaWriteRequest request = new(
+            target,
+            "order-1",
+            10,
+            ReplicaWriteMode.LatestState,
+            "TestApp.Orders.MappedReplica.V1",
+            "payload-1");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await sinkProvider.EnsureTargetAsync(target, CancellationToken.None));
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await sinkProvider.WriteAsync(request, CancellationToken.None));
+
+        Assert.Contains("has not been provisioned", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

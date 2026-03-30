@@ -27,6 +27,71 @@ public sealed class CosmosReplicaSinkOptionsTests
     }
 
     /// <summary>
+    ///     Ensures unnamed option validation still uses the default-name path and succeeds when fully configured.
+    /// </summary>
+    [Fact]
+    public void CosmosReplicaSinkOptionsValidationShouldAcceptValidUnnamedConfiguration()
+    {
+        CosmosReplicaSinkOptionsValidation validator = new();
+        CosmosReplicaSinkOptions options = new()
+        {
+            ClientKey = "orders-client",
+            DatabaseId = "orders-db",
+            ContainerId = "orders-container",
+            QueryBatchSize = 25,
+            ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing,
+        };
+        ValidateOptionsResult result = validator.Validate(null, options);
+        Assert.True(result.Succeeded);
+        Assert.Null(result.Failures);
+    }
+
+    /// <summary>
+    ///     Ensures option validation rejects each required field and positive batch size independently.
+    /// </summary>
+    [Fact]
+    public void CosmosReplicaSinkOptionsValidationShouldRejectEachMissingFieldIndependently()
+    {
+        CosmosReplicaSinkOptionsValidation validator = new();
+        CosmosReplicaSinkOptions missingDatabase = new()
+        {
+            ClientKey = "orders-client",
+            DatabaseId = " ",
+            ContainerId = "orders-container",
+            QueryBatchSize = 25,
+        };
+        CosmosReplicaSinkOptions missingContainer = new()
+        {
+            ClientKey = "orders-client",
+            DatabaseId = "orders-db",
+            ContainerId = string.Empty,
+            QueryBatchSize = 25,
+        };
+        CosmosReplicaSinkOptions invalidBatchSize = new()
+        {
+            ClientKey = "orders-client",
+            DatabaseId = "orders-db",
+            ContainerId = "orders-container",
+            QueryBatchSize = 0,
+        };
+        ValidateOptionsResult missingDatabaseResult = validator.Validate("orders", missingDatabase);
+        ValidateOptionsResult missingContainerResult = validator.Validate("orders", missingContainer);
+        ValidateOptionsResult invalidBatchSizeResult = validator.Validate("orders", invalidBatchSize);
+        Assert.False(missingDatabaseResult.Succeeded);
+        Assert.False(missingContainerResult.Succeeded);
+        Assert.False(invalidBatchSizeResult.Succeeded);
+        Assert.Contains(
+            missingDatabaseResult.Failures!,
+            failure => failure.Contains("database identifier", StringComparison.Ordinal));
+        Assert.Contains(
+            missingContainerResult.Failures!,
+            failure => failure.Contains("container identifier", StringComparison.Ordinal));
+        Assert.Contains(
+            invalidBatchSizeResult.Failures!,
+            failure => failure.Contains("query batch size", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     ///     Ensures option validation rejects empty keys and invalid query batch sizes.
     /// </summary>
     [Fact]
@@ -44,5 +109,20 @@ public sealed class CosmosReplicaSinkOptionsTests
         Assert.False(result.Succeeded);
         Assert.NotNull(result.Failures);
         Assert.Contains(result.Failures, failure => failure.Contains("client key", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Ensures option validation rejects missing named options instances.
+    /// </summary>
+    [Fact]
+    public void CosmosReplicaSinkOptionsValidationShouldRejectMissingOptionsInstance()
+    {
+        CosmosReplicaSinkOptionsValidation validator = new();
+        ValidateOptionsResult result = validator.Validate("orders", null!);
+        Assert.False(result.Succeeded);
+        Assert.NotNull(result.Failures);
+        Assert.Contains(
+            result.Failures,
+            static failure => failure.Contains("options are required", StringComparison.Ordinal));
     }
 }
