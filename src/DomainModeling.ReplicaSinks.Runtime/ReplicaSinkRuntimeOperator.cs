@@ -115,9 +115,14 @@ internal sealed class ReplicaSinkRuntimeOperator : IReplicaSinkRuntimeOperator
             return projectionMissing;
         }
 
+        await Coordinator.NotifyLiveAsync(projectionType!, parsedDeliveryKey.EntityId, targetSourcePosition, cancellationToken);
+
         try
         {
-            ReplicaSinkDeliveryState updatedState = ReplicaSinkDeliveryStateTransitions.ClearDeadLetter(state);
+            ReplicaSinkDeliveryState latestState = await DeliveryStateStore.ReadAsync(request.DeliveryKey, cancellationToken) ??
+                                                   throw new InvalidOperationException(
+                                                       $"Replica sink delivery state '{request.DeliveryKey}' was missing after re-drive notify.");
+            ReplicaSinkDeliveryState updatedState = ReplicaSinkDeliveryStateTransitions.ClearDeadLetter(latestState);
             await DeliveryStateStore.WriteAsync(updatedState, cancellationToken);
         }
         catch (Exception ex) when (!IsCriticalException(ex))
@@ -136,7 +141,6 @@ internal sealed class ReplicaSinkRuntimeOperator : IReplicaSinkRuntimeOperator
             return quarantined;
         }
 
-        await Coordinator.NotifyLiveAsync(projectionType!, parsedDeliveryKey.EntityId, targetSourcePosition, cancellationToken);
         ReplicaSinkDeadLetterReDriveResult queued = new(request.DeliveryKey, "queued", true, targetSourcePosition);
         await AuditSink.RecordReDriveAsync(request, queued, cancellationToken);
         return queued;
