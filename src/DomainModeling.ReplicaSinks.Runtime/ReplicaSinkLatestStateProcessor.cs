@@ -18,11 +18,6 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
 {
     private static readonly TimeSpan RetryDelay = TimeSpan.FromMinutes(1);
 
-    private static bool IsCriticalException(
-        Exception exception
-    ) =>
-        exception is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReplicaSinkLatestStateProcessor" /> class.
     /// </summary>
@@ -61,6 +56,128 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
 
     private TimeProvider TimeProvider { get; }
 
+    private static ReplicaSinkDeliveryState AdvanceDesiredPosition(
+        ReplicaSinkDeliveryState currentState,
+        long desiredSourcePosition,
+        ReplicaSinkDeliveryIdentity deliveryIdentity
+    )
+    {
+        long? currentDesiredSourcePosition = currentState.DesiredSourcePosition;
+        long? committedSourcePosition = currentState.CommittedSourcePosition;
+        if ((currentDesiredSourcePosition is not null &&
+             (desiredSourcePosition < currentDesiredSourcePosition.Value)) ||
+            (committedSourcePosition is not null && (desiredSourcePosition < committedSourcePosition.Value)))
+        {
+            throw new ReplicaSinkRewindRejectedException(
+                deliveryIdentity.DeliveryKey,
+                desiredSourcePosition,
+                currentDesiredSourcePosition,
+                committedSourcePosition);
+        }
+
+        ReplicaSinkStoredFailure? retry = currentState.Retry;
+        ReplicaSinkStoredFailure? deadLetter = currentState.DeadLetter;
+        if (retry is not null && (retry.SourcePosition < desiredSourcePosition))
+        {
+            retry = null;
+        }
+
+        if (deadLetter is not null && (deadLetter.SourcePosition < desiredSourcePosition))
+        {
+            deadLetter = null;
+        }
+
+        return new(
+            currentState.DeliveryKey,
+            desiredSourcePosition,
+            currentState.CommittedSourcePosition,
+            retry,
+            deadLetter);
+    }
+
+    private static ReplicaWriteRequest BuildWriteRequest(
+        BindingWorkItem workItem,
+        ReplicaSinkSourceState sourceState,
+        long sourcePosition
+    )
+    {
+        if (sourceState.Kind == ReplicaSinkSourceStateKind.Value)
+        {
+            object payload = workItem.Binding.Map(sourceState.Value!) ??
+                             throw new InvalidOperationException("Replica sink mapping produced a null payload.");
+            return new(
+                workItem.Binding.Target,
+                workItem.DeliveryIdentity.DeliveryKey,
+                sourcePosition,
+                workItem.Binding.WriteMode,
+                workItem.Binding.ContractIdentity,
+                payload);
+        }
+
+        return new(
+            workItem.Binding.Target,
+            workItem.DeliveryIdentity.DeliveryKey,
+            sourcePosition,
+            workItem.Binding.WriteMode,
+            workItem.Binding.ContractIdentity,
+            null)
+        {
+            IsDeleted = true,
+        };
+    }
+
+    private static ReplicaSinkDeliveryState CreateCommittedState(
+        ReplicaSinkDeliveryState currentState,
+        long sourcePosition
+    ) =>
+        new(currentState.DeliveryKey, currentState.DesiredSourcePosition, sourcePosition);
+
+    private static string CreateUnexpectedFailureSummary(
+        string prefix,
+        Exception exception
+    )
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        return $"{prefix} ({exception.GetType().Name}).";
+    }
+
+    private static int GetNextAttemptCount(
+        ReplicaSinkDeliveryState state,
+        long sourcePosition
+    )
+    {
+        if (state.Retry is not null && (state.Retry.SourcePosition == sourcePosition))
+        {
+            return state.Retry.AttemptCount + 1;
+        }
+
+        if (state.DeadLetter is not null && (state.DeadLetter.SourcePosition == sourcePosition))
+        {
+            return state.DeadLetter.AttemptCount + 1;
+        }
+
+        return 1;
+    }
+
+    private static bool IsCriticalException(
+        Exception exception
+    ) =>
+        exception is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
+
+    private static bool IsTerminalOutcome(
+        ReplicaWriteOutcome outcome
+    ) =>
+        outcome is ReplicaWriteOutcome.Applied or ReplicaWriteOutcome.DuplicateIgnored
+            or ReplicaWriteOutcome.SupersededIgnored;
+
+    private static bool ShouldFlush(
+        ReplicaSinkDeliveryState state,
+        long targetSourcePosition
+    ) =>
+        (state.DesiredSourcePosition == targetSourcePosition) &&
+        (state.CommittedSourcePosition is null || (state.CommittedSourcePosition.Value < targetSourcePosition)) &&
+        (state.DeadLetter is null || (state.DeadLetter.SourcePosition != targetSourcePosition));
+
     /// <inheritdoc />
     public Task AdvanceDesiredPositionAsync<TProjection>(
         string entityId,
@@ -81,7 +198,6 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         ArgumentNullException.ThrowIfNull(projectionType);
         ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
         ArgumentOutOfRangeException.ThrowIfNegative(desiredSourcePosition);
-
         ReplicaSinkBindingDescriptor[] bindings = GetBindings(projectionType);
         if (bindings.Length == 0)
         {
@@ -92,7 +208,10 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         {
             ReplicaSinkDeliveryIdentity deliveryIdentity = new(binding.Identity, entityId);
             ReplicaSinkDeliveryState currentState = await ReadStateAsync(deliveryIdentity, cancellationToken);
-            ReplicaSinkDeliveryState updatedState = AdvanceDesiredPosition(currentState, desiredSourcePosition, deliveryIdentity);
+            ReplicaSinkDeliveryState updatedState = AdvanceDesiredPosition(
+                currentState,
+                desiredSourcePosition,
+                deliveryIdentity);
             await DeliveryStateStore.WriteAsync(updatedState, cancellationToken);
         }
 
@@ -116,7 +235,6 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
     {
         ArgumentNullException.ThrowIfNull(projectionType);
         ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-
         ReplicaSinkBindingDescriptor[] bindings = GetBindings(projectionType);
         if (bindings.Length == 0)
         {
@@ -136,7 +254,8 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         long highestDesired = highestDesiredSourcePosition.Value;
         foreach (BindingWorkItem workItem in workItems)
         {
-            if ((workItem.State.DesiredSourcePosition is null) || (workItem.State.DesiredSourcePosition.Value < highestDesired))
+            if (workItem.State.DesiredSourcePosition is null ||
+                (workItem.State.DesiredSourcePosition.Value < highestDesired))
             {
                 workItem.State = AdvanceDesiredPosition(workItem.State, highestDesired, workItem.DeliveryIdentity);
                 await DeliveryStateStore.WriteAsync(workItem.State, cancellationToken);
@@ -154,7 +273,11 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         ReplicaSinkSourceState sourceState;
         try
         {
-            sourceState = await SourceStateAccessor.ReadAsync(projectionType, entityId, highestDesired, cancellationToken);
+            sourceState = await SourceStateAccessor.ReadAsync(
+                projectionType,
+                entityId,
+                highestDesired,
+                cancellationToken);
         }
         catch (ReplicaSinkSourceStateUnavailableException)
         {
@@ -216,7 +339,12 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
             }
             catch (ReplicaSinkWriteException ex)
             {
-                await PersistDeadLetterAsync(workItem, highestDesired, ex.FailureCode, ex.FailureSummary, cancellationToken);
+                await PersistDeadLetterAsync(
+                    workItem,
+                    highestDesired,
+                    ex.FailureCode,
+                    ex.FailureSummary,
+                    cancellationToken);
                 continue;
             }
             catch (Exception ex) when (!IsCriticalException(ex))
@@ -234,126 +362,6 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         }
     }
 
-    private static ReplicaSinkDeliveryState AdvanceDesiredPosition(
-        ReplicaSinkDeliveryState currentState,
-        long desiredSourcePosition,
-        ReplicaSinkDeliveryIdentity deliveryIdentity
-    )
-    {
-        long? currentDesiredSourcePosition = currentState.DesiredSourcePosition;
-        long? committedSourcePosition = currentState.CommittedSourcePosition;
-        if (((currentDesiredSourcePosition is not null) && (desiredSourcePosition < currentDesiredSourcePosition.Value)) ||
-            ((committedSourcePosition is not null) && (desiredSourcePosition < committedSourcePosition.Value)))
-        {
-            throw new ReplicaSinkRewindRejectedException(
-                deliveryIdentity.DeliveryKey,
-                desiredSourcePosition,
-                currentDesiredSourcePosition,
-                committedSourcePosition);
-        }
-
-        ReplicaSinkStoredFailure? retry = currentState.Retry;
-        ReplicaSinkStoredFailure? deadLetter = currentState.DeadLetter;
-        if ((retry is not null) && (retry.SourcePosition < desiredSourcePosition))
-        {
-            retry = null;
-        }
-
-        if ((deadLetter is not null) && (deadLetter.SourcePosition < desiredSourcePosition))
-        {
-            deadLetter = null;
-        }
-
-        return new ReplicaSinkDeliveryState(
-            currentState.DeliveryKey,
-            desiredSourcePosition,
-            currentState.CommittedSourcePosition,
-            retry,
-            deadLetter);
-    }
-
-    private static string CreateUnexpectedFailureSummary(
-        string prefix,
-        Exception exception
-    )
-    {
-        ArgumentNullException.ThrowIfNull(exception);
-        return $"{prefix} ({exception.GetType().Name}).";
-    }
-
-    private static int GetNextAttemptCount(
-        ReplicaSinkDeliveryState state,
-        long sourcePosition
-    )
-    {
-        if ((state.Retry is not null) && (state.Retry.SourcePosition == sourcePosition))
-        {
-            return state.Retry.AttemptCount + 1;
-        }
-
-        if ((state.DeadLetter is not null) && (state.DeadLetter.SourcePosition == sourcePosition))
-        {
-            return state.DeadLetter.AttemptCount + 1;
-        }
-
-        return 1;
-    }
-
-    private static bool IsTerminalOutcome(
-        ReplicaWriteOutcome outcome
-    ) =>
-        outcome is ReplicaWriteOutcome.Applied or ReplicaWriteOutcome.DuplicateIgnored or ReplicaWriteOutcome.SupersededIgnored;
-
-    private static bool ShouldFlush(
-        ReplicaSinkDeliveryState state,
-        long targetSourcePosition
-    ) =>
-        (state.DesiredSourcePosition == targetSourcePosition) &&
-        ((state.CommittedSourcePosition is null) || (state.CommittedSourcePosition.Value < targetSourcePosition)) &&
-        ((state.DeadLetter is null) || (state.DeadLetter.SourcePosition != targetSourcePosition));
-
-    private static ReplicaWriteRequest BuildWriteRequest(
-        BindingWorkItem workItem,
-        ReplicaSinkSourceState sourceState,
-        long sourcePosition
-    )
-    {
-        if (sourceState.Kind == ReplicaSinkSourceStateKind.Value)
-        {
-            object payload = workItem.Binding.Map(sourceState.Value!) ??
-                             throw new InvalidOperationException("Replica sink mapping produced a null payload.");
-            return new ReplicaWriteRequest(
-                workItem.Binding.Target,
-                workItem.DeliveryIdentity.DeliveryKey,
-                sourcePosition,
-                workItem.Binding.WriteMode,
-                workItem.Binding.ContractIdentity,
-                payload);
-        }
-
-        return new ReplicaWriteRequest(
-            workItem.Binding.Target,
-            workItem.DeliveryIdentity.DeliveryKey,
-            sourcePosition,
-            workItem.Binding.WriteMode,
-            workItem.Binding.ContractIdentity,
-            null)
-        {
-            IsDeleted = true,
-        };
-    }
-
-    private static ReplicaSinkDeliveryState CreateCommittedState(
-        ReplicaSinkDeliveryState currentState,
-        long sourcePosition
-    ) =>
-        new(
-            currentState.DeliveryKey,
-            currentState.DesiredSourcePosition,
-            sourcePosition,
-            null,
-            null);
-
     private ReplicaSinkDeliveryState CreateDeadLetterState(
         ReplicaSinkDeliveryState currentState,
         long sourcePosition,
@@ -368,7 +376,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
             failureCode,
             failureSummary,
             now);
-        return new ReplicaSinkDeliveryState(
+        return new(
             currentState.DeliveryKey,
             currentState.DesiredSourcePosition,
             currentState.CommittedSourcePosition,
@@ -391,12 +399,11 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
             failureSummary,
             now,
             now.Add(RetryDelay));
-        return new ReplicaSinkDeliveryState(
+        return new(
             currentState.DeliveryKey,
             currentState.DesiredSourcePosition,
             currentState.CommittedSourcePosition,
-            retry,
-            null);
+            retry);
     }
 
     private ReplicaSinkBindingDescriptor[] GetBindings(
@@ -416,7 +423,10 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
             return;
         }
 
-        await Hook.AfterProviderWriteBeforeCheckpointAsync(workItem.DeliveryIdentity, sourcePosition, cancellationToken);
+        await Hook.AfterProviderWriteBeforeCheckpointAsync(
+            workItem.DeliveryIdentity,
+            sourcePosition,
+            cancellationToken);
         workItem.State = CreateCommittedState(workItem.State, sourcePosition);
         await DeliveryStateStore.WriteAsync(workItem.State, cancellationToken);
         Logger.DeliveryCheckpointed(workItem.DeliveryIdentity.DeliveryKey, sourcePosition);
@@ -433,7 +443,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         {
             ReplicaSinkDeliveryIdentity deliveryIdentity = new(binding.Identity, entityId);
             ReplicaSinkDeliveryState state = await ReadStateAsync(deliveryIdentity, cancellationToken);
-            workItems.Add(new BindingWorkItem(binding, deliveryIdentity, state));
+            workItems.Add(new(binding, deliveryIdentity, state));
         }
 
         return workItems;

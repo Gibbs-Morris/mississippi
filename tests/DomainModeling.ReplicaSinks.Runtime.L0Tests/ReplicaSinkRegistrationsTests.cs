@@ -108,6 +108,42 @@ public sealed class ReplicaSinkRegistrationsTests
     }
 
     /// <summary>
+    ///     Ensures ambiguous sink registration multiplicity surfaces the stable <c>RS0008</c> diagnostic.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task ReplicaSinkStartupValidatorShouldRejectAmbiguousSinkRegistrationMultiplicity()
+    {
+        ServiceCollection services = [];
+        ReplicaSinkProjectionDescriptor binding = CreateMappedBinding(
+            typeof(MappedReplicaProjection),
+            "bootstrap-ambiguous",
+            "orders-ambiguous");
+        services.AddSingleton(binding);
+        services.AddSingleton(
+            new ReplicaSinkRegistrationDescriptor(
+                "bootstrap-ambiguous",
+                "bootstrap-client-a",
+                BootstrapReplicaSinkProvider.FormatName,
+                typeof(BootstrapReplicaSinkProvider),
+                ReplicaProvisioningMode.CreateIfMissing));
+        services.AddSingleton(
+            new ReplicaSinkRegistrationDescriptor(
+                "bootstrap-ambiguous",
+                "bootstrap-client-b",
+                BootstrapReplicaSinkProvider.FormatName,
+                typeof(BootstrapReplicaSinkProvider),
+                ReplicaProvisioningMode.CreateIfMissing));
+        services.AddMapper<MappedReplicaProjection, MappedReplicaContract, MappedReplicaProjectionToContractMapper>();
+        InvalidOperationException exception = await AssertValidationFailureAsync(services);
+        ReplicaSinkStartupDiagnostic expected = ReplicaSinkStartupDiagnostics.CreateInvalidSinkRegistrationMultiplicity(
+            binding,
+            2);
+        Assert.Contains(expected.Id, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(expected.Message, exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Ensures direct replication without explicit opt-in surfaces the stable <c>RS0005</c> diagnostic.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -270,42 +306,6 @@ public sealed class ReplicaSinkRegistrationsTests
     }
 
     /// <summary>
-    ///     Ensures ambiguous sink registration multiplicity surfaces the stable <c>RS0008</c> diagnostic.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    public async Task ReplicaSinkStartupValidatorShouldRejectAmbiguousSinkRegistrationMultiplicity()
-    {
-        ServiceCollection services = [];
-        ReplicaSinkProjectionDescriptor binding = CreateMappedBinding(
-            typeof(MappedReplicaProjection),
-            "bootstrap-ambiguous",
-            "orders-ambiguous");
-        services.AddSingleton(binding);
-        services.AddSingleton(
-            new ReplicaSinkRegistrationDescriptor(
-                "bootstrap-ambiguous",
-                "bootstrap-client-a",
-                BootstrapReplicaSinkProvider.FormatName,
-                typeof(BootstrapReplicaSinkProvider),
-                ReplicaProvisioningMode.CreateIfMissing));
-        services.AddSingleton(
-            new ReplicaSinkRegistrationDescriptor(
-                "bootstrap-ambiguous",
-                "bootstrap-client-b",
-                BootstrapReplicaSinkProvider.FormatName,
-                typeof(BootstrapReplicaSinkProvider),
-                ReplicaProvisioningMode.CreateIfMissing));
-        services.AddMapper<MappedReplicaProjection, MappedReplicaContract, MappedReplicaProjectionToContractMapper>();
-        InvalidOperationException exception = await AssertValidationFailureAsync(services);
-        ReplicaSinkStartupDiagnostic expected = ReplicaSinkStartupDiagnostics.CreateInvalidSinkRegistrationMultiplicity(
-            binding,
-            2);
-        Assert.Contains(expected.Id, exception.Message, StringComparison.Ordinal);
-        Assert.Contains(expected.Message, exception.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Ensures missing sink registrations surface the stable <c>RS0001</c> diagnostic.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -406,10 +406,11 @@ public sealed class ReplicaSinkRegistrationsTests
         Assert.Equal(typeof(MappedReplicaContract), mappedBinding.ContractType);
         Assert.NotNull(mappedBinding.MapperDelegate);
         MappedReplicaContract mappedContract = Assert.IsType<MappedReplicaContract>(
-            mappedBinding.MapperDelegate!(new MappedReplicaProjection
-            {
-                Id = "order-42",
-            }));
+            mappedBinding.MapperDelegate!(
+                new MappedReplicaProjection
+                {
+                    Id = "order-42",
+                }));
         Assert.Equal("order-42", mappedContract.Id);
         Assert.False(mappedBinding.UsesDirectMaterialization);
         Assert.Equal("bootstrap-client", mappedBinding.ValidatedTargetDescriptor.DestinationIdentity.ClientKey);

@@ -12,10 +12,7 @@ internal sealed class ReplicaSinkRewindRejectedException : InvalidOperationExcep
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReplicaSinkRewindRejectedException" /> class.
     /// </summary>
-    public ReplicaSinkRewindRejectedException()
-    {
-        DeliveryKey = string.Empty;
-    }
+    public ReplicaSinkRewindRejectedException() => DeliveryKey = string.Empty;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReplicaSinkRewindRejectedException" /> class.
@@ -24,10 +21,8 @@ internal sealed class ReplicaSinkRewindRejectedException : InvalidOperationExcep
     public ReplicaSinkRewindRejectedException(
         string message
     )
-        : base(message)
-    {
+        : base(message) =>
         DeliveryKey = string.Empty;
-    }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReplicaSinkRewindRejectedException" /> class.

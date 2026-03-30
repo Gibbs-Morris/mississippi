@@ -15,7 +15,7 @@ internal sealed class ReplicaSinkSourceState
     )
     {
         ArgumentOutOfRangeException.ThrowIfNegative(sourcePosition);
-        if ((kind == ReplicaSinkSourceStateKind.Value) && (value is null))
+        if ((kind == ReplicaSinkSourceStateKind.Value) && value is null)
         {
             throw new ArgumentNullException(nameof(value));
         }

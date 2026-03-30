@@ -17,20 +17,6 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap;
 public static class BootstrapReplicaSinkRegistrations
 {
     /// <summary>
-    ///     Adds the bootstrap in-memory delivery-state store used by the Increment 03a proof path.
-    /// </summary>
-    /// <param name="services">The service collection to update.</param>
-    /// <returns>The updated service collection.</returns>
-    public static IServiceCollection AddBootstrapReplicaSinkDeliveryStateStore(
-        this IServiceCollection services
-    )
-    {
-        ArgumentNullException.ThrowIfNull(services);
-        services.TryAddSingleton<IReplicaSinkDeliveryStateStore, BootstrapReplicaSinkDeliveryStateStore>();
-        return services;
-    }
-
-    /// <summary>
     ///     Adds the bootstrap replica sink provider for the specified named sink.
     /// </summary>
     /// <param name="services">The service collection to update.</param>
@@ -80,6 +66,20 @@ public static class BootstrapReplicaSinkRegistrations
         services.Configure<BootstrapReplicaSinkOptions>(sinkKey, configurationSection);
         services.PostConfigure<BootstrapReplicaSinkOptions>(sinkKey, options => options.ClientKey = clientKey);
         return services.AddBootstrapReplicaSinkCore(sinkKey);
+    }
+
+    /// <summary>
+    ///     Adds the bootstrap in-memory delivery-state store used by the Increment 03a proof path.
+    /// </summary>
+    /// <param name="services">The service collection to update.</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddBootstrapReplicaSinkDeliveryStateStore(
+        this IServiceCollection services
+    )
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<IReplicaSinkDeliveryStateStore, BootstrapReplicaSinkDeliveryStateStore>();
+        return services;
     }
 
     private static IServiceCollection AddBootstrapReplicaSinkCore(

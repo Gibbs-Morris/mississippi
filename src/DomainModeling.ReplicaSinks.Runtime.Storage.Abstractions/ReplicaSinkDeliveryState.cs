@@ -36,31 +36,39 @@ public sealed class ReplicaSinkDeliveryState
         ArgumentException.ThrowIfNullOrWhiteSpace(deliveryKey);
         ValidatePosition(desiredSourcePosition, nameof(desiredSourcePosition));
         ValidatePosition(committedSourcePosition, nameof(committedSourcePosition));
-        if ((desiredSourcePosition is not null) && (committedSourcePosition is not null) &&
+        if (desiredSourcePosition is not null &&
+            committedSourcePosition is not null &&
             (desiredSourcePosition.Value < committedSourcePosition.Value))
         {
-            throw new InvalidOperationException("Desired source position cannot be older than the committed source position.");
+            throw new InvalidOperationException(
+                "Desired source position cannot be older than the committed source position.");
         }
 
-        if ((retry is not null) && (deadLetter is not null))
+        if (retry is not null && deadLetter is not null)
         {
-            throw new InvalidOperationException("Retry and dead-letter state cannot both be active for the same delivery lane.");
+            throw new InvalidOperationException(
+                "Retry and dead-letter state cannot both be active for the same delivery lane.");
         }
 
-        if (((retry is not null) || (deadLetter is not null)) && (desiredSourcePosition is null))
+        if ((retry is not null || deadLetter is not null) && desiredSourcePosition is null)
         {
             throw new InvalidOperationException("Failure state cannot exist without a desired source position.");
         }
 
-        if ((retry is not null) && (desiredSourcePosition is not null) && (retry.SourcePosition > desiredSourcePosition.Value))
+        if (retry is not null &&
+            desiredSourcePosition is not null &&
+            (retry.SourcePosition > desiredSourcePosition.Value))
         {
-            throw new InvalidOperationException("Retry source position cannot be newer than the desired source position.");
+            throw new InvalidOperationException(
+                "Retry source position cannot be newer than the desired source position.");
         }
 
-        if ((deadLetter is not null) && (desiredSourcePosition is not null) &&
+        if (deadLetter is not null &&
+            desiredSourcePosition is not null &&
             (deadLetter.SourcePosition > desiredSourcePosition.Value))
         {
-            throw new InvalidOperationException("Dead-letter source position cannot be newer than the desired source position.");
+            throw new InvalidOperationException(
+                "Dead-letter source position cannot be newer than the desired source position.");
         }
 
         DeliveryKey = deliveryKey;
@@ -100,7 +108,7 @@ public sealed class ReplicaSinkDeliveryState
         string paramName
     )
     {
-        if ((position is not null) && (position.Value < 0))
+        if (position is not null && (position.Value < 0))
         {
             throw new ArgumentOutOfRangeException(paramName, "Replica sink source positions cannot be negative.");
         }

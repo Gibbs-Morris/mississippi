@@ -13,8 +13,7 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap;
 /// </summary>
 public sealed class BootstrapReplicaSinkDeliveryStateStore : IReplicaSinkDeliveryStateStore
 {
-    private ConcurrentDictionary<string, ReplicaSinkDeliveryState> States { get; } =
-        new(StringComparer.Ordinal);
+    private ConcurrentDictionary<string, ReplicaSinkDeliveryState> States { get; } = new(StringComparer.Ordinal);
 
     /// <inheritdoc />
     public Task<ReplicaSinkDeliveryState?> ReadAsync(

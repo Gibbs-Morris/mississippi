@@ -81,34 +81,34 @@ public sealed class BootstrapReplicaSinkProviderTests
     }
 
     /// <summary>
-    ///     Ensures duplicate and superseded writes are ignored.
+    ///     Ensures the bootstrap delivery-state store round-trips durable latest-state snapshots.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
-    public async Task BootstrapReplicaSinkProviderShouldIgnoreDuplicateAndSupersededWrites()
+    public async Task BootstrapReplicaSinkDeliveryStateStoreShouldRoundTripPersistedState()
     {
         ServiceCollection services = [];
-        services.AddBootstrapReplicaSink(
-            "bootstrap",
-            "bootstrap-client",
-            options => options.ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing);
+        services.AddBootstrapReplicaSinkDeliveryStateStore();
         await using ServiceProvider provider = services.BuildServiceProvider();
-        IReplicaSinkProvider sinkProvider = provider.GetRequiredKeyedService<IReplicaSinkProvider>("bootstrap");
-        ReplicaTargetDescriptor target = new(
-            new("bootstrap-client", "orders-read"),
-            ReplicaProvisioningMode.CreateIfMissing);
-        await sinkProvider.EnsureTargetAsync(target, CancellationToken.None);
-        await sinkProvider.WriteAsync(
-            new(target, "order-1", 10, ReplicaWriteMode.LatestState, "TestApp.Orders.MappedReplica.V1", "payload-1"),
-            CancellationToken.None);
-        ReplicaWriteResult duplicate = await sinkProvider.WriteAsync(
-            new(target, "order-1", 10, ReplicaWriteMode.LatestState, "TestApp.Orders.MappedReplica.V1", "payload-1"),
-            CancellationToken.None);
-        ReplicaWriteResult superseded = await sinkProvider.WriteAsync(
-            new(target, "order-1", 9, ReplicaWriteMode.LatestState, "TestApp.Orders.MappedReplica.V1", "payload-0"),
-            CancellationToken.None);
-        Assert.Equal(ReplicaWriteOutcome.DuplicateIgnored, duplicate.Outcome);
-        Assert.Equal(ReplicaWriteOutcome.SupersededIgnored, superseded.Outcome);
+        IReplicaSinkDeliveryStateStore stateStore = provider.GetRequiredService<IReplicaSinkDeliveryStateStore>();
+        ReplicaSinkDeliveryState state = new(
+            "delivery-key",
+            42,
+            41,
+            new(
+                42,
+                2,
+                "transient_failure",
+                "Transient failure.",
+                new(2026, 3, 29, 12, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 3, 29, 12, 1, 0, TimeSpan.Zero)));
+        await stateStore.WriteAsync(state, CancellationToken.None);
+        ReplicaSinkDeliveryState? roundTripped = await stateStore.ReadAsync("delivery-key", CancellationToken.None);
+        Assert.NotNull(roundTripped);
+        Assert.Equal(42, roundTripped.DesiredSourcePosition);
+        Assert.Equal(41, roundTripped.CommittedSourcePosition);
+        Assert.NotNull(roundTripped.Retry);
+        Assert.Equal("transient_failure", roundTripped.Retry.FailureCode);
     }
 
     /// <summary>
@@ -146,34 +146,34 @@ public sealed class BootstrapReplicaSinkProviderTests
     }
 
     /// <summary>
-    ///     Ensures the bootstrap delivery-state store round-trips durable latest-state snapshots.
+    ///     Ensures duplicate and superseded writes are ignored.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
-    public async Task BootstrapReplicaSinkDeliveryStateStoreShouldRoundTripPersistedState()
+    public async Task BootstrapReplicaSinkProviderShouldIgnoreDuplicateAndSupersededWrites()
     {
         ServiceCollection services = [];
-        services.AddBootstrapReplicaSinkDeliveryStateStore();
+        services.AddBootstrapReplicaSink(
+            "bootstrap",
+            "bootstrap-client",
+            options => options.ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing);
         await using ServiceProvider provider = services.BuildServiceProvider();
-        IReplicaSinkDeliveryStateStore stateStore = provider.GetRequiredService<IReplicaSinkDeliveryStateStore>();
-        ReplicaSinkDeliveryState state = new(
-            "delivery-key",
-            desiredSourcePosition: 42,
-            committedSourcePosition: 41,
-            retry: new ReplicaSinkStoredFailure(
-                42,
-                2,
-                "transient_failure",
-                "Transient failure.",
-                new DateTimeOffset(2026, 3, 29, 12, 0, 0, TimeSpan.Zero),
-                new DateTimeOffset(2026, 3, 29, 12, 1, 0, TimeSpan.Zero)));
-        await stateStore.WriteAsync(state, CancellationToken.None);
-        ReplicaSinkDeliveryState? roundTripped = await stateStore.ReadAsync("delivery-key", CancellationToken.None);
-        Assert.NotNull(roundTripped);
-        Assert.Equal(42, roundTripped.DesiredSourcePosition);
-        Assert.Equal(41, roundTripped.CommittedSourcePosition);
-        Assert.NotNull(roundTripped.Retry);
-        Assert.Equal("transient_failure", roundTripped.Retry.FailureCode);
+        IReplicaSinkProvider sinkProvider = provider.GetRequiredKeyedService<IReplicaSinkProvider>("bootstrap");
+        ReplicaTargetDescriptor target = new(
+            new("bootstrap-client", "orders-read"),
+            ReplicaProvisioningMode.CreateIfMissing);
+        await sinkProvider.EnsureTargetAsync(target, CancellationToken.None);
+        await sinkProvider.WriteAsync(
+            new(target, "order-1", 10, ReplicaWriteMode.LatestState, "TestApp.Orders.MappedReplica.V1", "payload-1"),
+            CancellationToken.None);
+        ReplicaWriteResult duplicate = await sinkProvider.WriteAsync(
+            new(target, "order-1", 10, ReplicaWriteMode.LatestState, "TestApp.Orders.MappedReplica.V1", "payload-1"),
+            CancellationToken.None);
+        ReplicaWriteResult superseded = await sinkProvider.WriteAsync(
+            new(target, "order-1", 9, ReplicaWriteMode.LatestState, "TestApp.Orders.MappedReplica.V1", "payload-0"),
+            CancellationToken.None);
+        Assert.Equal(ReplicaWriteOutcome.DuplicateIgnored, duplicate.Outcome);
+        Assert.Equal(ReplicaWriteOutcome.SupersededIgnored, superseded.Outcome);
     }
 
     /// <summary>

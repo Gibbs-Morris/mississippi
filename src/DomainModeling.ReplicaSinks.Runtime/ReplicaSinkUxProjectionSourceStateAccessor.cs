@@ -14,6 +14,13 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime;
 /// </summary>
 internal sealed class ReplicaSinkUxProjectionSourceStateAccessor : IReplicaSinkSourceStateAccessor
 {
+    private delegate ValueTask<ReplicaSinkSourceState> ReaderDelegate(
+        IUxProjectionGrainFactory grainFactory,
+        string entityId,
+        long sourcePosition,
+        CancellationToken cancellationToken
+    );
+
     private static readonly ConcurrentDictionary<Type, ReaderDelegate> Readers = new();
 
     /// <summary>
@@ -22,34 +29,48 @@ internal sealed class ReplicaSinkUxProjectionSourceStateAccessor : IReplicaSinkS
     /// <param name="uxProjectionGrainFactory">The UX projection grain factory.</param>
     public ReplicaSinkUxProjectionSourceStateAccessor(
         IUxProjectionGrainFactory uxProjectionGrainFactory
-    )
-    {
+    ) =>
         UxProjectionGrainFactory = uxProjectionGrainFactory ??
                                    throw new ArgumentNullException(nameof(uxProjectionGrainFactory));
-    }
-
-    private delegate ValueTask<ReplicaSinkSourceState> ReaderDelegate(
-        IUxProjectionGrainFactory grainFactory,
-        string entityId,
-        long sourcePosition,
-        CancellationToken cancellationToken);
-
-    /// <summary>
-    ///     Creates typed source-state readers for cached projection types.
-    /// </summary>
-    private interface IReaderFactory
-    {
-        /// <summary>
-        ///     Creates the typed source-state reader delegate.
-        /// </summary>
-        /// <returns>The typed source-state reader delegate.</returns>
-        ReaderDelegate Create();
-    }
 
     /// <summary>
     ///     Gets the UX projection grain factory.
     /// </summary>
     private IUxProjectionGrainFactory UxProjectionGrainFactory { get; }
+
+    private static ReaderDelegate CreateReader(
+        Type projectionType
+    )
+    {
+        Type readerFactoryType = typeof(ReaderFactory<>).MakeGenericType(projectionType);
+        IReaderFactory readerFactory = (IReaderFactory)Activator.CreateInstance(readerFactoryType)!;
+        return readerFactory.Create();
+    }
+
+    private static async ValueTask<ReplicaSinkSourceState> ReadProjectionStateAsync<TProjection>(
+        IUxProjectionGrainFactory grainFactory,
+        string entityId,
+        long sourcePosition,
+        CancellationToken cancellationToken
+    )
+        where TProjection : class
+    {
+        IUxProjectionGrain<TProjection> projectionGrain = grainFactory.GetUxProjectionGrain<TProjection>(entityId);
+        BrookPosition latestVersion = await projectionGrain.GetLatestVersionAsync(cancellationToken);
+        if (latestVersion.NotSet || (latestVersion.Value < sourcePosition))
+        {
+            throw new ReplicaSinkSourceStateUnavailableException(
+                typeof(TProjection),
+                entityId,
+                sourcePosition,
+                latestVersion.NotSet ? null : latestVersion.Value);
+        }
+
+        TProjection? projection = await projectionGrain.GetAtVersionAsync(new(sourcePosition), cancellationToken);
+        return projection is null
+            ? ReplicaSinkSourceState.Deleted(sourcePosition)
+            : ReplicaSinkSourceState.FromValue(sourcePosition, projection);
+    }
 
     /// <inheritdoc />
     public ValueTask<ReplicaSinkSourceState> ReadAsync(
@@ -66,37 +87,16 @@ internal sealed class ReplicaSinkUxProjectionSourceStateAccessor : IReplicaSinkS
         return reader(UxProjectionGrainFactory, entityId, sourcePosition, cancellationToken);
     }
 
-    private static ReaderDelegate CreateReader(
-        Type projectionType
-    )
+    /// <summary>
+    ///     Creates typed source-state readers for cached projection types.
+    /// </summary>
+    private interface IReaderFactory
     {
-        Type readerFactoryType = typeof(ReaderFactory<>).MakeGenericType(projectionType);
-        IReaderFactory readerFactory = (IReaderFactory)Activator.CreateInstance(readerFactoryType)!;
-        return readerFactory.Create();
-    }
-
-    private static async ValueTask<ReplicaSinkSourceState> ReadProjectionStateAsync<TProjection>(
-        IUxProjectionGrainFactory grainFactory,
-        string entityId,
-        long sourcePosition,
-        CancellationToken cancellationToken)
-        where TProjection : class
-    {
-        IUxProjectionGrain<TProjection> projectionGrain = grainFactory.GetUxProjectionGrain<TProjection>(entityId);
-        BrookPosition latestVersion = await projectionGrain.GetLatestVersionAsync(cancellationToken);
-        if (latestVersion.NotSet || (latestVersion.Value < sourcePosition))
-        {
-            throw new ReplicaSinkSourceStateUnavailableException(
-                typeof(TProjection),
-                entityId,
-                sourcePosition,
-                latestVersion.NotSet ? null : latestVersion.Value);
-        }
-
-        TProjection? projection = await projectionGrain.GetAtVersionAsync(new BrookPosition(sourcePosition), cancellationToken);
-        return projection is null
-            ? ReplicaSinkSourceState.Deleted(sourcePosition)
-            : ReplicaSinkSourceState.FromValue(sourcePosition, projection);
+        /// <summary>
+        ///     Creates the typed source-state reader delegate.
+        /// </summary>
+        /// <returns>The typed source-state reader delegate.</returns>
+        ReaderDelegate Create();
     }
 
     private sealed class ReaderFactory<TProjection> : IReaderFactory

@@ -210,7 +210,8 @@ internal sealed class ReplicaSinkProjectionRegistry : IReplicaSinkProjectionRegi
 
         HashSet<ReplicaSinkBindingIdentity> overlappingBindingIdentities = [];
         foreach (IGrouping<string, (ReplicaSinkBindingIdentity BindingIdentity, string PhysicalTargetKey,
-                 ReplicaSinkRegistrationDescriptor RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor)> group in physicalTargetCandidates
+                     ReplicaSinkRegistrationDescriptor RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor
+                     )> group in physicalTargetCandidates
                      .GroupBy(candidate => candidate.PhysicalTargetKey, StringComparer.Ordinal)
                      .Where(group => group.Count() > 1)
                      .OrderBy(group => group.Key, StringComparer.Ordinal))
@@ -221,7 +222,8 @@ internal sealed class ReplicaSinkProjectionRegistry : IReplicaSinkProjectionRegi
                     group.First().RegistrationDescriptor,
                     group.First().TargetDescriptor));
             foreach ((ReplicaSinkBindingIdentity BindingIdentity, string PhysicalTargetKey,
-                     ReplicaSinkRegistrationDescriptor RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor) candidate in group)
+                     ReplicaSinkRegistrationDescriptor RegistrationDescriptor, ReplicaTargetDescriptor TargetDescriptor)
+                     candidate in group)
             {
                 overlappingBindingIdentities.Add(candidate.BindingIdentity);
             }

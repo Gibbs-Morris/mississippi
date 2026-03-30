@@ -62,11 +62,6 @@ internal sealed class ReplicaSinkBindingDescriptor
     public ReplicaSinkBindingIdentity BindingIdentity { get; }
 
     /// <summary>
-    ///     Gets the logical binding identity.
-    /// </summary>
-    public ReplicaSinkBindingIdentity Identity => BindingIdentity;
-
-    /// <summary>
     ///     Gets the stable contract identity string.
     /// </summary>
     public string ContractIdentity { get; }
@@ -75,6 +70,11 @@ internal sealed class ReplicaSinkBindingDescriptor
     ///     Gets the mapped contract type, when present.
     /// </summary>
     public Type? ContractType { get; }
+
+    /// <summary>
+    ///     Gets the logical binding identity.
+    /// </summary>
+    public ReplicaSinkBindingIdentity Identity => BindingIdentity;
 
     /// <summary>
     ///     Gets the cached mapper delegate, when mapped replication is used.
@@ -102,14 +102,14 @@ internal sealed class ReplicaSinkBindingDescriptor
     public string SinkKey => BindingIdentity.SinkKey;
 
     /// <summary>
-    ///     Gets the provider-neutral target name.
-    /// </summary>
-    public string TargetName => BindingIdentity.TargetName;
-
-    /// <summary>
     ///     Gets the validated target descriptor.
     /// </summary>
     public ReplicaTargetDescriptor Target => ValidatedTargetDescriptor;
+
+    /// <summary>
+    ///     Gets the provider-neutral target name.
+    /// </summary>
+    public string TargetName => BindingIdentity.TargetName;
 
     /// <summary>
     ///     Gets a value indicating whether direct materialization is used.
