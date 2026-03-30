@@ -106,6 +106,8 @@
     <Project Path="tests\DomainModeling.ReplicaSinks.Runtime.L0Tests\DomainModeling.ReplicaSinks.Runtime.L0Tests.csproj" />
     <Project Path="tests\DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap.L0Tests\DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap.L0Tests.csproj" />
     <Project Path="tests\DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.L0Tests\DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.L0Tests.csproj" />
+    <Project Path="tests\DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.L2Tests\DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.L2Tests.csproj" />
+    <Project Path="tests\DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.L2Tests.AppHost\DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.L2Tests.AppHost.csproj" />
   </Folder>
   <Folder Name="/Tests/EventSourcing/Brooks/">
     <Project Path="tests\Brooks.Abstractions.L0Tests\Brooks.Abstractions.L0Tests.csproj" />
