@@ -192,6 +192,33 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
     }
 
     /// <summary>
+    ///     Ensures concurrent batch executions serialize through the coordinator's single-flight gate.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task RuntimeCoordinatorShouldSerializeConcurrentExecuteBatchCallsForSingleFlight()
+    {
+        FakeTimeProvider timeProvider = CreateTimeProvider();
+        BlockingReplicaSinkProvider provider = new();
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<RuntimeProjection>("sink-a", "orders", provider);
+        BootstrapReplicaSinkDeliveryStateStore stateStore = new();
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(typeof(RuntimeProjection), "entity-1", 60, new RuntimeProjection { Id = "projection-60" });
+        ReplicaSinkRuntimeCoordinator coordinator = CreateCoordinator([binding], stateStore, sourceAccessor, timeProvider);
+        await coordinator.NotifyLiveAsync<RuntimeProjection>("entity-1", 60, CancellationToken.None);
+        Task<int> firstBatchTask = coordinator.ExecuteBatchAsync(CancellationToken.None);
+        await provider.WaitForFirstWriteAsync();
+        Task<int> secondBatchTask = coordinator.ExecuteBatchAsync(CancellationToken.None);
+        provider.ReleaseFirstWrite();
+        int firstBatchCount = await firstBatchTask;
+        int secondBatchCount = await secondBatchTask;
+        Assert.Equal(1, firstBatchCount);
+        Assert.Equal(0, secondBatchCount);
+        Assert.Single(provider.Requests);
+        Assert.Equal(60, provider.Requests.Single().SourcePosition);
+    }
+
+    /// <summary>
     ///     Ensures summary-level reads page dead letters and redact failure summaries.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -358,6 +385,50 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
         {
             Requests.Add(request);
             return ValueTask.FromResult(OnWrite(request));
+        }
+    }
+
+    private sealed class BlockingReplicaSinkProvider : IReplicaSinkProvider
+    {
+        private TaskCompletionSource<bool> FirstWriteStartedSource { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private TaskCompletionSource<bool> ReleaseFirstWriteSource { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public string Format => "test";
+
+        public List<ReplicaWriteRequest> Requests { get; } = [];
+
+        public ValueTask EnsureTargetAsync(
+            ReplicaTargetDescriptor target,
+            CancellationToken cancellationToken
+        ) =>
+            ValueTask.CompletedTask;
+
+        public ValueTask<ReplicaTargetInspection> InspectAsync(
+            ReplicaTargetDescriptor target,
+            CancellationToken cancellationToken
+        ) =>
+            ValueTask.FromResult(new ReplicaTargetInspection(target.DestinationIdentity, true, Requests.Count));
+
+        public void ReleaseFirstWrite() => ReleaseFirstWriteSource.TrySetResult(true);
+
+        public Task WaitForFirstWriteAsync() => FirstWriteStartedSource.Task;
+
+        public async ValueTask<ReplicaWriteResult> WriteAsync(
+            ReplicaWriteRequest request,
+            CancellationToken cancellationToken
+        )
+        {
+            Requests.Add(request);
+            if (Requests.Count == 1)
+            {
+                FirstWriteStartedSource.TrySetResult(true);
+                await ReleaseFirstWriteSource.Task.WaitAsync(cancellationToken);
+            }
+
+            return new(ReplicaWriteOutcome.Applied, request.Target.DestinationIdentity, request.SourcePosition);
         }
     }
 

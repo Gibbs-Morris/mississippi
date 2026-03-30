@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.DomainModeling.ReplicaSinks.Abstractions;
 using Mississippi.DomainModeling.ReplicaSinks.Runtime;
@@ -12,6 +13,10 @@ using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions;
 using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap;
 
 using MississippiTests.DomainModeling.ReplicaSinks.Runtime.L0Tests.Fixtures;
+
+using Moq;
+
+using Orleans;
 
 
 namespace MississippiTests.DomainModeling.ReplicaSinks.Runtime.L0Tests;
@@ -54,13 +59,15 @@ public sealed class ReplicaSinkRegistrationsTests
         new(projectionType, sinkKey, targetName, typeof(MappedReplicaContract), false, ReplicaWriteMode.LatestState);
 
     /// <summary>
-    ///     Ensures the runtime shell and bootstrap provider execute a runnable happy-path onboarding proof.
+    ///     Ensures the runtime shell, hosted services, and bootstrap provider execute a runnable happy-path onboarding
+    ///     proof.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
     public async Task AddReplicaSinksAndBootstrapProviderShouldProvisionTargetsDuringHappyPathValidation()
     {
         ServiceCollection services = [];
+        services.AddSingleton(Mock.Of<IGrainFactory>());
         services.AddReplicaSinks();
         services.ScanReplicaSinkAssemblies(typeof(MappedReplicaProjection).Assembly);
         services.AddBootstrapReplicaSink(
@@ -75,6 +82,15 @@ public sealed class ReplicaSinkRegistrationsTests
         await using ServiceProvider provider = services.BuildServiceProvider();
         IReplicaSinkStartupValidator validator = provider.GetRequiredService<IReplicaSinkStartupValidator>();
         await validator.ValidateAsync(CancellationToken.None);
+        IReplicaSinkLatestStateProcessor latestStateProcessor =
+            provider.GetRequiredService<IReplicaSinkLatestStateProcessor>();
+        IReplicaSinkExecutionHealthManager healthManager =
+            provider.GetRequiredService<IReplicaSinkExecutionHealthManager>();
+        IReplicaSinkOperatorAuditSink auditSink = provider.GetRequiredService<IReplicaSinkOperatorAuditSink>();
+        IReplicaSinkRuntimeCoordinator runtimeCoordinator =
+            provider.GetRequiredService<IReplicaSinkRuntimeCoordinator>();
+        IReplicaSinkRuntimeOperator runtimeOperator = provider.GetRequiredService<IReplicaSinkRuntimeOperator>();
+        IHostedService[] hostedServices = provider.GetServices<IHostedService>().ToArray();
         IReplicaSinkProvider mappedProvider =
             provider.GetRequiredKeyedService<IReplicaSinkProvider>("bootstrap-mapped");
         IReplicaSinkProvider directProvider =
@@ -85,6 +101,13 @@ public sealed class ReplicaSinkRegistrationsTests
         ReplicaTargetInspection directInspection = await directProvider.InspectAsync(
             new(new("bootstrap-client", "orders-direct"), ReplicaProvisioningMode.CreateIfMissing),
             CancellationToken.None);
+        Assert.IsType<ReplicaSinkLatestStateProcessor>(latestStateProcessor);
+        Assert.IsType<ReplicaSinkExecutionHealthManager>(healthManager);
+        Assert.IsType<LoggerReplicaSinkOperatorAuditSink>(auditSink);
+        Assert.IsType<ReplicaSinkRuntimeCoordinator>(runtimeCoordinator);
+        Assert.IsType<ReplicaSinkRuntimeOperator>(runtimeOperator);
+        Assert.Contains(hostedServices, static service => service is ReplicaSinkStartupValidationService);
+        Assert.Contains(hostedServices, static service => service is ReplicaSinkRuntimeExecutionService);
         Assert.True(mappedInspection.TargetExists);
         Assert.True(directInspection.TargetExists);
         Assert.Equal(2, provider.GetServices<ReplicaSinkRegistrationDescriptor>().Count());

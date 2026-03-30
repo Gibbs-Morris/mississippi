@@ -1111,6 +1111,65 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     }
 
     /// <summary>
+    ///     Repeated retryable provider failures throttle the sink until the configured block duration expires.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldThrottleSinkAfterRepeatedRetryableProviderFailures()
+    {
+        FakeTimeProvider timeProvider = CreateTimeProvider();
+        RecordingReplicaSinkProvider provider = new(_ => throw new ReplicaSinkWriteException(
+            ReplicaSinkWriteFailureDisposition.Retry,
+            "transient_failure",
+            "Transient provider failure."));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            27,
+            new TestProjection
+            {
+                Id = "projection-27",
+            });
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        ReplicaSinkExecutionHealthManager healthManager = new(timeProvider);
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor(
+            [binding],
+            stateStore,
+            sourceAccessor,
+            timeProvider,
+            healthManager: healthManager,
+            runtimeOptions: new ReplicaSinkRuntimeOptions
+            {
+                RepeatedProviderFailureThrottleThreshold = 2,
+                RepeatedProviderFailureThrottleDuration = TimeSpan.FromMinutes(5),
+            });
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 27, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        Assert.Null(healthManager.GetCurrentBlock("sink-a"));
+        timeProvider.Advance(TimeSpan.FromMinutes(2));
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkExecutionBlock? block = healthManager.GetCurrentBlock("sink-a");
+        Assert.NotNull(block);
+        Assert.Equal(ReplicaSinkExecutionBlockKind.Throttled, block.Kind);
+        Assert.Equal(2, provider.Requests.Count);
+        timeProvider.Advance(TimeSpan.FromMinutes(2));
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        Assert.Equal(2, provider.Requests.Count);
+        timeProvider.Advance(TimeSpan.FromMinutes(4));
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        Assert.Equal(3, provider.Requests.Count);
+    }
+
+    /// <summary>
     ///     Dead-letter persistence failures quarantine the sink instead of repeatedly retrying unsafe partial work.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
