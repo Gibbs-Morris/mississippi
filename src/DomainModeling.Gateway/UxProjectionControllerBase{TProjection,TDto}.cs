@@ -24,28 +24,13 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         the internal projection representation from the public API contract.
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserProjectionController : UxProjectionControllerBase&lt;UserProjection, UserDto&gt;
-///             {
-///                 public UserProjectionController(
-///                     IUxProjectionGrainFactory factory,
-///                     IMapper&lt;UserProjection, UserDto&gt; mapper,
-///                     ILogger&lt;UserProjectionController&gt; logger) : base(factory, mapper, logger) { }
-///             }
-///         </code>
+///         The derived class must apply a route attribute (e.g., <c>[Route("api/users/{entityId}")]</c>)
+///         and inject the required factory and mapper dependencies. The base class provides three endpoints:
+///         <c>GET /{entityId}</c> for the latest state, <c>GET /{entityId}/version</c> for the version number,
+///         and <c>GET /{entityId}/at/{version}</c> for historical versions.
 ///     </para>
 ///     <para>
-///         This provides three endpoints:
-///         <list type="bullet">
-///             <item><c>GET /api/users/{entityId}</c> - Returns the latest projection state as a DTO.</item>
-///             <item><c>GET /api/users/{entityId}/version</c> - Returns the latest version number.</item>
-///             <item>
-///                 <c>GET /api/users/{entityId}/at/{version}</c> - Returns the projection at a specific version as a
-///                 DTO.
-///             </item>
-///         </list>
+///         Refer to the Gateway projects in the repository samples for complete implementation examples.
 ///     </para>
 /// </remarks>
 [ApiController]

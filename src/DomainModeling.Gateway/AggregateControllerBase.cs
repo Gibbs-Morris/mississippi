@@ -17,38 +17,16 @@ namespace Mississippi.DomainModeling.Gateway;
 /// <remarks>
 ///     <para>
 ///         Inherit from this controller to expose aggregate commands as a RESTful API.
-///         The derived class must apply a route attribute and can customize behavior
-///         or add additional endpoints.
+///         The derived class must apply a route attribute (e.g., <c>[Route("api/users/{entityId}")]</c>)
+///         and can customize behavior or add additional endpoints.
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserController : AggregateControllerBase&lt;UserAggregate&gt;
-///             {
-///                 private readonly IUserService _service;
-///                 public UserController(
-///                     IUserService service,
-///                     ILogger&lt;UserController&gt; logger) : base(logger)
-///                 {
-///                     _service = service;
-///                 }
-///                 [HttpPost("register")]
-///                 public Task&lt;ActionResult&lt;OperationResult&gt;&gt; RegisterAsync(
-///                     [FromRoute] string entityId,
-///                     [FromBody] RegisterUser command,
-///                     CancellationToken ct = default)
-///                     =&gt; ExecuteAsync(entityId, command, _service.RegisterAsync, ct);
-///             }
-///         </code>
+///         Derived controllers should inject domain services and use the <c>ExecuteAsync</c> helper method
+///         to delegate command execution to those services. This provides common logging for command execution
+///         at the API layer, consistent error handling, and HTTP response formatting.
 ///     </para>
 ///     <para>
-///         This base class provides:
-///         <list type="bullet">
-///             <item>Common logging for command execution at the API layer.</item>
-///             <item>Consistent error handling and HTTP response formatting.</item>
-///             <item>The <c>ExecuteAsync</c> helper method that delegates to service methods.</item>
-///         </list>
+///         Refer to the Gateway projects in the repository samples for complete implementation examples.
 ///     </para>
 /// </remarks>
 [ApiController]
