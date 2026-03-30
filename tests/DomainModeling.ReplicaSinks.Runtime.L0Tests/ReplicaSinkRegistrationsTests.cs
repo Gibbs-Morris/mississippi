@@ -5,8 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
 using Mississippi.Common.Abstractions.Mapping;
 using Mississippi.DomainModeling.ReplicaSinks.Abstractions;
 using Mississippi.DomainModeling.ReplicaSinks.Runtime;
@@ -75,8 +73,8 @@ public sealed class ReplicaSinkRegistrationsTests
             options => options.ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing);
         services.AddMapper<MappedReplicaProjection, MappedReplicaContract, MappedReplicaProjectionToContractMapper>();
         await using ServiceProvider provider = services.BuildServiceProvider();
-        IHostedService startupValidationService = provider.GetServices<IHostedService>().Single();
-        await startupValidationService.StartAsync(CancellationToken.None);
+        IReplicaSinkStartupValidator validator = provider.GetRequiredService<IReplicaSinkStartupValidator>();
+        await validator.ValidateAsync(CancellationToken.None);
         IReplicaSinkProvider mappedProvider =
             provider.GetRequiredKeyedService<IReplicaSinkProvider>("bootstrap-mapped");
         IReplicaSinkProvider directProvider =

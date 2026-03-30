@@ -29,6 +29,7 @@ public static class ReplicaSinkRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.AddOptions<ReplicaSinkRuntimeOptions>();
         services.TryAddSingleton<IReplicaSinkProjectionRegistry>(serviceProvider => new ReplicaSinkProjectionRegistry(
             serviceProvider,
             serviceProvider.GetServices<ReplicaSinkProjectionDescriptor>(),
@@ -37,9 +38,14 @@ public static class ReplicaSinkRegistrations
         services.AddUxProjections();
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IReplicaSinkSourceStateAccessor, ReplicaSinkUxProjectionSourceStateAccessor>();
+        services.TryAddSingleton<IReplicaSinkExecutionHealthManager, ReplicaSinkExecutionHealthManager>();
+        services.TryAddSingleton<IReplicaSinkOperatorAuditSink, LoggerReplicaSinkOperatorAuditSink>();
         services.TryAddSingleton<IReplicaSinkLatestStateProcessorHook, NullReplicaSinkLatestStateProcessorHook>();
         services.TryAddSingleton<IReplicaSinkLatestStateProcessor, ReplicaSinkLatestStateProcessor>();
+        services.TryAddSingleton<IReplicaSinkRuntimeCoordinator, ReplicaSinkRuntimeCoordinator>();
+        services.TryAddSingleton<IReplicaSinkRuntimeOperator, ReplicaSinkRuntimeOperator>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ReplicaSinkStartupValidationService>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ReplicaSinkRuntimeExecutionService>());
         return services;
     }
 

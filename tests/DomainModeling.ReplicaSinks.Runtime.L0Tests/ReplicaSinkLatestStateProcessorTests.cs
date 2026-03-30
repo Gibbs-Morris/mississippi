@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.Brooks.Abstractions;
@@ -73,15 +75,22 @@ public sealed class ReplicaSinkLatestStateProcessorTests
         IReplicaSinkDeliveryStateStore stateStore,
         IReplicaSinkSourceStateAccessor sourceStateAccessor,
         TimeProvider? timeProvider = null,
-        IReplicaSinkLatestStateProcessorHook? hook = null
-    ) =>
-        new(
+        IReplicaSinkLatestStateProcessorHook? hook = null,
+        IReplicaSinkExecutionHealthManager? healthManager = null,
+        ReplicaSinkRuntimeOptions? runtimeOptions = null
+    )
+    {
+        TimeProvider effectiveTimeProvider = timeProvider ?? TimeProvider.System;
+        return new(
             new TestReplicaSinkProjectionRegistry(bindings),
             stateStore,
             sourceStateAccessor,
-            timeProvider ?? TimeProvider.System,
+            effectiveTimeProvider,
             hook ?? new NullReplicaSinkLatestStateProcessorHook(),
+            healthManager ?? new ReplicaSinkExecutionHealthManager(effectiveTimeProvider),
+            Options.Create(runtimeOptions ?? new ReplicaSinkRuntimeOptions()),
             NullLogger<ReplicaSinkLatestStateProcessor>.Instance);
+    }
 
     private static FakeTimeProvider CreateTimeProvider()
     {
@@ -164,6 +173,44 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     {
         private ConcurrentDictionary<string, ReplicaSinkDeliveryState> States { get; } = new(StringComparer.Ordinal);
 
+        public Task<ReplicaSinkDeliveryStatePage> ReadDeadLetterPageAsync(
+            int pageSize,
+            string? continuationToken = null,
+            CancellationToken cancellationToken = default
+        )
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            int offset = string.IsNullOrWhiteSpace(continuationToken)
+                ? 0
+                : int.Parse(continuationToken, CultureInfo.InvariantCulture);
+            List<ReplicaSinkDeliveryState> orderedStates = States.Values
+                .Where(static state => state.DeadLetter is not null)
+                .OrderByDescending(static state => state.DeadLetter!.RecordedAtUtc)
+                .ThenBy(static state => state.DeliveryKey, StringComparer.Ordinal)
+                .ToList();
+            List<ReplicaSinkDeliveryState> items = orderedStates.Skip(offset).Take(pageSize).ToList();
+            int nextOffset = offset + items.Count;
+            return Task.FromResult(new ReplicaSinkDeliveryStatePage(
+                items,
+                nextOffset < orderedStates.Count ? nextOffset.ToString(CultureInfo.InvariantCulture) : null));
+        }
+
+        public Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDueRetriesAsync(
+            DateTimeOffset dueAtOrBeforeUtc,
+            int maxCount,
+            CancellationToken cancellationToken = default
+        )
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            IReadOnlyList<ReplicaSinkDeliveryState> items = States.Values
+                .Where(state => state.Retry?.NextRetryAtUtc is DateTimeOffset nextRetryAtUtc && nextRetryAtUtc <= dueAtOrBeforeUtc)
+                .OrderBy(static state => state.Retry!.NextRetryAtUtc)
+                .ThenBy(static state => state.DeliveryKey, StringComparer.Ordinal)
+                .Take(maxCount)
+                .ToList();
+            return Task.FromResult(items);
+        }
+
         public Task<ReplicaSinkDeliveryState?> ReadAsync(
             string deliveryKey,
             CancellationToken cancellationToken = default
@@ -182,6 +229,44 @@ public sealed class ReplicaSinkLatestStateProcessorTests
             cancellationToken.ThrowIfCancellationRequested();
             States[state.DeliveryKey] = state;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class DeadLetterWriteFailingReplicaSinkDeliveryStateStore : IReplicaSinkDeliveryStateStore
+    {
+        private InMemoryReplicaSinkDeliveryStateStore InnerStore { get; } = new();
+
+        public Task<ReplicaSinkDeliveryStatePage> ReadDeadLetterPageAsync(
+            int pageSize,
+            string? continuationToken = null,
+            CancellationToken cancellationToken = default
+        ) =>
+            InnerStore.ReadDeadLetterPageAsync(pageSize, continuationToken, cancellationToken);
+
+        public Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDueRetriesAsync(
+            DateTimeOffset dueAtOrBeforeUtc,
+            int maxCount,
+            CancellationToken cancellationToken = default
+        ) =>
+            InnerStore.ReadDueRetriesAsync(dueAtOrBeforeUtc, maxCount, cancellationToken);
+
+        public Task<ReplicaSinkDeliveryState?> ReadAsync(
+            string deliveryKey,
+            CancellationToken cancellationToken = default
+        ) =>
+            InnerStore.ReadAsync(deliveryKey, cancellationToken);
+
+        public Task WriteAsync(
+            ReplicaSinkDeliveryState state,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (state.DeadLetter is not null)
+            {
+                throw new InvalidOperationException("Synthetic dead-letter persistence failure.");
+            }
+
+            return InnerStore.WriteAsync(state, cancellationToken);
         }
     }
 
@@ -576,6 +661,68 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     }
 
     /// <summary>
+    ///     FlushAsync respects a bootstrap cutover fence before processing later live positions for the same lane.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldRespectBootstrapUpperBoundBeforeCutover()
+    {
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.Applied,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            10,
+            new TestProjection
+            {
+                Id = "projection-10",
+            });
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            12,
+            new TestProjection
+            {
+                Id = "projection-12",
+            });
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        await stateStore.WriteAsync(
+            new(
+                GetDeliveryKey(binding, "entity-1"),
+                desiredSourcePosition: 12,
+                bootstrapUpperBoundSourcePosition: 10),
+            CancellationToken.None);
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor([binding], stateStore, sourceAccessor);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkDeliveryState? firstState = await stateStore.ReadAsync(
+            GetDeliveryKey(binding, "entity-1"),
+            CancellationToken.None);
+        Assert.NotNull(firstState);
+        Assert.Equal(12, firstState.DesiredSourcePosition);
+        Assert.Equal(10, firstState.CommittedSourcePosition);
+        Assert.Null(firstState.BootstrapUpperBoundSourcePosition);
+        Assert.Equal([10L], provider.Requests.Select(static request => request.SourcePosition).ToArray());
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkDeliveryState? secondState = await stateStore.ReadAsync(
+            GetDeliveryKey(binding, "entity-1"),
+            CancellationToken.None);
+        Assert.NotNull(secondState);
+        Assert.Equal(12, secondState.CommittedSourcePosition);
+        Assert.Equal([10L, 12L], provider.Requests.Select(static request => request.SourcePosition).ToArray());
+    }
+
+    /// <summary>
     ///     FlushAsync coalesces to the highest desired source position before directly materializing the projection.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -765,6 +912,57 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     }
 
     /// <summary>
+    ///     FlushAsync does not re-run a retryable lane until the persisted retry due time arrives.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldSkipRetryUntilDueTimeArrives()
+    {
+        FakeTimeProvider timeProvider = CreateTimeProvider();
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.Applied,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            15,
+            new TestProjection
+            {
+                Id = "projection-15",
+            });
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        await stateStore.WriteAsync(
+            new(
+                GetDeliveryKey(binding, "entity-1"),
+                desiredSourcePosition: 15,
+                retry: new(
+                    15,
+                    1,
+                    "transient_failure",
+                    "Transient provider failure.",
+                    timeProvider.GetUtcNow(),
+                    timeProvider.GetUtcNow().AddMinutes(1))),
+            CancellationToken.None);
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor([binding], stateStore, sourceAccessor, timeProvider);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        Assert.Empty(provider.Requests);
+        timeProvider.Advance(TimeSpan.FromMinutes(2));
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        Assert.Single(provider.Requests);
+        Assert.Equal(15, provider.Requests.Single().SourcePosition);
+    }
+
+    /// <summary>
     ///     FlushAsync keeps the last committed checkpoint while persisting a sanitized retry record for a newer desired
     ///     position.
     /// </summary>
@@ -864,6 +1062,94 @@ public sealed class ReplicaSinkLatestStateProcessorTests
         Assert.Null(state.DeadLetter);
         Assert.Single(provider.Requests);
         Assert.Equal(22, provider.Requests.Single().SourcePosition);
+    }
+
+    /// <summary>
+    ///     Retryable authentication failures park the sink so repeated flushes do not hot-loop the provider.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldParkSinkAfterAuthenticationFailure()
+    {
+        FakeTimeProvider timeProvider = CreateTimeProvider();
+        RecordingReplicaSinkProvider provider = new(_ => throw new ReplicaSinkWriteException(
+            ReplicaSinkWriteFailureDisposition.Retry,
+            "authentication_failed",
+            "Authentication failed."));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            25,
+            new TestProjection
+            {
+                Id = "projection-25",
+            });
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        ReplicaSinkExecutionHealthManager healthManager = new(timeProvider);
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor(
+            [binding],
+            stateStore,
+            sourceAccessor,
+            timeProvider,
+            healthManager: healthManager);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 25, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkExecutionBlock? block = healthManager.GetCurrentBlock("sink-a");
+        Assert.NotNull(block);
+        Assert.Equal(ReplicaSinkExecutionBlockKind.Parked, block.Kind);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        Assert.Single(provider.Requests);
+    }
+
+    /// <summary>
+    ///     Dead-letter persistence failures quarantine the sink instead of repeatedly retrying unsafe partial work.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldQuarantineSinkWhenDeadLetterPersistenceFails()
+    {
+        RecordingReplicaSinkProvider provider = new(_ => throw new ReplicaSinkWriteException(
+            ReplicaSinkWriteFailureDisposition.DeadLetter,
+            "validation_failed",
+            "Validation failed."));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            26,
+            new TestProjection
+            {
+                Id = "projection-26",
+            });
+        DeadLetterWriteFailingReplicaSinkDeliveryStateStore stateStore = new();
+        ReplicaSinkExecutionHealthManager healthManager = new(TimeProvider.System);
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor(
+            [binding],
+            stateStore,
+            sourceAccessor,
+            healthManager: healthManager);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 26, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        ReplicaSinkExecutionBlock? block = healthManager.GetCurrentBlock("sink-a");
+        Assert.NotNull(block);
+        Assert.Equal(ReplicaSinkExecutionBlockKind.Quarantined, block.Kind);
     }
 
     /// <summary>

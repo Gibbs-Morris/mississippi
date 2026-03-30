@@ -13,6 +13,9 @@ public sealed class ReplicaSinkDeliveryState
     /// </summary>
     /// <param name="deliveryKey">The runtime-owned delivery key.</param>
     /// <param name="desiredSourcePosition">The highest desired source position observed for the lane.</param>
+    /// <param name="bootstrapUpperBoundSourcePosition">
+    ///     The bootstrap cutover fence for the lane, when bootstrap work is still constrained below live traffic.
+    /// </param>
     /// <param name="committedSourcePosition">The highest source position durably checkpointed as externally committed.</param>
     /// <param name="retry">The currently persisted retry state, if any.</param>
     /// <param name="deadLetter">The currently persisted dead-letter state, if any.</param>
@@ -27,6 +30,7 @@ public sealed class ReplicaSinkDeliveryState
     public ReplicaSinkDeliveryState(
         string deliveryKey,
         long? desiredSourcePosition = null,
+        long? bootstrapUpperBoundSourcePosition = null,
         long? committedSourcePosition = null,
         ReplicaSinkStoredFailure? retry = null,
         ReplicaSinkStoredFailure? deadLetter = null
@@ -35,6 +39,7 @@ public sealed class ReplicaSinkDeliveryState
         ArgumentNullException.ThrowIfNull(deliveryKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(deliveryKey);
         ValidatePosition(desiredSourcePosition, nameof(desiredSourcePosition));
+        ValidatePosition(bootstrapUpperBoundSourcePosition, nameof(bootstrapUpperBoundSourcePosition));
         ValidatePosition(committedSourcePosition, nameof(committedSourcePosition));
         if (desiredSourcePosition is not null &&
             committedSourcePosition is not null &&
@@ -42,6 +47,14 @@ public sealed class ReplicaSinkDeliveryState
         {
             throw new InvalidOperationException(
                 "Desired source position cannot be older than the committed source position.");
+        }
+
+        if (bootstrapUpperBoundSourcePosition is not null &&
+            desiredSourcePosition is not null &&
+            (bootstrapUpperBoundSourcePosition.Value > desiredSourcePosition.Value))
+        {
+            throw new InvalidOperationException(
+                "Bootstrap upper-bound source position cannot be newer than the desired source position.");
         }
 
         if (retry is not null && deadLetter is not null)
@@ -73,10 +86,16 @@ public sealed class ReplicaSinkDeliveryState
 
         DeliveryKey = deliveryKey;
         DesiredSourcePosition = desiredSourcePosition;
+        BootstrapUpperBoundSourcePosition = bootstrapUpperBoundSourcePosition;
         CommittedSourcePosition = committedSourcePosition;
         Retry = retry;
         DeadLetter = deadLetter;
     }
+
+    /// <summary>
+    ///     Gets the bootstrap cutover fence for the lane, when bootstrap work is still constrained below live traffic.
+    /// </summary>
+    public long? BootstrapUpperBoundSourcePosition { get; }
 
     /// <summary>
     ///     Gets the highest source position durably checkpointed as externally committed.

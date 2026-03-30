@@ -23,6 +23,17 @@ internal static partial class ReplicaSinkLatestStateProcessorLoggerExtensions
     );
 
     [LoggerMessage(
+        EventId = 7,
+        Level = LogLevel.Error,
+        Message =
+            "Replica sink sink '{SinkKey}' quarantined lane '{DeliveryKey}' after dead-letter persistence failed.")]
+    public static partial void DeadLetterStoreQuarantined(
+        this ILogger logger,
+        string sinkKey,
+        string deliveryKey
+    );
+
+    [LoggerMessage(
         EventId = 2,
         Level = LogLevel.Debug,
         Message = "Replica sink lane '{DeliveryKey}' checkpointed committed source position {SourcePosition}.")]

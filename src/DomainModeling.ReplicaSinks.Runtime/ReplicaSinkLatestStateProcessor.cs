@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions;
 
@@ -33,6 +34,8 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         IReplicaSinkSourceStateAccessor sourceStateAccessor,
         TimeProvider timeProvider,
         IReplicaSinkLatestStateProcessorHook hook,
+        IReplicaSinkExecutionHealthManager healthManager,
+        IOptions<ReplicaSinkRuntimeOptions> runtimeOptions,
         ILogger<ReplicaSinkLatestStateProcessor> logger
     )
     {
@@ -41,8 +44,12 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         SourceStateAccessor = sourceStateAccessor ?? throw new ArgumentNullException(nameof(sourceStateAccessor));
         TimeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         Hook = hook ?? throw new ArgumentNullException(nameof(hook));
+        HealthManager = healthManager ?? throw new ArgumentNullException(nameof(healthManager));
+        RuntimeOptions = runtimeOptions ?? throw new ArgumentNullException(nameof(runtimeOptions));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    private IReplicaSinkExecutionHealthManager HealthManager { get; }
 
     private IReplicaSinkDeliveryStateStore DeliveryStateStore { get; }
 
@@ -52,48 +59,11 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
 
     private IReplicaSinkProjectionRegistry Registry { get; }
 
+    private IOptions<ReplicaSinkRuntimeOptions> RuntimeOptions { get; }
+
     private IReplicaSinkSourceStateAccessor SourceStateAccessor { get; }
 
     private TimeProvider TimeProvider { get; }
-
-    private static ReplicaSinkDeliveryState AdvanceDesiredPosition(
-        ReplicaSinkDeliveryState currentState,
-        long desiredSourcePosition,
-        ReplicaSinkDeliveryIdentity deliveryIdentity
-    )
-    {
-        long? currentDesiredSourcePosition = currentState.DesiredSourcePosition;
-        long? committedSourcePosition = currentState.CommittedSourcePosition;
-        if ((currentDesiredSourcePosition is not null &&
-             (desiredSourcePosition < currentDesiredSourcePosition.Value)) ||
-            (committedSourcePosition is not null && (desiredSourcePosition < committedSourcePosition.Value)))
-        {
-            throw new ReplicaSinkRewindRejectedException(
-                deliveryIdentity.DeliveryKey,
-                desiredSourcePosition,
-                currentDesiredSourcePosition,
-                committedSourcePosition);
-        }
-
-        ReplicaSinkStoredFailure? retry = currentState.Retry;
-        ReplicaSinkStoredFailure? deadLetter = currentState.DeadLetter;
-        if (retry is not null && (retry.SourcePosition < desiredSourcePosition))
-        {
-            retry = null;
-        }
-
-        if (deadLetter is not null && (deadLetter.SourcePosition < desiredSourcePosition))
-        {
-            deadLetter = null;
-        }
-
-        return new(
-            currentState.DeliveryKey,
-            desiredSourcePosition,
-            currentState.CommittedSourcePosition,
-            retry,
-            deadLetter);
-    }
 
     private static ReplicaWriteRequest BuildWriteRequest(
         BindingWorkItem workItem,
@@ -125,12 +95,6 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
             IsDeleted = true,
         };
     }
-
-    private static ReplicaSinkDeliveryState CreateCommittedState(
-        ReplicaSinkDeliveryState currentState,
-        long sourcePosition
-    ) =>
-        new(currentState.DeliveryKey, currentState.DesiredSourcePosition, sourcePosition);
 
     private static string CreateUnexpectedFailureSummary(
         string prefix,
@@ -170,13 +134,25 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         outcome is ReplicaWriteOutcome.Applied or ReplicaWriteOutcome.DuplicateIgnored
             or ReplicaWriteOutcome.SupersededIgnored;
 
+    private static bool IsAuthenticationFailureCode(
+        string failureCode
+    ) =>
+        failureCode.Contains("auth", StringComparison.OrdinalIgnoreCase) ||
+        failureCode.Contains("unauthorized", StringComparison.OrdinalIgnoreCase) ||
+        failureCode.Contains("forbidden", StringComparison.OrdinalIgnoreCase) ||
+        failureCode.Contains("credential", StringComparison.OrdinalIgnoreCase);
+
     private static bool ShouldFlush(
         ReplicaSinkDeliveryState state,
-        long targetSourcePosition
+        long targetSourcePosition,
+        DateTimeOffset now
     ) =>
-        (state.DesiredSourcePosition == targetSourcePosition) &&
         (state.CommittedSourcePosition is null || (state.CommittedSourcePosition.Value < targetSourcePosition)) &&
-        (state.DeadLetter is null || (state.DeadLetter.SourcePosition != targetSourcePosition));
+        (state.DeadLetter is null || (state.DeadLetter.SourcePosition != targetSourcePosition)) &&
+        (state.Retry is null ||
+         (state.Retry.SourcePosition != targetSourcePosition) ||
+         state.Retry.NextRetryAtUtc is null ||
+         state.Retry.NextRetryAtUtc.Value <= now);
 
     /// <inheritdoc />
     public Task AdvanceDesiredPositionAsync<TProjection>(
@@ -208,7 +184,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         {
             ReplicaSinkDeliveryIdentity deliveryIdentity = new(binding.Identity, entityId);
             ReplicaSinkDeliveryState currentState = await ReadStateAsync(deliveryIdentity, cancellationToken);
-            ReplicaSinkDeliveryState updatedState = AdvanceDesiredPosition(
+            ReplicaSinkDeliveryState updatedState = ReplicaSinkDeliveryStateTransitions.AdvanceDesiredPosition(
                 currentState,
                 desiredSourcePosition,
                 deliveryIdentity);
@@ -257,109 +233,150 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
             if (workItem.State.DesiredSourcePosition is null ||
                 (workItem.State.DesiredSourcePosition.Value < highestDesired))
             {
-                workItem.State = AdvanceDesiredPosition(workItem.State, highestDesired, workItem.DeliveryIdentity);
+                workItem.State = ReplicaSinkDeliveryStateTransitions.AdvanceDesiredPosition(
+                    workItem.State,
+                    highestDesired,
+                    workItem.DeliveryIdentity);
                 await DeliveryStateStore.WriteAsync(workItem.State, cancellationToken);
             }
         }
 
-        List<BindingWorkItem> pendingWorkItems = workItems
-            .Where(item => ShouldFlush(item.State, highestDesired))
-            .ToList();
-        if (pendingWorkItems.Count == 0)
-        {
-            return;
-        }
-
-        ReplicaSinkSourceState sourceState;
-        try
-        {
-            sourceState = await SourceStateAccessor.ReadAsync(
-                projectionType,
-                entityId,
-                highestDesired,
-                cancellationToken);
-        }
-        catch (ReplicaSinkSourceStateUnavailableException)
-        {
-            Logger.SourceStateUnavailable(projectionType.Name, entityId, highestDesired);
-            foreach (BindingWorkItem workItem in pendingWorkItems)
+        DateTimeOffset now = TimeProvider.GetUtcNow();
+        IOrderedEnumerable<IGrouping<long, BindingWorkItem>> pendingGroups = workItems
+            .Where(item => !HealthManager.IsBlocked(item.Binding.Identity.SinkKey))
+            .Select(item => new
             {
-                await PersistRetryAsync(
-                    workItem,
-                    highestDesired,
-                    "source_state_unavailable",
-                    "Projection source state is not yet available at the requested source position.",
-                    cancellationToken);
-            }
-
-            return;
-        }
-        catch (Exception ex) when (!IsCriticalException(ex))
+                Item = item,
+                TargetSourcePosition = ReplicaSinkDeliveryStateTransitions.GetEffectiveTargetSourcePosition(item.State),
+            })
+            .Where(candidate => candidate.TargetSourcePosition is not null &&
+                                ShouldFlush(candidate.Item.State, candidate.TargetSourcePosition.Value, now))
+            .GroupBy(candidate => candidate.TargetSourcePosition!.Value, candidate => candidate.Item)
+            .OrderBy(group => group.Key);
+        foreach (IGrouping<long, BindingWorkItem> pendingGroup in pendingGroups)
         {
-            foreach (BindingWorkItem workItem in pendingWorkItems)
-            {
-                await PersistRetryAsync(
-                    workItem,
-                    highestDesired,
-                    "source_state_read_failed",
-                    CreateUnexpectedFailureSummary("Projection source state read failed unexpectedly.", ex),
-                    cancellationToken);
-            }
-
-            return;
-        }
-
-        foreach (BindingWorkItem workItem in pendingWorkItems)
-        {
-            ReplicaWriteRequest request;
+            long targetSourcePosition = pendingGroup.Key;
+            List<BindingWorkItem> pendingWorkItems = pendingGroup.ToList();
+            ReplicaSinkSourceState sourceState;
             try
             {
-                request = BuildWriteRequest(workItem, sourceState, highestDesired);
-            }
-            catch (Exception ex) when (!IsCriticalException(ex))
-            {
-                await PersistDeadLetterAsync(
-                    workItem,
-                    highestDesired,
-                    "mapping_failure",
-                    CreateUnexpectedFailureSummary("Projection materialization failed unexpectedly.", ex),
+                sourceState = await SourceStateAccessor.ReadAsync(
+                    projectionType,
+                    entityId,
+                    targetSourcePosition,
                     cancellationToken);
-                continue;
             }
+            catch (ReplicaSinkSourceStateUnavailableException)
+            {
+                Logger.SourceStateUnavailable(projectionType.Name, entityId, targetSourcePosition);
+                foreach (BindingWorkItem workItem in pendingWorkItems)
+                {
+                    await PersistRetryAsync(
+                        workItem,
+                        targetSourcePosition,
+                        "source_state_unavailable",
+                        "Projection source state is not yet available at the requested source position.",
+                        false,
+                        cancellationToken);
+                }
 
-            ReplicaWriteResult result;
-            try
-            {
-                result = await workItem.Binding.ProviderHandle.WriteAsync(request, cancellationToken);
-            }
-            catch (ReplicaSinkWriteException ex) when (ex.Disposition == ReplicaSinkWriteFailureDisposition.Retry)
-            {
-                await PersistRetryAsync(workItem, highestDesired, ex.FailureCode, ex.FailureSummary, cancellationToken);
-                continue;
-            }
-            catch (ReplicaSinkWriteException ex)
-            {
-                await PersistDeadLetterAsync(
-                    workItem,
-                    highestDesired,
-                    ex.FailureCode,
-                    ex.FailureSummary,
-                    cancellationToken);
                 continue;
             }
             catch (Exception ex) when (!IsCriticalException(ex))
             {
-                await PersistRetryAsync(
-                    workItem,
-                    highestDesired,
-                    "provider_write_failed",
-                    CreateUnexpectedFailureSummary("Replica sink provider write failed unexpectedly.", ex),
-                    cancellationToken);
+                foreach (BindingWorkItem workItem in pendingWorkItems)
+                {
+                    await PersistRetryAsync(
+                        workItem,
+                        targetSourcePosition,
+                        "source_state_read_failed",
+                        CreateUnexpectedFailureSummary("Projection source state read failed unexpectedly.", ex),
+                        false,
+                        cancellationToken);
+                }
+
                 continue;
             }
 
-            await HandleTerminalWriteAsync(workItem, highestDesired, result, cancellationToken);
+            foreach (BindingWorkItem workItem in pendingWorkItems)
+            {
+                ReplicaWriteRequest request;
+                try
+                {
+                    request = BuildWriteRequest(workItem, sourceState, targetSourcePosition);
+                }
+                catch (Exception ex) when (!IsCriticalException(ex))
+                {
+                    await PersistDeadLetterAsync(
+                        workItem,
+                        targetSourcePosition,
+                        "mapping_failure",
+                        CreateUnexpectedFailureSummary("Projection materialization failed unexpectedly.", ex),
+                        cancellationToken);
+                    continue;
+                }
+
+                ReplicaWriteResult result;
+                try
+                {
+                    result = await workItem.Binding.ProviderHandle.WriteAsync(request, cancellationToken);
+                }
+                catch (ReplicaSinkWriteException ex) when (ex.Disposition == ReplicaSinkWriteFailureDisposition.Retry)
+                {
+                    ApplyImmediateFailureContainment(workItem, ex.FailureCode, ex.FailureSummary);
+                    await PersistRetryAsync(
+                        workItem,
+                        targetSourcePosition,
+                        ex.FailureCode,
+                        ex.FailureSummary,
+                        true,
+                        cancellationToken);
+                    continue;
+                }
+                catch (ReplicaSinkWriteException ex)
+                {
+                    ApplyImmediateFailureContainment(workItem, ex.FailureCode, ex.FailureSummary);
+                    await PersistDeadLetterAsync(
+                        workItem,
+                        targetSourcePosition,
+                        ex.FailureCode,
+                        ex.FailureSummary,
+                        cancellationToken);
+                    continue;
+                }
+                catch (Exception ex) when (!IsCriticalException(ex))
+                {
+                    await PersistRetryAsync(
+                        workItem,
+                        targetSourcePosition,
+                        "provider_write_failed",
+                        CreateUnexpectedFailureSummary("Replica sink provider write failed unexpectedly.", ex),
+                        true,
+                        cancellationToken);
+                    continue;
+                }
+
+                await HandleTerminalWriteAsync(workItem, targetSourcePosition, result, cancellationToken);
+            }
         }
+    }
+
+    private void ApplyImmediateFailureContainment(
+        BindingWorkItem workItem,
+        string failureCode,
+        string failureSummary
+    )
+    {
+        if (!IsAuthenticationFailureCode(failureCode))
+        {
+            return;
+        }
+
+        HealthManager.Park(
+            workItem.Binding.Identity.SinkKey,
+            failureCode,
+            failureSummary,
+            TimeProvider.GetUtcNow().Add(RuntimeOptions.Value.AuthFailureParkDuration));
     }
 
     private ReplicaSinkDeliveryState CreateDeadLetterState(
@@ -379,6 +396,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         return new(
             currentState.DeliveryKey,
             currentState.DesiredSourcePosition,
+            currentState.BootstrapUpperBoundSourcePosition,
             currentState.CommittedSourcePosition,
             null,
             deadLetter);
@@ -402,6 +420,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         return new(
             currentState.DeliveryKey,
             currentState.DesiredSourcePosition,
+            currentState.BootstrapUpperBoundSourcePosition,
             currentState.CommittedSourcePosition,
             retry);
     }
@@ -427,7 +446,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
             workItem.DeliveryIdentity,
             sourcePosition,
             cancellationToken);
-        workItem.State = CreateCommittedState(workItem.State, sourcePosition);
+        workItem.State = ReplicaSinkDeliveryStateTransitions.CreateCommittedState(workItem.State, sourcePosition);
         await DeliveryStateStore.WriteAsync(workItem.State, cancellationToken);
         Logger.DeliveryCheckpointed(workItem.DeliveryIdentity.DeliveryKey, sourcePosition);
     }
@@ -458,8 +477,19 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
     )
     {
         workItem.State = CreateDeadLetterState(workItem.State, sourcePosition, failureCode, failureSummary);
-        await DeliveryStateStore.WriteAsync(workItem.State, cancellationToken);
-        Logger.DeadLetterPersisted(workItem.DeliveryIdentity.DeliveryKey, sourcePosition, failureCode);
+        try
+        {
+            await DeliveryStateStore.WriteAsync(workItem.State, cancellationToken);
+            Logger.DeadLetterPersisted(workItem.DeliveryIdentity.DeliveryKey, sourcePosition, failureCode);
+        }
+        catch (Exception ex) when (!IsCriticalException(ex))
+        {
+            HealthManager.Quarantine(
+                workItem.Binding.Identity.SinkKey,
+                "dead_letter_store_failed",
+                "Dead-letter persistence failed while storing terminal lane state.");
+            Logger.DeadLetterStoreQuarantined(workItem.Binding.Identity.SinkKey, workItem.DeliveryIdentity.DeliveryKey);
+        }
     }
 
     private async Task PersistRetryAsync(
@@ -467,6 +497,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         long sourcePosition,
         string failureCode,
         string failureSummary,
+        bool isProviderFailure,
         CancellationToken cancellationToken
     )
     {
@@ -475,6 +506,15 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
         if (workItem.State.Retry?.NextRetryAtUtc is DateTimeOffset nextRetryAtUtc)
         {
             Logger.RetryPersisted(workItem.DeliveryIdentity.DeliveryKey, sourcePosition, failureCode, nextRetryAtUtc);
+            if (isProviderFailure && !IsAuthenticationFailureCode(failureCode) &&
+                workItem.State.Retry.AttemptCount >= RuntimeOptions.Value.RepeatedProviderFailureThrottleThreshold)
+            {
+                HealthManager.Throttle(
+                    workItem.Binding.Identity.SinkKey,
+                    failureCode,
+                    failureSummary,
+                    TimeProvider.GetUtcNow().Add(RuntimeOptions.Value.RepeatedProviderFailureThrottleDuration));
+            }
         }
     }
 

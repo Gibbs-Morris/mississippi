@@ -94,6 +94,7 @@ public sealed class BootstrapReplicaSinkProviderTests
         ReplicaSinkDeliveryState state = new(
             "delivery-key",
             42,
+            42,
             41,
             new(
                 42,
@@ -106,9 +107,116 @@ public sealed class BootstrapReplicaSinkProviderTests
         ReplicaSinkDeliveryState? roundTripped = await stateStore.ReadAsync("delivery-key", CancellationToken.None);
         Assert.NotNull(roundTripped);
         Assert.Equal(42, roundTripped.DesiredSourcePosition);
+        Assert.Equal(42, roundTripped.BootstrapUpperBoundSourcePosition);
         Assert.Equal(41, roundTripped.CommittedSourcePosition);
         Assert.NotNull(roundTripped.Retry);
         Assert.Equal("transient_failure", roundTripped.Retry.FailureCode);
+    }
+
+    /// <summary>
+    ///     Ensures the bootstrap delivery-state store pages persisted dead-letter snapshots in newest-first order.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task BootstrapReplicaSinkDeliveryStateStoreShouldPageDeadLetterSnapshots()
+    {
+        ServiceCollection services = [];
+        services.AddBootstrapReplicaSinkDeliveryStateStore();
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        IReplicaSinkDeliveryStateStore stateStore = provider.GetRequiredService<IReplicaSinkDeliveryStateStore>();
+        await stateStore.WriteAsync(
+            new(
+                "delivery-a",
+                desiredSourcePosition: 10,
+                deadLetter: new(
+                    10,
+                    1,
+                    "dead_letter_a",
+                    "Dead letter A.",
+                    new(2026, 3, 30, 12, 0, 0, TimeSpan.Zero))),
+            CancellationToken.None);
+        await stateStore.WriteAsync(
+            new(
+                "delivery-b",
+                desiredSourcePosition: 11,
+                deadLetter: new(
+                    11,
+                    1,
+                    "dead_letter_b",
+                    "Dead letter B.",
+                    new(2026, 3, 30, 12, 1, 0, TimeSpan.Zero))),
+            CancellationToken.None);
+        ReplicaSinkDeliveryStatePage firstPage = await stateStore.ReadDeadLetterPageAsync(1, null, CancellationToken.None);
+        ReplicaSinkDeliveryStatePage secondPage = await stateStore.ReadDeadLetterPageAsync(
+            1,
+            firstPage.ContinuationToken,
+            CancellationToken.None);
+        Assert.Single(firstPage.Items);
+        Assert.Equal("delivery-b", firstPage.Items.Single().DeliveryKey);
+        Assert.NotNull(firstPage.ContinuationToken);
+        Assert.Single(secondPage.Items);
+        Assert.Equal("delivery-a", secondPage.Items.Single().DeliveryKey);
+        Assert.Null(secondPage.ContinuationToken);
+    }
+
+    /// <summary>
+    ///     Ensures the bootstrap delivery-state store returns bounded due retries in due-time order.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task BootstrapReplicaSinkDeliveryStateStoreShouldReadDueRetriesInDueOrder()
+    {
+        ServiceCollection services = [];
+        services.AddBootstrapReplicaSinkDeliveryStateStore();
+        await using ServiceProvider provider = services.BuildServiceProvider();
+        IReplicaSinkDeliveryStateStore stateStore = provider.GetRequiredService<IReplicaSinkDeliveryStateStore>();
+        await stateStore.WriteAsync(
+            new(
+                "delivery-a",
+                10,
+                null,
+                null,
+                new(
+                    10,
+                    1,
+                    "retry_a",
+                    "Retry A.",
+                    new(2026, 3, 30, 12, 0, 0, TimeSpan.Zero),
+                    new(2026, 3, 30, 12, 5, 0, TimeSpan.Zero))),
+            CancellationToken.None);
+        await stateStore.WriteAsync(
+            new(
+                "delivery-b",
+                11,
+                null,
+                null,
+                new(
+                    11,
+                    1,
+                    "retry_b",
+                    "Retry B.",
+                    new(2026, 3, 30, 12, 0, 0, TimeSpan.Zero),
+                    new(2026, 3, 30, 12, 4, 0, TimeSpan.Zero))),
+            CancellationToken.None);
+        await stateStore.WriteAsync(
+            new(
+                "delivery-c",
+                12,
+                null,
+                null,
+                new(
+                    12,
+                    1,
+                    "retry_c",
+                    "Retry C.",
+                    new(2026, 3, 30, 12, 0, 0, TimeSpan.Zero),
+                    new(2026, 3, 30, 12, 7, 0, TimeSpan.Zero))),
+            CancellationToken.None);
+        IReadOnlyList<ReplicaSinkDeliveryState> dueStates = await stateStore.ReadDueRetriesAsync(
+            new(2026, 3, 30, 12, 5, 0, TimeSpan.Zero),
+            2,
+            CancellationToken.None);
+        Assert.Equal(["delivery-b", "delivery-a"], dueStates.Select(static state => state.DeliveryKey).ToArray());
     }
 
     /// <summary>
