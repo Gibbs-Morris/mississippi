@@ -38,7 +38,18 @@ internal static class CosmosReplicaSinkDocumentKeys
     /// <returns>The durable delivery-state document identifier.</returns>
     internal static string DeliveryStateId(
         string deliveryKey
-    ) => $"state::{deliveryKey}";
+    ) =>
+        $"state::{deliveryKey}";
+
+    /// <summary>
+    ///     Deserializes a stored payload snapshot from its JSON representation.
+    /// </summary>
+    /// <param name="payloadJson">The stored payload JSON.</param>
+    /// <returns>The deserialized payload, or <see langword="null" /> when no payload is present.</returns>
+    internal static object? DeserializePayload(
+        string? payloadJson
+    ) =>
+        payloadJson is null ? null : JsonConvert.DeserializeObject<object>(payloadJson);
 
     /// <summary>
     ///     Serializes a UTC timestamp using the round-trip format required by Cosmos string ordering.
@@ -47,7 +58,8 @@ internal static class CosmosReplicaSinkDocumentKeys
     /// <returns>The round-trip UTC timestamp.</returns>
     internal static string FormatUtcTimestamp(
         DateTimeOffset timestamp
-    ) => timestamp.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+    ) =>
+        timestamp.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
     /// <summary>
     ///     Parses an optional UTC timestamp stored in a Cosmos document.
@@ -67,22 +79,14 @@ internal static class CosmosReplicaSinkDocumentKeys
     }
 
     /// <summary>
-    ///     Deserializes a stored payload snapshot from its JSON representation.
-    /// </summary>
-    /// <param name="payloadJson">The stored payload JSON.</param>
-    /// <returns>The deserialized payload, or <see langword="null" /> when no payload is present.</returns>
-    internal static object? DeserializePayload(
-        string? payloadJson
-    ) => payloadJson is null ? null : JsonConvert.DeserializeObject<object>(payloadJson);
-
-    /// <summary>
     ///     Serializes a payload snapshot for Cosmos storage.
     /// </summary>
     /// <param name="payload">The payload to serialize.</param>
     /// <returns>The serialized payload, or <see langword="null" /> when no payload is present.</returns>
     internal static string? SerializePayload(
         object? payload
-    ) => payload is null ? null : JsonConvert.SerializeObject(payload);
+    ) =>
+        payload is null ? null : JsonConvert.SerializeObject(payload);
 
     /// <summary>
     ///     Creates the target-delivery document identifier for the supplied delivery key.
@@ -91,5 +95,6 @@ internal static class CosmosReplicaSinkDocumentKeys
     /// <returns>The target-delivery document identifier.</returns>
     internal static string TargetDeliveryId(
         string deliveryKey
-    ) => $"delivery::{deliveryKey}";
+    ) =>
+        $"delivery::{deliveryKey}";
 }

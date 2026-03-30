@@ -43,9 +43,7 @@ public static class CosmosReplicaSinkRegistrations
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configure);
         ValidateKeys(sinkKey, clientKey);
-        services.AddOptions<CosmosReplicaSinkOptions>(sinkKey)
-            .Configure(configure)
-            .ValidateOnStart();
+        services.AddOptions<CosmosReplicaSinkOptions>(sinkKey).Configure(configure).ValidateOnStart();
         services.PostConfigure<CosmosReplicaSinkOptions>(sinkKey, options => options.ClientKey = clientKey);
         return services.AddCosmosReplicaSinkCore(sinkKey);
     }
@@ -71,9 +69,7 @@ public static class CosmosReplicaSinkRegistrations
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configurationSection);
         ValidateKeys(sinkKey, clientKey);
-        services.AddOptions<CosmosReplicaSinkOptions>(sinkKey)
-            .Bind(configurationSection)
-            .ValidateOnStart();
+        services.AddOptions<CosmosReplicaSinkOptions>(sinkKey).Bind(configurationSection).ValidateOnStart();
         services.PostConfigure<CosmosReplicaSinkOptions>(sinkKey, options => options.ClientKey = clientKey);
         return services.AddCosmosReplicaSinkCore(sinkKey);
     }
@@ -87,10 +83,10 @@ public static class CosmosReplicaSinkRegistrations
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IRetryPolicy, CosmosRetryPolicy>();
         services.TryAddEnumerable(
-            ServiceDescriptor.Singleton<IValidateOptions<CosmosReplicaSinkOptions>, CosmosReplicaSinkOptionsValidation>());
+            ServiceDescriptor
+                .Singleton<IValidateOptions<CosmosReplicaSinkOptions>, CosmosReplicaSinkOptionsValidation>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, CosmosReplicaSinkContainerInitializer>());
         services.TryAddSingleton<IReplicaSinkDeliveryStateStore, CosmosReplicaSinkDeliveryStateStore>();
-
         string containerServiceKey = ReplicaSinkCosmosDefaults.CreateContainerServiceKey(sinkKey);
         services.AddKeyedSingleton<Container>(
             containerServiceKey,
@@ -99,13 +95,15 @@ public static class CosmosReplicaSinkRegistrations
                 _
             ) =>
             {
-                CosmosReplicaSinkOptions options = provider.GetRequiredService<IOptionsMonitor<CosmosReplicaSinkOptions>>().Get(sinkKey);
+                CosmosReplicaSinkOptions options =
+                    provider.GetRequiredService<IOptionsMonitor<CosmosReplicaSinkOptions>>().Get(sinkKey);
                 CosmosClient cosmosClient = provider.GetRequiredKeyedService<CosmosClient>(options.ClientKey);
                 return cosmosClient.GetDatabase(options.DatabaseId).GetContainer(options.ContainerId);
             });
         services.AddSingleton<ICosmosReplicaSinkShard>(provider =>
         {
-            CosmosReplicaSinkOptions options = provider.GetRequiredService<IOptionsMonitor<CosmosReplicaSinkOptions>>().Get(sinkKey);
+            CosmosReplicaSinkOptions options =
+                provider.GetRequiredService<IOptionsMonitor<CosmosReplicaSinkOptions>>().Get(sinkKey);
             CosmosClient cosmosClient = provider.GetRequiredKeyedService<CosmosClient>(options.ClientKey);
             Container container = provider.GetRequiredKeyedService<Container>(containerServiceKey);
             IRetryPolicy retryPolicy = provider.GetRequiredService<IRetryPolicy>();
@@ -129,12 +127,12 @@ public static class CosmosReplicaSinkRegistrations
             (
                 provider,
                 _
-            ) =>
-                (IReplicaSinkProvider)provider.GetServices<ICosmosReplicaSinkShard>().Single(
-                    shard => string.Equals(shard.SinkKey, sinkKey, StringComparison.Ordinal)));
+            ) => (IReplicaSinkProvider)provider.GetServices<ICosmosReplicaSinkShard>()
+                .Single(shard => string.Equals(shard.SinkKey, sinkKey, StringComparison.Ordinal)));
         services.AddSingleton(provider =>
         {
-            CosmosReplicaSinkOptions options = provider.GetRequiredService<IOptionsMonitor<CosmosReplicaSinkOptions>>().Get(sinkKey);
+            CosmosReplicaSinkOptions options =
+                provider.GetRequiredService<IOptionsMonitor<CosmosReplicaSinkOptions>>().Get(sinkKey);
             return new ReplicaSinkRegistrationDescriptor(
                 sinkKey,
                 options.ClientKey,

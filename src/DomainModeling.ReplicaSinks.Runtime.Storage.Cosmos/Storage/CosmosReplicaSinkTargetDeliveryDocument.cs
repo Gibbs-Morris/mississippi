@@ -13,38 +13,6 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.Storage
 internal sealed class CosmosReplicaSinkTargetDeliveryDocument
 {
     /// <summary>
-    ///     Creates a target delivery document from the supplied provider write request.
-    /// </summary>
-    /// <param name="request">The provider write request.</param>
-    /// <param name="appliedWriteCount">The cumulative applied-write count for the lane.</param>
-    /// <param name="updatedAtUtc">The UTC timestamp when the lane was updated.</param>
-    /// <returns>The target delivery document.</returns>
-    public static CosmosReplicaSinkTargetDeliveryDocument Create(
-        ReplicaWriteRequest request,
-        int appliedWriteCount,
-        DateTimeOffset updatedAtUtc
-    ) => new()
-    {
-        AppliedWriteCount = appliedWriteCount,
-        ContractIdentity = request.ContractIdentity,
-        DeliveryKey = request.DeliveryKey,
-        Id = CosmosReplicaSinkDocumentKeys.TargetDeliveryId(request.DeliveryKey),
-        IsDeleted = request.IsDeleted,
-        LastUpdatedAtUtc = CosmosReplicaSinkDocumentKeys.FormatUtcTimestamp(updatedAtUtc),
-        LatestPayloadJson = CosmosReplicaSinkDocumentKeys.SerializePayload(request.Payload),
-        LatestSourcePosition = request.SourcePosition,
-        ReplicaPartitionKey = request.Target.DestinationIdentity.TargetName,
-        TargetName = request.Target.DestinationIdentity.TargetName,
-        Type = CosmosReplicaSinkDocumentKeys.TargetDeliveryDocumentType,
-    };
-
-    /// <summary>
-    ///     Gets the latest payload represented by the document.
-    /// </summary>
-    /// <returns>The deserialized payload, if present.</returns>
-    public object? GetLatestPayload() => CosmosReplicaSinkDocumentKeys.DeserializePayload(LatestPayloadJson);
-
-    /// <summary>
     ///     Gets or sets the cumulative applied-write count for the lane.
     /// </summary>
     [JsonProperty("appliedWriteCount")]
@@ -109,4 +77,37 @@ internal sealed class CosmosReplicaSinkTargetDeliveryDocument
     /// </summary>
     [JsonProperty("type")]
     public string Type { get; set; } = CosmosReplicaSinkDocumentKeys.TargetDeliveryDocumentType;
+
+    /// <summary>
+    ///     Creates a target delivery document from the supplied provider write request.
+    /// </summary>
+    /// <param name="request">The provider write request.</param>
+    /// <param name="appliedWriteCount">The cumulative applied-write count for the lane.</param>
+    /// <param name="updatedAtUtc">The UTC timestamp when the lane was updated.</param>
+    /// <returns>The target delivery document.</returns>
+    public static CosmosReplicaSinkTargetDeliveryDocument Create(
+        ReplicaWriteRequest request,
+        int appliedWriteCount,
+        DateTimeOffset updatedAtUtc
+    ) =>
+        new()
+        {
+            AppliedWriteCount = appliedWriteCount,
+            ContractIdentity = request.ContractIdentity,
+            DeliveryKey = request.DeliveryKey,
+            Id = CosmosReplicaSinkDocumentKeys.TargetDeliveryId(request.DeliveryKey),
+            IsDeleted = request.IsDeleted,
+            LastUpdatedAtUtc = CosmosReplicaSinkDocumentKeys.FormatUtcTimestamp(updatedAtUtc),
+            LatestPayloadJson = CosmosReplicaSinkDocumentKeys.SerializePayload(request.Payload),
+            LatestSourcePosition = request.SourcePosition,
+            ReplicaPartitionKey = request.Target.DestinationIdentity.TargetName,
+            TargetName = request.Target.DestinationIdentity.TargetName,
+            Type = CosmosReplicaSinkDocumentKeys.TargetDeliveryDocumentType,
+        };
+
+    /// <summary>
+    ///     Gets the latest payload represented by the document.
+    /// </summary>
+    /// <returns>The deserialized payload, if present.</returns>
+    public object? GetLatestPayload() => CosmosReplicaSinkDocumentKeys.DeserializePayload(LatestPayloadJson);
 }

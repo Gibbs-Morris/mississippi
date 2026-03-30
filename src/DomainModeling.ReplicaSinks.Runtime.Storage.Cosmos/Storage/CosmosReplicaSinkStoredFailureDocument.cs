@@ -13,50 +13,6 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.Storage
 internal sealed class CosmosReplicaSinkStoredFailureDocument
 {
     /// <summary>
-    ///     Creates a Cosmos document from the supplied stored failure.
-    /// </summary>
-    /// <param name="failure">The stored failure.</param>
-    /// <returns>The Cosmos representation, or <see langword="null" /> when no failure exists.</returns>
-    public static CosmosReplicaSinkStoredFailureDocument? FromDomain(
-        ReplicaSinkStoredFailure? failure
-    )
-    {
-        if (failure is null)
-        {
-            return null;
-        }
-
-        return new CosmosReplicaSinkStoredFailureDocument
-        {
-            AttemptCount = failure.AttemptCount,
-            FailureCode = failure.FailureCode,
-            FailureSummary = failure.FailureSummary,
-            NextRetryAtUtc = failure.NextRetryAtUtc is null
-                ? null
-                : CosmosReplicaSinkDocumentKeys.FormatUtcTimestamp(failure.NextRetryAtUtc.Value),
-            RecordedAtUtc = CosmosReplicaSinkDocumentKeys.FormatUtcTimestamp(failure.RecordedAtUtc),
-            SourcePosition = failure.SourcePosition,
-        };
-    }
-
-    /// <summary>
-    ///     Converts the Cosmos document into the stored failure abstraction.
-    /// </summary>
-    /// <returns>The stored failure abstraction.</returns>
-    public ReplicaSinkStoredFailure ToDomain()
-    {
-        DateTimeOffset recordedAtUtc = CosmosReplicaSinkDocumentKeys.ParseNullableUtcTimestamp(RecordedAtUtc) ?? default;
-        DateTimeOffset? nextRetryAtUtc = CosmosReplicaSinkDocumentKeys.ParseNullableUtcTimestamp(NextRetryAtUtc);
-        return new(
-            SourcePosition,
-            AttemptCount,
-            FailureCode,
-            FailureSummary,
-            recordedAtUtc,
-            nextRetryAtUtc);
-    }
-
-    /// <summary>
     ///     Gets or sets the cumulative attempt count.
     /// </summary>
     [JsonProperty("attemptCount")]
@@ -91,4 +47,43 @@ internal sealed class CosmosReplicaSinkStoredFailureDocument
     /// </summary>
     [JsonProperty("sourcePosition")]
     public long SourcePosition { get; set; }
+
+    /// <summary>
+    ///     Creates a Cosmos document from the supplied stored failure.
+    /// </summary>
+    /// <param name="failure">The stored failure.</param>
+    /// <returns>The Cosmos representation, or <see langword="null" /> when no failure exists.</returns>
+    public static CosmosReplicaSinkStoredFailureDocument? FromDomain(
+        ReplicaSinkStoredFailure? failure
+    )
+    {
+        if (failure is null)
+        {
+            return null;
+        }
+
+        return new()
+        {
+            AttemptCount = failure.AttemptCount,
+            FailureCode = failure.FailureCode,
+            FailureSummary = failure.FailureSummary,
+            NextRetryAtUtc = failure.NextRetryAtUtc is null
+                ? null
+                : CosmosReplicaSinkDocumentKeys.FormatUtcTimestamp(failure.NextRetryAtUtc.Value),
+            RecordedAtUtc = CosmosReplicaSinkDocumentKeys.FormatUtcTimestamp(failure.RecordedAtUtc),
+            SourcePosition = failure.SourcePosition,
+        };
+    }
+
+    /// <summary>
+    ///     Converts the Cosmos document into the stored failure abstraction.
+    /// </summary>
+    /// <returns>The stored failure abstraction.</returns>
+    public ReplicaSinkStoredFailure ToDomain()
+    {
+        DateTimeOffset recordedAtUtc =
+            CosmosReplicaSinkDocumentKeys.ParseNullableUtcTimestamp(RecordedAtUtc) ?? default;
+        DateTimeOffset? nextRetryAtUtc = CosmosReplicaSinkDocumentKeys.ParseNullableUtcTimestamp(NextRetryAtUtc);
+        return new(SourcePosition, AttemptCount, FailureCode, FailureSummary, recordedAtUtc, nextRetryAtUtc);
+    }
 }

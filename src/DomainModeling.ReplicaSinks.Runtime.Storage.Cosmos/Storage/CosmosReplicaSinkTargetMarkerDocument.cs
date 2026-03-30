@@ -11,24 +11,6 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos.Storage
 internal sealed class CosmosReplicaSinkTargetMarkerDocument
 {
     /// <summary>
-    ///     Creates a target marker document for the specified target.
-    /// </summary>
-    /// <param name="targetName">The target name.</param>
-    /// <param name="createdAtUtc">The UTC timestamp when the target was provisioned.</param>
-    /// <returns>The target marker document.</returns>
-    public static CosmosReplicaSinkTargetMarkerDocument Create(
-        string targetName,
-        DateTimeOffset createdAtUtc
-    ) => new()
-    {
-        CreatedAtUtc = CosmosReplicaSinkDocumentKeys.FormatUtcTimestamp(createdAtUtc),
-        Id = CosmosReplicaSinkDocumentKeys.TargetMarkerId,
-        ReplicaPartitionKey = targetName,
-        TargetName = targetName,
-        Type = CosmosReplicaSinkDocumentKeys.TargetMarkerDocumentType,
-    };
-
-    /// <summary>
     ///     Gets or sets the UTC timestamp when the target was provisioned.
     /// </summary>
     [JsonProperty("createdAtUtc")]
@@ -57,4 +39,23 @@ internal sealed class CosmosReplicaSinkTargetMarkerDocument
     /// </summary>
     [JsonProperty("type")]
     public string Type { get; set; } = CosmosReplicaSinkDocumentKeys.TargetMarkerDocumentType;
+
+    /// <summary>
+    ///     Creates a target marker document for the specified target.
+    /// </summary>
+    /// <param name="targetName">The target name.</param>
+    /// <param name="createdAtUtc">The UTC timestamp when the target was provisioned.</param>
+    /// <returns>The target marker document.</returns>
+    public static CosmosReplicaSinkTargetMarkerDocument Create(
+        string targetName,
+        DateTimeOffset createdAtUtc
+    ) =>
+        new()
+        {
+            CreatedAtUtc = CosmosReplicaSinkDocumentKeys.FormatUtcTimestamp(createdAtUtc),
+            Id = CosmosReplicaSinkDocumentKeys.TargetMarkerId,
+            ReplicaPartitionKey = targetName,
+            TargetName = targetName,
+            Type = CosmosReplicaSinkDocumentKeys.TargetMarkerDocumentType,
+        };
 }

@@ -52,5 +52,6 @@ internal sealed class CosmosReplicaSinkContainerInitializer : IHostedService
     /// <inheritdoc />
     public Task StopAsync(
         CancellationToken cancellationToken
-    ) => Task.CompletedTask;
+    ) =>
+        Task.CompletedTask;
 }

@@ -56,9 +56,9 @@ internal sealed class CosmosReplicaSinkContainerOperations
         Logger = logger;
     }
 
-    private Container CosmosContainer { get; }
-
     private CosmosClient CosmosClient { get; }
+
+    private Container CosmosContainer { get; }
 
     private ILogger<CosmosReplicaSinkContainerOperations> Logger { get; }
 
@@ -70,63 +70,33 @@ internal sealed class CosmosReplicaSinkContainerOperations
 
     private TimeProvider TimeProvider { get; }
 
-    /// <summary>
-    ///     Gets the current UTC timestamp from the configured time provider.
-    /// </summary>
-    /// <returns>The current UTC timestamp.</returns>
-    public DateTimeOffset GetCurrentUtcNow() => TimeProvider.GetUtcNow();
-
-    /// <summary>
-    ///     Ensures the configured database/container exists or is valid according to the supplied provisioning mode.
-    /// </summary>
-    /// <param name="provisioningMode">The provisioning mode to apply.</param>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task EnsureContainerAsync(
-        ReplicaProvisioningMode provisioningMode,
-        CancellationToken cancellationToken = default
+    private static bool IsNewer(
+        CosmosReplicaSinkTargetDeliveryDocument candidate,
+        CosmosReplicaSinkTargetDeliveryDocument current
     )
     {
-        Logger.LogEnsuringContainer(SinkKey, Options.DatabaseId, Options.ContainerId, provisioningMode.ToString());
-        if (provisioningMode == ReplicaProvisioningMode.CreateIfMissing)
+        if (candidate.LatestSourcePosition != current.LatestSourcePosition)
         {
-            await RetryPolicy.ExecuteAsync(
-                    () => CosmosClient.CreateDatabaseIfNotExistsAsync(Options.DatabaseId, cancellationToken: cancellationToken),
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            Database database = CosmosClient.GetDatabase(Options.DatabaseId);
-            ContainerResponse response = await RetryPolicy.ExecuteAsync(
-                    () => database.CreateContainerIfNotExistsAsync(
-                        new ContainerProperties(Options.ContainerId, ReplicaSinkCosmosDefaults.PartitionKeyPath),
-                        cancellationToken: cancellationToken),
-                    cancellationToken)
-                .ConfigureAwait(false);
-            ValidatePartitionKey(response.Resource?.PartitionKeyPath);
-            Logger.LogContainerProvisioned(SinkKey, Options.DatabaseId, Options.ContainerId);
-            return;
+            return candidate.LatestSourcePosition > current.LatestSourcePosition;
         }
 
-        try
+        int updatedComparison = StringComparer.Ordinal.Compare(candidate.LastUpdatedAtUtc, current.LastUpdatedAtUtc);
+        if (updatedComparison != 0)
         {
-            ContainerResponse response = await RetryPolicy.ExecuteAsync(
-                    () => CosmosContainer.ReadContainerAsync(cancellationToken: cancellationToken),
-                    cancellationToken)
-                .ConfigureAwait(false);
-            ValidatePartitionKey(response.Resource?.PartitionKeyPath);
-            Logger.LogContainerValidated(SinkKey, Options.DatabaseId, Options.ContainerId);
+            return updatedComparison > 0;
         }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+
+        return StringComparer.Ordinal.Compare(candidate.DeliveryKey, current.DeliveryKey) < 0;
+    }
+
+    private static void ValidatePartitionKey(
+        string? partitionKeyPath
+    )
+    {
+        if (!string.Equals(partitionKeyPath, ReplicaSinkCosmosDefaults.PartitionKeyPath, StringComparison.Ordinal))
         {
-            Logger.LogContainerMissing(
-                ex,
-                SinkKey,
-                Options.DatabaseId,
-                Options.ContainerId,
-                provisioningMode.ToString());
             throw new InvalidOperationException(
-                $"Cosmos replica sink '{SinkKey}' requires existing container '{Options.DatabaseId}/{Options.ContainerId}' when provisioning mode '{provisioningMode}' is used.",
-                ex);
+                $"Cosmos replica sink containers must use partition key path '{ReplicaSinkCosmosDefaults.PartitionKeyPath}', but '{partitionKeyPath ?? "<null>"}' was found.");
         }
     }
 
@@ -164,6 +134,67 @@ internal sealed class CosmosReplicaSinkContainerOperations
     }
 
     /// <summary>
+    ///     Ensures the configured database/container exists or is valid according to the supplied provisioning mode.
+    /// </summary>
+    /// <param name="provisioningMode">The provisioning mode to apply.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task EnsureContainerAsync(
+        ReplicaProvisioningMode provisioningMode,
+        CancellationToken cancellationToken = default
+    )
+    {
+        Logger.LogEnsuringContainer(SinkKey, Options.DatabaseId, Options.ContainerId, provisioningMode.ToString());
+        if (provisioningMode == ReplicaProvisioningMode.CreateIfMissing)
+        {
+            await RetryPolicy.ExecuteAsync(
+                    () => CosmosClient.CreateDatabaseIfNotExistsAsync(
+                        Options.DatabaseId,
+                        cancellationToken: cancellationToken),
+                    cancellationToken)
+                .ConfigureAwait(false);
+            Database database = CosmosClient.GetDatabase(Options.DatabaseId);
+            ContainerResponse response = await RetryPolicy.ExecuteAsync(
+                    () => database.CreateContainerIfNotExistsAsync(
+                        new(Options.ContainerId, ReplicaSinkCosmosDefaults.PartitionKeyPath),
+                        cancellationToken: cancellationToken),
+                    cancellationToken)
+                .ConfigureAwait(false);
+            ValidatePartitionKey(response.Resource?.PartitionKeyPath);
+            Logger.LogContainerProvisioned(SinkKey, Options.DatabaseId, Options.ContainerId);
+            return;
+        }
+
+        try
+        {
+            ContainerResponse response = await RetryPolicy.ExecuteAsync(
+                    () => CosmosContainer.ReadContainerAsync(cancellationToken: cancellationToken),
+                    cancellationToken)
+                .ConfigureAwait(false);
+            ValidatePartitionKey(response.Resource?.PartitionKeyPath);
+            Logger.LogContainerValidated(SinkKey, Options.DatabaseId, Options.ContainerId);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            Logger.LogContainerMissing(
+                ex,
+                SinkKey,
+                Options.DatabaseId,
+                Options.ContainerId,
+                provisioningMode.ToString());
+            throw new InvalidOperationException(
+                $"Cosmos replica sink '{SinkKey}' requires existing container '{Options.DatabaseId}/{Options.ContainerId}' when provisioning mode '{provisioningMode}' is used.",
+                ex);
+        }
+    }
+
+    /// <summary>
+    ///     Gets the current UTC timestamp from the configured time provider.
+    /// </summary>
+    /// <returns>The current UTC timestamp.</returns>
+    public DateTimeOffset GetCurrentUtcNow() => TimeProvider.GetUtcNow();
+
+    /// <summary>
     ///     Inspects the current target summary for the supplied target name.
     /// </summary>
     /// <param name="targetName">The provider-facing target name.</param>
@@ -184,15 +215,16 @@ internal sealed class CosmosReplicaSinkContainerOperations
             return new(false, 0);
         }
 
-        QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE c.type = @type")
-            .WithParameter("@type", CosmosReplicaSinkDocumentKeys.TargetDeliveryDocumentType);
-        IReadOnlyList<CosmosReplicaSinkTargetDeliveryDocument> deliveries = await QueryDocumentsAsync<CosmosReplicaSinkTargetDeliveryDocument>(
-                query,
-                targetName,
-                null,
-                cancellationToken)
-            .ConfigureAwait(false);
-
+        QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE c.type = @type").WithParameter(
+            "@type",
+            CosmosReplicaSinkDocumentKeys.TargetDeliveryDocumentType);
+        IReadOnlyList<CosmosReplicaSinkTargetDeliveryDocument> deliveries =
+            await QueryDocumentsAsync<CosmosReplicaSinkTargetDeliveryDocument>(
+                    query,
+                    targetName,
+                    null,
+                    cancellationToken)
+                .ConfigureAwait(false);
         long writeCount = 0;
         CosmosReplicaSinkTargetDeliveryDocument? latest = null;
         foreach (CosmosReplicaSinkTargetDeliveryDocument delivery in deliveries)
@@ -205,44 +237,38 @@ internal sealed class CosmosReplicaSinkContainerOperations
         }
 
         Logger.LogTargetInspected(SinkKey, targetName, true, writeCount);
-        return new(
-            true,
-            writeCount,
-            latest?.LatestSourcePosition,
-            latest?.GetLatestPayload());
+        return new(true, writeCount, latest?.LatestSourcePosition, latest?.GetLatestPayload());
     }
 
     /// <summary>
-    ///     Reads the current target-delivery document for the supplied lane.
+    ///     Reads the currently persisted dead-letter states from the durable delivery-state partition.
     /// </summary>
-    /// <param name="targetName">The provider-facing target name.</param>
-    /// <param name="deliveryKey">The runtime-owned delivery key.</param>
+    /// <param name="maxCount">The maximum number of states to return.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The current target-delivery document, or <see langword="null" /> when none exists.</returns>
-    public async Task<CosmosReplicaSinkTargetDeliveryDocument?> ReadTargetDeliveryAsync(
-        string targetName,
-        string deliveryKey,
+    /// <returns>The currently persisted dead-letter states.</returns>
+    public async Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDeadLettersAsync(
+        int maxCount,
         CancellationToken cancellationToken = default
     )
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(deliveryKey);
-        try
+        ArgumentOutOfRangeException.ThrowIfNegative(maxCount);
+        if (maxCount == 0)
         {
-            ItemResponse<CosmosReplicaSinkTargetDeliveryDocument> response = await RetryPolicy.ExecuteAsync(
-                    () => CosmosContainer.ReadItemAsync<CosmosReplicaSinkTargetDeliveryDocument>(
-                        CosmosReplicaSinkDocumentKeys.TargetDeliveryId(deliveryKey),
-                        new PartitionKey(targetName),
-                        cancellationToken: cancellationToken),
+            return Array.Empty<ReplicaSinkDeliveryState>();
+        }
+
+        QueryDefinition query = new QueryDefinition(
+                "SELECT * FROM c WHERE c.type = @type AND IS_DEFINED(c.deadLetter.recordedAtUtc) AND c.deadLetter.recordedAtUtc != null ORDER BY c.deadLetter.recordedAtUtc DESC, c.deliveryKey ASC")
+            .WithParameter("@type", CosmosReplicaSinkDocumentKeys.DeliveryStateDocumentType);
+        IReadOnlyList<CosmosReplicaSinkDeliveryStateDocument> documents =
+            await QueryDocumentsAsync<CosmosReplicaSinkDeliveryStateDocument>(
+                    query,
+                    ReplicaSinkCosmosDefaults.DeliveryStatePartitionKey,
+                    maxCount,
                     cancellationToken)
                 .ConfigureAwait(false);
-            return response.Resource;
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            Logger.LogTargetDeliveryNotFound(ex, SinkKey, targetName, deliveryKey);
-            return null;
-        }
+        Logger.LogQueryCompleted(SinkKey, "dead letters", documents.Count);
+        return documents.Select(static document => document.ToDomain()).ToArray();
     }
 
     /// <summary>
@@ -262,7 +288,7 @@ internal sealed class CosmosReplicaSinkContainerOperations
             ItemResponse<CosmosReplicaSinkDeliveryStateDocument> response = await RetryPolicy.ExecuteAsync(
                     () => CosmosContainer.ReadItemAsync<CosmosReplicaSinkDeliveryStateDocument>(
                         CosmosReplicaSinkDocumentKeys.DeliveryStateId(deliveryKey),
-                        new PartitionKey(ReplicaSinkCosmosDefaults.DeliveryStatePartitionKey),
+                        new(ReplicaSinkCosmosDefaults.DeliveryStatePartitionKey),
                         cancellationToken: cancellationToken),
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -299,44 +325,48 @@ internal sealed class CosmosReplicaSinkContainerOperations
                 "SELECT * FROM c WHERE c.type = @type AND IS_DEFINED(c.retry.nextRetryAtUtc) AND c.retry.nextRetryAtUtc != null AND c.retry.nextRetryAtUtc <= @dueAt ORDER BY c.retry.nextRetryAtUtc ASC, c.deliveryKey ASC")
             .WithParameter("@type", CosmosReplicaSinkDocumentKeys.DeliveryStateDocumentType)
             .WithParameter("@dueAt", dueAt);
-        IReadOnlyList<CosmosReplicaSinkDeliveryStateDocument> documents = await QueryDocumentsAsync<CosmosReplicaSinkDeliveryStateDocument>(
-                query,
-                ReplicaSinkCosmosDefaults.DeliveryStatePartitionKey,
-                maxCount,
-                cancellationToken)
-            .ConfigureAwait(false);
+        IReadOnlyList<CosmosReplicaSinkDeliveryStateDocument> documents =
+            await QueryDocumentsAsync<CosmosReplicaSinkDeliveryStateDocument>(
+                    query,
+                    ReplicaSinkCosmosDefaults.DeliveryStatePartitionKey,
+                    maxCount,
+                    cancellationToken)
+                .ConfigureAwait(false);
         Logger.LogQueryCompleted(SinkKey, "due retries", documents.Count);
         return documents.Select(static document => document.ToDomain()).ToArray();
     }
 
     /// <summary>
-    ///     Reads the currently persisted dead-letter states from the durable delivery-state partition.
+    ///     Reads the current target-delivery document for the supplied lane.
     /// </summary>
-    /// <param name="maxCount">The maximum number of states to return.</param>
+    /// <param name="targetName">The provider-facing target name.</param>
+    /// <param name="deliveryKey">The runtime-owned delivery key.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The currently persisted dead-letter states.</returns>
-    public async Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDeadLettersAsync(
-        int maxCount,
+    /// <returns>The current target-delivery document, or <see langword="null" /> when none exists.</returns>
+    public async Task<CosmosReplicaSinkTargetDeliveryDocument?> ReadTargetDeliveryAsync(
+        string targetName,
+        string deliveryKey,
         CancellationToken cancellationToken = default
     )
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(maxCount);
-        if (maxCount == 0)
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(deliveryKey);
+        try
         {
-            return Array.Empty<ReplicaSinkDeliveryState>();
+            ItemResponse<CosmosReplicaSinkTargetDeliveryDocument> response = await RetryPolicy.ExecuteAsync(
+                    () => CosmosContainer.ReadItemAsync<CosmosReplicaSinkTargetDeliveryDocument>(
+                        CosmosReplicaSinkDocumentKeys.TargetDeliveryId(deliveryKey),
+                        new(targetName),
+                        cancellationToken: cancellationToken),
+                    cancellationToken)
+                .ConfigureAwait(false);
+            return response.Resource;
         }
-
-        QueryDefinition query = new QueryDefinition(
-                "SELECT * FROM c WHERE c.type = @type AND IS_DEFINED(c.deadLetter.recordedAtUtc) AND c.deadLetter.recordedAtUtc != null ORDER BY c.deadLetter.recordedAtUtc DESC, c.deliveryKey ASC")
-            .WithParameter("@type", CosmosReplicaSinkDocumentKeys.DeliveryStateDocumentType);
-        IReadOnlyList<CosmosReplicaSinkDeliveryStateDocument> documents = await QueryDocumentsAsync<CosmosReplicaSinkDeliveryStateDocument>(
-                query,
-                ReplicaSinkCosmosDefaults.DeliveryStatePartitionKey,
-                maxCount,
-                cancellationToken)
-            .ConfigureAwait(false);
-        Logger.LogQueryCompleted(SinkKey, "dead letters", documents.Count);
-        return documents.Select(static document => document.ToDomain()).ToArray();
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            Logger.LogTargetDeliveryNotFound(ex, SinkKey, targetName, deliveryKey);
+            return null;
+        }
     }
 
     /// <summary>
@@ -348,7 +378,8 @@ internal sealed class CosmosReplicaSinkContainerOperations
     public async Task<bool> TargetExistsAsync(
         string targetName,
         CancellationToken cancellationToken = default
-    ) => await ReadTargetMarkerAsync(targetName, cancellationToken).ConfigureAwait(false) is not null;
+    ) =>
+        await ReadTargetMarkerAsync(targetName, cancellationToken).ConfigureAwait(false) is not null;
 
     /// <summary>
     ///     Upserts the target-delivery document for the supplied lane.
@@ -362,7 +393,11 @@ internal sealed class CosmosReplicaSinkContainerOperations
     )
     {
         ArgumentNullException.ThrowIfNull(document);
-        Logger.LogWritingTargetDelivery(SinkKey, document.TargetName, document.DeliveryKey, document.LatestSourcePosition);
+        Logger.LogWritingTargetDelivery(
+            SinkKey,
+            document.TargetName,
+            document.DeliveryKey,
+            document.LatestSourcePosition);
         await ExecuteAsync(
                 () => CosmosContainer.UpsertItemAsync(
                     document,
@@ -370,7 +405,11 @@ internal sealed class CosmosReplicaSinkContainerOperations
                     cancellationToken: cancellationToken),
                 cancellationToken)
             .ConfigureAwait(false);
-        Logger.LogTargetDeliveryWritten(SinkKey, document.TargetName, document.DeliveryKey, document.LatestSourcePosition);
+        Logger.LogTargetDeliveryWritten(
+            SinkKey,
+            document.TargetName,
+            document.DeliveryKey,
+            document.LatestSourcePosition);
     }
 
     /// <summary>
@@ -395,25 +434,6 @@ internal sealed class CosmosReplicaSinkContainerOperations
                 cancellationToken)
             .ConfigureAwait(false);
         Logger.LogDeliveryStateWritten(SinkKey, state.DeliveryKey);
-    }
-
-    private static bool IsNewer(
-        CosmosReplicaSinkTargetDeliveryDocument candidate,
-        CosmosReplicaSinkTargetDeliveryDocument current
-    )
-    {
-        if (candidate.LatestSourcePosition != current.LatestSourcePosition)
-        {
-            return candidate.LatestSourcePosition > current.LatestSourcePosition;
-        }
-
-        int updatedComparison = StringComparer.Ordinal.Compare(candidate.LastUpdatedAtUtc, current.LastUpdatedAtUtc);
-        if (updatedComparison != 0)
-        {
-            return updatedComparison > 0;
-        }
-
-        return StringComparer.Ordinal.Compare(candidate.DeliveryKey, current.DeliveryKey) < 0;
     }
 
     private async Task ExecuteAsync(
@@ -446,12 +466,12 @@ internal sealed class CosmosReplicaSinkContainerOperations
         List<TDocument> documents = [];
         using FeedIterator<TDocument> iterator = CosmosContainer.GetItemQueryIterator<TDocument>(
             query,
-            requestOptions: new QueryRequestOptions
+            requestOptions: new()
             {
                 PartitionKey = new PartitionKey(partitionKey),
                 MaxItemCount = Options.QueryBatchSize,
             });
-        while (iterator.HasMoreResults && (!maxCount.HasValue || documents.Count < maxCount.Value))
+        while (iterator.HasMoreResults && (!maxCount.HasValue || (documents.Count < maxCount.Value)))
         {
             FeedResponse<TDocument> page = await RetryPolicy.ExecuteAsync(
                     () => iterator.ReadNextAsync(cancellationToken),
@@ -460,7 +480,7 @@ internal sealed class CosmosReplicaSinkContainerOperations
             foreach (TDocument document in page)
             {
                 documents.Add(document);
-                if (maxCount.HasValue && documents.Count >= maxCount.Value)
+                if (maxCount.HasValue && (documents.Count >= maxCount.Value))
                 {
                     break;
                 }
@@ -480,7 +500,7 @@ internal sealed class CosmosReplicaSinkContainerOperations
             ItemResponse<CosmosReplicaSinkTargetMarkerDocument> response = await RetryPolicy.ExecuteAsync(
                     () => CosmosContainer.ReadItemAsync<CosmosReplicaSinkTargetMarkerDocument>(
                         CosmosReplicaSinkDocumentKeys.TargetMarkerId,
-                        new PartitionKey(targetName),
+                        new(targetName),
                         cancellationToken: cancellationToken),
                     cancellationToken)
                 .ConfigureAwait(false);
@@ -490,17 +510,6 @@ internal sealed class CosmosReplicaSinkContainerOperations
         {
             Logger.LogTargetMarkerNotFound(ex, SinkKey, targetName);
             return null;
-        }
-    }
-
-    private static void ValidatePartitionKey(
-        string? partitionKeyPath
-    )
-    {
-        if (!string.Equals(partitionKeyPath, ReplicaSinkCosmosDefaults.PartitionKeyPath, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Cosmos replica sink containers must use partition key path '{ReplicaSinkCosmosDefaults.PartitionKeyPath}', but '{partitionKeyPath ?? "<null>"}' was found.");
         }
     }
 }

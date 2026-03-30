@@ -21,22 +21,26 @@ internal sealed class CosmosReplicaSinkOptionsValidation : IValidateOptions<Cosm
 
         if (string.IsNullOrWhiteSpace(options.ClientKey))
         {
-            return ValidateOptionsResult.Fail($"Cosmos replica sink '{name ?? Options.DefaultName}' client key is required.");
+            return ValidateOptionsResult.Fail(
+                $"Cosmos replica sink '{name ?? Options.DefaultName}' client key is required.");
         }
 
         if (string.IsNullOrWhiteSpace(options.DatabaseId))
         {
-            return ValidateOptionsResult.Fail($"Cosmos replica sink '{name ?? Options.DefaultName}' database identifier is required.");
+            return ValidateOptionsResult.Fail(
+                $"Cosmos replica sink '{name ?? Options.DefaultName}' database identifier is required.");
         }
 
         if (string.IsNullOrWhiteSpace(options.ContainerId))
         {
-            return ValidateOptionsResult.Fail($"Cosmos replica sink '{name ?? Options.DefaultName}' container identifier is required.");
+            return ValidateOptionsResult.Fail(
+                $"Cosmos replica sink '{name ?? Options.DefaultName}' container identifier is required.");
         }
 
         if (options.QueryBatchSize <= 0)
         {
-            return ValidateOptionsResult.Fail($"Cosmos replica sink '{name ?? Options.DefaultName}' query batch size must be greater than zero.");
+            return ValidateOptionsResult.Fail(
+                $"Cosmos replica sink '{name ?? Options.DefaultName}' query batch size must be greater than zero.");
         }
 
         return ValidateOptionsResult.Success;

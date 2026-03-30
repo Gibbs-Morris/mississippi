@@ -14,7 +14,9 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos;
 /// <summary>
 ///     Cosmos-backed implementation of the replica sink provider contract.
 /// </summary>
-internal sealed class CosmosReplicaSinkProvider : IReplicaSinkProvider, ICosmosReplicaSinkShard
+internal sealed class CosmosReplicaSinkProvider
+    : IReplicaSinkProvider,
+      ICosmosReplicaSinkShard
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="CosmosReplicaSinkProvider" /> class.
@@ -54,6 +56,12 @@ internal sealed class CosmosReplicaSinkProvider : IReplicaSinkProvider, ICosmosR
     private CosmosReplicaSinkOptions Options { get; }
 
     /// <inheritdoc />
+    public Task EnsureContainerAsync(
+        CancellationToken cancellationToken = default
+    ) =>
+        ContainerOperations.EnsureContainerAsync(Options.ProvisioningMode, cancellationToken);
+
+    /// <inheritdoc />
     public async ValueTask EnsureTargetAsync(
         ReplicaTargetDescriptor target,
         CancellationToken cancellationToken
@@ -67,8 +75,10 @@ internal sealed class CosmosReplicaSinkProvider : IReplicaSinkProvider, ICosmosR
             target.DestinationIdentity.ClientKey,
             target.DestinationIdentity.TargetName,
             target.ProvisioningMode.ToString());
-        await ContainerOperations.EnsureContainerAsync(target.ProvisioningMode, cancellationToken).ConfigureAwait(false);
-        if (await ContainerOperations.TargetExistsAsync(target.DestinationIdentity.TargetName, cancellationToken).ConfigureAwait(false))
+        await ContainerOperations.EnsureContainerAsync(target.ProvisioningMode, cancellationToken)
+            .ConfigureAwait(false);
+        if (await ContainerOperations.TargetExistsAsync(target.DestinationIdentity.TargetName, cancellationToken)
+                .ConfigureAwait(false))
         {
             Logger.LogTargetValidated(
                 SinkKey,
@@ -83,7 +93,8 @@ internal sealed class CosmosReplicaSinkProvider : IReplicaSinkProvider, ICosmosR
                 $"Cosmos replica sink '{SinkKey}' target '{target.DestinationIdentity}' does not exist and provisioning mode '{target.ProvisioningMode}' does not allow creation.");
         }
 
-        await ContainerOperations.CreateTargetAsync(target.DestinationIdentity.TargetName, cancellationToken).ConfigureAwait(false);
+        await ContainerOperations.CreateTargetAsync(target.DestinationIdentity.TargetName, cancellationToken)
+            .ConfigureAwait(false);
         Logger.LogTargetProvisioned(
             SinkKey,
             target.DestinationIdentity.ClientKey,
@@ -122,6 +133,28 @@ internal sealed class CosmosReplicaSinkProvider : IReplicaSinkProvider, ICosmosR
     }
 
     /// <inheritdoc />
+    public Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDeadLettersAsync(
+        int maxCount,
+        CancellationToken cancellationToken = default
+    ) =>
+        ContainerOperations.ReadDeadLettersAsync(maxCount, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDueRetriesAsync(
+        DateTimeOffset dueAtOrBeforeUtc,
+        int maxCount,
+        CancellationToken cancellationToken = default
+    ) =>
+        ContainerOperations.ReadDueRetriesAsync(dueAtOrBeforeUtc, maxCount, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<ReplicaSinkDeliveryState?> ReadStateAsync(
+        string deliveryKey,
+        CancellationToken cancellationToken = default
+    ) =>
+        ContainerOperations.ReadDeliveryStateAsync(deliveryKey, cancellationToken);
+
+    /// <inheritdoc />
     public async ValueTask<ReplicaWriteResult> WriteAsync(
         ReplicaWriteRequest request,
         CancellationToken cancellationToken
@@ -136,7 +169,8 @@ internal sealed class CosmosReplicaSinkProvider : IReplicaSinkProvider, ICosmosR
             request.Target.DestinationIdentity.TargetName,
             request.DeliveryKey,
             request.SourcePosition);
-        if (!await ContainerOperations.TargetExistsAsync(request.Target.DestinationIdentity.TargetName, cancellationToken)
+        if (!await ContainerOperations
+                .TargetExistsAsync(request.Target.DestinationIdentity.TargetName, cancellationToken)
                 .ConfigureAwait(false))
         {
             throw new InvalidOperationException(
@@ -187,41 +221,15 @@ internal sealed class CosmosReplicaSinkProvider : IReplicaSinkProvider, ICosmosR
             request.Target.DestinationIdentity.ClientKey,
             request.Target.DestinationIdentity.TargetName,
             request.SourcePosition);
-        return new(
-            ReplicaWriteOutcome.Applied,
-            request.Target.DestinationIdentity,
-            request.SourcePosition);
+        return new(ReplicaWriteOutcome.Applied, request.Target.DestinationIdentity, request.SourcePosition);
     }
-
-    /// <inheritdoc />
-    public Task EnsureContainerAsync(
-        CancellationToken cancellationToken = default
-    ) => ContainerOperations.EnsureContainerAsync(Options.ProvisioningMode, cancellationToken);
-
-    /// <inheritdoc />
-    public Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDeadLettersAsync(
-        int maxCount,
-        CancellationToken cancellationToken = default
-    ) => ContainerOperations.ReadDeadLettersAsync(maxCount, cancellationToken);
-
-    /// <inheritdoc />
-    public Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDueRetriesAsync(
-        DateTimeOffset dueAtOrBeforeUtc,
-        int maxCount,
-        CancellationToken cancellationToken = default
-    ) => ContainerOperations.ReadDueRetriesAsync(dueAtOrBeforeUtc, maxCount, cancellationToken);
-
-    /// <inheritdoc />
-    public Task<ReplicaSinkDeliveryState?> ReadStateAsync(
-        string deliveryKey,
-        CancellationToken cancellationToken = default
-    ) => ContainerOperations.ReadDeliveryStateAsync(deliveryKey, cancellationToken);
 
     /// <inheritdoc />
     public Task WriteStateAsync(
         ReplicaSinkDeliveryState state,
         CancellationToken cancellationToken = default
-    ) => ContainerOperations.WriteDeliveryStateAsync(state, cancellationToken);
+    ) =>
+        ContainerOperations.WriteDeliveryStateAsync(state, cancellationToken);
 
     private void ValidateClientKey(
         ReplicaDestinationIdentity destinationIdentity

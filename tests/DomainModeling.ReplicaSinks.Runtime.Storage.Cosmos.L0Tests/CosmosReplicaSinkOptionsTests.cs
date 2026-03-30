@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.Options;
 
 using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions;
@@ -38,11 +40,9 @@ public sealed class CosmosReplicaSinkOptionsTests
             ContainerId = string.Empty,
             QueryBatchSize = 0,
         };
-
         ValidateOptionsResult result = validator.Validate("orders", options);
-
         Assert.False(result.Succeeded);
         Assert.NotNull(result.Failures);
-        Assert.Contains(result.Failures, failure => failure.Contains("client key", System.StringComparison.Ordinal));
+        Assert.Contains(result.Failures, failure => failure.Contains("client key", StringComparison.Ordinal));
     }
 }
