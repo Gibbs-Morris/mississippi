@@ -27,6 +27,8 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
     /// <param name="sourceStateAccessor">The source-state accessor.</param>
     /// <param name="timeProvider">The time provider used for retry/dead-letter timestamps.</param>
     /// <param name="hook">The post-write/pre-checkpoint hook.</param>
+    /// <param name="healthManager">The sink execution health manager.</param>
+    /// <param name="runtimeOptions">The runtime options.</param>
     /// <param name="logger">The logger.</param>
     public ReplicaSinkLatestStateProcessor(
         IReplicaSinkProjectionRegistry registry,
@@ -266,9 +268,9 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
                     targetSourcePosition,
                     cancellationToken);
             }
-            catch (ReplicaSinkSourceStateUnavailableException)
+            catch (ReplicaSinkSourceStateUnavailableException ex)
             {
-                Logger.SourceStateUnavailable(projectionType.Name, entityId, targetSourcePosition);
+                Logger.SourceStateUnavailable(projectionType.Name, entityId, targetSourcePosition, ex);
                 foreach (BindingWorkItem workItem in pendingWorkItems)
                 {
                     await PersistRetryAsync(
@@ -284,6 +286,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
             }
             catch (Exception ex) when (!IsCriticalException(ex))
             {
+                Logger.SourceStateReadFailed(projectionType.Name, entityId, targetSourcePosition, ex);
                 foreach (BindingWorkItem workItem in pendingWorkItems)
                 {
                     await PersistRetryAsync(
@@ -307,6 +310,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
                 }
                 catch (Exception ex) when (!IsCriticalException(ex))
                 {
+                    Logger.ProjectionMappingFailed(workItem.DeliveryIdentity.DeliveryKey, targetSourcePosition, ex);
                     await PersistDeadLetterAsync(
                         workItem,
                         targetSourcePosition,
@@ -323,6 +327,11 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
                 }
                 catch (ReplicaSinkWriteException ex) when (ex.Disposition == ReplicaSinkWriteFailureDisposition.Retry)
                 {
+                    Logger.ProviderWriteRetryScheduled(
+                        workItem.DeliveryIdentity.DeliveryKey,
+                        targetSourcePosition,
+                        ex.FailureCode,
+                        ex);
                     ApplyImmediateFailureContainment(workItem, ex.FailureCode, ex.FailureSummary);
                     await PersistRetryAsync(
                         workItem,
@@ -335,6 +344,11 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
                 }
                 catch (ReplicaSinkWriteException ex)
                 {
+                    Logger.ProviderWriteDeadLettered(
+                        workItem.DeliveryIdentity.DeliveryKey,
+                        targetSourcePosition,
+                        ex.FailureCode,
+                        ex);
                     ApplyImmediateFailureContainment(workItem, ex.FailureCode, ex.FailureSummary);
                     await PersistDeadLetterAsync(
                         workItem,
@@ -346,6 +360,7 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
                 }
                 catch (Exception ex) when (!IsCriticalException(ex))
                 {
+                    Logger.ProviderWriteFailed(workItem.DeliveryIdentity.DeliveryKey, targetSourcePosition, ex);
                     await PersistRetryAsync(
                         workItem,
                         targetSourcePosition,
@@ -488,7 +503,10 @@ internal sealed class ReplicaSinkLatestStateProcessor : IReplicaSinkLatestStateP
                 workItem.Binding.Identity.SinkKey,
                 "dead_letter_store_failed",
                 "Dead-letter persistence failed while storing terminal lane state.");
-            Logger.DeadLetterStoreQuarantined(workItem.Binding.Identity.SinkKey, workItem.DeliveryIdentity.DeliveryKey);
+            Logger.DeadLetterStoreQuarantined(
+                workItem.Binding.Identity.SinkKey,
+                workItem.DeliveryIdentity.DeliveryKey,
+                ex);
         }
     }
 

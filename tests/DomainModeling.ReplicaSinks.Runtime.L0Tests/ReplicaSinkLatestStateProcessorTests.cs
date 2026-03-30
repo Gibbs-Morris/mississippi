@@ -3,9 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -58,17 +60,31 @@ public sealed class ReplicaSinkLatestStateProcessorTests
         IReplicaSinkProvider provider
     )
         where TProjection : class =>
-        new(
-            new(typeof(TProjection).FullName ?? typeof(TProjection).Name, sinkKey, targetName),
-            typeof(TProjection),
+        CreateDirectBinding(typeof(TProjection), sinkKey, targetName, provider);
+
+    private static ReplicaSinkBindingDescriptor CreateDirectBinding(
+        Type projectionType,
+        string sinkKey,
+        string targetName,
+        IReplicaSinkProvider provider
+    )
+    {
+        ReplicaContractNameAttribute contractName = projectionType.GetCustomAttribute<ReplicaContractNameAttribute>() ??
+                                                    throw new InvalidOperationException(
+                                                        $"Projection '{projectionType.FullName ?? projectionType.Name}' must declare [ReplicaContractName] for direct replication tests.");
+
+        return new(
+            new(projectionType.FullName ?? projectionType.Name, sinkKey, targetName),
+            projectionType,
             ReplicaWriteMode.LatestState,
             null,
-            typeof(TProjection).FullName ?? typeof(TProjection).Name,
+            contractName.ContractIdentity,
             null,
             true,
             new(sinkKey, "client", provider.Format, provider.GetType(), ReplicaProvisioningMode.CreateIfMissing),
             provider,
             new(new("client", targetName), ReplicaProvisioningMode.CreateIfMissing));
+    }
 
     private static ReplicaSinkLatestStateProcessor CreateProcessor(
         IReadOnlyList<ReplicaSinkBindingDescriptor> bindings,
@@ -77,7 +93,8 @@ public sealed class ReplicaSinkLatestStateProcessorTests
         TimeProvider? timeProvider = null,
         IReplicaSinkLatestStateProcessorHook? hook = null,
         IReplicaSinkExecutionHealthManager? healthManager = null,
-        ReplicaSinkRuntimeOptions? runtimeOptions = null
+        ReplicaSinkRuntimeOptions? runtimeOptions = null,
+        ILogger<ReplicaSinkLatestStateProcessor>? logger = null
     )
     {
         TimeProvider effectiveTimeProvider = timeProvider ?? TimeProvider.System;
@@ -89,7 +106,7 @@ public sealed class ReplicaSinkLatestStateProcessorTests
             hook ?? new NullReplicaSinkLatestStateProcessorHook(),
             healthManager ?? new ReplicaSinkExecutionHealthManager(effectiveTimeProvider),
             Options.Create(runtimeOptions ?? new ReplicaSinkRuntimeOptions()),
-            NullLogger<ReplicaSinkLatestStateProcessor>.Instance);
+            logger ?? NullLogger<ReplicaSinkLatestStateProcessor>.Instance);
     }
 
     private static FakeTimeProvider CreateTimeProvider()
@@ -1021,6 +1038,53 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     }
 
     /// <summary>
+    ///     FlushAsync logs the concrete exception object when an unexpected source-state read failure occurs.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldLogExceptionObjectForUnexpectedSourceStateReadFailure()
+    {
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.Applied,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        InvalidOperationException failure = new("sensitive source-state failure");
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetFailure(typeof(TestProjection), "entity-1", 11, failure);
+        InMemoryReplicaSinkDeliveryStateStore stateStore = new();
+        Mock<ILogger<ReplicaSinkLatestStateProcessor>> logger = new();
+        logger.Setup(log => log.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor(
+            [binding],
+            stateStore,
+            sourceAccessor,
+            logger: logger.Object);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 11, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        logger.Verify(
+            log => log.Log(
+                LogLevel.Warning,
+                It.Is<EventId>(id =>
+                    (id.Id == 8) &&
+                    (id.Name == nameof(ReplicaSinkLatestStateProcessorLoggerExtensions.SourceStateReadFailed))),
+                It.Is<It.IsAnyType>((
+                    state,
+                    _
+                ) => state.ToString()!.Contains("entity-1", StringComparison.Ordinal)),
+                It.Is<Exception>(ex => ReferenceEquals(ex, failure)),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    /// <summary>
     ///     FlushAsync checkpoints terminal provider outcomes when the target reports the write as superseded.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -1209,6 +1273,64 @@ public sealed class ReplicaSinkLatestStateProcessorTests
         ReplicaSinkExecutionBlock? block = healthManager.GetCurrentBlock("sink-a");
         Assert.NotNull(block);
         Assert.Equal(ReplicaSinkExecutionBlockKind.Quarantined, block.Kind);
+    }
+
+    /// <summary>
+    ///     FlushAsync logs the concrete exception object when dead-letter persistence fails and the sink is quarantined.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task FlushAsyncShouldLogExceptionObjectWhenDeadLetterPersistenceFails()
+    {
+        RecordingReplicaSinkProvider provider = new(_ => throw new ReplicaSinkWriteException(
+            ReplicaSinkWriteFailureDisposition.DeadLetter,
+            "validation_failed",
+            "Validation failed."));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<TestProjection>(
+            "sink-a",
+            "orders",
+            provider,
+            projection => new TestContract
+            {
+                Id = projection.Id,
+            });
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(
+            typeof(TestProjection),
+            "entity-1",
+            26,
+            new TestProjection
+            {
+                Id = "projection-26",
+            });
+        DeadLetterWriteFailingReplicaSinkDeliveryStateStore stateStore = new();
+        Mock<ILogger<ReplicaSinkLatestStateProcessor>> logger = new();
+        logger.Setup(log => log.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
+        ReplicaSinkLatestStateProcessor processor = CreateProcessor(
+            [binding],
+            stateStore,
+            sourceAccessor,
+            logger: logger.Object);
+        await processor.AdvanceDesiredPositionAsync<TestProjection>("entity-1", 26, CancellationToken.None);
+        await processor.FlushAsync<TestProjection>("entity-1", CancellationToken.None);
+        logger.Verify(
+            log => log.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id =>
+                    (id.Id == 7) &&
+                    (id.Name == nameof(ReplicaSinkLatestStateProcessorLoggerExtensions.DeadLetterStoreQuarantined))),
+                It.Is<It.IsAnyType>((
+                    state,
+                    _
+                ) => state.ToString()!.Contains("entity-1", StringComparison.Ordinal)),
+                It.Is<Exception>(ex =>
+                    (ex.GetType() == typeof(InvalidOperationException)) &&
+                    string.Equals(
+                        ex.Message,
+                        "Synthetic dead-letter persistence failure.",
+                        StringComparison.Ordinal)),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     /// <summary>

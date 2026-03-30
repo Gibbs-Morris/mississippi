@@ -248,7 +248,8 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
             new TestReplicaSinkProjectionRegistry([binding]),
             auditSink,
             new ReplicaSinkExecutionHealthManager(TimeProvider.System),
-            Options.Create(new ReplicaSinkRuntimeOptions { MaxDeadLetterPageSize = 1 }));
+            Options.Create(new ReplicaSinkRuntimeOptions { MaxDeadLetterPageSize = 1 }),
+            NullLogger<ReplicaSinkRuntimeOperator>.Instance);
         ReplicaSinkDeadLetterPage firstPage = await runtimeOperator.ReadDeadLettersAsync(
             new(
                 new("operator-a", ReplicaSinkOperatorAccessLevel.Summary),
@@ -300,7 +301,8 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
             new TestReplicaSinkProjectionRegistry([binding]),
             auditSink,
             new ReplicaSinkExecutionHealthManager(timeProvider),
-            Options.Create(new ReplicaSinkRuntimeOptions()));
+            Options.Create(new ReplicaSinkRuntimeOptions()),
+            NullLogger<ReplicaSinkRuntimeOperator>.Instance);
         ReplicaSinkDeadLetterReDriveResult result = await runtimeOperator.ReDriveAsync(
             new(new("operator-admin", ReplicaSinkOperatorAccessLevel.Admin), GetDeliveryKey(binding, "entity-1")),
             CancellationToken.None);
@@ -315,6 +317,96 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
         Assert.Equal(1, processedCount);
         Assert.Single(provider.Requests);
         Assert.Equal(50, provider.Requests.Single().SourcePosition);
+        Assert.Equal(1, auditSink.ReDriveCount);
+    }
+
+    /// <summary>
+    ///     Ensures re-drive keeps the stored dead letter when the projection type can no longer be resolved.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task RuntimeOperatorShouldKeepDeadLetterStateWhenProjectionTypeCannotBeResolved()
+    {
+        FakeTimeProvider timeProvider = CreateTimeProvider();
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.Applied,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<RuntimeProjection>("sink-a", "orders", provider);
+        BootstrapReplicaSinkDeliveryStateStore stateStore = new();
+        string deliveryKey = GetDeliveryKey(binding, "entity-1");
+        await stateStore.WriteAsync(
+            new(
+                deliveryKey,
+                desiredSourcePosition: 50,
+                deadLetter: new(50, 2, "dead_letter", "Detailed dead-letter.", timeProvider.GetUtcNow())));
+        RecordingReplicaSinkOperatorAuditSink auditSink = new();
+        ReplicaSinkRuntimeOperator runtimeOperator = new(
+            stateStore,
+            CreateCoordinator([binding], stateStore, new TestReplicaSinkSourceStateAccessor(), timeProvider),
+            new TestReplicaSinkProjectionRegistry([]),
+            auditSink,
+            new ReplicaSinkExecutionHealthManager(timeProvider),
+            Options.Create(new ReplicaSinkRuntimeOptions()),
+            NullLogger<ReplicaSinkRuntimeOperator>.Instance);
+        ReplicaSinkDeadLetterReDriveResult result = await runtimeOperator.ReDriveAsync(
+            new(new("operator-admin", ReplicaSinkOperatorAccessLevel.Admin), deliveryKey),
+            CancellationToken.None);
+        ReplicaSinkDeliveryState? updatedState = await stateStore.ReadAsync(deliveryKey, CancellationToken.None);
+        Assert.False(result.WasQueued);
+        Assert.Equal("projection_type_not_found", result.Outcome);
+        Assert.Equal(50, result.TargetSourcePosition);
+        Assert.NotNull(updatedState);
+        Assert.NotNull(updatedState.DeadLetter);
+        Assert.Empty(provider.Requests);
+        Assert.Equal(1, auditSink.ReDriveCount);
+    }
+
+    /// <summary>
+    ///     Ensures re-drive quarantines the sink and preserves the dead letter when dead-letter clearing fails.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task RuntimeOperatorShouldQuarantineSinkWhenDeadLetterClearFails()
+    {
+        FakeTimeProvider timeProvider = CreateTimeProvider();
+        RecordingReplicaSinkProvider provider = new(request => new(
+            ReplicaWriteOutcome.Applied,
+            request.Target.DestinationIdentity,
+            request.SourcePosition));
+        ReplicaSinkBindingDescriptor binding = CreateMappedBinding<RuntimeProjection>("sink-a", "orders", provider);
+        DeadLetterClearFailingReplicaSinkDeliveryStateStore stateStore = new();
+        string deliveryKey = GetDeliveryKey(binding, "entity-1");
+        await stateStore.SeedAsync(
+            new(
+                deliveryKey,
+                desiredSourcePosition: 50,
+                deadLetter: new(50, 2, "dead_letter", "Detailed dead-letter.", timeProvider.GetUtcNow())));
+        TestReplicaSinkSourceStateAccessor sourceAccessor = new();
+        sourceAccessor.SetValue(typeof(RuntimeProjection), "entity-1", 50, new RuntimeProjection { Id = "projection-50" });
+        ReplicaSinkExecutionHealthManager healthManager = new(timeProvider);
+        RecordingReplicaSinkOperatorAuditSink auditSink = new();
+        ReplicaSinkRuntimeOperator runtimeOperator = new(
+            stateStore,
+            CreateCoordinator([binding], stateStore, sourceAccessor, timeProvider, healthManager: healthManager),
+            new TestReplicaSinkProjectionRegistry([binding]),
+            auditSink,
+            healthManager,
+            Options.Create(new ReplicaSinkRuntimeOptions()),
+            NullLogger<ReplicaSinkRuntimeOperator>.Instance);
+        ReplicaSinkDeadLetterReDriveResult result = await runtimeOperator.ReDriveAsync(
+            new(new("operator-admin", ReplicaSinkOperatorAccessLevel.Admin), deliveryKey),
+            CancellationToken.None);
+        ReplicaSinkDeliveryState? updatedState = await stateStore.ReadAsync(deliveryKey, CancellationToken.None);
+        ReplicaSinkExecutionBlock? block = healthManager.GetCurrentBlock("sink-a");
+        Assert.False(result.WasQueued);
+        Assert.Equal("dead_letter_store_quarantined", result.Outcome);
+        Assert.Equal(50, result.TargetSourcePosition);
+        Assert.NotNull(updatedState);
+        Assert.NotNull(updatedState.DeadLetter);
+        Assert.NotNull(block);
+        Assert.Equal(ReplicaSinkExecutionBlockKind.Quarantined, block.Kind);
+        Assert.Empty(provider.Requests);
         Assert.Equal(1, auditSink.ReDriveCount);
     }
 
@@ -350,6 +442,50 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
             cancellationToken.ThrowIfCancellationRequested();
             ReDriveCount++;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class DeadLetterClearFailingReplicaSinkDeliveryStateStore : IReplicaSinkDeliveryStateStore
+    {
+        private BootstrapReplicaSinkDeliveryStateStore InnerStore { get; } = new();
+
+        public Task<ReplicaSinkDeliveryStatePage> ReadDeadLetterPageAsync(
+            int pageSize,
+            string? continuationToken = null,
+            CancellationToken cancellationToken = default
+        ) =>
+            InnerStore.ReadDeadLetterPageAsync(pageSize, continuationToken, cancellationToken);
+
+        public Task<IReadOnlyList<ReplicaSinkDeliveryState>> ReadDueRetriesAsync(
+            DateTimeOffset dueAtOrBeforeUtc,
+            int maxCount,
+            CancellationToken cancellationToken = default
+        ) =>
+            InnerStore.ReadDueRetriesAsync(dueAtOrBeforeUtc, maxCount, cancellationToken);
+
+        public Task<ReplicaSinkDeliveryState?> ReadAsync(
+            string deliveryKey,
+            CancellationToken cancellationToken = default
+        ) =>
+            InnerStore.ReadAsync(deliveryKey, cancellationToken);
+
+        public Task SeedAsync(
+            ReplicaSinkDeliveryState state,
+            CancellationToken cancellationToken = default
+        ) =>
+            InnerStore.WriteAsync(state, cancellationToken);
+
+        public Task WriteAsync(
+            ReplicaSinkDeliveryState state,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (state.DeadLetter is null)
+            {
+                throw new InvalidOperationException("Synthetic dead-letter clear persistence failure.");
+            }
+
+            return InnerStore.WriteAsync(state, cancellationToken);
         }
     }
 
@@ -390,8 +526,7 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
 
     private sealed class BlockingReplicaSinkProvider : IReplicaSinkProvider
     {
-        private TaskCompletionSource<bool> FirstWriteStartedSource { get; } =
-            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private SemaphoreSlim FirstWriteStartedSignal { get; } = new(0, 1);
 
         private TaskCompletionSource<bool> ReleaseFirstWriteSource { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -414,7 +549,7 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
 
         public void ReleaseFirstWrite() => ReleaseFirstWriteSource.TrySetResult(true);
 
-        public Task WaitForFirstWriteAsync() => FirstWriteStartedSource.Task;
+        public Task WaitForFirstWriteAsync() => FirstWriteStartedSignal.WaitAsync();
 
         public async ValueTask<ReplicaWriteResult> WriteAsync(
             ReplicaWriteRequest request,
@@ -424,7 +559,7 @@ public sealed class ReplicaSinkRuntimeCoordinatorAndOperatorTests
             Requests.Add(request);
             if (Requests.Count == 1)
             {
-                FirstWriteStartedSource.TrySetResult(true);
+                _ = FirstWriteStartedSignal.Release();
                 await ReleaseFirstWriteSource.Task.WaitAsync(cancellationToken);
             }
 

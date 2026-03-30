@@ -11,6 +11,7 @@ using Mississippi.DomainModeling.ReplicaSinks.Abstractions;
 using Mississippi.DomainModeling.ReplicaSinks.Runtime;
 using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions;
 using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap;
+using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Cosmos;
 
 using MississippiTests.DomainModeling.ReplicaSinks.Runtime.L0Tests.Fixtures;
 
@@ -300,6 +301,30 @@ public sealed class ReplicaSinkRegistrationsTests
     }
 
     /// <summary>
+    ///     Ensures direct replication without projection-level contract metadata surfaces the stable <c>RS0002</c>
+    ///     diagnostic.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task ReplicaSinkStartupValidatorShouldRejectMissingReplicaContractIdentityForDirectReplication()
+    {
+        ServiceCollection services = [];
+        ReplicaSinkProjectionDescriptor binding = CreateDirectBinding(
+            typeof(UnnamedDirectReplicaProjection),
+            "bootstrap-direct",
+            "orders-direct");
+        services.AddSingleton(binding);
+        services.AddBootstrapReplicaSink(
+            "bootstrap-direct",
+            "bootstrap-client",
+            options => options.ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing);
+        InvalidOperationException exception = await AssertValidationFailureAsync(services);
+        ReplicaSinkStartupDiagnostic expected = ReplicaSinkStartupDiagnostics.CreateMissingReplicaContractName(binding);
+        Assert.Contains(expected.Id, exception.Message, StringComparison.Ordinal);
+        Assert.Contains(expected.Message, exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Ensures missing provider handles surface the stable <c>RS0008</c> diagnostic.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -391,6 +416,32 @@ public sealed class ReplicaSinkRegistrationsTests
     }
 
     /// <summary>
+    ///     Ensures provider registrations fail fast when a different delivery-state store implementation already owns the
+    ///     global service.
+    /// </summary>
+    [Fact]
+    public void AddReplicaSinkProvidersShouldRejectMixedDeliveryStateStoreImplementations()
+    {
+        ServiceCollection services = [];
+        services.AddBootstrapReplicaSink(
+            "bootstrap-direct",
+            "bootstrap-client",
+            options => options.ProvisioningMode = ReplicaProvisioningMode.CreateIfMissing);
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddCosmosReplicaSink(
+                "cosmos-direct",
+                "cosmos-client",
+                options =>
+                {
+                    options.DatabaseId = "orders-db";
+                    options.ContainerId = "orders-container";
+                }));
+        Assert.Contains(nameof(IReplicaSinkDeliveryStateStore), exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(BootstrapReplicaSinkDeliveryStateStore), exception.Message, StringComparison.Ordinal);
+        Assert.Contains("CosmosReplicaSinkDeliveryStateStore", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Ensures repeated assembly scans merge without last-call-wins replacement and cache stable binding descriptors.
     /// </summary>
     [Fact]
@@ -439,9 +490,7 @@ public sealed class ReplicaSinkRegistrationsTests
         Assert.Same(
             provider.GetRequiredKeyedService<IReplicaSinkProvider>("bootstrap-mapped"),
             mappedBinding.ProviderHandle);
-        Assert.Equal(
-            "MississippiTests.DomainModeling.ReplicaSinks.Runtime.L0Tests.Fixtures.DirectReplicaProjection",
-            directBinding.ContractIdentity);
+        Assert.Equal("TestApp.Orders.DirectReplica.V1", directBinding.ContractIdentity);
         Assert.Null(directBinding.ContractType);
         Assert.Null(directBinding.MapperDelegate);
         Assert.True(directBinding.UsesDirectMaterialization);

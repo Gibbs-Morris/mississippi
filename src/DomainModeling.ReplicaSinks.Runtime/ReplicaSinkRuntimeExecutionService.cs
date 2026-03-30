@@ -36,8 +36,9 @@ internal sealed class ReplicaSinkRuntimeExecutionService : BackgroundService
         CancellationToken stoppingToken
     )
     {
-        using PeriodicTimer timer = new(TimeSpan.FromMilliseconds(
-            Math.Max(1, RuntimeOptions.Value.ExecutionPollInterval.TotalMilliseconds)), TimeProvider);
+        TimeSpan pollInterval = TimeSpan.FromMilliseconds(
+            Math.Max(1, RuntimeOptions.Value.ExecutionPollInterval.TotalMilliseconds));
+        using PeriodicTimer timer = new(pollInterval, TimeProvider);
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -46,7 +47,7 @@ internal sealed class ReplicaSinkRuntimeExecutionService : BackgroundService
             }
             catch (Exception ex) when (!IsCriticalException(ex))
             {
-                Logger.ExecutionPumpIterationFailed(ex.GetType().Name);
+                Logger.ExecutionPumpIterationFailed(ex);
             }
 
             if (!await timer.WaitForNextTickAsync(stoppingToken))
@@ -67,9 +68,9 @@ internal static partial class ReplicaSinkRuntimeExecutionServiceLoggerExtensions
     [LoggerMessage(
         EventId = 30,
         Level = LogLevel.Warning,
-        Message = "Replica sink runtime execution pump iteration failed with exception type '{ExceptionType}'.")]
+        Message = "Replica sink runtime execution pump iteration failed.")]
     public static partial void ExecutionPumpIterationFailed(
         this ILogger logger,
-        string exceptionType
+        Exception exception
     );
 }

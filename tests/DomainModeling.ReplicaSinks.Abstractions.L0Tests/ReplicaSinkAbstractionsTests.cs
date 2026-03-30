@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 
 using Mississippi.DomainModeling.ReplicaSinks.Abstractions;
 
@@ -46,6 +47,25 @@ public sealed class ReplicaSinkAbstractionsTests
         };
         Assert.Null(attribute.ContractType);
         Assert.True(attribute.IsDirectProjectionReplicationEnabled);
+    }
+
+    /// <summary>
+    ///     Ensures direct replication metadata can expose a stable projection-level contract identity.
+    /// </summary>
+    [Fact]
+    public void DirectProjectionMetadataShouldExposeStableReplicaContractIdentity()
+    {
+        ProjectionReplicationAttribute projectionReplication =
+            typeof(SampleDirectReplicaProjection).GetCustomAttribute<ProjectionReplicationAttribute>() ??
+            throw new InvalidOperationException("Expected ProjectionReplicationAttribute was not found.");
+        ReplicaContractNameAttribute replicaContractName =
+            typeof(SampleDirectReplicaProjection).GetCustomAttribute<ReplicaContractNameAttribute>() ??
+            throw new InvalidOperationException("Expected ReplicaContractNameAttribute was not found.");
+        Assert.Equal("search", projectionReplication.Sink);
+        Assert.Equal("orders-direct", projectionReplication.TargetName);
+        Assert.Null(projectionReplication.ContractType);
+        Assert.True(projectionReplication.IsDirectProjectionReplicationEnabled);
+        Assert.Equal("TestApp.Orders.DirectReplica.V1", replicaContractName.ContractIdentity);
     }
 
     /// <summary>

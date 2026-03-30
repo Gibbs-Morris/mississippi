@@ -156,8 +156,18 @@ internal sealed class ReplicaSinkProjectionRegistry : IReplicaSinkProjectionRegi
                 }
                 else
                 {
-                    usesDirectMaterialization = true;
-                    contractIdentity = ReplicaSinkStartupDiagnostics.GetTypeDisplayName(binding.ProjectionType);
+                    ReplicaContractNameAttribute? contractNameAttribute =
+                        binding.ProjectionType.GetCustomAttribute<ReplicaContractNameAttribute>();
+                    if (contractNameAttribute is null)
+                    {
+                        diagnostics.Add(ReplicaSinkStartupDiagnostics.CreateMissingReplicaContractName(binding));
+                        hasBindingDiagnostics = true;
+                    }
+                    else
+                    {
+                        usesDirectMaterialization = true;
+                        contractIdentity = contractNameAttribute.ContractIdentity;
+                    }
                 }
             }
             else

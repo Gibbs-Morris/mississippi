@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,8 +79,31 @@ public static class BootstrapReplicaSinkRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
+        EnsureDeliveryStateStoreOwnership(services);
         services.TryAddSingleton<IReplicaSinkDeliveryStateStore, BootstrapReplicaSinkDeliveryStateStore>();
         return services;
+    }
+
+    private static void EnsureDeliveryStateStoreOwnership(
+        IServiceCollection services
+    )
+    {
+        ServiceDescriptor? existingDescriptor = services.LastOrDefault(descriptor =>
+            descriptor.ServiceType == typeof(IReplicaSinkDeliveryStateStore));
+        if (existingDescriptor is null)
+        {
+            return;
+        }
+
+        Type? existingImplementationType = existingDescriptor.ImplementationType ??
+                                           existingDescriptor.ImplementationInstance?.GetType();
+        if (existingImplementationType == typeof(BootstrapReplicaSinkDeliveryStateStore))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Replica sink delivery-state store '{existingImplementationType?.FullName ?? "<factory>"}' is already registered for '{nameof(IReplicaSinkDeliveryStateStore)}'. Bootstrap registrations require '{typeof(BootstrapReplicaSinkDeliveryStateStore).FullName}' and cannot replace an existing implementation.");
     }
 
     private static IServiceCollection AddBootstrapReplicaSinkCore(

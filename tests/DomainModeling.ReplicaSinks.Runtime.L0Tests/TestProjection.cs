@@ -1,3 +1,6 @@
+using Mississippi.DomainModeling.ReplicaSinks.Abstractions;
+
+
 namespace MississippiTests.DomainModeling.ReplicaSinks.Runtime.L0Tests;
 
 /// <summary>
@@ -7,6 +10,7 @@ namespace MississippiTests.DomainModeling.ReplicaSinks.Runtime.L0Tests;
 ///     This type is internal but accessible to Moq via the InternalsVisibleTo attribute
 ///     for DynamicProxyGenAssembly2 configured in Directory.Build.props.
 /// </remarks>
+[ReplicaContractName("TestApp", "Replica", "TestProjection")]
 internal sealed class TestProjection
 {
     /// <summary>

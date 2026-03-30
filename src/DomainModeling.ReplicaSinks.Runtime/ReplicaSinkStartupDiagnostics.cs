@@ -122,10 +122,13 @@ internal static class ReplicaSinkStartupDiagnostics
     /// <returns>The diagnostic.</returns>
     public static ReplicaSinkStartupDiagnostic CreateMissingReplicaContractName(
         ReplicaSinkProjectionDescriptor binding
-    ) =>
-        new(
-            MissingReplicaContractId,
-            $"Projection '{GetTypeDisplayName(binding.ProjectionType)}' declares replica sink '{binding.SinkKey}' for target '{binding.TargetName}' with contract '{GetTypeDisplayName(binding.ContractType)}', but that contract does not declare [ReplicaContractName]. Annotate the contract with ReplicaContractNameAttribute so the runtime can compute a stable contract identity.");
+    )
+    {
+        string message = binding.ContractType is null
+            ? $"Projection '{GetTypeDisplayName(binding.ProjectionType)}' declares direct replica sink '{binding.SinkKey}' for target '{binding.TargetName}', but the projection type does not declare [ReplicaContractName]. Annotate the projection with ReplicaContractNameAttribute so the runtime can compute a stable contract identity."
+            : $"Projection '{GetTypeDisplayName(binding.ProjectionType)}' declares replica sink '{binding.SinkKey}' for target '{binding.TargetName}' with contract '{GetTypeDisplayName(binding.ContractType)}', but that contract does not declare [ReplicaContractName]. Annotate the contract with ReplicaContractNameAttribute so the runtime can compute a stable contract identity.";
+        return new(MissingReplicaContractId, message);
+    }
 
     /// <summary>
     ///     Creates an <c>RS0001</c> diagnostic.

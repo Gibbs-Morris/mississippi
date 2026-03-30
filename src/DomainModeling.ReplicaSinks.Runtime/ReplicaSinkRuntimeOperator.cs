@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions;
@@ -18,7 +19,8 @@ internal sealed class ReplicaSinkRuntimeOperator : IReplicaSinkRuntimeOperator
         IReplicaSinkProjectionRegistry registry,
         IReplicaSinkOperatorAuditSink auditSink,
         IReplicaSinkExecutionHealthManager healthManager,
-        IOptions<ReplicaSinkRuntimeOptions> runtimeOptions
+        IOptions<ReplicaSinkRuntimeOptions> runtimeOptions,
+        ILogger<ReplicaSinkRuntimeOperator> logger
     )
     {
         DeliveryStateStore = deliveryStateStore ?? throw new ArgumentNullException(nameof(deliveryStateStore));
@@ -27,6 +29,7 @@ internal sealed class ReplicaSinkRuntimeOperator : IReplicaSinkRuntimeOperator
         AuditSink = auditSink ?? throw new ArgumentNullException(nameof(auditSink));
         HealthManager = healthManager ?? throw new ArgumentNullException(nameof(healthManager));
         RuntimeOptions = runtimeOptions ?? throw new ArgumentNullException(nameof(runtimeOptions));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private IReplicaSinkOperatorAuditSink AuditSink { get; }
@@ -36,6 +39,8 @@ internal sealed class ReplicaSinkRuntimeOperator : IReplicaSinkRuntimeOperator
     private IReplicaSinkDeliveryStateStore DeliveryStateStore { get; }
 
     private IReplicaSinkExecutionHealthManager HealthManager { get; }
+
+    private ILogger<ReplicaSinkRuntimeOperator> Logger { get; }
 
     private IReplicaSinkProjectionRegistry Registry { get; }
 
@@ -99,26 +104,6 @@ internal sealed class ReplicaSinkRuntimeOperator : IReplicaSinkRuntimeOperator
         long targetSourcePosition = state.DesiredSourcePosition ?? state.DeadLetter.SourcePosition;
         ReplicaSinkDeliveryKeyParser.ParsedReplicaSinkDeliveryKey parsedDeliveryKey = ReplicaSinkDeliveryKeyParser.Parse(
             request.DeliveryKey);
-        try
-        {
-            ReplicaSinkDeliveryState updatedState = ReplicaSinkDeliveryStateTransitions.ClearDeadLetter(state);
-            await DeliveryStateStore.WriteAsync(updatedState, cancellationToken);
-        }
-        catch (Exception ex) when (!IsCriticalException(ex))
-        {
-            HealthManager.Quarantine(
-                parsedDeliveryKey.SinkKey,
-                "dead_letter_store_failed",
-                "Dead-letter persistence failed while clearing dead-letter state.");
-            ReplicaSinkDeadLetterReDriveResult quarantined = new(
-                request.DeliveryKey,
-                "dead_letter_store_quarantined",
-                false,
-                targetSourcePosition);
-            await AuditSink.RecordReDriveAsync(request, quarantined, cancellationToken);
-            return quarantined;
-        }
-
         if (!TryResolveProjectionType(parsedDeliveryKey.ProjectionTypeName, out Type? projectionType))
         {
             ReplicaSinkDeadLetterReDriveResult projectionMissing = new(
@@ -130,7 +115,28 @@ internal sealed class ReplicaSinkRuntimeOperator : IReplicaSinkRuntimeOperator
             return projectionMissing;
         }
 
-        await Coordinator.NotifyLiveAsync(projectionType, parsedDeliveryKey.EntityId, targetSourcePosition, cancellationToken);
+        try
+        {
+            ReplicaSinkDeliveryState updatedState = ReplicaSinkDeliveryStateTransitions.ClearDeadLetter(state);
+            await DeliveryStateStore.WriteAsync(updatedState, cancellationToken);
+        }
+        catch (Exception ex) when (!IsCriticalException(ex))
+        {
+            HealthManager.Quarantine(
+                parsedDeliveryKey.SinkKey,
+                "dead_letter_store_failed",
+                "Dead-letter persistence failed while clearing dead-letter state.");
+            Logger.DeadLetterClearStoreQuarantined(parsedDeliveryKey.SinkKey, request.DeliveryKey, ex);
+            ReplicaSinkDeadLetterReDriveResult quarantined = new(
+                request.DeliveryKey,
+                "dead_letter_store_quarantined",
+                false,
+                targetSourcePosition);
+            await AuditSink.RecordReDriveAsync(request, quarantined, cancellationToken);
+            return quarantined;
+        }
+
+        await Coordinator.NotifyLiveAsync(projectionType!, parsedDeliveryKey.EntityId, targetSourcePosition, cancellationToken);
         ReplicaSinkDeadLetterReDriveResult queued = new(request.DeliveryKey, "queued", true, targetSourcePosition);
         await AuditSink.RecordReDriveAsync(request, queued, cancellationToken);
         return queued;

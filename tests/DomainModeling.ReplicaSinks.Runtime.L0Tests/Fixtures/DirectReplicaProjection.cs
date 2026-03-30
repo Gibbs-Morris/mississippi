@@ -6,6 +6,7 @@ namespace MississippiTests.DomainModeling.ReplicaSinks.Runtime.L0Tests.Fixtures;
 /// <summary>
 ///     A direct-replication projection used by runtime discovery tests.
 /// </summary>
+[ReplicaContractName("TestApp", "Orders", "DirectReplica")]
 [ProjectionReplication("bootstrap-direct", "orders-direct", IsDirectProjectionReplicationEnabled = true)]
 internal sealed class DirectReplicaProjection
 {

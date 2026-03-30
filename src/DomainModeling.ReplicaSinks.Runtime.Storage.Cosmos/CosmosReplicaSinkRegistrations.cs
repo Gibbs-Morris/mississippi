@@ -86,6 +86,7 @@ public static class CosmosReplicaSinkRegistrations
             ServiceDescriptor
                 .Singleton<IValidateOptions<CosmosReplicaSinkOptions>, CosmosReplicaSinkOptionsValidation>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, CosmosReplicaSinkContainerInitializer>());
+        EnsureDeliveryStateStoreOwnership(services);
         services.TryAddSingleton<IReplicaSinkDeliveryStateStore, CosmosReplicaSinkDeliveryStateStore>();
         string containerServiceKey = ReplicaSinkCosmosDefaults.CreateContainerServiceKey(sinkKey);
         services.AddKeyedSingleton<Container>(
@@ -141,6 +142,28 @@ public static class CosmosReplicaSinkRegistrations
                 options.ProvisioningMode);
         });
         return services;
+    }
+
+    private static void EnsureDeliveryStateStoreOwnership(
+        IServiceCollection services
+    )
+    {
+        ServiceDescriptor? existingDescriptor = services.LastOrDefault(descriptor =>
+            descriptor.ServiceType == typeof(IReplicaSinkDeliveryStateStore));
+        if (existingDescriptor is null)
+        {
+            return;
+        }
+
+        Type? existingImplementationType = existingDescriptor.ImplementationType ??
+                                           existingDescriptor.ImplementationInstance?.GetType();
+        if (existingImplementationType == typeof(CosmosReplicaSinkDeliveryStateStore))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Replica sink delivery-state store '{existingImplementationType?.FullName ?? "<factory>"}' is already registered for '{nameof(IReplicaSinkDeliveryStateStore)}'. Cosmos registrations require '{typeof(CosmosReplicaSinkDeliveryStateStore).FullName}' and cannot replace an existing implementation.");
     }
 
     private static void ValidateKeys(

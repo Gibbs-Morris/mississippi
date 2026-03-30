@@ -10,7 +10,9 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Abstractions;
 ///     <para>
 ///         Mapped replica contracts are the default path. When <see cref="ContractType" /> is omitted,
 ///         direct projection replication remains disabled unless
-///         <see cref="IsDirectProjectionReplicationEnabled" /> is set to <see langword="true" />.
+///         <see cref="IsDirectProjectionReplicationEnabled" /> is set to <see langword="true" /> and the
+///         projection type declares <see cref="ReplicaContractNameAttribute" /> so the runtime can compute a
+///         stable contract identity.
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
