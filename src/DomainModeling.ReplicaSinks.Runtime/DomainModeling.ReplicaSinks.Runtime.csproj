@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\DomainModeling.ReplicaSinks.Abstractions\DomainModeling.ReplicaSinks.Abstractions.csproj" />
     <ProjectReference Include="..\DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions\DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions.csproj" />
   </ItemGroup>

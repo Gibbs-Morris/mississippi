@@ -3,6 +3,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\DomainModeling.ReplicaSinks.Runtime\DomainModeling.ReplicaSinks.Runtime.csproj" />
     <ProjectReference Include="..\..\src\DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap\DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap.csproj" />
   </ItemGroup>

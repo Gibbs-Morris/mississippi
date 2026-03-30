@@ -25,11 +25,8 @@ internal sealed class ReplicaSinkStartupValidationService : IHostedService
     /// <inheritdoc />
     public Task StartAsync(
         CancellationToken cancellationToken
-    )
-    {
-        StartupValidator.Validate();
-        return Task.CompletedTask;
-    }
+    ) =>
+        StartupValidator.ValidateAsync(cancellationToken).AsTask();
 
     /// <inheritdoc />
     public Task StopAsync(

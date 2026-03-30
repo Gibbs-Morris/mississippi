@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.DomainModeling.ReplicaSinks.Abstractions;
+using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Abstractions;
 
 
 namespace Mississippi.DomainModeling.ReplicaSinks.Runtime;
@@ -26,7 +28,10 @@ public static class ReplicaSinkRegistrations
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.TryAddSingleton<IReplicaSinkProjectionRegistry>(_ => new ReplicaSinkProjectionRegistry());
+        services.TryAddSingleton<IReplicaSinkProjectionRegistry>(serviceProvider => new ReplicaSinkProjectionRegistry(
+            serviceProvider,
+            serviceProvider.GetServices<ReplicaSinkProjectionDescriptor>(),
+            serviceProvider.GetServices<ReplicaSinkRegistrationDescriptor>()));
         services.TryAddSingleton<IReplicaSinkStartupValidator, ReplicaSinkStartupValidator>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ReplicaSinkStartupValidationService>());
         return services;
@@ -47,6 +52,11 @@ public static class ReplicaSinkRegistrations
         ArgumentNullException.ThrowIfNull(assemblies);
         services.AddReplicaSinks();
         List<ReplicaSinkProjectionDescriptor> descriptors = [];
+        List<ReplicaSinkProjectionDescriptor> existingDescriptors = services
+            .Where(descriptor => (descriptor.ServiceType == typeof(ReplicaSinkProjectionDescriptor)) &&
+                                 descriptor.ImplementationInstance is ReplicaSinkProjectionDescriptor)
+            .Select(descriptor => (ReplicaSinkProjectionDescriptor)descriptor.ImplementationInstance!)
+            .ToList();
         foreach (Assembly assembly in assemblies)
         {
             ArgumentNullException.ThrowIfNull(assembly);
@@ -67,8 +77,16 @@ public static class ReplicaSinkRegistrations
             }
         }
 
-        services.RemoveAll<IReplicaSinkProjectionRegistry>();
-        services.AddSingleton<IReplicaSinkProjectionRegistry>(new ReplicaSinkProjectionRegistry(descriptors));
+        foreach (ReplicaSinkProjectionDescriptor descriptor in descriptors)
+        {
+            if (existingDescriptors.Contains(descriptor))
+            {
+                continue;
+            }
+
+            services.AddSingleton(descriptor);
+        }
+
         return services;
     }
 

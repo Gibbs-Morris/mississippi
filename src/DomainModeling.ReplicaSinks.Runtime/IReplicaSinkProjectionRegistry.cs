@@ -9,8 +9,14 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime;
 internal interface IReplicaSinkProjectionRegistry
 {
     /// <summary>
-    ///     Gets the discovered projection bindings.
+    ///     Gets the cached runtime binding descriptors.
     /// </summary>
-    /// <returns>The discovered projection bindings.</returns>
-    IReadOnlyList<ReplicaSinkProjectionDescriptor> GetProjectionBindings();
+    /// <returns>The cached runtime binding descriptors.</returns>
+    IReadOnlyList<ReplicaSinkBindingDescriptor> GetBindingDescriptors();
+
+    /// <summary>
+    ///     Gets the cached startup validation diagnostics.
+    /// </summary>
+    /// <returns>The cached startup validation diagnostics.</returns>
+    IReadOnlyList<ReplicaSinkStartupDiagnostic> GetDiagnostics();
 }

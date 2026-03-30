@@ -8,7 +8,7 @@ namespace Mississippi.DomainModeling.ReplicaSinks.Runtime;
 /// <summary>
 ///     Represents a single projection-to-sink binding discovered from <see cref="ProjectionReplicationAttribute" />.
 /// </summary>
-internal sealed class ReplicaSinkProjectionDescriptor
+internal sealed class ReplicaSinkProjectionDescriptor : IEquatable<ReplicaSinkProjectionDescriptor>
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="ReplicaSinkProjectionDescriptor" /> class.
@@ -73,4 +73,32 @@ internal sealed class ReplicaSinkProjectionDescriptor
     ///     Gets the requested write mode.
     /// </summary>
     public ReplicaWriteMode WriteMode { get; }
+
+    /// <inheritdoc />
+    public bool Equals(
+        ReplicaSinkProjectionDescriptor? other
+    ) =>
+        other is not null &&
+        (ProjectionType == other.ProjectionType) &&
+        string.Equals(SinkKey, other.SinkKey, StringComparison.Ordinal) &&
+        string.Equals(TargetName, other.TargetName, StringComparison.Ordinal) &&
+        Equals(ContractType, other.ContractType) &&
+        (IsDirectProjectionReplicationEnabled == other.IsDirectProjectionReplicationEnabled) &&
+        (WriteMode == other.WriteMode);
+
+    /// <inheritdoc />
+    public override bool Equals(
+        object? obj
+    ) =>
+        obj is ReplicaSinkProjectionDescriptor other && Equals(other);
+
+    /// <inheritdoc />
+    public override int GetHashCode() =>
+        HashCode.Combine(
+            ProjectionType,
+            SinkKey,
+            TargetName,
+            ContractType,
+            IsDirectProjectionReplicationEnabled,
+            WriteMode);
 }
