@@ -17,6 +17,8 @@ using Mississippi.DomainModeling.ReplicaSinks.Runtime.Storage.Bootstrap;
 
 using Moq;
 
+using ReplicaStateKey = (System.Type ProjectionType, string EntityId, long SourcePosition);
+
 
 namespace MississippiTests.DomainModeling.ReplicaSinks.Runtime.L0Tests;
 
@@ -218,10 +220,7 @@ public sealed class ReplicaSinkLatestStateProcessorTests
     {
         public List<(Type ProjectionType, string EntityId, long SourcePosition)> ReadRequests { get; } = [];
 
-        private Dictionary<(Type ProjectionType, string EntityId, long SourcePosition), ReplicaSinkSourceState> States
-        {
-            get;
-        } = [];
+        private Dictionary<ReplicaStateKey, ReplicaSinkSourceState> States { get; } = [];
 
         public ValueTask<ReplicaSinkSourceState> ReadAsync(
             Type projectionType,
