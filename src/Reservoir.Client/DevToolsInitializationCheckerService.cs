@@ -33,13 +33,13 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
 
     private readonly IHostEnvironment? hostEnvironment;
 
-    private readonly ILogger<DevToolsInitializationCheckerService> logger;
+    private ILogger<DevToolsInitializationCheckerService> Logger { get; }
 
-    private readonly ReservoirDevToolsOptions options;
+    private ReservoirDevToolsOptions Options { get; }
 
-    private readonly TimeProvider timeProvider;
+    private TimeProvider TimeProvider { get; }
 
-    private readonly DevToolsInitializationTracker tracker;
+    private DevToolsInitializationTracker Tracker { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="DevToolsInitializationCheckerService" /> class.
@@ -83,10 +83,10 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(options);
-        this.tracker = tracker;
-        this.logger = logger;
-        this.timeProvider = timeProvider;
-        this.options = options.Value;
+        Tracker = tracker;
+        Logger = logger;
+        TimeProvider = timeProvider;
+        Options = options.Value;
         this.hostEnvironment = hostEnvironment;
         this.checkDelay = checkDelay;
     }
@@ -104,23 +104,23 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
 
         try
         {
-            await Task.Delay(checkDelay, timeProvider, stoppingToken);
-            logger.DevToolsInitializationCheckResult(tracker.WasInitialized);
-            if (tracker.WasInitialized)
+            await Task.Delay(checkDelay, TimeProvider, stoppingToken);
+            Logger.DevToolsInitializationCheckResult(Tracker.WasInitialized);
+            if (Tracker.WasInitialized)
             {
                 return;
             }
 
             if (ShouldThrow())
             {
-                logger.DevToolsNotInitializedError();
+                Logger.DevToolsNotInitializedError();
                 throw new InvalidOperationException(
                     "DevTools is registered and enabled but Initialize() was not called. " +
                     "Add <ReservoirDevToolsInitializerComponent/> to your App.razor or root layout. " +
                     "Set ThrowOnMissingInitializer to false in ReservoirDevToolsOptions to log a warning instead.");
             }
 
-            logger.DevToolsNotInitialized();
+            Logger.DevToolsNotInitialized();
         }
         catch (OperationCanceledException)
         {
@@ -130,7 +130,7 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
 
     private bool IsEnabled()
     {
-        return options.Enablement switch
+        return Options.Enablement switch
         {
             ReservoirDevToolsEnablement.Always => true,
             ReservoirDevToolsEnablement.DevelopmentOnly => hostEnvironment?.IsDevelopment() == true,
@@ -141,9 +141,9 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
     private bool ShouldThrow()
     {
         // Explicit configuration takes precedence
-        if (options.ThrowOnMissingInitializer.HasValue)
+        if (Options.ThrowOnMissingInitializer.HasValue)
         {
-            return options.ThrowOnMissingInitializer.Value;
+            return Options.ThrowOnMissingInitializer.Value;
         }
 
         // Default: throw in development, warn in production

@@ -42,10 +42,6 @@ internal sealed class InletSignalRActionEffect
 
     private readonly IDisposable hubCallbackRegistration;
 
-    private readonly IHubConnectionProvider hubConnectionProvider;
-
-    private readonly Lazy<IInletStore> lazyStore;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="InletSignalRActionEffect" /> class.
     /// </summary>
@@ -68,24 +64,26 @@ internal sealed class InletSignalRActionEffect
         ArgumentNullException.ThrowIfNull(hubConnectionProvider);
         ArgumentNullException.ThrowIfNull(projectionFetcher);
         ArgumentNullException.ThrowIfNull(projectionDtoRegistry);
-        this.lazyStore = lazyStore;
-        this.hubConnectionProvider = hubConnectionProvider;
+        LazyStore = lazyStore;
+        HubConnectionProvider = hubConnectionProvider;
         ProjectionFetcher = projectionFetcher;
         ProjectionDtoRegistry = projectionDtoRegistry;
         TimeProvider = timeProvider ?? TimeProvider.System;
 
         // Subscribe to projection update notifications from the server
-        hubCallbackRegistration = hubConnectionProvider.RegisterHandler<string, string, long>(
+        hubCallbackRegistration = HubConnectionProvider.RegisterHandler<string, string, long>(
             InletHubConstants.ProjectionUpdatedMethod,
             OnProjectionUpdatedAsync);
 
         // Handle reconnection - re-subscribe to all active subscriptions
-        hubConnectionProvider.OnReconnected(OnReconnectedAsync);
+        HubConnectionProvider.OnReconnected(OnReconnectedAsync);
     }
 
-    private HubConnection HubConnection => hubConnectionProvider.Connection;
+    private HubConnection HubConnection => HubConnectionProvider.Connection;
 
-    private IProjectionDtoRegistry ProjectionDtoRegistry { get; }
+    private IHubConnectionProvider HubConnectionProvider { get; }
+
+    private Lazy<IInletStore> LazyStore { get; }
 
     private IProjectionFetcher ProjectionFetcher { get; }
 
@@ -94,7 +92,7 @@ internal sealed class InletSignalRActionEffect
     ///     The store resolves action effects during construction, so action effects cannot depend
     ///     on the store directly in their constructor.
     /// </summary>
-    private IInletStore Store => lazyStore.Value;
+    private IInletStore Store => LazyStore.Value;
 
     private TimeProvider TimeProvider { get; }
 
@@ -148,7 +146,7 @@ internal sealed class InletSignalRActionEffect
     )
     {
         // Ensure connection is started (HubConnectionProvider handles state dispatching)
-        await hubConnectionProvider.EnsureConnectedAsync(cancellationToken);
+        await HubConnectionProvider.EnsureConnectedAsync(cancellationToken);
 
         // For connection request, we're done after ensuring connection
         if (action is RequestSignalRConnectionAction)
