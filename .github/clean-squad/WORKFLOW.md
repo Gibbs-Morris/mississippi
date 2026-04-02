@@ -48,7 +48,9 @@ cases it **MUST NOT** create governed workflow state or advance governed work.
 
 `@cs River Orchestrator` is the direct governed intake path and the sole governed
 orchestrator. `cs River Orchestrator` accepts either direct free-form intake or a
-G0-approved Story Pack candidate and then runs the full governed workflow.
+G0-approved Story Pack candidate, defaults to governed end-to-end execution, and
+asks one fixed qualification round only when the intake appears partial or
+ambiguous before discovery continues.
 
 All governed Clean Squad delegation **MUST** target only approved Clean Squad
 agents named in the `Agent Roster` section of this workflow. The user never
@@ -69,6 +71,89 @@ leave Clean Squad orchestration for that task.
   governed discovery.
 - Optional pre-governed shaping: the human starts with **cs Entrepreneur** when
   the idea is still fuzzy and needs pressure-testing before governed intake.
+
+### Governed Intake Defaults and Qualification Contract
+
+Canonical vocabulary for governed intake:
+
+| Term | Meaning |
+|------|---------|
+| `execution scope` | Whether River treats the intake as `full-run`, `bounded-objective`, or `non-governed`. |
+| `discovery mode` | Whether discovery proceeds as `autonomous-defaults` or `manual-refinement`. |
+| `qualification round` | One fixed question-UI batch that captures execution scope and discovery mode together. |
+
+Qualification rules:
+
+- `cs River Orchestrator` **MUST** classify governed intake before Phase 1 discovery work proceeds.
+- When intake is clear and governed end-to-end execution is obviously intended,
+  River **MUST** skip the qualification round and default to `execution scope = full-run`
+  plus `discovery mode = autonomous-defaults`.
+- When intake appears partial, ambiguous, or otherwise unclear about whether the
+  governed workflow should run end to end, River **MUST** ask exactly one
+  qualification round through the question UI.
+- That qualification round **MUST** capture exactly two decisions: execution scope
+  and discovery mode.
+- A G0-approved Story Pack candidate **MUST** follow the same rule: default to
+  `full-run` plus `autonomous-defaults` unless the accompanying human instruction
+  narrows the objective or leaves the downstream scope ambiguous.
+
+Deterministic intake decision table:
+
+| Intake pattern | Qualification round? | Execution scope result | Discovery mode default | Gate behavior |
+|------|------|------|------|------|
+| Clear end-to-end ask such as “implement this feature” or “run this governed task” | No | `full-run` | `autonomous-defaults` | G1/G2/G3 remain explicit |
+| Ambiguous ask such as “handle this plan” or “do the docs” with unclear scope | Yes | human-selected | human-selected | G1/G2/G3 remain explicit |
+| Human confirms a bounded governed slice | Yes | `bounded-objective` | human-selected | The applicable governed workflow still runs to completion for that bounded objective; G1/G2/G3 remain explicit whenever their artifact packages still apply |
+| Resume or retry on a task folder that already records qualification or discovery facts | No new round by default | reuse recorded scope | reuse recorded mode | Resume from canonical facts |
+| Advice-only, authority-widening, or non-governed ask | No governed progression | `non-governed` | none | River blocks or redirects per workflow rules |
+
+### Autonomous Discovery Defaults Contract
+
+- `cs River Orchestrator` **MUST NOT** generate autonomous discovery defaults directly.
+  River remains the orchestrator and canonical writer.
+- `cs Requirements Analyst` is the bounded specialist that **MUST** generate
+  autonomous discovery defaults when discovery mode is `autonomous-defaults`.
+- Autonomous discovery **MUST** reuse `01-discovery/questions-round-NN.md` rather
+  than inventing a new artifact family.
+- Each inferred answer in an autonomous discovery batch **MUST** include trust tier,
+  source category, evidence reference(s), confidence, and
+  `requiresHumanConfirmation`.
+- Autonomous discovery precedence **MUST** be: confirmed human intent → approved
+  governed artifacts → authoritative repo contract surfaces → existing repo
+  patterns → framework defaults → explicit assumptions.
+- Autonomous discovery **MUST** fail closed and require later human confirmation
+  for low-confidence or conflicting evidence, security-sensitive or destructive
+  choices, public API or contract changes, authority-widening requests, or
+  unresolved high-impact domain ambiguity.
+- Autonomous discovery **MUST** stay bounded to a hard cap of three rounds or
+  fifteen inferred questions unless a future workflow revision explicitly narrows
+  that bound further.
+- When high-impact ambiguity remains after the autonomous bound, River and its
+  delegated specialist **MUST** promote that ambiguity to explicit assumptions or
+  open questions rather than generating additional autonomous discovery rounds.
+- `01-discovery/requirements-synthesis.md` **MUST** keep inferred defaults separate
+  from confirmed requirements until qualification or G1 later accepts them.
+
+### Canonical Qualification, Resume, and Cutover Rules
+
+- When River asks the qualification round, it **MUST** record the human wait
+  boundaries canonically before and after the response.
+- Qualification outcome **MUST** be recorded canonically as a bounded `completed`
+  event whose `workItemId` and `rootWorkItemId` are `intake.qualification`, whose
+  `details.executionScope` and `details.discoveryMode` capture the selected mode,
+  and whose `details.qualificationReason` explains why the qualification round was
+  needed.
+- When River skips the qualification round because clear governed intent exists,
+  it **MUST** still record the defaulted `execution scope` and `discovery mode`
+  canonically before discovery proceeds.
+- Autonomous discovery publication **MUST** be recorded canonically and **MUST**
+  bind the generated `questions-round-NN.md` artifact(s).
+- Pre-change task folders whose workflow fingerprint predates this contract and do
+  not contain qualification or discovery-mode facts **MUST** preserve legacy
+  manual-discovery semantics on resume.
+- When a resumed task folder already contains qualification and discovery-mode
+  facts, River **MUST** reuse them and **MUST NOT** ask a second qualification
+  round unless the human later changes the scope explicitly.
 
 ### Story Pack Contract
 
@@ -230,8 +315,8 @@ governed work begins:
     activity-log.md                 # Start/progress/blocker/completion log
     00-intake.md                    # Initial request & context
     01-discovery/
-      questions-round-01.md         # First group of 5 questions + answers
-      questions-round-02.md         # Next group + answers (adaptive)
+      questions-round-01.md         # Discovery batch (manual answers or autonomous defaults with provenance)
+      questions-round-02.md         # Next discovery batch (adaptive manual follow-up or bounded autonomous continuation)
       ...
       requirements-synthesis.md     # Synthesized requirements
     02-three-amigos/
@@ -679,7 +764,7 @@ Relationship semantics:
 `details` is required on every canonical event and MAY contain only event-type-specific keys defined by this contract. It MUST NOT be used to encode append-precondition semantics because those semantics live in `appendPrecondition`. When no event-type-specific keys apply, `details` MUST be `{}`:
 
 - `delegation-recorded`: `delegatedAgent`, `expectedOutputPath`, `completionSignal`, `closureCondition`, `allowedActions`, `authorizedTargets`
-- `completed`: `gateId`, `gateName`, `decision`, `decidedBy`, and optional `notes` when the completed event records a human gate decision
+- `completed`: either `gateId`, `gateName`, `decision`, `decidedBy`, and optional `notes` when the completed event records a human gate decision, or `executionScope`, `discoveryMode`, `qualificationReason`, and optional `notes` when the completed event records the governed intake qualification outcome
 - `wait-started` and `wait-ended`: `waitKind` with allowed values `human` or `system`
 - `deviation-recorded`: `deviationClass`, `rationalePath`
 - `blocked`: `blockerKind`, `blockedOn`
@@ -708,6 +793,21 @@ Allowed `details.publicationState` values:
 |-------|---------|
 | `stale` | The previously published reviewer summary is no longer fresh for the current canonical facts or CI identity |
 | `fresh` | The currently published reviewer summary is verified as current for the canonical facts and attached CI identity |
+
+Allowed `details.executionScope` values:
+
+| Value | Meaning |
+|-------|---------|
+| `full-run` | Governed delivery proceeds end to end by default. |
+| `bounded-objective` | Governed delivery proceeds only for the explicitly bounded objective while still honoring the applicable gates. |
+| `non-governed` | The request is blocked or redirected outside governed Clean Squad execution. |
+
+Allowed `details.discoveryMode` values:
+
+| Value | Meaning |
+|-------|---------|
+| `autonomous-defaults` | Discovery defaults are generated by the bounded specialist from evidence, repo patterns, and framework defaults. |
+| `manual-refinement` | River continues the human interview using five-question batches. |
 
 Writer-obligation matrix:
 
@@ -982,27 +1082,52 @@ Implementation and review MUST explicitly cover at least these cases with the ex
 1. The human reaches `cs River Orchestrator` either through direct free-form intake
   or with a G0-approved Story Pack candidate from **cs Entrepreneur**.
 2. `cs River Orchestrator` creates `.thinking/<date>-<slug>/` and writes `00-intake.md`.
-3. `cs River Orchestrator` asks the first group of **5 questions** (using built-in
-   persona knowledge — business, technical, QA perspectives).
-4. After the user answers, `cs River Orchestrator` records answers and invokes
-   **cs Requirements Analyst** to analyze gaps and suggest the next 5 questions.
-5. `cs River Orchestrator` asks the next 5 questions to the user.
-6. Repeat until requirements are sufficiently clear (`cs River Orchestrator` decides,
-   typically 3-6 rounds = 15-30 questions).
-7. `cs River Orchestrator` invokes **cs Discovery Synthesizer** to write `requirements-synthesis.md` from the gathered discovery evidence.
+3. `cs River Orchestrator` classifies intake against the deterministic intake decision table.
+4. If the intake appears partial or ambiguous, `cs River Orchestrator` asks exactly
+   one qualification round through the question UI to capture execution scope and
+   discovery mode, then records the outcome canonically.
+5. If no qualification round is needed, `cs River Orchestrator` records the defaulted
+   `execution scope = full-run` and `discovery mode = autonomous-defaults` canonically.
+6. If discovery mode is `manual-refinement`, `cs River Orchestrator` asks the human
+   discovery questions in batches of exactly 5, records answers in
+   `questions-round-NN.md`, and invokes **cs Requirements Analyst** to analyze gaps
+   and suggest the next 5 questions.
+7. If discovery mode is `autonomous-defaults`, `cs River Orchestrator` invokes
+   **cs Requirements Analyst** to write evidence-backed autonomous discovery batches
+   into `questions-round-NN.md` using repo patterns and framework defaults with the
+   required trust and provenance labels.
+8. `cs River Orchestrator` decides when requirements are sufficiently clear,
+   respecting the autonomous discovery bound when autonomous mode is active.
+9. `cs River Orchestrator` invokes **cs Discovery Synthesizer** to write
+   `requirements-synthesis.md` from the gathered discovery evidence, preserving
+   confirmed requirements separately from inferred defaults and unresolved questions.
 
-### Adaptive Questioning Rules
+### Discovery Execution Rules
 
-- Questions **MUST** be grouped in sets of exactly 5.
-- After each set, the next 5 **MUST** be informed by answers already received.
-- Questions **SHOULD** start broad (business value, user needs) and progressively
-  narrow (technical constraints, edge cases, quality expectations).
-- If the user is highly technical and mentions code quality, subsequent questions
-  **MUST** reflect that (architecture patterns, testing strategy, naming).
-- If the user is non-technical, questions **MUST** use plain language and focus
-  on outcomes rather than implementation.
-- Each question **MUST** include ranked options (A, B, C...) plus
+- The qualification round **MUST** happen at most once per governed scope version
+  and **MUST** capture exactly two decisions: execution scope and discovery mode.
+- In `manual-refinement`, questions **MUST** be grouped in sets of exactly 5.
+- In `manual-refinement`, after each set, the next 5 **MUST** be informed by
+  answers already received.
+- Manual questions **SHOULD** start broad (business value, user needs) and
+  progressively narrow (technical constraints, edge cases, quality expectations).
+- If the user is highly technical and mentions code quality, subsequent manual
+  questions **MUST** reflect that (architecture patterns, testing strategy, naming).
+- If the user is non-technical, manual questions **MUST** use plain language and
+  focus on outcomes rather than implementation.
+- Each manual discovery question **MUST** include ranked options (A, B, C...) plus
   **(X) I don't care — pick the best default**.
+- In `autonomous-defaults`, `cs Requirements Analyst` **MUST NOT** ask the human
+  additional discovery questions directly and **MUST** instead publish up to 5
+  inferred answers per autonomous round in `questions-round-NN.md`.
+- Every autonomous discovery batch **MUST** record trust tier, source category,
+  evidence reference(s), confidence, and `requiresHumanConfirmation` for each
+  inferred answer.
+- In `autonomous-defaults`, the combined discovery loop **MUST NOT** exceed three
+  autonomous rounds or fifteen inferred questions.
+- In `autonomous-defaults`, unresolved high-impact ambiguity **MUST** become an
+  explicit open question or assumption rather than causing an unbounded loop of
+  additional inferred rounds.
 
 ## Phase 2: Three Amigos + Adoption
 
@@ -1507,7 +1632,7 @@ leave Clean Squad orchestration for that task.
 
 ## Executable Customization Contract
 
-The workflow remains the authoritative Clean Squad contract. The executable customization layer under `.github/agents/`, `.github/prompts/`, `.github/skills/`, `.github/hooks/`, and `.github/clean-squad/customization-manifest.json` exists to enforce and validate this workflow, not to replace it.
+The workflow remains the authoritative Clean Squad contract. The executable customization layer under `.github/agents/`, `.github/prompts/`, `.github/skills/`, and `.github/hooks/` exists to enforce and validate this workflow, not to replace it.
 
 ### Frontmatter parity rules
 
@@ -1517,7 +1642,6 @@ The workflow remains the authoritative Clean Squad contract. The executable cust
 - Approved phase coordinators use explicit `agents:` allowlists.
 - Non-delegating Clean Squad agents use `agents: []`.
 - `cs River Orchestrator` uses one explicit allowlist containing all approved internal Clean Squad agents and no non-Clean-Squad agents.
-- `.github/clean-squad/customization-manifest.json` records the derived parity surface for the full roster and must validate against this workflow before maintainers treat metadata changes as complete.
 
 ### Approved nested coordinators
 
@@ -1567,3 +1691,232 @@ standard:
 - Every decision is documented with reasoning.
 - Every conclusion is verified through CoV.
 - The goal is **exceptional, error-free output** — consistently.
+
+## Workflow Diagram
+
+The following Mermaid diagram is a visual companion to this workflow specification. Where the diagram and the prose differ, the prose sections above are authoritative.
+
+```mermaid
+flowchart TD
+    Authority["Authority note:<br/>WORKFLOW.md is authoritative.<br/>This diagram is a visual companion only."]
+    Principles["Cross-cutting note:<br/>All agents apply first principles and CoV.<br/>cs Entrepreneur is the optional pre-governed public intake agent.<br/>cs River Orchestrator is the sole governed orchestrator."]
+    SharedState["Cross-cutting note:<br/>Governed agents share state through .thinking/&lt;task&gt;/.<br/>cs Entrepreneur is the explicit pre-governed exception and does not create or use this shared state.<br/>workflow-audit/ with immutable meta.json plus immutable seven-digit event files is the authoritative execution record.<br/>Activity-log and handover updates are mandatory secondary evidence."]
+    AuditOwnership["Cross-cutting note:<br/>cs River Orchestrator writes canonical audit events for Phases 1-9.<br/>cs PR Manager executes only bounded delegated Phase 9 PR-surface work and does not write canonical facts.<br/>cs Scribe publishes derived audit output only."]
+    AuditRules["Cross-cutting note:<br/>sequence is the only ordering authority.<br/>Canonical eventUtc timestamps are mandatory for timing and diagnostics only and never override sequence.<br/>Narrative logs, Mermaid, and PR prose are supporting or derived evidence only."]
+    AuditDelegation["Cross-cutting note:<br/>Only one canonical writer may be active for the workflow run at a time.<br/>Phase 9 specialist work starts only after explicit cs River Orchestrator delegation that names the bounded task slice, a fresh expected artifact output or artifact bundle, completion signal, closure condition, details.allowedActions, and details.authorizedTargets without transferring canonical ownership.<br/>Delegated pass-back is file-first, and cs River Orchestrator validates returned artifact existence and containment before canonical completion.<br/>Blocked startup or recovery never transfers canonical ownership away from cs River Orchestrator.<br/>A bounded stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active so stale publication has no integrity window.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch.<br/>The first canonical append uses sequence 1 with expected prior sequence 0."]
+    AuditEventContract["Cross-cutting note:<br/>Every canonical event uses the v4 semantic envelope and is stored as one immutable event file: sequence, eventUtc, logicalEventId, actor, phase, eventType,<br/>appendPrecondition, workItemId and rootWorkItemId when meaningful, spanId, causedBy, closes, outcome, summary, reasonCode,<br/>artifacts as evidence bindings, artifactTransitions for lifecycle meaning, iterationId, provenance, and details."]
+    StateSupportContract["Cross-cutting note:<br/>state.json is runtime support only and mirrors the workflow state contract exactly.<br/>It includes workflowContractFingerprint, currentSequence, currentOwner, openWait, and lastCompiledAtUtc.<br/>currentSequence matches the highest durable event file or 0 when only meta.json exists.<br/>currentOwner means canonical ownership only and never delegated execution ownership.<br/>It never repairs canonical facts from workflow-audit/."]
+    TrustModel["Cross-cutting note:<br/>Reviewer-facing audit output is policy-authoritative and freshness-verifiable within this repo,<br/>but not tamper-resistant or authenticated.<br/>Evidence-bearing artifacts require content digests or immutable external identities before publication."]
+    ProvenanceContract["Cross-cutting note:<br/>Every detailed audit artifact binds to HEAD SHA, ledger watermark, ledgerDigest, workflowContractFingerprint,<br/>generation timestamp, and generator identity.<br/>When merge readiness depends on CI, cs River Orchestrator verifies and attaches the current normalized required CI-result identity set before publication or directed PR-surface publication.<br/>Required CI identity changes alone do not force detailed-audit recompilation, and merge readiness never passes with stale, missing, or mismatched provenance."]
+    VerdictContract["Cross-cutting note:<br/>Verdicts are Conformant, ConformantWithDeviations, NonConformant, Blocked, or Untrusted.<br/>Missing, malformed, or policy-violating evidence never yields a conformant verdict from current policy-authoritative evidence."]
+    EvidenceContract["Cross-cutting note:<br/>Major completion claims require sufficient artifact evidence.<br/>Schema validation is required where the contract defines canonical or derived metadata structure.<br/>Supporting logs may corroborate but never repair missing canonical facts.<br/>Missing evidence maps to NonConformant, Blocked, or Untrusted based on policy violation, incomplete run, or trust failure."]
+    TimingContract["Cross-cutting note:<br/>Timing uses elapsed, active-agent, human-wait, and system-wait totals derived from canonical eventUtc values.<br/>Buckets are mutually exclusive; unmatched or overlapping waits and impossible totals invalidate trust."]
+    SummaryContract["Cross-cutting note:<br/>Reviewer Audit Summary order is verdict, action, blockers, provenance stamp, condensed Mermaid flow,<br/>four-bucket timing, fixed timing sentence, deviations, then pointer to workflow-audit.md.<br/>Keep only current blockers, the condensed topology, and at most three deviations on the PR surface; overflow detail lives in workflow-audit.md.<br/>workflow-audit.md begins with a why-this-matters opener."]
+    FailureMatrix["Cross-cutting note:<br/>Failure matrix cases and outcomes are mirrored from WORKFLOW.md:<br/>happy path, human clarification wait, and Phase 9 polling wait -> Conformant and publish or keep published only with current provenance.<br/>remediation loop, allowed skip, and declined review comment -> ConformantWithDeviations and republish only when reviewer-facing deviations change with refreshed provenance.<br/>blocked run -> Blocked and no merge-ready summary is sufficient until cleared and regenerated.<br/>stale summary, unmatched wait boundary, overlapping waits, impossible timing totals, and malformed provenance -> Untrusted and invalidate immediately until corrected and regenerated.<br/>duplicate logicalEventId, invalid chronology or delegation-basis violation, and unauthorized writer or delegated actor -> NonConformant and no trusted reviewer evidence publishes until repaired and regenerated.<br/>missing major-claim evidence -> Blocked when incomplete, otherwise Untrusted; invalidate or withhold publication until evidence exists and a fresh summary is generated."]
+    Delegation["Cross-cutting note:<br/>Before every runSubagent, verify the approved Agent Roster in WORKFLOW.md.<br/>If no approved fit exists, stop, record the blocker, and ask the user how to proceed."]
+
+    subgraph EntryPoint["Public Intake"]
+        User([User request]) -->|rough idea| Entrepreneur["cs Entrepreneur shapes one Story Pack candidate before governed intake"]
+        User -->|direct governed intake| ProductOwner["cs River Orchestrator starts governed work and remains the sole governed orchestrator"]
+        Entrepreneur --> StoryPack["Story Pack candidate"]
+        StoryPack --> G0{"G0 Intake Gate<br/>Story Pack candidate"}
+        G0 -->|APPROVED| ProductOwner
+        G0 -->|NOT APPROVED| G0NotApproved["Stop or rework outside governed workflow<br/>(see G0 gate outcomes in WORKFLOW.md)"]
+    end
+
+    subgraph Phase1["Phase 1: Intake & Discovery"]
+        P1Setup["Create .thinking/&lt;date&gt;-&lt;task-slug&gt;/, state.json, workflow-audit/ with meta.json and 0000001.json, activity-log.md, and 00-intake.md"]
+        P1Classify["Classify intake against the governed intake decision table"]
+        P1Ambiguous{"Partial or ambiguous?"}
+        P1Qualify["Ask one qualification round for execution scope + discovery mode"]
+        P1Default["Default full-run + autonomous-defaults"]
+        P1Record["Record qualification or default outcome canonically"]
+        P1Mode{"Discovery mode"}
+        P1Manual["Ask 5 human discovery questions and record questions-round-NN.md"]
+        P1ManualClear{"Requirements sufficiently clear?"}
+        P1Analyze["Invoke cs Requirements Analyst for gap analysis and the next 5 questions"]
+        P1Auto["Invoke cs Requirements Analyst for bounded autonomous discovery defaults"]
+        P1AutoPublish["Write questions-round-NN.md with trust tier, provenance, confidence, and requiresHumanConfirmation"]
+        P1AutoClear{"Requirements sufficiently clear or autonomous bound reached?"}
+        P1Synthesis["Invoke cs Discovery Synthesizer to write 01-discovery/requirements-synthesis.md"]
+
+        P1Setup --> P1Classify --> P1Ambiguous
+        P1Ambiguous -- No --> P1Default --> P1Record --> P1Mode
+        P1Ambiguous -- Yes --> P1Qualify --> P1Record --> P1Mode
+        P1Mode -- manual-refinement --> P1Manual --> P1ManualClear
+        P1ManualClear -- No --> P1Analyze --> P1Manual
+        P1ManualClear -- Yes --> P1Synthesis
+        P1Mode -- autonomous-defaults --> P1Auto --> P1AutoPublish --> P1AutoClear
+        P1AutoClear -- No --> P1Auto
+        P1AutoClear -- Yes --> P1Synthesis
+    end
+
+    subgraph Phase2["Phase 2: Three Amigos + Adoption"]
+        P2Invoke["Invoke cs Business Analyst, cs Tech Lead, cs QA Analyst, and cs Developer Evangelist one at a time"]
+        P2Outputs["Each sub-agent writes its perspective document"]
+        P2Synthesis["Invoke cs Three Amigos Synthesizer to write 02-three-amigos/synthesis.md"]
+        P2Gaps{"Critical gaps identified?"}
+        P2Questions["Ask the user additional questions before proceeding"]
+
+        P2Invoke --> P2Outputs --> P2Synthesis --> P2Gaps
+        P2Gaps -- Yes --> P2Questions
+    end
+
+    subgraph Phase3["Phase 3: Architecture & Design"]
+        P3Architect["Invoke cs Solution Architect"]
+        P3Design["Produce 03-architecture/solution-design.md"]
+        P3C4["Invoke cs C4 Diagrammer"]
+        P3Diagrams["Produce Context and Container diagrams, plus Component or omission rationale"]
+        P3Adr["Invoke cs ADR Keeper"]
+
+        P3Architect --> P3Design --> P3C4 --> P3Diagrams --> P3Adr
+    end
+
+    subgraph Phase4["Phase 4: Planning & Review Cycles"]
+        P4Draft["Combine outputs into 04-planning/draft-plan-v1.md"]
+        P4Review["Invoke approved planning reviewers from the Agent Roster"]
+        P4Feedback["Each reviewer reads the plan and produces feedback"]
+        P4Synth["Invoke cs Plan Synthesizer to categorize feedback"]
+        P4Revise["Revise the plan"]
+        P4More{"More review cycles needed?"}
+        P4Final["Write 04-planning/final-plan.md"]
+
+        P4Draft --> P4Review --> P4Feedback --> P4Synth --> P4Revise --> P4More
+        P4More -- Yes --> P4Review
+        P4More -- No --> P4Final
+    end
+
+    subgraph Phase5["Phase 5: Implementation"]
+        P5Branch["Create a feature branch from main"]
+        P5Lead["Invoke cs Lead Developer with the next slice of work"]
+        P5Code["cs Lead Developer writes a small, focused increment"]
+        P5Tests["Invoke cs Test Engineer to write or validate tests"]
+        P5Build["Run the build and verify zero warnings"]
+        P5RunTests["Run tests and verify they pass"]
+        P5Guard["Invoke cs Commit Guardian"]
+        P5Issues{"cs Commit Guardian issues found?"}
+        P5Remediate["cs Lead Developer remediates cs Commit Guardian findings in the current increment"]
+        P5Commit["Commit with a scoped message and record increment artifacts"]
+        P5More{"More plan items to implement?"}
+        P5Full["After all increments, run the full build, full tests, and mutation tests if Mississippi"]
+
+        P5Branch --> P5Lead --> P5Code --> P5Tests --> P5Build --> P5RunTests --> P5Guard --> P5Issues
+        P5Issues -- Yes --> P5Remediate --> P5Tests
+        P5Issues -- No --> P5Commit --> P5More
+        P5More -- Yes --> P5Lead
+        P5More -- No --> P5Full
+    end
+
+    subgraph Phase6["Phase 6: Comprehensive Code Review"]
+        P6Diff["Use git diff main...HEAD to identify changed files"]
+        P6Review["Invoke cs Reviewer Pedantic, cs Reviewer Strategic, cs Reviewer Security, cs Reviewer DX, cs Reviewer Performance, and cs Developer Evangelist in sequence"]
+        P6Experts["Invoke relevant approved domain experts from the Agent Roster"]
+        P6Synthesis["Invoke cs Code Review Synthesizer to deduplicate and prioritize all review output"]
+        P6Findings{"Review findings remain?"}
+        P6Remediate["Fix each finding or document why it was declined"]
+
+        P6Diff --> P6Review --> P6Experts --> P6Synthesis --> P6Findings
+        P6Findings -- Yes --> P6Remediate --> P6Review
+    end
+
+    subgraph Phase7["Phase 7: QA Validation"]
+        P7Lead["Invoke cs QA Lead to review test strategy and coverage"]
+        P7Exploratory["Invoke cs QA Exploratory"]
+        P7Mutation["Invoke cs Test Engineer for mutation testing validation"]
+        P7Synthesis["Invoke cs QA Synthesizer to write 07-qa/qa-readiness.md"]
+        P7Gaps{"QA gaps identified?"}
+        P7Remediate["Feed QA gaps back for remediation of the current increment"]
+
+        P7Lead --> P7Exploratory --> P7Mutation --> P7Synthesis --> P7Gaps
+        P7Gaps -- Yes --> P7Remediate
+    end
+
+    subgraph Phase8["Phase 8: Documentation"]
+        P8Scope["Invoke cs Documentation Scope Synthesizer to assess documentation scope from the branch diff and .thinking artifacts"]
+        P8UserFacing{"User-facing changes exist?"}
+        P8Skip["Record the documentation skip reason in scope-assessment.md"]
+        P8Writer["Invoke cs Technical Writer"]
+        P8Drafts["Create the evidence map, classify page types, draft pages, and publish verified pages"]
+        P8Review["Run the documentation review cycle with cs Doc Reviewer and cs Developer Evangelist"]
+        P8MustFix{"cs Doc Reviewer Must Fix findings remain?"}
+        P8Fixes["Re-invoke cs Technical Writer for each Must Fix or Should Fix finding and record remediation"]
+        P8Validate["Validate the documentation quality gates"]
+
+        P8Scope --> P8UserFacing
+        P8UserFacing -- No --> P8Skip
+        P8UserFacing -- Yes --> P8Writer --> P8Drafts --> P8Review --> P8MustFix
+        P8MustFix -- Yes --> P8Fixes --> P8Review
+        P8MustFix -- No --> P8Validate
+    end
+
+    subgraph Phase9["Phase 9: PR Creation & Merge Readiness"]
+        P9Manager["cs River Orchestrator remains the canonical Phase 9 owner and records every reviewer-significant Phase 9 fact"]
+        P9Startup["Record a bounded delegation to cs PR Manager that names the bounded task slice, a fresh details.expectedOutputPath, completion signal, closure condition, details.allowedActions, and details.authorizedTargets; blocked startup or recovery never transfers ownership"]
+        P9Scribe["cs River Orchestrator invokes cs Scribe when HEAD, ledger, workflow contract, or reviewer-meaningful canonical facts require a fresh stable-snapshot audit"]
+        P9Execute["cs PR Manager executes only the delegated PR-surface work and returns artifacts and evidence"]
+        P9Stale["At first observation, cs River Orchestrator records invalidation canonically and the continuously delegated stale-marker capability marks the PR surface stale immediately; do not let the 300-second wait delay invalidation"]
+        P9Verify["cs River Orchestrator verifies workflow-audit provenance plus the current required CI identity set before republication or merge-readiness evaluation"]
+        P9Publish["cs River Orchestrator decides publication or republication; cs PR Manager applies the PR-surface mutation only when delegated"]
+        P9Wait["After pushing to an open PR, wait 300 seconds unless stale invalidation work preempts the wait"]
+        P9Poll["Poll for unresolved review comments"]
+        P9Comments{"New unaddressed comments?"}
+        P9Scope{"Comment is in scope?"}
+        P9Address["Fix, commit, push, reply with evidence, and resolve the thread"]
+        P9OutOfScope["Reply with reasoned explanation and leave the thread open for the reviewer"]
+        P9Record["cs River Orchestrator records the resulting canonical fact, closes or reissues the delegation, and decides whether publication or merge readiness changed"]
+        P9Cap{"Iteration cap reached?"}
+        P9Ready["cs River Orchestrator invokes cs Merge Readiness Evaluator and evaluates current evidence canonically"]
+        G3{"G3 Merge Gate<br/>Merge-readiness package + rolled-up review, QA, and documentation conclusions"}
+        P9Stop(["Stop and report remaining unresolved threads for human review"])
+        P9Done([Done])
+
+        P9Manager --> P9Startup --> P9Scribe --> P9Execute --> P9Stale --> P9Verify --> P9Publish --> P9Wait --> P9Poll --> P9Comments
+        P9Comments -- Yes --> P9Scope
+        P9Scope -- Yes --> P9Address --> P9Record --> P9Cap
+        P9Scope -- No --> P9OutOfScope --> P9Record --> P9Cap
+        P9Cap -- No --> P9Wait
+        P9Cap -- Yes --> P9Stop
+            P9Comments -- No --> P9Ready --> G3
+            G3 --|APPROVED| P9Done
+        G3 --|CHANGES_REQUESTED| ProductOwner
+        G3 --|DEFERRED or CANCELLED| Stop3(["Stop or hold after late-stage review"])
+    end
+
+    G1{"G1 Scope Gate<br/>requirements-synthesis.md + synthesis.md"}
+    G2{"G2 Plan Gate<br/>solution-design.md + binding C4/ADR artifacts + final-plan.md"}
+
+    P2Gaps -- No --> G1
+    P2Questions --> G1
+    G1 --|APPROVED| P3Architect
+    G1 --|CHANGES_REQUESTED| ProductOwner
+    G1 --|DEFERRED or CANCELLED| Stop1(["Stop or hold after scope review"])
+    P1Synthesis --> P2Invoke
+    P3Adr --> P4Draft
+    P4Final --> G2
+    G2 --|APPROVED| P5Branch
+    G2 --|CHANGES_REQUESTED| ProductOwner
+    G2 --|DEFERRED or CANCELLED| Stop2(["Stop or hold before implementation"])
+    P5Full --> P6Diff
+    P6Findings -- No --> P7Lead
+    P7Remediate --> P5Tests
+    P7Gaps -- No --> P8Scope
+    P8Skip --> P9Manager
+    P8Validate --> P9Manager
+
+    Authority -.-> ProductOwner
+    Principles -.-> ProductOwner
+    SharedState -.-> P1Setup
+    AuditOwnership -.-> ProductOwner
+    AuditDelegation -.-> P9Manager
+    AuditEventContract -.-> P1Setup
+    StateSupportContract -.-> P1Setup
+    TrustModel -.-> P9Publish
+    ProvenanceContract -.-> P9Scribe
+    VerdictContract -.-> P9Ready
+    EvidenceContract -.-> P9Scribe
+    TimingContract -.-> P9Wait
+    SummaryContract -.-> P9Scribe
+    FailureMatrix -.-> P9Manager
+    AuditRules -.-> P9Manager
+    Delegation -.-> ProductOwner
+```

@@ -6,7 +6,7 @@ agent: "agent"
 tools: ["clean-squad-reader", "clean-squad-review", "read", "search", "execute"]
 ---
 
-Use [TROUBLESHOOTING](../clean-squad/TROUBLESHOOTING.md), [PLATFORM-FEATURE-COVERAGE](../clean-squad/PLATFORM-FEATURE-COVERAGE.md), and [customization manifest](../clean-squad/customization-manifest.json) to diagnose the reported symptom.
+Use [WORKFLOW](../clean-squad/WORKFLOW.md) and the agent frontmatter in `.github/agents/cs-*.agent.md` to diagnose the reported symptom.
 
 Produce:
 
