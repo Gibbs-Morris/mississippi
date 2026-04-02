@@ -1505,6 +1505,55 @@ leave Clean Squad orchestration for that task.
 | cs PR Manager | PR lifecycle, thread management, merge readiness |
 | cs Merge Readiness Evaluator | Produces merge-readiness recommendation artifacts from current review, QA, docs, and PR evidence |
 
+## Executable Customization Contract
+
+The workflow remains the authoritative Clean Squad contract. The executable customization layer under `.github/agents/`, `.github/prompts/`, `.github/skills/`, `.github/hooks/`, and `.github/clean-squad/customization-manifest.json` exists to enforce and validate this workflow, not to replace it.
+
+### Frontmatter parity rules
+
+- `cs Entrepreneur` and `cs River Orchestrator` are the only user-invocable Clean Squad agents.
+- `cs Entrepreneur` exposes the only public handoff, and that handoff targets `cs River Orchestrator` only, with explicit `send: false`.
+- All internal Clean Squad agents use `user-invocable: false` and `disable-model-invocation: true`.
+- Approved phase coordinators use explicit `agents:` allowlists.
+- Non-delegating Clean Squad agents use `agents: []`.
+- `cs River Orchestrator` uses one explicit allowlist containing all approved internal Clean Squad agents and no non-Clean-Squad agents.
+- `.github/clean-squad/customization-manifest.json` records the derived parity surface for the full roster and must validate against this workflow before maintainers treat metadata changes as complete.
+
+### Approved nested coordinators
+
+Nested subagent waves are approved only for these bounded coordinators:
+
+- `cs Three Amigos Synthesizer`
+- `cs Code Review Synthesizer`
+- `cs QA Synthesizer`
+- `cs Documentation Scope Synthesizer`
+
+All other Clean Squad agents remain flat delegators or non-delegators unless this workflow is explicitly changed first.
+
+### Deterministic batch contract
+
+Before River or an approved nested coordinator enables a parallel or nested wave, all of the following must hold:
+
+1. One immutable batch or iteration ID exists.
+2. One immutable input manifest records the delegated artifact set.
+3. Every worker gets a unique output path or bundle path.
+4. Every worker returns the same batch ID in its status envelope.
+5. Sibling workers do not consume each other's in-flight outputs.
+6. The expected worker roster is recorded before execution starts.
+7. Every expected worker reaches one explicit terminal state: `succeeded`, `failed`, `cancelled`, or `timed out`.
+8. Fan-in ordering follows declared roster order, not completion order.
+9. Downstream work consumes one explicit synthesis or join artifact.
+10. Partial synthesis is allowed only as an explicit degraded mode recorded by the active coordinator.
+11. The active coordinator records the concurrency cap for the phase.
+12. Nested coordinators record `parentBatchId`, `parentCoordinator`, and current depth.
+
+### Skills, prompts, tool sets, and hooks
+
+- Skills are reusable procedure packs only; governance authority remains here and in the agent contracts.
+- Prompt files are bounded operator launchers; they do not create new public agents or bypass workflow gates.
+- Tool sets are an ergonomic layer only. The current VS Code platform exposes them through profile-level `.toolsets.jsonc` files, so the repo ships a template and guidance rather than treating tool sets as a workspace authority surface.
+- Hooks are a cautious preview pilot only. They must remain non-destructive by default and the workflow must remain operable when hooks are disabled, unavailable, or blocked by policy.
+
 ## Quality Bar
 
 This system builds mission-critical applications to the highest enterprise

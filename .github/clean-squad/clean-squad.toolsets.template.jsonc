@@ -1,0 +1,31 @@
+// Copy this file into your VS Code prompts home as <name>.toolsets.jsonc
+// if you want the documented Clean Squad tool-set names in the tools picker.
+{
+  "clean-squad-reader": {
+    "tools": [
+      "read",
+      "search"
+    ],
+    "description": "Read-only Clean Squad context gathering",
+    "icon": "book"
+  },
+  "clean-squad-review": {
+    "tools": [
+      "clean-squad-reader",
+      "web"
+    ],
+    "description": "Review-focused Clean Squad tool grouping",
+    "icon": "search"
+  },
+  "clean-squad-delivery": {
+    "tools": [
+      "read",
+      "search",
+      "edit",
+      "execute",
+      "agent"
+    ],
+    "description": "Delivery and validation tooling for Clean Squad maintainers",
+    "icon": "tools"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "pwsh -NoLogo -NoProfile -File ./eng/clean-squad-customization-hook.ps1",
+        "timeout": 10
+      }
+    ]
+  }
+}

@@ -1,0 +1,955 @@
+{
+  "manifestVersion": 1,
+  "authorityModel": {
+    "workflowPath": ".github/clean-squad/WORKFLOW.md",
+    "instructionPath": ".github/instructions/clean-squad.instructions.md",
+    "manifestRole": "subordinate-parity-enforcement"
+  },
+  "workflowContractSha256": "5471f6e07190ff40cb185ae72734c8fcfa17026d2aae46eef5607f371641084e",
+  "agents": [
+    {
+      "id": "cs-entrepreneur",
+      "file": ".github/agents/cs-entrepreneur.agent.md",
+      "frontmatterName": "cs Entrepreneur",
+      "workflowRosterLabel": "cs Entrepreneur",
+      "public": true,
+      "delegationKind": "public",
+      "roleCluster": "Public Intake",
+      "phaseEligibility": [
+        "pre-governed"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [
+        "cs-river-orchestrator"
+      ],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-discovery"
+      ],
+      "sourceSha256": "6cfa6a1565e1c31bc9ead0a6f66f583e8851ecf4b3d8468fc24fc248e4053507"
+    },
+    {
+      "id": "cs-river-orchestrator",
+      "file": ".github/agents/cs-river-orchestrator.agent.md",
+      "frontmatterName": "cs River Orchestrator",
+      "workflowRosterLabel": "cs River Orchestrator",
+      "public": true,
+      "delegationKind": "root coordinator",
+      "roleCluster": "Public Intake",
+      "phaseEligibility": [
+        "1-intake-discovery",
+        "2-three-amigos",
+        "3-architecture",
+        "4-planning",
+        "5-implementation",
+        "6-code-review",
+        "7-qa",
+        "8-documentation",
+        "9-pr-merge"
+      ],
+      "nestedSubagentPolicy": "allowlisted",
+      "toolStrategy": "explicit-core",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [
+        "cs Requirements Analyst",
+        "cs Discovery Synthesizer",
+        "cs Business Analyst",
+        "cs QA Analyst",
+        "cs Tech Lead",
+        "cs Solution Architect",
+        "cs C4 Diagrammer",
+        "cs ADR Keeper",
+        "cs Plan Synthesizer",
+        "cs Three Amigos Synthesizer",
+        "cs Code Review Synthesizer",
+        "cs QA Synthesizer",
+        "cs Documentation Scope Synthesizer",
+        "cs Lead Developer",
+        "cs Test Engineer",
+        "cs Commit Guardian",
+        "cs Reviewer Pedantic",
+        "cs Reviewer Strategic",
+        "cs Reviewer Security",
+        "cs Reviewer DX",
+        "cs Reviewer Performance",
+        "cs Expert CSharp",
+        "cs Expert Python",
+        "cs Expert Java",
+        "cs Expert Serialization",
+        "cs Expert Cloud",
+        "cs Expert Distributed",
+        "cs Expert UX",
+        "cs Developer Evangelist",
+        "cs QA Lead",
+        "cs QA Exploratory",
+        "cs DevOps Engineer",
+        "cs Technical Writer",
+        "cs Doc Reviewer",
+        "cs Scribe",
+        "cs PR Manager",
+        "cs Merge Readiness Evaluator"
+      ],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-subagent-orchestration",
+        "clean-squad-discovery",
+        "clean-squad-synthesis"
+      ],
+      "sourceSha256": "b0c84303d9f323b6e854598e19d8f0adb75abf51056c804d7cd01f8ca774ec37"
+    },
+    {
+      "id": "cs-requirements-analyst",
+      "file": ".github/agents/cs-requirements-analyst.agent.md",
+      "frontmatterName": "cs Requirements Analyst",
+      "workflowRosterLabel": "cs Requirements Analyst",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Discovery & Requirements",
+      "phaseEligibility": [
+        "1-intake-discovery"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-discovery"
+      ],
+      "sourceSha256": "5737b8422383d76881436e50121179195003ffbd05ca48f19bcc0ec917d44b97"
+    },
+    {
+      "id": "cs-discovery-synthesizer",
+      "file": ".github/agents/cs-discovery-synthesizer.agent.md",
+      "frontmatterName": "cs Discovery Synthesizer",
+      "workflowRosterLabel": "cs Discovery Synthesizer",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Discovery & Requirements",
+      "phaseEligibility": [
+        "1-intake-discovery"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-discovery",
+        "clean-squad-synthesis"
+      ],
+      "sourceSha256": "8611a4d4adebecdac76380f82a72b4f2fb21fc6e45ffdd238ad52bed3c0eb0b9"
+    },
+    {
+      "id": "cs-business-analyst",
+      "file": ".github/agents/cs-business-analyst.agent.md",
+      "frontmatterName": "cs Business Analyst",
+      "workflowRosterLabel": "cs Business Analyst",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Discovery & Requirements",
+      "phaseEligibility": [
+        "2-three-amigos"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-discovery"
+      ],
+      "sourceSha256": "824ee7d9c5d626e59e311f34d8872a31629025c6bfc6bbc4592a8d1a71889b15"
+    },
+    {
+      "id": "cs-qa-analyst",
+      "file": ".github/agents/cs-qa-analyst.agent.md",
+      "frontmatterName": "cs QA Analyst",
+      "workflowRosterLabel": "cs QA Analyst",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Discovery & Requirements",
+      "phaseEligibility": [
+        "2-three-amigos"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-discovery"
+      ],
+      "sourceSha256": "1a6c0560c77d24e59a7c23eb7c98a0d8ec8eb9bd85eb5f8e546859920017c17e"
+    },
+    {
+      "id": "cs-tech-lead",
+      "file": ".github/agents/cs-tech-lead.agent.md",
+      "frontmatterName": "cs Tech Lead",
+      "workflowRosterLabel": "cs Tech Lead",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Architecture",
+      "phaseEligibility": [
+        "2-three-amigos",
+        "4-planning"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-discovery"
+      ],
+      "sourceSha256": "0746c9a0fe34593c919dc8865f65a53d9184827dca9dcdef06b59392cb086209"
+    },
+    {
+      "id": "cs-solution-architect",
+      "file": ".github/agents/cs-solution-architect.agent.md",
+      "frontmatterName": "cs Solution Architect",
+      "workflowRosterLabel": "cs Solution Architect",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Architecture",
+      "phaseEligibility": [
+        "3-architecture"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "c307b9c0da2c0487731677f1535cfe507cc25f5c873d097809b829072d771cf6"
+    },
+    {
+      "id": "cs-c4-diagrammer",
+      "file": ".github/agents/cs-c4-diagrammer.agent.md",
+      "frontmatterName": "cs C4 Diagrammer",
+      "workflowRosterLabel": "cs C4 Diagrammer",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Architecture",
+      "phaseEligibility": [
+        "3-architecture"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-documentation-governance"
+      ],
+      "sourceSha256": "edd22ca1a1d3c0ef2b8abc8bf98e76670daf573f7139cc931edb2bbf186354c7"
+    },
+    {
+      "id": "cs-adr-keeper",
+      "file": ".github/agents/cs-adr-keeper.agent.md",
+      "frontmatterName": "cs ADR Keeper",
+      "workflowRosterLabel": "cs ADR Keeper",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Architecture",
+      "phaseEligibility": [
+        "3-architecture",
+        "8-documentation"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-documentation-governance"
+      ],
+      "sourceSha256": "f33cedcaa33274f4f8ca256d964c3281581da1009391b4789fabe592b275e8c6"
+    },
+    {
+      "id": "cs-plan-synthesizer",
+      "file": ".github/agents/cs-plan-synthesizer.agent.md",
+      "frontmatterName": "cs Plan Synthesizer",
+      "workflowRosterLabel": "cs Plan Synthesizer",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Planning",
+      "phaseEligibility": [
+        "4-planning"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-synthesis"
+      ],
+      "sourceSha256": "7ae5023d5fc9391401bc034b42c919a9188f3e4e7d535c2a492c6d6d4a34e030"
+    },
+    {
+      "id": "cs-three-amigos-synthesizer",
+      "file": ".github/agents/cs-three-amigos-synthesizer.agent.md",
+      "frontmatterName": "cs Three Amigos Synthesizer",
+      "workflowRosterLabel": "cs Three Amigos Synthesizer",
+      "public": false,
+      "delegationKind": "phase coordinator",
+      "roleCluster": "Workflow Synthesis",
+      "phaseEligibility": [
+        "2-three-amigos"
+      ],
+      "nestedSubagentPolicy": "allowlisted",
+      "toolStrategy": "explicit-core",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [
+        "cs Business Analyst",
+        "cs Tech Lead",
+        "cs QA Analyst",
+        "cs Developer Evangelist"
+      ],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-subagent-orchestration",
+        "clean-squad-synthesis"
+      ],
+      "sourceSha256": "b945a56a94e71a476f92b36cdac028a07171ca0e750da3009eb7949f2d28872c"
+    },
+    {
+      "id": "cs-code-review-synthesizer",
+      "file": ".github/agents/cs-code-review-synthesizer.agent.md",
+      "frontmatterName": "cs Code Review Synthesizer",
+      "workflowRosterLabel": "cs Code Review Synthesizer",
+      "public": false,
+      "delegationKind": "phase coordinator",
+      "roleCluster": "Workflow Synthesis",
+      "phaseEligibility": [
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "allowlisted",
+      "toolStrategy": "explicit-core",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [
+        "cs Reviewer Pedantic",
+        "cs Reviewer Strategic",
+        "cs Reviewer Security",
+        "cs Reviewer DX",
+        "cs Reviewer Performance",
+        "cs Expert CSharp",
+        "cs Expert Python",
+        "cs Expert Java",
+        "cs Expert Serialization",
+        "cs Expert Cloud",
+        "cs Expert Distributed",
+        "cs Expert UX",
+        "cs Developer Evangelist",
+        "cs DevOps Engineer"
+      ],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-subagent-orchestration",
+        "clean-squad-synthesis"
+      ],
+      "sourceSha256": "c99dba15bc04a3f76a309f9ab5d424ac442ed9871af7f1d65524cd8d2945deb5"
+    },
+    {
+      "id": "cs-qa-synthesizer",
+      "file": ".github/agents/cs-qa-synthesizer.agent.md",
+      "frontmatterName": "cs QA Synthesizer",
+      "workflowRosterLabel": "cs QA Synthesizer",
+      "public": false,
+      "delegationKind": "phase coordinator",
+      "roleCluster": "Workflow Synthesis",
+      "phaseEligibility": [
+        "7-qa"
+      ],
+      "nestedSubagentPolicy": "allowlisted",
+      "toolStrategy": "explicit-core",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [
+        "cs QA Lead",
+        "cs QA Exploratory",
+        "cs Test Engineer"
+      ],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-subagent-orchestration",
+        "clean-squad-synthesis"
+      ],
+      "sourceSha256": "4dec3bedae3a9c3b725d22ad196e080948c5eea1ceef7c80be460c824e4f9c4e"
+    },
+    {
+      "id": "cs-documentation-scope-synthesizer",
+      "file": ".github/agents/cs-documentation-scope-synthesizer.agent.md",
+      "frontmatterName": "cs Documentation Scope Synthesizer",
+      "workflowRosterLabel": "cs Documentation Scope Synthesizer",
+      "public": false,
+      "delegationKind": "phase coordinator",
+      "roleCluster": "Workflow Synthesis",
+      "phaseEligibility": [
+        "8-documentation"
+      ],
+      "nestedSubagentPolicy": "allowlisted",
+      "toolStrategy": "explicit-core",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [
+        "cs Technical Writer",
+        "cs Doc Reviewer"
+      ],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-subagent-orchestration",
+        "clean-squad-documentation-governance"
+      ],
+      "sourceSha256": "f0d44ab09d2672b64f20b44d8d205e4255de0fdd26c45afc9616f99b0a8d4750"
+    },
+    {
+      "id": "cs-lead-developer",
+      "file": ".github/agents/cs-lead-developer.agent.md",
+      "frontmatterName": "cs Lead Developer",
+      "workflowRosterLabel": "cs Lead Developer",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Implementation",
+      "phaseEligibility": [
+        "5-implementation"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-delivery-quality"
+      ],
+      "sourceSha256": "d44e6926c1b85fffc6a434b24b4acbad5ce62234ef30fcad01289d9dd8f01a4c"
+    },
+    {
+      "id": "cs-test-engineer",
+      "file": ".github/agents/cs-test-engineer.agent.md",
+      "frontmatterName": "cs Test Engineer",
+      "workflowRosterLabel": "cs Test Engineer",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Implementation",
+      "phaseEligibility": [
+        "5-implementation",
+        "7-qa"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-delivery-quality"
+      ],
+      "sourceSha256": "0589097a69f649d0b01593859978709090cced1a2b4630fc18b507810e1015fb"
+    },
+    {
+      "id": "cs-commit-guardian",
+      "file": ".github/agents/cs-commit-guardian.agent.md",
+      "frontmatterName": "cs Commit Guardian",
+      "workflowRosterLabel": "cs Commit Guardian",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Implementation",
+      "phaseEligibility": [
+        "5-implementation"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-delivery-quality"
+      ],
+      "sourceSha256": "8fbe65eaa0492825def771c822f07e55eef88876d7f6d058216dff7e32aba0ac"
+    },
+    {
+      "id": "cs-reviewer-pedantic",
+      "file": ".github/agents/cs-reviewer-pedantic.agent.md",
+      "frontmatterName": "cs Reviewer Pedantic",
+      "workflowRosterLabel": "cs Reviewer Pedantic",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Code Review",
+      "phaseEligibility": [
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "a22a9001cc254ae53bf1af93f1ab231c9abf0a6407e8cc0bb60e6c93f5fb38c3"
+    },
+    {
+      "id": "cs-reviewer-strategic",
+      "file": ".github/agents/cs-reviewer-strategic.agent.md",
+      "frontmatterName": "cs Reviewer Strategic",
+      "workflowRosterLabel": "cs Reviewer Strategic",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Code Review",
+      "phaseEligibility": [
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "d5c30dbcab6457825fe78cd1cd3fbe450349c16b5824c71424775db9c227ba39"
+    },
+    {
+      "id": "cs-reviewer-security",
+      "file": ".github/agents/cs-reviewer-security.agent.md",
+      "frontmatterName": "cs Reviewer Security",
+      "workflowRosterLabel": "cs Reviewer Security",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Code Review",
+      "phaseEligibility": [
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "73c50f8f6eb07d9d52006196ab59e1e96d9604d43ad101b01f62abd736198f88"
+    },
+    {
+      "id": "cs-reviewer-dx",
+      "file": ".github/agents/cs-reviewer-dx.agent.md",
+      "frontmatterName": "cs Reviewer DX",
+      "workflowRosterLabel": "cs Reviewer DX",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Code Review",
+      "phaseEligibility": [
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "13238b548f718cd9476e7f7a953840b192a2ba4e01c5f1d14d09f777615729d9"
+    },
+    {
+      "id": "cs-reviewer-performance",
+      "file": ".github/agents/cs-reviewer-performance.agent.md",
+      "frontmatterName": "cs Reviewer Performance",
+      "workflowRosterLabel": "cs Reviewer Performance",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Code Review",
+      "phaseEligibility": [
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "397adc333e63362c4d0167fc993b241af12c0b6430b7441933c179f9e1033900"
+    },
+    {
+      "id": "cs-expert-csharp",
+      "file": ".github/agents/cs-expert-csharp.agent.md",
+      "frontmatterName": "cs Expert CSharp",
+      "workflowRosterLabel": "cs Expert CSharp",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Domain Experts",
+      "phaseEligibility": [
+        "3-architecture",
+        "4-planning",
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "a7e8d544d9765a25056260154afaab0b075d073e45dd64c50146d19e60a1389d"
+    },
+    {
+      "id": "cs-expert-python",
+      "file": ".github/agents/cs-expert-python.agent.md",
+      "frontmatterName": "cs Expert Python",
+      "workflowRosterLabel": "cs Expert Python",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Domain Experts",
+      "phaseEligibility": [
+        "3-architecture",
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "2c599d27afbd59a8c7a42cfeb34de7853755425c09049a21dcbbb7433ee51bde"
+    },
+    {
+      "id": "cs-expert-java",
+      "file": ".github/agents/cs-expert-java.agent.md",
+      "frontmatterName": "cs Expert Java",
+      "workflowRosterLabel": "cs Expert Java",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Domain Experts",
+      "phaseEligibility": [
+        "3-architecture",
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "71ccb78a586cc518c9c7c8792ed255e3c599d5cf532752c5b9dfe93f13a48d26"
+    },
+    {
+      "id": "cs-expert-serialization",
+      "file": ".github/agents/cs-expert-serialization.agent.md",
+      "frontmatterName": "cs Expert Serialization",
+      "workflowRosterLabel": "cs Expert Serialization",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Domain Experts",
+      "phaseEligibility": [
+        "3-architecture",
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "f8ad1a547f8fb0b3b13a5f7164b70129045bf83e6fc4b92a90234c59c318ab94"
+    },
+    {
+      "id": "cs-expert-cloud",
+      "file": ".github/agents/cs-expert-cloud.agent.md",
+      "frontmatterName": "cs Expert Cloud",
+      "workflowRosterLabel": "cs Expert Cloud",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Domain Experts",
+      "phaseEligibility": [
+        "3-architecture",
+        "4-planning",
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "1bd6ed3cdb2fc57a41596c65852c96c1402b5bc6f537d0ae9e00c8d1e8c64cf7"
+    },
+    {
+      "id": "cs-expert-distributed",
+      "file": ".github/agents/cs-expert-distributed.agent.md",
+      "frontmatterName": "cs Expert Distributed",
+      "workflowRosterLabel": "cs Expert Distributed",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Domain Experts",
+      "phaseEligibility": [
+        "3-architecture",
+        "4-planning",
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "d5e7316adb7e0b5c78fcd35f8f23d144f664b33dd4e14d30afff9b3266454af4"
+    },
+    {
+      "id": "cs-expert-ux",
+      "file": ".github/agents/cs-expert-ux.agent.md",
+      "frontmatterName": "cs Expert UX",
+      "workflowRosterLabel": "cs Expert UX",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Domain Experts",
+      "phaseEligibility": [
+        "3-architecture",
+        "6-code-review"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "3cd391983138380f188b4cb57b74fdc3be2cd5342d36dc8a9ae03928ba0e7d23"
+    },
+    {
+      "id": "cs-developer-evangelist",
+      "file": ".github/agents/cs-developer-evangelist.agent.md",
+      "frontmatterName": "cs Developer Evangelist",
+      "workflowRosterLabel": "cs Developer Evangelist",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Adoption",
+      "phaseEligibility": [
+        "2-three-amigos",
+        "4-planning",
+        "6-code-review",
+        "8-documentation"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-discovery"
+      ],
+      "sourceSha256": "fcb6d1968b67ca05052aa4b17a86e951abdcacf60153b8f95ad5393b766fd274"
+    },
+    {
+      "id": "cs-qa-lead",
+      "file": ".github/agents/cs-qa-lead.agent.md",
+      "frontmatterName": "cs QA Lead",
+      "workflowRosterLabel": "cs QA Lead",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "QA",
+      "phaseEligibility": [
+        "4-planning",
+        "7-qa"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-delivery-quality"
+      ],
+      "sourceSha256": "17a276f8095e0180c70dca664d23f0d6c8b0c842575b74e030bfb04ac2fa5f1e"
+    },
+    {
+      "id": "cs-qa-exploratory",
+      "file": ".github/agents/cs-qa-exploratory.agent.md",
+      "frontmatterName": "cs QA Exploratory",
+      "workflowRosterLabel": "cs QA Exploratory",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "QA",
+      "phaseEligibility": [
+        "7-qa"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-delivery-quality"
+      ],
+      "sourceSha256": "6b2adf6c9265f8cc110e72fce3c82e15c304d47a33e4a3d48d49fe7995ea3550"
+    },
+    {
+      "id": "cs-devops-engineer",
+      "file": ".github/agents/cs-devops-engineer.agent.md",
+      "frontmatterName": "cs DevOps Engineer",
+      "workflowRosterLabel": "cs DevOps Engineer",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "DevOps",
+      "phaseEligibility": [
+        "5-implementation",
+        "7-qa",
+        "9-pr-merge"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-delivery-quality"
+      ],
+      "sourceSha256": "951e9dcf4f22475cbf89b837b0069b6629bdc5f742ece4aee38f81cfc3d6c9fa"
+    },
+    {
+      "id": "cs-technical-writer",
+      "file": ".github/agents/cs-technical-writer.agent.md",
+      "frontmatterName": "cs Technical Writer",
+      "workflowRosterLabel": "cs Technical Writer",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Documentation",
+      "phaseEligibility": [
+        "8-documentation"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-documentation-governance"
+      ],
+      "sourceSha256": "8f3c1f3f544758fd064cb53e9b6723874bb0ea2b775596631a747c7f4e538421"
+    },
+    {
+      "id": "cs-doc-reviewer",
+      "file": ".github/agents/cs-doc-reviewer.agent.md",
+      "frontmatterName": "cs Doc Reviewer",
+      "workflowRosterLabel": "cs Doc Reviewer",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "Documentation",
+      "phaseEligibility": [
+        "8-documentation"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-documentation-governance"
+      ],
+      "sourceSha256": "b92ea99a95aa032514a8cf27da5e8f24a2e935754fbe7b20d5450abf8486da9f"
+    },
+    {
+      "id": "cs-scribe",
+      "file": ".github/agents/cs-scribe.agent.md",
+      "frontmatterName": "cs Scribe",
+      "workflowRosterLabel": "cs Scribe",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "PR & Records",
+      "phaseEligibility": [
+        "9-pr-merge"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-synthesis"
+      ],
+      "sourceSha256": "6dae026b1217239ea3df0372d196548325a48875f32ffcc114a1e2933782e81f"
+    },
+    {
+      "id": "cs-pr-manager",
+      "file": ".github/agents/cs-pr-manager.agent.md",
+      "frontmatterName": "cs PR Manager",
+      "workflowRosterLabel": "cs PR Manager",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "PR & Records",
+      "phaseEligibility": [
+        "9-pr-merge"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation"
+      ],
+      "sourceSha256": "ab93dde0910d4ccbebaf09ce9a9ac66642301d121a7a558efc1627147d9210bc"
+    },
+    {
+      "id": "cs-merge-readiness-evaluator",
+      "file": ".github/agents/cs-merge-readiness-evaluator.agent.md",
+      "frontmatterName": "cs Merge Readiness Evaluator",
+      "workflowRosterLabel": "cs Merge Readiness Evaluator",
+      "public": false,
+      "delegationKind": "leaf worker",
+      "roleCluster": "PR & Records",
+      "phaseEligibility": [
+        "9-pr-merge"
+      ],
+      "nestedSubagentPolicy": "none",
+      "toolStrategy": "inherit",
+      "modelStrategy": "inherit-current-model",
+      "allowedHandoffTargets": [],
+      "allowedSubagentTargets": [],
+      "skillReferences": [
+        "clean-squad-delegation",
+        "clean-squad-synthesis"
+      ],
+      "sourceSha256": "d5a89666ec87bdd4708a6847fc77a144e5e75f29816427efbb1374fab25919d8"
+    }
+  ]
+}
