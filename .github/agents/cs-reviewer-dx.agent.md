@@ -3,7 +3,6 @@ name: "cs Reviewer DX"
 description: "Developer-experience reviewer for planning and code review. Use when APIs, tooling, or workflows need ergonomics and discoverability assessment. Produces DX review findings and usability guidance. Not for security signoff."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Reviewer DX

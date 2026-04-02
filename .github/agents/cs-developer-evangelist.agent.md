@@ -3,7 +3,6 @@ name: "cs Developer Evangelist"
 description: "Adoption reviewer for Three Amigos, planning, code review, and documentation. Use when a change needs demo value, competitive positioning, or story clarity assessment. Produces adoption guidance and narrative findings. Not for final requirements signoff."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Developer Evangelist

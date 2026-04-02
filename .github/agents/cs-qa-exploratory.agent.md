@@ -3,7 +3,6 @@ name: "cs QA Exploratory"
 description: "Exploratory testing reviewer for QA validation. Use when a change needs creative scenario discovery beyond scripted tests. Produces exploratory findings and unexpected-risk guidance. Not for coverage-gate ownership."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs QA Exploratory

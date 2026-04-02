@@ -4,7 +4,6 @@ description: "QA evidence synthesizer for governed validation. Use when River ha
 tools: ["agent", "read", "edit", "search"]
 agents: ["cs QA Lead", "cs QA Exploratory", "cs Test Engineer"]
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs QA Synthesizer

@@ -5,7 +5,7 @@ This matrix records how Clean Squad uses current VS Code Copilot customization f
 | Feature | Classification | Clean Squad usage |
 |---|---|---|
 | Custom agents | Core | Every `cs-*.agent.md` file |
-| `user-invocable` / `disable-model-invocation` | Core | Public boundary hardening and protected workers |
+| `user-invocable` | Core | Public boundary hardening and hidden internal workers |
 | `agents:` allowlists | Core | River and approved phase coordinators |
 | Handoffs | Core | One-way `cs Entrepreneur` -> `cs River Orchestrator` handoff |
 | Skills | Core | Repeated procedures moved into `.github/skills/` |

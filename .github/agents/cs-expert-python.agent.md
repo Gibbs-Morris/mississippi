@@ -3,7 +3,6 @@ name: "cs Expert Python"
 description: "Python ecosystem reviewer for architecture and API design. Use when cross-language ergonomics or Python-consumer implications need scrutiny. Produces Python-perspective guidance and interoperability findings. Not for C# implementation details."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Expert Python

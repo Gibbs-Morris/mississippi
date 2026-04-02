@@ -3,7 +3,6 @@ name: "cs Reviewer Performance"
 description: "Performance reviewer for planning and code review. Use when a plan or diff may affect allocations, complexity, latency, or scaling. Produces performance findings and hot-path guidance. Not for general style cleanup."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Reviewer Performance

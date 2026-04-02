@@ -3,7 +3,6 @@ name: "cs Discovery Synthesizer"
 description: "Discovery evidence synthesizer for governed intake. Use when River has gathered discovery rounds and needs a requirements synthesis artifact. Produces the discovery requirements synthesis and unresolved-question summary in .thinking. Not for asking the user questions or deciding workflow progression."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Discovery Synthesizer

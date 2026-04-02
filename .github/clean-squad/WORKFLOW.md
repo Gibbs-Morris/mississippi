@@ -1513,7 +1513,7 @@ The workflow remains the authoritative Clean Squad contract. The executable cust
 
 - `cs Entrepreneur` and `cs River Orchestrator` are the only user-invocable Clean Squad agents.
 - `cs Entrepreneur` exposes the only public handoff, and that handoff targets `cs River Orchestrator` only, with explicit `send: false`.
-- All internal Clean Squad agents use `user-invocable: false` and `disable-model-invocation: true`.
+- All internal Clean Squad agents use `user-invocable: false`.
 - Approved phase coordinators use explicit `agents:` allowlists.
 - Non-delegating Clean Squad agents use `agents: []`.
 - `cs River Orchestrator` uses one explicit allowlist containing all approved internal Clean Squad agents and no non-Clean-Squad agents.

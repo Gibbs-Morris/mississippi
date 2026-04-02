@@ -5,7 +5,7 @@
     "instructionPath": ".github/instructions/clean-squad.instructions.md",
     "manifestRole": "subordinate-parity-enforcement"
   },
-  "workflowContractSha256": "5471f6e07190ff40cb185ae72734c8fcfa17026d2aae46eef5607f371641084e",
+  "workflowContractSha256": "48d8dbf2d0cd174f13aa347ef4689c83661e167a5307d5d5ff2fd433f7c978d7",
   "agents": [
     {
       "id": "cs-entrepreneur",
@@ -120,7 +120,7 @@
         "clean-squad-delegation",
         "clean-squad-discovery"
       ],
-      "sourceSha256": "5737b8422383d76881436e50121179195003ffbd05ca48f19bcc0ec917d44b97"
+      "sourceSha256": "9d8efac1191500333c346a7cd9eb92478b51890d738a393cbab8e3b36660eb1a"
     },
     {
       "id": "cs-discovery-synthesizer",
@@ -143,7 +143,7 @@
         "clean-squad-discovery",
         "clean-squad-synthesis"
       ],
-      "sourceSha256": "8611a4d4adebecdac76380f82a72b4f2fb21fc6e45ffdd238ad52bed3c0eb0b9"
+      "sourceSha256": "c7939e5af24b5145e95162f84ad4c01c05ed91c983cf1335fd1286be5357b02a"
     },
     {
       "id": "cs-business-analyst",
@@ -165,7 +165,7 @@
         "clean-squad-delegation",
         "clean-squad-discovery"
       ],
-      "sourceSha256": "824ee7d9c5d626e59e311f34d8872a31629025c6bfc6bbc4592a8d1a71889b15"
+      "sourceSha256": "c337521629b790d64db027e1e34b538d44909f1a8fd7bc99d36036c82fdc4250"
     },
     {
       "id": "cs-qa-analyst",
@@ -187,7 +187,7 @@
         "clean-squad-delegation",
         "clean-squad-discovery"
       ],
-      "sourceSha256": "1a6c0560c77d24e59a7c23eb7c98a0d8ec8eb9bd85eb5f8e546859920017c17e"
+      "sourceSha256": "5ab080f1a1fc973f4e04e331c7783c5ee1eecd5db6d0aa60e6bac94410b369e7"
     },
     {
       "id": "cs-tech-lead",
@@ -210,7 +210,7 @@
         "clean-squad-delegation",
         "clean-squad-discovery"
       ],
-      "sourceSha256": "0746c9a0fe34593c919dc8865f65a53d9184827dca9dcdef06b59392cb086209"
+      "sourceSha256": "9a3cd0f743bbe8e7bd0c80b0a1417c62a7336181a9fc26a337af389516699192"
     },
     {
       "id": "cs-solution-architect",
@@ -231,7 +231,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "c307b9c0da2c0487731677f1535cfe507cc25f5c873d097809b829072d771cf6"
+      "sourceSha256": "dcc6708c303507dcf2785189468c804d0099c85d508f46594342c182c4617c3c"
     },
     {
       "id": "cs-c4-diagrammer",
@@ -253,7 +253,7 @@
         "clean-squad-delegation",
         "clean-squad-documentation-governance"
       ],
-      "sourceSha256": "edd22ca1a1d3c0ef2b8abc8bf98e76670daf573f7139cc931edb2bbf186354c7"
+      "sourceSha256": "bcd6af1fd320e595d7ff2fa3ea1a8d193f082a35796928b1f8a8390a3ce85ed3"
     },
     {
       "id": "cs-adr-keeper",
@@ -276,7 +276,7 @@
         "clean-squad-delegation",
         "clean-squad-documentation-governance"
       ],
-      "sourceSha256": "f33cedcaa33274f4f8ca256d964c3281581da1009391b4789fabe592b275e8c6"
+      "sourceSha256": "1e62c51847fa2bf42c4aae69730eb72d5bfbd2308e84c30d86e2b0a4f6835f3e"
     },
     {
       "id": "cs-plan-synthesizer",
@@ -298,7 +298,7 @@
         "clean-squad-delegation",
         "clean-squad-synthesis"
       ],
-      "sourceSha256": "7ae5023d5fc9391401bc034b42c919a9188f3e4e7d535c2a492c6d6d4a34e030"
+      "sourceSha256": "565b16597d15b0738f7d6556fcd1adb55ba128d18405a094a5c7b12042ff29bf"
     },
     {
       "id": "cs-three-amigos-synthesizer",
@@ -326,7 +326,7 @@
         "clean-squad-subagent-orchestration",
         "clean-squad-synthesis"
       ],
-      "sourceSha256": "b945a56a94e71a476f92b36cdac028a07171ca0e750da3009eb7949f2d28872c"
+      "sourceSha256": "3d1e6adaced9c90d1c70ec6b6934e2032eeb6786af6aaa8ef5d8dfbdcab96f5a"
     },
     {
       "id": "cs-code-review-synthesizer",
@@ -364,7 +364,7 @@
         "clean-squad-subagent-orchestration",
         "clean-squad-synthesis"
       ],
-      "sourceSha256": "c99dba15bc04a3f76a309f9ab5d424ac442ed9871af7f1d65524cd8d2945deb5"
+      "sourceSha256": "73fa13b2e0382bf7fa6133660e10ae2f3bae685c28b3fd9d583413f7607b2b5b"
     },
     {
       "id": "cs-qa-synthesizer",
@@ -391,7 +391,7 @@
         "clean-squad-subagent-orchestration",
         "clean-squad-synthesis"
       ],
-      "sourceSha256": "4dec3bedae3a9c3b725d22ad196e080948c5eea1ceef7c80be460c824e4f9c4e"
+      "sourceSha256": "bf4e4d78803d38eb1ab8f7c04bba1e28fe16d431ce7c995abf41657fecc489e6"
     },
     {
       "id": "cs-documentation-scope-synthesizer",
@@ -417,7 +417,7 @@
         "clean-squad-subagent-orchestration",
         "clean-squad-documentation-governance"
       ],
-      "sourceSha256": "f0d44ab09d2672b64f20b44d8d205e4255de0fdd26c45afc9616f99b0a8d4750"
+      "sourceSha256": "e033fb9bc4dace42ef2950935be400e4b3b74f5a96bed5d63b57942ef43869ca"
     },
     {
       "id": "cs-lead-developer",
@@ -439,7 +439,7 @@
         "clean-squad-delegation",
         "clean-squad-delivery-quality"
       ],
-      "sourceSha256": "d44e6926c1b85fffc6a434b24b4acbad5ce62234ef30fcad01289d9dd8f01a4c"
+      "sourceSha256": "686a33ea7c4f9fa02dc39f6b4b05c79c19131f2d8df232b9b78d52749af74c0d"
     },
     {
       "id": "cs-test-engineer",
@@ -462,7 +462,7 @@
         "clean-squad-delegation",
         "clean-squad-delivery-quality"
       ],
-      "sourceSha256": "0589097a69f649d0b01593859978709090cced1a2b4630fc18b507810e1015fb"
+      "sourceSha256": "b5c2d8151f7b15fb30213af4d23277edd1ab18ffc6e6bd14834c5d939841c101"
     },
     {
       "id": "cs-commit-guardian",
@@ -484,7 +484,7 @@
         "clean-squad-delegation",
         "clean-squad-delivery-quality"
       ],
-      "sourceSha256": "8fbe65eaa0492825def771c822f07e55eef88876d7f6d058216dff7e32aba0ac"
+      "sourceSha256": "99d312824b8d9fb908360242b15498131a43bffc9badeb4928f993168d028529"
     },
     {
       "id": "cs-reviewer-pedantic",
@@ -505,7 +505,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "a22a9001cc254ae53bf1af93f1ab231c9abf0a6407e8cc0bb60e6c93f5fb38c3"
+      "sourceSha256": "c54d5cd82f98f183ddadcc0e91bb41b3b41b87dda88294d8f37e12d774f87490"
     },
     {
       "id": "cs-reviewer-strategic",
@@ -526,7 +526,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "d5c30dbcab6457825fe78cd1cd3fbe450349c16b5824c71424775db9c227ba39"
+      "sourceSha256": "76f2a79856846da342003ddd9fde6c95a03cd74a4c001351c4a36ae641a07438"
     },
     {
       "id": "cs-reviewer-security",
@@ -547,7 +547,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "73c50f8f6eb07d9d52006196ab59e1e96d9604d43ad101b01f62abd736198f88"
+      "sourceSha256": "de63eaded482e4473c961bf2ee1e9e1e7bd8319414018171f3834597c3e1cdcf"
     },
     {
       "id": "cs-reviewer-dx",
@@ -568,7 +568,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "13238b548f718cd9476e7f7a953840b192a2ba4e01c5f1d14d09f777615729d9"
+      "sourceSha256": "b51f6b0a83b3689f692d88098c2f99b51824065e848dfce48f073010f77833ab"
     },
     {
       "id": "cs-reviewer-performance",
@@ -589,7 +589,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "397adc333e63362c4d0167fc993b241af12c0b6430b7441933c179f9e1033900"
+      "sourceSha256": "53d2b8b17ed10c196de15e443a333bfc8c57de29693cd5516652dec47b4fec0d"
     },
     {
       "id": "cs-expert-csharp",
@@ -612,7 +612,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "a7e8d544d9765a25056260154afaab0b075d073e45dd64c50146d19e60a1389d"
+      "sourceSha256": "6a4b3f52a24f56ec2512eebc259c15ab4ac8c847f845f172d04af0fa53e570af"
     },
     {
       "id": "cs-expert-python",
@@ -634,7 +634,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "2c599d27afbd59a8c7a42cfeb34de7853755425c09049a21dcbbb7433ee51bde"
+      "sourceSha256": "88af6e8d1df97c013eda1cc8e4b51bf1be04dd0340b95ba2b3944fa6505ede8c"
     },
     {
       "id": "cs-expert-java",
@@ -656,7 +656,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "71ccb78a586cc518c9c7c8792ed255e3c599d5cf532752c5b9dfe93f13a48d26"
+      "sourceSha256": "def6420f8618640bee4d30465eb6cd118422bb78599ddb95a0222745ef2cda09"
     },
     {
       "id": "cs-expert-serialization",
@@ -678,7 +678,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "f8ad1a547f8fb0b3b13a5f7164b70129045bf83e6fc4b92a90234c59c318ab94"
+      "sourceSha256": "eaab6e3ca69eb78269f5ac0902270dd4e08956fd7dc531b0d0722ad4da7138c1"
     },
     {
       "id": "cs-expert-cloud",
@@ -701,7 +701,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "1bd6ed3cdb2fc57a41596c65852c96c1402b5bc6f537d0ae9e00c8d1e8c64cf7"
+      "sourceSha256": "090114628949bb05b87186dc824650990d35d56352d263b52d532db7173b9a3a"
     },
     {
       "id": "cs-expert-distributed",
@@ -724,7 +724,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "d5e7316adb7e0b5c78fcd35f8f23d144f664b33dd4e14d30afff9b3266454af4"
+      "sourceSha256": "65b5cbf2b50b88cb3f55fa1b429b59778feafef042dc44ddc92b2ad70ab6210b"
     },
     {
       "id": "cs-expert-ux",
@@ -746,7 +746,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "3cd391983138380f188b4cb57b74fdc3be2cd5342d36dc8a9ae03928ba0e7d23"
+      "sourceSha256": "a87f55e0e88aaa1b74af3e81ad9ba7610d5313f7aa4c10e3e7e6a9b3e7211701"
     },
     {
       "id": "cs-developer-evangelist",
@@ -771,7 +771,7 @@
         "clean-squad-delegation",
         "clean-squad-discovery"
       ],
-      "sourceSha256": "fcb6d1968b67ca05052aa4b17a86e951abdcacf60153b8f95ad5393b766fd274"
+      "sourceSha256": "1aa9de2ed6bc6e1e8be0188774dbc7d7e9037b0005701a5593c35ccb62645268"
     },
     {
       "id": "cs-qa-lead",
@@ -794,7 +794,7 @@
         "clean-squad-delegation",
         "clean-squad-delivery-quality"
       ],
-      "sourceSha256": "17a276f8095e0180c70dca664d23f0d6c8b0c842575b74e030bfb04ac2fa5f1e"
+      "sourceSha256": "262f49afe9ea0508d89f1c52261cd34527b5687a6abb9615b771ab722b202967"
     },
     {
       "id": "cs-qa-exploratory",
@@ -816,7 +816,7 @@
         "clean-squad-delegation",
         "clean-squad-delivery-quality"
       ],
-      "sourceSha256": "6b2adf6c9265f8cc110e72fce3c82e15c304d47a33e4a3d48d49fe7995ea3550"
+      "sourceSha256": "f9fbfd99d9d41a921c405d0893eef96130ebc3c0458955756c5f96a9f4da4cb0"
     },
     {
       "id": "cs-devops-engineer",
@@ -840,7 +840,7 @@
         "clean-squad-delegation",
         "clean-squad-delivery-quality"
       ],
-      "sourceSha256": "951e9dcf4f22475cbf89b837b0069b6629bdc5f742ece4aee38f81cfc3d6c9fa"
+      "sourceSha256": "48fd04d7595b716ab989fec836ef1843fc99dbf4a983b1fed14e0e372e69f06e"
     },
     {
       "id": "cs-technical-writer",
@@ -862,7 +862,7 @@
         "clean-squad-delegation",
         "clean-squad-documentation-governance"
       ],
-      "sourceSha256": "8f3c1f3f544758fd064cb53e9b6723874bb0ea2b775596631a747c7f4e538421"
+      "sourceSha256": "8f43902850a4cfa4ab2941d24a358eedbbc926609e9de892d2852e3b2fc7fac2"
     },
     {
       "id": "cs-doc-reviewer",
@@ -884,7 +884,7 @@
         "clean-squad-delegation",
         "clean-squad-documentation-governance"
       ],
-      "sourceSha256": "b92ea99a95aa032514a8cf27da5e8f24a2e935754fbe7b20d5450abf8486da9f"
+      "sourceSha256": "e50374925517c9cbfe33fe39acf63111b08b910f03c27b4424e1c480e148d4f1"
     },
     {
       "id": "cs-scribe",
@@ -906,7 +906,7 @@
         "clean-squad-delegation",
         "clean-squad-synthesis"
       ],
-      "sourceSha256": "6dae026b1217239ea3df0372d196548325a48875f32ffcc114a1e2933782e81f"
+      "sourceSha256": "e338ceb9dd5002313cf87d3bb78ced0fbc085cf863678eb3a351b4a1bafc816b"
     },
     {
       "id": "cs-pr-manager",
@@ -927,7 +927,7 @@
       "skillReferences": [
         "clean-squad-delegation"
       ],
-      "sourceSha256": "ab93dde0910d4ccbebaf09ce9a9ac66642301d121a7a558efc1627147d9210bc"
+      "sourceSha256": "74004b5f80b95c31a1ed378b5411a10c0e04d326c6e26fa4d2b38434104f98c7"
     },
     {
       "id": "cs-merge-readiness-evaluator",
@@ -949,7 +949,7 @@
         "clean-squad-delegation",
         "clean-squad-synthesis"
       ],
-      "sourceSha256": "d5a89666ec87bdd4708a6847fc77a144e5e75f29816427efbb1374fab25919d8"
+      "sourceSha256": "dc3e463792ce778b1dc2cd13fbe6688869352a8a597754e4a6b04b39358c3c7b"
     }
   ]
 }

@@ -3,7 +3,6 @@ name: "cs Tech Lead"
 description: "Technical feasibility reviewer for Three Amigos and planning. Use when the team needs implementation risk, complexity, and repo-constraint guidance. Produces feasibility, risk, and technical approach feedback. Not for end-state solution architecture."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Tech Lead

@@ -3,7 +3,6 @@ name: "cs QA Analyst"
 description: "Quality-scenario reviewer for Three Amigos. Use when requirements need testability, edge-case, and failure-mode analysis. Produces the QA perspective and shift-left quality guidance. Not for final QA signoff."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs QA Analyst

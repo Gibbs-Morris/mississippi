@@ -3,7 +3,6 @@ name: "cs PR Manager"
 description: "Pull-request specialist delegate for PR creation and merge readiness. Use when implemented work needs bounded PR-surface execution, review-thread handling, or merge-readiness evidence gathering. Produces PR lifecycle artifacts and review-status guidance for River Orchestrator canonical recording. Not for planned feature implementation or canonical workflow writing."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs PR Manager

@@ -3,7 +3,6 @@ name: "cs Business Analyst"
 description: "Business-value reviewer for Three Amigos. Use when requirements need user-value, acceptance-criteria, and business-rule analysis. Produces the business perspective and acceptance guidance. Not for technical feasibility."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Business Analyst

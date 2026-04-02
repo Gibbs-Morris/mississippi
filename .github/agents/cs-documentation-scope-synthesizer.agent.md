@@ -4,7 +4,6 @@ description: "Documentation impact assessor for governed delivery. Use when Rive
 tools: ["agent", "read", "edit", "search"]
 agents: ["cs Technical Writer", "cs Doc Reviewer"]
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Documentation Scope Synthesizer

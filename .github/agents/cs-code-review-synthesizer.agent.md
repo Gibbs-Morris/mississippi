@@ -4,7 +4,6 @@ description: "Review finding synthesizer for governed code-review cycles. Use wh
 tools: ["agent", "read", "edit", "search"]
 agents: ["cs Reviewer Pedantic", "cs Reviewer Strategic", "cs Reviewer Security", "cs Reviewer DX", "cs Reviewer Performance", "cs Expert CSharp", "cs Expert Python", "cs Expert Java", "cs Expert Serialization", "cs Expert Cloud", "cs Expert Distributed", "cs Expert UX", "cs Developer Evangelist", "cs DevOps Engineer"]
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Code Review Synthesizer

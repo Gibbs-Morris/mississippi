@@ -4,7 +4,6 @@ description: "Cross-perspective synthesis agent for discovery follow-through. Us
 tools: ["agent", "read", "edit", "search"]
 agents: ["cs Business Analyst", "cs Tech Lead", "cs QA Analyst", "cs Developer Evangelist"]
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Three Amigos Synthesizer

@@ -3,7 +3,6 @@ name: "cs Expert Distributed"
 description: "Distributed-systems reviewer for architecture, planning, and code review. Use when consistency, partitioning, messaging, or Orleans behaviors need scrutiny. Produces distributed-systems guidance and failure-mode findings. Not for documentation authoring."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Expert Distributed

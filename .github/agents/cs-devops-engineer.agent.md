@@ -3,7 +3,6 @@ name: "cs DevOps Engineer"
 description: "Delivery and operations specialist for implementation, QA, and PR readiness. Use when pipelines, deployment safety, infrastructure config, or observability need scrutiny. Produces DevOps findings and operational guidance. Not for business-rule analysis."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs DevOps Engineer

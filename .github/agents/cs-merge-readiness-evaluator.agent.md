@@ -3,7 +3,6 @@ name: "cs Merge Readiness Evaluator"
 description: "Merge-readiness evidence evaluator for late-stage governed delivery. Use when River needs the current PR, review, QA, and documentation evidence collapsed into one merge-readiness artifact. Produces the merge-readiness evaluation in .thinking. Not for performing PR operations directly or recording canonical workflow events."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Merge Readiness Evaluator

@@ -3,7 +3,6 @@ name: "cs Lead Developer"
 description: "Implementation owner for production-code increments. Use when an approved plan slice needs code changes in the repo. Produces the production implementation for the current increment. Not for independent test strategy signoff."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Lead Developer

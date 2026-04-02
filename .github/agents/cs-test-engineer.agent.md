@@ -3,7 +3,6 @@ name: "cs Test Engineer"
 description: "Test implementation specialist for implementation and QA. Use when code needs deterministic tests, coverage improvement, or mutation hardening. Produces tests and test-quality evidence. Not for final quality approval."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Test Engineer

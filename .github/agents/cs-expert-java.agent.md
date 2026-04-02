@@ -3,7 +3,6 @@ name: "cs Expert Java"
 description: "Java ecosystem reviewer for architecture and API design. Use when enterprise JVM patterns or Java-consumer implications need scrutiny. Produces Java-perspective guidance and interoperability findings. Not for Azure infrastructure design."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Expert Java

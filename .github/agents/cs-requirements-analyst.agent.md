@@ -3,7 +3,6 @@ name: "cs Requirements Analyst"
 description: "Requirements gap analyst for discovery rounds. Use when discovered requirements need missing-question analysis before the next user round. Produces gap analysis and ranked follow-up questions. Not for business-value prioritization."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Requirements Analyst

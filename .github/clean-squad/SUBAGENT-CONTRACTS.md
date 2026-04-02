@@ -12,8 +12,7 @@ This document summarizes the executable Clean Squad subagent contract. `WORKFLOW
 ## Protected workers
 
 - Every internal Clean Squad agent sets `user-invocable: false`.
-- Every internal Clean Squad agent sets `disable-model-invocation: true`.
-- Approved coordinator allowlists are the only supported override path for invoking protected workers as subagents.
+- Approved coordinator allowlists remain the supported control surface for invoking internal workers as subagents.
 - Non-delegating agents use `agents: []`.
 
 ## Approved coordinators

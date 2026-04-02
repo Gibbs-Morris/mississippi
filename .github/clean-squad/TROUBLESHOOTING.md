@@ -15,7 +15,7 @@ This validates:
 - workflow roster vs manifest membership
 - frontmatter identity
 - public visibility
-- protected-worker flags
+- internal worker visibility
 - `agents:` allowlists and `agents: []` denials
 - public handoff targets
 
@@ -23,18 +23,17 @@ This validates:
 
 ### A protected worker appears in the agent picker
 
-**Checks**
+#### Checks
 
 1. Open the worker's `.agent.md` file.
 2. Confirm `user-invocable: false`.
-3. Confirm `disable-model-invocation: true`.
-4. Run the parity validator.
+3. Run the parity validator.
 
-**Likely cause**
+#### Likely cause
 
 - Frontmatter drift or a failed merge resolution.
 
-**Recovery**
+#### Recovery
 
 1. Restore the correct frontmatter from `customization-manifest.json`.
 2. Re-run the validator.
@@ -42,51 +41,51 @@ This validates:
 
 ### River or a coordinator can delegate to the wrong agent
 
-**Checks**
+#### Checks
 
 1. Inspect the active agent's `agents:` allowlist.
 2. Compare it with `customization-manifest.json`.
 3. Re-run the parity validator.
 
-**Likely cause**
+#### Likely cause
 
 - Allowlist drift or a manual edit that widened the coordinator surface.
 
-**Recovery**
+#### Recovery
 
 1. Restore the allowlist to the manifest value.
 2. Keep any new delegation target out of service until `WORKFLOW.md` is updated first.
 
 ### Nested coordinator did not fan out
 
-**Checks**
+#### Checks
 
 1. Confirm the coordinator is one of the approved nested coordinators.
 2. Confirm `chat.subagents.allowInvocationsFromSubagents` is enabled.
 3. Check whether the coordinator recorded degraded mode intentionally.
 
-**Likely cause**
+#### Likely cause
 
 - Nested subagents are disabled, blocked, or intentionally bypassed because artifacts already existed.
 
-**Recovery**
+#### Recovery
 
 1. Enable the setting when the environment allows it.
 2. If policy forbids nested subagents, keep the degraded direct-delegation path and do not widen the roster.
 
 ### Prompt file could not find the documented tool sets
 
-**Checks**
+#### Checks
 
 1. Confirm whether a profile-level `.toolsets.jsonc` file exists.
 2. Compare it with `.github/clean-squad/clean-squad.toolsets.template.jsonc`.
 3. Remember that current VS Code tool sets are profile-level, not workspace-loaded.
 
-**Likely cause**
+#### Likely cause
 
 - The current profile has not installed the template yet.
 
-**Recovery**
+#### Recovery
 
 1. Copy the template into your prompts home as `<name>.toolsets.jsonc`.
 2. Re-open VS Code or the Chat tools picker.
@@ -94,17 +93,17 @@ This validates:
 
 ### Hook did not run
 
-**Checks**
+#### Checks
 
 1. Confirm hooks are allowed by policy in your VS Code environment.
 2. Confirm `.github/hooks/clean-squad-customization-guard.json` is present.
 3. Check the **GitHub Copilot Chat Hooks** output channel.
 
-**Likely cause**
+#### Likely cause
 
 - Hooks are disabled by policy, unsupported in the current environment, or the edit did not touch one of the watched customization surfaces.
 
-**Recovery**
+#### Recovery
 
 1. Treat hooks as optional.
 2. Run `/clean-squad-validate-contracts` or the validator script manually.

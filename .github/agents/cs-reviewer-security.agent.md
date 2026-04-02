@@ -3,7 +3,6 @@ name: "cs Reviewer Security"
 description: "Security reviewer for planning and code review. Use when a plan or diff needs attack-surface, trust-boundary, or secret-handling analysis. Produces security findings and mitigation guidance. Not for general performance tuning."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Reviewer Security

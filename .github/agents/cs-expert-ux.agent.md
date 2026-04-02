@@ -3,7 +3,6 @@ name: "cs Expert UX"
 description: "User-experience reviewer for architecture and code review. Use when journeys, accessibility, or interaction design need scrutiny. Produces UX findings and accessibility guidance. Not for backend persistence design."
 agents: []
 user-invocable: false
-disable-model-invocation: true
 ---
 
 # cs Expert UX
