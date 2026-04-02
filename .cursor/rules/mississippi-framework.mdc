@@ -6,7 +6,7 @@ alwaysApply: false
 # Mississippi Framework Usage
 
 **Source:** .github/instructions/mississippi-framework.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Build applications using the Mississippi framework with source generation as the default, a clean four-project solution structure, Redux-style state management via Reservoir, and small componentized projections over brooks.
 

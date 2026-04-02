@@ -6,7 +6,7 @@ alwaysApply: false
 # Markdown and markdownlint
 
 **Source:** .github/instructions/markdown.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: All Markdown must pass the configured markdownlint rules with no suppressions; fix content instead of disabling rules.
 

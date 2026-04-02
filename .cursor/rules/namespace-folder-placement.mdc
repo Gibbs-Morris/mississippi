@@ -3,9 +3,10 @@ description: Namespace and Folder Placement
 globs: ["**/*.{cs,razor,css}"]
 alwaysApply: false
 ---
-
 # Namespace and Folder Placement
+
 **Source:** .github/instructions/namespace-folder-placement.instructions.md
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: File location and namespace layout must be deterministic, vertically sliced, and repeatable so contributors can find behavior in the same place across framework, tests, and samples.
 

@@ -6,7 +6,7 @@ alwaysApply: false
 # DDD and Architecture Checklist
 
 **Source:** .github/instructions/dotnet-architecture-good-practices.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Start every domain change with explicit DDD/SOLID analysis, keep logic in the right layer, and verify tests/observability before shipping.
 

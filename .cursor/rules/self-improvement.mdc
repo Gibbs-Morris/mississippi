@@ -5,7 +5,7 @@ alwaysApply: true
 # Self-Improvement Learning System
 
 **Source:** .github/instructions/self-improvement.instructions.md
-**Last synced:** 2026-03-23 (commit 80ff68f7)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Agents record validated lessons from real-work failures into typed `self-taught-<domain>.instructions.md` files, creating persistent institutional memory that prevents repeated mistakes without conflicting with hand-authored rules.
 

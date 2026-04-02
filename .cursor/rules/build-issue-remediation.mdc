@@ -5,7 +5,7 @@ alwaysApply: true
 # Build Issue Remediation Protocol
 
 **Source:** .github/instructions/build-issue-remediation.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Fix each warning/error with the smallest safe edit in at most five focused attempts, deferring with context when blocked.
 

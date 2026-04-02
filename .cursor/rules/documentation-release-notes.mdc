@@ -6,7 +6,7 @@ alwaysApply: false
 # Release Notes Documentation
 
 **Source:** .github/instructions/documentation-release-notes.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Release notes tell Mississippi users what changed, why it matters, and what action is required without turning into migration guides or marketing copy.
 

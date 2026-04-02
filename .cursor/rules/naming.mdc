@@ -6,7 +6,7 @@ alwaysApply: false
 # C# Naming and XML Documentation
 
 **Source:** .github/instructions/naming.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Use feature-centric namespaces, clear PascalCase identifiers, and factual XML docs enforced by StyleCop.
 
@@ -56,3 +56,4 @@ All C# contributors.
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - C# standards: `.github/instructions/csharp.instructions.md`
 - Domain modeling: `.github/instructions/domain-modeling.instructions.md`
+- Deterministic placement: `.github/instructions/namespace-folder-placement.instructions.md`

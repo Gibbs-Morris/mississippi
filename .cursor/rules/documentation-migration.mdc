@@ -6,7 +6,7 @@ alwaysApply: false
 # Migration Documentation
 
 **Source:** .github/instructions/documentation-migration.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Migration pages move readers from one exact Mississippi version range to another with explicit compatibility, validation, and rollback guidance.
 

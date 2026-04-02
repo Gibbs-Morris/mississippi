@@ -6,7 +6,7 @@ alwaysApply: false
 # Feature Documentation Structure
 
 **Source:** .github/instructions/feature-documentation-structure.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Mississippi is migrating toward a clearer page-type-driven documentation system, but feature-oriented folders still need consistent structure and content placement while that migration is in progress.
 

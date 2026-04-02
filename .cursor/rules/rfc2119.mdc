@@ -6,7 +6,7 @@ alwaysApply: false
 # RFC 2119 Keyword Usage
 
 **Source:** .github/instructions/rfc2119.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Use RFC 2119 keywords only for normative requirements, keep them uppercase, and confine them to a single Rules section per file.
 

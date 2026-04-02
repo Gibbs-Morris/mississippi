@@ -6,7 +6,7 @@ alwaysApply: false
 # Documentation Page Focus
 
 **Source:** .github/instructions/documentation-page-focus.instructions.md
-**Last synced:** 2026-03-07 (commit 213f37b9)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: Every Mississippi documentation page should serve one reader intent and one page type, even while the repository is still migrating from older feature-oriented layouts.
 

@@ -5,7 +5,7 @@ alwaysApply: true
 # Post-Push PR Review Polling
 
 **Source:** .github/instructions/pr-review-polling.instructions.md
-**Last synced:** 2026-03-10 (commit pending)
+**Last synced:** 2026-04-02 (commit 9fd43d39)
 
 Governing thought: After pushing code to a branch with an open PR, agents sleep for human review, then systematically address every new comment one-at-a-time until none remain.
 
