@@ -1,6 +1,7 @@
 ---
 name: "cs Technical Writer"
 description: "Documentation author for the documentation phase. Use when user-facing changes need Docusaurus pages or updates backed by repo evidence. Produces doc drafts, published pages, and evidence maps. Not for independent doc acceptance review."
+tools: ["read", "search", "edit"]
 agents: []
 user-invocable: false
 ---

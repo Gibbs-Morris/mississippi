@@ -1,6 +1,8 @@
 ---
 name: "cs Reviewer Strategic"
 description: "Design-level code reviewer for code review. Use when a diff needs assessment of architecture fit, maintainability, and long-term risks. Produces strategic review findings. Not for line-by-line polish."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

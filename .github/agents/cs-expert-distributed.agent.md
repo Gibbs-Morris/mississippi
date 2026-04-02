@@ -1,6 +1,8 @@
 ---
 name: "cs Expert Distributed"
 description: "Distributed-systems reviewer for architecture, planning, and code review. Use when consistency, partitioning, messaging, or Orleans behaviors need scrutiny. Produces distributed-systems guidance and failure-mode findings. Not for documentation authoring."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

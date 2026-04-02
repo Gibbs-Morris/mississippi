@@ -1,6 +1,7 @@
 ---
 name: "cs Doc Reviewer"
 description: "Documentation reviewer for the documentation phase. Use when changed docs need independent accuracy, structure, and navigation verification. Produces documentation review findings and must-fix issues. Not for authoring the docs under review."
+tools: ["read", "search", "edit"]
 agents: []
 user-invocable: false
 ---

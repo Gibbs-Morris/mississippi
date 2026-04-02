@@ -1,6 +1,8 @@
 ---
 name: "cs Merge Readiness Evaluator"
 description: "Merge-readiness evidence evaluator for late-stage governed delivery. Use when River needs the current PR, review, QA, and documentation evidence collapsed into one merge-readiness artifact. Produces the merge-readiness evaluation in .thinking. Not for performing PR operations directly or recording canonical workflow events."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

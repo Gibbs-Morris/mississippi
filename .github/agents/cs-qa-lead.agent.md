@@ -1,6 +1,7 @@
 ---
 name: "cs QA Lead"
 description: "Strategic quality owner for planning and QA validation. Use when the team needs risk-based test-strategy review, coverage-gate judgment, or release-readiness assessment. Produces QA validation and quality-gate decisions. Not for writing or refactoring tests."
+tools: ["read", "search", "edit", "execute"]
 agents: []
 user-invocable: false
 ---

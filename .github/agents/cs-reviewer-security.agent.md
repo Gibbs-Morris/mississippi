@@ -1,6 +1,8 @@
 ---
 name: "cs Reviewer Security"
 description: "Security reviewer for planning and code review. Use when a plan or diff needs attack-surface, trust-boundary, or secret-handling analysis. Produces security findings and mitigation guidance. Not for general performance tuning."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

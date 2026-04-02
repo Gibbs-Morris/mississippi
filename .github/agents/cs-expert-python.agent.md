@@ -1,6 +1,8 @@
 ---
 name: "cs Expert Python"
 description: "Python ecosystem reviewer for architecture and API design. Use when cross-language ergonomics or Python-consumer implications need scrutiny. Produces Python-perspective guidance and interoperability findings. Not for C# implementation details."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

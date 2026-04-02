@@ -1,6 +1,7 @@
 ---
 name: "cs Commit Guardian"
 description: "Commit-discipline reviewer for implementation increments. Use when an increment is ready to be checked for atomic scope, message quality, and clean validation. Produces commit-review findings and release-to-commit guidance. Not for writing the implementation itself."
+tools: ["read", "search", "edit", "execute"]
 agents: []
 user-invocable: false
 ---

@@ -1,6 +1,8 @@
 ---
 name: "cs Expert UX"
 description: "User-experience reviewer for architecture and code review. Use when journeys, accessibility, or interaction design need scrutiny. Produces UX findings and accessibility guidance. Not for backend persistence design."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

@@ -1,6 +1,7 @@
 ---
 name: "cs C4 Diagrammer"
 description: "Architecture diagram specialist for the architecture phase. Use when a solution design needs C4 context, container, or component views in Mermaid. Produces C4 diagrams or a component-omission rationale. Not for choosing the architecture itself."
+tools: ["read", "search", "edit"]
 agents: []
 user-invocable: false
 ---

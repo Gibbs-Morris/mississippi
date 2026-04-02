@@ -1,6 +1,8 @@
 ---
 name: "cs Reviewer Pedantic"
 description: "Detailed code reviewer for code review. Use when a diff needs scrutiny for naming, consistency, and small correctness issues. Produces line-level review findings. Not for architecture-level tradeoff decisions."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

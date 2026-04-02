@@ -1,6 +1,8 @@
 ---
 name: "cs Expert Java"
 description: "Java ecosystem reviewer for architecture and API design. Use when enterprise JVM patterns or Java-consumer implications need scrutiny. Produces Java-perspective guidance and interoperability findings. Not for Azure infrastructure design."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

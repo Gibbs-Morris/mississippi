@@ -3,7 +3,9 @@ name: "cs Entrepreneur"
 description: "Optional pre-governed idea shaper for rough concepts before Clean Squad intake. Use when a human request needs challenge, refinement, and one stronger Story Pack candidate before governed delivery begins. Produces exactly one Story Pack candidate or an explicit stop outcome using the workflow decision vocabulary. Not for governed workflow orchestration, task-folder creation, or specialist implementation."
 argument-hint: "Describe the rough product idea, user problem, and value you want to pressure-test."
 agents: []
+tools: ["read", "search", "edit"]
 user-invocable: true
+disable-model-invocation: true
 handoffs:
   - label: "Start Governed Intake"
     agent: "cs-river-orchestrator"

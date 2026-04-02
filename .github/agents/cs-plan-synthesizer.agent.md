@@ -1,6 +1,8 @@
 ---
 name: "cs Plan Synthesizer"
 description: "Plan review synthesizer for planning cycles. Use when multiple review outputs need deduplication and prioritization. Produces MoSCoW-organized review synthesis and action lists. Not for original plan authorship."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

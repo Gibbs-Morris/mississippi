@@ -1,6 +1,7 @@
 ---
 name: "cs Solution Architect"
 description: "Solution design owner for the architecture phase. Use when requirements are stable enough to choose components, contracts, and integration boundaries. Produces the solution design and technology decisions. Not for early feasibility triage."
+tools: ["read", "search", "edit"]
 agents: []
 user-invocable: false
 ---

@@ -1,6 +1,8 @@
 ---
 name: "cs Expert CSharp"
 description: "C# domain expert for architecture and code review. Use when a task needs .NET idioms, runtime behavior, or language-level design scrutiny. Produces C#-specific guidance and findings. Not for broader product prioritization."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

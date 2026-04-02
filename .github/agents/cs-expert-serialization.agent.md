@@ -1,6 +1,8 @@
 ---
 name: "cs Expert Serialization"
 description: "Serialization domain expert for architecture and code review. Use when contracts, wire formats, schema evolution, or payload performance need scrutiny. Produces serialization guidance and compatibility findings. Not for UI or UX decisions."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---

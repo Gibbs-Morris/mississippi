@@ -1,6 +1,8 @@
 ---
 name: "cs Expert Cloud"
 description: "Cloud infrastructure reviewer for architecture, planning, and code review. Use when hosting, resilience, cost, or managed-service choices need scrutiny. Produces cloud architecture guidance and operational findings. Not for application-level naming decisions."
+tools: ["read", "search"]
+model: ["GPT-5.4 Mini (copilot)", "GPT-5.4 (copilot)"]
 agents: []
 user-invocable: false
 ---
