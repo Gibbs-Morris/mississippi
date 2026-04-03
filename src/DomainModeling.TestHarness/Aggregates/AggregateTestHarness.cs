@@ -35,22 +35,10 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///         </item>
 ///     </list>
 ///     <para>
-///         <strong>Example:</strong>
-///     </para>
-///     <code>
-///         CommandHandlerTestExtensions.ForAggregate&lt;BankAccountAggregate&gt;()
-///             .WithHandler&lt;OpenAccountHandler&gt;()
-///             .WithHandler&lt;DepositFundsHandler&gt;()
-///             .WithReducer&lt;AccountOpenedReducer&gt;()
-///             .WithReducer&lt;FundsDepositedReducer&gt;()
-///             .CreateScenario()
-///             .Given(new AccountOpened { HolderName = "Test", InitialDeposit = 100m })
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
-///     </code>
-///     <para>
 ///         <strong>Unified Testing Approach:</strong>
+///         Register the handlers and reducers your aggregate needs, then call <c>CreateScenario()</c>
+///         to chain <c>Given</c>, <c>When</c>, and <c>Then</c> assertions. Given events are replayed
+///         through the registered reducers before <c>When</c> executes the matching command handler.
 ///         This harness shares design patterns with
 ///         <see cref="ReducerTestHarness{TProjection}" />,
 ///         enabling consistent testing for both projections and aggregates.
