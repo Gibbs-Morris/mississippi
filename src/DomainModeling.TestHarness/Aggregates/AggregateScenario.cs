@@ -17,16 +17,11 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 /// <typeparam name="TAggregate">The aggregate type being tested.</typeparam>
 /// <remarks>
 ///     <para>
-///         Use this class to build readable test scenarios that establish state via events (Given),
-///         execute a command (When), and verify emitted events and resulting state (Then).
+///         Create a scenario via <c>CreateScenario()</c> on <see cref="AggregateTestHarness{TAggregate}" />,
+///         call <c>Given</c> to replay historical events, call <c>When</c> to execute the command under
+///         test, and finish with the <c>Then*</c> members to assert emitted events, failures, or resulting
+///         state.
 ///     </para>
-///     <code>
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
-///     </code>
 /// </remarks>
 public sealed class AggregateScenario<TAggregate>
     where TAggregate : new()

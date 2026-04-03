@@ -24,25 +24,22 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         the internal projection representation from the public API contract.
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserProjectionController : UxProjectionControllerBase&lt;UserProjection, UserDto&gt;
-///             {
-///                 public UserProjectionController(
-///                     IUxProjectionGrainFactory factory,
-///                     IMapper&lt;UserProjection, UserDto&gt; mapper,
-///                     ILogger&lt;UserProjectionController&gt; logger) : base(factory, mapper, logger) { }
-///             }
-///         </code>
+///         Derived controllers are expected to apply the route template that identifies the projection
+///         resource. This base type supplies the read endpoints and maps each successful response
+///         through the injected mapper.
 ///     </para>
 ///     <para>
-///         This provides three endpoints:
+///         Override the virtual action methods only when a derived controller needs to adjust the
+///         default projection-loading behavior or response shape for a specific endpoint.
+///     </para>
+///     <para>
+///         Once a derived controller applies its route template, this base type exposes three read
+///         endpoints:
 ///         <list type="bullet">
-///             <item><c>GET /api/users/{entityId}</c> - Returns the latest projection state as a DTO.</item>
-///             <item><c>GET /api/users/{entityId}/version</c> - Returns the latest version number.</item>
+///             <item><c>GET {route}</c> - Returns the latest projection state as a DTO.</item>
+///             <item><c>GET {route}/version</c> - Returns the latest version number.</item>
 ///             <item>
-///                 <c>GET /api/users/{entityId}/at/{version}</c> - Returns the projection at a specific version as a
+///                 <c>GET {route}/at/{version}</c> - Returns the projection at a specific version as a
 ///                 DTO.
 ///             </item>
 ///         </list>
