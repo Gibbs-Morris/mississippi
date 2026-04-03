@@ -69,7 +69,7 @@ public abstract class AggregateControllerBase<TAggregate> : ControllerBase
     /// <summary>
     ///     Gets the logger for diagnostic output.
     /// </summary>
-    protected ILogger<AggregateControllerBase<TAggregate>> Logger { get; }
+    private ILogger<AggregateControllerBase<TAggregate>> Logger { get; }
 
     /// <summary>
     ///     Executes a command via the service layer and returns an appropriate HTTP response.

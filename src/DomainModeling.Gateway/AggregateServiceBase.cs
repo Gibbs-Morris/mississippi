@@ -55,7 +55,7 @@ public abstract class AggregateServiceBase<TAggregate>
     /// <summary>
     ///     Gets the logger for diagnostic output.
     /// </summary>
-    protected ILogger<AggregateServiceBase<TAggregate>> Logger { get; }
+    private ILogger<AggregateServiceBase<TAggregate>> Logger { get; }
 
     /// <summary>
     ///     Executes a command against the aggregate.

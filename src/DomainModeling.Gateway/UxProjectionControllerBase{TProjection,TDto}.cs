@@ -77,7 +77,7 @@ public abstract class UxProjectionControllerBase<TProjection, TDto> : Controller
     /// <summary>
     ///     Gets the logger for diagnostic output.
     /// </summary>
-    protected ILogger<UxProjectionControllerBase<TProjection, TDto>> Logger { get; }
+    private ILogger<UxProjectionControllerBase<TProjection, TDto>> Logger { get; }
 
     /// <summary>
     ///     Gets the mapper for converting projections to DTOs.
