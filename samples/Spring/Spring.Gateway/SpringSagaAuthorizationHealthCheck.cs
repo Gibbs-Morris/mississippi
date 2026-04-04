@@ -13,7 +13,7 @@ namespace MississippiSamples.Spring.Gateway;
 /// </summary>
 internal sealed class SpringSagaAuthorizationHealthCheck : IHealthCheck
 {
-    private readonly IOptionsMonitor<SpringAuthOptions> springAuthOptions;
+    private IOptionsMonitor<SpringAuthOptions> SpringAuthOptions { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SpringSagaAuthorizationHealthCheck" /> class.
@@ -27,7 +27,7 @@ internal sealed class SpringSagaAuthorizationHealthCheck : IHealthCheck
     {
         ArgumentNullException.ThrowIfNull(springAuthOptions);
         ArgumentNullException.ThrowIfNull(accessContextProvider);
-        this.springAuthOptions = springAuthOptions;
+        SpringAuthOptions = springAuthOptions;
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ internal sealed class SpringSagaAuthorizationHealthCheck : IHealthCheck
     )
     {
         ArgumentNullException.ThrowIfNull(context);
-        if (!springAuthOptions.CurrentValue.Enabled)
+        if (!SpringAuthOptions.CurrentValue.Enabled)
         {
             return Task.FromResult(HealthCheckResult.Healthy("Spring auth-proof mode is disabled."));
         }
