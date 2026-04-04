@@ -214,10 +214,10 @@ public sealed class McpSagaToolsGeneratorTests
     }
 
     /// <summary>
-    ///     Generated tools class should inject IAggregateGrainFactory via constructor.
+    ///     Generated tools class should inject IAggregateGrainFactory and the saga recovery service via constructor.
     /// </summary>
     [Fact]
-    public void GeneratesConstructorWithAggregateGrainFactory()
+    public void GeneratesConstructorWithAggregateGrainFactoryAndRecoveryService()
     {
         const string source = """
                               using Mississippi.DomainModeling.Abstractions;
@@ -241,7 +241,9 @@ public sealed class McpSagaToolsGeneratorTests
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("IAggregateGrainFactory aggregateGrainFactory", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("ISagaRecoveryService<OrderSagaState> sagaRecoveryService", generatedCode, StringComparison.Ordinal);
         Assert.Contains("AggregateGrainFactory = aggregateGrainFactory;", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("SagaRecoveryService = sagaRecoveryService;", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -326,10 +328,10 @@ public sealed class McpSagaToolsGeneratorTests
     }
 
     /// <summary>
-    ///     Generator should produce both start and status tool methods for a saga.
+    ///     Generator should produce start, raw-status, runtime-status, and resume tool methods for a saga.
     /// </summary>
     [Fact]
-    public void GeneratesStartAndStatusToolsForSaga()
+    public void GeneratesStartStatusRuntimeStatusAndResumeToolsForSaga()
     {
         const string source = """
                               using Mississippi.DomainModeling.Abstractions;
@@ -354,6 +356,8 @@ public sealed class McpSagaToolsGeneratorTests
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("OrderAsync", generatedCode, StringComparison.Ordinal);
         Assert.Contains("GetOrderStatusAsync", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("GetOrderRuntimeStatusAsync", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("ResumeOrderAsync", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -539,6 +543,74 @@ public sealed class McpSagaToolsGeneratorTests
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("Name = \"order_status\"", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Runtime-status tool should use read-only behavioral annotations and the saga recovery service seam.
+    /// </summary>
+    [Fact]
+    public void RuntimeStatusToolHasReadOnlyBehavior()
+    {
+        const string source = """
+                              using Mississippi.DomainModeling.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "[McpServerTool(Name = \"order_runtime_status\", Destructive = false, ReadOnly = true, Idempotent = true, OpenWorld = false)]",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("SagaRecoveryService.GetRuntimeStatusAsync(sagaId, cancellationToken)", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Resume tool should use destructive behavioral annotations and the saga recovery service seam.
+    /// </summary>
+    [Fact]
+    public void ResumeToolHasDestructiveBehavior()
+    {
+        const string source = """
+                              using Mississippi.DomainModeling.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "[McpServerTool(Name = \"order_resume\", Destructive = true, ReadOnly = false, Idempotent = false, OpenWorld = false)]",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains("SagaRecoveryService.ResumeAsync(sagaId, cancellationToken)", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
