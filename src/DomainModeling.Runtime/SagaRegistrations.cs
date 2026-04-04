@@ -68,6 +68,7 @@ public static class SagaRegistrations
         services.AddReducer<SagaCompleted, SagaRecoveryCheckpoint, SagaRecoveryCheckpointCompletedReducer>();
         services.AddReducer<SagaCompensated, SagaRecoveryCheckpoint, SagaRecoveryCheckpointCompensatedReducer>();
         services.AddReducer<SagaFailed, SagaRecoveryCheckpoint, SagaRecoveryCheckpointFailedReducer>();
+        services.AddTransient<SagaRecoveryCheckpointAccessor<TSaga>>();
         services.AddRootEventEffect<TSaga>();
         services.AddTransient<IEventEffect<TSaga>, SagaOrchestrationEffect<TSaga>>();
         return services;
