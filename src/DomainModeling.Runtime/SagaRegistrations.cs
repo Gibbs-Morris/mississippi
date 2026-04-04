@@ -47,6 +47,7 @@ public static class SagaRegistrations
                     SagaRecoveryMode.Automatic,
                     null)));
         services.AddCommandHandler<StartSagaCommand<TInput>, TSaga, StartSagaCommandHandler<TSaga, TInput>>();
+        services.AddCommandHandler<ResumeSagaCommand, TSaga, ResumeSagaCommandHandler<TSaga>>();
         services.AddReducer<SagaStartedEvent, TSaga, SagaStartedReducer<TSaga>>();
         services.AddReducer<SagaInputProvided<TInput>, TSaga, SagaInputProvidedReducer<TSaga, TInput>>();
         services.AddReducer<SagaStepCompleted, TSaga, SagaStepCompletedReducer<TSaga>>();

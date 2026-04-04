@@ -41,6 +41,68 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
     private SagaRecoveryPlanner<TSaga> Planner { get; }
 
     /// <summary>
+    ///     Applies the planned recovery action for the specified saga when work needs to execute.
+    /// </summary>
+    /// <param name="entityId">The saga entity identifier.</param>
+    /// <param name="source">The source requesting recovery execution.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The selected recovery plan when command execution succeeds.</returns>
+    public async Task<OperationResult<SagaRecoveryPlan>> ResumeAsync(
+        string entityId,
+        SagaResumeSource source,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        (IGenericAggregateGrain<TSaga> grain, TSaga? state, SagaRecoveryCheckpoint? checkpoint) =
+            await LoadInputsAsync(entityId, cancellationToken);
+        if (state is null)
+        {
+            return OperationResult.Ok(new SagaRecoveryPlan
+            {
+                Disposition = SagaRecoveryPlanDisposition.NoAction,
+                Reason = "Saga state not found.",
+            });
+        }
+
+        if (state.Phase is SagaPhase.Completed or SagaPhase.Compensated or SagaPhase.Failed)
+        {
+            return OperationResult.Ok(new SagaRecoveryPlan
+            {
+                Disposition = SagaRecoveryPlanDisposition.Terminal,
+            });
+        }
+
+        if (checkpoint is null)
+        {
+            return OperationResult.Ok(new SagaRecoveryPlan
+            {
+                Disposition = SagaRecoveryPlanDisposition.NoAction,
+                Reason = "Recovery checkpoint not found.",
+            });
+        }
+
+        SagaRecoveryPlan plan = Planner.Plan(state, checkpoint, source);
+        if (plan.Disposition is SagaRecoveryPlanDisposition.NoAction
+            or SagaRecoveryPlanDisposition.WorkflowMismatch)
+        {
+            return OperationResult.Ok(plan);
+        }
+
+        OperationResult commandResult = await grain.ExecuteAsync(
+            CreateResumeCommand(plan, state, checkpoint, source),
+            cancellationToken);
+        if (!commandResult.Success)
+        {
+            return OperationResult.Fail<SagaRecoveryPlan>(
+                commandResult.ErrorCode,
+                commandResult.ErrorMessage);
+        }
+
+        return OperationResult.Ok(plan);
+    }
+
+    /// <summary>
     ///     Loads the current saga state and checkpoint, then computes the next recovery action.
     /// </summary>
     /// <param name="entityId">The saga entity identifier.</param>
@@ -54,8 +116,7 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-        TSaga? state = await AggregateGrainFactory.GetGenericAggregate<TSaga>(entityId)
-            .GetStateAsync(cancellationToken);
+        (_, TSaga? state, SagaRecoveryCheckpoint? checkpoint) = await LoadInputsAsync(entityId, cancellationToken);
         if (state is null)
         {
             return new()
@@ -73,7 +134,6 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
             };
         }
 
-        SagaRecoveryCheckpoint? checkpoint = await CheckpointAccessor.GetAsync(entityId, cancellationToken);
         if (checkpoint is null)
         {
             return new()
@@ -84,5 +144,68 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
         }
 
         return Planner.Plan(state, checkpoint, source);
+    }
+
+    private static ResumeSagaCommand CreateResumeCommand(
+        SagaRecoveryPlan plan,
+        TSaga state,
+        SagaRecoveryCheckpoint checkpoint,
+        SagaResumeSource source
+    )
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(checkpoint);
+
+        if (plan.Disposition is SagaRecoveryPlanDisposition.ExecuteStep)
+        {
+            ArgumentNullException.ThrowIfNull(plan.Step);
+
+            return new ResumeSagaCommand
+            {
+                AttemptId = checkpoint.InFlightAttemptId,
+                Direction = plan.Direction,
+                Disposition = plan.Disposition,
+                OperationKey = checkpoint.InFlightOperationKey,
+                Source = source,
+                StepIndex = plan.Step.StepIndex,
+                StepName = plan.Step.StepName,
+            };
+        }
+
+        if (plan.Disposition is SagaRecoveryPlanDisposition.Blocked)
+        {
+            ArgumentNullException.ThrowIfNull(plan.Step);
+
+            return new ResumeSagaCommand
+            {
+                BlockedReason = plan.Reason,
+                Direction = plan.Direction,
+                Disposition = plan.Disposition,
+                Source = source,
+                StepIndex = plan.Step.StepIndex,
+                StepName = plan.Step.StepName,
+            };
+        }
+
+        return new ResumeSagaCommand
+        {
+            Disposition = plan.Disposition,
+            Source = source,
+        };
+    }
+
+    private async Task<(IGenericAggregateGrain<TSaga> Grain, TSaga? State, SagaRecoveryCheckpoint? Checkpoint)> LoadInputsAsync(
+        string entityId,
+        CancellationToken cancellationToken
+    )
+    {
+        IGenericAggregateGrain<TSaga> grain = AggregateGrainFactory.GetGenericAggregate<TSaga>(entityId);
+        TSaga? state = await grain.GetStateAsync(cancellationToken);
+        SagaRecoveryCheckpoint? checkpoint = state is null
+            || state.Phase is SagaPhase.Completed or SagaPhase.Compensated or SagaPhase.Failed
+            ? null
+            : await CheckpointAccessor.GetAsync(entityId, cancellationToken);
+        return (grain, state, checkpoint);
     }
 }

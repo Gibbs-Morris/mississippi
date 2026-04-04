@@ -146,7 +146,74 @@ public sealed class SagaOrchestrationEffectTests
                     StepIndex = 0,
                     StepName = "Step",
                 }));
+        Assert.True(
+            effect.CanHandle(
+                new SagaStepExecutionStarted
+                {
+                    AttemptId = Guid.NewGuid(),
+                    Direction = SagaExecutionDirection.Forward,
+                    OperationKey = "operation-key",
+                    Source = SagaResumeSource.Reminder,
+                    StartedAt = now,
+                    StepIndex = 0,
+                    StepName = "Step",
+                }));
         Assert.False(effect.CanHandle(new()));
+    }
+
+    /// <summary>
+    ///     Verifies reminder/manual execution-started markers execute replay work with replay context.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncExecutesStartedReplayAttempt()
+    {
+        DateTimeOffset now = new(2025, 2, 12, 9, 30, 0, TimeSpan.Zero);
+        FakeTimeProvider timeProvider = new(now);
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaSuccessStep), false, SagaStepRecoveryPolicy.Automatic, null),
+        ];
+        using ServiceProvider provider = CreateProvider(services => services.AddSingleton<SagaSuccessStep>());
+        SagaSuccessStep step = provider.GetRequiredService<SagaSuccessStep>();
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
+
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaStepExecutionStarted
+                {
+                    AttemptId = Guid.NewGuid(),
+                    Direction = SagaExecutionDirection.Forward,
+                    OperationKey = "resume-op",
+                    Source = SagaResumeSource.Reminder,
+                    StartedAt = now,
+                    StepIndex = 0,
+                    StepName = "Debit",
+                },
+                new()
+                {
+                    Phase = SagaPhase.Running,
+                    SagaId = Guid.NewGuid(),
+                },
+                "saga",
+                0,
+                CancellationToken.None));
+
+        Assert.Collection(
+            events,
+            item => Assert.IsType<SagaMarkerEvent>(item),
+            item =>
+            {
+                SagaStepCompleted completed = Assert.IsType<SagaStepCompleted>(item);
+                Assert.Equal(0, completed.StepIndex);
+                Assert.Equal("Debit", completed.StepName);
+                Assert.Equal(now, completed.CompletedAt);
+                Assert.Equal("resume-op", completed.OperationKey);
+            });
+        Assert.NotNull(step.LastExecutionContext);
+        Assert.True(step.LastExecutionContext!.IsReplay);
+        Assert.Equal(SagaResumeSource.Reminder, step.LastExecutionContext.Source);
+        Assert.Equal("resume-op", step.LastExecutionContext.OperationKey);
     }
 
     /// <summary>

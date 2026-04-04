@@ -77,6 +77,20 @@ public sealed class SagaRecoveryCoordinatorTests
 
     private static string ComputeHash() => SagaStepHash.Compute(new(SagaRecoveryMode.Automatic, null), Steps);
 
+    private static SagaRecoveryCheckpoint CreateCheckpoint(
+        SagaExecutionDirection direction,
+        int stepIndex,
+        string? stepHash = null,
+        SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic
+    ) => new()
+    {
+        PendingDirection = direction,
+        PendingStepIndex = stepIndex,
+        RecoveryMode = recoveryMode,
+        SagaId = Guid.NewGuid(),
+        StepHash = stepHash ?? ComputeHash(),
+    };
+
     private static SagaRecoveryCoordinator<CoordinatorSagaState> CreateCoordinator(
         Mock<IAggregateGrainFactory> aggregateGrainFactoryMock,
         Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
@@ -306,5 +320,491 @@ public sealed class SagaRecoveryCoordinatorTests
         Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
         Assert.NotNull(plan.Step);
         Assert.Equal(1, plan.Step.StepIndex);
+    }
+
+    /// <summary>
+    ///     Verifies resume execution returns no action when the saga state is missing.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncReturnsNoActionWhenSagaStateMissing()
+    {
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync((CoordinatorSagaState?)null);
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(aggregateGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Reminder);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.NoAction, result.Value.Disposition);
+        grainMock.Verify(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies resume execution returns terminal when the saga has already finished.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncReturnsTerminalWhenSagaAlreadyTerminal()
+    {
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Compensated,
+            StepHash = ComputeHash(),
+        });
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(aggregateGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Manual);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.Terminal, result.Value.Disposition);
+        grainMock.Verify(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies resume execution returns no action when the checkpoint is missing.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncReturnsNoActionWhenCheckpointMissing()
+    {
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Running,
+            StepHash = ComputeHash(),
+        });
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(7));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorGrainMock.Object);
+        BrookKey brookKey = BrookKey.ForType<CoordinatorSagaState>("saga-123");
+        SnapshotKey snapshotKey = new(
+            new(
+                brookKey.BrookName,
+                SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                brookKey.EntityId,
+                "checkpoint-hash"),
+            7);
+        Mock<ISnapshotCacheGrain<SagaRecoveryCheckpoint>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
+            .Returns(() => ValueTask.FromResult((SagaRecoveryCheckpoint)null!));
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey))
+            .Returns(snapshotCacheGrainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(
+            aggregateGrainFactoryMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Manual);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.NoAction, result.Value.Disposition);
+        grainMock.Verify(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies reminder resumes short-circuit when saga recovery mode is manual-only.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncReturnsNoActionWhenReminderHitsManualOnlySaga()
+    {
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Running,
+            StepHash = ComputeHash(),
+        });
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        BrookKey brookKey = BrookKey.ForType<CoordinatorSagaState>("saga-123");
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(7));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(brookKey)).Returns(cursorGrainMock.Object);
+        SnapshotKey snapshotKey = new(
+            new(
+                brookKey.BrookName,
+                SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                brookKey.EntityId,
+                "checkpoint-hash"),
+            7);
+        SagaRecoveryCheckpoint checkpoint = CreateCheckpoint(
+            SagaExecutionDirection.Forward,
+            0,
+            recoveryMode: SagaRecoveryMode.ManualOnly);
+        Mock<ISnapshotCacheGrain<SagaRecoveryCheckpoint>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(checkpoint);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey))
+            .Returns(snapshotCacheGrainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(
+            aggregateGrainFactoryMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Reminder);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.NoAction, result.Value.Disposition);
+        grainMock.Verify(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies workflow mismatches short-circuit without issuing a resume command.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncReturnsWorkflowMismatchWithoutExecutingCommand()
+    {
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Running,
+            StepHash = ComputeHash(),
+        });
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        BrookKey brookKey = BrookKey.ForType<CoordinatorSagaState>("saga-123");
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(7));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(brookKey)).Returns(cursorGrainMock.Object);
+        SnapshotKey snapshotKey = new(
+            new(
+                brookKey.BrookName,
+                SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                brookKey.EntityId,
+                "checkpoint-hash"),
+            7);
+        SagaRecoveryCheckpoint checkpoint = CreateCheckpoint(SagaExecutionDirection.Forward, 0, "DIFFERENT-HASH");
+        Mock<ISnapshotCacheGrain<SagaRecoveryCheckpoint>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(checkpoint);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey))
+            .Returns(snapshotCacheGrainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(
+            aggregateGrainFactoryMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Manual);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.WorkflowMismatch, result.Value.Disposition);
+        grainMock.Verify(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies resume execution emits a blocked resume command for reminder-driven manual-only work.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncExecutesBlockedCommandForReminderPlan()
+    {
+        ResumeSagaCommand? capturedCommand = null;
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Running,
+            SagaId = Guid.NewGuid(),
+            StepHash = ComputeHash(),
+        });
+        grainMock.Setup(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+            .Callback<object, CancellationToken>((command, _) => capturedCommand = Assert.IsType<ResumeSagaCommand>(command))
+            .ReturnsAsync(OperationResult.Ok());
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        BrookKey brookKey = BrookKey.ForType<CoordinatorSagaState>("saga-123");
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(7));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(brookKey)).Returns(cursorGrainMock.Object);
+        SnapshotKey snapshotKey = new(
+            new(
+                brookKey.BrookName,
+                SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                brookKey.EntityId,
+                "checkpoint-hash"),
+            7);
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Forward,
+            PendingStepIndex = 1,
+            RecoveryMode = SagaRecoveryMode.Automatic,
+            SagaId = Guid.NewGuid(),
+            StepHash = ComputeHash(),
+        };
+        Mock<ISnapshotCacheGrain<SagaRecoveryCheckpoint>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(checkpoint);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey))
+            .Returns(snapshotCacheGrainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(
+            aggregateGrainFactoryMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Reminder);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.Blocked, result.Value.Disposition);
+        Assert.NotNull(capturedCommand);
+        Assert.Equal(SagaRecoveryPlanDisposition.Blocked, capturedCommand.Disposition);
+        Assert.Equal(SagaResumeSource.Reminder, capturedCommand.Source);
+        Assert.Equal(SagaExecutionDirection.Forward, capturedCommand.Direction);
+        Assert.Equal(1, capturedCommand.StepIndex);
+        Assert.Equal("Credit", capturedCommand.StepName);
+        Assert.Equal("Step 'Credit' requires manual forward recovery.", capturedCommand.BlockedReason);
+    }
+
+    /// <summary>
+    ///     Verifies resume execution reuses the persisted in-flight identity for replayable work.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncReusesInFlightIdentityForExecutePlan()
+    {
+        ResumeSagaCommand? capturedCommand = null;
+        Guid attemptId = Guid.NewGuid();
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Running,
+            SagaId = Guid.NewGuid(),
+            StepHash = ComputeHash(),
+        });
+        grainMock.Setup(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+            .Callback<object, CancellationToken>((command, _) => capturedCommand = Assert.IsType<ResumeSagaCommand>(command))
+            .ReturnsAsync(OperationResult.Ok());
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        BrookKey brookKey = BrookKey.ForType<CoordinatorSagaState>("saga-123");
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(7));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(brookKey)).Returns(cursorGrainMock.Object);
+        SnapshotKey snapshotKey = new(
+            new(
+                brookKey.BrookName,
+                SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                brookKey.EntityId,
+                "checkpoint-hash"),
+            7);
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            InFlightAttemptId = attemptId,
+            InFlightOperationKey = "resume-op",
+            PendingDirection = SagaExecutionDirection.Forward,
+            PendingStepIndex = 1,
+            RecoveryMode = SagaRecoveryMode.Automatic,
+            SagaId = Guid.NewGuid(),
+            StepHash = ComputeHash(),
+        };
+        Mock<ISnapshotCacheGrain<SagaRecoveryCheckpoint>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(checkpoint);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey))
+            .Returns(snapshotCacheGrainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(
+            aggregateGrainFactoryMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Manual);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.ExecuteStep, result.Value.Disposition);
+        Assert.NotNull(capturedCommand);
+        Assert.Equal(SagaRecoveryPlanDisposition.ExecuteStep, capturedCommand.Disposition);
+        Assert.Equal(SagaResumeSource.Manual, capturedCommand.Source);
+        Assert.Equal(attemptId, capturedCommand.AttemptId);
+        Assert.Equal("resume-op", capturedCommand.OperationKey);
+        Assert.Equal(1, capturedCommand.StepIndex);
+        Assert.Equal("Credit", capturedCommand.StepName);
+    }
+
+    /// <summary>
+    ///     Verifies forward-complete plans execute a terminal completion command.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncExecutesCompleteSagaCommand()
+    {
+        ResumeSagaCommand? capturedCommand = null;
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Running,
+            SagaId = Guid.NewGuid(),
+            StepHash = ComputeHash(),
+        });
+        grainMock.Setup(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+            .Callback<object, CancellationToken>((command, _) => capturedCommand = Assert.IsType<ResumeSagaCommand>(command))
+            .ReturnsAsync(OperationResult.Ok());
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        BrookKey brookKey = BrookKey.ForType<CoordinatorSagaState>("saga-123");
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(7));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(brookKey)).Returns(cursorGrainMock.Object);
+        SnapshotKey snapshotKey = new(
+            new(
+                brookKey.BrookName,
+                SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                brookKey.EntityId,
+                "checkpoint-hash"),
+            7);
+        SagaRecoveryCheckpoint checkpoint = CreateCheckpoint(SagaExecutionDirection.Forward, 2);
+        Mock<ISnapshotCacheGrain<SagaRecoveryCheckpoint>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(checkpoint);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey))
+            .Returns(snapshotCacheGrainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(
+            aggregateGrainFactoryMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Manual);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.CompleteSaga, result.Value.Disposition);
+        Assert.NotNull(capturedCommand);
+        Assert.Equal(SagaRecoveryPlanDisposition.CompleteSaga, capturedCommand.Disposition);
+        Assert.Equal(SagaResumeSource.Manual, capturedCommand.Source);
+        Assert.Null(capturedCommand.StepIndex);
+        Assert.Null(capturedCommand.StepName);
+    }
+
+    /// <summary>
+    ///     Verifies compensation-complete plans execute a terminal compensation command.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncExecutesCompensateSagaCommand()
+    {
+        ResumeSagaCommand? capturedCommand = null;
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Running,
+            SagaId = Guid.NewGuid(),
+            StepHash = ComputeHash(),
+        });
+        grainMock.Setup(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+            .Callback<object, CancellationToken>((command, _) => capturedCommand = Assert.IsType<ResumeSagaCommand>(command))
+            .ReturnsAsync(OperationResult.Ok());
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        BrookKey brookKey = BrookKey.ForType<CoordinatorSagaState>("saga-123");
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(7));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(brookKey)).Returns(cursorGrainMock.Object);
+        SnapshotKey snapshotKey = new(
+            new(
+                brookKey.BrookName,
+                SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                brookKey.EntityId,
+                "checkpoint-hash"),
+            7);
+        SagaRecoveryCheckpoint checkpoint = CreateCheckpoint(SagaExecutionDirection.Compensation, -1);
+        Mock<ISnapshotCacheGrain<SagaRecoveryCheckpoint>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(checkpoint);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey))
+            .Returns(snapshotCacheGrainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(
+            aggregateGrainFactoryMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Reminder);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.Value);
+        Assert.Equal(SagaRecoveryPlanDisposition.CompensateSaga, result.Value.Disposition);
+        Assert.NotNull(capturedCommand);
+        Assert.Equal(SagaRecoveryPlanDisposition.CompensateSaga, capturedCommand.Disposition);
+        Assert.Equal(SagaResumeSource.Reminder, capturedCommand.Source);
+        Assert.Null(capturedCommand.StepIndex);
+        Assert.Null(capturedCommand.StepName);
+    }
+
+    /// <summary>
+    ///     Verifies resume command failures propagate as failed coordinator results.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncReturnsFailureWhenCommandExecutionFails()
+    {
+        Mock<IGenericAggregateGrain<CoordinatorSagaState>> grainMock = new();
+        grainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new CoordinatorSagaState
+        {
+            Phase = SagaPhase.Running,
+            SagaId = Guid.NewGuid(),
+            StepHash = ComputeHash(),
+        });
+        grainMock.Setup(g => g.ExecuteAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OperationResult.Fail(AggregateErrorCodes.InvalidState, "resume failed"));
+        Mock<IAggregateGrainFactory> aggregateGrainFactoryMock = new();
+        aggregateGrainFactoryMock.Setup(f => f.GetGenericAggregate<CoordinatorSagaState>("saga-123"))
+            .Returns(grainMock.Object);
+        BrookKey brookKey = BrookKey.ForType<CoordinatorSagaState>("saga-123");
+        Mock<IBrookCursorGrain> cursorGrainMock = new();
+        cursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition(7));
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(brookKey)).Returns(cursorGrainMock.Object);
+        SnapshotKey snapshotKey = new(
+            new(
+                brookKey.BrookName,
+                SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                brookKey.EntityId,
+                "checkpoint-hash"),
+            7);
+        SagaRecoveryCheckpoint checkpoint = CreateCheckpoint(SagaExecutionDirection.Compensation, -1);
+        Mock<ISnapshotCacheGrain<SagaRecoveryCheckpoint>> snapshotCacheGrainMock = new();
+        snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>())).ReturnsAsync(checkpoint);
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        snapshotGrainFactoryMock.Setup(f => f.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey))
+            .Returns(snapshotCacheGrainMock.Object);
+        SagaRecoveryCoordinator<CoordinatorSagaState> coordinator = CreateCoordinator(
+            aggregateGrainFactoryMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+
+        OperationResult<SagaRecoveryPlan> result = await coordinator.ResumeAsync("saga-123", SagaResumeSource.Reminder);
+
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+        Assert.Equal("resume failed", result.ErrorMessage);
     }
 }
