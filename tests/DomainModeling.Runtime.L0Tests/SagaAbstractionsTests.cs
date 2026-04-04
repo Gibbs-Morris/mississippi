@@ -146,8 +146,14 @@ public sealed class SagaAbstractionsTests
         {
             Profile = "critical-payments",
         };
+        AttributeUsageAttribute? usage = (AttributeUsageAttribute?)Attribute.GetCustomAttribute(
+            typeof(SagaRecoveryAttribute),
+            typeof(AttributeUsageAttribute));
+
         Assert.Equal(SagaRecoveryMode.ManualOnly, attribute.Mode);
         Assert.Equal("critical-payments", attribute.Profile);
+        Assert.NotNull(usage);
+        Assert.False(usage.Inherited);
     }
 
     /// <summary>

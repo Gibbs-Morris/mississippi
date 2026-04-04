@@ -6,7 +6,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 /// <summary>
 ///     Configures framework-owned recovery behavior for a saga state type.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class SagaRecoveryAttribute : Attribute
 {
     /// <summary>
