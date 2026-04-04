@@ -421,8 +421,8 @@ public sealed class SagaOrchestrationEffectTests
         [
             new(0, "Debit", typeof(SagaSuccessStep), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
-        using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaSuccessStep>());
-        SagaSuccessStep.Reset();
+        using ServiceProvider provider = CreateProvider(services => services.AddSingleton<SagaSuccessStep>());
+        SagaSuccessStep step = provider.GetRequiredService<SagaSuccessStep>();
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
         List<object> events = await CollectAsync(
             effect.HandleAsync(
@@ -451,12 +451,12 @@ public sealed class SagaOrchestrationEffectTests
                 Assert.Equal(started.AttemptId, completed.AttemptId);
                 Assert.Equal(started.OperationKey, completed.OperationKey);
             });
-        Assert.NotNull(SagaSuccessStep.LastExecutionContext);
-        Assert.Equal(SagaExecutionDirection.Forward, SagaSuccessStep.LastExecutionContext!.Direction);
-        Assert.False(SagaSuccessStep.LastExecutionContext.IsReplay);
-        Assert.Equal(SagaResumeSource.Initial, SagaSuccessStep.LastExecutionContext.Source);
-        Assert.Equal(0, SagaSuccessStep.LastExecutionContext.StepIndex);
-        Assert.Equal("Debit", SagaSuccessStep.LastExecutionContext.StepName);
+        Assert.NotNull(step.LastExecutionContext);
+        Assert.Equal(SagaExecutionDirection.Forward, step.LastExecutionContext!.Direction);
+        Assert.False(step.LastExecutionContext.IsReplay);
+        Assert.Equal(SagaResumeSource.Initial, step.LastExecutionContext.Source);
+        Assert.Equal(0, step.LastExecutionContext.StepIndex);
+        Assert.Equal("Debit", step.LastExecutionContext.StepName);
     }
 
     /// <summary>

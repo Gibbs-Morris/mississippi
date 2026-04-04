@@ -14,12 +14,7 @@ internal sealed class SagaSuccessStep : ISagaStep<TestSagaState>
     /// <summary>
     ///     Gets the last execution context observed by the step.
     /// </summary>
-    internal static SagaStepExecutionContext? LastExecutionContext { get; private set; }
-
-    /// <summary>
-    ///     Clears the captured execution context.
-    /// </summary>
-    internal static void Reset() => LastExecutionContext = null;
+    internal SagaStepExecutionContext? LastExecutionContext { get; private set; }
 
     /// <inheritdoc />
     public Task<StepResult> ExecuteAsync(
