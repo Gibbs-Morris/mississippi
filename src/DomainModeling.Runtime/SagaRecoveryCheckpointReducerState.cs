@@ -9,7 +9,8 @@ namespace Mississippi.DomainModeling.Runtime;
 internal static class SagaRecoveryCheckpointReducerState
 {
     /// <summary>
-    ///     Clears only the in-flight attempt metadata while keeping the pending step information intact.
+    ///     Clears the in-flight attempt metadata and cached pending step name while preserving the pending direction
+    ///     and step index.
     /// </summary>
     /// <param name="state">The current checkpoint state.</param>
     /// <returns>The updated checkpoint with in-flight metadata removed.</returns>
