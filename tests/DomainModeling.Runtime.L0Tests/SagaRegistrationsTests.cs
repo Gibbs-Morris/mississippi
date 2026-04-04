@@ -146,6 +146,22 @@ public sealed class SagaRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies the public saga recovery service is registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersSagaRecoveryService()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+
+        Assert.Contains(
+            services,
+            descriptor => descriptor.ServiceType == typeof(ISagaRecoveryService<TestSagaState>)
+                          && descriptor.ImplementationType == typeof(SagaRecoveryService<TestSagaState>)
+                          && descriptor.Lifetime == ServiceLifetime.Transient);
+    }
+
+    /// <summary>
     ///     Verifies the saga reminder handler is registered.
     /// </summary>
     [Fact]

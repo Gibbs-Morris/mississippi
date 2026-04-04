@@ -157,6 +157,77 @@ public sealed class SagaAbstractionsTests
     }
 
     /// <summary>
+    ///     Verifies saga resume responses capture typed request outcomes.
+    /// </summary>
+    [Fact]
+    public void SagaResumeResponseCapturesTypedOutcome()
+    {
+        DateTimeOffset processedAt = new(2026, 4, 4, 15, 0, 0, TimeSpan.Zero);
+        SagaResumeResponse response = new()
+        {
+            BlockedReason = "Manual approval required.",
+            Disposition = SagaResumeRequestDisposition.Blocked,
+            Message = "Resume blocked.",
+            PendingStepIndex = 3,
+            PendingStepName = "Debit",
+            ProcessedAt = processedAt,
+            SagaId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            Source = SagaResumeSource.Manual,
+        };
+
+        Assert.Equal(SagaResumeRequestDisposition.Blocked, response.Disposition);
+        Assert.Equal("Manual approval required.", response.BlockedReason);
+        Assert.Equal("Resume blocked.", response.Message);
+        Assert.Equal(3, response.PendingStepIndex);
+        Assert.Equal("Debit", response.PendingStepName);
+        Assert.Equal(processedAt, response.ProcessedAt);
+        Assert.Equal(Guid.Parse("11111111-1111-1111-1111-111111111111"), response.SagaId);
+        Assert.Equal(SagaResumeSource.Manual, response.Source);
+    }
+
+    /// <summary>
+    ///     Verifies saga runtime status captures metadata-only recovery information.
+    /// </summary>
+    [Fact]
+    public void SagaRuntimeStatusCapturesRecoveryMetadata()
+    {
+        DateTimeOffset attemptedAt = new(2026, 4, 4, 16, 0, 0, TimeSpan.Zero);
+        DateTimeOffset nextEligibleAt = new(2026, 4, 4, 16, 5, 0, TimeSpan.Zero);
+        SagaRuntimeStatus status = new()
+        {
+            AutomaticAttemptCount = 2,
+            BlockedReason = "Manual policy prevents automatic replay.",
+            LastResumeAttemptedAt = attemptedAt,
+            LastResumeSource = SagaResumeSource.Reminder,
+            NextEligibleResumeAt = nextEligibleAt,
+            PendingDirection = SagaExecutionDirection.Compensation,
+            PendingStepIndex = 1,
+            PendingStepName = "Credit",
+            Phase = SagaPhase.Compensating.ToString(),
+            RecoveryMode = SagaRecoveryMode.ManualOnly,
+            ReminderArmed = true,
+            ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired,
+            SagaId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            WorkflowHashMatches = false,
+        };
+
+        Assert.Equal(2, status.AutomaticAttemptCount);
+        Assert.Equal("Manual policy prevents automatic replay.", status.BlockedReason);
+        Assert.Equal(attemptedAt, status.LastResumeAttemptedAt);
+        Assert.Equal(SagaResumeSource.Reminder, status.LastResumeSource);
+        Assert.Equal(nextEligibleAt, status.NextEligibleResumeAt);
+        Assert.Equal(SagaExecutionDirection.Compensation, status.PendingDirection);
+        Assert.Equal(1, status.PendingStepIndex);
+        Assert.Equal("Credit", status.PendingStepName);
+        Assert.Equal(SagaPhase.Compensating.ToString(), status.Phase);
+        Assert.Equal(SagaRecoveryMode.ManualOnly, status.RecoveryMode);
+        Assert.True(status.ReminderArmed);
+        Assert.Equal(SagaResumeDisposition.ManualInterventionRequired, status.ResumeDisposition);
+        Assert.Equal(Guid.Parse("22222222-2222-2222-2222-222222222222"), status.SagaId);
+        Assert.False(status.WorkflowHashMatches);
+    }
+
+    /// <summary>
     ///     Verifies step compensated event stores step details.
     /// </summary>
     [Fact]

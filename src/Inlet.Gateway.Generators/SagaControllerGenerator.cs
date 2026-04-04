@@ -108,10 +108,12 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.AppendSummary($"Initializes a new instance of the <see cref=\"{saga.ControllerTypeName}\" /> class.");
         sb.AppendLine("/// <param name=\"aggregateGrainFactory\">Factory for resolving saga grains.</param>");
+        sb.AppendLine("/// <param name=\"sagaRecoveryService\">Service for runtime-status and manual-resume saga operations.</param>");
         sb.AppendLine("/// <param name=\"logger\">The logger for diagnostic output.</param>");
         sb.AppendLine($"public {saga.ControllerTypeName}(");
         sb.IncreaseIndent();
         sb.AppendLine("IAggregateGrainFactory aggregateGrainFactory,");
+        sb.AppendLine($"ISagaRecoveryService<{saga.SagaStateTypeName}> sagaRecoveryService,");
         sb.AppendLine($"ILogger<{saga.ControllerTypeName}> logger");
         sb.DecreaseIndent();
         sb.AppendLine(")");
@@ -120,9 +122,11 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.OpenBrace();
         sb.AppendLine("AggregateGrainFactory = aggregateGrainFactory;");
+        sb.AppendLine("SagaRecoveryService = sagaRecoveryService;");
         sb.CloseBrace();
         sb.AppendLine();
         sb.AppendLine("private IAggregateGrainFactory AggregateGrainFactory { get; }");
+        sb.AppendLine($"private ISagaRecoveryService<{saga.SagaStateTypeName}> SagaRecoveryService {{ get; }}");
         sb.AppendLine();
 
         // Start endpoint
@@ -159,10 +163,54 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-        sb.AppendLine(
-            $"IGenericAggregateGrain<{saga.SagaStateTypeName}> grain = AggregateGrainFactory.GetGenericAggregate<{saga.SagaStateTypeName}>(sagaId.ToString());");
-        sb.AppendLine("var state = await grain.GetStateAsync(cancellationToken);");
+        sb.AppendLine($"{saga.SagaStateTypeName}? state = await SagaRecoveryService.GetStateAsync(sagaId.ToString(), cancellationToken);");
         sb.AppendLine("return Ok(state);");
+        sb.CloseBrace();
+        sb.AppendLine();
+
+        // Runtime-status endpoint
+        sb.AppendSummary($"Gets the runtime recovery status for the {saga.SagaName} saga.");
+        sb.AppendLine("/// <param name=\"sagaId\">The saga identifier.</param>");
+        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine("/// <returns>The metadata-only saga runtime status.</returns>");
+        sb.AppendLine("[HttpGet(\"runtime-status\")]");
+        sb.AppendLine("public async Task<ActionResult<SagaRuntimeStatus>> GetRuntimeStatusAsync(");
+        sb.IncreaseIndent();
+        sb.AppendLine("[FromRoute] Guid sagaId,");
+        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+        sb.AppendLine("SagaRuntimeStatus? status = await SagaRecoveryService.GetRuntimeStatusAsync(sagaId.ToString(), cancellationToken);");
+        sb.AppendLine("if (status is null)");
+        sb.OpenBrace();
+        sb.AppendLine("return NotFound();");
+        sb.CloseBrace();
+        sb.AppendLine();
+        sb.AppendLine("return Ok(status);");
+        sb.CloseBrace();
+        sb.AppendLine();
+
+        // Resume endpoint
+        sb.AppendSummary($"Requests an explicit manual resume for the {saga.SagaName} saga.");
+        sb.AppendLine("/// <param name=\"sagaId\">The saga identifier.</param>");
+        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine("/// <returns>The typed manual-resume response.</returns>");
+        sb.AppendLine("[HttpPost(\"resume\")]");
+        sb.AppendLine("public async Task<ActionResult<SagaResumeResponse>> ResumeAsync(");
+        sb.IncreaseIndent();
+        sb.AppendLine("[FromRoute] Guid sagaId,");
+        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+        sb.AppendLine("SagaResumeResponse? response = await SagaRecoveryService.ResumeAsync(sagaId.ToString(), cancellationToken);");
+        sb.AppendLine("if (response is null)");
+        sb.OpenBrace();
+        sb.AppendLine("return NotFound();");
+        sb.CloseBrace();
+        sb.AppendLine();
+        sb.AppendLine("return Ok(response);");
         sb.CloseBrace();
         sb.AppendLine();
 
