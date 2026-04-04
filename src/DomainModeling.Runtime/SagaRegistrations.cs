@@ -28,6 +28,8 @@ public static class SagaRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddAggregateSupport();
+        services.AddSnapshotType<SagaRecoveryCheckpoint>();
+        services.AddSnapshotStateConverter<SagaRecoveryCheckpoint>();
         services.AddEventType<SagaStartedEvent>();
         services.AddEventType<SagaInputProvided<TInput>>();
         services.AddEventType<SagaStepExecutionStarted>();
@@ -51,6 +53,21 @@ public static class SagaRegistrations
         services.AddReducer<SagaCompleted, TSaga, SagaCompletedReducer<TSaga>>();
         services.AddReducer<SagaCompensated, TSaga, SagaCompensatedReducer<TSaga>>();
         services.AddReducer<SagaFailed, TSaga, SagaFailedReducer<TSaga>>();
+        services.AddReducer<SagaStartedEvent, SagaRecoveryCheckpoint, SagaRecoveryCheckpointStartedReducer>();
+        services.AddReducer<
+            SagaStepExecutionStarted,
+            SagaRecoveryCheckpoint,
+            SagaRecoveryCheckpointExecutionStartedReducer>();
+        services.AddReducer<SagaStepCompleted, SagaRecoveryCheckpoint, SagaRecoveryCheckpointStepCompletedReducer>();
+        services.AddReducer<SagaStepFailed, SagaRecoveryCheckpoint, SagaRecoveryCheckpointStepFailedReducer>();
+        services.AddReducer<SagaCompensating, SagaRecoveryCheckpoint, SagaRecoveryCheckpointCompensatingReducer>();
+        services.AddReducer<
+            SagaStepCompensated,
+            SagaRecoveryCheckpoint,
+            SagaRecoveryCheckpointStepCompensatedReducer>();
+        services.AddReducer<SagaCompleted, SagaRecoveryCheckpoint, SagaRecoveryCheckpointCompletedReducer>();
+        services.AddReducer<SagaCompensated, SagaRecoveryCheckpoint, SagaRecoveryCheckpointCompensatedReducer>();
+        services.AddReducer<SagaFailed, SagaRecoveryCheckpoint, SagaRecoveryCheckpointFailedReducer>();
         services.AddRootEventEffect<TSaga>();
         services.AddTransient<IEventEffect<TSaga>, SagaOrchestrationEffect<TSaga>>();
         return services;
