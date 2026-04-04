@@ -94,8 +94,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
     {
         ProjectionProperties properties = ProjectionProperties.Create(projection.TypeSymbol);
         const string AutomaticPendingDisposition = "ResumeDisposition = SagaResumeDisposition.AutomaticPending";
-        const string ManualInterventionDisposition =
-            "ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired";
+        const string WorkflowMismatchAwareBlockedDisposition =
+            "ResumeDisposition = SagaStatusRecoveryReasonClassifier.IsWorkflowMismatch(eventData.BlockedReason) ? SagaResumeDisposition.WorkflowMismatch : SagaResumeDisposition.ManualInterventionRequired";
         const string StartedDisposition =
             "ResumeDisposition = eventData.RecoveryMode is SagaRecoveryMode.ManualOnly ? SagaResumeDisposition.ManualInterventionRequired : SagaResumeDisposition.AutomaticPending";
         const string TerminalDisposition = "ResumeDisposition = SagaResumeDisposition.Terminal";
@@ -110,6 +110,38 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         sb.AppendUsing("Mississippi.Tributary.Abstractions");
         sb.AppendUsing("Mississippi.DomainModeling.Abstractions");
         sb.AppendFileScopedNamespace(projection.Namespace + ".Reducers");
+        sb.AppendLine();
+        sb.AppendSummary("Classifies framework-managed saga recovery blocked reasons for status projections.");
+        sb.AppendGeneratedCodeAttribute(GeneratorName);
+        sb.AppendLine("internal static class SagaStatusRecoveryReasonClassifier");
+        sb.OpenBrace();
+        sb.AppendLine("internal static bool IsWorkflowMismatch(");
+        sb.IncreaseIndent();
+        sb.AppendLine("string blockedReason");
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+        sb.AppendLine("ArgumentException.ThrowIfNullOrWhiteSpace(blockedReason);");
+        sb.AppendLine("return string.Equals(");
+        sb.IncreaseIndent();
+        sb.AppendLine("blockedReason,");
+        sb.AppendLine("\"Workflow hash mismatch prevents automatic resume.\",");
+        sb.AppendLine("StringComparison.Ordinal) ||");
+        sb.AppendLine("string.Equals(");
+        sb.AppendLine("blockedReason,");
+        sb.AppendLine("\"Recovery checkpoint is missing a pending step index.\",");
+        sb.AppendLine("StringComparison.Ordinal) ||");
+        sb.AppendLine("(blockedReason.StartsWith(\"Pending step index '\", StringComparison.Ordinal) &&");
+        sb.AppendLine("blockedReason.EndsWith(");
+        sb.AppendLine("\"' is not registered in the current saga definition.\",");
+        sb.AppendLine("StringComparison.Ordinal)) ||");
+        sb.AppendLine("(blockedReason.StartsWith(\"Step '\", StringComparison.Ordinal) &&");
+        sb.AppendLine("blockedReason.EndsWith(");
+        sb.AppendLine("\"' no longer supports compensation recovery.\",");
+        sb.AppendLine("StringComparison.Ordinal));");
+        sb.DecreaseIndent();
+        sb.CloseBrace();
+        sb.CloseBrace();
         sb.AppendLine();
         List<string> sagaStartedAssignments =
         [
@@ -305,7 +337,10 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
                 resumeBlockedAssignments,
                 properties.AutomaticAttemptCount,
                 "AutomaticAttemptCount = eventData.Source is SagaResumeSource.Reminder ? state.AutomaticAttemptCount + 1 : state.AutomaticAttemptCount");
-            AddAssignment(resumeBlockedAssignments, properties.ResumeDisposition, ManualInterventionDisposition);
+            AddAssignment(
+                resumeBlockedAssignments,
+                properties.ResumeDisposition,
+                WorkflowMismatchAwareBlockedDisposition);
             if (resumeBlockedAssignments.Count > 0)
             {
                 reducerBlocks.Add(

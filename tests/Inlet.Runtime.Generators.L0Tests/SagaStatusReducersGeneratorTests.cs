@@ -232,7 +232,19 @@ public sealed class SagaStatusReducersGeneratorTests
         Assert.Contains("RecoveryMode = eventData.RecoveryMode", reducersSource, StringComparison.Ordinal);
         Assert.Contains("PendingDirection = SagaExecutionDirection.Forward", reducersSource, StringComparison.Ordinal);
         Assert.Contains(
-            "ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired",
+            "class SagaStatusRecoveryReasonClassifier",
+            reducersSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SagaStatusRecoveryReasonClassifier.IsWorkflowMismatch(eventData.BlockedReason)",
+            reducersSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "? SagaResumeDisposition.WorkflowMismatch : SagaResumeDisposition.ManualInterventionRequired",
+            reducersSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SagaResumeDisposition.WorkflowMismatch",
             reducersSource,
             StringComparison.Ordinal);
         Assert.Contains("class SagaStepExecutionStartedStatusReducer", reducersSource, StringComparison.Ordinal);

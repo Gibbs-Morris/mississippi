@@ -343,6 +343,48 @@ public sealed class SagaRecoveryServiceTests
     }
 
     /// <summary>
+    ///     Verifies runtime status preserves workflow-mismatch semantics when the checkpoint is already blocked with a
+    ///     framework-managed mismatch reason.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task GetRuntimeStatusAsyncReturnsWorkflowMismatchWhenCheckpointBlockedByWorkflowMismatchReason()
+    {
+        FakeAggregateGrainFactory aggregateGrainFactory = new()
+        {
+            Grain = new()
+            {
+                State = new()
+                {
+                    Phase = SagaPhase.Compensating,
+                    SagaId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    StepHash = ComputeHash(),
+                },
+            },
+        };
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        SetupCheckpointLoad(
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock,
+            "saga-123",
+            CreateCheckpoint(
+                SagaExecutionDirection.Compensation,
+                0,
+                "Workflow hash mismatch prevents automatic resume."));
+        SagaRecoveryService<ServiceSagaState> service = CreateService(
+            aggregateGrainFactory,
+            new(new(2026, 4, 4, 19, 2, 0, TimeSpan.Zero)),
+            brookGrainFactoryMock: brookGrainFactoryMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        SagaRuntimeStatus? status = await service.GetRuntimeStatusAsync("saga-123");
+        Assert.NotNull(status);
+        Assert.Equal(SagaResumeDisposition.WorkflowMismatch, status.ResumeDisposition);
+        Assert.Equal("Workflow hash mismatch prevents automatic resume.", status.BlockedReason);
+        Assert.False(status.ReminderArmed);
+    }
+
+    /// <summary>
     ///     Verifies runtime status reports manual intervention when the currently pending step itself requires manual
     ///     forward recovery.
     /// </summary>

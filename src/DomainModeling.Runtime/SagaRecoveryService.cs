@@ -116,6 +116,33 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
             Source = SagaResumeSource.Manual,
         };
 
+    private static bool IsWorkflowMismatchBlockedReason(
+        string? blockedReason
+    )
+    {
+        if (string.IsNullOrWhiteSpace(blockedReason))
+        {
+            return false;
+        }
+
+        return string.Equals(
+                   blockedReason,
+                   "Workflow hash mismatch prevents automatic resume.",
+                   StringComparison.Ordinal) ||
+               string.Equals(
+                   blockedReason,
+                   "Recovery checkpoint is missing a pending step index.",
+                   StringComparison.Ordinal) ||
+               (blockedReason.StartsWith("Pending step index '", StringComparison.Ordinal) &&
+                blockedReason.EndsWith(
+                    "' is not registered in the current saga definition.",
+                    StringComparison.Ordinal)) ||
+               (blockedReason.StartsWith("Step '", StringComparison.Ordinal) &&
+                blockedReason.EndsWith(
+                    "' no longer supports compensation recovery.",
+                    StringComparison.Ordinal));
+    }
+
     private static SagaResumeDisposition DetermineStatusDisposition(
         TSaga state,
         SagaRecoveryCheckpoint? checkpoint,
@@ -137,7 +164,9 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
 
         if (!string.IsNullOrWhiteSpace(checkpoint?.BlockedReason))
         {
-            return SagaResumeDisposition.ManualInterventionRequired;
+            return IsWorkflowMismatchBlockedReason(checkpoint.BlockedReason)
+                ? SagaResumeDisposition.WorkflowMismatch
+                : SagaResumeDisposition.ManualInterventionRequired;
         }
 
         if (checkpoint?.PendingDirection is not null)

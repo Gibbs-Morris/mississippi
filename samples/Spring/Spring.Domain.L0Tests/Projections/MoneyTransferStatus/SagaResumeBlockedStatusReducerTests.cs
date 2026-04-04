@@ -57,4 +57,34 @@ public sealed class SagaResumeBlockedStatusReducerTests
         result.AutomaticAttemptCount.Should().Be(1);
         result.ResumeDisposition.Should().Be(SagaResumeDisposition.ManualInterventionRequired);
     }
+
+    /// <summary>
+    ///     Verifies framework-managed workflow-mismatch blocked reasons surface as workflow mismatch instead of generic
+    ///     manual intervention.
+    /// </summary>
+    [Fact]
+    public void ReduceWithResumeBlockedClassifiesWorkflowMismatchReasons()
+    {
+        DateTimeOffset blockedAt = new(2026, 4, 4, 10, 20, 0, TimeSpan.Zero);
+        MoneyTransferStatusProjection initial = new()
+        {
+            RecoveryMode = SagaRecoveryMode.Automatic,
+            ResumeDisposition = SagaResumeDisposition.AutomaticPending,
+        };
+        SagaResumeBlocked @event = new()
+        {
+            BlockedAt = blockedAt,
+            BlockedReason = "Workflow hash mismatch prevents automatic resume.",
+            Direction = SagaExecutionDirection.Forward,
+            Source = SagaResumeSource.Reminder,
+            StepIndex = 0,
+            StepName = "Withdraw",
+        };
+        MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
+        result.BlockedReason.Should().Be(@event.BlockedReason);
+        result.LastResumeSource.Should().Be(SagaResumeSource.Reminder);
+        result.LastResumeAttemptedAt.Should().Be(blockedAt);
+        result.AutomaticAttemptCount.Should().Be(1);
+        result.ResumeDisposition.Should().Be(SagaResumeDisposition.WorkflowMismatch);
+    }
 }
