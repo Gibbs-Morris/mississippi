@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Mississippi.Brooks.Abstractions;
 using Mississippi.DomainModeling.Abstractions;
 
 using Orleans.Runtime;
