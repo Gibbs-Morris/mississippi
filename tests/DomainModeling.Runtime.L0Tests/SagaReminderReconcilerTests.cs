@@ -71,7 +71,8 @@ public sealed class SagaReminderReconcilerTests
         SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic,
         int automaticAttemptCount = 0,
         SagaExecutionDirection? pendingDirection = SagaExecutionDirection.Forward,
-        int? pendingStepIndex = 0
+        int? pendingStepIndex = 0,
+        bool reminderArmed = false
     ) => new()
     {
         AutomaticAttemptCount = automaticAttemptCount,
@@ -79,6 +80,7 @@ public sealed class SagaReminderReconcilerTests
         NextEligibleResumeAt = nextEligibleResumeAt,
         PendingDirection = pendingDirection,
         PendingStepIndex = pendingStepIndex,
+        ReminderArmed = reminderArmed,
         RecoveryMode = recoveryMode,
         SagaId = Guid.NewGuid(),
         StepHash = "hash",
@@ -365,7 +367,7 @@ public sealed class SagaReminderReconcilerTests
             .ReturnsAsync(existingReminderMock.Object);
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        SetupCheckpoint(brookGrainFactoryMock, snapshotGrainFactoryMock, CreateCheckpoint());
+        SetupCheckpoint(brookGrainFactoryMock, snapshotGrainFactoryMock, CreateCheckpoint(reminderArmed: true));
         SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
             reminderManagerMock,
             brookGrainFactoryMock,
@@ -398,7 +400,7 @@ public sealed class SagaReminderReconcilerTests
         SetupCheckpoint(
             brookGrainFactoryMock,
             snapshotGrainFactoryMock,
-            CreateCheckpoint(blockedReason: "manual intervention required"));
+            CreateCheckpoint(blockedReason: "manual intervention required", reminderArmed: true));
         SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
             reminderManagerMock,
             brookGrainFactoryMock,
@@ -438,7 +440,7 @@ public sealed class SagaReminderReconcilerTests
         SetupCheckpoint(
             brookGrainFactoryMock,
             snapshotGrainFactoryMock,
-            CreateCheckpoint(recoveryMode: SagaRecoveryMode.ManualOnly));
+            CreateCheckpoint(recoveryMode: SagaRecoveryMode.ManualOnly, reminderArmed: true));
         SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
             reminderManagerMock,
             brookGrainFactoryMock,
@@ -471,7 +473,7 @@ public sealed class SagaReminderReconcilerTests
         SetupCheckpoint(
             brookGrainFactoryMock,
             snapshotGrainFactoryMock,
-            CreateCheckpoint(automaticAttemptCount: 2));
+            CreateCheckpoint(automaticAttemptCount: 2, reminderArmed: true));
         SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
             reminderManagerMock,
             brookGrainFactoryMock,
@@ -505,7 +507,7 @@ public sealed class SagaReminderReconcilerTests
         SetupCheckpoint(
             brookGrainFactoryMock,
             snapshotGrainFactoryMock,
-            CreateCheckpoint(pendingDirection: null));
+            CreateCheckpoint(pendingDirection: null, reminderArmed: true));
         SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
             reminderManagerMock,
             brookGrainFactoryMock,
@@ -538,7 +540,7 @@ public sealed class SagaReminderReconcilerTests
         SetupCheckpoint(
             brookGrainFactoryMock,
             snapshotGrainFactoryMock,
-            CreateCheckpoint(pendingStepIndex: null));
+            CreateCheckpoint(pendingStepIndex: null, reminderArmed: true));
         SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
             reminderManagerMock,
             brookGrainFactoryMock,
@@ -568,7 +570,7 @@ public sealed class SagaReminderReconcilerTests
             .ReturnsAsync(existingReminderMock.Object);
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
-        SetupCheckpoint(brookGrainFactoryMock, snapshotGrainFactoryMock, CreateCheckpoint());
+        SetupCheckpoint(brookGrainFactoryMock, snapshotGrainFactoryMock, CreateCheckpoint(reminderArmed: true));
         SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
             reminderManagerMock,
             brookGrainFactoryMock,
@@ -584,5 +586,36 @@ public sealed class SagaReminderReconcilerTests
         reminderManagerMock.Verify(
             manager => manager.UnregisterReminderAsync(grainMock.Object, existingReminderMock.Object),
             Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies disabled recovery skips reminder-registry lookups when the checkpoint says no reminder is armed.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ReconcileAsyncSkipsReminderLookupWhenReminderIsNotApplicable()
+    {
+        Mock<IGrainReminderManager> reminderManagerMock = new();
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        SetupCheckpoint(brookGrainFactoryMock, snapshotGrainFactoryMock, CreateCheckpoint());
+        SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
+            reminderManagerMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock,
+            new SagaRecoveryOptions { Enabled = false });
+        Mock<IGrainBase> grainMock = CreateGrain();
+
+        await reconciler.ReconcileAsync(
+            grainMock.Object,
+            "saga-123",
+            _ => Task.FromResult<ReminderSagaState?>(RunningState));
+
+        reminderManagerMock.Verify(
+            manager => manager.GetReminderAsync(It.IsAny<IGrainBase>(), It.IsAny<string>()),
+            Times.Never);
+        reminderManagerMock.Verify(
+            manager => manager.UnregisterReminderAsync(It.IsAny<IGrainBase>(), It.IsAny<IGrainReminder>()),
+            Times.Never);
     }
 }
