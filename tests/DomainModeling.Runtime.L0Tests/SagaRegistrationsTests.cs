@@ -113,6 +113,22 @@ public sealed class SagaRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies the recovery planner service is registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersRecoveryPlanner()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+
+        Assert.Contains(
+            services,
+            descriptor => descriptor.ServiceType == typeof(SagaRecoveryPlanner<TestSagaState>)
+                          && descriptor.ImplementationType == typeof(SagaRecoveryPlanner<TestSagaState>)
+                          && descriptor.Lifetime == ServiceLifetime.Transient);
+    }
+
+    /// <summary>
     ///     Verifies service collection chaining.
     /// </summary>
     [Fact]

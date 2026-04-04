@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 
 using Mississippi.DomainModeling.Abstractions;
 
@@ -42,53 +40,6 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
 
     private TimeProvider TimeProvider { get; }
 
-    private static string ComputeStepHash(
-        SagaRecoveryInfo recovery,
-        IReadOnlyList<SagaStepInfo> steps
-    )
-    {
-        ArgumentNullException.ThrowIfNull(recovery);
-        ArgumentNullException.ThrowIfNull(steps);
-        StringBuilder builder = new();
-        builder.Append("Recovery=")
-            .Append(recovery.Mode)
-            .Append(':');
-
-        if (recovery.Profile is null)
-        {
-            builder.Append("Profile:null");
-        }
-        else
-        {
-            builder.Append("Profile:value:")
-                .Append(recovery.Profile.Length)
-                .Append(':')
-                .Append(recovery.Profile);
-        }
-
-        for (int i = 0; i < steps.Count; i++)
-        {
-            SagaStepInfo step = steps[i];
-            builder.Append('|');
-
-            string stepTypeName = step.StepType.FullName ?? step.StepType.Name;
-            builder.Append(step.StepIndex)
-                .Append(':')
-                .Append(step.StepName)
-                .Append(':')
-                .Append(stepTypeName)
-                .Append(':')
-                .Append(step.HasCompensation)
-                .Append(':')
-                .Append(step.ForwardRecoveryPolicy)
-                .Append(':')
-                .Append(step.CompensationRecoveryPolicy?.ToString() ?? "NONE");
-        }
-
-        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
-        return Convert.ToHexString(bytes);
-    }
-
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         StartSagaCommand<TInput> command,
@@ -115,7 +66,7 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
             SagaId = command.SagaId,
             RecoveryMode = RecoveryInfoProvider.Recovery.Mode,
             RecoveryProfile = RecoveryInfoProvider.Recovery.Profile,
-            StepHash = ComputeStepHash(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps),
+            StepHash = SagaStepHash.Compute(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps),
             StartedAt = TimeProvider.GetUtcNow(),
             CorrelationId = command.CorrelationId,
         };
