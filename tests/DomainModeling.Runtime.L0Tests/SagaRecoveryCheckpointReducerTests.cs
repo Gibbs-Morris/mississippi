@@ -208,6 +208,37 @@ public sealed class SagaRecoveryCheckpointReducerTests
     }
 
     /// <summary>
+    ///     Verifies legacy failed-step events with defaulted replay metadata do not seed invalid in-flight attempt state.
+    /// </summary>
+    [Fact]
+    public void ReduceNormalizesLegacyFailedStepAttemptMetadataDefaults()
+    {
+        SagaRecoveryCheckpoint checkpoint = Reduce(
+            new SagaStartedEvent
+            {
+                SagaId = Guid.NewGuid(),
+                RecoveryMode = SagaRecoveryMode.Automatic,
+                StepHash = "HASH",
+                StartedAt = new(2025, 2, 15, 12, 15, 0, TimeSpan.Zero),
+            },
+            new SagaStepFailed
+            {
+                AttemptId = Guid.Empty,
+                StepIndex = 1,
+                StepName = "Credit",
+                ErrorCode = "ERR",
+                ErrorMessage = "boom",
+                OperationKey = null!,
+            });
+
+        Assert.Equal(SagaExecutionDirection.Forward, checkpoint.PendingDirection);
+        Assert.Equal(1, checkpoint.PendingStepIndex);
+        Assert.Equal("Credit", checkpoint.PendingStepName);
+        Assert.Null(checkpoint.InFlightAttemptId);
+        Assert.Null(checkpoint.InFlightOperationKey);
+    }
+
+    /// <summary>
     ///     Verifies blocked resume events preserve the pending step and operator-visible blocked state.
     /// </summary>
     [Fact]
