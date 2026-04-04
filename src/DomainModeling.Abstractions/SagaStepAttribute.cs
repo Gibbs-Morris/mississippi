@@ -27,7 +27,8 @@ public sealed class SagaStepAttribute<TSaga> : Attribute
     }
 
     /// <summary>
-    ///     Gets the compensation-path recovery policy.
+    ///     Gets the compensation-path recovery policy when the step implements
+    ///     <see cref="ICompensatable{TSaga}" />; otherwise, this value is ignored.
     /// </summary>
     public SagaStepRecoveryPolicy CompensationRecoveryPolicy { get; init; }
 
