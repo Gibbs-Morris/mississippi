@@ -172,4 +172,43 @@ internal static partial class AggregateGrainLoggerExtensions
         string aggregateKey,
         long finalPosition
     );
+
+    /// <summary>
+    ///     Logs when a reminder tick is received for an aggregate grain.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(11, LogLevel.Debug, "Received reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void ReminderReceived(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when a reminder callback is ignored because no registered reminder handler claimed it.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(12, LogLevel.Debug, "Ignored reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void ReminderIgnored(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when a reminder callback is processed by the registered reminder handler.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(13, LogLevel.Debug, "Processed reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void ReminderProcessed(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
 }

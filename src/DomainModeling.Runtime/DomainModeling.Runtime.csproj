@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Orleans.Sdk" />
+    <PackageReference Include="Microsoft.Orleans.Reminders" />
   </ItemGroup>
   <PropertyGroup>
     <Description>DomainModeling runtime for aggregates, sagas, and ux projections.</Description>

@@ -49,6 +49,7 @@ namespace Mississippi.DomainModeling.Runtime;
 [Alias("Mississippi.DomainModeling.Runtime.GenericAggregateGrain`1")]
 internal sealed class GenericAggregateGrain<TAggregate>
     : IGenericAggregateGrain<TAggregate>,
+            IRemindable,
       IGrainBase
     where TAggregate : class
 {
@@ -81,6 +82,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ///     Optional root event effect dispatcher for running side effects after events are persisted.
     ///     When null, no effects are executed.
     /// </param>
+    /// <param name="aggregateReminderHandler">
+    ///     Optional reminder handler for aggregate types that participate in Orleans reminder callbacks.
+    /// </param>
     public GenericAggregateGrain(
         IGrainContext grainContext,
         IGrainFactory grainFactory,
@@ -92,7 +96,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
         IOptions<AggregateEffectOptions> effectOptions,
         ILogger<GenericAggregateGrain<TAggregate>> logger,
         IEnumerable<IFireAndForgetEffectRegistration<TAggregate>> fireAndForgetEffectRegistrations,
-        IRootEventEffect<TAggregate>? rootEventEffect = null
+        IRootEventEffect<TAggregate>? rootEventEffect = null,
+        IAggregateReminderHandler<TAggregate>? aggregateReminderHandler = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
@@ -106,6 +111,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         FireAndForgetEffectRegistrations = fireAndForgetEffectRegistrations?.ToArray() ?? [];
         RootEventEffect = rootEventEffect;
+        AggregateReminderHandler = aggregateReminderHandler;
     }
 
     /// <summary>
@@ -117,6 +123,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
+
+    private IAggregateReminderHandler<TAggregate>? AggregateReminderHandler { get; }
 
     private IBrookEventConverter BrookEventConverter { get; }
 
@@ -206,6 +214,36 @@ internal sealed class GenericAggregateGrain<TAggregate>
         SnapshotKey snapshotKey = new(snapshotStreamKey, currentPosition.Value);
         return await SnapshotGrainFactory.GetSnapshotCacheGrain<TAggregate>(snapshotKey)
             .GetStateAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task ReceiveReminder(
+        string reminderName,
+        TickStatus status
+    )
+    {
+        string aggregateKey = brookKey;
+        Logger.ReminderReceived(reminderName, aggregateKey);
+        if (AggregateReminderHandler is null)
+        {
+            Logger.ReminderIgnored(reminderName, aggregateKey);
+            return;
+        }
+
+        bool handled = await AggregateReminderHandler.ReceiveReminderAsync(
+            this.GetPrimaryKeyString(),
+            reminderName,
+            status,
+            cancellationToken => GetStateAsync(cancellationToken),
+            (command, cancellationToken) => ExecuteAsync(command, cancellationToken),
+            CancellationToken.None);
+        if (handled)
+        {
+            Logger.ReminderProcessed(reminderName, aggregateKey);
+            return;
+        }
+
+        Logger.ReminderIgnored(reminderName, aggregateKey);
     }
 
     /// <summary>

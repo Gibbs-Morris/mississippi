@@ -74,6 +74,7 @@ public static class SagaRegistrations
         services.AddTransient<SagaRecoveryCheckpointAccessor<TSaga>>();
         services.AddTransient<SagaRecoveryCoordinator<TSaga>>();
         services.AddTransient<SagaRecoveryPlanner<TSaga>>();
+        services.TryAddTransient<IAggregateReminderHandler<TSaga>, SagaReminderHandler<TSaga>>();
         services.AddRootEventEffect<TSaga>();
         services.AddTransient<IEventEffect<TSaga>, SagaOrchestrationEffect<TSaga>>();
         return services;

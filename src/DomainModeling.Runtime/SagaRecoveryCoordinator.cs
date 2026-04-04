@@ -82,7 +82,7 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
             });
         }
 
-        SagaRecoveryPlan plan = Planner.Plan(state, checkpoint, source);
+        SagaRecoveryPlan plan = Plan(state, checkpoint, source);
         if (plan.Disposition is SagaRecoveryPlanDisposition.NoAction
             or SagaRecoveryPlanDisposition.WorkflowMismatch)
         {
@@ -90,7 +90,7 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
         }
 
         OperationResult commandResult = await grain.ExecuteAsync(
-            CreateResumeCommand(plan, state, checkpoint, source),
+            CreateResumeCommand(plan, checkpoint, source),
             cancellationToken);
         if (!commandResult.Success)
         {
@@ -143,18 +143,65 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
             };
         }
 
+        return Plan(state, checkpoint, source);
+    }
+
+    /// <summary>
+    ///     Computes the effective recovery plan for already-loaded saga state and checkpoint inputs.
+    /// </summary>
+    /// <param name="state">The current saga state, if any.</param>
+    /// <param name="checkpoint">The current authoritative recovery checkpoint, if any.</param>
+    /// <param name="source">The source requesting resume evaluation.</param>
+    /// <returns>The selected recovery plan for the supplied runtime state.</returns>
+    internal SagaRecoveryPlan Plan(
+        TSaga? state,
+        SagaRecoveryCheckpoint? checkpoint,
+        SagaResumeSource source
+    )
+    {
+        if (state is null)
+        {
+            return new()
+            {
+                Disposition = SagaRecoveryPlanDisposition.NoAction,
+                Reason = "Saga state not found.",
+            };
+        }
+
+        if (state.Phase is SagaPhase.Completed or SagaPhase.Compensated or SagaPhase.Failed)
+        {
+            return new()
+            {
+                Disposition = SagaRecoveryPlanDisposition.Terminal,
+            };
+        }
+
+        if (checkpoint is null)
+        {
+            return new()
+            {
+                Disposition = SagaRecoveryPlanDisposition.NoAction,
+                Reason = "Recovery checkpoint not found.",
+            };
+        }
+
         return Planner.Plan(state, checkpoint, source);
     }
 
-    private static ResumeSagaCommand CreateResumeCommand(
+    /// <summary>
+    ///     Converts an actionable recovery plan into the internal resume command payload.
+    /// </summary>
+    /// <param name="plan">The recovery plan selected for execution.</param>
+    /// <param name="checkpoint">The authoritative checkpoint that supplies in-flight metadata.</param>
+    /// <param name="source">The source requesting resume execution.</param>
+    /// <returns>The command that materializes the selected recovery action.</returns>
+    internal static ResumeSagaCommand CreateResumeCommand(
         SagaRecoveryPlan plan,
-        TSaga state,
         SagaRecoveryCheckpoint checkpoint,
         SagaResumeSource source
     )
     {
         ArgumentNullException.ThrowIfNull(plan);
-        ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(checkpoint);
 
         if (plan.Disposition is SagaRecoveryPlanDisposition.ExecuteStep)

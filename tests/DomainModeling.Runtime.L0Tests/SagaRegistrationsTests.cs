@@ -145,6 +145,22 @@ public sealed class SagaRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies the saga reminder handler is registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersSagaReminderHandler()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+
+        Assert.Contains(
+            services,
+            descriptor => descriptor.ServiceType == typeof(IAggregateReminderHandler<TestSagaState>)
+                          && descriptor.ImplementationType == typeof(SagaReminderHandler<TestSagaState>)
+                          && descriptor.Lifetime == ServiceLifetime.Transient);
+    }
+
+    /// <summary>
     ///     Verifies the resume command handler is registered.
     /// </summary>
     [Fact]
