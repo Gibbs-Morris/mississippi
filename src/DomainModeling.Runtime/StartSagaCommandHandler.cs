@@ -101,6 +101,8 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
         SagaStartedEvent started = new()
         {
             SagaId = command.SagaId,
+            RecoveryMode = RecoveryInfoProvider.Recovery.Mode,
+            RecoveryProfile = RecoveryInfoProvider.Recovery.Profile,
             StepHash = ComputeStepHash(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps),
             StartedAt = TimeProvider.GetUtcNow(),
             CorrelationId = command.CorrelationId,

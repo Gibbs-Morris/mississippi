@@ -28,6 +28,18 @@ public sealed record SagaStartedEvent
     public required Guid SagaId { get; init; }
 
     /// <summary>
+    ///     Gets the saga-level recovery mode.
+    /// </summary>
+    [Id(4)]
+    public required SagaRecoveryMode RecoveryMode { get; init; }
+
+    /// <summary>
+    ///     Gets the optional saga-level recovery profile.
+    /// </summary>
+    [Id(5)]
+    public string? RecoveryProfile { get; init; }
+
+    /// <summary>
     ///     Gets the timestamp when the saga started.
     /// </summary>
     [Id(2)]

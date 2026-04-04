@@ -185,6 +185,8 @@ public sealed class StartSagaCommandHandlerTests
         SagaInputProvided<TestInput> inputProvided = Assert.IsType<SagaInputProvided<TestInput>>(result.Value[1]);
         Assert.Equal(command.SagaId, started.SagaId);
         Assert.Equal(command.CorrelationId, started.CorrelationId);
+        Assert.Equal(recovery.Mode, started.RecoveryMode);
+        Assert.Equal(recovery.Profile, started.RecoveryProfile);
         Assert.Equal(now, started.StartedAt);
         Assert.Equal(ComputeExpectedStepHash(recovery, steps), started.StepHash);
         Assert.Equal(command.SagaId, inputProvided.SagaId);

@@ -107,6 +107,7 @@ public sealed class SagaOrchestrationEffectTests
                 new SagaStartedEvent
                 {
                     SagaId = Guid.NewGuid(),
+                    RecoveryMode = SagaRecoveryMode.Automatic,
                     StartedAt = now,
                     StepHash = "HASH",
                 }));
@@ -329,6 +330,7 @@ public sealed class SagaOrchestrationEffectTests
                 new SagaStartedEvent
                 {
                     SagaId = Guid.NewGuid(),
+                    RecoveryMode = SagaRecoveryMode.Automatic,
                     StartedAt = startedAt,
                     StepHash = "HASH",
                 },
@@ -427,6 +429,7 @@ public sealed class SagaOrchestrationEffectTests
                 new SagaStartedEvent
                 {
                     SagaId = Guid.NewGuid(),
+                    RecoveryMode = SagaRecoveryMode.Automatic,
                     StartedAt = now,
                     StepHash = "HASH",
                 },
@@ -577,6 +580,7 @@ public sealed class SagaOrchestrationEffectTests
                 new SagaStartedEvent
                 {
                     SagaId = Guid.NewGuid(),
+                    RecoveryMode = SagaRecoveryMode.Automatic,
                     StartedAt = new(2025, 2, 12, 14, 0, 0, TimeSpan.Zero),
                     StepHash = "HASH",
                 },
@@ -607,6 +611,7 @@ public sealed class SagaOrchestrationEffectTests
                                new SagaStartedEvent
                                {
                                    SagaId = Guid.NewGuid(),
+                                   RecoveryMode = SagaRecoveryMode.Automatic,
                                    StartedAt = new(2025, 2, 12, 13, 0, 0, TimeSpan.Zero),
                                    StepHash = "HASH",
                                },

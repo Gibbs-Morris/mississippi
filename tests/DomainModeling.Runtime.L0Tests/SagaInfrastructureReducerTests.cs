@@ -105,6 +105,7 @@ public sealed class SagaInfrastructureReducerTests
         SagaStartedEvent @event = new()
         {
             SagaId = sagaId,
+            RecoveryMode = SagaRecoveryMode.Automatic,
             StepHash = "HASH",
             StartedAt = startedAt,
             CorrelationId = "corr-1",
