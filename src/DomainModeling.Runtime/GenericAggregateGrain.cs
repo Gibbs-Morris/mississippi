@@ -85,6 +85,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="aggregateReminderHandler">
     ///     Optional reminder handler for aggregate types that participate in Orleans reminder callbacks.
     /// </param>
+    /// <param name="aggregateReminderReconciler">
+    ///     Optional reminder reconciler for aggregate types that need Orleans reminder lifecycle management.
+    /// </param>
     public GenericAggregateGrain(
         IGrainContext grainContext,
         IGrainFactory grainFactory,
@@ -97,7 +100,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
         ILogger<GenericAggregateGrain<TAggregate>> logger,
         IEnumerable<IFireAndForgetEffectRegistration<TAggregate>> fireAndForgetEffectRegistrations,
         IRootEventEffect<TAggregate>? rootEventEffect = null,
-        IAggregateReminderHandler<TAggregate>? aggregateReminderHandler = null
+        IAggregateReminderHandler<TAggregate>? aggregateReminderHandler = null,
+        IAggregateReminderReconciler<TAggregate>? aggregateReminderReconciler = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
@@ -112,6 +116,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         FireAndForgetEffectRegistrations = fireAndForgetEffectRegistrations?.ToArray() ?? [];
         RootEventEffect = rootEventEffect;
         AggregateReminderHandler = aggregateReminderHandler;
+        AggregateReminderReconciler = aggregateReminderReconciler;
     }
 
     /// <summary>
@@ -123,6 +128,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
+
+    private IAggregateReminderReconciler<TAggregate>? AggregateReminderReconciler { get; }
 
     private IAggregateReminderHandler<TAggregate>? AggregateReminderHandler { get; }
 
@@ -239,6 +246,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
             CancellationToken.None);
         if (handled)
         {
+            await ReconcileReminderStateIfRegisteredAsync(CancellationToken.None);
             Logger.ReminderProcessed(reminderName, aggregateKey);
             return;
         }
@@ -255,7 +263,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ///     Thrown when the <see cref="BrookNameAttribute" />
     ///     is missing from the <typeparamref name="TAggregate" /> type.
     /// </exception>
-    public Task OnActivateAsync(
+    public async Task OnActivateAsync(
         CancellationToken token
     )
     {
@@ -272,7 +280,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
             entityId,
             RootReducer.GetReducerHash());
         Logger.Activated(brookKey);
-        return Task.CompletedTask;
+        await ReconcileReminderStateIfRegisteredAsync(token);
     }
 
     /// <summary>
@@ -470,6 +478,22 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
     }
 
+    private async Task ReconcileReminderStateIfRegisteredAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        if (AggregateReminderReconciler is null)
+        {
+            return;
+        }
+
+        await AggregateReminderReconciler.ReconcileAsync(
+            this,
+            this.GetPrimaryKeyString(),
+            cancellationToken => GetStateAsync(cancellationToken),
+            cancellationToken);
+    }
+
     private async Task<OperationResult> ExecuteInternalAsync(
         object command,
         BrookPosition? expectedVersion,
@@ -512,6 +536,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
                 commandTypeName,
                 aggregateKey,
                 cancellationToken);
+            await ReconcileReminderStateIfRegisteredAsync(cancellationToken);
         }
 
         sw.Stop();

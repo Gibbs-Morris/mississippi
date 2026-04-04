@@ -28,6 +28,7 @@ public static class SagaRegistrations
     {
         ArgumentNullException.ThrowIfNull(services);
         services.AddAggregateSupport();
+        services.AddOptions<SagaRecoveryOptions>();
         services.AddSnapshotType<SagaRecoveryCheckpoint>();
         services.AddSnapshotStateConverter<SagaRecoveryCheckpoint>();
         services.AddEventType<SagaStartedEvent>();
@@ -74,7 +75,9 @@ public static class SagaRegistrations
         services.AddTransient<SagaRecoveryCheckpointAccessor<TSaga>>();
         services.AddTransient<SagaRecoveryCoordinator<TSaga>>();
         services.AddTransient<SagaRecoveryPlanner<TSaga>>();
+        services.TryAddSingleton<IGrainReminderManager, GrainReminderManager>();
         services.TryAddTransient<IAggregateReminderHandler<TSaga>, SagaReminderHandler<TSaga>>();
+        services.TryAddTransient<IAggregateReminderReconciler<TSaga>, SagaReminderReconciler<TSaga>>();
         services.AddRootEventEffect<TSaga>();
         services.AddTransient<IEventEffect<TSaga>, SagaOrchestrationEffect<TSaga>>();
         return services;

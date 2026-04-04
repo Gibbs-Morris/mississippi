@@ -211,4 +211,52 @@ internal static partial class AggregateGrainLoggerExtensions
         string reminderName,
         string aggregateKey
     );
+
+    /// <summary>
+    ///     Logs when reminder reconciliation evaluates a desired reminder action.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="action">The reconciled action.</param>
+    [LoggerMessage(14, LogLevel.Debug, "Reconciled reminder {ReminderName} for aggregate {AggregateKey} with action {Action}")]
+    public static partial void ReminderReconciled(
+        this ILogger logger,
+        string aggregateKey,
+        string reminderName,
+        string action
+    );
+
+    /// <summary>
+    ///     Logs when a reminder is registered or updated during reconciliation.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="dueTime">The initial due time.</param>
+    /// <param name="period">The reminder period.</param>
+    [LoggerMessage(
+        15,
+        LogLevel.Information,
+        "Scheduled reminder {ReminderName} for aggregate {AggregateKey} with due time {DueTime} and period {Period}")]
+    public static partial void ReminderScheduled(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey,
+        TimeSpan dueTime,
+        TimeSpan period
+    );
+
+    /// <summary>
+    ///     Logs when reminder reconciliation removes a stale reminder.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(16, LogLevel.Information, "Removed reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void ReminderRemoved(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
 }

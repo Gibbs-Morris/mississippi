@@ -1,6 +1,7 @@
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using Mississippi.DomainModeling.Abstractions;
 
@@ -158,6 +159,36 @@ public sealed class SagaRegistrationsTests
             descriptor => descriptor.ServiceType == typeof(IAggregateReminderHandler<TestSagaState>)
                           && descriptor.ImplementationType == typeof(SagaReminderHandler<TestSagaState>)
                           && descriptor.Lifetime == ServiceLifetime.Transient);
+    }
+
+    /// <summary>
+    ///     Verifies the saga reminder reconciler is registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersSagaReminderReconciler()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+
+        Assert.Contains(
+            services,
+            descriptor => descriptor.ServiceType == typeof(IAggregateReminderReconciler<TestSagaState>)
+                          && descriptor.ImplementationType == typeof(SagaReminderReconciler<TestSagaState>)
+                          && descriptor.Lifetime == ServiceLifetime.Transient);
+    }
+
+    /// <summary>
+    ///     Verifies saga recovery options are registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersSagaRecoveryOptions()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IOptions<SagaRecoveryOptions> options = provider.GetRequiredService<IOptions<SagaRecoveryOptions>>();
+
+        Assert.True(options.Value.Enabled);
     }
 
     /// <summary>
