@@ -16,6 +16,7 @@ internal sealed class SagaCompensationNoCodeStep
     /// <inheritdoc />
     public Task<CompensationResult> CompensateAsync(
         TestSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     ) =>
         Task.FromResult(
@@ -28,6 +29,7 @@ internal sealed class SagaCompensationNoCodeStep
     /// <inheritdoc />
     public Task<StepResult> ExecuteAsync(
         TestSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     ) =>
         Task.FromResult(StepResult.Succeeded());

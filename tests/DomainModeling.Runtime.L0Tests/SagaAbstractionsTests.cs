@@ -22,7 +22,7 @@ public sealed class SagaAbstractionsTests
         ServiceCollection services = new();
         List<SagaStepInfo> steps =
         [
-            new(0, "Step", typeof(SagaStepMarker), false),
+            new(0, "Step", typeof(SagaStepMarker), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         IServiceCollection result = services.AddSagaStepInfo<TestSagaState>(steps);
         Assert.Same(services, result);
@@ -39,7 +39,10 @@ public sealed class SagaAbstractionsTests
     public void AddSagaStepInfoThrowsWhenServicesNull()
     {
         IServiceCollection? services = null;
-        List<SagaStepInfo> steps = [new(0, "Step", typeof(SagaStepMarker), false)];
+        List<SagaStepInfo> steps =
+        [
+            new(0, "Step", typeof(SagaStepMarker), false, SagaStepRecoveryPolicy.Automatic, null),
+        ];
         Assert.Throws<ArgumentNullException>(() => services!.AddSagaStepInfo<TestSagaState>(steps));
     }
 
@@ -96,9 +99,28 @@ public sealed class SagaAbstractionsTests
     [Fact]
     public void SagaStepAttributeCapturesOrderAndSaga()
     {
-        SagaStepAttribute<TestSagaState> attribute = new(3);
+        SagaStepAttribute<TestSagaState> attribute = new(3, SagaStepRecoveryPolicy.ManualOnly)
+        {
+            CompensationRecoveryPolicy = SagaStepRecoveryPolicy.Automatic,
+        };
         Assert.Equal(3, attribute.Order);
         Assert.Equal(typeof(TestSagaState), attribute.Saga);
+        Assert.Equal(SagaStepRecoveryPolicy.ManualOnly, attribute.ForwardRecoveryPolicy);
+        Assert.Equal(SagaStepRecoveryPolicy.Automatic, attribute.CompensationRecoveryPolicy);
+    }
+
+    /// <summary>
+    ///     Verifies saga recovery attributes capture mode and profile.
+    /// </summary>
+    [Fact]
+    public void SagaRecoveryAttributeCapturesModeAndProfile()
+    {
+        SagaRecoveryAttribute attribute = new(SagaRecoveryMode.ManualOnly)
+        {
+            Profile = "critical-payments",
+        };
+        Assert.Equal(SagaRecoveryMode.ManualOnly, attribute.Mode);
+        Assert.Equal("critical-payments", attribute.Profile);
     }
 
     /// <summary>
@@ -144,6 +166,38 @@ public sealed class SagaAbstractionsTests
         DefaultStepInfoProvider provider = new();
         bool appliesTo = ((ISagaStepInfoProvider<TestSagaState>)provider).AppliesTo(new());
         Assert.True(appliesTo);
+    }
+
+    /// <summary>
+    ///     Verifies saga step execution context stores execution metadata.
+    /// </summary>
+    [Fact]
+    public void SagaStepExecutionContextStoresExecutionMetadata()
+    {
+        Guid sagaId = Guid.NewGuid();
+        Guid attemptId = Guid.NewGuid();
+        DateTimeOffset startedAt = new(2026, 4, 4, 12, 0, 0, TimeSpan.Zero);
+        SagaStepExecutionContext context = new()
+        {
+            AttemptId = attemptId,
+            AttemptStartedAt = startedAt,
+            Direction = SagaExecutionDirection.Compensation,
+            IsReplay = true,
+            OperationKey = "operation-key",
+            SagaId = sagaId,
+            Source = SagaResumeSource.Manual,
+            StepIndex = 7,
+            StepName = "Refund",
+        };
+        Assert.Equal(attemptId, context.AttemptId);
+        Assert.Equal(startedAt, context.AttemptStartedAt);
+        Assert.Equal(SagaExecutionDirection.Compensation, context.Direction);
+        Assert.True(context.IsReplay);
+        Assert.Equal("operation-key", context.OperationKey);
+        Assert.Equal(sagaId, context.SagaId);
+        Assert.Equal(SagaResumeSource.Manual, context.Source);
+        Assert.Equal(7, context.StepIndex);
+        Assert.Equal("Refund", context.StepName);
     }
 
     /// <summary>

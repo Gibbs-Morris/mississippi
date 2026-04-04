@@ -22,7 +22,7 @@ namespace MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 ///         step fails. For this sample, the deposit is the final step so no compensation is needed.
 ///     </para>
 /// </remarks>
-[SagaStep<MoneyTransferSagaState>(1)]
+[SagaStep<MoneyTransferSagaState>(1, SagaStepRecoveryPolicy.ManualOnly)]
 internal sealed class DepositToDestinationStep : ISagaStep<MoneyTransferSagaState>
 {
     /// <summary>
@@ -42,10 +42,12 @@ internal sealed class DepositToDestinationStep : ISagaStep<MoneyTransferSagaStat
     /// <inheritdoc />
     public async Task<StepResult> ExecuteAsync(
         MoneyTransferSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(context);
         StartMoneyTransferCommand? input = state.Input;
         if (input is null)
         {

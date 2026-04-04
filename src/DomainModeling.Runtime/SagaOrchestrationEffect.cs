@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -128,7 +129,15 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         }
 
         Logger?.SagaStepCompensating(typeof(TSaga).Name, stepInfo.StepName, stepIndex);
-        CompensationResult result = await compensatable.CompensateAsync(state, cancellationToken).ConfigureAwait(false);
+        SagaStepExecutionContext executionContext = CreateExecutionContext(
+            state,
+            stepInfo,
+            SagaExecutionDirection.Compensation);
+        CompensationResult result = await compensatable.CompensateAsync(
+                state,
+                executionContext,
+                cancellationToken)
+            .ConfigureAwait(false);
         if (result.Success || result.Skipped)
         {
             yield return new SagaStepCompensated
@@ -202,7 +211,11 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
         ISagaStep<TSaga> step = ResolveStep(stepInfo);
         Logger?.SagaStepExecuting(typeof(TSaga).Name, stepInfo.StepName, stepIndex);
-        StepResult result = await step.ExecuteAsync(state, cancellationToken).ConfigureAwait(false);
+        SagaStepExecutionContext executionContext = CreateExecutionContext(
+            state,
+            stepInfo,
+            SagaExecutionDirection.Forward);
+        StepResult result = await step.ExecuteAsync(state, executionContext, cancellationToken).ConfigureAwait(false);
         if (result.Success)
         {
             foreach (object evt in result.Events)
@@ -262,4 +275,35 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         stepInfo = steps[stepIndex];
         return true;
     }
+
+    private SagaStepExecutionContext CreateExecutionContext(
+        TSaga state,
+        SagaStepInfo stepInfo,
+        SagaExecutionDirection direction
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(stepInfo);
+
+        return new()
+        {
+            AttemptId = Guid.NewGuid(),
+            AttemptStartedAt = TimeProvider.GetUtcNow(),
+            Direction = direction,
+            IsReplay = false,
+            OperationKey = CreateOperationKey(state.SagaId, stepInfo.StepIndex, direction),
+            SagaId = state.SagaId,
+            Source = SagaResumeSource.Initial,
+            StepIndex = stepInfo.StepIndex,
+            StepName = stepInfo.StepName,
+        };
+    }
+
+    private static string CreateOperationKey(
+        Guid sagaId,
+        int stepIndex,
+        SagaExecutionDirection direction
+    ) => string.Create(
+        CultureInfo.InvariantCulture,
+        $"{sagaId:N}:{direction}:{stepIndex}");
 }

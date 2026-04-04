@@ -37,7 +37,11 @@ public sealed class StartSagaCommandHandlerTests
                 .Append(':')
                 .Append(stepTypeName)
                 .Append(':')
-                .Append(step.HasCompensation);
+                .Append(step.HasCompensation)
+                .Append(':')
+                .Append(step.ForwardRecoveryPolicy)
+                .Append(':')
+                .Append(step.CompensationRecoveryPolicy?.ToString() ?? "NONE");
         }
 
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
@@ -48,6 +52,7 @@ public sealed class StartSagaCommandHandlerTests
     {
         public Task<StepResult> ExecuteAsync(
             TestSagaState state,
+            SagaStepExecutionContext context,
             CancellationToken cancellationToken
         ) =>
             Task.FromResult(StepResult.Succeeded());
@@ -59,12 +64,14 @@ public sealed class StartSagaCommandHandlerTests
     {
         public Task<CompensationResult> CompensateAsync(
             TestSagaState state,
+            SagaStepExecutionContext context,
             CancellationToken cancellationToken
         ) =>
             Task.FromResult(CompensationResult.Succeeded());
 
         public Task<StepResult> ExecuteAsync(
             TestSagaState state,
+            SagaStepExecutionContext context,
             CancellationToken cancellationToken
         ) =>
             Task.FromResult(StepResult.Succeeded());
@@ -101,7 +108,13 @@ public sealed class StartSagaCommandHandlerTests
         FakeTimeProvider timeProvider = new();
         IReadOnlyList<SagaStepInfo> steps =
         [
-            new(0, "Debit", typeof(DebitStep), true),
+            new(
+                0,
+                "Debit",
+                typeof(DebitStep),
+                true,
+                SagaStepRecoveryPolicy.Automatic,
+                SagaStepRecoveryPolicy.ManualOnly),
         ];
         StartSagaCommandHandler<TestSagaState, TestInput> handler = new(
             new SagaStepInfoProvider<TestSagaState>(steps),
@@ -130,8 +143,20 @@ public sealed class StartSagaCommandHandlerTests
         FakeTimeProvider timeProvider = new(now);
         IReadOnlyList<SagaStepInfo> steps =
         [
-            new(0, "Debit", typeof(DebitStep), true),
-            new(1, "Credit", typeof(CreditStep), false),
+            new(
+                0,
+                "Debit",
+                typeof(DebitStep),
+                true,
+                SagaStepRecoveryPolicy.Automatic,
+                SagaStepRecoveryPolicy.ManualOnly),
+            new(
+                1,
+                "Credit",
+                typeof(CreditStep),
+                false,
+                SagaStepRecoveryPolicy.ManualOnly,
+                null),
         ];
         StartSagaCommandHandler<TestSagaState, TestInput> handler = new(
             new SagaStepInfoProvider<TestSagaState>(steps),

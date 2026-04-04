@@ -57,7 +57,11 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
                 .Append(':')
                 .Append(stepTypeName)
                 .Append(':')
-                .Append(step.HasCompensation);
+                .Append(step.HasCompensation)
+                .Append(':')
+                .Append(step.ForwardRecoveryPolicy)
+                .Append(':')
+                .Append(step.CompensationRecoveryPolicy?.ToString() ?? "NONE");
         }
 
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
