@@ -18,13 +18,13 @@ internal sealed class GrainReminderManager : IGrainReminderManager
     /// </summary>
     /// <param name="reminderRegistry">The Orleans reminder registry.</param>
     public GrainReminderManager(
-        IReminderRegistry reminderRegistry
+        Orleans.Timers.IReminderRegistry reminderRegistry
     )
     {
         ReminderRegistry = reminderRegistry ?? throw new ArgumentNullException(nameof(reminderRegistry));
     }
 
-    private IReminderRegistry ReminderRegistry { get; }
+    private Orleans.Timers.IReminderRegistry ReminderRegistry { get; }
 
     /// <inheritdoc />
     public async Task<IGrainReminder?> GetReminderAsync(
