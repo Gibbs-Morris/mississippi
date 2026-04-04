@@ -10,7 +10,7 @@ description: Quick reference for every event sourcing concept used in the Spring
 
 ## Overview
 
-This page defines every concept used in the Spring sample. Each concept maps to a specific base class or interface in the Mississippi framework. Read this page first if you are new to event sourcing or to Mississippi.
+This page defines every concept used in the Spring sample. Each concept maps to a specific base class or interface in the Mississippi framework. Read this page first if you are new to event sourcing or to Mississippi, especially if you are comparing older saga examples with the current recovery-aware contracts.
 
 ## Domain Terms → Framework Types
 
@@ -25,9 +25,10 @@ Use this table as a translation guide from plain-language architecture terms to 
 | Aggregate | `BankAccountAggregate` | `[GenerateAggregateEndpoints]`, `[BrookName]`, `[SnapshotStorageName]` | Domain state root that command handlers validate against and event reducers update. |
 | Effect (synchronous) | `HighValueTransactionEffect` | `SimpleEventEffectBase<TEvent, TAggregate>` | Side-effect that runs after event persistence and can block command completion. |
 | Effect (fire-and-forget) | `WithdrawalNotificationEffect` | `FireAndForgetEventEffectBase<TEvent, TAggregate>` | Side-effect executed asynchronously in worker infrastructure after event persistence. |
-| Saga | `MoneyTransferSagaState` | `ISagaState`, `[GenerateSagaEndpoints]` | Long-running orchestration state for multi-step workflows across aggregates. |
-| Saga step | `WithdrawFromSourceStep` | `ISagaStep<TSaga>`, `[SagaStep<TSaga>(index)]` | One executable workflow step with ordered execution. |
-| Saga compensation | `WithdrawFromSourceStep.CompensateAsync` | `ICompensatable<TSaga>` | Optional rollback behavior invoked when a later step fails. |
+| Saga | `MoneyTransferSagaState` | `ISagaState`, `[GenerateSagaEndpoints]`, optional `[SagaRecovery]` | Long-running orchestration state for multi-step workflows across aggregates. Generated surfaces keep raw status separate from recovery metadata. |
+| Saga step | `WithdrawFromSourceStep` | `ISagaStep<TSaga>`, `[SagaStep<TSaga>(index, forwardRecoveryPolicy)]`, `SagaStepExecutionContext` | One executable workflow step with ordered execution, explicit recovery policy, and runtime attempt metadata. |
+| Saga compensation | `WithdrawFromSourceStep.CompensateAsync` | `ICompensatable<TSaga>`, `CompensationRecoveryPolicy`, `SagaStepExecutionContext` | Optional rollback behavior invoked when a later step fails, with its own recovery policy and attempt metadata. |
+| Saga runtime status | `MoneyTransferStatusProjection` and generated saga surfaces | `SagaRuntimeStatus`, `SagaResumeResponse`, `[GenerateSagaStatusReducers]` | Metadata-only operator view of blocked/resumable state without exposing raw saga state. |
 | Projection (domain model) | `BankAccountBalanceProjection` | `[GenerateProjectionEndpoints]`, `[ProjectionPath]`, `[BrookName]` | Read-optimized domain projection record built from events. |
 | UX projection runtime | Generated projection query/subscription runtime | `IUxProjectionGrain<TProjection>` / `UxProjectionGrain<TProjection>` | Orleans runtime abstraction that serves projection queries and versioned projection reads. |
 | Brook | `SPRING/BANKING/ACCOUNT` | `[BrookName]`, `BrookKey` | Canonical event stream identity (name + entity key). |
@@ -206,30 +207,42 @@ A saga orchestrates a long-running workflow that spans multiple aggregates. Each
     InputType = typeof(StartMoneyTransferCommand),
     RoutePrefix = "money-transfer",
     FeatureKey = "moneyTransfer")]
+[GenerateMcpSagaTools(
+    Title = "Transfer Funds",
+    Description = "Transfers funds between two Spring Bank accounts using the saga orchestrator.",
+    ToolPrefix = "transfer_funds")]
 [GenerateSerializer]
 public sealed record MoneyTransferSagaState : ISagaState
 {
-    [Id(0)] public Guid SagaId { get; init; }
-    [Id(1)] public SagaPhase Phase { get; init; }
+    [Id(3)] public string? CorrelationId { get; init; }
+    [Id(6)] public StartMoneyTransferCommand? Input { get; init; }
     [Id(2)] public int LastCompletedStepIndex { get; init; } = -1;
-    // ... additional state fields
+    [Id(1)] public SagaPhase Phase { get; init; }
+    [Id(0)] public Guid SagaId { get; init; }
+    [Id(4)] public DateTimeOffset? StartedAt { get; init; }
+    [Id(5)] public string? StepHash { get; init; }
 }
 ```
 
 The saga itself does not contain step logic. Steps are separate classes.
 
+`[GenerateSagaEndpoints]` now keeps raw saga state on `GET status` and adds metadata-only `GET runtime-status` plus typed `POST resume`. Because Spring does not decorate the state with `[SagaRecovery]`, its saga-level recovery mode stays on the generated default of `SagaRecoveryMode.Automatic` until a saga explicitly overrides it.
+
 ([MoneyTransferSagaState.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/MoneyTransferSaga/MoneyTransferSagaState.cs))
 
 ## Saga Step
 
-A saga step implements [`ISagaStep<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStep.cs) and executes one unit of work in the saga. Steps are ordered by the `[SagaStep<TSaga>(index)]` attribute.
+A saga step implements [`ISagaStep<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStep.cs) and executes one unit of work in the saga. Steps are ordered by the `[SagaStep<TSaga>(index, forwardRecoveryPolicy)]` attribute, and the current contract always passes a `SagaStepExecutionContext`.
 
 ```csharp
-[SagaStep<MoneyTransferSagaState>(0)]
-internal sealed class WithdrawFromSourceStep : ISagaStep<MoneyTransferSagaState>
+[SagaStep<MoneyTransferSagaState>(
+    1,
+    SagaStepRecoveryPolicy.ManualOnly)]
+internal sealed class DepositToDestinationStep : ISagaStep<MoneyTransferSagaState>
 {
     public async Task<StepResult> ExecuteAsync(
         MoneyTransferSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken)
     {
         // Withdraw from source account
@@ -239,6 +252,8 @@ internal sealed class WithdrawFromSourceStep : ISagaStep<MoneyTransferSagaState>
 
 Steps return `StepResult.Succeeded()` or `StepResult.Failed(...)`. If a step fails, the saga triggers compensation on previously completed steps.
 
+Spring intentionally marks both money-movement steps as `ManualOnly` because the underlying `WithdrawFunds` and `DepositFunds` commands declare `Idempotent = false`.
+
 ([WithdrawFromSourceStep.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/MoneyTransferSaga/Steps/WithdrawFromSourceStep.cs))
 
 ## Saga Compensation
@@ -246,13 +261,17 @@ Steps return `StepResult.Succeeded()` or `StepResult.Failed(...)`. If a step fai
 A saga step that implements [`ICompensatable<TSaga>`](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/ISagaStep.cs) provides a `CompensateAsync` method. If a later step fails, the framework calls `CompensateAsync` on previously completed compensatable steps in reverse order to undo their work.
 
 ```csharp
-[SagaStep<MoneyTransferSagaState>(0)]
+[SagaStep<MoneyTransferSagaState>(
+    0,
+    SagaStepRecoveryPolicy.ManualOnly,
+    CompensationRecoveryPolicy = SagaStepRecoveryPolicy.ManualOnly)]
 internal sealed class WithdrawFromSourceStep
     : ISagaStep<MoneyTransferSagaState>,
       ICompensatable<MoneyTransferSagaState>
 {
     public async Task<CompensationResult> CompensateAsync(
         MoneyTransferSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken)
     {
         // Deposit the amount back to source account to undo the withdrawal
@@ -260,7 +279,7 @@ internal sealed class WithdrawFromSourceStep
 }
 ```
 
-Not every step needs compensation. The `DepositToDestinationStep` in Spring does not implement `ICompensatable` because it is the final step - there is nothing after it that could fail.
+Not every step needs compensation. The `DepositToDestinationStep` in Spring does not implement `ICompensatable` because it is the final step - there is nothing after it that could fail. Compensation receives the same attempt metadata contract as forward execution, so it can use `OperationKey`, `Direction`, and `Source` for safe undo logic.
 
 ([WithdrawFromSourceStep.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/MoneyTransferSaga/Steps/WithdrawFromSourceStep.cs) |
 [DepositToDestinationStep.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/MoneyTransferSaga/Steps/DepositToDestinationStep.cs))
@@ -301,6 +320,8 @@ public sealed record BankAccountBalanceProjection
 
 Projections have their own `EventReducer`s. A single event stream can feed multiple projections - the `BankAccount` event stream feeds both `BankAccountBalanceProjection` and `BankAccountLedgerProjection`.
 
+Spring's `MoneyTransferStatusProjection` uses `[GenerateSagaStatusReducers]` to mirror `RecoveryMode`, `ResumeDisposition`, `PendingStepName`, `BlockedReason`, and other operator-facing recovery fields without exposing raw saga state.
+
 ([BankAccountBalanceProjection.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs))
 
 ## Brook
@@ -335,3 +356,4 @@ Every concept in Mississippi has a single, well-defined responsibility. Commands
 - [Building an Aggregate](../tutorials/building-an-aggregate.md) - See these concepts in action with the BankAccount example
 - [Building a Saga](../tutorials/building-a-saga.md) - Orchestrate a multi-aggregate workflow
 - [Building Projections](../tutorials/building-projections.md) - Create read-optimized views
+- [Upgrade saga code from < 0.0.1 to 0.0.1](../../../domain-modeling/migration/upgrade-saga-code-from-before-0-0-1-to-0-0-1.md) - Migrate older step signatures and recovery policies to the current saga contracts

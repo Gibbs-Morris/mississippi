@@ -12,6 +12,8 @@ description: Step-by-step walkthrough of building UX projections that transform 
 
 Aggregates store internal state for command validation. Projections build **read-optimized views** from the same event streams. A single event stream can feed multiple projections, each tailored for a different read pattern.
 
+The money-transfer status projection is also Spring's operator-facing recovery view. It mirrors saga phase plus blocked/manual-resume metadata without inflating the raw saga state itself.
+
 Spring defines four projections from three event streams:
 
 | Projection | Subscribes To | Purpose |
@@ -19,7 +21,7 @@ Spring defines four projections from three event streams:
 | `BankAccountBalanceProjection` | BankAccount events | Current balance and account status |
 | `BankAccountLedgerProjection` | BankAccount events | Last 20 transactions |
 | `FlaggedTransactionsProjection` | TransactionInvestigationQueue events | Last 30 flagged high-value deposits |
-| `MoneyTransferStatusProjection` | MoneyTransferSaga events | Saga phase, step progress, errors |
+| `MoneyTransferStatusProjection` | MoneyTransferSaga events | Saga phase, pending step, blocked/manual resume metadata |
 
 ```mermaid
 flowchart TB
@@ -247,27 +249,51 @@ The `[BrookName("SPRING", "COMPLIANCE", "INVESTIGATION")]` matches the `Transact
 
 ## Saga Status Projection: MoneyTransferStatus
 
-The `MoneyTransferStatusProjection` demonstrates a projection over a saga's event stream. The `[GenerateSagaStatusReducers]` attribute tells Mississippi to source-generate event reducers that automatically track saga phase, step progress, errors, and timestamps - you do not write event reducers for saga status projections.
+The `MoneyTransferStatusProjection` demonstrates a projection over a saga's event stream. The `[GenerateSagaStatusReducers]` attribute tells Mississippi to source-generate event reducers that automatically track saga phase, pending work, blocked/manual resume state, and terminal timestamps - you do not write event reducers for saga status projections.
 
 ```csharp
 [ProjectionPath("money-transfer-status")]
 [BrookName("SPRING", "BANKING", "TRANSFER")]
 [SnapshotStorageName("SPRING", "BANKING", "TRANSFERSTATUS")]
 [GenerateProjectionEndpoints]
+[GenerateMcpReadTool(
+    Title = "Get Money Transfer Status",
+    Description = "Retrieves the current status and phase of a money transfer saga.")]
 [GenerateSerializer]
 [GenerateSagaStatusReducers]
+[Alias("MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus.MoneyTransferStatusProjection")]
 public sealed record MoneyTransferStatusProjection
 {
-    [Id(0)] public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
-    [Id(1)] public int LastCompletedStepIndex { get; init; } = -1;
+    [Id(14)] public int AutomaticAttemptCount { get; init; }
+    [Id(11)] public string? BlockedReason { get; init; }
+    [Id(5)] public DateTimeOffset? CompletedAt { get; init; }
     [Id(2)] public string? ErrorCode { get; init; }
     [Id(3)] public string? ErrorMessage { get; init; }
+    [Id(13)] public DateTimeOffset? LastResumeAttemptedAt { get; init; }
+    [Id(12)] public SagaResumeSource? LastResumeSource { get; init; }
+    [Id(1)] public int LastCompletedStepIndex { get; init; } = -1;
+    [Id(7)] public SagaExecutionDirection? PendingDirection { get; init; }
+    [Id(8)] public int? PendingStepIndex { get; init; }
+    [Id(9)] public string? PendingStepName { get; init; }
+    [Id(0)] public SagaPhase Phase { get; init; } = SagaPhase.NotStarted;
+    [Id(6)] public SagaRecoveryMode RecoveryMode { get; init; } = SagaRecoveryMode.Automatic;
+    [Id(10)] public SagaResumeDisposition ResumeDisposition { get; init; } = SagaResumeDisposition.Idle;
     [Id(4)] public DateTimeOffset? StartedAt { get; init; }
-    [Id(5)] public DateTimeOffset? CompletedAt { get; init; }
 }
 ```
 
 The `[GenerateSagaStatusReducers]` attribute does all the work. No manual event reducers needed.
+
+`MoneyTransferStatusProjection` mirrors the same operator-facing concepts that `SagaRuntimeStatus` exposes:
+
+| Field group | Meaning |
+|-------------|---------|
+| `Phase`, `LastCompletedStepIndex`, `StartedAt`, `CompletedAt` | Core workflow progress |
+| `RecoveryMode`, `ResumeDisposition` | Whether the saga is automatic, manual-only, idle, blocked, or terminal |
+| `PendingDirection`, `PendingStepIndex`, `PendingStepName` | The next resumable work item |
+| `BlockedReason`, `LastResumeSource`, `LastResumeAttemptedAt`, `AutomaticAttemptCount` | Operator diagnostics for retries and manual intervention |
+
+Two of the fields are nullable enums: `PendingDirection` and `LastResumeSource`. Generated gateway and client DTOs handle those nullable enum surfaces automatically, so the Spring UI can bind them directly without custom adapter code.
 
 ([MoneyTransferStatusProjection.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/MoneyTransferStatus/MoneyTransferStatusProjection.cs))
 
@@ -277,6 +303,7 @@ Before moving on, verify these tutorial outcomes in the Spring sample source:
 
 - the balance and ledger projections subscribe to the bank-account brook
 - the flagged-transactions projection subscribes to the compliance brook
+- the saga-status projection includes recovery metadata fields such as `RecoveryMode`, `ResumeDisposition`, and `PendingStepName`
 - the saga-status projection uses generated saga status reducers instead of manual reducers
 
 ## The Complete Projections File Structure
@@ -312,12 +339,13 @@ Projections/
 | One projection per read concern | Balance view, ledger view, and flagged view serve different UI components |
 | Separate snapshot storage names | Aggregate and projection snapshots are independent - rebuilding one does not affect the other |
 | Sliding window via `ImmutableArray` | Pure functional state - prepend, take, return new array |
-| `[GenerateSagaStatusReducers]` for saga projections | Saga lifecycle events follow a standard pattern that can be fully generated |
+| `[GenerateSagaStatusReducers]` for saga projections | Saga lifecycle and recovery metadata follow a standard pattern that can be fully generated |
+| Keep raw saga state separate from the status projection | Operator tooling gets recovery metadata without exposing command-validation state |
 | Projections are `public` | Unlike domain events (which are `internal` to `Spring.Domain`), projections are the public read API |
 
 ## Summary
 
-Projections in Mississippi are read-optimized state records with their own `EventReducer`s. They subscribe to event streams via `[BrookName]`, maintain independent snapshots, and are served through source-generated API endpoints and real-time SignalR subscriptions. A single event stream can feed multiple projections, each shaped for a specific read pattern.
+Projections in Mississippi are read-optimized state records with their own `EventReducer`s. They subscribe to event streams via `[BrookName]`, maintain independent snapshots, and are served through source-generated API endpoints and real-time SignalR subscriptions. A single event stream can feed multiple projections, each shaped for a specific read pattern, including operator-facing recovery views like `MoneyTransferStatusProjection`.
 
 ## Next Steps
 
