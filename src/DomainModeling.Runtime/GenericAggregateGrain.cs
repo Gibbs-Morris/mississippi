@@ -237,16 +237,25 @@ internal sealed class GenericAggregateGrain<TAggregate>
             return;
         }
 
+        bool commandExecuted = false;
         bool handled = await AggregateReminderHandler.ReceiveReminderAsync(
             this.GetPrimaryKeyString(),
             reminderName,
             status,
             cancellationToken => GetStateAsync(cancellationToken),
-            (command, cancellationToken) => ExecuteAsync(command, cancellationToken),
+            async (command, cancellationToken) =>
+            {
+                commandExecuted = true;
+                return await ExecuteAsync(command, cancellationToken);
+            },
             CancellationToken.None);
         if (handled)
         {
-            await ReconcileReminderStateIfRegisteredAsync(CancellationToken.None);
+            if (!commandExecuted)
+            {
+                await ReconcileReminderStateIfRegisteredAsync(CancellationToken.None);
+            }
+
             Logger.ReminderProcessed(reminderName, aggregateKey);
             return;
         }
