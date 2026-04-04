@@ -87,6 +87,7 @@ public sealed class SagaReminderHandlerTests
     {
         PendingDirection = direction,
         PendingStepIndex = stepIndex,
+        PendingStepName = stepIndex == 0 ? "Debit" : "Credit",
         RecoveryMode = SagaRecoveryMode.Automatic,
         SagaId = Guid.NewGuid(),
         StepHash = stepHash ?? ComputeHash(),
@@ -234,7 +235,7 @@ public sealed class SagaReminderHandlerTests
     }
 
     /// <summary>
-    ///     Verifies workflow mismatches are handled without executing a resume command.
+    ///     Verifies workflow mismatches become blocked reminder-driven resume commands so reminders can be disarmed.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
@@ -255,7 +256,7 @@ public sealed class SagaReminderHandlerTests
         SagaReminderHandler<ReminderSagaState> handler = CreateHandler(
             brookGrainFactoryMock,
             snapshotGrainFactoryMock);
-        bool commandExecuted = false;
+        object? executedCommand = null;
 
         bool handled = await handler.ReceiveReminderAsync(
             "saga-123",
@@ -266,14 +267,19 @@ public sealed class SagaReminderHandlerTests
                 Phase = SagaPhase.Running,
                 StepHash = ComputeHash(),
             }),
-            (_, _) =>
+            (command, _) =>
             {
-                commandExecuted = true;
+                executedCommand = command;
                 return Task.FromResult(OperationResult.Ok());
             });
 
+        ResumeSagaCommand command = Assert.IsType<ResumeSagaCommand>(executedCommand);
         Assert.True(handled);
-        Assert.False(commandExecuted);
+        Assert.Equal(SagaRecoveryPlanDisposition.Blocked, command.Disposition);
+        Assert.Equal(SagaResumeSource.Reminder, command.Source);
+        Assert.Equal(0, command.StepIndex);
+        Assert.Equal("Debit", command.StepName);
+        Assert.Equal("Workflow hash mismatch prevents automatic resume.", command.BlockedReason);
     }
 
     /// <summary>

@@ -65,8 +65,29 @@ internal sealed class SagaReminderHandler<TSaga> : IAggregateReminderHandler<TSa
             ? null
             : await CheckpointAccessor.GetAsync(entityId, cancellationToken);
         SagaRecoveryPlan plan = RecoveryCoordinator.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        if (plan.Disposition is SagaRecoveryPlanDisposition.WorkflowMismatch)
+        {
+            if (checkpoint?.PendingDirection is not null && checkpoint.PendingStepIndex.HasValue)
+            {
+                await executeCommandAsync(
+                    new ResumeSagaCommand
+                    {
+                        BlockedReason = plan.Reason ?? "Workflow hash mismatch prevents automatic resume.",
+                        Direction = checkpoint.PendingDirection,
+                        Disposition = SagaRecoveryPlanDisposition.Blocked,
+                        Source = SagaResumeSource.Reminder,
+                        StepIndex = checkpoint.PendingStepIndex.Value,
+                        StepName = string.IsNullOrWhiteSpace(checkpoint.PendingStepName)
+                            ? $"Step {checkpoint.PendingStepIndex.Value}"
+                            : checkpoint.PendingStepName,
+                    },
+                    cancellationToken);
+            }
+
+            return true;
+        }
+
         if (plan.Disposition is SagaRecoveryPlanDisposition.NoAction
-            or SagaRecoveryPlanDisposition.WorkflowMismatch
             or SagaRecoveryPlanDisposition.Terminal)
         {
             return true;
