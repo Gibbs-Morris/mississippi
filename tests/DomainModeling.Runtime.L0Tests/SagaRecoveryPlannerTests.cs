@@ -120,6 +120,31 @@ public sealed class SagaRecoveryPlannerTests
     }
 
     /// <summary>
+    ///     Verifies a checkpoint with a direction but no pending step index is treated as invalid recovery metadata.
+    /// </summary>
+    [Fact]
+    public void PlanReturnsWorkflowMismatchWhenPendingStepIndexMissing()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Running,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Forward,
+            StepHash = ComputeHash(),
+        };
+
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+
+        Assert.Equal(SagaRecoveryPlanDisposition.WorkflowMismatch, plan.Disposition);
+        Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
+        Assert.Equal("Recovery checkpoint is missing a pending step index.", plan.Reason);
+    }
+
+    /// <summary>
     ///     Verifies reminder-driven manual-only forward recovery blocks instead of executing the step.
     /// </summary>
     [Fact]

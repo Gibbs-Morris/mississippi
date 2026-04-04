@@ -64,13 +64,25 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             };
         }
 
-        if (checkpoint.PendingDirection is null || checkpoint.PendingStepIndex is null)
+        if (checkpoint.PendingDirection is null)
         {
             return new()
             {
                 Disposition = SagaRecoveryPlanDisposition.NoAction,
             };
         }
+
+        if (!checkpoint.PendingStepIndex.HasValue)
+        {
+            return new()
+            {
+                Disposition = SagaRecoveryPlanDisposition.WorkflowMismatch,
+                Direction = checkpoint.PendingDirection,
+                Reason = "Recovery checkpoint is missing a pending step index.",
+            };
+        }
+
+        int pendingStepIndex = checkpoint.PendingStepIndex.Value;
 
         string expectedHash = SagaStepHash.Compute(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps);
         string? actualHash = string.IsNullOrWhiteSpace(checkpoint.StepHash) ? state.StepHash : checkpoint.StepHash;
@@ -85,7 +97,7 @@ internal sealed class SagaRecoveryPlanner<TSaga>
         }
 
         if (checkpoint.PendingDirection is SagaExecutionDirection.Forward
-            && checkpoint.PendingStepIndex.Value >= StepInfoProvider.Steps.Count)
+            && pendingStepIndex >= StepInfoProvider.Steps.Count)
         {
             return new()
             {
@@ -95,7 +107,7 @@ internal sealed class SagaRecoveryPlanner<TSaga>
         }
 
         if (checkpoint.PendingDirection is SagaExecutionDirection.Compensation
-            && checkpoint.PendingStepIndex.Value < 0)
+            && pendingStepIndex < 0)
         {
             return new()
             {
@@ -104,14 +116,14 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             };
         }
 
-        SagaStepInfo? step = StepInfoProvider.Steps.FirstOrDefault(s => s.StepIndex == checkpoint.PendingStepIndex.Value);
+        SagaStepInfo? step = StepInfoProvider.Steps.FirstOrDefault(s => s.StepIndex == pendingStepIndex);
         if (step is null)
         {
             return new()
             {
                 Disposition = SagaRecoveryPlanDisposition.WorkflowMismatch,
                 Direction = checkpoint.PendingDirection,
-                Reason = $"Pending step index '{checkpoint.PendingStepIndex.Value}' is not registered in the current saga definition.",
+                Reason = $"Pending step index '{pendingStepIndex}' is not registered in the current saga definition.",
             };
         }
 
