@@ -3,8 +3,6 @@ using System.Globalization;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.DomainModeling.Abstractions;
-
 using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
 using MississippiSamples.Spring.Client.Features.BankAccountLedger.Dtos;
 using MississippiSamples.Spring.Client.Features.MoneyTransferStatus.Dtos;
@@ -160,10 +158,7 @@ public sealed partial class AccountOperationsSection
     private bool CanResumeTransfer =>
         !string.IsNullOrWhiteSpace(TransferSagaId) &&
         TransferStatusProjection is not null &&
-        string.Equals(
-            TransferStatusProjection.ResumeDisposition.ToString(),
-            nameof(SagaResumeDisposition.ManualInterventionRequired),
-            StringComparison.Ordinal);
+        TransferStatusProjection.ResumeDisposition == SagaResumeDispositionDto.ManualInterventionRequired;
 
     private static string FormatTimestamp(
         DateTimeOffset? timestamp
