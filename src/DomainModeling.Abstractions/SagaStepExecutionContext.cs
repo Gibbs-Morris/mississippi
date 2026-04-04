@@ -29,7 +29,7 @@ public sealed record SagaStepExecutionContext
     public required bool IsReplay { get; init; }
 
     /// <summary>
-    ///     Gets the framework-issued operation key for the attempt.
+    ///     Gets the framework-issued operation key that identifies this saga step operation across retries.
     /// </summary>
     public required string OperationKey { get; init; }
 
