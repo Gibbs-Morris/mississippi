@@ -707,12 +707,12 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         out string? expression
     )
     {
-        foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
+        KeyValuePair<string, TypedConstant> namedArgument = attributeData.NamedArguments
+            .Where(candidate => candidate.Key == argumentName)
+            .FirstOrDefault();
+        if (namedArgument.Key is not null)
         {
-            if (namedArgument.Key == argumentName)
-            {
-                return TryGetEnumValueExpression(namedArgument.Value, out expression);
-            }
+            return TryGetEnumValueExpression(namedArgument.Value, out expression);
         }
 
         expression = null;
