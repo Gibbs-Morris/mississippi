@@ -17,22 +17,28 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
     /// <summary>
     ///     Initializes a new instance of the <see cref="StartSagaCommandHandler{TSaga,TInput}" /> class.
     /// </summary>
+    /// <param name="sagaAccessContextProvider">Provider for the persisted saga access-context fingerprint.</param>
     /// <param name="stepInfoProvider">The saga step metadata provider.</param>
     /// <param name="recoveryInfoProvider">The saga recovery metadata provider.</param>
     /// <param name="timeProvider">The time provider.</param>
     public StartSagaCommandHandler(
+        ISagaAccessContextProvider sagaAccessContextProvider,
         ISagaStepInfoProvider<TSaga> stepInfoProvider,
         ISagaRecoveryInfoProvider<TSaga> recoveryInfoProvider,
         TimeProvider timeProvider
     )
     {
+        ArgumentNullException.ThrowIfNull(sagaAccessContextProvider);
         ArgumentNullException.ThrowIfNull(stepInfoProvider);
         ArgumentNullException.ThrowIfNull(recoveryInfoProvider);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        SagaAccessContextProvider = sagaAccessContextProvider;
         StepInfoProvider = stepInfoProvider;
         RecoveryInfoProvider = recoveryInfoProvider;
         TimeProvider = timeProvider;
     }
+
+    private ISagaAccessContextProvider SagaAccessContextProvider { get; }
 
     private ISagaRecoveryInfoProvider<TSaga> RecoveryInfoProvider { get; }
 
@@ -63,6 +69,7 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
 
         SagaStartedEvent started = new()
         {
+            AccessContextFingerprint = SagaAccessContextProvider.GetFingerprint(),
             SagaId = command.SagaId,
             RecoveryMode = RecoveryInfoProvider.Recovery.Mode,
             RecoveryProfile = RecoveryInfoProvider.Recovery.Profile,

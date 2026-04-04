@@ -17,6 +17,13 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests;
 /// </summary>
 public sealed class StartSagaCommandHandlerTests
 {
+    private sealed class FixedSagaAccessContextProvider(
+        string? fingerprint
+    ) : ISagaAccessContextProvider
+    {
+        public string? GetFingerprint() => fingerprint;
+    }
+
     private static string ComputeExpectedStepHash(
         SagaRecoveryInfo recovery,
         IReadOnlyList<SagaStepInfo> steps
@@ -106,6 +113,7 @@ public sealed class StartSagaCommandHandlerTests
     {
         FakeTimeProvider timeProvider = new();
         StartSagaCommandHandler<TestSagaState, TestInput> handler = new(
+            new FixedSagaAccessContextProvider(null),
             new SagaStepInfoProvider<TestSagaState>(Array.Empty<SagaStepInfo>()),
             CreateRecoveryInfoProvider(),
             timeProvider);
@@ -137,6 +145,7 @@ public sealed class StartSagaCommandHandlerTests
                 SagaStepRecoveryPolicy.ManualOnly),
         ];
         StartSagaCommandHandler<TestSagaState, TestInput> handler = new(
+            new FixedSagaAccessContextProvider(null),
             new SagaStepInfoProvider<TestSagaState>(steps),
             CreateRecoveryInfoProvider(),
             timeProvider);
@@ -181,6 +190,7 @@ public sealed class StartSagaCommandHandlerTests
         ];
         SagaRecoveryInfo recovery = new(SagaRecoveryMode.ManualOnly, "critical-payments");
         StartSagaCommandHandler<TestSagaState, TestInput> handler = new(
+            new FixedSagaAccessContextProvider("tenant:user-a"),
             new SagaStepInfoProvider<TestSagaState>(steps),
             CreateRecoveryInfoProvider(recovery),
             timeProvider);
@@ -196,6 +206,7 @@ public sealed class StartSagaCommandHandlerTests
         SagaStartedEvent started = Assert.IsType<SagaStartedEvent>(result.Value[0]);
         SagaInputProvided<TestInput> inputProvided = Assert.IsType<SagaInputProvided<TestInput>>(result.Value[1]);
         Assert.Equal(command.SagaId, started.SagaId);
+        Assert.Equal("tenant:user-a", started.AccessContextFingerprint);
         Assert.Equal(command.CorrelationId, started.CorrelationId);
         Assert.Equal(recovery.Mode, started.RecoveryMode);
         Assert.Equal(recovery.Profile, started.RecoveryProfile);
@@ -229,10 +240,12 @@ public sealed class StartSagaCommandHandlerTests
             Input = new("transfer-1"),
         };
         StartSagaCommandHandler<TestSagaState, TestInput> nullProfileHandler = new(
+            new FixedSagaAccessContextProvider(null),
             new SagaStepInfoProvider<TestSagaState>(steps),
             CreateRecoveryInfoProvider(new(SagaRecoveryMode.Automatic, null)),
             timeProvider);
         StartSagaCommandHandler<TestSagaState, TestInput> literalProfileHandler = new(
+            new FixedSagaAccessContextProvider(null),
             new SagaStepInfoProvider<TestSagaState>(steps),
             CreateRecoveryInfoProvider(new(SagaRecoveryMode.Automatic, "NONE")),
             timeProvider);

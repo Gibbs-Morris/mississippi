@@ -20,6 +20,7 @@ internal sealed class SagaRecoveryCheckpointStartedReducer : EventReducerBase<Sa
         ArgumentNullException.ThrowIfNull(eventData);
         return state with
         {
+            AccessContextFingerprint = eventData.AccessContextFingerprint,
             SagaId = eventData.SagaId,
             StepHash = eventData.StepHash,
             RecoveryMode = eventData.RecoveryMode,
@@ -35,7 +36,6 @@ internal sealed class SagaRecoveryCheckpointStartedReducer : EventReducerBase<Sa
             AutomaticAttemptCount = 0,
             NextEligibleResumeAt = null,
             ReminderArmed = false,
-            AccessContextFingerprint = null,
         };
     }
 }

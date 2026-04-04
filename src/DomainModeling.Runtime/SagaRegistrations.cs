@@ -72,6 +72,8 @@ public static class SagaRegistrations
         services.AddReducer<SagaCompleted, SagaRecoveryCheckpoint, SagaRecoveryCheckpointCompletedReducer>();
         services.AddReducer<SagaCompensated, SagaRecoveryCheckpoint, SagaRecoveryCheckpointCompensatedReducer>();
         services.AddReducer<SagaFailed, SagaRecoveryCheckpoint, SagaRecoveryCheckpointFailedReducer>();
+        services.TryAddSingleton<ISagaAccessContextProvider, DefaultSagaAccessContextProvider>();
+        services.TryAddSingleton<ISagaAccessAuthorizer, DefaultSagaAccessAuthorizer>();
         services.AddTransient<SagaRecoveryCheckpointAccessor<TSaga>>();
         services.AddTransient<SagaRecoveryCoordinator<TSaga>>();
         services.AddTransient<SagaRecoveryPlanner<TSaga>>();

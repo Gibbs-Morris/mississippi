@@ -66,6 +66,7 @@ public sealed class SagaRecoveryCheckpointReducerTests
         SagaRecoveryCheckpoint checkpoint = Reduce(
             new SagaStartedEvent
             {
+                AccessContextFingerprint = "tenant:user-a",
                 SagaId = sagaId,
                 RecoveryMode = SagaRecoveryMode.ManualOnly,
                 RecoveryProfile = "critical-payments",
@@ -95,7 +96,39 @@ public sealed class SagaRecoveryCheckpointReducerTests
         Assert.Equal(SagaResumeSource.Reminder, checkpoint.LastResumeSource);
         Assert.Equal(startedAt.AddMinutes(5), checkpoint.LastResumeAttemptedAt);
         Assert.Equal(1, checkpoint.AutomaticAttemptCount);
+        Assert.Equal("tenant:user-a", checkpoint.AccessContextFingerprint);
         Assert.False(checkpoint.ReminderArmed);
+    }
+
+    /// <summary>
+    ///     Verifies explicit manual resume events refresh the stored access fingerprint.
+    /// </summary>
+    [Fact]
+    public void ReduceUpdatesAccessFingerprintForManualResumeExecution()
+    {
+        SagaRecoveryCheckpoint checkpoint = Reduce(
+            new SagaStartedEvent
+            {
+                AccessContextFingerprint = "tenant:user-a",
+                SagaId = Guid.NewGuid(),
+                RecoveryMode = SagaRecoveryMode.Automatic,
+                StepHash = "HASH",
+                StartedAt = new(2025, 2, 15, 10, 0, 0, TimeSpan.Zero),
+            },
+            new SagaStepExecutionStarted
+            {
+                AccessContextFingerprint = "tenant:user-b",
+                AttemptId = Guid.NewGuid(),
+                Direction = SagaExecutionDirection.Forward,
+                OperationKey = "manual-key",
+                Source = SagaResumeSource.Manual,
+                StartedAt = new(2025, 2, 15, 10, 1, 0, TimeSpan.Zero),
+                StepIndex = 0,
+                StepName = "Debit",
+            });
+
+        Assert.Equal("tenant:user-b", checkpoint.AccessContextFingerprint);
+        Assert.Equal(SagaResumeSource.Manual, checkpoint.LastResumeSource);
     }
 
     /// <summary>

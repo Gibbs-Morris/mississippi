@@ -194,11 +194,13 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
     /// <param name="plan">The recovery plan selected for execution.</param>
     /// <param name="checkpoint">The authoritative checkpoint that supplies in-flight metadata.</param>
     /// <param name="source">The source requesting resume execution.</param>
+    /// <param name="accessContextFingerprint">The optional caller-context fingerprint for explicit resumes.</param>
     /// <returns>The command that materializes the selected recovery action.</returns>
     internal static ResumeSagaCommand CreateResumeCommand(
         SagaRecoveryPlan plan,
         SagaRecoveryCheckpoint checkpoint,
-        SagaResumeSource source
+        SagaResumeSource source,
+        string? accessContextFingerprint = null
     )
     {
         ArgumentNullException.ThrowIfNull(plan);
@@ -210,6 +212,7 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
 
             return new ResumeSagaCommand
             {
+                AccessContextFingerprint = accessContextFingerprint,
                 AttemptId = checkpoint.InFlightAttemptId,
                 Direction = plan.Direction,
                 Disposition = plan.Disposition,
@@ -226,6 +229,7 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
 
             return new ResumeSagaCommand
             {
+                AccessContextFingerprint = accessContextFingerprint,
                 BlockedReason = plan.Reason,
                 Direction = plan.Direction,
                 Disposition = plan.Disposition,
@@ -237,6 +241,7 @@ internal sealed class SagaRecoveryCoordinator<TSaga>
 
         return new ResumeSagaCommand
         {
+            AccessContextFingerprint = accessContextFingerprint,
             Disposition = plan.Disposition,
             Source = source,
         };

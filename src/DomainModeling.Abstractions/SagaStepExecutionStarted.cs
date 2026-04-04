@@ -16,6 +16,12 @@ namespace Mississippi.DomainModeling.Abstractions;
 public sealed record SagaStepExecutionStarted
 {
     /// <summary>
+    ///     Gets the optional access-context fingerprint associated with the explicit resume attempt.
+    /// </summary>
+    [Id(7)]
+    public string? AccessContextFingerprint { get; init; }
+
+    /// <summary>
     ///     Gets the unique attempt identifier.
     /// </summary>
     [Id(3)]

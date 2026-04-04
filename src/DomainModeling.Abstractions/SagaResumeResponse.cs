@@ -75,6 +75,11 @@ public enum SagaResumeRequestDisposition
     WorkflowMismatch,
 
     /// <summary>
+    ///     The request was denied because the caller is not authorized to access the saga.
+    /// </summary>
+    Unauthorized,
+
+    /// <summary>
     ///     The request completed without taking any recovery action.
     /// </summary>
     NoAction,

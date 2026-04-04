@@ -16,6 +16,12 @@ namespace Mississippi.DomainModeling.Abstractions;
 public sealed record SagaResumeBlocked
 {
     /// <summary>
+    ///     Gets the optional access-context fingerprint associated with the explicit resume attempt.
+    /// </summary>
+    [Id(6)]
+    public string? AccessContextFingerprint { get; init; }
+
+    /// <summary>
     ///     Gets the timestamp when the resume attempt was blocked.
     /// </summary>
     [Id(5)]

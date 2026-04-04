@@ -16,6 +16,12 @@ namespace Mississippi.DomainModeling.Abstractions;
 public sealed record SagaStartedEvent
 {
     /// <summary>
+    ///     Gets the optional access-context fingerprint captured when the saga started.
+    /// </summary>
+    [Id(6)]
+    public string? AccessContextFingerprint { get; init; }
+
+    /// <summary>
     ///     Gets the optional correlation identifier.
     /// </summary>
     [Id(3)]

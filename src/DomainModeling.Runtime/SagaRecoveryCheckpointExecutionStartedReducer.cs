@@ -29,6 +29,9 @@ internal sealed class SagaRecoveryCheckpointExecutionStartedReducer
             InFlightAttemptId = eventData.AttemptId,
             InFlightOperationKey = eventData.OperationKey,
             BlockedReason = null,
+            AccessContextFingerprint = eventData.Source is SagaResumeSource.Manual
+                ? eventData.AccessContextFingerprint ?? state.AccessContextFingerprint
+                : state.AccessContextFingerprint,
             LastResumeSource = isExplicitResume ? eventData.Source : state.LastResumeSource,
             LastResumeAttemptedAt = isExplicitResume ? eventData.StartedAt : state.LastResumeAttemptedAt,
             AutomaticAttemptCount = isAutomaticResume ? state.AutomaticAttemptCount + 1 : state.AutomaticAttemptCount,

@@ -109,9 +109,11 @@ public sealed class SagaRecoveryServiceTests
         int stepIndex,
         string? blockedReason = null,
         SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic,
-        string? stepHash = null
+        string? stepHash = null,
+        string? accessContextFingerprint = null
     ) => new()
     {
+        AccessContextFingerprint = accessContextFingerprint,
         AutomaticAttemptCount = 2,
         BlockedReason = blockedReason,
         LastResumeAttemptedAt = new(2026, 4, 4, 18, 0, 0, TimeSpan.Zero),
@@ -130,12 +132,22 @@ public sealed class SagaRecoveryServiceTests
         IAggregateGrainFactory aggregateGrainFactory,
         FakeTimeProvider timeProvider,
         SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic,
+        ISagaAccessContextProvider? sagaAccessContextProvider = null,
+        ISagaAccessAuthorizer? sagaAccessAuthorizer = null,
         Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
         Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null
     )
     {
+        bool configureDefaultCursor = brookGrainFactoryMock is null;
         brookGrainFactoryMock ??= new();
         snapshotGrainFactoryMock ??= new();
+        if (configureDefaultCursor)
+        {
+            Mock<IBrookCursorGrain> defaultCursorGrainMock = new();
+            defaultCursorGrainMock.Setup(g => g.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+            brookGrainFactoryMock.Setup(f => f.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(defaultCursorGrainMock.Object);
+        }
+
         Mock<IRootReducer<SagaRecoveryCheckpoint>> checkpointReducerMock = new();
         checkpointReducerMock.Setup(r => r.GetReducerHash()).Returns("checkpoint-hash");
         SagaRecoveryCheckpointAccessor<ServiceSagaState> accessor = new(
@@ -153,6 +165,8 @@ public sealed class SagaRecoveryServiceTests
             accessor,
             coordinator,
             new SagaRecoveryInfoProvider<ServiceSagaState>(new(recoveryMode, null)),
+            sagaAccessAuthorizer ?? new DefaultSagaAccessAuthorizer(),
+            sagaAccessContextProvider ?? new DefaultSagaAccessContextProvider(),
             new SagaStepInfoProvider<ServiceSagaState>(Steps),
             timeProvider);
     }
@@ -209,6 +223,49 @@ public sealed class SagaRecoveryServiceTests
         ServiceSagaState? state = await service.GetStateAsync("saga-123");
 
         Assert.Same(expectedState, state);
+    }
+
+    /// <summary>
+    ///     Verifies raw saga state reads fail closed when the caller fingerprint does not match the stored fingerprint.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task GetStateAsyncReturnsNullWhenCallerNotAuthorized()
+    {
+        FakeAggregateGrainFactory aggregateGrainFactory = new()
+        {
+            Grain = new FakeAggregateGrain
+            {
+                State = new ServiceSagaState
+                {
+                    Phase = SagaPhase.Running,
+                    SagaId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    StepHash = ComputeHash(),
+                },
+            },
+        };
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        SetupCheckpointLoad(
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock,
+            "saga-123",
+            CreateCheckpoint(
+                SagaExecutionDirection.Forward,
+                0,
+                accessContextFingerprint: "tenant:user-a"));
+        Mock<ISagaAccessContextProvider> sagaAccessContextProviderMock = new();
+        sagaAccessContextProviderMock.Setup(p => p.GetFingerprint()).Returns("tenant:user-b");
+        SagaRecoveryService<ServiceSagaState> service = CreateService(
+            aggregateGrainFactory,
+            new FakeTimeProvider(new DateTimeOffset(2026, 4, 4, 18, 45, 0, TimeSpan.Zero)),
+            sagaAccessContextProvider: sagaAccessContextProviderMock.Object,
+            brookGrainFactoryMock: brookGrainFactoryMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+
+        ServiceSagaState? state = await service.GetStateAsync("saga-123");
+
+        Assert.Null(state);
     }
 
     /// <summary>
@@ -584,9 +641,12 @@ public sealed class SagaRecoveryServiceTests
             "saga-123",
             CreateCheckpoint(SagaExecutionDirection.Forward, 0));
         FakeTimeProvider timeProvider = new(new DateTimeOffset(2026, 4, 4, 20, 0, 0, TimeSpan.Zero));
+        Mock<ISagaAccessContextProvider> sagaAccessContextProviderMock = new();
+        sagaAccessContextProviderMock.Setup(p => p.GetFingerprint()).Returns("tenant:user-a");
         SagaRecoveryService<ServiceSagaState> service = CreateService(
             aggregateGrainFactory,
             timeProvider,
+            sagaAccessContextProvider: sagaAccessContextProviderMock.Object,
             brookGrainFactoryMock: brookGrainFactoryMock,
             snapshotGrainFactoryMock: snapshotGrainFactoryMock);
 
@@ -599,7 +659,57 @@ public sealed class SagaRecoveryServiceTests
         Assert.Equal("Debit", response.PendingStepName);
         Assert.Equal(timeProvider.GetUtcNow(), response.ProcessedAt);
         Assert.Equal(SagaResumeSource.Manual, response.Source);
-        Assert.IsType<ResumeSagaCommand>(grain.LastCommand);
+        ResumeSagaCommand command = Assert.IsType<ResumeSagaCommand>(grain.LastCommand);
+        Assert.Equal("tenant:user-a", command.AccessContextFingerprint);
+    }
+
+    /// <summary>
+    ///     Verifies manual resume returns a typed unauthorized response when the caller fingerprint does not match.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task ResumeAsyncReturnsUnauthorizedWhenCallerNotAuthorized()
+    {
+        FakeAggregateGrain grain = new()
+        {
+            State = new ServiceSagaState
+            {
+                Phase = SagaPhase.Running,
+                SagaId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                StepHash = ComputeHash(),
+            },
+        };
+        FakeAggregateGrainFactory aggregateGrainFactory = new()
+        {
+            Grain = grain,
+        };
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        SetupCheckpointLoad(
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock,
+            "saga-123",
+            CreateCheckpoint(
+                SagaExecutionDirection.Forward,
+                0,
+                accessContextFingerprint: "tenant:user-a"));
+        Mock<ISagaAccessContextProvider> sagaAccessContextProviderMock = new();
+        sagaAccessContextProviderMock.Setup(p => p.GetFingerprint()).Returns("tenant:user-b");
+        FakeTimeProvider timeProvider = new(new DateTimeOffset(2026, 4, 4, 20, 5, 0, TimeSpan.Zero));
+        SagaRecoveryService<ServiceSagaState> service = CreateService(
+            aggregateGrainFactory,
+            timeProvider,
+            sagaAccessContextProvider: sagaAccessContextProviderMock.Object,
+            brookGrainFactoryMock: brookGrainFactoryMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+
+        SagaResumeResponse? response = await service.ResumeAsync("saga-123");
+
+        Assert.NotNull(response);
+        Assert.Equal(SagaResumeRequestDisposition.Unauthorized, response.Disposition);
+        Assert.Equal("The current caller is not authorized for this saga.", response.Message);
+        Assert.Equal(SagaResumeSource.Manual, response.Source);
+        Assert.Null(grain.LastCommand);
     }
 
     /// <summary>

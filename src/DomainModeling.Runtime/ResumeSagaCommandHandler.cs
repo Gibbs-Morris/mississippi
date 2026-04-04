@@ -90,6 +90,7 @@ internal sealed class ResumeSagaCommandHandler<TSaga> : CommandHandlerBase<Resum
         [
             new SagaResumeBlocked
             {
+                AccessContextFingerprint = command.AccessContextFingerprint,
                 BlockedAt = blockedAt,
                 BlockedReason = command.BlockedReason,
                 Direction = command.Direction.Value,
@@ -124,6 +125,7 @@ internal sealed class ResumeSagaCommandHandler<TSaga> : CommandHandlerBase<Resum
         [
             new SagaStepExecutionStarted
             {
+                AccessContextFingerprint = command.AccessContextFingerprint,
                 AttemptId = attemptId,
                 Direction = command.Direction.Value,
                 OperationKey = operationKey,

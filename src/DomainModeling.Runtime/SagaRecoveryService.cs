@@ -21,6 +21,8 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
     /// <param name="checkpointAccessor">Accessor for the latest authoritative recovery checkpoint.</param>
     /// <param name="coordinator">Coordinator for planning and applying manual resume requests.</param>
     /// <param name="recoveryInfoProvider">Provider for the configured saga recovery metadata.</param>
+    /// <param name="sagaAccessAuthorizer">Authorizer for saga reads and manual resume operations.</param>
+    /// <param name="sagaAccessContextProvider">Provider for the current caller-context fingerprint.</param>
     /// <param name="stepInfoProvider">Provider for the ordered saga step metadata.</param>
     /// <param name="timeProvider">Time provider used to stamp manual resume responses.</param>
     public SagaRecoveryService(
@@ -28,6 +30,8 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         SagaRecoveryCheckpointAccessor<TSaga> checkpointAccessor,
         SagaRecoveryCoordinator<TSaga> coordinator,
         ISagaRecoveryInfoProvider<TSaga> recoveryInfoProvider,
+        ISagaAccessAuthorizer sagaAccessAuthorizer,
+        ISagaAccessContextProvider sagaAccessContextProvider,
         ISagaStepInfoProvider<TSaga> stepInfoProvider,
         TimeProvider timeProvider
     )
@@ -36,12 +40,16 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         ArgumentNullException.ThrowIfNull(checkpointAccessor);
         ArgumentNullException.ThrowIfNull(coordinator);
         ArgumentNullException.ThrowIfNull(recoveryInfoProvider);
+        ArgumentNullException.ThrowIfNull(sagaAccessAuthorizer);
+        ArgumentNullException.ThrowIfNull(sagaAccessContextProvider);
         ArgumentNullException.ThrowIfNull(stepInfoProvider);
         ArgumentNullException.ThrowIfNull(timeProvider);
         AggregateGrainFactory = aggregateGrainFactory;
         CheckpointAccessor = checkpointAccessor;
         Coordinator = coordinator;
         RecoveryInfoProvider = recoveryInfoProvider;
+        SagaAccessAuthorizer = sagaAccessAuthorizer;
+        SagaAccessContextProvider = sagaAccessContextProvider;
         StepInfoProvider = stepInfoProvider;
         TimeProvider = timeProvider;
     }
@@ -51,6 +59,10 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
     private SagaRecoveryCheckpointAccessor<TSaga> CheckpointAccessor { get; }
 
     private SagaRecoveryCoordinator<TSaga> Coordinator { get; }
+
+    private ISagaAccessAuthorizer SagaAccessAuthorizer { get; }
+
+    private ISagaAccessContextProvider SagaAccessContextProvider { get; }
 
     private ISagaRecoveryInfoProvider<TSaga> RecoveryInfoProvider { get; }
 
@@ -65,7 +77,15 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
     )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-        return await AggregateGrainFactory.GetGenericAggregate<TSaga>(entityId).GetStateAsync(cancellationToken);
+        (TSaga? state, SagaRecoveryCheckpoint? checkpoint) = await LoadStateAndCheckpointAsync(entityId, cancellationToken);
+        if (state is null)
+        {
+            return null;
+        }
+
+        return Authorize(entityId, SagaAccessAction.ReadState, checkpoint).IsAuthorized
+            ? state
+            : null;
     }
 
     /// <inheritdoc />
@@ -77,6 +97,11 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
         (TSaga? state, SagaRecoveryCheckpoint? checkpoint) = await LoadStateAndCheckpointAsync(entityId, cancellationToken);
         if (state is null)
+        {
+            return null;
+        }
+
+        if (!Authorize(entityId, SagaAccessAction.ReadRuntimeStatus, checkpoint).IsAuthorized)
         {
             return null;
         }
@@ -115,8 +140,21 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
             return null;
         }
 
-        SagaRecoveryPlan plan = Coordinator.Plan(state, checkpoint, SagaResumeSource.Manual);
         DateTimeOffset processedAt = TimeProvider.GetUtcNow();
+        SagaAccessAuthorizationResult authorization = Authorize(entityId, SagaAccessAction.Resume, checkpoint);
+        if (!authorization.IsAuthorized)
+        {
+            return new SagaResumeResponse
+            {
+                Disposition = SagaResumeRequestDisposition.Unauthorized,
+                Message = authorization.FailureReason ?? "The current caller is not authorized to resume this saga.",
+                ProcessedAt = processedAt,
+                SagaId = state.SagaId,
+                Source = SagaResumeSource.Manual,
+            };
+        }
+
+        SagaRecoveryPlan plan = Coordinator.Plan(state, checkpoint, SagaResumeSource.Manual);
         if (plan.Disposition is SagaRecoveryPlanDisposition.ExecuteStep
             or SagaRecoveryPlanDisposition.Blocked
             or SagaRecoveryPlanDisposition.CompleteSaga
@@ -125,7 +163,11 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
             ArgumentNullException.ThrowIfNull(checkpoint);
             OperationResult commandResult = await AggregateGrainFactory.GetGenericAggregate<TSaga>(entityId)
                 .ExecuteAsync(
-                    SagaRecoveryCoordinator<TSaga>.CreateResumeCommand(plan, checkpoint, SagaResumeSource.Manual),
+                    SagaRecoveryCoordinator<TSaga>.CreateResumeCommand(
+                        plan,
+                        checkpoint,
+                        SagaResumeSource.Manual,
+                        checkpoint.AccessContextFingerprint ?? SagaAccessContextProvider.GetFingerprint()),
                     cancellationToken);
             if (!commandResult.Success)
             {
@@ -221,6 +263,17 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         _ => SagaResumeRequestDisposition.NoAction,
     };
 
+    private SagaAccessAuthorizationResult Authorize(
+        string entityId,
+        SagaAccessAction action,
+        SagaRecoveryCheckpoint? checkpoint
+    ) =>
+        SagaAccessAuthorizer.Authorize(
+            entityId,
+            action,
+            checkpoint?.AccessContextFingerprint,
+            SagaAccessContextProvider.GetFingerprint());
+
     private async Task<(TSaga? State, SagaRecoveryCheckpoint? Checkpoint)> LoadStateAndCheckpointAsync(
         string entityId,
         CancellationToken cancellationToken
@@ -229,7 +282,6 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         IGenericAggregateGrain<TSaga> grain = AggregateGrainFactory.GetGenericAggregate<TSaga>(entityId);
         TSaga? state = await grain.GetStateAsync(cancellationToken);
         SagaRecoveryCheckpoint? checkpoint = state is null
-            || state.Phase is SagaPhase.Completed or SagaPhase.Compensated or SagaPhase.Failed
             ? null
             : await CheckpointAccessor.GetAsync(entityId, cancellationToken);
         return (state, checkpoint);

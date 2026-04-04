@@ -15,6 +15,12 @@ namespace Mississippi.DomainModeling.Runtime;
 internal sealed record ResumeSagaCommand
 {
     /// <summary>
+    ///     Gets the optional access-context fingerprint captured for the current caller.
+    /// </summary>
+    [Id(8)]
+    public string? AccessContextFingerprint { get; init; }
+
+    /// <summary>
     ///     Gets the optional attempt identifier to reuse when replaying an in-flight operation.
     /// </summary>
     [Id(6)]

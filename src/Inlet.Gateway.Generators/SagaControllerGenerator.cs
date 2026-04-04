@@ -164,6 +164,11 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.AppendLine(")");
         sb.OpenBrace();
         sb.AppendLine($"{saga.SagaStateTypeName}? state = await SagaRecoveryService.GetStateAsync(sagaId.ToString(), cancellationToken);");
+        sb.AppendLine("if (state is null)");
+        sb.OpenBrace();
+        sb.AppendLine("return NotFound();");
+        sb.CloseBrace();
+        sb.AppendLine();
         sb.AppendLine("return Ok(state);");
         sb.CloseBrace();
         sb.AppendLine();
