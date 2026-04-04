@@ -66,6 +66,37 @@ public sealed class SagaRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies a default saga recovery provider is registered when none is supplied.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersDefaultSagaRecoveryInfoProvider()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISagaRecoveryInfoProvider<TestSagaState> recoveryProvider =
+            provider.GetRequiredService<ISagaRecoveryInfoProvider<TestSagaState>>();
+        Assert.Equal(SagaRecoveryMode.Automatic, recoveryProvider.Recovery.Mode);
+        Assert.Null(recoveryProvider.Recovery.Profile);
+    }
+
+    /// <summary>
+    ///     Verifies an explicit saga recovery provider registration overrides the default.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationAllowsExplicitSagaRecoveryInfoOverride()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        services.AddSagaRecoveryInfo<TestSagaState>(new(SagaRecoveryMode.ManualOnly, "critical-payments"));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISagaRecoveryInfoProvider<TestSagaState> recoveryProvider =
+            provider.GetRequiredService<ISagaRecoveryInfoProvider<TestSagaState>>();
+        Assert.Equal(SagaRecoveryMode.ManualOnly, recoveryProvider.Recovery.Mode);
+        Assert.Equal("critical-payments", recoveryProvider.Recovery.Profile);
+    }
+
+    /// <summary>
     ///     Verifies service collection chaining.
     /// </summary>
     [Fact]

@@ -1,6 +1,7 @@
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Tributary.Runtime;
@@ -37,6 +38,11 @@ public static class SagaRegistrations
         services.AddEventType<SagaCompleted>();
         services.AddEventType<SagaCompensated>();
         services.AddEventType<SagaFailed>();
+        services.TryAddSingleton<ISagaRecoveryInfoProvider<TSaga>>(
+            new SagaRecoveryInfoProvider<TSaga>(
+                new(
+                    SagaRecoveryMode.Automatic,
+                    null)));
         services.AddCommandHandler<StartSagaCommand<TInput>, TSaga, StartSagaCommandHandler<TSaga, TInput>>();
         services.AddReducer<SagaStartedEvent, TSaga, SagaStartedReducer<TSaga>>();
         services.AddReducer<SagaInputProvided<TInput>, TSaga, SagaInputProvidedReducer<TSaga, TInput>>();
