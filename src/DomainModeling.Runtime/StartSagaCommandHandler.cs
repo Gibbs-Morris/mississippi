@@ -52,8 +52,20 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
         StringBuilder builder = new();
         builder.Append("Recovery=")
             .Append(recovery.Mode)
-            .Append(':')
-            .Append(recovery.Profile ?? "NONE");
+            .Append(':');
+
+        if (recovery.Profile is null)
+        {
+            builder.Append("Profile:null");
+        }
+        else
+        {
+            builder.Append("Profile:value:")
+                .Append(recovery.Profile.Length)
+                .Append(':')
+                .Append(recovery.Profile);
+        }
+
         for (int i = 0; i < steps.Count; i++)
         {
             SagaStepInfo step = steps[i];
