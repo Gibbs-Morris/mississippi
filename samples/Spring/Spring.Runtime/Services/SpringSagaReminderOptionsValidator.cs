@@ -16,7 +16,7 @@ namespace MississippiSamples.Spring.Runtime.Services;
 /// </summary>
 internal sealed class SpringSagaReminderOptionsValidator : IValidateOptions<SagaRecoveryOptions>
 {
-    private readonly IReminderRegistry[] reminderRegistries;
+    private IReminderRegistry[] ReminderRegistries { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SpringSagaReminderOptionsValidator" /> class.
@@ -27,7 +27,7 @@ internal sealed class SpringSagaReminderOptionsValidator : IValidateOptions<Saga
     )
     {
         ArgumentNullException.ThrowIfNull(reminderRegistries);
-        this.reminderRegistries = reminderRegistries.ToArray();
+        ReminderRegistries = reminderRegistries.ToArray();
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ internal sealed class SpringSagaReminderOptionsValidator : IValidateOptions<Saga
             failures.Add("SagaRecovery:MaxAutomaticAttempts must be greater than zero.");
         }
 
-        if (options.Enabled && !options.ForceManualOnly && (reminderRegistries.Length == 0))
+        if (options.Enabled && !options.ForceManualOnly && (ReminderRegistries.Length == 0))
         {
             failures.Add(
                 "Automatic saga recovery is enabled but no Orleans reminder provider is configured. Configure Azure Table reminders or force manual-only mode.");
