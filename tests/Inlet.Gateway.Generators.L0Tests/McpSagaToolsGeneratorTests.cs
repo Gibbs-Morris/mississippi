@@ -530,6 +530,47 @@ public sealed class McpSagaToolsGeneratorTests
     }
 
     /// <summary>
+    ///     Status tool should use the saga recovery service seam so authorization matches the HTTP status surface.
+    /// </summary>
+    [Fact]
+    public void StatusToolUsesSagaRecoveryServiceSeam()
+    {
+        const string source = """
+                              using Mississippi.DomainModeling.Abstractions;
+                              using Mississippi.Inlet.Generators.Abstractions;
+
+                              namespace TestApp.Domain.Sagas
+                              {
+                                  public sealed record StartOrderInput
+                                  {
+                                      public string CustomerId { get; init; }
+                                  }
+
+                                  [GenerateSagaEndpoints(InputType = typeof(StartOrderInput))]
+                                  [GenerateMcpSagaTools]
+                                  public sealed record OrderSagaState : ISagaState
+                                  {
+                                  }
+                              }
+                              """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, source);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "OrderSagaState? state = await SagaRecoveryService.GetStateAsync(sagaId, cancellationToken)",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "AggregateGrainFactory.GetGenericAggregate<OrderSagaState>(sagaId)",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "await grain.GetStateAsync(cancellationToken)",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Start tool should use destructive behavioral annotations.
     /// </summary>
     [Fact]

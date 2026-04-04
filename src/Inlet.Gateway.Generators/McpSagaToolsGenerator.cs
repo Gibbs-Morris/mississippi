@@ -415,12 +415,8 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-        sb.AppendLine($"IGenericAggregateGrain<{saga.SagaStateTypeName}> grain =");
-        sb.IncreaseIndent();
-        sb.AppendLine($"AggregateGrainFactory.GetGenericAggregate<{saga.SagaStateTypeName}>(sagaId);");
-        sb.DecreaseIndent();
-        sb.AppendLine();
-        sb.AppendLine($"{saga.SagaStateTypeName}? state = await grain.GetStateAsync(cancellationToken);");
+        sb.AppendLine(
+            $"{saga.SagaStateTypeName}? state = await SagaRecoveryService.GetStateAsync(sagaId, cancellationToken);");
         sb.AppendLine();
         sb.AppendLine("if (state is null)");
         sb.OpenBrace();
@@ -472,7 +468,8 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         // DI property
         sb.AppendSummary("Gets the aggregate grain factory.");
         sb.AppendLine("private IAggregateGrainFactory AggregateGrainFactory { get; }");
-        sb.AppendSummary("Gets the saga recovery service used for runtime-status and manual-resume operations.");
+        sb.AppendSummary(
+            "Gets the saga recovery service used for raw status, runtime-status, and manual-resume operations.");
         sb.AppendLine($"private ISagaRecoveryService<{saga.SagaStateTypeName}> SagaRecoveryService {{ get; }}");
         sb.AppendLine();
 
@@ -480,7 +477,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.AppendSummary($"Initializes a new instance of the <see cref=\"{saga.ToolsClassName}\" /> class.");
         sb.AppendLine("/// <param name=\"aggregateGrainFactory\">Factory for resolving saga grains.</param>");
         sb.AppendLine(
-            "/// <param name=\"sagaRecoveryService\">Service for runtime-status and manual-resume saga operations.</param>");
+            "/// <param name=\"sagaRecoveryService\">Service for raw-status, runtime-status, and manual-resume saga operations.</param>");
         sb.AppendLine($"public {saga.ToolsClassName}(");
         sb.IncreaseIndent();
         sb.AppendLine("IAggregateGrainFactory aggregateGrainFactory,");
