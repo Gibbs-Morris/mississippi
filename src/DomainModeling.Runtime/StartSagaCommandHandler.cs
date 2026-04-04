@@ -38,9 +38,9 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
         TimeProvider = timeProvider;
     }
 
-    private ISagaAccessContextProvider SagaAccessContextProvider { get; }
-
     private ISagaRecoveryInfoProvider<TSaga> RecoveryInfoProvider { get; }
+
+    private ISagaAccessContextProvider SagaAccessContextProvider { get; }
 
     private ISagaStepInfoProvider<TSaga> StepInfoProvider { get; }
 

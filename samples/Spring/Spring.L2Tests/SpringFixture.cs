@@ -64,6 +64,11 @@ public sealed class SpringFixture
     public bool IsInitialized { get; private set; }
 
     /// <summary>
+    ///     Gets the base URI for the Spring runtime application.
+    /// </summary>
+    public Uri RuntimeBaseUri { get; private set; } = new("about:blank");
+
+    /// <summary>
     ///     Creates an <see cref="HttpClient" /> configured to communicate with the Spring gateway.
     ///     Uses Aspire's <see cref="DistributedApplicationHostingTestingExtensions.CreateHttpClient" />
     ///     which handles internal proxy routing correctly.
@@ -94,6 +99,21 @@ public sealed class SpringFixture
         IPage page = await browser.NewPageAsync();
         page.SetDefaultTimeout(PlaywrightTimeoutMs);
         return page;
+    }
+
+    /// <summary>
+    ///     Creates an <see cref="HttpClient" /> configured to communicate with the Spring runtime host.
+    /// </summary>
+    /// <returns>An <see cref="HttpClient" /> configured for the Spring runtime host.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the app is not initialized.</exception>
+    public HttpClient CreateRuntimeHttpClient()
+    {
+        if (app is null)
+        {
+            throw new InvalidOperationException("Application not initialized.");
+        }
+
+        return app.CreateHttpClient("spring-runtime");
     }
 
     /// <inheritdoc />
@@ -167,12 +187,17 @@ public sealed class SpringFixture
             await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cts.Token)
                 .WaitAsync(DefaultTimeout, cts.Token);
 
+            // Wait for the runtime host to be healthy before clients depend on it.
+            await app.ResourceNotifications.WaitForResourceHealthyAsync("spring-runtime", cts.Token)
+                .WaitAsync(DefaultTimeout, cts.Token);
+
             // Wait for the gateway to be running
             await app.ResourceNotifications.WaitForResourceHealthyAsync("spring-gateway", cts.Token)
                 .WaitAsync(DefaultTimeout, cts.Token);
 
             // Get the gateway HTTP endpoint (returns Uri directly)
             GatewayBaseUri = app.GetEndpoint("spring-gateway", "http");
+            RuntimeBaseUri = app.GetEndpoint("spring-runtime", "http");
 
             // Initialize Playwright
             playwright = await Playwright.CreateAsync();

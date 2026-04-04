@@ -12,7 +12,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.SagaStartedEvent")]
-[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTARTED", version: 1)]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTARTED")]
 public sealed record SagaStartedEvent
 {
     /// <summary>
@@ -28,12 +28,6 @@ public sealed record SagaStartedEvent
     public string? CorrelationId { get; init; }
 
     /// <summary>
-    ///     Gets the saga identifier.
-    /// </summary>
-    [Id(0)]
-    public required Guid SagaId { get; init; }
-
-    /// <summary>
     ///     Gets the saga-level recovery mode.
     /// </summary>
     [Id(4)]
@@ -44,6 +38,12 @@ public sealed record SagaStartedEvent
     /// </summary>
     [Id(5)]
     public string? RecoveryProfile { get; init; }
+
+    /// <summary>
+    ///     Gets the saga identifier.
+    /// </summary>
+    [Id(0)]
+    public required Guid SagaId { get; init; }
 
     /// <summary>
     ///     Gets the timestamp when the saga started.

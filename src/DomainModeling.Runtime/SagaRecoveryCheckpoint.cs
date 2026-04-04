@@ -13,7 +13,7 @@ namespace Mississippi.DomainModeling.Runtime;
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Runtime.SagaRecoveryCheckpoint")]
-[SnapshotStorageName("MISSISSIPPI", "SAGAS", "SAGARECOVERYCHECKPOINT", version: 1)]
+[SnapshotStorageName("MISSISSIPPI", "SAGAS", "SAGARECOVERYCHECKPOINT")]
 internal sealed record SagaRecoveryCheckpoint
 {
     /// <summary>
@@ -83,12 +83,6 @@ internal sealed record SagaRecoveryCheckpoint
     public string? PendingStepName { get; init; }
 
     /// <summary>
-    ///     Gets a value indicating whether the reminder is currently armed for this saga.
-    /// </summary>
-    [Id(14)]
-    public bool ReminderArmed { get; init; }
-
-    /// <summary>
     ///     Gets the configured saga-level recovery mode.
     /// </summary>
     [Id(2)]
@@ -99,6 +93,12 @@ internal sealed record SagaRecoveryCheckpoint
     /// </summary>
     [Id(3)]
     public string? RecoveryProfile { get; init; }
+
+    /// <summary>
+    ///     Gets a value indicating whether the reminder is currently armed for this saga.
+    /// </summary>
+    [Id(14)]
+    public bool ReminderArmed { get; init; }
 
     /// <summary>
     ///     Gets the saga identifier associated with this checkpoint.

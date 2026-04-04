@@ -87,13 +87,13 @@ public sealed partial class AccountOperationsSection
     [Parameter]
     public EventCallback OnOpenAccount { get; set; }
 
-    /// <summary>Gets or sets the callback to start a transfer.</summary>
-    [Parameter]
-    public EventCallback OnStartTransfer { get; set; }
-
     /// <summary>Gets or sets the callback to manually resume a blocked transfer.</summary>
     [Parameter]
     public EventCallback OnResumeTransfer { get; set; }
+
+    /// <summary>Gets or sets the callback to start a transfer.</summary>
+    [Parameter]
+    public EventCallback OnStartTransfer { get; set; }
 
     /// <summary>Gets or sets the callback to switch accounts.</summary>
     [Parameter]
@@ -158,7 +158,7 @@ public sealed partial class AccountOperationsSection
     private bool CanResumeTransfer =>
         !string.IsNullOrWhiteSpace(TransferSagaId) &&
         TransferStatusProjection is not null &&
-        TransferStatusProjection.ResumeDisposition == SagaResumeDispositionDto.ManualInterventionRequired;
+        (TransferStatusProjection.ResumeDisposition == SagaResumeDispositionDto.ManualInterventionRequired);
 
     private static string FormatTimestamp(
         DateTimeOffset? timestamp

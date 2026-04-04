@@ -11,6 +11,7 @@ using Projects;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 bool springAuthProofModeEnabled = builder.Configuration.GetValue("Spring:AuthProofMode", false);
+bool springForceManualOnlyEnabled = builder.Configuration.GetValue("Spring:SagaRecovery:ForceManualOnly", false);
 
 // Add Azure Storage (Azurite emulator)
 IResourceBuilder<AzureStorageResource> storage = builder.AddAzureStorage("storage").RunAsEmulator();
@@ -47,8 +48,10 @@ OrleansService orleans = builder.AddOrleans("default")
 // WithHealthCheck ensures the runtime host is fully ready before dependents start
 IResourceBuilder<ProjectResource> springRuntime = builder.AddProject<Spring_Runtime>("spring-runtime")
     .WithReference(orleans)
+    .WithReference(clusteringTable)
     .WithReference(cosmos)
     .WithReference(blobs)
+    .WithReference(grainState)
     .WaitFor(storage)
     .WaitFor(cosmos)
     .WithHttpHealthCheck("/health");
@@ -58,12 +61,19 @@ IResourceBuilder<ProjectResource> springRuntime = builder.AddProject<Spring_Runt
 // WaitFor ensures the gateway doesn't start until dependencies are ready
 IResourceBuilder<ProjectResource> springGateway = builder.AddProject<Spring_Gateway>("spring-gateway")
     .WithReference(orleans.AsClient())
+    .WithReference(clusteringTable)
     .WaitFor(storage)
     .WaitFor(springRuntime)
     .WithExternalHttpEndpoints();
 if (springAuthProofModeEnabled)
 {
     springGateway.WithEnvironment("SpringAuth__Enabled", "true");
+}
+
+if (springForceManualOnlyEnabled)
+{
+    springGateway.WithEnvironment("SagaRecovery__ForceManualOnly", "true");
+    springRuntime.WithEnvironment("SagaRecovery__ForceManualOnly", "true");
 }
 
 await builder.Build().RunAsync();

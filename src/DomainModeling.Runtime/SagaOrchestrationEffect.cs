@@ -50,6 +50,44 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
     private TimeProvider TimeProvider { get; }
 
+    private static SagaStepExecutionContext CreateExecutionContext(
+        TSaga state,
+        SagaStepExecutionStarted started
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(started);
+        return new()
+        {
+            AttemptId = started.AttemptId,
+            AttemptStartedAt = started.StartedAt,
+            Direction = started.Direction,
+            IsReplay = started.Source is not SagaResumeSource.Initial,
+            OperationKey = started.OperationKey,
+            SagaId = state.SagaId,
+            Source = started.Source,
+            StepIndex = started.StepIndex,
+            StepName = started.StepName,
+        };
+    }
+
+    private static SagaStepExecutionStarted CreateExecutionStartedEvent(
+        SagaStepExecutionContext executionContext
+    )
+    {
+        ArgumentNullException.ThrowIfNull(executionContext);
+        return new()
+        {
+            AttemptId = executionContext.AttemptId,
+            Direction = executionContext.Direction,
+            OperationKey = executionContext.OperationKey,
+            Source = executionContext.Source,
+            StartedAt = executionContext.AttemptStartedAt,
+            StepIndex = executionContext.StepIndex,
+            StepName = executionContext.StepName,
+        };
+    }
+
     /// <inheritdoc />
     public bool CanHandle(
         object eventData
@@ -90,6 +128,32 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
                 ? AsyncEnumerable.Empty<object>()
                 : ExecuteStartedAttemptAsync(currentState, started, cancellationToken),
             var _ => AsyncEnumerable.Empty<object>(),
+        };
+    }
+
+    private SagaStepExecutionContext CreateExecutionContext(
+        TSaga state,
+        SagaStepInfo stepInfo,
+        SagaExecutionDirection direction,
+        SagaResumeSource source,
+        Guid attemptId,
+        string? operationKey,
+        DateTimeOffset? startedAt
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(stepInfo);
+        return new()
+        {
+            AttemptId = attemptId,
+            AttemptStartedAt = startedAt ?? TimeProvider.GetUtcNow(),
+            Direction = direction,
+            IsReplay = source is not SagaResumeSource.Initial,
+            OperationKey = operationKey ?? SagaStepOperationKey.Compute(state.SagaId, stepInfo.StepIndex, direction),
+            SagaId = state.SagaId,
+            Source = source,
+            StepIndex = stepInfo.StepIndex,
+            StepName = stepInfo.StepName,
         };
     }
 
@@ -143,10 +207,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         }
 
         yield return CreateExecutionStartedEvent(executionContext);
-        CompensationResult result = await compensatable.CompensateAsync(
-                state,
-                executionContext,
-                cancellationToken)
+        CompensationResult result = await compensatable.CompensateAsync(state, executionContext, cancellationToken)
             .ConfigureAwait(false);
         if (result.Success || result.Skipped)
         {
@@ -201,10 +262,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             yield break;
         }
 
-        CompensationResult result = await compensatable.CompensateAsync(
-                state,
-                executionContext,
-                cancellationToken)
+        CompensationResult result = await compensatable.CompensateAsync(state, executionContext, cancellationToken)
             .ConfigureAwait(false);
         if (result.Success || result.Skipped)
         {
@@ -418,72 +476,5 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
         stepInfo = steps[stepIndex];
         return true;
-    }
-
-    private SagaStepExecutionContext CreateExecutionContext(
-        TSaga state,
-        SagaStepInfo stepInfo,
-        SagaExecutionDirection direction,
-        SagaResumeSource source,
-        Guid attemptId,
-        string? operationKey,
-        DateTimeOffset? startedAt
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(stepInfo);
-
-        return new()
-        {
-            AttemptId = attemptId,
-            AttemptStartedAt = startedAt ?? TimeProvider.GetUtcNow(),
-            Direction = direction,
-            IsReplay = source is not SagaResumeSource.Initial,
-            OperationKey = operationKey ?? SagaStepOperationKey.Compute(state.SagaId, stepInfo.StepIndex, direction),
-            SagaId = state.SagaId,
-            Source = source,
-            StepIndex = stepInfo.StepIndex,
-            StepName = stepInfo.StepName,
-        };
-    }
-
-    private static SagaStepExecutionContext CreateExecutionContext(
-        TSaga state,
-        SagaStepExecutionStarted started
-    )
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(started);
-
-        return new()
-        {
-            AttemptId = started.AttemptId,
-            AttemptStartedAt = started.StartedAt,
-            Direction = started.Direction,
-            IsReplay = started.Source is not SagaResumeSource.Initial,
-            OperationKey = started.OperationKey,
-            SagaId = state.SagaId,
-            Source = started.Source,
-            StepIndex = started.StepIndex,
-            StepName = started.StepName,
-        };
-    }
-
-    private static SagaStepExecutionStarted CreateExecutionStartedEvent(
-        SagaStepExecutionContext executionContext
-    )
-    {
-        ArgumentNullException.ThrowIfNull(executionContext);
-
-        return new()
-        {
-            AttemptId = executionContext.AttemptId,
-            Direction = executionContext.Direction,
-            OperationKey = executionContext.OperationKey,
-            Source = executionContext.Source,
-            StartedAt = executionContext.AttemptStartedAt,
-            StepIndex = executionContext.StepIndex,
-            StepName = executionContext.StepName,
-        };
     }
 }

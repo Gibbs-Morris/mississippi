@@ -75,14 +75,16 @@ public sealed class SagaClientRegistrationGenerator : IIncrementalGenerator
             $"feature.AddReducer<{startActionPrefix}ExecutingAction>({reducersTypeName}.{startActionPrefix}Executing);");
         sb.AppendLine(
             $"feature.AddReducer<{startActionPrefix}SucceededAction>({reducersTypeName}.{startActionPrefix}Succeeded);");
-        sb.AppendLine($"feature.AddReducer<{startActionPrefix}FailedAction>({reducersTypeName}.{startActionPrefix}Failed);");
+        sb.AppendLine(
+            $"feature.AddReducer<{startActionPrefix}FailedAction>({reducersTypeName}.{startActionPrefix}Failed);");
         sb.AppendLine();
         sb.AppendLine($"// Reducers - {resumeActionPrefix}");
         sb.AppendLine(
             $"feature.AddReducer<{resumeActionPrefix}ExecutingAction>({reducersTypeName}.{resumeActionPrefix}Executing);");
         sb.AppendLine(
             $"feature.AddReducer<{resumeActionPrefix}SucceededAction>({reducersTypeName}.{resumeActionPrefix}Succeeded);");
-        sb.AppendLine($"feature.AddReducer<{resumeActionPrefix}FailedAction>({reducersTypeName}.{resumeActionPrefix}Failed);");
+        sb.AppendLine(
+            $"feature.AddReducer<{resumeActionPrefix}FailedAction>({reducersTypeName}.{resumeActionPrefix}Failed);");
         sb.AppendLine();
         sb.AppendLine("// Action Effects");
         sb.AppendLine($"feature.AddActionEffect<{startActionPrefix}ActionEffect>();");

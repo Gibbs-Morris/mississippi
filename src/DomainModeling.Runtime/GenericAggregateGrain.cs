@@ -49,7 +49,7 @@ namespace Mississippi.DomainModeling.Runtime;
 [Alias("Mississippi.DomainModeling.Runtime.GenericAggregateGrain`1")]
 internal sealed class GenericAggregateGrain<TAggregate>
     : IGenericAggregateGrain<TAggregate>,
-            IRemindable,
+      IRemindable,
       IGrainBase
     where TAggregate : class
 {
@@ -129,9 +129,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
 
-    private IAggregateReminderReconciler<TAggregate>? AggregateReminderReconciler { get; }
-
     private IAggregateReminderHandler<TAggregate>? AggregateReminderHandler { get; }
+
+    private IAggregateReminderReconciler<TAggregate>? AggregateReminderReconciler { get; }
 
     private IBrookEventConverter BrookEventConverter { get; }
 
@@ -223,46 +223,6 @@ internal sealed class GenericAggregateGrain<TAggregate>
             .GetStateAsync(cancellationToken);
     }
 
-    /// <inheritdoc />
-    public async Task ReceiveReminder(
-        string reminderName,
-        TickStatus status
-    )
-    {
-        string aggregateKey = brookKey;
-        Logger.ReminderReceived(reminderName, aggregateKey);
-        if (AggregateReminderHandler is null)
-        {
-            Logger.ReminderIgnored(reminderName, aggregateKey);
-            return;
-        }
-
-        bool commandExecuted = false;
-        bool handled = await AggregateReminderHandler.ReceiveReminderAsync(
-            this.GetPrimaryKeyString(),
-            reminderName,
-            status,
-            cancellationToken => GetStateAsync(cancellationToken),
-            async (command, cancellationToken) =>
-            {
-                commandExecuted = true;
-                return await ExecuteAsync(command, cancellationToken);
-            },
-            CancellationToken.None);
-        if (handled)
-        {
-            if (!commandExecuted)
-            {
-                await ReconcileReminderStateIfRegisteredAsync(CancellationToken.None);
-            }
-
-            Logger.ReminderProcessed(reminderName, aggregateKey);
-            return;
-        }
-
-        Logger.ReminderIgnored(reminderName, aggregateKey);
-    }
-
     /// <summary>
     ///     Called when the grain is activated. Initializes the brook key and snapshot stream key.
     /// </summary>
@@ -290,6 +250,49 @@ internal sealed class GenericAggregateGrain<TAggregate>
             RootReducer.GetReducerHash());
         Logger.Activated(brookKey);
         await ReconcileReminderStateIfRegisteredAsync(token);
+    }
+
+    /// <inheritdoc />
+    public async Task ReceiveReminder(
+        string reminderName,
+        TickStatus status
+    )
+    {
+        string aggregateKey = brookKey;
+        Logger.ReminderReceived(reminderName, aggregateKey);
+        if (AggregateReminderHandler is null)
+        {
+            Logger.ReminderIgnored(reminderName, aggregateKey);
+            return;
+        }
+
+        bool commandExecuted = false;
+        bool handled = await AggregateReminderHandler.ReceiveReminderAsync(
+            this.GetPrimaryKeyString(),
+            reminderName,
+            status,
+            cancellationToken => GetStateAsync(cancellationToken),
+            async (
+                command,
+                cancellationToken
+            ) =>
+            {
+                commandExecuted = true;
+                return await ExecuteAsync(command, cancellationToken);
+            },
+            CancellationToken.None);
+        if (handled)
+        {
+            if (!commandExecuted)
+            {
+                await ReconcileReminderStateIfRegisteredAsync(CancellationToken.None);
+            }
+
+            Logger.ReminderProcessed(reminderName, aggregateKey);
+            return;
+        }
+
+        Logger.ReminderIgnored(reminderName, aggregateKey);
     }
 
     /// <summary>
@@ -487,22 +490,6 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
     }
 
-    private async Task ReconcileReminderStateIfRegisteredAsync(
-        CancellationToken cancellationToken
-    )
-    {
-        if (AggregateReminderReconciler is null)
-        {
-            return;
-        }
-
-        await AggregateReminderReconciler.ReconcileAsync(
-            this,
-            this.GetPrimaryKeyString(),
-            cancellationToken => GetStateAsync(cancellationToken),
-            cancellationToken);
-    }
-
     private async Task<OperationResult> ExecuteInternalAsync(
         object command,
         BrookPosition? expectedVersion,
@@ -614,6 +601,22 @@ internal sealed class GenericAggregateGrain<TAggregate>
             aggregateKey,
             cancellationToken);
         await DispatchFireAndForgetEffectsIfRegisteredAsync(events, currentPosition, cancellationToken);
+    }
+
+    private async Task ReconcileReminderStateIfRegisteredAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        if (AggregateReminderReconciler is null)
+        {
+            return;
+        }
+
+        await AggregateReminderReconciler.ReconcileAsync(
+            this,
+            this.GetPrimaryKeyString(),
+            cancellationToken => GetStateAsync(cancellationToken),
+            cancellationToken);
     }
 
     private OperationResult RecordCommandFailure(

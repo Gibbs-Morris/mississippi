@@ -706,18 +706,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
-    private static string GetEnumDtoTypeName(
-        ITypeSymbol typeSymbol
-    ) => ((INamedTypeSymbol)UnwrapNullable(typeSymbol)).Name + "Dto";
-
-    private static bool IsNullableEnumType(
-        ITypeSymbol typeSymbol
-    ) =>
-        typeSymbol is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } &&
-        UnwrapNullable(typeSymbol) is INamedTypeSymbol enumType &&
-        enumType.TypeKind == TypeKind.Enum &&
-        !TypeAnalyzer.IsFrameworkType(enumType);
-
     /// <summary>
     ///     Gets the controller type name.
     /// </summary>
@@ -728,6 +716,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         string baseName = projection.Model.TypeName.Replace(ProjectionSuffix, string.Empty);
         return baseName + "Controller";
     }
+
+    private static string GetEnumDtoTypeName(
+        ITypeSymbol typeSymbol
+    ) =>
+        ((INamedTypeSymbol)UnwrapNullable(typeSymbol)).Name + "Dto";
 
     /// <summary>
     ///     Gets enum DTOs required for a projection.
@@ -745,51 +738,6 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         }
 
         return enumInfos;
-    }
-
-    private static void TryAddEnumDto(
-        List<EnumDtoInfo> enumInfos,
-        HashSet<string> seen,
-        ITypeSymbol? typeSymbol,
-        string? dtoTypeName
-    )
-    {
-        if (typeSymbol is null || string.IsNullOrEmpty(dtoTypeName))
-        {
-            return;
-        }
-
-        if (UnwrapNullable(typeSymbol) is not INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
-        {
-            return;
-        }
-
-        string dtoName = dtoTypeName!;
-        string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        if (!seen.Add(key))
-        {
-            return;
-        }
-
-        enumInfos.Add(new(enumType, GetUnderlyingDtoTypeName(dtoName)));
-    }
-
-    private static string GetUnderlyingDtoTypeName(
-        string dtoTypeName
-    )
-    {
-        if (dtoTypeName.EndsWith("?", StringComparison.Ordinal))
-        {
-            return dtoTypeName.Substring(0, dtoTypeName.Length - 1);
-        }
-
-        if (dtoTypeName.StartsWith("Nullable<", StringComparison.Ordinal) &&
-            dtoTypeName.EndsWith(">", StringComparison.Ordinal))
-        {
-            return dtoTypeName.Substring(9, dtoTypeName.Length - 10);
-        }
-
-        return dtoTypeName;
     }
 
     /// <summary>
@@ -870,6 +818,32 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         return baseName + "ProjectionMapperRegistrations";
     }
 
+    private static string GetUnderlyingDtoTypeName(
+        string dtoTypeName
+    )
+    {
+        if (dtoTypeName.EndsWith("?", StringComparison.Ordinal))
+        {
+            return dtoTypeName.Substring(0, dtoTypeName.Length - 1);
+        }
+
+        if (dtoTypeName.StartsWith("Nullable<", StringComparison.Ordinal) &&
+            dtoTypeName.EndsWith(">", StringComparison.Ordinal))
+        {
+            return dtoTypeName.Substring(9, dtoTypeName.Length - 10);
+        }
+
+        return dtoTypeName;
+    }
+
+    private static bool IsNullableEnumType(
+        ITypeSymbol typeSymbol
+    ) =>
+        typeSymbol is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } &&
+        UnwrapNullable(typeSymbol) is INamedTypeSymbol enumType &&
+        (enumType.TypeKind == TypeKind.Enum) &&
+        !TypeAnalyzer.IsFrameworkType(enumType);
+
     /// <summary>
     ///     Converts PascalCase to camelCase.
     /// </summary>
@@ -883,6 +857,33 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         }
 
         return char.ToLowerInvariant(value[0]) + value.Substring(1);
+    }
+
+    private static void TryAddEnumDto(
+        List<EnumDtoInfo> enumInfos,
+        HashSet<string> seen,
+        ITypeSymbol? typeSymbol,
+        string? dtoTypeName
+    )
+    {
+        if (typeSymbol is null || string.IsNullOrEmpty(dtoTypeName))
+        {
+            return;
+        }
+
+        if (UnwrapNullable(typeSymbol) is not INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
+        {
+            return;
+        }
+
+        string dtoName = dtoTypeName!;
+        string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        if (!seen.Add(key))
+        {
+            return;
+        }
+
+        enumInfos.Add(new(enumType, GetUnderlyingDtoTypeName(dtoName)));
     }
 
     /// <summary>

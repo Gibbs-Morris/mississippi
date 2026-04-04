@@ -1,5 +1,6 @@
-using System;
 using System.Collections.Generic;
+
+using Microsoft.Extensions.Options;
 
 using Mississippi.DomainModeling.Abstractions;
 
@@ -20,53 +21,144 @@ public sealed class SagaRecoveryPlannerTests
             true,
             SagaStepRecoveryPolicy.Automatic,
             SagaStepRecoveryPolicy.ManualOnly),
-        new(
-            1,
-            "Credit",
-            typeof(SagaNonCompensatableStep),
-            false,
-            SagaStepRecoveryPolicy.ManualOnly,
-            null),
+        new(1, "Credit", typeof(SagaNonCompensatableStep), false, SagaStepRecoveryPolicy.ManualOnly, null),
     ];
-
-    private static SagaRecoveryPlanner<TestSagaState> CreatePlanner(
-        SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic,
-        IReadOnlyList<SagaStepInfo>? steps = null,
-        string? profile = null
-    ) =>
-        new(
-            new SagaStepInfoProvider<TestSagaState>(steps ?? ForwardThenCompensatingSteps),
-            new SagaRecoveryInfoProvider<TestSagaState>(new(recoveryMode, profile)));
 
     private static string ComputeHash(
         SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic,
         IReadOnlyList<SagaStepInfo>? steps = null,
         string? profile = null
-    ) => SagaStepHash.Compute(new(recoveryMode, profile), steps ?? ForwardThenCompensatingSteps);
+    ) =>
+        SagaStepHash.Compute(new(recoveryMode, profile), steps ?? ForwardThenCompensatingSteps);
+
+    private static SagaRecoveryPlanner<TestSagaState> CreatePlanner(
+        SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic,
+        IReadOnlyList<SagaStepInfo>? steps = null,
+        string? profile = null,
+        SagaRecoveryOptions? recoveryOptions = null
+    ) =>
+        new(
+            new SagaStepInfoProvider<TestSagaState>(steps ?? ForwardThenCompensatingSteps),
+            new SagaRecoveryInfoProvider<TestSagaState>(new(recoveryMode, profile)),
+            Options.Create(recoveryOptions ?? new SagaRecoveryOptions()));
 
     /// <summary>
-    ///     Verifies terminal sagas do not schedule additional recovery work.
+    ///     Verifies reminder-driven manual-only compensation blocks instead of executing the step.
     /// </summary>
     [Fact]
-    public void PlanReturnsTerminalForTerminalSagaState()
+    public void PlanBlocksReminderForManualOnlyCompensationStep()
     {
         SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
         TestSagaState state = new()
         {
-            Phase = SagaPhase.Completed,
+            Phase = SagaPhase.Compensating,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Compensation,
+            PendingStepIndex = 0,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        Assert.Equal(SagaRecoveryPlanDisposition.Blocked, plan.Disposition);
+        Assert.Equal(SagaExecutionDirection.Compensation, plan.Direction);
+        Assert.Equal("Step 'Debit' requires manual compensation recovery.", plan.Reason);
+    }
+
+    /// <summary>
+    ///     Verifies reminder-driven manual-only forward recovery blocks instead of executing the step.
+    /// </summary>
+    [Fact]
+    public void PlanBlocksReminderForManualOnlyForwardStep()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Running,
             StepHash = ComputeHash(),
         };
         SagaRecoveryCheckpoint checkpoint = new()
         {
             PendingDirection = SagaExecutionDirection.Forward,
-            PendingStepIndex = 0,
+            PendingStepIndex = 1,
             StepHash = ComputeHash(),
         };
-
         SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        Assert.Equal(SagaRecoveryPlanDisposition.Blocked, plan.Disposition);
+        Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
+        Assert.Equal("Step 'Credit' requires manual forward recovery.", plan.Reason);
+        Assert.NotNull(plan.Step);
+        Assert.Equal(1, plan.Step.StepIndex);
+    }
 
-        Assert.Equal(SagaRecoveryPlanDisposition.Terminal, plan.Disposition);
-        Assert.Null(plan.Step);
+    /// <summary>
+    ///     Verifies compensation checkpoints before the first step finalize the saga as compensated.
+    /// </summary>
+    [Fact]
+    public void PlanCompensatesSagaWhenCompensationCursorIsBeforeFirstStep()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Compensating,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Compensation,
+            PendingStepIndex = -1,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        Assert.Equal(SagaRecoveryPlanDisposition.CompensateSaga, plan.Disposition);
+    }
+
+    /// <summary>
+    ///     Verifies forward checkpoints beyond the final step complete the saga instead of executing another step.
+    /// </summary>
+    [Fact]
+    public void PlanCompletesSagaWhenForwardCursorIsPastFinalStep()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Running,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Forward,
+            PendingStepIndex = ForwardThenCompensatingSteps.Count,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        Assert.Equal(SagaRecoveryPlanDisposition.CompleteSaga, plan.Disposition);
+    }
+
+    /// <summary>
+    ///     Verifies manual resume can execute a manual-only forward step.
+    /// </summary>
+    [Fact]
+    public void PlanExecutesManualOnlyForwardStepForManualResume()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Running,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Forward,
+            PendingStepIndex = 1,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Manual);
+        Assert.Equal(SagaRecoveryPlanDisposition.ExecuteStep, plan.Disposition);
+        Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
+        Assert.NotNull(plan.Step);
+        Assert.Equal(1, plan.Step.StepIndex);
     }
 
     /// <summary>
@@ -88,10 +180,81 @@ public sealed class SagaRecoveryPlannerTests
             PendingStepIndex = 0,
             StepHash = ComputeHash(SagaRecoveryMode.ManualOnly),
         };
-
         SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
-
         Assert.Equal(SagaRecoveryPlanDisposition.NoAction, plan.Disposition);
+    }
+
+    /// <summary>
+    ///     Verifies stale reminder ticks do nothing when automatic recovery is globally forced into manual-only mode.
+    /// </summary>
+    [Fact]
+    public void PlanReturnsNoActionForReminderWhenAutomaticRecoveryForcedManual()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner(
+            recoveryOptions: new()
+            {
+                ForceManualOnly = true,
+            });
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Running,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            RecoveryMode = SagaRecoveryMode.Automatic,
+            PendingDirection = SagaExecutionDirection.Forward,
+            PendingStepIndex = 0,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        Assert.Equal(SagaRecoveryPlanDisposition.NoAction, plan.Disposition);
+    }
+
+    /// <summary>
+    ///     Verifies terminal sagas do not schedule additional recovery work.
+    /// </summary>
+    [Fact]
+    public void PlanReturnsTerminalForTerminalSagaState()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Completed,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Forward,
+            PendingStepIndex = 0,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        Assert.Equal(SagaRecoveryPlanDisposition.Terminal, plan.Disposition);
+        Assert.Null(plan.Step);
+    }
+
+    /// <summary>
+    ///     Verifies a checkpoint with a direction but no pending step index is treated as invalid recovery metadata.
+    /// </summary>
+    [Fact]
+    public void PlanReturnsWorkflowMismatchWhenPendingStepIndexMissing()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Running,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Forward,
+            StepHash = ComputeHash(),
+        };
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        Assert.Equal(SagaRecoveryPlanDisposition.WorkflowMismatch, plan.Disposition);
+        Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
+        Assert.Equal("Recovery checkpoint is missing a pending step index.", plan.Reason);
     }
 
     /// <summary>
@@ -112,164 +275,8 @@ public sealed class SagaRecoveryPlannerTests
             PendingStepIndex = 0,
             StepHash = "DIFFERENT",
         };
-
         SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
-
         Assert.Equal(SagaRecoveryPlanDisposition.WorkflowMismatch, plan.Disposition);
         Assert.Equal("Workflow hash mismatch prevents automatic resume.", plan.Reason);
-    }
-
-    /// <summary>
-    ///     Verifies a checkpoint with a direction but no pending step index is treated as invalid recovery metadata.
-    /// </summary>
-    [Fact]
-    public void PlanReturnsWorkflowMismatchWhenPendingStepIndexMissing()
-    {
-        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
-        TestSagaState state = new()
-        {
-            Phase = SagaPhase.Running,
-            StepHash = ComputeHash(),
-        };
-        SagaRecoveryCheckpoint checkpoint = new()
-        {
-            PendingDirection = SagaExecutionDirection.Forward,
-            StepHash = ComputeHash(),
-        };
-
-        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
-
-        Assert.Equal(SagaRecoveryPlanDisposition.WorkflowMismatch, plan.Disposition);
-        Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
-        Assert.Equal("Recovery checkpoint is missing a pending step index.", plan.Reason);
-    }
-
-    /// <summary>
-    ///     Verifies reminder-driven manual-only forward recovery blocks instead of executing the step.
-    /// </summary>
-    [Fact]
-    public void PlanBlocksReminderForManualOnlyForwardStep()
-    {
-        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
-        TestSagaState state = new()
-        {
-            Phase = SagaPhase.Running,
-            StepHash = ComputeHash(),
-        };
-        SagaRecoveryCheckpoint checkpoint = new()
-        {
-            PendingDirection = SagaExecutionDirection.Forward,
-            PendingStepIndex = 1,
-            StepHash = ComputeHash(),
-        };
-
-        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
-
-        Assert.Equal(SagaRecoveryPlanDisposition.Blocked, plan.Disposition);
-        Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
-        Assert.Equal("Step 'Credit' requires manual forward recovery.", plan.Reason);
-        Assert.NotNull(plan.Step);
-        Assert.Equal(1, plan.Step.StepIndex);
-    }
-
-    /// <summary>
-    ///     Verifies manual resume can execute a manual-only forward step.
-    /// </summary>
-    [Fact]
-    public void PlanExecutesManualOnlyForwardStepForManualResume()
-    {
-        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
-        TestSagaState state = new()
-        {
-            Phase = SagaPhase.Running,
-            StepHash = ComputeHash(),
-        };
-        SagaRecoveryCheckpoint checkpoint = new()
-        {
-            PendingDirection = SagaExecutionDirection.Forward,
-            PendingStepIndex = 1,
-            StepHash = ComputeHash(),
-        };
-
-        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Manual);
-
-        Assert.Equal(SagaRecoveryPlanDisposition.ExecuteStep, plan.Disposition);
-        Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
-        Assert.NotNull(plan.Step);
-        Assert.Equal(1, plan.Step.StepIndex);
-    }
-
-    /// <summary>
-    ///     Verifies reminder-driven manual-only compensation blocks instead of executing the step.
-    /// </summary>
-    [Fact]
-    public void PlanBlocksReminderForManualOnlyCompensationStep()
-    {
-        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
-        TestSagaState state = new()
-        {
-            Phase = SagaPhase.Compensating,
-            StepHash = ComputeHash(),
-        };
-        SagaRecoveryCheckpoint checkpoint = new()
-        {
-            PendingDirection = SagaExecutionDirection.Compensation,
-            PendingStepIndex = 0,
-            StepHash = ComputeHash(),
-        };
-
-        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
-
-        Assert.Equal(SagaRecoveryPlanDisposition.Blocked, plan.Disposition);
-        Assert.Equal(SagaExecutionDirection.Compensation, plan.Direction);
-        Assert.Equal("Step 'Debit' requires manual compensation recovery.", plan.Reason);
-    }
-
-    /// <summary>
-    ///     Verifies forward checkpoints beyond the final step complete the saga instead of executing another step.
-    /// </summary>
-    [Fact]
-    public void PlanCompletesSagaWhenForwardCursorIsPastFinalStep()
-    {
-        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
-        TestSagaState state = new()
-        {
-            Phase = SagaPhase.Running,
-            StepHash = ComputeHash(),
-        };
-        SagaRecoveryCheckpoint checkpoint = new()
-        {
-            PendingDirection = SagaExecutionDirection.Forward,
-            PendingStepIndex = ForwardThenCompensatingSteps.Count,
-            StepHash = ComputeHash(),
-        };
-
-        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
-
-        Assert.Equal(SagaRecoveryPlanDisposition.CompleteSaga, plan.Disposition);
-    }
-
-    /// <summary>
-    ///     Verifies compensation checkpoints before the first step finalize the saga as compensated.
-    /// </summary>
-    [Fact]
-    public void PlanCompensatesSagaWhenCompensationCursorIsBeforeFirstStep()
-    {
-        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner();
-        TestSagaState state = new()
-        {
-            Phase = SagaPhase.Compensating,
-            StepHash = ComputeHash(),
-        };
-        SagaRecoveryCheckpoint checkpoint = new()
-        {
-            PendingDirection = SagaExecutionDirection.Compensation,
-            PendingStepIndex = -1,
-            StepHash = ComputeHash(),
-        };
-
-        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
-
-        Assert.Equal(SagaRecoveryPlanDisposition.CompensateSaga, plan.Disposition);
     }
 }

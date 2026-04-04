@@ -56,12 +56,6 @@ public class GenericAggregateGrainTests
         return grain;
     }
 
-    private static TickStatus CreateTickStatus() =>
-        new(
-            new DateTime(2025, 2, 15, 10, 0, 0, DateTimeKind.Utc),
-            TimeSpan.FromMinutes(5),
-            new DateTime(2025, 2, 15, 10, 5, 0, DateTimeKind.Utc));
-
     private static Mock<IGrainContext> CreateDefaultGrainContext()
     {
         Mock<IGrainContext> mock = new();
@@ -121,6 +115,12 @@ public class GenericAggregateGrainTests
             aggregateReminderHandler,
             aggregateReminderReconciler);
     }
+
+    private static TickStatus CreateTickStatus() =>
+        new(
+            new(2025, 2, 15, 10, 0, 0, DateTimeKind.Utc),
+            TimeSpan.FromMinutes(5),
+            new(2025, 2, 15, 10, 5, 0, DateTimeKind.Utc));
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators - needed for IAsyncEnumerable signature
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods - IAsyncEnumerable helper naming
@@ -441,6 +441,54 @@ public class GenericAggregateGrainTests
     }
 
     /// <summary>
+    ///     ExecuteAsync should reconcile reminder state after persisting events.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncReconcilesReminderStateAfterPersistingEvents()
+    {
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<IAggregateReminderReconciler<AggregateGrainTestAggregate>> reminderReconcilerMock = new();
+        cursorMock.Setup(cursor => cursor.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+        brookFactoryMock.Setup(factory => factory.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(factory => factory.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        handlerMock.Setup(handler => handler.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { new AggregateGrainTestEvent("test") }));
+        converterMock
+            .Setup(converter => converter.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(
+                ImmutableArray.Create(
+                    new BrookEvent
+                    {
+                        Id = "event-1",
+                        EventType = "TestEvent",
+                    }));
+        reminderReconcilerMock.Setup(reconciler => reconciler.ReconcileAsync(
+                It.IsAny<IGrainBase>(),
+                TestEntityId,
+                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            handlerMock,
+            brookFactoryMock,
+            brookEventConverterMock: converterMock,
+            aggregateReminderReconciler: reminderReconcilerMock.Object);
+        await grain.ExecuteAsync(new AggregateGrainTestCommand("test"), CancellationToken.None);
+        reminderReconcilerMock.Verify(
+            reconciler => reconciler.ReconcileAsync(
+                It.IsAny<IGrainBase>(),
+                TestEntityId,
+                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+    }
+
+    /// <summary>
     ///     ExecuteAsync should respect custom MaxEffectIterations from options.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -665,6 +713,30 @@ public class GenericAggregateGrainTests
     }
 
     /// <summary>
+    ///     OnActivateAsync should delegate reminder reconciliation when a reconciler is registered.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task OnActivateAsyncDelegatesToRegisteredReminderReconciler()
+    {
+        Mock<IAggregateReminderReconciler<AggregateGrainTestAggregate>> reminderReconcilerMock = new();
+        reminderReconcilerMock.Setup(reconciler => reconciler.ReconcileAsync(
+                It.IsAny<IGrainBase>(),
+                TestEntityId,
+                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        await CreateActivatedGrainAsync(aggregateReminderReconciler: reminderReconcilerMock.Object);
+        reminderReconcilerMock.Verify(
+            reconciler => reconciler.ReconcileAsync(
+                It.IsAny<IGrainBase>(),
+                TestEntityId,
+                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
     ///     OnActivateAsync should set up brook key from entity ID.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -692,43 +764,33 @@ public class GenericAggregateGrainTests
     }
 
     /// <summary>
-    ///     OnActivateAsync should delegate reminder reconciliation when a reconciler is registered.
+    ///     ReceiveReminder should allow registered handlers to decline unrelated reminder names.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task OnActivateAsyncDelegatesToRegisteredReminderReconciler()
+    public async Task ReceiveReminderAllowsHandlerToDeclineReminderName()
     {
-        Mock<IAggregateReminderReconciler<AggregateGrainTestAggregate>> reminderReconcilerMock = new();
-        reminderReconcilerMock.Setup(reconciler => reconciler.ReconcileAsync(
-                It.IsAny<IGrainBase>(),
+        Mock<IAggregateReminderHandler<AggregateGrainTestAggregate>> reminderHandlerMock = new();
+        reminderHandlerMock.Setup(h => h.ReceiveReminderAsync(
                 TestEntityId,
+                "other-reminder",
+                It.IsAny<TickStatus>(),
                 It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<Func<object, CancellationToken, Task<OperationResult>>>(),
                 It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        await CreateActivatedGrainAsync(aggregateReminderReconciler: reminderReconcilerMock.Object);
-
-        reminderReconcilerMock.Verify(
-            reconciler => reconciler.ReconcileAsync(
-                It.IsAny<IGrainBase>(),
+            .ReturnsAsync(false);
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            aggregateReminderHandler: reminderHandlerMock.Object);
+        await grain.ReceiveReminder("other-reminder", CreateTickStatus());
+        reminderHandlerMock.Verify(
+            h => h.ReceiveReminderAsync(
                 TestEntityId,
+                "other-reminder",
+                It.IsAny<TickStatus>(),
                 It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<Func<object, CancellationToken, Task<OperationResult>>>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
-    }
-
-    /// <summary>
-    ///     ReceiveReminder should ignore reminder ticks when no reminder handler is registered.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ReceiveReminderIgnoresTicksWithoutReminderHandler()
-    {
-        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync();
-
-        await grain.ReceiveReminder(SagaReminderNames.Recovery, CreateTickStatus());
-
-        Assert.NotNull(grain);
     }
 
     /// <summary>
@@ -740,18 +802,16 @@ public class GenericAggregateGrainTests
     {
         Mock<IAggregateReminderHandler<AggregateGrainTestAggregate>> reminderHandlerMock = new();
         reminderHandlerMock.Setup(h => h.ReceiveReminderAsync(
-            TestEntityId,
-            SagaReminderNames.Recovery,
-            It.IsAny<TickStatus>(),
-            It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
-            It.IsAny<Func<object, CancellationToken, Task<OperationResult>>>(),
-            It.IsAny<CancellationToken>()))
+                TestEntityId,
+                SagaReminderNames.Recovery,
+                It.IsAny<TickStatus>(),
+                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<Func<object, CancellationToken, Task<OperationResult>>>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
             aggregateReminderHandler: reminderHandlerMock.Object);
-
         await grain.ReceiveReminder(SagaReminderNames.Recovery, CreateTickStatus());
-
         reminderHandlerMock.Verify(
             h => h.ReceiveReminderAsync(
                 TestEntityId,
@@ -764,7 +824,89 @@ public class GenericAggregateGrainTests
     }
 
     /// <summary>
-    ///     ReceiveReminder should reconcile reminder state after a registered handler processes the tick without executing a command.
+    ///     ReceiveReminder should not reconcile reminder state twice when the handler executes a command.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ReceiveReminderDoesNotDoubleReconcileWhenHandlerExecutesCommand()
+    {
+        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
+        Mock<IBrookGrainFactory> brookFactoryMock = new();
+        Mock<IBrookEventConverter> converterMock = new();
+        Mock<IBrookCursorGrain> cursorMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<IAggregateReminderHandler<AggregateGrainTestAggregate>> reminderHandlerMock = new();
+        Mock<IAggregateReminderReconciler<AggregateGrainTestAggregate>> reminderReconcilerMock = new();
+        cursorMock.Setup(cursor => cursor.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
+        brookFactoryMock.Setup(factory => factory.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
+        brookFactoryMock.Setup(factory => factory.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
+        handlerMock.Setup(handler => handler.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
+            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { new AggregateGrainTestEvent("test") }));
+        converterMock
+            .Setup(converter => converter.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
+            .Returns(
+                ImmutableArray.Create(
+                    new BrookEvent
+                    {
+                        Id = "event-1",
+                        EventType = "TestEvent",
+                    }));
+        reminderHandlerMock.Setup(h => h.ReceiveReminderAsync(
+                TestEntityId,
+                SagaReminderNames.Recovery,
+                It.IsAny<TickStatus>(),
+                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<Func<object, CancellationToken, Task<OperationResult>>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(async (
+                string _,
+                string _,
+                TickStatus _,
+                Func<CancellationToken, Task<AggregateGrainTestAggregate?>> _,
+                Func<object, CancellationToken, Task<OperationResult>> executeCommandAsync,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                await executeCommandAsync(new AggregateGrainTestCommand("test"), cancellationToken);
+                return true;
+            });
+        reminderReconcilerMock.Setup(reconciler => reconciler.ReconcileAsync(
+                It.IsAny<IGrainBase>(),
+                TestEntityId,
+                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
+            handlerMock,
+            brookFactoryMock,
+            brookEventConverterMock: converterMock,
+            aggregateReminderHandler: reminderHandlerMock.Object,
+            aggregateReminderReconciler: reminderReconcilerMock.Object);
+        await grain.ReceiveReminder(SagaReminderNames.Recovery, CreateTickStatus());
+        reminderReconcilerMock.Verify(
+            reconciler => reconciler.ReconcileAsync(
+                It.IsAny<IGrainBase>(),
+                TestEntityId,
+                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+    }
+
+    /// <summary>
+    ///     ReceiveReminder should ignore reminder ticks when no reminder handler is registered.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ReceiveReminderIgnoresTicksWithoutReminderHandler()
+    {
+        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync();
+        await grain.ReceiveReminder(SagaReminderNames.Recovery, CreateTickStatus());
+        Assert.NotNull(grain);
+    }
+
+    /// <summary>
+    ///     ReceiveReminder should reconcile reminder state after a registered handler processes the tick without executing a
+    ///     command.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
@@ -789,147 +931,7 @@ public class GenericAggregateGrainTests
         GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
             aggregateReminderHandler: reminderHandlerMock.Object,
             aggregateReminderReconciler: reminderReconcilerMock.Object);
-
         await grain.ReceiveReminder(SagaReminderNames.Recovery, CreateTickStatus());
-
-        reminderReconcilerMock.Verify(
-            reconciler => reconciler.ReconcileAsync(
-                It.IsAny<IGrainBase>(),
-                TestEntityId,
-                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
-                It.IsAny<CancellationToken>()),
-            Times.Exactly(2));
-    }
-
-    /// <summary>
-    ///     ReceiveReminder should not reconcile reminder state twice when the handler executes a command.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ReceiveReminderDoesNotDoubleReconcileWhenHandlerExecutesCommand()
-    {
-        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
-        Mock<IBrookGrainFactory> brookFactoryMock = new();
-        Mock<IBrookEventConverter> converterMock = new();
-        Mock<IBrookCursorGrain> cursorMock = new();
-        Mock<IBrookWriterGrain> writerMock = new();
-        Mock<IAggregateReminderHandler<AggregateGrainTestAggregate>> reminderHandlerMock = new();
-        Mock<IAggregateReminderReconciler<AggregateGrainTestAggregate>> reminderReconcilerMock = new();
-        cursorMock.Setup(cursor => cursor.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
-        brookFactoryMock.Setup(factory => factory.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
-        brookFactoryMock.Setup(factory => factory.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
-        handlerMock.Setup(handler => handler.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
-            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { new AggregateGrainTestEvent("test") }));
-        converterMock.Setup(converter => converter.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns(ImmutableArray.Create(new BrookEvent { Id = "event-1", EventType = "TestEvent" }));
-        reminderHandlerMock.Setup(h => h.ReceiveReminderAsync(
-                TestEntityId,
-                SagaReminderNames.Recovery,
-                It.IsAny<TickStatus>(),
-                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
-                It.IsAny<Func<object, CancellationToken, Task<OperationResult>>>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(async (
-                string _,
-                string _,
-                TickStatus _,
-                Func<CancellationToken, Task<AggregateGrainTestAggregate?>> _,
-                Func<object, CancellationToken, Task<OperationResult>> executeCommandAsync,
-                CancellationToken cancellationToken) =>
-            {
-                await executeCommandAsync(new AggregateGrainTestCommand("test"), cancellationToken);
-                return true;
-            });
-        reminderReconcilerMock.Setup(reconciler => reconciler.ReconcileAsync(
-                It.IsAny<IGrainBase>(),
-                TestEntityId,
-                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
-            rootCommandHandlerMock: handlerMock,
-            brookGrainFactoryMock: brookFactoryMock,
-            brookEventConverterMock: converterMock,
-            aggregateReminderHandler: reminderHandlerMock.Object,
-            aggregateReminderReconciler: reminderReconcilerMock.Object);
-
-        await grain.ReceiveReminder(SagaReminderNames.Recovery, CreateTickStatus());
-
-        reminderReconcilerMock.Verify(
-            reconciler => reconciler.ReconcileAsync(
-                It.IsAny<IGrainBase>(),
-                TestEntityId,
-                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
-                It.IsAny<CancellationToken>()),
-            Times.Exactly(2));
-    }
-
-    /// <summary>
-    ///     ReceiveReminder should allow registered handlers to decline unrelated reminder names.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ReceiveReminderAllowsHandlerToDeclineReminderName()
-    {
-        Mock<IAggregateReminderHandler<AggregateGrainTestAggregate>> reminderHandlerMock = new();
-        reminderHandlerMock.Setup(h => h.ReceiveReminderAsync(
-            TestEntityId,
-            "other-reminder",
-            It.IsAny<TickStatus>(),
-            It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
-            It.IsAny<Func<object, CancellationToken, Task<OperationResult>>>(),
-            It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
-            aggregateReminderHandler: reminderHandlerMock.Object);
-
-        await grain.ReceiveReminder("other-reminder", CreateTickStatus());
-
-        reminderHandlerMock.Verify(
-            h => h.ReceiveReminderAsync(
-                TestEntityId,
-                "other-reminder",
-                It.IsAny<TickStatus>(),
-                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
-                It.IsAny<Func<object, CancellationToken, Task<OperationResult>>>(),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    /// <summary>
-    ///     ExecuteAsync should reconcile reminder state after persisting events.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task ExecuteAsyncReconcilesReminderStateAfterPersistingEvents()
-    {
-        Mock<IRootCommandHandler<AggregateGrainTestAggregate>> handlerMock = new();
-        Mock<IBrookGrainFactory> brookFactoryMock = new();
-        Mock<IBrookEventConverter> converterMock = new();
-        Mock<IBrookCursorGrain> cursorMock = new();
-        Mock<IBrookWriterGrain> writerMock = new();
-        Mock<IAggregateReminderReconciler<AggregateGrainTestAggregate>> reminderReconcilerMock = new();
-        cursorMock.Setup(cursor => cursor.GetLatestPositionAsync()).ReturnsAsync(new BrookPosition());
-        brookFactoryMock.Setup(factory => factory.GetBrookCursorGrain(It.IsAny<BrookKey>())).Returns(cursorMock.Object);
-        brookFactoryMock.Setup(factory => factory.GetBrookWriterGrain(It.IsAny<BrookKey>())).Returns(writerMock.Object);
-        handlerMock.Setup(handler => handler.Handle(It.IsAny<object>(), It.IsAny<AggregateGrainTestAggregate?>()))
-            .Returns(OperationResult.Ok<IReadOnlyList<object>>(new object[] { new AggregateGrainTestEvent("test") }));
-        converterMock.Setup(converter => converter.ToStorageEvents(It.IsAny<BrookKey>(), It.IsAny<IReadOnlyList<object>>()))
-            .Returns(ImmutableArray.Create(new BrookEvent { Id = "event-1", EventType = "TestEvent" }));
-        reminderReconcilerMock.Setup(reconciler => reconciler.ReconcileAsync(
-                It.IsAny<IGrainBase>(),
-                TestEntityId,
-                It.IsAny<Func<CancellationToken, Task<AggregateGrainTestAggregate?>>>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        GenericAggregateGrain<AggregateGrainTestAggregate> grain = await CreateActivatedGrainAsync(
-            rootCommandHandlerMock: handlerMock,
-            brookGrainFactoryMock: brookFactoryMock,
-            brookEventConverterMock: converterMock,
-            aggregateReminderReconciler: reminderReconcilerMock.Object);
-
-        await grain.ExecuteAsync(new AggregateGrainTestCommand("test"), CancellationToken.None);
-
         reminderReconcilerMock.Verify(
             reconciler => reconciler.ReconcileAsync(
                 It.IsAny<IGrainBase>(),

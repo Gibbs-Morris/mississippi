@@ -47,9 +47,7 @@ public sealed class SagaResumeBlockedStatusReducerTests
             StepIndex = 0,
             StepName = "Withdraw",
         };
-
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-
         result.PendingDirection.Should().Be(SagaExecutionDirection.Forward);
         result.PendingStepIndex.Should().Be(0);
         result.PendingStepName.Should().Be("Withdraw");

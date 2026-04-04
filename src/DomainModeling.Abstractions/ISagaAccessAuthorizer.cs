@@ -48,23 +48,24 @@ public enum SagaAccessAction
 public sealed record SagaAccessAuthorizationResult
 {
     /// <summary>
-    ///     Gets a value indicating whether the request is authorized.
-    /// </summary>
-    public required bool IsAuthorized { get; init; }
-
-    /// <summary>
     ///     Gets an optional denial reason suitable for operator-visible responses.
     /// </summary>
     public string? FailureReason { get; init; }
 
     /// <summary>
+    ///     Gets a value indicating whether the request is authorized.
+    /// </summary>
+    public required bool IsAuthorized { get; init; }
+
+    /// <summary>
     ///     Creates an authorization result that allows the request.
     /// </summary>
     /// <returns>An authorized result.</returns>
-    public static SagaAccessAuthorizationResult Allow() => new()
-    {
-        IsAuthorized = true,
-    };
+    public static SagaAccessAuthorizationResult Allow() =>
+        new()
+        {
+            IsAuthorized = true,
+        };
 
     /// <summary>
     ///     Creates an authorization result that denies the request.
@@ -73,9 +74,10 @@ public sealed record SagaAccessAuthorizationResult
     /// <returns>A denied result.</returns>
     public static SagaAccessAuthorizationResult Deny(
         string? failureReason = null
-    ) => new()
-    {
-        FailureReason = failureReason,
-        IsAuthorized = false,
-    };
+    ) =>
+        new()
+        {
+            FailureReason = failureReason,
+            IsAuthorized = false,
+        };
 }

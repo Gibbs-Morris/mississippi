@@ -48,9 +48,7 @@ public sealed class SagaStepExecutionStartedStatusReducerTests
             StepIndex = 1,
             StepName = "Deposit",
         };
-
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-
         result.PendingDirection.Should().Be(SagaExecutionDirection.Forward);
         result.PendingStepIndex.Should().Be(1);
         result.PendingStepName.Should().Be("Deposit");

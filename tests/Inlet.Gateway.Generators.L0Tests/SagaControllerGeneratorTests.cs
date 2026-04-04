@@ -309,40 +309,6 @@ public sealed class SagaControllerGeneratorTests
     }
 
     /// <summary>
-    ///     Verifies generated controllers include runtime-status and manual-resume endpoints.
-    /// </summary>
-    [Fact]
-    public void GeneratesRuntimeStatusAndResumeEndpoints()
-    {
-        const string sagaSource = """
-                                  using Mississippi.DomainModeling.Abstractions;
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      public sealed record TransferInput(string AccountId);
-
-                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
-                                      public sealed record TransferSagaState : ISagaState
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, sagaSource);
-        string controllerCode = runResult.GeneratedTrees.First(tree =>
-                tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
-            .GetText()
-            .ToString();
-
-        Assert.Contains("ISagaRecoveryService<TransferSagaState> sagaRecoveryService", controllerCode, StringComparison.Ordinal);
-        Assert.Contains("[HttpGet(\"runtime-status\")]", controllerCode, StringComparison.Ordinal);
-        Assert.Contains("GetRuntimeStatusAsync", controllerCode, StringComparison.Ordinal);
-        Assert.Contains("[HttpPost(\"resume\")]", controllerCode, StringComparison.Ordinal);
-        Assert.Contains("ResumeAsync", controllerCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Verifies controller output includes input namespace imports when needed.
     /// </summary>
     [Fact]
@@ -444,6 +410,42 @@ public sealed class SagaControllerGeneratorTests
             "new TransferInput(request.AccountId, request.Amount)",
             controllerCode,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies generated controllers include runtime-status and manual-resume endpoints.
+    /// </summary>
+    [Fact]
+    public void GeneratesRuntimeStatusAndResumeEndpoints()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput(string AccountId);
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        string controllerCode = runResult.GeneratedTrees.First(tree =>
+                tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains(
+            "ISagaRecoveryService<TransferSagaState> sagaRecoveryService",
+            controllerCode,
+            StringComparison.Ordinal);
+        Assert.Contains("[HttpGet(\"runtime-status\")]", controllerCode, StringComparison.Ordinal);
+        Assert.Contains("GetRuntimeStatusAsync", controllerCode, StringComparison.Ordinal);
+        Assert.Contains("[HttpPost(\"resume\")]", controllerCode, StringComparison.Ordinal);
+        Assert.Contains("ResumeAsync", controllerCode, StringComparison.Ordinal);
     }
 
     /// <summary>

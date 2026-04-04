@@ -56,6 +56,12 @@ public sealed record MoneyTransferStatusProjection
     public string? ErrorMessage { get; init; }
 
     /// <summary>
+    ///     Gets the index of the last completed step.
+    /// </summary>
+    [Id(1)]
+    public int LastCompletedStepIndex { get; init; } = -1;
+
+    /// <summary>
     ///     Gets the timestamp of the most recent explicit resume attempt.
     /// </summary>
     [Id(13)]
@@ -66,12 +72,6 @@ public sealed record MoneyTransferStatusProjection
     /// </summary>
     [Id(12)]
     public SagaResumeSource? LastResumeSource { get; init; }
-
-    /// <summary>
-    ///     Gets the index of the last completed step.
-    /// </summary>
-    [Id(1)]
-    public int LastCompletedStepIndex { get; init; } = -1;
 
     /// <summary>
     ///     Gets the pending execution direction when the saga has resumable work.

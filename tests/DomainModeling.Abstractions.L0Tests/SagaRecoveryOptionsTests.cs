@@ -1,7 +1,5 @@
 using System;
 
-using Mississippi.DomainModeling.Abstractions;
-
 
 namespace Mississippi.DomainModeling.Abstractions.L0Tests;
 
@@ -17,7 +15,6 @@ public sealed class SagaRecoveryOptionsTests
     public void ConstructorSetsExpectedDefaults()
     {
         SagaRecoveryOptions options = new();
-
         Assert.True(options.Enabled);
         Assert.False(options.ForceManualOnly);
         Assert.Equal(TimeSpan.FromMinutes(1), options.InitialReminderDueTime);
@@ -39,7 +36,6 @@ public sealed class SagaRecoveryOptionsTests
             MaxAutomaticAttempts = 3,
             ReminderPeriod = TimeSpan.FromMinutes(2),
         };
-
         Assert.False(options.Enabled);
         Assert.True(options.ForceManualOnly);
         Assert.Equal(TimeSpan.FromSeconds(30), options.InitialReminderDueTime);

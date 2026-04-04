@@ -132,6 +132,96 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when a reminder callback is ignored because no registered reminder handler claimed it.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(12, LogLevel.Debug, "Ignored reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void ReminderIgnored(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when a reminder callback is processed by the registered reminder handler.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(13, LogLevel.Debug, "Processed reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void ReminderProcessed(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when a reminder tick is received for an aggregate grain.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(11, LogLevel.Debug, "Received reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void ReminderReceived(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when reminder reconciliation evaluates a desired reminder action.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="action">The reconciled action.</param>
+    [LoggerMessage(
+        14,
+        LogLevel.Debug,
+        "Reconciled reminder {ReminderName} for aggregate {AggregateKey} with action {Action}")]
+    public static partial void ReminderReconciled(
+        this ILogger logger,
+        string aggregateKey,
+        string reminderName,
+        string action
+    );
+
+    /// <summary>
+    ///     Logs when reminder reconciliation removes a stale reminder.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(16, LogLevel.Information, "Removed reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void ReminderRemoved(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when a reminder is registered or updated during reconciliation.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="dueTime">The initial due time.</param>
+    /// <param name="period">The reminder period.</param>
+    [LoggerMessage(
+        15,
+        LogLevel.Information,
+        "Scheduled reminder {ReminderName} for aggregate {AggregateKey} with due time {DueTime} and period {Period}")]
+    public static partial void ReminderScheduled(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey,
+        TimeSpan dueTime,
+        TimeSpan period
+    );
+
+    /// <summary>
     ///     Logs when requesting background snapshot persistence.
     /// </summary>
     /// <param name="logger">The logger.</param>
@@ -171,92 +261,5 @@ internal static partial class AggregateGrainLoggerExtensions
         this ILogger logger,
         string aggregateKey,
         long finalPosition
-    );
-
-    /// <summary>
-    ///     Logs when a reminder tick is received for an aggregate grain.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="reminderName">The reminder name.</param>
-    /// <param name="aggregateKey">The aggregate key.</param>
-    [LoggerMessage(11, LogLevel.Debug, "Received reminder {ReminderName} for aggregate {AggregateKey}")]
-    public static partial void ReminderReceived(
-        this ILogger logger,
-        string reminderName,
-        string aggregateKey
-    );
-
-    /// <summary>
-    ///     Logs when a reminder callback is ignored because no registered reminder handler claimed it.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="reminderName">The reminder name.</param>
-    /// <param name="aggregateKey">The aggregate key.</param>
-    [LoggerMessage(12, LogLevel.Debug, "Ignored reminder {ReminderName} for aggregate {AggregateKey}")]
-    public static partial void ReminderIgnored(
-        this ILogger logger,
-        string reminderName,
-        string aggregateKey
-    );
-
-    /// <summary>
-    ///     Logs when a reminder callback is processed by the registered reminder handler.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="reminderName">The reminder name.</param>
-    /// <param name="aggregateKey">The aggregate key.</param>
-    [LoggerMessage(13, LogLevel.Debug, "Processed reminder {ReminderName} for aggregate {AggregateKey}")]
-    public static partial void ReminderProcessed(
-        this ILogger logger,
-        string reminderName,
-        string aggregateKey
-    );
-
-    /// <summary>
-    ///     Logs when reminder reconciliation evaluates a desired reminder action.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="aggregateKey">The aggregate key.</param>
-    /// <param name="reminderName">The reminder name.</param>
-    /// <param name="action">The reconciled action.</param>
-    [LoggerMessage(14, LogLevel.Debug, "Reconciled reminder {ReminderName} for aggregate {AggregateKey} with action {Action}")]
-    public static partial void ReminderReconciled(
-        this ILogger logger,
-        string aggregateKey,
-        string reminderName,
-        string action
-    );
-
-    /// <summary>
-    ///     Logs when a reminder is registered or updated during reconciliation.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="reminderName">The reminder name.</param>
-    /// <param name="aggregateKey">The aggregate key.</param>
-    /// <param name="dueTime">The initial due time.</param>
-    /// <param name="period">The reminder period.</param>
-    [LoggerMessage(
-        15,
-        LogLevel.Information,
-        "Scheduled reminder {ReminderName} for aggregate {AggregateKey} with due time {DueTime} and period {Period}")]
-    public static partial void ReminderScheduled(
-        this ILogger logger,
-        string reminderName,
-        string aggregateKey,
-        TimeSpan dueTime,
-        TimeSpan period
-    );
-
-    /// <summary>
-    ///     Logs when reminder reconciliation removes a stale reminder.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
-    /// <param name="reminderName">The reminder name.</param>
-    /// <param name="aggregateKey">The aggregate key.</param>
-    [LoggerMessage(16, LogLevel.Information, "Removed reminder {ReminderName} for aggregate {AggregateKey}")]
-    public static partial void ReminderRemoved(
-        this ILogger logger,
-        string reminderName,
-        string aggregateKey
     );
 }

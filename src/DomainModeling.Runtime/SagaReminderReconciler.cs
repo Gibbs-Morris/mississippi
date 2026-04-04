@@ -69,7 +69,8 @@ internal sealed class SagaReminderReconciler<TSaga> : IAggregateReminderReconcil
         TSaga? state = await loadStateAsync(cancellationToken);
         SagaRecoveryCheckpoint? checkpoint = await CheckpointAccessor.GetAsync(entityId, cancellationToken);
         bool shouldArmReminder = ShouldArmReminder(state, checkpoint);
-        IGrainReminder? existingReminder = await GrainReminderManager.GetReminderAsync(grain, SagaReminderNames.Recovery);
+        IGrainReminder? existingReminder =
+            await GrainReminderManager.GetReminderAsync(grain, SagaReminderNames.Recovery);
         if (!shouldArmReminder)
         {
             Logger.ReminderReconciled(aggregateKey, SagaReminderNames.Recovery, "clear");

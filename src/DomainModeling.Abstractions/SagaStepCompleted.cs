@@ -12,7 +12,7 @@ namespace Mississippi.DomainModeling.Abstractions;
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.SagaStepCompleted")]
-[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPCOMPLETED", version: 1)]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPCOMPLETED")]
 public sealed record SagaStepCompleted
 {
     /// <summary>

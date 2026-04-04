@@ -20,18 +20,21 @@ public sealed class WithdrawFromSourceStepTests
 {
     private static SagaStepExecutionContext CreateContext(
         SagaExecutionDirection direction = SagaExecutionDirection.Forward
-    ) => new()
-    {
-        AttemptId = Guid.NewGuid(),
-        AttemptStartedAt = new DateTimeOffset(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
-        Direction = direction,
-        IsReplay = false,
-        OperationKey = direction is SagaExecutionDirection.Compensation ? "withdraw-compensation-op" : "withdraw-step-op",
-        SagaId = Guid.NewGuid(),
-        Source = SagaResumeSource.Manual,
-        StepIndex = 0,
-        StepName = nameof(WithdrawFromSourceStep),
-    };
+    ) =>
+        new()
+        {
+            AttemptId = Guid.NewGuid(),
+            AttemptStartedAt = new(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
+            Direction = direction,
+            IsReplay = false,
+            OperationKey = direction is SagaExecutionDirection.Compensation
+                ? "withdraw-compensation-op"
+                : "withdraw-step-op",
+            SagaId = Guid.NewGuid(),
+            Source = SagaResumeSource.Manual,
+            StepIndex = 0,
+            StepName = nameof(WithdrawFromSourceStep),
+        };
 
     /// <summary>
     ///     Verifies compensation failure surfaces as a failed result.

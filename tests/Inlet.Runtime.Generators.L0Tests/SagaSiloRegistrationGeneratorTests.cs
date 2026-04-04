@@ -297,6 +297,116 @@ public sealed class SagaSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Verifies steps without saga type information are ignored.
+    /// </summary>
+    [Fact]
+    public void IgnoresStepWithoutSagaTypeOrInterface()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+
+                                      [SagaStep<TransferSagaState>(0, SagaStepRecoveryPolicy.Automatic)]
+                                      public sealed class MissingSagaStep
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1004"));
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+    }
+
+    /// <summary>
+    ///     Verifies no step registrations are emitted when no steps exist.
+    /// </summary>
+    [Fact]
+    public void OmitsStepInfoWhenNoSteps()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1007"));
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+    }
+
+    /// <summary>
+    ///     Verifies explicit enum casts that do not map to named members are preserved in generated code.
+    /// </summary>
+    [Fact]
+    public void PreservesExplicitUnknownEnumCastsInGeneratedCode()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [SagaRecovery((SagaRecoveryMode)123)]
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+
+                                      [SagaStep<TransferSagaState>(0, (SagaStepRecoveryPolicy)456)]
+                                      public sealed class DebitStep : ISagaStep<TransferSagaState>
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "(global::Mississippi.DomainModeling.Abstractions.SagaRecoveryMode)(int)123",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "(global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy)(int)456",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies compensatable steps must declare compensation recovery policy explicitly.
     /// </summary>
     [Fact]
@@ -364,116 +474,6 @@ public sealed class SagaSiloRegistrationGeneratorTests
         (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult _) =
             RunGenerator(AttributeStubs, sagaSource);
         Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1011"));
-        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
-    }
-
-    /// <summary>
-    ///     Verifies explicit enum casts that do not map to named members are preserved in generated code.
-    /// </summary>
-    [Fact]
-    public void PreservesExplicitUnknownEnumCastsInGeneratedCode()
-    {
-        const string sagaSource = """
-                                  using Mississippi.DomainModeling.Abstractions;
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      public sealed record TransferInput
-                                      {
-                                          public string AccountId { get; init; }
-                                      }
-
-                                      [SagaRecovery((SagaRecoveryMode)123)]
-                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
-                                      public sealed record TransferSagaState : ISagaState
-                                      {
-                                      }
-
-                                      [SagaStep<TransferSagaState>(0, (SagaStepRecoveryPolicy)456)]
-                                      public sealed class DebitStep : ISagaStep<TransferSagaState>
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, sagaSource);
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.Contains(
-            "(global::Mississippi.DomainModeling.Abstractions.SagaRecoveryMode)(int)123",
-            generatedCode,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "(global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy)(int)456",
-            generatedCode,
-            StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Verifies steps without saga type information are ignored.
-    /// </summary>
-    [Fact]
-    public void IgnoresStepWithoutSagaTypeOrInterface()
-    {
-        const string sagaSource = """
-                                  using Mississippi.DomainModeling.Abstractions;
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      public sealed record TransferInput
-                                      {
-                                          public string AccountId { get; init; }
-                                      }
-
-                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
-                                      public sealed record TransferSagaState : ISagaState
-                                      {
-                                      }
-
-                                      [SagaStep<TransferSagaState>(0, SagaStepRecoveryPolicy.Automatic)]
-                                      public sealed class MissingSagaStep
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
-        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1004"));
-        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
-    }
-
-    /// <summary>
-    ///     Verifies no step registrations are emitted when no steps exist.
-    /// </summary>
-    [Fact]
-    public void OmitsStepInfoWhenNoSteps()
-    {
-        const string sagaSource = """
-                                  using Mississippi.DomainModeling.Abstractions;
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      public sealed record TransferInput
-                                      {
-                                          public string AccountId { get; init; }
-                                      }
-
-                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
-                                      public sealed record TransferSagaState : ISagaState
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeStubs, sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
-        Assert.DoesNotContain("AddSagaStepInfo", generatedCode, StringComparison.Ordinal);
-        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1007"));
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
 

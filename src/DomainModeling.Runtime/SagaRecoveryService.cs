@@ -2,7 +2,13 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Options;
+
+using Mississippi.Brooks.Abstractions;
+using Mississippi.Brooks.Abstractions.Attributes;
+using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Tributary.Abstractions;
 
 
 namespace Mississippi.DomainModeling.Runtime;
@@ -18,18 +24,20 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
     ///     Initializes a new instance of the <see cref="SagaRecoveryService{TSaga}" /> class.
     /// </summary>
     /// <param name="aggregateGrainFactory">Factory for loading the current saga state.</param>
-    /// <param name="checkpointAccessor">Accessor for the latest authoritative recovery checkpoint.</param>
-    /// <param name="coordinator">Coordinator for planning and applying manual resume requests.</param>
+    /// <param name="brookGrainFactory">Factory for resolving brook cursor grains for recovery-checkpoint lookups.</param>
+    /// <param name="snapshotGrainFactory">Factory for resolving checkpoint snapshot cache grains.</param>
     /// <param name="recoveryInfoProvider">Provider for the configured saga recovery metadata.</param>
+    /// <param name="recoveryOptions">Runtime recovery overrides that shape effective reminder/readiness behavior.</param>
     /// <param name="sagaAccessAuthorizer">Authorizer for saga reads and manual resume operations.</param>
     /// <param name="sagaAccessContextProvider">Provider for the current caller-context fingerprint.</param>
     /// <param name="stepInfoProvider">Provider for the ordered saga step metadata.</param>
     /// <param name="timeProvider">Time provider used to stamp manual resume responses.</param>
     public SagaRecoveryService(
         IAggregateGrainFactory aggregateGrainFactory,
-        SagaRecoveryCheckpointAccessor<TSaga> checkpointAccessor,
-        SagaRecoveryCoordinator<TSaga> coordinator,
+        IBrookGrainFactory brookGrainFactory,
+        ISnapshotGrainFactory snapshotGrainFactory,
         ISagaRecoveryInfoProvider<TSaga> recoveryInfoProvider,
+        IOptions<SagaRecoveryOptions> recoveryOptions,
         ISagaAccessAuthorizer sagaAccessAuthorizer,
         ISagaAccessContextProvider sagaAccessContextProvider,
         ISagaStepInfoProvider<TSaga> stepInfoProvider,
@@ -37,146 +45,57 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
     )
     {
         ArgumentNullException.ThrowIfNull(aggregateGrainFactory);
-        ArgumentNullException.ThrowIfNull(checkpointAccessor);
-        ArgumentNullException.ThrowIfNull(coordinator);
+        ArgumentNullException.ThrowIfNull(brookGrainFactory);
+        ArgumentNullException.ThrowIfNull(snapshotGrainFactory);
         ArgumentNullException.ThrowIfNull(recoveryInfoProvider);
+        ArgumentNullException.ThrowIfNull(recoveryOptions);
+        ArgumentNullException.ThrowIfNull(recoveryOptions.Value);
         ArgumentNullException.ThrowIfNull(sagaAccessAuthorizer);
         ArgumentNullException.ThrowIfNull(sagaAccessContextProvider);
         ArgumentNullException.ThrowIfNull(stepInfoProvider);
         ArgumentNullException.ThrowIfNull(timeProvider);
         AggregateGrainFactory = aggregateGrainFactory;
-        CheckpointAccessor = checkpointAccessor;
-        Coordinator = coordinator;
+        BrookGrainFactory = brookGrainFactory;
+        SnapshotGrainFactory = snapshotGrainFactory;
         RecoveryInfoProvider = recoveryInfoProvider;
+        RecoveryOptions = recoveryOptions.Value;
         SagaAccessAuthorizer = sagaAccessAuthorizer;
         SagaAccessContextProvider = sagaAccessContextProvider;
         StepInfoProvider = stepInfoProvider;
         TimeProvider = timeProvider;
+        Planner = new(stepInfoProvider, recoveryInfoProvider, Options.Create(RecoveryOptions));
     }
 
     private IAggregateGrainFactory AggregateGrainFactory { get; }
 
-    private SagaRecoveryCheckpointAccessor<TSaga> CheckpointAccessor { get; }
+    private IBrookGrainFactory BrookGrainFactory { get; }
 
-    private SagaRecoveryCoordinator<TSaga> Coordinator { get; }
+    private SagaRecoveryPlanner<TSaga> Planner { get; }
+
+    private ISagaRecoveryInfoProvider<TSaga> RecoveryInfoProvider { get; }
+
+    private SagaRecoveryOptions RecoveryOptions { get; }
 
     private ISagaAccessAuthorizer SagaAccessAuthorizer { get; }
 
     private ISagaAccessContextProvider SagaAccessContextProvider { get; }
 
-    private ISagaRecoveryInfoProvider<TSaga> RecoveryInfoProvider { get; }
+    private ISnapshotGrainFactory SnapshotGrainFactory { get; }
 
     private ISagaStepInfoProvider<TSaga> StepInfoProvider { get; }
 
     private TimeProvider TimeProvider { get; }
 
-    /// <inheritdoc />
-    public async Task<TSaga?> GetStateAsync(
-        string entityId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-        (TSaga? state, SagaRecoveryCheckpoint? checkpoint) = await LoadStateAndCheckpointAsync(entityId, cancellationToken);
-        if (state is null)
+    private static string? BuildAcceptedMessage(
+        SagaRecoveryPlan plan
+    ) =>
+        plan.Disposition switch
         {
-            return null;
-        }
-
-        return Authorize(entityId, SagaAccessAction.ReadState, checkpoint).IsAuthorized
-            ? state
-            : null;
-    }
-
-    /// <inheritdoc />
-    public async Task<SagaRuntimeStatus?> GetRuntimeStatusAsync(
-        string entityId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-        (TSaga? state, SagaRecoveryCheckpoint? checkpoint) = await LoadStateAndCheckpointAsync(entityId, cancellationToken);
-        if (state is null)
-        {
-            return null;
-        }
-
-        if (!Authorize(entityId, SagaAccessAction.ReadRuntimeStatus, checkpoint).IsAuthorized)
-        {
-            return null;
-        }
-
-        SagaRecoveryMode recoveryMode = checkpoint?.RecoveryMode ?? RecoveryInfoProvider.Recovery.Mode;
-        bool workflowHashMatches = state.Phase is SagaPhase.NotStarted || HasMatchingWorkflowHash(state, checkpoint);
-        return new SagaRuntimeStatus
-        {
-            AutomaticAttemptCount = checkpoint?.AutomaticAttemptCount ?? 0,
-            BlockedReason = checkpoint?.BlockedReason,
-            LastResumeAttemptedAt = checkpoint?.LastResumeAttemptedAt,
-            LastResumeSource = checkpoint?.LastResumeSource,
-            NextEligibleResumeAt = checkpoint?.NextEligibleResumeAt,
-            PendingDirection = checkpoint?.PendingDirection,
-            PendingStepIndex = checkpoint?.PendingStepIndex,
-            PendingStepName = checkpoint?.PendingStepName,
-            Phase = state.Phase.ToString(),
-            RecoveryMode = recoveryMode,
-            ReminderArmed = checkpoint?.ReminderArmed ?? false,
-            ResumeDisposition = DetermineStatusDisposition(state, checkpoint, workflowHashMatches, recoveryMode),
-            SagaId = state.SagaId,
-            WorkflowHashMatches = workflowHashMatches,
+            SagaRecoveryPlanDisposition.ExecuteStep => "Manual resume accepted.",
+            SagaRecoveryPlanDisposition.CompleteSaga => "Manual resume completed the saga.",
+            SagaRecoveryPlanDisposition.CompensateSaga => "Manual resume completed saga compensation.",
+            var _ => null,
         };
-    }
-
-    /// <inheritdoc />
-    public async Task<SagaResumeResponse?> ResumeAsync(
-        string entityId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-        (TSaga? state, SagaRecoveryCheckpoint? checkpoint) = await LoadStateAndCheckpointAsync(entityId, cancellationToken);
-        if (state is null)
-        {
-            return null;
-        }
-
-        DateTimeOffset processedAt = TimeProvider.GetUtcNow();
-        SagaAccessAuthorizationResult authorization = Authorize(entityId, SagaAccessAction.Resume, checkpoint);
-        if (!authorization.IsAuthorized)
-        {
-            return new SagaResumeResponse
-            {
-                Disposition = SagaResumeRequestDisposition.Unauthorized,
-                Message = authorization.FailureReason ?? "The current caller is not authorized to resume this saga.",
-                ProcessedAt = processedAt,
-                SagaId = state.SagaId,
-                Source = SagaResumeSource.Manual,
-            };
-        }
-
-        SagaRecoveryPlan plan = Coordinator.Plan(state, checkpoint, SagaResumeSource.Manual);
-        if (plan.Disposition is SagaRecoveryPlanDisposition.ExecuteStep
-            or SagaRecoveryPlanDisposition.Blocked
-            or SagaRecoveryPlanDisposition.CompleteSaga
-            or SagaRecoveryPlanDisposition.CompensateSaga)
-        {
-            ArgumentNullException.ThrowIfNull(checkpoint);
-            OperationResult commandResult = await AggregateGrainFactory.GetGenericAggregate<TSaga>(entityId)
-                .ExecuteAsync(
-                    SagaRecoveryCoordinator<TSaga>.CreateResumeCommand(
-                        plan,
-                        checkpoint,
-                        SagaResumeSource.Manual,
-                        checkpoint.AccessContextFingerprint ?? SagaAccessContextProvider.GetFingerprint()),
-                    cancellationToken);
-            if (!commandResult.Success)
-            {
-                return CreateResumeResponse(state.SagaId, plan, processedAt, SagaResumeRequestDisposition.NoAction, commandResult.ErrorMessage);
-            }
-        }
-
-        return CreateResumeResponse(state.SagaId, plan, processedAt, MapRequestDisposition(plan.Disposition), plan.Reason);
-    }
 
     private static SagaResumeResponse CreateResumeResponse(
         Guid sagaId,
@@ -184,33 +103,25 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         DateTimeOffset processedAt,
         SagaResumeRequestDisposition disposition,
         string? message
-    ) => new()
-    {
-        BlockedReason = plan.Disposition is SagaRecoveryPlanDisposition.Blocked ? plan.Reason : null,
-        Disposition = disposition,
-        Message = message ?? BuildAcceptedMessage(plan),
-        PendingStepIndex = plan.Step?.StepIndex,
-        PendingStepName = plan.Step?.StepName,
-        ProcessedAt = processedAt,
-        SagaId = sagaId,
-        Source = SagaResumeSource.Manual,
-    };
-
-    private static string? BuildAcceptedMessage(
-        SagaRecoveryPlan plan
-    ) => plan.Disposition switch
-    {
-        SagaRecoveryPlanDisposition.ExecuteStep => "Manual resume accepted.",
-        SagaRecoveryPlanDisposition.CompleteSaga => "Manual resume completed the saga.",
-        SagaRecoveryPlanDisposition.CompensateSaga => "Manual resume completed saga compensation.",
-        _ => null,
-    };
+    ) =>
+        new()
+        {
+            BlockedReason = plan.Disposition is SagaRecoveryPlanDisposition.Blocked ? plan.Reason : null,
+            Disposition = disposition,
+            Message = message ?? BuildAcceptedMessage(plan),
+            PendingStepIndex = plan.Step?.StepIndex,
+            PendingStepName = plan.Step?.StepName,
+            ProcessedAt = processedAt,
+            SagaId = sagaId,
+            Source = SagaResumeSource.Manual,
+        };
 
     private static SagaResumeDisposition DetermineStatusDisposition(
         TSaga state,
         SagaRecoveryCheckpoint? checkpoint,
         bool workflowHashMatches,
-        SagaRecoveryMode recoveryMode
+        SagaRecoveryMode recoveryMode,
+        bool automaticRecoveryEnabled
     )
     {
         if (state.Phase is SagaPhase.Completed or SagaPhase.Compensated or SagaPhase.Failed)
@@ -230,7 +141,7 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
 
         if (checkpoint?.PendingDirection is not null)
         {
-            return recoveryMode is SagaRecoveryMode.ManualOnly
+            return recoveryMode is SagaRecoveryMode.ManualOnly || !automaticRecoveryEnabled
                 ? SagaResumeDisposition.ManualInterventionRequired
                 : SagaResumeDisposition.AutomaticPending;
         }
@@ -238,30 +149,141 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         return SagaResumeDisposition.Idle;
     }
 
-    private bool HasMatchingWorkflowHash(
-        TSaga state,
-        SagaRecoveryCheckpoint? checkpoint
-    )
-    {
-        string expectedHash = SagaStepHash.Compute(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps);
-        string? actualHash = string.IsNullOrWhiteSpace(checkpoint?.StepHash)
-            ? state.StepHash
-            : checkpoint.StepHash;
-        return !string.IsNullOrWhiteSpace(actualHash)
-               && string.Equals(actualHash, expectedHash, StringComparison.Ordinal);
-    }
-
     private static SagaResumeRequestDisposition MapRequestDisposition(
         SagaRecoveryPlanDisposition disposition
-    ) => disposition switch
+    ) =>
+        disposition switch
+        {
+            SagaRecoveryPlanDisposition.ExecuteStep or SagaRecoveryPlanDisposition.CompleteSaga
+                or SagaRecoveryPlanDisposition.CompensateSaga => SagaResumeRequestDisposition.Accepted,
+            SagaRecoveryPlanDisposition.Blocked => SagaResumeRequestDisposition.Blocked,
+            SagaRecoveryPlanDisposition.Terminal => SagaResumeRequestDisposition.Terminal,
+            SagaRecoveryPlanDisposition.WorkflowMismatch => SagaResumeRequestDisposition.WorkflowMismatch,
+            var _ => SagaResumeRequestDisposition.NoAction,
+        };
+
+    /// <inheritdoc />
+    public async Task<SagaRuntimeStatus?> GetRuntimeStatusAsync(
+        string entityId,
+        CancellationToken cancellationToken = default
+    )
     {
-        SagaRecoveryPlanDisposition.ExecuteStep or SagaRecoveryPlanDisposition.CompleteSaga
-            or SagaRecoveryPlanDisposition.CompensateSaga => SagaResumeRequestDisposition.Accepted,
-        SagaRecoveryPlanDisposition.Blocked => SagaResumeRequestDisposition.Blocked,
-        SagaRecoveryPlanDisposition.Terminal => SagaResumeRequestDisposition.Terminal,
-        SagaRecoveryPlanDisposition.WorkflowMismatch => SagaResumeRequestDisposition.WorkflowMismatch,
-        _ => SagaResumeRequestDisposition.NoAction,
-    };
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        (TSaga? state, SagaRecoveryCheckpoint? checkpoint) =
+            await LoadStateAndCheckpointAsync(entityId, cancellationToken);
+        if (state is null)
+        {
+            return null;
+        }
+
+        if (!Authorize(entityId, SagaAccessAction.ReadRuntimeStatus, checkpoint).IsAuthorized)
+        {
+            return null;
+        }
+
+        SagaRecoveryMode recoveryMode = checkpoint?.RecoveryMode ?? RecoveryInfoProvider.Recovery.Mode;
+        bool automaticRecoveryEnabled = RecoveryOptions.Enabled && !RecoveryOptions.ForceManualOnly;
+        bool workflowHashMatches = state.Phase is SagaPhase.NotStarted || HasMatchingWorkflowHash(state, checkpoint);
+        return new()
+        {
+            AutomaticAttemptCount = checkpoint?.AutomaticAttemptCount ?? 0,
+            BlockedReason = checkpoint?.BlockedReason,
+            LastResumeAttemptedAt = checkpoint?.LastResumeAttemptedAt,
+            LastResumeSource = checkpoint?.LastResumeSource,
+            NextEligibleResumeAt = checkpoint?.NextEligibleResumeAt,
+            PendingDirection = checkpoint?.PendingDirection,
+            PendingStepIndex = checkpoint?.PendingStepIndex,
+            PendingStepName = checkpoint?.PendingStepName,
+            Phase = state.Phase.ToString(),
+            RecoveryMode = recoveryMode,
+            ReminderArmed = automaticRecoveryEnabled && (checkpoint?.ReminderArmed ?? false),
+            ResumeDisposition = DetermineStatusDisposition(
+                state,
+                checkpoint,
+                workflowHashMatches,
+                recoveryMode,
+                automaticRecoveryEnabled),
+            SagaId = state.SagaId,
+            WorkflowHashMatches = workflowHashMatches,
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<TSaga?> GetStateAsync(
+        string entityId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        (TSaga? state, SagaRecoveryCheckpoint? checkpoint) =
+            await LoadStateAndCheckpointAsync(entityId, cancellationToken);
+        if (state is null)
+        {
+            return null;
+        }
+
+        return Authorize(entityId, SagaAccessAction.ReadState, checkpoint).IsAuthorized ? state : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<SagaResumeResponse?> ResumeAsync(
+        string entityId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        (TSaga? state, SagaRecoveryCheckpoint? checkpoint) =
+            await LoadStateAndCheckpointAsync(entityId, cancellationToken);
+        if (state is null)
+        {
+            return null;
+        }
+
+        DateTimeOffset processedAt = TimeProvider.GetUtcNow();
+        SagaAccessAuthorizationResult authorization = Authorize(entityId, SagaAccessAction.Resume, checkpoint);
+        if (!authorization.IsAuthorized)
+        {
+            return new()
+            {
+                Disposition = SagaResumeRequestDisposition.Unauthorized,
+                Message = authorization.FailureReason ?? "The current caller is not authorized to resume this saga.",
+                ProcessedAt = processedAt,
+                SagaId = state.SagaId,
+                Source = SagaResumeSource.Manual,
+            };
+        }
+
+        SagaRecoveryPlan plan = Plan(state, checkpoint, SagaResumeSource.Manual);
+        if (plan.Disposition is SagaRecoveryPlanDisposition.ExecuteStep or SagaRecoveryPlanDisposition.Blocked
+            or SagaRecoveryPlanDisposition.CompleteSaga or SagaRecoveryPlanDisposition.CompensateSaga)
+        {
+            ArgumentNullException.ThrowIfNull(checkpoint);
+            OperationResult commandResult = await AggregateGrainFactory.GetGenericAggregate<TSaga>(entityId)
+                .ExecuteAsync(
+                    SagaRecoveryCoordinator<TSaga>.CreateResumeCommand(
+                        plan,
+                        checkpoint,
+                        SagaResumeSource.Manual,
+                        checkpoint.AccessContextFingerprint ?? SagaAccessContextProvider.GetFingerprint()),
+                    cancellationToken);
+            if (!commandResult.Success)
+            {
+                return CreateResumeResponse(
+                    state.SagaId,
+                    plan,
+                    processedAt,
+                    SagaResumeRequestDisposition.NoAction,
+                    commandResult.ErrorMessage);
+            }
+        }
+
+        return CreateResumeResponse(
+            state.SagaId,
+            plan,
+            processedAt,
+            MapRequestDisposition(plan.Disposition),
+            plan.Reason);
+    }
 
     private SagaAccessAuthorizationResult Authorize(
         string entityId,
@@ -274,6 +296,17 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
             checkpoint?.AccessContextFingerprint,
             SagaAccessContextProvider.GetFingerprint());
 
+    private bool HasMatchingWorkflowHash(
+        TSaga state,
+        SagaRecoveryCheckpoint? checkpoint
+    )
+    {
+        string expectedHash = SagaStepHash.Compute(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps);
+        string? actualHash = string.IsNullOrWhiteSpace(checkpoint?.StepHash) ? state.StepHash : checkpoint.StepHash;
+        return !string.IsNullOrWhiteSpace(actualHash) &&
+               string.Equals(actualHash, expectedHash, StringComparison.Ordinal);
+    }
+
     private async Task<(TSaga? State, SagaRecoveryCheckpoint? Checkpoint)> LoadStateAndCheckpointAsync(
         string entityId,
         CancellationToken cancellationToken
@@ -281,9 +314,60 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
     {
         IGenericAggregateGrain<TSaga> grain = AggregateGrainFactory.GetGenericAggregate<TSaga>(entityId);
         TSaga? state = await grain.GetStateAsync(cancellationToken);
-        SagaRecoveryCheckpoint? checkpoint = state is null
-            ? null
-            : await CheckpointAccessor.GetAsync(entityId, cancellationToken);
+        SagaRecoveryCheckpoint? checkpoint = null;
+        if (state is not null)
+        {
+            BrookKey brookKey = BrookKey.ForType<TSaga>(entityId);
+            BrookPosition currentPosition =
+                await BrookGrainFactory.GetBrookCursorGrain(brookKey).GetLatestPositionAsync();
+            if (!currentPosition.NotSet)
+            {
+                SnapshotStreamKey streamKey = new(
+                    brookKey.BrookName,
+                    SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
+                    brookKey.EntityId,
+                    SagaRecoveryCheckpointMetadata.CheckpointReducerHash);
+                SnapshotKey snapshotKey = new(streamKey, currentPosition.Value);
+                checkpoint = await SnapshotGrainFactory.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey)
+                    .GetStateAsync(cancellationToken);
+            }
+        }
+
         return (state, checkpoint);
+    }
+
+    private SagaRecoveryPlan Plan(
+        TSaga? state,
+        SagaRecoveryCheckpoint? checkpoint,
+        SagaResumeSource source
+    )
+    {
+        if (state is null)
+        {
+            return new()
+            {
+                Disposition = SagaRecoveryPlanDisposition.NoAction,
+                Reason = "Saga state not found.",
+            };
+        }
+
+        if (state.Phase is SagaPhase.Completed or SagaPhase.Compensated or SagaPhase.Failed)
+        {
+            return new()
+            {
+                Disposition = SagaRecoveryPlanDisposition.Terminal,
+            };
+        }
+
+        if (checkpoint is null)
+        {
+            return new()
+            {
+                Disposition = SagaRecoveryPlanDisposition.NoAction,
+                Reason = "Recovery checkpoint not found.",
+            };
+        }
+
+        return Planner.Plan(state, checkpoint, source);
     }
 }

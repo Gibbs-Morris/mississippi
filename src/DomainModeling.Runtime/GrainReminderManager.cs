@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 using Orleans;
 using Orleans.Runtime;
+using Orleans.Timers;
 
 
 namespace Mississippi.DomainModeling.Runtime;
@@ -18,13 +19,11 @@ internal sealed class GrainReminderManager : IGrainReminderManager
     /// </summary>
     /// <param name="reminderRegistry">The Orleans reminder registry.</param>
     public GrainReminderManager(
-        Orleans.Timers.IReminderRegistry reminderRegistry
-    )
-    {
+        IReminderRegistry reminderRegistry
+    ) =>
         ReminderRegistry = reminderRegistry ?? throw new ArgumentNullException(nameof(reminderRegistry));
-    }
 
-    private Orleans.Timers.IReminderRegistry ReminderRegistry { get; }
+    private IReminderRegistry ReminderRegistry { get; }
 
     /// <inheritdoc />
     public async Task<IGrainReminder?> GetReminderAsync(
@@ -34,8 +33,8 @@ internal sealed class GrainReminderManager : IGrainReminderManager
     {
         ArgumentNullException.ThrowIfNull(grain);
         ArgumentException.ThrowIfNullOrWhiteSpace(reminderName);
-        return (await ReminderRegistry.GetReminders(grain.GrainContext.GrainId))
-            .SingleOrDefault(reminder => string.Equals(reminder.ReminderName, reminderName, StringComparison.Ordinal));
+        return (await ReminderRegistry.GetReminders(grain.GrainContext.GrainId)).SingleOrDefault(reminder =>
+            string.Equals(reminder.ReminderName, reminderName, StringComparison.Ordinal));
     }
 
     /// <inheritdoc />

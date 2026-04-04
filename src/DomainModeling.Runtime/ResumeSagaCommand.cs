@@ -33,16 +33,16 @@ internal sealed record ResumeSagaCommand
     public string? BlockedReason { get; init; }
 
     /// <summary>
-    ///     Gets the planned disposition selected by the recovery planner.
-    /// </summary>
-    [Id(1)]
-    public required SagaRecoveryPlanDisposition Disposition { get; init; }
-
-    /// <summary>
     ///     Gets the execution direction for the planned action, when applicable.
     /// </summary>
     [Id(2)]
     public SagaExecutionDirection? Direction { get; init; }
+
+    /// <summary>
+    ///     Gets the planned disposition selected by the recovery planner.
+    /// </summary>
+    [Id(1)]
+    public required SagaRecoveryPlanDisposition Disposition { get; init; }
 
     /// <summary>
     ///     Gets the optional operation key to reuse when replaying an in-flight operation.

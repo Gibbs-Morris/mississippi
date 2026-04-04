@@ -22,7 +22,6 @@ internal static class SagaStepOperationKey
         Guid sagaId,
         int stepIndex,
         SagaExecutionDirection direction
-    ) => string.Create(
-        CultureInfo.InvariantCulture,
-        $"{sagaId:N}:{direction}:{stepIndex}");
+    ) =>
+        string.Create(CultureInfo.InvariantCulture, $"{sagaId:N}:{direction}:{stepIndex}");
 }

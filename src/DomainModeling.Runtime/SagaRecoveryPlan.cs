@@ -9,14 +9,14 @@ namespace Mississippi.DomainModeling.Runtime;
 internal sealed record SagaRecoveryPlan
 {
     /// <summary>
-    ///     Gets the recovery action that should be performed.
-    /// </summary>
-    public required SagaRecoveryPlanDisposition Disposition { get; init; }
-
-    /// <summary>
     ///     Gets the direction associated with the selected recovery action, when applicable.
     /// </summary>
     public SagaExecutionDirection? Direction { get; init; }
+
+    /// <summary>
+    ///     Gets the recovery action that should be performed.
+    /// </summary>
+    public required SagaRecoveryPlanDisposition Disposition { get; init; }
 
     /// <summary>
     ///     Gets the operator-visible reason for a blocked or mismatched recovery plan.

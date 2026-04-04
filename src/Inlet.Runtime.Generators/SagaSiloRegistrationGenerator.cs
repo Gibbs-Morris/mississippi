@@ -34,9 +34,10 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
     private const string ReducerRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.ReducerRegistrations";
 
-    private const string SagaRegistrationsTypeFullName = "Mississippi.DomainModeling.Runtime.SagaRegistrations";
+    private const string SagaRecoveryAttributeFullName =
+        "Mississippi.DomainModeling.Abstractions.SagaRecoveryAttribute";
 
-    private const string SagaRecoveryAttributeFullName = "Mississippi.DomainModeling.Abstractions.SagaRecoveryAttribute";
+    private const string SagaRegistrationsTypeFullName = "Mississippi.DomainModeling.Runtime.SagaRegistrations";
 
     private const string SagaStateInterfaceFullName = "Mississippi.DomainModeling.Abstractions.ISagaState";
 
@@ -316,6 +317,27 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static string GetEnumUnderlyingValueExpression(
+        ITypeSymbol underlyingType,
+        object value
+    )
+    {
+        string underlyingTypeExpression = underlyingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        return value switch
+        {
+            byte byteValue => $"({underlyingTypeExpression}){byteValue}",
+            sbyte sbyteValue => $"({underlyingTypeExpression}){sbyteValue}",
+            short shortValue => $"({underlyingTypeExpression}){shortValue}",
+            ushort ushortValue => $"({underlyingTypeExpression}){ushortValue}",
+            int intValue => $"({underlyingTypeExpression}){intValue}",
+            uint uintValue => $"({underlyingTypeExpression}){uintValue}U",
+            long longValue => $"({underlyingTypeExpression}){longValue}L",
+            ulong ulongValue => $"({underlyingTypeExpression}){ulongValue}UL",
+            var _ => throw new InvalidOperationException(
+                $"Unsupported enum constant value type '{value.GetType().FullName}'."),
+        };
+    }
+
     private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
         Compilation compilation
     )
@@ -361,6 +383,14 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
         compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null;
 
+    private static bool MatchesAttribute(
+        AttributeData attributeData,
+        INamedTypeSymbol? attributeSymbol
+    ) =>
+        attributeSymbol is not null &&
+        attributeData.AttributeClass is not null &&
+        SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol);
+
     private static bool MatchesSagaAttribute(
         AttributeData attr,
         INamedTypeSymbol? sagaAttrSymbol,
@@ -380,14 +410,6 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         return sagaAttrGenericSymbol is not null &&
                SymbolEqualityComparer.Default.Equals(attr.AttributeClass.OriginalDefinition, sagaAttrGenericSymbol);
     }
-
-    private static bool MatchesAttribute(
-        AttributeData attributeData,
-        INamedTypeSymbol? attributeSymbol
-    ) =>
-        attributeSymbol is not null &&
-        attributeData.AttributeClass is not null &&
-        SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol);
 
     private static bool MatchesStepAttribute(
         AttributeData attr,
@@ -442,6 +464,18 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static string ToStringLiteral(
+        string? value
+    )
+    {
+        if (value is null)
+        {
+            return "null";
+        }
+
+        return SyntaxFactory.Literal(value).ToFullString();
+    }
+
     private static SagaSymbolContext? TryBuildSymbolContext(
         Compilation compilation
     )
@@ -477,6 +511,36 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             reducerBaseSymbol);
     }
 
+    private static bool TryGetEnumValueExpression(
+        TypedConstant constant,
+        out string? expression
+    )
+    {
+        expression = null;
+        if (constant.Type is not INamedTypeSymbol enumType || constant.Value is null)
+        {
+            return false;
+        }
+
+        IFieldSymbol? enumMember = enumType.GetMembers()
+            .OfType<IFieldSymbol>()
+            .FirstOrDefault(member => member.HasConstantValue && Equals(member.ConstantValue, constant.Value));
+        if (enumMember is not null)
+        {
+            expression = $"{enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{enumMember.Name}";
+            return true;
+        }
+
+        if (enumType.EnumUnderlyingType is null)
+        {
+            return false;
+        }
+
+        expression = $"({enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})" +
+                     GetEnumUnderlyingValueExpression(enumType.EnumUnderlyingType, constant.Value);
+        return true;
+    }
+
     private static bool TryGetInputType(
         AttributeData attr,
         out INamedTypeSymbol? inputTypeSymbol
@@ -496,6 +560,24 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         inputTypeSymbol =
             attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value.Value as INamedTypeSymbol;
         return inputTypeSymbol is not null;
+    }
+
+    private static bool TryGetNamedEnumValueExpression(
+        AttributeData attributeData,
+        string argumentName,
+        out string? expression
+    )
+    {
+        KeyValuePair<string, TypedConstant> namedArgument = attributeData.NamedArguments
+            .Where(candidate => candidate.Key == argumentName)
+            .FirstOrDefault();
+        if (namedArgument.Key is not null)
+        {
+            return TryGetEnumValueExpression(namedArgument.Value, out expression);
+        }
+
+        expression = null;
+        return false;
     }
 
     private static ReducerInfo? TryGetReducerInfo(
@@ -575,23 +657,12 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             recoveryModeExpression = parsedRecoveryModeExpression!;
         }
 
-        string? recoveryProfile = recoveryAttribute?.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Profile").Value.Value as string;
+        string? recoveryProfile =
+            recoveryAttribute?.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Profile").Value.Value as string;
         string outputNamespace = NamingConventions.GetSiloRegistrationNamespace(
             typeSymbol.ContainingNamespace.ToDisplayString(),
             targetRootNamespace);
         return new(typeSymbol, inputType, outputNamespace, recoveryModeExpression, recoveryProfile);
-    }
-
-    private static string ToStringLiteral(
-        string? value
-    )
-    {
-        if (value is null)
-        {
-            return "null";
-        }
-
-        return SyntaxFactory.Literal(value).ToFullString();
     }
 
     private static StepInfoResult TryGetStepInfo(
@@ -628,10 +699,9 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         TypedConstant forwardRecoveryPolicyArgument = attr.ConstructorArguments.Length > 1
             ? attr.ConstructorArguments[1]
             : default;
-        string forwardRecoveryPolicyExpression = "global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy.Automatic";
-        if (TryGetEnumValueExpression(
-                forwardRecoveryPolicyArgument,
-                out string? parsedForwardRecoveryPolicyExpression))
+        string forwardRecoveryPolicyExpression =
+            "global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy.Automatic";
+        if (TryGetEnumValueExpression(forwardRecoveryPolicyArgument, out string? parsedForwardRecoveryPolicyExpression))
         {
             forwardRecoveryPolicyExpression = parsedForwardRecoveryPolicyExpression!;
         }
@@ -717,77 +787,6 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 location),
             compensationPolicyDiagnostic,
             sagaStateSymbol);
-    }
-
-    private static bool TryGetEnumValueExpression(
-        TypedConstant constant,
-        out string? expression
-    )
-    {
-        expression = null;
-        if (constant.Type is not INamedTypeSymbol enumType || constant.Value is null)
-        {
-            return false;
-        }
-
-        IFieldSymbol? enumMember = enumType.GetMembers()
-            .OfType<IFieldSymbol>()
-            .FirstOrDefault(member => member.HasConstantValue && Equals(member.ConstantValue, constant.Value));
-        if (enumMember is not null)
-        {
-            expression = $"{enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{enumMember.Name}";
-            return true;
-        }
-
-        if (enumType.EnumUnderlyingType is null)
-        {
-            return false;
-        }
-
-        expression =
-            $"({enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})" +
-            GetEnumUnderlyingValueExpression(enumType.EnumUnderlyingType, constant.Value);
-        return true;
-    }
-
-    private static string GetEnumUnderlyingValueExpression(
-        ITypeSymbol underlyingType,
-        object value
-    )
-    {
-        string underlyingTypeExpression = underlyingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-        return value switch
-        {
-            byte byteValue => $"({underlyingTypeExpression}){byteValue}",
-            sbyte sbyteValue => $"({underlyingTypeExpression}){sbyteValue}",
-            short shortValue => $"({underlyingTypeExpression}){shortValue}",
-            ushort ushortValue => $"({underlyingTypeExpression}){ushortValue}",
-            int intValue => $"({underlyingTypeExpression}){intValue}",
-            uint uintValue => $"({underlyingTypeExpression}){uintValue}U",
-            long longValue => $"({underlyingTypeExpression}){longValue}L",
-            ulong ulongValue => $"({underlyingTypeExpression}){ulongValue}UL",
-            _ => throw new InvalidOperationException(
-                $"Unsupported enum constant value type '{value.GetType().FullName}'."),
-        };
-    }
-
-    private static bool TryGetNamedEnumValueExpression(
-        AttributeData attributeData,
-        string argumentName,
-        out string? expression
-    )
-    {
-        KeyValuePair<string, TypedConstant> namedArgument = attributeData.NamedArguments
-            .Where(candidate => candidate.Key == argumentName)
-            .FirstOrDefault();
-        if (namedArgument.Key is not null)
-        {
-            return TryGetEnumValueExpression(namedArgument.Value, out expression);
-        }
-
-        expression = null;
-        return false;
     }
 
     private static void ValidateSteps(

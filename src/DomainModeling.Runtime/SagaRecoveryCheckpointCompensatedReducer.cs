@@ -9,7 +9,8 @@ namespace Mississippi.DomainModeling.Runtime;
 /// <summary>
 ///     Rebuilds checkpoint state from <see cref="SagaCompensated" />.
 /// </summary>
-internal sealed class SagaRecoveryCheckpointCompensatedReducer : EventReducerBase<SagaCompensated, SagaRecoveryCheckpoint>
+internal sealed class SagaRecoveryCheckpointCompensatedReducer
+    : EventReducerBase<SagaCompensated, SagaRecoveryCheckpoint>
 {
     /// <inheritdoc />
     protected override SagaRecoveryCheckpoint ReduceCore(

@@ -21,6 +21,18 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
 
     private const string GeneratorName = "SagaStatusReducersGenerator";
 
+    private static void AddAssignment(
+        List<string> assignments,
+        bool condition,
+        string assignment
+    )
+    {
+        if (condition)
+        {
+            assignments.Add(assignment);
+        }
+    }
+
     private static void FindProjectionsInNamespace(
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol attributeSymbol,
@@ -71,22 +83,6 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
-    private static string JoinAssignments(
-        IEnumerable<string> assignments
-    ) => string.Join("\n", assignments.Select(static assignment => assignment + ","));
-
-    private static void AddAssignment(
-        List<string> assignments,
-        bool condition,
-        string assignment
-    )
-    {
-        if (condition)
-        {
-            assignments.Add(assignment);
-        }
-    }
-
     private static void GenerateReducers(
         SourceProductionContext context,
         ProjectionInfo projection
@@ -121,8 +117,14 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
             "CompletedAt = null",
         ];
         AddAssignment(sagaStartedAssignments, properties.RecoveryMode, "RecoveryMode = eventData.RecoveryMode");
-        AddAssignment(sagaStartedAssignments, properties.RecoveryProfile, "RecoveryProfile = eventData.RecoveryProfile");
-        AddAssignment(sagaStartedAssignments, properties.PendingDirection, "PendingDirection = SagaExecutionDirection.Forward");
+        AddAssignment(
+            sagaStartedAssignments,
+            properties.RecoveryProfile,
+            "RecoveryProfile = eventData.RecoveryProfile");
+        AddAssignment(
+            sagaStartedAssignments,
+            properties.PendingDirection,
+            "PendingDirection = SagaExecutionDirection.Forward");
         AddAssignment(sagaStartedAssignments, properties.PendingStepIndex, "PendingStepIndex = 0");
         AddAssignment(sagaStartedAssignments, properties.PendingStepName, "PendingStepName = null");
         AddAssignment(sagaStartedAssignments, properties.BlockedReason, "BlockedReason = null");
@@ -130,25 +132,31 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         AddAssignment(sagaStartedAssignments, properties.LastResumeAttemptedAt, "LastResumeAttemptedAt = null");
         AddAssignment(sagaStartedAssignments, properties.AutomaticAttemptCount, "AutomaticAttemptCount = 0");
         AddAssignment(sagaStartedAssignments, properties.ResumeDisposition, StartedDisposition);
-
         List<string> sagaStepCompletedAssignments = ["LastCompletedStepIndex = eventData.StepIndex"];
-        AddAssignment(sagaStepCompletedAssignments, properties.PendingDirection, "PendingDirection = SagaExecutionDirection.Forward");
-        AddAssignment(sagaStepCompletedAssignments, properties.PendingStepIndex, "PendingStepIndex = eventData.StepIndex + 1");
+        AddAssignment(
+            sagaStepCompletedAssignments,
+            properties.PendingDirection,
+            "PendingDirection = SagaExecutionDirection.Forward");
+        AddAssignment(
+            sagaStepCompletedAssignments,
+            properties.PendingStepIndex,
+            "PendingStepIndex = eventData.StepIndex + 1");
         AddAssignment(sagaStepCompletedAssignments, properties.PendingStepName, "PendingStepName = null");
         AddAssignment(sagaStepCompletedAssignments, properties.BlockedReason, "BlockedReason = null");
         AddAssignment(sagaStepCompletedAssignments, properties.ResumeDisposition, pendingDisposition);
-
         List<string> sagaStepFailedAssignments =
         [
             "ErrorCode = eventData.ErrorCode",
             "ErrorMessage = eventData.ErrorMessage",
         ];
-        AddAssignment(sagaStepFailedAssignments, properties.PendingDirection, "PendingDirection = SagaExecutionDirection.Forward");
+        AddAssignment(
+            sagaStepFailedAssignments,
+            properties.PendingDirection,
+            "PendingDirection = SagaExecutionDirection.Forward");
         AddAssignment(sagaStepFailedAssignments, properties.PendingStepIndex, "PendingStepIndex = eventData.StepIndex");
         AddAssignment(sagaStepFailedAssignments, properties.PendingStepName, "PendingStepName = eventData.StepName");
         AddAssignment(sagaStepFailedAssignments, properties.BlockedReason, "BlockedReason = null");
         AddAssignment(sagaStepFailedAssignments, properties.ResumeDisposition, pendingDisposition);
-
         List<string> sagaFailedAssignments =
         [
             "Phase = SagaPhase.Failed",
@@ -161,7 +169,6 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         AddAssignment(sagaFailedAssignments, properties.PendingStepName, "PendingStepName = null");
         AddAssignment(sagaFailedAssignments, properties.BlockedReason, "BlockedReason = null");
         AddAssignment(sagaFailedAssignments, properties.ResumeDisposition, TerminalDisposition);
-
         List<string> sagaCompletedAssignments =
         [
             "Phase = SagaPhase.Completed",
@@ -172,17 +179,18 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         AddAssignment(sagaCompletedAssignments, properties.PendingStepName, "PendingStepName = null");
         AddAssignment(sagaCompletedAssignments, properties.BlockedReason, "BlockedReason = null");
         AddAssignment(sagaCompletedAssignments, properties.ResumeDisposition, TerminalDisposition);
-
         List<string> sagaCompensatingAssignments = ["Phase = SagaPhase.Compensating"];
         AddAssignment(
             sagaCompensatingAssignments,
             properties.PendingDirection,
             "PendingDirection = SagaExecutionDirection.Compensation");
-        AddAssignment(sagaCompensatingAssignments, properties.PendingStepIndex, "PendingStepIndex = eventData.FromStepIndex");
+        AddAssignment(
+            sagaCompensatingAssignments,
+            properties.PendingStepIndex,
+            "PendingStepIndex = eventData.FromStepIndex");
         AddAssignment(sagaCompensatingAssignments, properties.PendingStepName, "PendingStepName = null");
         AddAssignment(sagaCompensatingAssignments, properties.BlockedReason, "BlockedReason = null");
         AddAssignment(sagaCompensatingAssignments, properties.ResumeDisposition, pendingDisposition);
-
         List<string> sagaCompensatedAssignments =
         [
             "Phase = SagaPhase.Compensated",
@@ -193,7 +201,6 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         AddAssignment(sagaCompensatedAssignments, properties.PendingStepName, "PendingStepName = null");
         AddAssignment(sagaCompensatedAssignments, properties.BlockedReason, "BlockedReason = null");
         AddAssignment(sagaCompensatedAssignments, properties.ResumeDisposition, TerminalDisposition);
-
         List<string> reducerBlocks =
         [
             GenerateReducerClass(
@@ -235,9 +242,18 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         if (properties.HasRecoveryMetadata)
         {
             List<string> executionStartedAssignments = [];
-            AddAssignment(executionStartedAssignments, properties.PendingDirection, "PendingDirection = eventData.Direction");
-            AddAssignment(executionStartedAssignments, properties.PendingStepIndex, "PendingStepIndex = eventData.StepIndex");
-            AddAssignment(executionStartedAssignments, properties.PendingStepName, "PendingStepName = eventData.StepName");
+            AddAssignment(
+                executionStartedAssignments,
+                properties.PendingDirection,
+                "PendingDirection = eventData.Direction");
+            AddAssignment(
+                executionStartedAssignments,
+                properties.PendingStepIndex,
+                "PendingStepIndex = eventData.StepIndex");
+            AddAssignment(
+                executionStartedAssignments,
+                properties.PendingStepName,
+                "PendingStepName = eventData.StepName");
             AddAssignment(executionStartedAssignments, properties.BlockedReason, "BlockedReason = null");
             AddAssignment(
                 executionStartedAssignments,
@@ -263,12 +279,24 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
             }
 
             List<string> resumeBlockedAssignments = [];
-            AddAssignment(resumeBlockedAssignments, properties.PendingDirection, "PendingDirection = eventData.Direction");
-            AddAssignment(resumeBlockedAssignments, properties.PendingStepIndex, "PendingStepIndex = eventData.StepIndex");
+            AddAssignment(
+                resumeBlockedAssignments,
+                properties.PendingDirection,
+                "PendingDirection = eventData.Direction");
+            AddAssignment(
+                resumeBlockedAssignments,
+                properties.PendingStepIndex,
+                "PendingStepIndex = eventData.StepIndex");
             AddAssignment(resumeBlockedAssignments, properties.PendingStepName, "PendingStepName = eventData.StepName");
-            AddAssignment(resumeBlockedAssignments, properties.BlockedReason, "BlockedReason = eventData.BlockedReason");
+            AddAssignment(
+                resumeBlockedAssignments,
+                properties.BlockedReason,
+                "BlockedReason = eventData.BlockedReason");
             AddAssignment(resumeBlockedAssignments, properties.LastResumeSource, "LastResumeSource = eventData.Source");
-            AddAssignment(resumeBlockedAssignments, properties.LastResumeAttemptedAt, "LastResumeAttemptedAt = eventData.BlockedAt");
+            AddAssignment(
+                resumeBlockedAssignments,
+                properties.LastResumeAttemptedAt,
+                "LastResumeAttemptedAt = eventData.BlockedAt");
             AddAssignment(
                 resumeBlockedAssignments,
                 properties.AutomaticAttemptCount,
@@ -289,7 +317,10 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
                 stepCompensatedAssignments,
                 properties.PendingDirection,
                 "PendingDirection = SagaExecutionDirection.Compensation");
-            AddAssignment(stepCompensatedAssignments, properties.PendingStepIndex, "PendingStepIndex = eventData.StepIndex - 1");
+            AddAssignment(
+                stepCompensatedAssignments,
+                properties.PendingStepIndex,
+                "PendingStepIndex = eventData.StepIndex - 1");
             AddAssignment(stepCompensatedAssignments, properties.PendingStepName, "PendingStepName = null");
             AddAssignment(stepCompensatedAssignments, properties.BlockedReason, "BlockedReason = null");
             AddAssignment(stepCompensatedAssignments, properties.ResumeDisposition, pendingDisposition);
@@ -330,6 +361,11 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         FindProjectionsInNamespace(compilation.Assembly.GlobalNamespace, attributeSymbol, projections);
         return projections;
     }
+
+    private static string JoinAssignments(
+        IEnumerable<string> assignments
+    ) =>
+        string.Join("\n", assignments.Select(static assignment => assignment + ","));
 
     /// <inheritdoc />
     public void Initialize(
@@ -406,8 +442,16 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         public bool BlockedReason { get; }
 
         public bool HasRecoveryMetadata =>
-            RecoveryMode || RecoveryProfile || PendingDirection || PendingStepIndex || PendingStepName ||
-            ResumeDisposition || BlockedReason || LastResumeSource || LastResumeAttemptedAt || AutomaticAttemptCount;
+            RecoveryMode ||
+            RecoveryProfile ||
+            PendingDirection ||
+            PendingStepIndex ||
+            PendingStepName ||
+            ResumeDisposition ||
+            BlockedReason ||
+            LastResumeSource ||
+            LastResumeAttemptedAt ||
+            AutomaticAttemptCount;
 
         public bool LastResumeAttemptedAt { get; }
 
@@ -438,8 +482,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
                     projectionType,
                     nameof(PendingDirection),
                     "Mississippi.DomainModeling.Abstractions.SagaExecutionDirection",
-                    nullable: true),
-                HasIntProperty(projectionType, nameof(PendingStepIndex), nullable: true),
+                    true),
+                HasIntProperty(projectionType, nameof(PendingStepIndex), true),
                 HasStringProperty(projectionType, nameof(PendingStepName)),
                 HasNamedTypeProperty(
                     projectionType,
@@ -450,13 +494,34 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
                     projectionType,
                     nameof(LastResumeSource),
                     "Mississippi.DomainModeling.Abstractions.SagaResumeSource",
-                    nullable: true),
-                HasNamedTypeProperty(
-                    projectionType,
-                    nameof(LastResumeAttemptedAt),
-                    "System.DateTimeOffset",
-                    nullable: true),
+                    true),
+                HasNamedTypeProperty(projectionType, nameof(LastResumeAttemptedAt), "System.DateTimeOffset", true),
                 HasIntProperty(projectionType, nameof(AutomaticAttemptCount)));
+
+        private static bool HasIntProperty(
+            INamedTypeSymbol projectionType,
+            string propertyName,
+            bool nullable = false
+        )
+        {
+            if (!TryGetProperty(projectionType, propertyName, out IPropertySymbol property))
+            {
+                return false;
+            }
+
+            if (!nullable)
+            {
+                return property.Type.SpecialType == SpecialType.System_Int32;
+            }
+
+            if (property.Type is not INamedTypeSymbol nullableType ||
+                (nullableType.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T))
+            {
+                return false;
+            }
+
+            return nullableType.TypeArguments[0].SpecialType == SpecialType.System_Int32;
+        }
 
         private static bool HasNamedTypeProperty(
             INamedTypeSymbol projectionType,
@@ -470,29 +535,23 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
                 return false;
             }
 
-            return nullable
-                ? property.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType &&
-                  nullableType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                      .Replace("global::", string.Empty) == fullTypeName
-                : property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                    .Replace("global::", string.Empty) == fullTypeName;
-        }
+            if (!nullable)
+            {
+                return property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                           .Replace("global::", string.Empty) ==
+                       fullTypeName;
+            }
 
-        private static bool HasIntProperty(
-            INamedTypeSymbol projectionType,
-            string propertyName,
-            bool nullable = false
-        )
-        {
-            if (!TryGetProperty(projectionType, propertyName, out IPropertySymbol property))
+            if (property.Type is not INamedTypeSymbol nullableType ||
+                (nullableType.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T))
             {
                 return false;
             }
 
-            return nullable
-                ? property.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType &&
-                  nullableType.TypeArguments[0].SpecialType == SpecialType.System_Int32
-                : property.Type.SpecialType == SpecialType.System_Int32;
+            return nullableType.TypeArguments[0]
+                       .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                       .Replace("global::", string.Empty) ==
+                   fullTypeName;
         }
 
         private static bool HasStringProperty(

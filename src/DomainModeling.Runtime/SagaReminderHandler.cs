@@ -50,19 +50,17 @@ internal sealed class SagaReminderHandler<TSaga> : IAggregateReminderHandler<TSa
         ArgumentException.ThrowIfNullOrWhiteSpace(reminderName);
         ArgumentNullException.ThrowIfNull(loadStateAsync);
         ArgumentNullException.ThrowIfNull(executeCommandAsync);
-
         _ = status;
-
         if (!string.Equals(reminderName, SagaReminderNames.Recovery, StringComparison.Ordinal))
         {
             return false;
         }
 
         TSaga? state = await loadStateAsync(cancellationToken);
-        SagaRecoveryCheckpoint? checkpoint = state is null
-            || state.Phase is SagaPhase.Completed or SagaPhase.Compensated or SagaPhase.Failed
-            ? null
-            : await CheckpointAccessor.GetAsync(entityId, cancellationToken);
+        SagaRecoveryCheckpoint? checkpoint =
+            state is null || state.Phase is SagaPhase.Completed or SagaPhase.Compensated or SagaPhase.Failed
+                ? null
+                : await CheckpointAccessor.GetAsync(entityId, cancellationToken);
         SagaRecoveryPlan plan = RecoveryCoordinator.Plan(state, checkpoint, SagaResumeSource.Reminder);
         if (plan.Disposition is SagaRecoveryPlanDisposition.WorkflowMismatch)
         {
@@ -86,8 +84,7 @@ internal sealed class SagaReminderHandler<TSaga> : IAggregateReminderHandler<TSa
             return true;
         }
 
-        if (plan.Disposition is SagaRecoveryPlanDisposition.NoAction
-            or SagaRecoveryPlanDisposition.Terminal)
+        if (plan.Disposition is SagaRecoveryPlanDisposition.NoAction or SagaRecoveryPlanDisposition.Terminal)
         {
             return true;
         }

@@ -14,6 +14,33 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests;
 public sealed class SagaAbstractionsTests
 {
     /// <summary>
+    ///     Verifies saga recovery info registration adds a provider.
+    /// </summary>
+    [Fact]
+    public void AddSagaRecoveryInfoRegistersProvider()
+    {
+        ServiceCollection services = new();
+        SagaRecoveryInfo recovery = new(SagaRecoveryMode.ManualOnly, "critical-payments");
+        IServiceCollection result = services.AddSagaRecoveryInfo<TestSagaState>(recovery);
+        Assert.Same(services, result);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISagaRecoveryInfoProvider<TestSagaState> resolved =
+            provider.GetRequiredService<ISagaRecoveryInfoProvider<TestSagaState>>();
+        Assert.Same(recovery, resolved.Recovery);
+    }
+
+    /// <summary>
+    ///     Verifies saga recovery info registration rejects null services.
+    /// </summary>
+    [Fact]
+    public void AddSagaRecoveryInfoThrowsWhenServicesNull()
+    {
+        IServiceCollection? services = null;
+        SagaRecoveryInfo recovery = new(SagaRecoveryMode.Automatic, null);
+        Assert.Throws<ArgumentNullException>(() => services!.AddSagaRecoveryInfo<TestSagaState>(recovery));
+    }
+
+    /// <summary>
     ///     Verifies saga step info registration adds a provider.
     /// </summary>
     [Fact]
@@ -33,22 +60,6 @@ public sealed class SagaAbstractionsTests
     }
 
     /// <summary>
-    ///     Verifies saga recovery info registration adds a provider.
-    /// </summary>
-    [Fact]
-    public void AddSagaRecoveryInfoRegistersProvider()
-    {
-        ServiceCollection services = new();
-        SagaRecoveryInfo recovery = new(SagaRecoveryMode.ManualOnly, "critical-payments");
-        IServiceCollection result = services.AddSagaRecoveryInfo<TestSagaState>(recovery);
-        Assert.Same(services, result);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        ISagaRecoveryInfoProvider<TestSagaState> resolved =
-            provider.GetRequiredService<ISagaRecoveryInfoProvider<TestSagaState>>();
-        Assert.Same(recovery, resolved.Recovery);
-    }
-
-    /// <summary>
     ///     Verifies saga step info registration rejects null services.
     /// </summary>
     [Fact]
@@ -60,17 +71,6 @@ public sealed class SagaAbstractionsTests
             new(0, "Step", typeof(SagaStepMarker), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         Assert.Throws<ArgumentNullException>(() => services!.AddSagaStepInfo<TestSagaState>(steps));
-    }
-
-    /// <summary>
-    ///     Verifies saga recovery info registration rejects null services.
-    /// </summary>
-    [Fact]
-    public void AddSagaRecoveryInfoThrowsWhenServicesNull()
-    {
-        IServiceCollection? services = null;
-        SagaRecoveryInfo recovery = new(SagaRecoveryMode.Automatic, null);
-        Assert.Throws<ArgumentNullException>(() => services!.AddSagaRecoveryInfo<TestSagaState>(recovery));
     }
 
     /// <summary>
@@ -121,22 +121,6 @@ public sealed class SagaAbstractionsTests
     }
 
     /// <summary>
-    ///     Verifies saga step attributes capture order and saga type.
-    /// </summary>
-    [Fact]
-    public void SagaStepAttributeCapturesOrderAndSaga()
-    {
-        SagaStepAttribute<TestSagaState> attribute = new(3, SagaStepRecoveryPolicy.ManualOnly)
-        {
-            CompensationRecoveryPolicy = SagaStepRecoveryPolicy.Automatic,
-        };
-        Assert.Equal(3, attribute.Order);
-        Assert.Equal(typeof(TestSagaState), attribute.Saga);
-        Assert.Equal(SagaStepRecoveryPolicy.ManualOnly, attribute.ForwardRecoveryPolicy);
-        Assert.Equal(SagaStepRecoveryPolicy.Automatic, attribute.CompensationRecoveryPolicy);
-    }
-
-    /// <summary>
     ///     Verifies saga recovery attributes capture mode and profile.
     /// </summary>
     [Fact]
@@ -149,11 +133,34 @@ public sealed class SagaAbstractionsTests
         AttributeUsageAttribute? usage = (AttributeUsageAttribute?)Attribute.GetCustomAttribute(
             typeof(SagaRecoveryAttribute),
             typeof(AttributeUsageAttribute));
-
         Assert.Equal(SagaRecoveryMode.ManualOnly, attribute.Mode);
         Assert.Equal("critical-payments", attribute.Profile);
         Assert.NotNull(usage);
         Assert.False(usage.Inherited);
+    }
+
+    /// <summary>
+    ///     Verifies blocked-resume events store operator-visible blocked state details.
+    /// </summary>
+    [Fact]
+    public void SagaResumeBlockedStoresBlockedStateDetails()
+    {
+        DateTimeOffset blockedAt = new(2026, 4, 4, 14, 0, 0, TimeSpan.Zero);
+        SagaResumeBlocked @event = new()
+        {
+            BlockedAt = blockedAt,
+            BlockedReason = "Manual policy prevents automatic replay.",
+            Direction = SagaExecutionDirection.Compensation,
+            Source = SagaResumeSource.Reminder,
+            StepIndex = 2,
+            StepName = "Credit",
+        };
+        Assert.Equal(blockedAt, @event.BlockedAt);
+        Assert.Equal("Manual policy prevents automatic replay.", @event.BlockedReason);
+        Assert.Equal(SagaExecutionDirection.Compensation, @event.Direction);
+        Assert.Equal(SagaResumeSource.Reminder, @event.Source);
+        Assert.Equal(2, @event.StepIndex);
+        Assert.Equal("Credit", @event.StepName);
     }
 
     /// <summary>
@@ -174,7 +181,6 @@ public sealed class SagaAbstractionsTests
             SagaId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             Source = SagaResumeSource.Manual,
         };
-
         Assert.Equal(SagaResumeRequestDisposition.Blocked, response.Disposition);
         Assert.Equal("Manual approval required.", response.BlockedReason);
         Assert.Equal("Resume blocked.", response.Message);
@@ -210,7 +216,6 @@ public sealed class SagaAbstractionsTests
             SagaId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
             WorkflowHashMatches = false,
         };
-
         Assert.Equal(2, status.AutomaticAttemptCount);
         Assert.Equal("Manual policy prevents automatic replay.", status.BlockedReason);
         Assert.Equal(attemptedAt, status.LastResumeAttemptedAt);
@@ -225,6 +230,22 @@ public sealed class SagaAbstractionsTests
         Assert.Equal(SagaResumeDisposition.ManualInterventionRequired, status.ResumeDisposition);
         Assert.Equal(Guid.Parse("22222222-2222-2222-2222-222222222222"), status.SagaId);
         Assert.False(status.WorkflowHashMatches);
+    }
+
+    /// <summary>
+    ///     Verifies saga step attributes capture order and saga type.
+    /// </summary>
+    [Fact]
+    public void SagaStepAttributeCapturesOrderAndSaga()
+    {
+        SagaStepAttribute<TestSagaState> attribute = new(3, SagaStepRecoveryPolicy.ManualOnly)
+        {
+            CompensationRecoveryPolicy = SagaStepRecoveryPolicy.Automatic,
+        };
+        Assert.Equal(3, attribute.Order);
+        Assert.Equal(typeof(TestSagaState), attribute.Saga);
+        Assert.Equal(SagaStepRecoveryPolicy.ManualOnly, attribute.ForwardRecoveryPolicy);
+        Assert.Equal(SagaStepRecoveryPolicy.Automatic, attribute.CompensationRecoveryPolicy);
     }
 
     /// <summary>
@@ -245,93 +266,6 @@ public sealed class SagaAbstractionsTests
         Assert.Equal("operation-key", @event.OperationKey);
         Assert.Equal(1, @event.StepIndex);
         Assert.Equal("Debit", @event.StepName);
-    }
-
-    /// <summary>
-    ///     Verifies step failed event stores error details.
-    /// </summary>
-    [Fact]
-    public void SagaStepFailedStoresErrorDetails()
-    {
-        Guid attemptId = Guid.NewGuid();
-        SagaStepFailed @event = new()
-        {
-            AttemptId = attemptId,
-            StepIndex = 2,
-            StepName = "Credit",
-            ErrorCode = "ERR",
-            ErrorMessage = "Bad",
-            OperationKey = "operation-key",
-        };
-        Assert.Equal(attemptId, @event.AttemptId);
-        Assert.Equal(2, @event.StepIndex);
-        Assert.Equal("Credit", @event.StepName);
-        Assert.Equal("ERR", @event.ErrorCode);
-        Assert.Equal("Bad", @event.ErrorMessage);
-        Assert.Equal("operation-key", @event.OperationKey);
-    }
-
-    /// <summary>
-    ///     Verifies step execution-started event stores attempt metadata.
-    /// </summary>
-    [Fact]
-    public void SagaStepExecutionStartedStoresAttemptMetadata()
-    {
-        Guid attemptId = Guid.NewGuid();
-        DateTimeOffset startedAt = new(2026, 4, 4, 13, 0, 0, TimeSpan.Zero);
-        SagaStepExecutionStarted @event = new()
-        {
-            AttemptId = attemptId,
-            Direction = SagaExecutionDirection.Forward,
-            OperationKey = "operation-key",
-            Source = SagaResumeSource.Initial,
-            StartedAt = startedAt,
-            StepIndex = 3,
-            StepName = "Debit",
-        };
-        Assert.Equal(attemptId, @event.AttemptId);
-        Assert.Equal(SagaExecutionDirection.Forward, @event.Direction);
-        Assert.Equal("operation-key", @event.OperationKey);
-        Assert.Equal(SagaResumeSource.Initial, @event.Source);
-        Assert.Equal(startedAt, @event.StartedAt);
-        Assert.Equal(3, @event.StepIndex);
-        Assert.Equal("Debit", @event.StepName);
-    }
-
-    /// <summary>
-    ///     Verifies blocked-resume events store operator-visible blocked state details.
-    /// </summary>
-    [Fact]
-    public void SagaResumeBlockedStoresBlockedStateDetails()
-    {
-        DateTimeOffset blockedAt = new(2026, 4, 4, 14, 0, 0, TimeSpan.Zero);
-        SagaResumeBlocked @event = new()
-        {
-            BlockedAt = blockedAt,
-            BlockedReason = "Manual policy prevents automatic replay.",
-            Direction = SagaExecutionDirection.Compensation,
-            Source = SagaResumeSource.Reminder,
-            StepIndex = 2,
-            StepName = "Credit",
-        };
-
-        Assert.Equal(blockedAt, @event.BlockedAt);
-        Assert.Equal("Manual policy prevents automatic replay.", @event.BlockedReason);
-        Assert.Equal(SagaExecutionDirection.Compensation, @event.Direction);
-        Assert.Equal(SagaResumeSource.Reminder, @event.Source);
-        Assert.Equal(2, @event.StepIndex);
-        Assert.Equal("Credit", @event.StepName);
-    }
-
-    /// <summary>
-    ///     Verifies the default AppliesTo implementation returns true.
-    /// </summary>
-    [Fact]
-    public void SagaStepInfoProviderDefaultsToAppliesToTrue()
-    {
-        DefaultStepInfoProvider provider = new();
-        bool appliesTo = ((ISagaStepInfoProvider<TestSagaState>)provider).AppliesTo(new());
-        Assert.True(appliesTo);
     }
 
     /// <summary>
@@ -367,19 +301,80 @@ public sealed class SagaAbstractionsTests
     }
 
     /// <summary>
+    ///     Verifies step execution-started event stores attempt metadata.
+    /// </summary>
+    [Fact]
+    public void SagaStepExecutionStartedStoresAttemptMetadata()
+    {
+        Guid attemptId = Guid.NewGuid();
+        DateTimeOffset startedAt = new(2026, 4, 4, 13, 0, 0, TimeSpan.Zero);
+        SagaStepExecutionStarted @event = new()
+        {
+            AttemptId = attemptId,
+            Direction = SagaExecutionDirection.Forward,
+            OperationKey = "operation-key",
+            Source = SagaResumeSource.Initial,
+            StartedAt = startedAt,
+            StepIndex = 3,
+            StepName = "Debit",
+        };
+        Assert.Equal(attemptId, @event.AttemptId);
+        Assert.Equal(SagaExecutionDirection.Forward, @event.Direction);
+        Assert.Equal("operation-key", @event.OperationKey);
+        Assert.Equal(SagaResumeSource.Initial, @event.Source);
+        Assert.Equal(startedAt, @event.StartedAt);
+        Assert.Equal(3, @event.StepIndex);
+        Assert.Equal("Debit", @event.StepName);
+    }
+
+    /// <summary>
+    ///     Verifies step failed event stores error details.
+    /// </summary>
+    [Fact]
+    public void SagaStepFailedStoresErrorDetails()
+    {
+        Guid attemptId = Guid.NewGuid();
+        SagaStepFailed @event = new()
+        {
+            AttemptId = attemptId,
+            StepIndex = 2,
+            StepName = "Credit",
+            ErrorCode = "ERR",
+            ErrorMessage = "Bad",
+            OperationKey = "operation-key",
+        };
+        Assert.Equal(attemptId, @event.AttemptId);
+        Assert.Equal(2, @event.StepIndex);
+        Assert.Equal("Credit", @event.StepName);
+        Assert.Equal("ERR", @event.ErrorCode);
+        Assert.Equal("Bad", @event.ErrorMessage);
+        Assert.Equal("operation-key", @event.OperationKey);
+    }
+
+    /// <summary>
+    ///     Verifies the default AppliesTo implementation returns true.
+    /// </summary>
+    [Fact]
+    public void SagaStepInfoProviderDefaultsToAppliesToTrue()
+    {
+        DefaultStepInfoProvider provider = new();
+        bool appliesTo = ((ISagaStepInfoProvider<TestSagaState>)provider).AppliesTo(new());
+        Assert.True(appliesTo);
+    }
+
+    /// <summary>
     ///     Verifies saga step info rejects missing compensation recovery policy when compensation is enabled.
     /// </summary>
     [Fact]
     public void SagaStepInfoThrowsWhenCompensationPolicyMissingForCompensatableStep()
     {
-        ArgumentException exception = Assert.Throws<ArgumentException>(() =>
-            new SagaStepInfo(
-                0,
-                "Debit",
-                typeof(SagaStepMarker),
-                true,
-                SagaStepRecoveryPolicy.Automatic,
-                null));
+        ArgumentException exception = Assert.Throws<ArgumentException>(() => new SagaStepInfo(
+            0,
+            "Debit",
+            typeof(SagaStepMarker),
+            true,
+            SagaStepRecoveryPolicy.Automatic,
+            null));
         Assert.Equal("compensationRecoveryPolicy", exception.ParamName);
     }
 
@@ -389,14 +384,13 @@ public sealed class SagaAbstractionsTests
     [Fact]
     public void SagaStepInfoThrowsWhenCompensationPolicyProvidedForNonCompensatableStep()
     {
-        ArgumentException exception = Assert.Throws<ArgumentException>(() =>
-            new SagaStepInfo(
-                0,
-                "Debit",
-                typeof(SagaStepMarker),
-                false,
-                SagaStepRecoveryPolicy.Automatic,
-                SagaStepRecoveryPolicy.ManualOnly));
+        ArgumentException exception = Assert.Throws<ArgumentException>(() => new SagaStepInfo(
+            0,
+            "Debit",
+            typeof(SagaStepMarker),
+            false,
+            SagaStepRecoveryPolicy.Automatic,
+            SagaStepRecoveryPolicy.ManualOnly));
         Assert.Equal("compensationRecoveryPolicy", exception.ParamName);
     }
 

@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 
+using Microsoft.Extensions.Options;
+
 using Mississippi.DomainModeling.Abstractions;
 
 
@@ -18,18 +20,25 @@ internal sealed class SagaRecoveryPlanner<TSaga>
     /// </summary>
     /// <param name="stepInfoProvider">The ordered saga step metadata provider.</param>
     /// <param name="recoveryInfoProvider">The saga-level recovery metadata provider.</param>
+    /// <param name="recoveryOptions">The runtime recovery overrides that gate reminder-driven resumes.</param>
     public SagaRecoveryPlanner(
         ISagaStepInfoProvider<TSaga> stepInfoProvider,
-        ISagaRecoveryInfoProvider<TSaga> recoveryInfoProvider
+        ISagaRecoveryInfoProvider<TSaga> recoveryInfoProvider,
+        IOptions<SagaRecoveryOptions> recoveryOptions
     )
     {
         ArgumentNullException.ThrowIfNull(stepInfoProvider);
         ArgumentNullException.ThrowIfNull(recoveryInfoProvider);
+        ArgumentNullException.ThrowIfNull(recoveryOptions);
+        ArgumentNullException.ThrowIfNull(recoveryOptions.Value);
         StepInfoProvider = stepInfoProvider;
         RecoveryInfoProvider = recoveryInfoProvider;
+        RecoveryOptions = recoveryOptions.Value;
     }
 
     private ISagaRecoveryInfoProvider<TSaga> RecoveryInfoProvider { get; }
+
+    private SagaRecoveryOptions RecoveryOptions { get; }
 
     private ISagaStepInfoProvider<TSaga> StepInfoProvider { get; }
 
@@ -64,6 +73,14 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             };
         }
 
+        if (source is SagaResumeSource.Reminder && (!RecoveryOptions.Enabled || RecoveryOptions.ForceManualOnly))
+        {
+            return new()
+            {
+                Disposition = SagaRecoveryPlanDisposition.NoAction,
+            };
+        }
+
         if (checkpoint.PendingDirection is null)
         {
             return new()
@@ -83,7 +100,6 @@ internal sealed class SagaRecoveryPlanner<TSaga>
         }
 
         int pendingStepIndex = checkpoint.PendingStepIndex.Value;
-
         string expectedHash = SagaStepHash.Compute(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps);
         string? actualHash = string.IsNullOrWhiteSpace(checkpoint.StepHash) ? state.StepHash : checkpoint.StepHash;
         if (string.IsNullOrWhiteSpace(actualHash) || !string.Equals(actualHash, expectedHash, StringComparison.Ordinal))
@@ -96,8 +112,8 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             };
         }
 
-        if (checkpoint.PendingDirection is SagaExecutionDirection.Forward
-            && pendingStepIndex >= StepInfoProvider.Steps.Count)
+        if (checkpoint.PendingDirection is SagaExecutionDirection.Forward &&
+            (pendingStepIndex >= StepInfoProvider.Steps.Count))
         {
             return new()
             {
@@ -106,8 +122,7 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             };
         }
 
-        if (checkpoint.PendingDirection is SagaExecutionDirection.Compensation
-            && pendingStepIndex < 0)
+        if (checkpoint.PendingDirection is SagaExecutionDirection.Compensation && (pendingStepIndex < 0))
         {
             return new()
             {
@@ -127,7 +142,8 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             };
         }
 
-        if (checkpoint.PendingDirection is SagaExecutionDirection.Compensation && step.CompensationRecoveryPolicy is null)
+        if (checkpoint.PendingDirection is SagaExecutionDirection.Compensation &&
+            step.CompensationRecoveryPolicy is null)
         {
             return new()
             {

@@ -18,14 +18,10 @@ internal sealed class SagaRecoveryCheckpointStepFailedReducer : EventReducerBase
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-
-        Guid? inFlightAttemptId = eventData.AttemptId == Guid.Empty
-            ? null
-            : eventData.AttemptId;
+        Guid? inFlightAttemptId = eventData.AttemptId == Guid.Empty ? null : eventData.AttemptId;
         string? inFlightOperationKey = string.IsNullOrWhiteSpace(eventData.OperationKey)
             ? null
             : eventData.OperationKey;
-
         return state with
         {
             PendingDirection = SagaExecutionDirection.Forward,

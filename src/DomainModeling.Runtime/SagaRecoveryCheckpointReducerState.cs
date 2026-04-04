@@ -1,6 +1,3 @@
-using Mississippi.DomainModeling.Abstractions;
-
-
 namespace Mississippi.DomainModeling.Runtime;
 
 /// <summary>

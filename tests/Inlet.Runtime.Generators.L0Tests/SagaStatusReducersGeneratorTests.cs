@@ -189,45 +189,6 @@ public sealed class SagaStatusReducersGeneratorTests
     }
 
     /// <summary>
-    ///     Generated reducers should include saga status reducers with expected assignments.
-    /// </summary>
-    [Fact]
-    public void GeneratedReducersIncludeSagaPhaseAssignments()
-    {
-        const string projectionSource = """
-                                        using Mississippi.Inlet.Generators.Abstractions;
-                                        using Mississippi.DomainModeling.Abstractions;
-
-                                        namespace TestApp.Domain.Projections.SagaStatus
-                                        {
-                                            [GenerateSagaStatusReducers]
-                                            public sealed record SagaStatusProjection
-                                            {
-                                                public SagaPhase Phase { get; init; }
-                                                public int LastCompletedStepIndex { get; init; }
-                                                public string? ErrorCode { get; init; }
-                                                public string? ErrorMessage { get; init; }
-                                                public DateTimeOffset? StartedAt { get; init; }
-                                                public DateTimeOffset? CompletedAt { get; init; }
-                                            }
-                                        }
-                                        """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
-            RunGenerator(AttributeAndBaseStubs, projectionSource);
-        string? reducersSource = runResult.GeneratedTrees.FirstOrDefault(t =>
-                t.FilePath.Contains("SagaStatusReducers", StringComparison.Ordinal))
-            ?.GetText()
-            .ToString();
-        Assert.NotNull(reducersSource);
-        Assert.Contains("class SagaStartedStatusReducer", reducersSource, StringComparison.Ordinal);
-        Assert.Contains("Phase = SagaPhase.Running", reducersSource, StringComparison.Ordinal);
-        Assert.Contains("class SagaFailedStatusReducer", reducersSource, StringComparison.Ordinal);
-        Assert.Contains("Phase = SagaPhase.Failed", reducersSource, StringComparison.Ordinal);
-        Assert.Contains("class SagaCompletedStatusReducer", reducersSource, StringComparison.Ordinal);
-        Assert.Contains("Phase = SagaPhase.Completed", reducersSource, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Generated reducers should include recovery-metadata reducers when the projection defines matching fields.
     /// </summary>
     [Fact]
@@ -270,10 +231,55 @@ public sealed class SagaStatusReducersGeneratorTests
         Assert.NotNull(reducersSource);
         Assert.Contains("RecoveryMode = eventData.RecoveryMode", reducersSource, StringComparison.Ordinal);
         Assert.Contains("PendingDirection = SagaExecutionDirection.Forward", reducersSource, StringComparison.Ordinal);
-        Assert.Contains("ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired", reducersSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired",
+            reducersSource,
+            StringComparison.Ordinal);
         Assert.Contains("class SagaStepExecutionStartedStatusReducer", reducersSource, StringComparison.Ordinal);
         Assert.Contains("class SagaResumeBlockedStatusReducer", reducersSource, StringComparison.Ordinal);
         Assert.Contains("class SagaStepCompensatedStatusReducer", reducersSource, StringComparison.Ordinal);
-        Assert.Contains("AutomaticAttemptCount = eventData.Source is SagaResumeSource.Reminder", reducersSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "AutomaticAttemptCount = eventData.Source is SagaResumeSource.Reminder",
+            reducersSource,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Generated reducers should include saga status reducers with expected assignments.
+    /// </summary>
+    [Fact]
+    public void GeneratedReducersIncludeSagaPhaseAssignments()
+    {
+        const string projectionSource = """
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.DomainModeling.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.SagaStatus
+                                        {
+                                            [GenerateSagaStatusReducers]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public SagaPhase Phase { get; init; }
+                                                public int LastCompletedStepIndex { get; init; }
+                                                public string? ErrorCode { get; init; }
+                                                public string? ErrorMessage { get; init; }
+                                                public DateTimeOffset? StartedAt { get; init; }
+                                                public DateTimeOffset? CompletedAt { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, projectionSource);
+        string? reducersSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("SagaStatusReducers", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(reducersSource);
+        Assert.Contains("class SagaStartedStatusReducer", reducersSource, StringComparison.Ordinal);
+        Assert.Contains("Phase = SagaPhase.Running", reducersSource, StringComparison.Ordinal);
+        Assert.Contains("class SagaFailedStatusReducer", reducersSource, StringComparison.Ordinal);
+        Assert.Contains("Phase = SagaPhase.Failed", reducersSource, StringComparison.Ordinal);
+        Assert.Contains("class SagaCompletedStatusReducer", reducersSource, StringComparison.Ordinal);
+        Assert.Contains("Phase = SagaPhase.Completed", reducersSource, StringComparison.Ordinal);
     }
 }

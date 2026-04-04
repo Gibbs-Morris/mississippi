@@ -1,6 +1,3 @@
-using System;
-
-
 namespace Mississippi.DomainModeling.Abstractions;
 
 /// <summary>
@@ -19,9 +16,7 @@ public sealed record SagaRecoveryInfo
     )
     {
         Mode = mode;
-        Profile = string.IsNullOrWhiteSpace(profile)
-            ? null
-            : profile;
+        Profile = string.IsNullOrWhiteSpace(profile) ? null : profile;
     }
 
     /// <summary>

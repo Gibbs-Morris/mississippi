@@ -139,6 +139,41 @@ public sealed class SagaClientGeneratorsTests
     }
 
     /// <summary>
+    ///     Verifies the resume action effect posts to the resume endpoint and parses typed responses.
+    /// </summary>
+    [Fact]
+    public void ActionEffectsGeneratorProducesResumeSagaActionEffect()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) = RunGenerator(
+            new SagaClientActionEffectsGenerator(),
+            AttributeStubs,
+            sagaSource);
+        string generatedCode = runResult.GeneratedTrees
+            .Single(tree => tree.FilePath.Contains("ResumeTransferSagaActionEffect.g.cs", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains("ReadFromJsonAsync<SagaResumeResponse>", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("/api/sagas/transfer/{action.SagaId}/resume", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies explicit route prefixes are used for action effects.
     /// </summary>
     [Fact]
@@ -571,40 +606,5 @@ public sealed class SagaClientGeneratorsTests
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("FeatureKey => \"customKey\"", generatedCode, StringComparison.Ordinal);
         Assert.Contains("SagaResumeResponse? LastResumeResponse", generatedCode, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    ///     Verifies the resume action effect posts to the resume endpoint and parses typed responses.
-    /// </summary>
-    [Fact]
-    public void ActionEffectsGeneratorProducesResumeSagaActionEffect()
-    {
-        const string sagaSource = """
-                                  using Mississippi.DomainModeling.Abstractions;
-                                  using Mississippi.Inlet.Generators.Abstractions;
-
-                                  namespace TestApp.Domain.Sagas
-                                  {
-                                      public sealed record TransferInput
-                                      {
-                                          public string AccountId { get; init; }
-                                      }
-
-                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
-                                      public sealed record TransferSagaState : ISagaState
-                                      {
-                                      }
-                                  }
-                                  """;
-        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) = RunGenerator(
-            new SagaClientActionEffectsGenerator(),
-            AttributeStubs,
-            sagaSource);
-        string generatedCode = runResult.GeneratedTrees.Single(
-            tree => tree.FilePath.Contains("ResumeTransferSagaActionEffect.g.cs", StringComparison.Ordinal))
-            .GetText()
-            .ToString();
-        Assert.Contains("ReadFromJsonAsync<SagaResumeResponse>", generatedCode, StringComparison.Ordinal);
-        Assert.Contains("/api/sagas/transfer/{action.SagaId}/resume", generatedCode, StringComparison.Ordinal);
     }
 }

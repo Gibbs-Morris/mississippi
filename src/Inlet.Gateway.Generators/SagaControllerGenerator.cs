@@ -108,7 +108,8 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.AppendSummary($"Initializes a new instance of the <see cref=\"{saga.ControllerTypeName}\" /> class.");
         sb.AppendLine("/// <param name=\"aggregateGrainFactory\">Factory for resolving saga grains.</param>");
-        sb.AppendLine("/// <param name=\"sagaRecoveryService\">Service for runtime-status and manual-resume saga operations.</param>");
+        sb.AppendLine(
+            "/// <param name=\"sagaRecoveryService\">Service for runtime-status and manual-resume saga operations.</param>");
         sb.AppendLine("/// <param name=\"logger\">The logger for diagnostic output.</param>");
         sb.AppendLine($"public {saga.ControllerTypeName}(");
         sb.IncreaseIndent();
@@ -163,7 +164,8 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-        sb.AppendLine($"{saga.SagaStateTypeName}? state = await SagaRecoveryService.GetStateAsync(sagaId.ToString(), cancellationToken);");
+        sb.AppendLine(
+            $"{saga.SagaStateTypeName}? state = await SagaRecoveryService.GetStateAsync(sagaId.ToString(), cancellationToken);");
         sb.AppendLine("if (state is null)");
         sb.OpenBrace();
         sb.AppendLine("return NotFound();");
@@ -186,7 +188,8 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-        sb.AppendLine("SagaRuntimeStatus? status = await SagaRecoveryService.GetRuntimeStatusAsync(sagaId.ToString(), cancellationToken);");
+        sb.AppendLine(
+            "SagaRuntimeStatus? status = await SagaRecoveryService.GetRuntimeStatusAsync(sagaId.ToString(), cancellationToken);");
         sb.AppendLine("if (status is null)");
         sb.OpenBrace();
         sb.AppendLine("return NotFound();");
@@ -209,7 +212,8 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-        sb.AppendLine("SagaResumeResponse? response = await SagaRecoveryService.ResumeAsync(sagaId.ToString(), cancellationToken);");
+        sb.AppendLine(
+            "SagaResumeResponse? response = await SagaRecoveryService.ResumeAsync(sagaId.ToString(), cancellationToken);");
         sb.AppendLine("if (response is null)");
         sb.OpenBrace();
         sb.AppendLine("return NotFound();");

@@ -59,14 +59,14 @@ public sealed record SagaRuntimeStatus
     public required SagaRecoveryMode RecoveryMode { get; init; }
 
     /// <summary>
-    ///     Gets the currently visible runtime recovery disposition.
-    /// </summary>
-    public required SagaResumeDisposition ResumeDisposition { get; init; }
-
-    /// <summary>
     ///     Gets a value indicating whether a reminder is currently armed for this saga.
     /// </summary>
     public bool ReminderArmed { get; init; }
+
+    /// <summary>
+    ///     Gets the currently visible runtime recovery disposition.
+    /// </summary>
+    public required SagaResumeDisposition ResumeDisposition { get; init; }
 
     /// <summary>
     ///     Gets the saga identifier.

@@ -6,6 +6,7 @@ using Moq;
 
 using Orleans;
 using Orleans.Runtime;
+using Orleans.Timers;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
@@ -42,22 +43,21 @@ public sealed class GrainReminderManagerTests
     [Fact]
     public async Task GetReminderAsyncReturnsMatchingReminder()
     {
-        Mock<Orleans.Timers.IReminderRegistry> reminderRegistryMock = new();
+        Mock<IReminderRegistry> reminderRegistryMock = new();
         Mock<IGrainReminder> expectedReminderMock = new();
         expectedReminderMock.SetupGet(reminder => reminder.ReminderName).Returns(SagaReminderNames.Recovery);
         Mock<IGrainReminder> otherReminderMock = new();
         otherReminderMock.SetupGet(reminder => reminder.ReminderName).Returns("other-reminder");
         Mock<IGrainBase> grainMock = CreateGrain();
         reminderRegistryMock.Setup(registry => registry.GetReminders(It.IsAny<GrainId>()))
-            .ReturnsAsync(new List<IGrainReminder>
-            {
-                otherReminderMock.Object,
-                expectedReminderMock.Object,
-            });
+            .ReturnsAsync(
+                new List<IGrainReminder>
+                {
+                    otherReminderMock.Object,
+                    expectedReminderMock.Object,
+                });
         GrainReminderManager manager = new(reminderRegistryMock.Object);
-
         IGrainReminder? reminder = await manager.GetReminderAsync(grainMock.Object, SagaReminderNames.Recovery);
-
         Assert.Same(expectedReminderMock.Object, reminder);
     }
 
@@ -68,14 +68,12 @@ public sealed class GrainReminderManagerTests
     [Fact]
     public async Task GetReminderAsyncReturnsNullWhenReminderMissing()
     {
-        Mock<Orleans.Timers.IReminderRegistry> reminderRegistryMock = new();
+        Mock<IReminderRegistry> reminderRegistryMock = new();
         Mock<IGrainBase> grainMock = CreateGrain();
         reminderRegistryMock.Setup(registry => registry.GetReminders(It.IsAny<GrainId>()))
             .ReturnsAsync(new List<IGrainReminder>());
         GrainReminderManager manager = new(reminderRegistryMock.Object);
-
         IGrainReminder? reminder = await manager.GetReminderAsync(grainMock.Object, SagaReminderNames.Recovery);
-
         Assert.Null(reminder);
     }
 
@@ -86,14 +84,12 @@ public sealed class GrainReminderManagerTests
     [Fact]
     public async Task RegisterOrUpdateReminderAsyncDelegatesToReminderRegistry()
     {
-        Mock<Orleans.Timers.IReminderRegistry> reminderRegistryMock = new();
+        Mock<IReminderRegistry> reminderRegistryMock = new();
         Mock<IGrainBase> grainMock = CreateGrain();
         GrainReminderManager manager = new(reminderRegistryMock.Object);
         TimeSpan dueTime = TimeSpan.FromSeconds(10);
         TimeSpan period = TimeSpan.FromMinutes(2);
-
         await manager.RegisterOrUpdateReminderAsync(grainMock.Object, SagaReminderNames.Recovery, dueTime, period);
-
         reminderRegistryMock.Verify(
             registry => registry.RegisterOrUpdateReminder(
                 grainMock.Object.GrainContext.GrainId,
@@ -110,13 +106,11 @@ public sealed class GrainReminderManagerTests
     [Fact]
     public async Task UnregisterReminderAsyncDelegatesToReminderRegistry()
     {
-        Mock<Orleans.Timers.IReminderRegistry> reminderRegistryMock = new();
+        Mock<IReminderRegistry> reminderRegistryMock = new();
         Mock<IGrainBase> grainMock = CreateGrain();
         Mock<IGrainReminder> reminderMock = new();
         GrainReminderManager manager = new(reminderRegistryMock.Object);
-
         await manager.UnregisterReminderAsync(grainMock.Object, reminderMock.Object);
-
         reminderRegistryMock.Verify(
             registry => registry.UnregisterReminder(grainMock.Object.GrainContext.GrainId, reminderMock.Object),
             Times.Once);

@@ -15,10 +15,8 @@ public sealed class SagaRecoveryAttribute : Attribute
     /// <param name="mode">The saga recovery mode.</param>
     public SagaRecoveryAttribute(
         SagaRecoveryMode mode = SagaRecoveryMode.Automatic
-    )
-    {
+    ) =>
         Mode = mode;
-    }
 
     /// <summary>
     ///     Gets the configured saga recovery mode.

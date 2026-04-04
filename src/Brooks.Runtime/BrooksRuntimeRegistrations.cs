@@ -1,6 +1,7 @@
 using System;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Brooks.Abstractions.Factory;
@@ -100,14 +101,16 @@ public static class BrooksRuntimeRegistrations
         this IServiceCollection services
     )
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         // Register the grain factory for accessing Orleans grains
         // Register as singleton and expose both public (abstractions) and internal interfaces
-        services.AddSingleton<BrookGrainFactory>();
-        services.AddSingleton<IBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
-        services.AddSingleton<IInternalBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
+        services.TryAddSingleton<BrookGrainFactory>();
+        services.TryAddSingleton<IBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
+        services.TryAddSingleton<IInternalBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
 
         // Register the stream ID factory for Orleans streams
-        services.AddSingleton<IStreamIdFactory, StreamIdFactory>();
+        services.TryAddSingleton<IStreamIdFactory, StreamIdFactory>();
 
         // Register options for brook reader and provider
         services.AddOptions<BrookReaderOptions>();

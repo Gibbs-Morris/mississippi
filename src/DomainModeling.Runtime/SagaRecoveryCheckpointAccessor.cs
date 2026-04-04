@@ -23,24 +23,18 @@ internal sealed class SagaRecoveryCheckpointAccessor<TSaga>
     /// </summary>
     /// <param name="brookGrainFactory">Factory for resolving brook cursor grains.</param>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot cache grains.</param>
-    /// <param name="checkpointReducer">Root reducer used to scope checkpoint snapshot compatibility.</param>
     public SagaRecoveryCheckpointAccessor(
         IBrookGrainFactory brookGrainFactory,
-        ISnapshotGrainFactory snapshotGrainFactory,
-        IRootReducer<SagaRecoveryCheckpoint> checkpointReducer
+        ISnapshotGrainFactory snapshotGrainFactory
     )
     {
         ArgumentNullException.ThrowIfNull(brookGrainFactory);
         ArgumentNullException.ThrowIfNull(snapshotGrainFactory);
-        ArgumentNullException.ThrowIfNull(checkpointReducer);
         BrookGrainFactory = brookGrainFactory;
         SnapshotGrainFactory = snapshotGrainFactory;
-        CheckpointReducer = checkpointReducer;
     }
 
     private IBrookGrainFactory BrookGrainFactory { get; }
-
-    private IRootReducer<SagaRecoveryCheckpoint> CheckpointReducer { get; }
 
     private ISnapshotGrainFactory SnapshotGrainFactory { get; }
 
@@ -67,7 +61,7 @@ internal sealed class SagaRecoveryCheckpointAccessor<TSaga>
             brookKey.BrookName,
             SnapshotStorageNameHelper.GetStorageName<SagaRecoveryCheckpoint>(),
             brookKey.EntityId,
-            CheckpointReducer.GetReducerHash());
+            SagaRecoveryCheckpointMetadata.CheckpointReducerHash);
         SnapshotKey snapshotKey = new(streamKey, currentPosition.Value);
         return await SnapshotGrainFactory.GetSnapshotCacheGrain<SagaRecoveryCheckpoint>(snapshotKey)
             .GetStateAsync(cancellationToken);

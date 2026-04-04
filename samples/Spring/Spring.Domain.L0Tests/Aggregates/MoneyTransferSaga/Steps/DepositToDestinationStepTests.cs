@@ -18,18 +18,19 @@ namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.MoneyTransferSaga.
 /// </summary>
 public sealed class DepositToDestinationStepTests
 {
-    private static SagaStepExecutionContext CreateContext() => new()
-    {
-        AttemptId = Guid.NewGuid(),
-        AttemptStartedAt = new DateTimeOffset(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
-        Direction = SagaExecutionDirection.Forward,
-        IsReplay = false,
-        OperationKey = "deposit-step-op",
-        SagaId = Guid.NewGuid(),
-        Source = SagaResumeSource.Manual,
-        StepIndex = 1,
-        StepName = nameof(DepositToDestinationStep),
-    };
+    private static SagaStepExecutionContext CreateContext() =>
+        new()
+        {
+            AttemptId = Guid.NewGuid(),
+            AttemptStartedAt = new(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
+            Direction = SagaExecutionDirection.Forward,
+            IsReplay = false,
+            OperationKey = "deposit-step-op",
+            SagaId = Guid.NewGuid(),
+            Source = SagaResumeSource.Manual,
+            StepIndex = 1,
+            StepName = nameof(DepositToDestinationStep),
+        };
 
     /// <summary>
     ///     Verifies a successful deposit returns a succeeded step result.

@@ -195,7 +195,8 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.CloseBrace();
         sb.AppendLine("else");
         sb.OpenBrace();
-        sb.AppendLine("response = await httpResponse.Content.ReadFromJsonAsync<SagaResumeResponse>(cancellationToken);");
+        sb.AppendLine(
+            "response = await httpResponse.Content.ReadFromJsonAsync<SagaResumeResponse>(cancellationToken);");
         sb.CloseBrace();
         sb.CloseBrace();
         sb.AppendLine("catch (HttpRequestException ex)");
