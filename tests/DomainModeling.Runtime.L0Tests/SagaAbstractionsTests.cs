@@ -33,6 +33,22 @@ public sealed class SagaAbstractionsTests
     }
 
     /// <summary>
+    ///     Verifies saga recovery info registration adds a provider.
+    /// </summary>
+    [Fact]
+    public void AddSagaRecoveryInfoRegistersProvider()
+    {
+        ServiceCollection services = new();
+        SagaRecoveryInfo recovery = new(SagaRecoveryMode.ManualOnly, "critical-payments");
+        IServiceCollection result = services.AddSagaRecoveryInfo<TestSagaState>(recovery);
+        Assert.Same(services, result);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        ISagaRecoveryInfoProvider<TestSagaState> resolved =
+            provider.GetRequiredService<ISagaRecoveryInfoProvider<TestSagaState>>();
+        Assert.Same(recovery, resolved.Recovery);
+    }
+
+    /// <summary>
     ///     Verifies saga step info registration rejects null services.
     /// </summary>
     [Fact]
@@ -44,6 +60,17 @@ public sealed class SagaAbstractionsTests
             new(0, "Step", typeof(SagaStepMarker), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         Assert.Throws<ArgumentNullException>(() => services!.AddSagaStepInfo<TestSagaState>(steps));
+    }
+
+    /// <summary>
+    ///     Verifies saga recovery info registration rejects null services.
+    /// </summary>
+    [Fact]
+    public void AddSagaRecoveryInfoThrowsWhenServicesNull()
+    {
+        IServiceCollection? services = null;
+        SagaRecoveryInfo recovery = new(SagaRecoveryMode.Automatic, null);
+        Assert.Throws<ArgumentNullException>(() => services!.AddSagaRecoveryInfo<TestSagaState>(recovery));
     }
 
     /// <summary>

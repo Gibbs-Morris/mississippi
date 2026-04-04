@@ -36,11 +36,32 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                           {
                                               using System;
 
+                                              public enum SagaRecoveryMode
+                                              {
+                                                  Automatic,
+                                                  ManualOnly,
+                                              }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class SagaRecoveryAttribute : Attribute
+                                              {
+                                                  public SagaRecoveryAttribute(SagaRecoveryMode mode = SagaRecoveryMode.Automatic)
+                                                  {
+                                                      Mode = mode;
+                                                  }
+
+                                                  public SagaRecoveryMode Mode { get; }
+
+                                                  public string? Profile { get; set; }
+                                              }
+
                                               public enum SagaStepRecoveryPolicy
                                               {
                                                   Automatic,
                                                   ManualOnly,
                                               }
+
+                                              public sealed record SagaRecoveryInfo(SagaRecoveryMode Mode, string? Profile);
 
                                               [AttributeUsage(AttributeTargets.Class, Inherited = false)]
                                               public sealed class SagaStepAttribute<TSaga> : Attribute
@@ -92,6 +113,17 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                           {
                                               public static class SagaRegistrations
                                               {
+                                              }
+                                          }
+
+                                          namespace Mississippi.DomainModeling.Abstractions
+                                          {
+                                              using Microsoft.Extensions.DependencyInjection;
+
+                                              public static class SagaRecoveryInfoRegistrations
+                                              {
+                                                  public static IServiceCollection AddSagaRecoveryInfo<TSaga>(this IServiceCollection services, SagaRecoveryInfo recovery)
+                                                      where TSaga : class, ISagaState => services;
                                               }
                                           }
 
@@ -198,6 +230,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                           public string AccountId { get; init; }
                                       }
 
+                                      [SagaRecovery(SagaRecoveryMode.ManualOnly, Profile = "critical-payments")]
                                       [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
                                       public sealed record TransferSagaState : ISagaState
                                       {
@@ -242,6 +275,10 @@ public sealed class SagaSiloRegistrationGeneratorTests
             StringComparison.Ordinal);
         Assert.Contains(
             "AddSagaStepInfo<global::TestApp.Domain.Sagas.TransferSagaState>",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "AddSagaRecoveryInfo<global::TestApp.Domain.Sagas.TransferSagaState>(new(global::Mississippi.DomainModeling.Abstractions.SagaRecoveryMode.ManualOnly, \"critical-payments\"));",
             generatedCode,
             StringComparison.Ordinal);
         Assert.Contains("typeof(global::TestApp.Domain.Sagas.CreditStep)", generatedCode, StringComparison.Ordinal);

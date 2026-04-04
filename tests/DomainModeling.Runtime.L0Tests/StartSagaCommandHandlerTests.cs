@@ -18,17 +18,19 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests;
 public sealed class StartSagaCommandHandlerTests
 {
     private static string ComputeExpectedStepHash(
+        SagaRecoveryInfo recovery,
         IReadOnlyList<SagaStepInfo> steps
     )
     {
         StringBuilder builder = new();
+        builder.Append("Recovery=")
+            .Append(recovery.Mode)
+            .Append(':')
+            .Append(recovery.Profile ?? "NONE");
         for (int i = 0; i < steps.Count; i++)
         {
             SagaStepInfo step = steps[i];
-            if (i > 0)
-            {
-                builder.Append('|');
-            }
+            builder.Append('|');
 
             string stepTypeName = step.StepType.FullName ?? step.StepType.Name;
             builder.Append(step.StepIndex)
@@ -47,6 +49,11 @@ public sealed class StartSagaCommandHandlerTests
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
         return Convert.ToHexString(bytes);
     }
+
+    private static SagaRecoveryInfoProvider<TestSagaState> CreateRecoveryInfoProvider(
+        SagaRecoveryInfo? recovery = null
+    ) =>
+        new(recovery ?? new SagaRecoveryInfo(SagaRecoveryMode.Automatic, null));
 
     private sealed class CreditStep : ISagaStep<TestSagaState>
     {
@@ -88,6 +95,7 @@ public sealed class StartSagaCommandHandlerTests
         FakeTimeProvider timeProvider = new();
         StartSagaCommandHandler<TestSagaState, TestInput> handler = new(
             new SagaStepInfoProvider<TestSagaState>(Array.Empty<SagaStepInfo>()),
+            CreateRecoveryInfoProvider(),
             timeProvider);
         StartSagaCommand<TestInput> command = new()
         {
@@ -118,6 +126,7 @@ public sealed class StartSagaCommandHandlerTests
         ];
         StartSagaCommandHandler<TestSagaState, TestInput> handler = new(
             new SagaStepInfoProvider<TestSagaState>(steps),
+            CreateRecoveryInfoProvider(),
             timeProvider);
         StartSagaCommand<TestInput> command = new()
         {
@@ -158,8 +167,10 @@ public sealed class StartSagaCommandHandlerTests
                 SagaStepRecoveryPolicy.ManualOnly,
                 null),
         ];
+        SagaRecoveryInfo recovery = new(SagaRecoveryMode.ManualOnly, "critical-payments");
         StartSagaCommandHandler<TestSagaState, TestInput> handler = new(
             new SagaStepInfoProvider<TestSagaState>(steps),
+            CreateRecoveryInfoProvider(recovery),
             timeProvider);
         StartSagaCommand<TestInput> command = new()
         {
@@ -175,7 +186,7 @@ public sealed class StartSagaCommandHandlerTests
         Assert.Equal(command.SagaId, started.SagaId);
         Assert.Equal(command.CorrelationId, started.CorrelationId);
         Assert.Equal(now, started.StartedAt);
-        Assert.Equal(ComputeExpectedStepHash(steps), started.StepHash);
+        Assert.Equal(ComputeExpectedStepHash(recovery, steps), started.StepHash);
         Assert.Equal(command.SagaId, inputProvided.SagaId);
         Assert.Equal(command.Input, inputProvided.Input);
     }

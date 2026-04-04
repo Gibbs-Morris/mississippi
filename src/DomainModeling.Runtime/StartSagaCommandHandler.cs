@@ -20,35 +20,44 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
     ///     Initializes a new instance of the <see cref="StartSagaCommandHandler{TSaga,TInput}" /> class.
     /// </summary>
     /// <param name="stepInfoProvider">The saga step metadata provider.</param>
+    /// <param name="recoveryInfoProvider">The saga recovery metadata provider.</param>
     /// <param name="timeProvider">The time provider.</param>
     public StartSagaCommandHandler(
         ISagaStepInfoProvider<TSaga> stepInfoProvider,
+        ISagaRecoveryInfoProvider<TSaga> recoveryInfoProvider,
         TimeProvider timeProvider
     )
     {
         ArgumentNullException.ThrowIfNull(stepInfoProvider);
+        ArgumentNullException.ThrowIfNull(recoveryInfoProvider);
         ArgumentNullException.ThrowIfNull(timeProvider);
         StepInfoProvider = stepInfoProvider;
+        RecoveryInfoProvider = recoveryInfoProvider;
         TimeProvider = timeProvider;
     }
+
+    private ISagaRecoveryInfoProvider<TSaga> RecoveryInfoProvider { get; }
 
     private ISagaStepInfoProvider<TSaga> StepInfoProvider { get; }
 
     private TimeProvider TimeProvider { get; }
 
     private static string ComputeStepHash(
+        SagaRecoveryInfo recovery,
         IReadOnlyList<SagaStepInfo> steps
     )
     {
+        ArgumentNullException.ThrowIfNull(recovery);
         ArgumentNullException.ThrowIfNull(steps);
         StringBuilder builder = new();
+        builder.Append("Recovery=")
+            .Append(recovery.Mode)
+            .Append(':')
+            .Append(recovery.Profile ?? "NONE");
         for (int i = 0; i < steps.Count; i++)
         {
             SagaStepInfo step = steps[i];
-            if (i > 0)
-            {
-                builder.Append('|');
-            }
+            builder.Append('|');
 
             string stepTypeName = step.StepType.FullName ?? step.StepType.Name;
             builder.Append(step.StepIndex)
@@ -92,7 +101,7 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
         SagaStartedEvent started = new()
         {
             SagaId = command.SagaId,
-            StepHash = ComputeStepHash(StepInfoProvider.Steps),
+            StepHash = ComputeStepHash(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps),
             StartedAt = TimeProvider.GetUtcNow(),
             CorrelationId = command.CorrelationId,
         };
