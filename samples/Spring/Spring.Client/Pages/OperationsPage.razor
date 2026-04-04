@@ -59,6 +59,7 @@
                                                                      decimal value
                                                                  ) => panelA.TransferAmount = value)"
                                           OnStartTransfer="@StartTransferA"
+                                          OnResumeTransfer="@ResumeTransferA"
                                           TransferSagaId="@panelA.TransferSagaId"
                                           TransferStatusProjection="@TransferStatusProjectionA"
                                           BalanceProjection="@BalanceProjectionA"
@@ -107,6 +108,7 @@
                                                                      decimal value
                                                                  ) => panelB.TransferAmount = value)"
                                           OnStartTransfer="@StartTransferB"
+                                          OnResumeTransfer="@ResumeTransferB"
                                           TransferSagaId="@panelB.TransferSagaId"
                                           TransferStatusProjection="@TransferStatusProjectionB"
                                           BalanceProjection="@BalanceProjectionB"

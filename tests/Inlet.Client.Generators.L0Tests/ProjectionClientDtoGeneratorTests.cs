@@ -196,6 +196,44 @@ public class ProjectionClientDtoGeneratorTests
     }
 
     /// <summary>
+    ///     Generated DTOs should include enum DTOs for nullable top-level enum properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoGeneratesNullableTopLevelEnumDto()
+    {
+        const string projectionSource = """
+                                        using System;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum SagaResumeSource
+                                            {
+                                                Initial = 0,
+                                                Reminder = 1,
+                                                Manual = 2,
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("saga-status")]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public SagaResumeSource? LastResumeSource { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string? enumDtoSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("SagaResumeSourceDto", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(enumDtoSource);
+        Assert.Contains("public enum SagaResumeSourceDto", enumDtoSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated DTO should handle collection of custom types.
     /// </summary>
     [Fact]

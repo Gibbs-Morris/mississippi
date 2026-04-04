@@ -7,11 +7,11 @@ using MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus.Reducers;
 namespace MississippiSamples.Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
 
 /// <summary>
-///     Tests for <see cref="SagaStepCompletedStatusReducer" />.
+///     Tests for <see cref="SagaStepCompensatedStatusReducer" />.
 /// </summary>
-public sealed class SagaStepCompletedStatusReducerTests
+public sealed class SagaStepCompensatedStatusReducerTests
 {
-    private readonly SagaStepCompletedStatusReducer reducer = new();
+    private readonly SagaStepCompensatedStatusReducer reducer = new();
 
     /// <summary>
     ///     Verifies null event throws.
@@ -20,39 +20,39 @@ public sealed class SagaStepCompletedStatusReducerTests
     public void ReduceWithNullEventThrows()
     {
         MoneyTransferStatusProjection initial = new();
-        reducer.ShouldThrow<ArgumentNullException, SagaStepCompleted, MoneyTransferStatusProjection>(
+        reducer.ShouldThrow<ArgumentNullException, SagaStepCompensated, MoneyTransferStatusProjection>(
             initial,
             null!,
             "eventData");
     }
 
     /// <summary>
-    ///     Verifies last completed step index updates.
+    ///     Verifies compensated steps move pending work backward through compensation.
     /// </summary>
     [Fact]
-    public void ReduceWithStepCompletedUpdatesIndex()
+    public void ReduceWithStepCompensatedMovesCompensationCursor()
     {
         MoneyTransferStatusProjection initial = new()
         {
             RecoveryMode = SagaRecoveryMode.Automatic,
-            PendingDirection = SagaExecutionDirection.Forward,
+            PendingDirection = SagaExecutionDirection.Compensation,
             PendingStepIndex = 1,
-            PendingStepName = "Withdraw",
-            BlockedReason = "Needs manual resume.",
+            PendingStepName = "Deposit",
             ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired,
+            BlockedReason = "Manual replay required.",
         };
-        SagaStepCompleted @event = new()
+        SagaStepCompensated @event = new()
         {
             AttemptId = Guid.NewGuid(),
-            OperationKey = "op-1",
+            OperationKey = "comp-op-1",
             StepIndex = 1,
             StepName = "Deposit",
-            CompletedAt = new(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
         };
+
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.LastCompletedStepIndex.Should().Be(1);
-        result.PendingDirection.Should().Be(SagaExecutionDirection.Forward);
-        result.PendingStepIndex.Should().Be(2);
+
+        result.PendingDirection.Should().Be(SagaExecutionDirection.Compensation);
+        result.PendingStepIndex.Should().Be(0);
         result.PendingStepName.Should().BeNull();
         result.BlockedReason.Should().BeNull();
         result.ResumeDisposition.Should().Be(SagaResumeDisposition.AutomaticPending);

@@ -32,16 +32,26 @@ public sealed class SagaStepFailedStatusReducerTests
     [Fact]
     public void ReduceWithStepFailedCapturesError()
     {
-        MoneyTransferStatusProjection initial = new();
+        MoneyTransferStatusProjection initial = new()
+        {
+            RecoveryMode = SagaRecoveryMode.Automatic,
+        };
         SagaStepFailed @event = new()
         {
+            AttemptId = Guid.NewGuid(),
             StepIndex = 1,
             StepName = "Deposit",
             ErrorCode = "ERR",
             ErrorMessage = "failed",
+            OperationKey = "op-1",
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
         result.ErrorCode.Should().Be("ERR");
         result.ErrorMessage.Should().Be("failed");
+        result.PendingDirection.Should().Be(SagaExecutionDirection.Forward);
+        result.PendingStepIndex.Should().Be(1);
+        result.PendingStepName.Should().Be("Deposit");
+        result.BlockedReason.Should().BeNull();
+        result.ResumeDisposition.Should().Be(SagaResumeDisposition.AutomaticPending);
     }
 }

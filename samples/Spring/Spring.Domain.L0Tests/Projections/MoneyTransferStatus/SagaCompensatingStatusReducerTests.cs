@@ -22,6 +22,9 @@ public sealed class SagaCompensatingStatusReducerTests
         MoneyTransferStatusProjection initial = new()
         {
             Phase = SagaPhase.Running,
+            RecoveryMode = SagaRecoveryMode.Automatic,
+            BlockedReason = "Needs manual resume.",
+            ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired,
         };
         SagaCompensating @event = new()
         {
@@ -29,6 +32,11 @@ public sealed class SagaCompensatingStatusReducerTests
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
         result.Phase.Should().Be(SagaPhase.Compensating);
+        result.PendingDirection.Should().Be(SagaExecutionDirection.Compensation);
+        result.PendingStepIndex.Should().Be(0);
+        result.PendingStepName.Should().BeNull();
+        result.BlockedReason.Should().BeNull();
+        result.ResumeDisposition.Should().Be(SagaResumeDisposition.AutomaticPending);
     }
 
     /// <summary>

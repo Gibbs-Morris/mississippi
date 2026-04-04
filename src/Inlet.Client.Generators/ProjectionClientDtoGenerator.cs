@@ -274,28 +274,56 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (prop.IsEnum && prop.SourceTypeSymbol is INamedTypeSymbol enumType)
-            {
-                string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                if (seen.Add(key))
-                {
-                    enumInfos.Add(new(enumType, prop.DtoTypeName));
-                }
-            }
-
-            if (prop.ElementIsEnum &&
-                prop.ElementTypeSymbol is INamedTypeSymbol elementEnum &&
-                prop.ElementDtoTypeName is not null)
-            {
-                string key = elementEnum.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                if (seen.Add(key))
-                {
-                    enumInfos.Add(new(elementEnum, prop.ElementDtoTypeName));
-                }
-            }
+            TryAddEnumDto(enumInfos, seen, prop.SourceTypeSymbol, prop.DtoTypeName);
+            TryAddEnumDto(enumInfos, seen, prop.ElementTypeSymbol, prop.ElementDtoTypeName);
         }
 
         return enumInfos;
+    }
+
+    private static void TryAddEnumDto(
+        List<EnumDtoInfo> enumInfos,
+        HashSet<string> seen,
+        ITypeSymbol? typeSymbol,
+        string? dtoTypeName
+    )
+    {
+        if (typeSymbol is null || string.IsNullOrEmpty(dtoTypeName))
+        {
+            return;
+        }
+
+        if (UnwrapNullable(typeSymbol) is not INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
+        {
+            return;
+        }
+
+        string dtoName = dtoTypeName!;
+        string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        if (!seen.Add(key))
+        {
+            return;
+        }
+
+        enumInfos.Add(new(enumType, GetUnderlyingDtoTypeName(dtoName)));
+    }
+
+    private static string GetUnderlyingDtoTypeName(
+        string dtoTypeName
+    )
+    {
+        if (dtoTypeName.EndsWith("?", StringComparison.Ordinal))
+        {
+            return dtoTypeName.Substring(0, dtoTypeName.Length - 1);
+        }
+
+        if (dtoTypeName.StartsWith("Nullable<", StringComparison.Ordinal) &&
+            dtoTypeName.EndsWith(">", StringComparison.Ordinal))
+        {
+            return dtoTypeName.Substring(9, dtoTypeName.Length - 10);
+        }
+
+        return dtoTypeName;
     }
 
     /// <summary>

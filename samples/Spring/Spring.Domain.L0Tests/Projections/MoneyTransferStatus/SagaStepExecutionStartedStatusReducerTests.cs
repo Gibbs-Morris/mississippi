@@ -7,11 +7,11 @@ using MississippiSamples.Spring.Domain.Projections.MoneyTransferStatus.Reducers;
 namespace MississippiSamples.Spring.Domain.L0Tests.Projections.MoneyTransferStatus;
 
 /// <summary>
-///     Tests for <see cref="SagaStepCompletedStatusReducer" />.
+///     Tests for <see cref="SagaStepExecutionStartedStatusReducer" />.
 /// </summary>
-public sealed class SagaStepCompletedStatusReducerTests
+public sealed class SagaStepExecutionStartedStatusReducerTests
 {
-    private readonly SagaStepCompletedStatusReducer reducer = new();
+    private readonly SagaStepExecutionStartedStatusReducer reducer = new();
 
     /// <summary>
     ///     Verifies null event throws.
@@ -20,41 +20,44 @@ public sealed class SagaStepCompletedStatusReducerTests
     public void ReduceWithNullEventThrows()
     {
         MoneyTransferStatusProjection initial = new();
-        reducer.ShouldThrow<ArgumentNullException, SagaStepCompleted, MoneyTransferStatusProjection>(
+        reducer.ShouldThrow<ArgumentNullException, SagaStepExecutionStarted, MoneyTransferStatusProjection>(
             initial,
             null!,
             "eventData");
     }
 
     /// <summary>
-    ///     Verifies last completed step index updates.
+    ///     Verifies reminder-driven executions update recovery metadata.
     /// </summary>
     [Fact]
-    public void ReduceWithStepCompletedUpdatesIndex()
+    public void ReduceWithReminderExecutionUpdatesRecoveryMetadata()
     {
+        DateTimeOffset startedAt = new(2026, 4, 4, 9, 30, 0, TimeSpan.Zero);
         MoneyTransferStatusProjection initial = new()
         {
             RecoveryMode = SagaRecoveryMode.Automatic,
-            PendingDirection = SagaExecutionDirection.Forward,
-            PendingStepIndex = 1,
-            PendingStepName = "Withdraw",
-            BlockedReason = "Needs manual resume.",
-            ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired,
+            ResumeDisposition = SagaResumeDisposition.Idle,
         };
-        SagaStepCompleted @event = new()
+        SagaStepExecutionStarted @event = new()
         {
             AttemptId = Guid.NewGuid(),
-            OperationKey = "op-1",
+            Direction = SagaExecutionDirection.Forward,
+            OperationKey = "reminder-op-1",
+            Source = SagaResumeSource.Reminder,
+            StartedAt = startedAt,
             StepIndex = 1,
             StepName = "Deposit",
-            CompletedAt = new(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
         };
+
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
-        result.LastCompletedStepIndex.Should().Be(1);
+
         result.PendingDirection.Should().Be(SagaExecutionDirection.Forward);
-        result.PendingStepIndex.Should().Be(2);
-        result.PendingStepName.Should().BeNull();
+        result.PendingStepIndex.Should().Be(1);
+        result.PendingStepName.Should().Be("Deposit");
         result.BlockedReason.Should().BeNull();
+        result.LastResumeSource.Should().Be(SagaResumeSource.Reminder);
+        result.LastResumeAttemptedAt.Should().Be(startedAt);
+        result.AutomaticAttemptCount.Should().Be(1);
         result.ResumeDisposition.Should().Be(SagaResumeDisposition.AutomaticPending);
     }
 }
