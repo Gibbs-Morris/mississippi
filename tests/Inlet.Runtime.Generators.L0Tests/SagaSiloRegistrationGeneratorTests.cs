@@ -368,6 +368,49 @@ public sealed class SagaSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Verifies explicit enum casts that do not map to named members are preserved in generated code.
+    /// </summary>
+    [Fact]
+    public void PreservesExplicitUnknownEnumCastsInGeneratedCode()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [SagaRecovery((SagaRecoveryMode)123)]
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+
+                                      [SagaStep<TransferSagaState>(0, (SagaStepRecoveryPolicy)456)]
+                                      public sealed class DebitStep : ISagaStep<TransferSagaState>
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "(global::Mississippi.DomainModeling.Abstractions.SagaRecoveryMode)(int)123",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "(global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy)(int)456",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies steps without saga type information are ignored.
     /// </summary>
     [Fact]

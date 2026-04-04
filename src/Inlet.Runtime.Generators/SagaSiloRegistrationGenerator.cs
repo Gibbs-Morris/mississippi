@@ -733,13 +733,43 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         IFieldSymbol? enumMember = enumType.GetMembers()
             .OfType<IFieldSymbol>()
             .FirstOrDefault(member => member.HasConstantValue && Equals(member.ConstantValue, constant.Value));
-        if (enumMember is null)
+        if (enumMember is not null)
+        {
+            expression = $"{enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{enumMember.Name}";
+            return true;
+        }
+
+        if (enumType.EnumUnderlyingType is null)
         {
             return false;
         }
 
-        expression = $"{enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{enumMember.Name}";
+        expression =
+            $"({enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})" +
+            GetEnumUnderlyingValueExpression(enumType.EnumUnderlyingType, constant.Value);
         return true;
+    }
+
+    private static string GetEnumUnderlyingValueExpression(
+        ITypeSymbol underlyingType,
+        object value
+    )
+    {
+        string underlyingTypeExpression = underlyingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        return value switch
+        {
+            byte byteValue => $"({underlyingTypeExpression}){byteValue}",
+            sbyte sbyteValue => $"({underlyingTypeExpression}){sbyteValue}",
+            short shortValue => $"({underlyingTypeExpression}){shortValue}",
+            ushort ushortValue => $"({underlyingTypeExpression}){ushortValue}",
+            int intValue => $"({underlyingTypeExpression}){intValue}",
+            uint uintValue => $"({underlyingTypeExpression}){uintValue}U",
+            long longValue => $"({underlyingTypeExpression}){longValue}L",
+            ulong ulongValue => $"({underlyingTypeExpression}){ulongValue}UL",
+            _ => throw new InvalidOperationException(
+                $"Unsupported enum constant value type '{value.GetType().FullName}'."),
+        };
     }
 
     private static bool TryGetNamedEnumValueExpression(
