@@ -16,7 +16,7 @@ internal sealed class SpringSagaAccessContextProvider : ISagaAccessContextProvid
     /// </summary>
     internal const string RequestContextKey = "spring.saga.access-fingerprint";
 
-    private readonly IHttpContextAccessor httpContextAccessor;
+    private IHttpContextAccessor HttpContextAccessor { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SpringSagaAccessContextProvider" /> class.
@@ -27,7 +27,7 @@ internal sealed class SpringSagaAccessContextProvider : ISagaAccessContextProvid
     )
     {
         ArgumentNullException.ThrowIfNull(httpContextAccessor);
-        this.httpContextAccessor = httpContextAccessor;
+        HttpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
@@ -36,7 +36,7 @@ internal sealed class SpringSagaAccessContextProvider : ISagaAccessContextProvid
     /// <returns>The derived caller fingerprint, or <see langword="null" /> when no authenticated caller is present.</returns>
     public string? GetFingerprint()
     {
-        ClaimsPrincipal? user = httpContextAccessor.HttpContext?.User;
+        ClaimsPrincipal? user = HttpContextAccessor.HttpContext?.User;
         if (user?.Identity?.IsAuthenticated != true)
         {
             return null;
