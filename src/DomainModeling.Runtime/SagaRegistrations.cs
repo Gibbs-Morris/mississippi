@@ -33,6 +33,7 @@ public static class SagaRegistrations
         services.AddEventType<SagaStartedEvent>();
         services.AddEventType<SagaInputProvided<TInput>>();
         services.AddEventType<SagaStepExecutionStarted>();
+        services.AddEventType<SagaResumeBlocked>();
         services.AddEventType<SagaStepCompleted>();
         services.AddEventType<SagaStepFailed>();
         services.AddEventType<SagaCompensating>();
@@ -58,6 +59,7 @@ public static class SagaRegistrations
             SagaStepExecutionStarted,
             SagaRecoveryCheckpoint,
             SagaRecoveryCheckpointExecutionStartedReducer>();
+        services.AddReducer<SagaResumeBlocked, SagaRecoveryCheckpoint, SagaRecoveryCheckpointResumeBlockedReducer>();
         services.AddReducer<SagaStepCompleted, SagaRecoveryCheckpoint, SagaRecoveryCheckpointStepCompletedReducer>();
         services.AddReducer<SagaStepFailed, SagaRecoveryCheckpoint, SagaRecoveryCheckpointStepFailedReducer>();
         services.AddReducer<SagaCompensating, SagaRecoveryCheckpoint, SagaRecoveryCheckpointCompensatingReducer>();

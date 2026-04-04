@@ -66,6 +66,22 @@ public sealed class SagaRegistrationsTests
     }
 
     /// <summary>
+    ///     Verifies blocked-resume event type is registered.
+    /// </summary>
+    [Fact]
+    public void AddSagaOrchestrationRegistersSagaResumeBlockedEventType()
+    {
+        ServiceCollection services = new();
+        services.AddSagaOrchestration<TestSagaState, TestInput>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventTypeRegistry registry = provider.GetRequiredService<IEventTypeRegistry>();
+        string? eventName = registry.ResolveName(typeof(SagaResumeBlocked));
+
+        Assert.NotNull(eventName);
+        Assert.Equal(typeof(SagaResumeBlocked), registry.ResolveType(eventName));
+    }
+
+    /// <summary>
     ///     Verifies a default saga recovery provider is registered when none is supplied.
     /// </summary>
     [Fact]

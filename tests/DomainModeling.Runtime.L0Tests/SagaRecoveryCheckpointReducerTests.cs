@@ -208,6 +208,43 @@ public sealed class SagaRecoveryCheckpointReducerTests
     }
 
     /// <summary>
+    ///     Verifies blocked resume events preserve the pending step and operator-visible blocked state.
+    /// </summary>
+    [Fact]
+    public void ReduceCapturesBlockedResumeState()
+    {
+        DateTimeOffset startedAt = new(2025, 2, 15, 12, 30, 0, TimeSpan.Zero);
+        SagaRecoveryCheckpoint checkpoint = Reduce(
+            new SagaStartedEvent
+            {
+                SagaId = Guid.NewGuid(),
+                RecoveryMode = SagaRecoveryMode.Automatic,
+                StepHash = "HASH",
+                StartedAt = startedAt,
+            },
+            new SagaResumeBlocked
+            {
+                BlockedAt = startedAt.AddMinutes(3),
+                BlockedReason = "Manual policy prevents automatic replay.",
+                Direction = SagaExecutionDirection.Forward,
+                Source = SagaResumeSource.Reminder,
+                StepIndex = 1,
+                StepName = "Credit",
+            });
+
+        Assert.Equal(SagaExecutionDirection.Forward, checkpoint.PendingDirection);
+        Assert.Equal(1, checkpoint.PendingStepIndex);
+        Assert.Equal("Credit", checkpoint.PendingStepName);
+        Assert.Null(checkpoint.InFlightAttemptId);
+        Assert.Null(checkpoint.InFlightOperationKey);
+        Assert.Equal("Manual policy prevents automatic replay.", checkpoint.BlockedReason);
+        Assert.Equal(SagaResumeSource.Reminder, checkpoint.LastResumeSource);
+        Assert.Equal(startedAt.AddMinutes(3), checkpoint.LastResumeAttemptedAt);
+        Assert.Equal(1, checkpoint.AutomaticAttemptCount);
+        Assert.False(checkpoint.ReminderArmed);
+    }
+
+    /// <summary>
     ///     Verifies terminal saga completion clears pending recovery state.
     /// </summary>
     [Fact]

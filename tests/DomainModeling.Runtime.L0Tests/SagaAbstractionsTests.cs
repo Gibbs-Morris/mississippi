@@ -228,6 +228,31 @@ public sealed class SagaAbstractionsTests
     }
 
     /// <summary>
+    ///     Verifies blocked-resume events store operator-visible blocked state details.
+    /// </summary>
+    [Fact]
+    public void SagaResumeBlockedStoresBlockedStateDetails()
+    {
+        DateTimeOffset blockedAt = new(2026, 4, 4, 14, 0, 0, TimeSpan.Zero);
+        SagaResumeBlocked @event = new()
+        {
+            BlockedAt = blockedAt,
+            BlockedReason = "Manual policy prevents automatic replay.",
+            Direction = SagaExecutionDirection.Compensation,
+            Source = SagaResumeSource.Reminder,
+            StepIndex = 2,
+            StepName = "Credit",
+        };
+
+        Assert.Equal(blockedAt, @event.BlockedAt);
+        Assert.Equal("Manual policy prevents automatic replay.", @event.BlockedReason);
+        Assert.Equal(SagaExecutionDirection.Compensation, @event.Direction);
+        Assert.Equal(SagaResumeSource.Reminder, @event.Source);
+        Assert.Equal(2, @event.StepIndex);
+        Assert.Equal("Credit", @event.StepName);
+    }
+
+    /// <summary>
     ///     Verifies the default AppliesTo implementation returns true.
     /// </summary>
     [Fact]
