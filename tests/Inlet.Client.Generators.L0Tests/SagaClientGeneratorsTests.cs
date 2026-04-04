@@ -131,6 +131,9 @@ public sealed class SagaClientGeneratorsTests
         Assert.Contains(
             runResult.GeneratedTrees,
             tree => tree.FilePath.Contains("StartTransferSagaActionEffect.g.cs", StringComparison.Ordinal));
+        Assert.Contains(
+            runResult.GeneratedTrees,
+            tree => tree.FilePath.Contains("ResumeTransferSagaActionEffect.g.cs", StringComparison.Ordinal));
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("/api/sagas/transfer", generatedCode, StringComparison.Ordinal);
     }
@@ -200,6 +203,12 @@ public sealed class SagaClientGeneratorsTests
         Assert.Contains(
             runResult.GeneratedTrees,
             tree => tree.FilePath.Contains("StartTransferSagaExecutingAction.g.cs", StringComparison.Ordinal));
+        Assert.Contains(
+            runResult.GeneratedTrees,
+            tree => tree.FilePath.Contains("ResumeTransferSagaAction.g.cs", StringComparison.Ordinal));
+        Assert.Contains(
+            runResult.GeneratedTrees,
+            tree => tree.FilePath.Contains("ResumeTransferSagaSucceededAction.g.cs", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -484,6 +493,8 @@ public sealed class SagaClientGeneratorsTests
             generatedCode,
             StringComparison.Ordinal);
         Assert.Contains("StartTransferSagaExecutingAction", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("ResumeTransferSagaSucceededAction", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("LastResumeResponse = action.Response", generatedCode, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -520,6 +531,14 @@ public sealed class SagaClientGeneratorsTests
             "feature.AddActionEffect<StartTransferSagaActionEffect>",
             generatedCode,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "feature.AddReducer<ResumeTransferSagaSucceededAction>(TransferSagaReducers.ResumeTransferSagaSucceeded)",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "feature.AddActionEffect<ResumeTransferSagaActionEffect>",
+            generatedCode,
+            StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -551,5 +570,41 @@ public sealed class SagaClientGeneratorsTests
             sagaSource);
         string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
         Assert.Contains("FeatureKey => \"customKey\"", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("SagaResumeResponse? LastResumeResponse", generatedCode, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies the resume action effect posts to the resume endpoint and parses typed responses.
+    /// </summary>
+    [Fact]
+    public void ActionEffectsGeneratorProducesResumeSagaActionEffect()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) = RunGenerator(
+            new SagaClientActionEffectsGenerator(),
+            AttributeStubs,
+            sagaSource);
+        string generatedCode = runResult.GeneratedTrees.Single(
+            tree => tree.FilePath.Contains("ResumeTransferSagaActionEffect.g.cs", StringComparison.Ordinal))
+            .GetText()
+            .ToString();
+        Assert.Contains("ReadFromJsonAsync<SagaResumeResponse>", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("/api/sagas/transfer/{action.SagaId}/resume", generatedCode, StringComparison.Ordinal);
     }
 }
