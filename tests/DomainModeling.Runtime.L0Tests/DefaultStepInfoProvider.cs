@@ -13,6 +13,6 @@ internal sealed class DefaultStepInfoProvider : ISagaStepInfoProvider<TestSagaSt
     /// <inheritdoc />
     public IReadOnlyList<SagaStepInfo> Steps { get; } =
     [
-        new(0, "Step", typeof(SagaStepMarker), false),
+        new(0, "Step", typeof(SagaStepMarker), false, SagaStepRecoveryPolicy.Automatic, null),
     ];
 }

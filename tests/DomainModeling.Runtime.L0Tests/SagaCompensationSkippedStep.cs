@@ -16,6 +16,7 @@ internal sealed class SagaCompensationSkippedStep
     /// <inheritdoc />
     public Task<CompensationResult> CompensateAsync(
         TestSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     ) =>
         Task.FromResult(CompensationResult.SkippedResult("skipped"));
@@ -23,6 +24,7 @@ internal sealed class SagaCompensationSkippedStep
     /// <inheritdoc />
     public Task<StepResult> ExecuteAsync(
         TestSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     ) =>
         Task.FromResult(StepResult.Succeeded());

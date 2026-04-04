@@ -1,15 +1,22 @@
+using System.Linq;
+using System.Threading;
+
+using Azure.Data.Tables;
 using Azure.Storage.Blobs;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Runtime;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
+using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Inlet.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
@@ -34,6 +41,8 @@ builder.Services.AddHttpClient();
 
 // Register notification service (stub for demo, replace with real provider in production)
 builder.Services.AddSingleton<INotificationService, StubNotificationService>();
+builder.Services.AddSingleton<ISagaAccessContextProvider, SpringSagaAccessContextProvider>();
+builder.Services.AddSingleton<IValidateOptions<SagaRecoveryOptions>, SpringSagaReminderOptionsValidator>();
 
 // Register Spring domain aggregates
 builder.Services.AddAuthProofAggregate();
@@ -73,6 +82,11 @@ builder.Services.AddOpenTelemetry()
 // Must use Keyed variants so Orleans can resolve via GetRequiredKeyedService<T>(serviceKey)
 builder.AddKeyedAzureTableServiceClient("clustering");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
+builder.Services.AddSingleton(sp => sp.GetRequiredKeyedService<TableServiceClient>("clustering"));
+builder.Services.AddOptions<SagaRecoveryOptions>()
+    .Bind(builder.Configuration.GetSection("SagaRecovery"))
+    .ValidateOnStart();
+builder.Services.AddHealthChecks().AddCheck<SpringSagaReminderHealthCheck>("spring-saga-reminders");
 
 // Add Aspire-managed Cosmos client for event sourcing storage (Brooks + Snapshots)
 // Gateway mode required for Aspire Cosmos emulator compatibility
@@ -137,6 +151,13 @@ builder.Services.AddCosmosSnapshotStorageProvider(options =>
 builder.UseOrleans(siloBuilder =>
 {
     siloBuilder.AddActivityPropagation();
+    siloBuilder.UseAzureTableReminderService(optionsBuilder =>
+    {
+        optionsBuilder.Configure<TableServiceClient>((
+            options,
+            tableServiceClient
+        ) => options.TableServiceClient = tableServiceClient);
+    });
 
     // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane
     siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
@@ -150,19 +171,30 @@ WebApplication app = builder.Build();
 // Health check endpoint for Aspire orchestration
 app.MapGet(
     "/health",
-    (
-        ISiloStatusOracle siloStatus
+    async (
+        ISiloStatusOracle siloStatus,
+        HealthCheckService healthCheckService,
+        CancellationToken cancellationToken
     ) =>
     {
         SiloStatus status = siloStatus.CurrentStatus;
-        return status == SiloStatus.Active
-            ? Results.Ok(
-                new
+        HealthReport report = await healthCheckService.CheckHealthAsync(cancellationToken);
+        bool healthy = (status == SiloStatus.Active) && (report.Status != HealthStatus.Unhealthy);
+        object payload = new
+        {
+            Status = healthy ? "Healthy" : "Unhealthy",
+            Service = "MississippiSamples.Spring.Runtime",
+            Orleans = status.ToString(),
+            Checks = report.Entries.ToDictionary(
+                entry => entry.Key,
+                entry => new
                 {
-                    Status = "Healthy",
-                    Service = "MississippiSamples.Spring.Runtime",
-                    Orleans = status.ToString(),
-                })
-            : Results.StatusCode(503);
+                    Status = entry.Value.Status.ToString(),
+                    entry.Value.Description,
+                }),
+        };
+        return healthy
+            ? Results.Ok(payload)
+            : Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable);
     });
 await app.RunAsync();

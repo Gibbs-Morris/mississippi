@@ -46,7 +46,7 @@ Start here when the question is about aggregates, sagas, effects, or UX projecti
 
 ## Current Coverage
 
-This section now includes typed boundary pages for getting started, concepts, package selection, reference, and troubleshooting.
+This section now includes typed boundary pages for getting started, concepts, migration, package selection, reference, and troubleshooting.
 
 They make the domain-facing boundary easier to navigate while deeper aggregate, saga, effect, and UX projection pages are still being written.
 
@@ -55,6 +55,7 @@ They make the domain-facing boundary easier to navigate while deeper aggregate, 
 - [Documentation Home](../index.md) - Return to the product-area docs landing page
 - [Domain Modeling Getting Started](./getting-started/getting-started.md) - Start with the domain-facing entry points
 - [Domain Modeling Concepts](./concepts/concepts.md) - Understand the aggregate, saga, and projection boundary
+- [Upgrade saga code from < 0.0.1 to 0.0.1](./migration/upgrade-saga-code-from-before-0-0-1-to-0-0-1.md) - Migrate older saga implementations to the recovery-aware contracts
 - [Domain Modeling Reference](./reference/reference.md) - Review the currently verified package and ownership surface
 - [Tributary](../tributary/index.md) - See the reducers and snapshots layer beneath domain behavior
 - [Archived Concepts](../archived/concepts/index.md) - Browse the preserved concept material

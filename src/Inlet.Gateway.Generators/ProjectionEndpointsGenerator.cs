@@ -411,6 +411,12 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
                 // Single custom type
                 sb.AppendLine($"{prop.Name} = {prop.Name}Mapper.Map(source.{prop.Name}){comma}");
             }
+            else if (IsNullableEnumType(prop.SourceTypeSymbol))
+            {
+                string enumDtoTypeName = GetEnumDtoTypeName(prop.SourceTypeSymbol);
+                sb.AppendLine(
+                    $"{prop.Name} = source.{prop.Name}.HasValue ? ({enumDtoTypeName}?)source.{prop.Name}.Value : null{comma}");
+            }
             else
             {
                 // Direct assignment
@@ -675,7 +681,13 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
             string comma = i < (properties.Length - 1) ? "," : string.Empty;
 
             // Check if this property is a custom enum that needs casting
-            if (TypeAnalyzer.IsEnumType(prop.Type) && !TypeAnalyzer.IsFrameworkType(prop.Type))
+            if (IsNullableEnumType(prop.Type))
+            {
+                string enumDtoTypeName = GetEnumDtoTypeName(prop.Type);
+                sb.AppendLine(
+                    $"{prop.Name} = source.{prop.Name}.HasValue ? ({enumDtoTypeName}?)source.{prop.Name}.Value : null{comma}");
+            }
+            else if (TypeAnalyzer.IsEnumType(prop.Type) && !TypeAnalyzer.IsFrameworkType(prop.Type))
             {
                 string enumTypeName = prop.Type.Name;
                 string enumDtoTypeName = enumTypeName + "Dto";
@@ -705,6 +717,11 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         return baseName + "Controller";
     }
 
+    private static string GetEnumDtoTypeName(
+        ITypeSymbol typeSymbol
+    ) =>
+        ((INamedTypeSymbol)UnwrapNullable(typeSymbol)).Name + "Dto";
+
     /// <summary>
     ///     Gets enum DTOs required for a projection.
     /// </summary>
@@ -716,25 +733,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         HashSet<string> seen = new(StringComparer.Ordinal);
         foreach (PropertyModel prop in projection.Model.Properties)
         {
-            if (prop.IsEnum && prop.SourceTypeSymbol is INamedTypeSymbol enumType)
-            {
-                string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                if (seen.Add(key))
-                {
-                    enumInfos.Add(new(enumType, prop.DtoTypeName));
-                }
-            }
-
-            if (prop.ElementIsEnum &&
-                prop.ElementTypeSymbol is INamedTypeSymbol elementEnum &&
-                prop.ElementDtoTypeName is not null)
-            {
-                string key = elementEnum.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                if (seen.Add(key))
-                {
-                    enumInfos.Add(new(elementEnum, prop.ElementDtoTypeName));
-                }
-            }
+            TryAddEnumDto(enumInfos, seen, prop.SourceTypeSymbol, prop.DtoTypeName);
+            TryAddEnumDto(enumInfos, seen, prop.ElementTypeSymbol, prop.ElementDtoTypeName);
         }
 
         return enumInfos;
@@ -818,6 +818,32 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         return baseName + "ProjectionMapperRegistrations";
     }
 
+    private static string GetUnderlyingDtoTypeName(
+        string dtoTypeName
+    )
+    {
+        if (dtoTypeName.EndsWith("?", StringComparison.Ordinal))
+        {
+            return dtoTypeName.Substring(0, dtoTypeName.Length - 1);
+        }
+
+        if (dtoTypeName.StartsWith("Nullable<", StringComparison.Ordinal) &&
+            dtoTypeName.EndsWith(">", StringComparison.Ordinal))
+        {
+            return dtoTypeName.Substring(9, dtoTypeName.Length - 10);
+        }
+
+        return dtoTypeName;
+    }
+
+    private static bool IsNullableEnumType(
+        ITypeSymbol typeSymbol
+    ) =>
+        typeSymbol is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } &&
+        UnwrapNullable(typeSymbol) is INamedTypeSymbol enumType &&
+        (enumType.TypeKind == TypeKind.Enum) &&
+        !TypeAnalyzer.IsFrameworkType(enumType);
+
     /// <summary>
     ///     Converts PascalCase to camelCase.
     /// </summary>
@@ -831,6 +857,33 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         }
 
         return char.ToLowerInvariant(value[0]) + value.Substring(1);
+    }
+
+    private static void TryAddEnumDto(
+        List<EnumDtoInfo> enumInfos,
+        HashSet<string> seen,
+        ITypeSymbol? typeSymbol,
+        string? dtoTypeName
+    )
+    {
+        if (typeSymbol is null || string.IsNullOrEmpty(dtoTypeName))
+        {
+            return;
+        }
+
+        if (UnwrapNullable(typeSymbol) is not INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType)
+        {
+            return;
+        }
+
+        string dtoName = dtoTypeName!;
+        string key = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        if (!seen.Add(key))
+        {
+            return;
+        }
+
+        enumInfos.Add(new(enumType, GetUnderlyingDtoTypeName(dtoName)));
     }
 
     /// <summary>

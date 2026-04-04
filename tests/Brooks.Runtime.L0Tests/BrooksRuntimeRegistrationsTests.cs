@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Factory;
 using Mississippi.Brooks.Runtime.Reader;
 
 
@@ -17,6 +18,20 @@ namespace Mississippi.Brooks.Runtime.L0Tests;
 /// </summary>
 public sealed class BrooksRuntimeRegistrationsTests
 {
+    /// <summary>
+    ///     Verifies repeated service registration stays idempotent for singleton Brooks infrastructure.
+    /// </summary>
+    [Fact]
+    public void AddEventSourcingByServiceIsIdempotentForSingletonInfrastructure()
+    {
+        ServiceCollection services = new();
+        services.AddEventSourcingByService();
+        services.AddEventSourcingByService();
+        Assert.Equal(1, services.Count(d => d.ServiceType == typeof(BrookGrainFactory)));
+        Assert.Equal(1, services.Count(d => d.ServiceType == typeof(IBrookGrainFactory)));
+        Assert.Equal(1, services.Count(d => d.ServiceType == typeof(IStreamIdFactory)));
+    }
+
     /// <summary>
     ///     Verifies that <c>AddEventSourcingByService</c> uses default stream provider name.
     /// </summary>

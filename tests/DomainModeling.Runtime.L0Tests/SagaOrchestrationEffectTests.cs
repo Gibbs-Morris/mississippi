@@ -18,6 +18,29 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests;
 public sealed class SagaOrchestrationEffectTests
 {
     /// <summary>
+    ///     Asserts a saga step execution-started event has the expected metadata.
+    /// </summary>
+    /// <param name="item">The event to assert.</param>
+    /// <param name="stepIndex">The expected step index.</param>
+    /// <param name="stepName">The expected step name.</param>
+    /// <param name="direction">The expected execution direction.</param>
+    /// <returns>The asserted started event.</returns>
+    private static SagaStepExecutionStarted AssertStartedEvent(
+        object item,
+        int stepIndex,
+        string stepName,
+        SagaExecutionDirection direction
+    )
+    {
+        SagaStepExecutionStarted started = Assert.IsType<SagaStepExecutionStarted>(item);
+        Assert.Equal(stepIndex, started.StepIndex);
+        Assert.Equal(stepName, started.StepName);
+        Assert.Equal(direction, started.Direction);
+        Assert.Equal(SagaResumeSource.Initial, started.Source);
+        return started;
+    }
+
+    /// <summary>
     ///     Collects all events from an async stream.
     /// </summary>
     /// <param name="stream">The async stream.</param>
@@ -84,6 +107,7 @@ public sealed class SagaOrchestrationEffectTests
                 new SagaStartedEvent
                 {
                     SagaId = Guid.NewGuid(),
+                    RecoveryMode = SagaRecoveryMode.Automatic,
                     StartedAt = now,
                     StepHash = "HASH",
                 }));
@@ -91,17 +115,21 @@ public sealed class SagaOrchestrationEffectTests
             effect.CanHandle(
                 new SagaStepCompleted
                 {
+                    AttemptId = Guid.NewGuid(),
                     StepIndex = 0,
                     StepName = "Step",
                     CompletedAt = now,
+                    OperationKey = "operation-key",
                 }));
         Assert.True(
             effect.CanHandle(
                 new SagaStepFailed
                 {
+                    AttemptId = Guid.NewGuid(),
                     StepIndex = 0,
                     StepName = "Step",
                     ErrorCode = "ERR",
+                    OperationKey = "operation-key",
                 }));
         Assert.True(
             effect.CanHandle(
@@ -113,6 +141,20 @@ public sealed class SagaOrchestrationEffectTests
             effect.CanHandle(
                 new SagaStepCompensated
                 {
+                    AttemptId = Guid.NewGuid(),
+                    OperationKey = "operation-key",
+                    StepIndex = 0,
+                    StepName = "Step",
+                }));
+        Assert.True(
+            effect.CanHandle(
+                new SagaStepExecutionStarted
+                {
+                    AttemptId = Guid.NewGuid(),
+                    Direction = SagaExecutionDirection.Forward,
+                    OperationKey = "operation-key",
+                    Source = SagaResumeSource.Reminder,
+                    StartedAt = now,
                     StepIndex = 0,
                     StepName = "Step",
                 }));
@@ -128,7 +170,7 @@ public sealed class SagaOrchestrationEffectTests
     {
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaNonCompensatableStep), false),
+            new(0, "Debit", typeof(SagaNonCompensatableStep), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaNonCompensatableStep>());
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
@@ -142,9 +184,18 @@ public sealed class SagaOrchestrationEffectTests
                 "saga",
                 0,
                 CancellationToken.None));
-        SagaStepCompensated compensated = Assert.IsType<SagaStepCompensated>(Assert.Single(events));
-        Assert.Equal(0, compensated.StepIndex);
-        Assert.Equal("Debit", compensated.StepName);
+        Assert.Collection(
+            events,
+            item => AssertStartedEvent(item, 0, "Debit", SagaExecutionDirection.Compensation),
+            item =>
+            {
+                SagaStepExecutionStarted started = Assert.IsType<SagaStepExecutionStarted>(events[0]);
+                SagaStepCompensated compensated = Assert.IsType<SagaStepCompensated>(item);
+                Assert.Equal(0, compensated.StepIndex);
+                Assert.Equal("Debit", compensated.StepName);
+                Assert.Equal(started.AttemptId, compensated.AttemptId);
+                Assert.Equal(started.OperationKey, compensated.OperationKey);
+            });
     }
 
     /// <summary>
@@ -156,19 +207,28 @@ public sealed class SagaOrchestrationEffectTests
     {
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaCompensationSuccessStep), true),
-            new(1, "Credit", typeof(SagaNonCompensatableStep), false),
+            new(
+                0,
+                "Debit",
+                typeof(SagaCompensationSuccessStep),
+                true,
+                SagaStepRecoveryPolicy.Automatic,
+                SagaStepRecoveryPolicy.Automatic),
+            new(1, "Credit", typeof(SagaNonCompensatableStep), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         using ServiceProvider provider = CreateProvider(services =>
         {
-            services.AddTransient<SagaCompensationSuccessStep>();
+            services.AddSingleton<SagaCompensationSuccessStep>();
             services.AddTransient<SagaNonCompensatableStep>();
         });
+        SagaCompensationSuccessStep step = provider.GetRequiredService<SagaCompensationSuccessStep>();
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
         List<object> events = await CollectAsync(
             effect.HandleAsync(
                 new SagaStepCompensated
                 {
+                    AttemptId = Guid.NewGuid(),
+                    OperationKey = "operation-key",
                     StepIndex = 1,
                     StepName = "Credit",
                 },
@@ -176,9 +236,21 @@ public sealed class SagaOrchestrationEffectTests
                 "saga",
                 0,
                 CancellationToken.None));
-        SagaStepCompensated compensated = Assert.IsType<SagaStepCompensated>(Assert.Single(events));
-        Assert.Equal(0, compensated.StepIndex);
-        Assert.Equal("Debit", compensated.StepName);
+        Assert.Collection(
+            events,
+            item => AssertStartedEvent(item, 0, "Debit", SagaExecutionDirection.Compensation),
+            item =>
+            {
+                SagaStepExecutionStarted started = Assert.IsType<SagaStepExecutionStarted>(events[0]);
+                SagaStepCompensated compensated = Assert.IsType<SagaStepCompensated>(item);
+                Assert.Equal(0, compensated.StepIndex);
+                Assert.Equal("Debit", compensated.StepName);
+                Assert.Equal(started.AttemptId, compensated.AttemptId);
+                Assert.Equal(started.OperationKey, compensated.OperationKey);
+            });
+        Assert.NotNull(step.LastCompensationContext);
+        Assert.Equal(SagaExecutionDirection.Compensation, step.LastCompensationContext!.Direction);
+        Assert.Equal(SagaResumeSource.Initial, step.LastCompensationContext.Source);
     }
 
     /// <summary>
@@ -220,7 +292,7 @@ public sealed class SagaOrchestrationEffectTests
         FakeTimeProvider timeProvider = new(now);
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaSuccessStep), false),
+            new(0, "Debit", typeof(SagaSuccessStep), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaSuccessStep>());
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
@@ -228,9 +300,11 @@ public sealed class SagaOrchestrationEffectTests
             effect.HandleAsync(
                 new SagaStepCompleted
                 {
+                    AttemptId = Guid.NewGuid(),
                     StepIndex = 0,
                     StepName = "Debit",
                     CompletedAt = now,
+                    OperationKey = "operation-key",
                 },
                 new(),
                 "saga",
@@ -249,16 +323,18 @@ public sealed class SagaOrchestrationEffectTests
     {
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaFailStep), false),
+            new(0, "Debit", typeof(SagaFailStep), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaFailStep>());
-        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
         DateTimeOffset startedAt = new(2025, 2, 12, 12, 0, 0, TimeSpan.Zero);
+        FakeTimeProvider timeProvider = new(startedAt);
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
         List<object> events = await CollectAsync(
             effect.HandleAsync(
                 new SagaStartedEvent
                 {
                     SagaId = Guid.NewGuid(),
+                    RecoveryMode = SagaRecoveryMode.Automatic,
                     StartedAt = startedAt,
                     StepHash = "HASH",
                 },
@@ -270,10 +346,18 @@ public sealed class SagaOrchestrationEffectTests
             events,
             item =>
             {
+                SagaStepExecutionStarted started = AssertStartedEvent(item, 0, "Debit", SagaExecutionDirection.Forward);
+                Assert.Equal(startedAt, started.StartedAt);
+            },
+            item =>
+            {
+                SagaStepExecutionStarted started = Assert.IsType<SagaStepExecutionStarted>(events[0]);
                 SagaStepFailed failed = Assert.IsType<SagaStepFailed>(item);
                 Assert.Equal("ERR", failed.ErrorCode);
                 Assert.Equal("boom", failed.ErrorMessage);
                 Assert.Equal(0, failed.StepIndex);
+                Assert.Equal(started.AttemptId, failed.AttemptId);
+                Assert.Equal(started.OperationKey, failed.OperationKey);
             },
             item =>
             {
@@ -293,8 +377,8 @@ public sealed class SagaOrchestrationEffectTests
         FakeTimeProvider timeProvider = new(now);
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaSuccessStep), false),
-            new(1, "Credit", typeof(SagaSuccessStep), false),
+            new(0, "Debit", typeof(SagaSuccessStep), false, SagaStepRecoveryPolicy.Automatic, null),
+            new(1, "Credit", typeof(SagaSuccessStep), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaSuccessStep>());
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
@@ -302,11 +386,65 @@ public sealed class SagaOrchestrationEffectTests
             effect.HandleAsync(
                 new SagaStepCompleted
                 {
+                    AttemptId = Guid.NewGuid(),
                     StepIndex = 0,
                     StepName = "Debit",
                     CompletedAt = now,
+                    OperationKey = "operation-key",
                 },
                 new(),
+                "saga",
+                0,
+                CancellationToken.None));
+        Assert.Collection(
+            events,
+            item => AssertStartedEvent(item, 1, "Credit", SagaExecutionDirection.Forward),
+            item => Assert.IsType<SagaMarkerEvent>(item),
+            item =>
+            {
+                SagaStepExecutionStarted started = Assert.IsType<SagaStepExecutionStarted>(events[0]);
+                SagaStepCompleted completed = Assert.IsType<SagaStepCompleted>(item);
+                Assert.Equal(1, completed.StepIndex);
+                Assert.Equal("Credit", completed.StepName);
+                Assert.Equal(now, completed.CompletedAt);
+                Assert.Equal(started.AttemptId, completed.AttemptId);
+                Assert.Equal(started.OperationKey, completed.OperationKey);
+            });
+    }
+
+    /// <summary>
+    ///     Verifies reminder/manual execution-started markers execute replay work with replay context.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncExecutesStartedReplayAttempt()
+    {
+        DateTimeOffset now = new(2025, 2, 12, 9, 30, 0, TimeSpan.Zero);
+        FakeTimeProvider timeProvider = new(now);
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaSuccessStep), false, SagaStepRecoveryPolicy.Automatic, null),
+        ];
+        using ServiceProvider provider = CreateProvider(services => services.AddSingleton<SagaSuccessStep>());
+        SagaSuccessStep step = provider.GetRequiredService<SagaSuccessStep>();
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaStepExecutionStarted
+                {
+                    AttemptId = Guid.NewGuid(),
+                    Direction = SagaExecutionDirection.Forward,
+                    OperationKey = "resume-op",
+                    Source = SagaResumeSource.Reminder,
+                    StartedAt = now,
+                    StepIndex = 0,
+                    StepName = "Debit",
+                },
+                new()
+                {
+                    Phase = SagaPhase.Running,
+                    SagaId = Guid.NewGuid(),
+                },
                 "saga",
                 0,
                 CancellationToken.None));
@@ -316,10 +454,15 @@ public sealed class SagaOrchestrationEffectTests
             item =>
             {
                 SagaStepCompleted completed = Assert.IsType<SagaStepCompleted>(item);
-                Assert.Equal(1, completed.StepIndex);
-                Assert.Equal("Credit", completed.StepName);
+                Assert.Equal(0, completed.StepIndex);
+                Assert.Equal("Debit", completed.StepName);
                 Assert.Equal(now, completed.CompletedAt);
+                Assert.Equal("resume-op", completed.OperationKey);
             });
+        Assert.NotNull(step.LastExecutionContext);
+        Assert.True(step.LastExecutionContext!.IsReplay);
+        Assert.Equal(SagaResumeSource.Reminder, step.LastExecutionContext.Source);
+        Assert.Equal("resume-op", step.LastExecutionContext.OperationKey);
     }
 
     /// <summary>
@@ -333,15 +476,17 @@ public sealed class SagaOrchestrationEffectTests
         FakeTimeProvider timeProvider = new(now);
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaSuccessStep), false),
+            new(0, "Debit", typeof(SagaSuccessStep), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
-        using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaSuccessStep>());
+        using ServiceProvider provider = CreateProvider(services => services.AddSingleton<SagaSuccessStep>());
+        SagaSuccessStep step = provider.GetRequiredService<SagaSuccessStep>();
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, timeProvider);
         List<object> events = await CollectAsync(
             effect.HandleAsync(
                 new SagaStartedEvent
                 {
                     SagaId = Guid.NewGuid(),
+                    RecoveryMode = SagaRecoveryMode.Automatic,
                     StartedAt = now,
                     StepHash = "HASH",
                 },
@@ -351,14 +496,24 @@ public sealed class SagaOrchestrationEffectTests
                 CancellationToken.None));
         Assert.Collection(
             events,
+            item => AssertStartedEvent(item, 0, "Debit", SagaExecutionDirection.Forward),
             item => Assert.IsType<SagaMarkerEvent>(item),
             item =>
             {
+                SagaStepExecutionStarted started = Assert.IsType<SagaStepExecutionStarted>(events[0]);
                 SagaStepCompleted completed = Assert.IsType<SagaStepCompleted>(item);
                 Assert.Equal(0, completed.StepIndex);
                 Assert.Equal("Debit", completed.StepName);
                 Assert.Equal(now, completed.CompletedAt);
+                Assert.Equal(started.AttemptId, completed.AttemptId);
+                Assert.Equal(started.OperationKey, completed.OperationKey);
             });
+        Assert.NotNull(step.LastExecutionContext);
+        Assert.Equal(SagaExecutionDirection.Forward, step.LastExecutionContext!.Direction);
+        Assert.False(step.LastExecutionContext.IsReplay);
+        Assert.Equal(SagaResumeSource.Initial, step.LastExecutionContext.Source);
+        Assert.Equal(0, step.LastExecutionContext.StepIndex);
+        Assert.Equal("Debit", step.LastExecutionContext.StepName);
     }
 
     /// <summary>
@@ -398,7 +553,13 @@ public sealed class SagaOrchestrationEffectTests
     {
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaCompensationFailStep), true),
+            new(
+                0,
+                "Debit",
+                typeof(SagaCompensationFailStep),
+                true,
+                SagaStepRecoveryPolicy.Automatic,
+                SagaStepRecoveryPolicy.Automatic),
         ];
         using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaCompensationFailStep>());
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
@@ -412,9 +573,15 @@ public sealed class SagaOrchestrationEffectTests
                 "saga",
                 0,
                 CancellationToken.None));
-        SagaFailed failed = Assert.IsType<SagaFailed>(Assert.Single(events));
-        Assert.Equal("FAIL", failed.ErrorCode);
-        Assert.Equal("nope", failed.ErrorMessage);
+        Assert.Collection(
+            events,
+            item => AssertStartedEvent(item, 0, "Debit", SagaExecutionDirection.Compensation),
+            item =>
+            {
+                SagaFailed failed = Assert.IsType<SagaFailed>(item);
+                Assert.Equal("FAIL", failed.ErrorCode);
+                Assert.Equal("nope", failed.ErrorMessage);
+            });
     }
 
     /// <summary>
@@ -430,9 +597,11 @@ public sealed class SagaOrchestrationEffectTests
             effect.HandleAsync(
                 new SagaStepFailed
                 {
+                    AttemptId = Guid.NewGuid(),
                     StepIndex = 0,
                     StepName = "Step",
                     ErrorCode = "ERR",
+                    OperationKey = "operation-key",
                 },
                 new(),
                 "saga",
@@ -468,6 +637,7 @@ public sealed class SagaOrchestrationEffectTests
                 new SagaStartedEvent
                 {
                     SagaId = Guid.NewGuid(),
+                    RecoveryMode = SagaRecoveryMode.Automatic,
                     StartedAt = new(2025, 2, 12, 14, 0, 0, TimeSpan.Zero),
                     StepHash = "HASH",
                 },
@@ -488,7 +658,7 @@ public sealed class SagaOrchestrationEffectTests
     {
         SagaStepInfo[] steps =
         [
-            new(0, "Invalid", typeof(SagaInvalidStep), false),
+            new(0, "Invalid", typeof(SagaInvalidStep), false, SagaStepRecoveryPolicy.Automatic, null),
         ];
         using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaInvalidStep>());
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
@@ -498,6 +668,7 @@ public sealed class SagaOrchestrationEffectTests
                                new SagaStartedEvent
                                {
                                    SagaId = Guid.NewGuid(),
+                                   RecoveryMode = SagaRecoveryMode.Automatic,
                                    StartedAt = new(2025, 2, 12, 13, 0, 0, TimeSpan.Zero),
                                    StepHash = "HASH",
                                },
@@ -520,7 +691,13 @@ public sealed class SagaOrchestrationEffectTests
     {
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaCompensationSkippedStep), true),
+            new(
+                0,
+                "Debit",
+                typeof(SagaCompensationSkippedStep),
+                true,
+                SagaStepRecoveryPolicy.Automatic,
+                SagaStepRecoveryPolicy.Automatic),
         ];
         using ServiceProvider provider =
             CreateProvider(services => services.AddTransient<SagaCompensationSkippedStep>());
@@ -535,9 +712,18 @@ public sealed class SagaOrchestrationEffectTests
                 "saga",
                 0,
                 CancellationToken.None));
-        SagaStepCompensated compensated = Assert.IsType<SagaStepCompensated>(Assert.Single(events));
-        Assert.Equal(0, compensated.StepIndex);
-        Assert.Equal("Debit", compensated.StepName);
+        Assert.Collection(
+            events,
+            item => AssertStartedEvent(item, 0, "Debit", SagaExecutionDirection.Compensation),
+            item =>
+            {
+                SagaStepExecutionStarted started = Assert.IsType<SagaStepExecutionStarted>(events[0]);
+                SagaStepCompensated compensated = Assert.IsType<SagaStepCompensated>(item);
+                Assert.Equal(0, compensated.StepIndex);
+                Assert.Equal("Debit", compensated.StepName);
+                Assert.Equal(started.AttemptId, compensated.AttemptId);
+                Assert.Equal(started.OperationKey, compensated.OperationKey);
+            });
     }
 
     /// <summary>
@@ -549,7 +735,13 @@ public sealed class SagaOrchestrationEffectTests
     {
         SagaStepInfo[] steps =
         [
-            new(0, "Debit", typeof(SagaCompensationNoCodeStep), true),
+            new(
+                0,
+                "Debit",
+                typeof(SagaCompensationNoCodeStep),
+                true,
+                SagaStepRecoveryPolicy.Automatic,
+                SagaStepRecoveryPolicy.Automatic),
         ];
         using ServiceProvider provider = CreateProvider(services =>
             services.AddTransient<SagaCompensationNoCodeStep>());
@@ -564,8 +756,14 @@ public sealed class SagaOrchestrationEffectTests
                 "saga",
                 0,
                 CancellationToken.None));
-        SagaFailed failed = Assert.IsType<SagaFailed>(Assert.Single(events));
-        Assert.Equal("COMPENSATION_FAILED", failed.ErrorCode);
-        Assert.Equal("nope", failed.ErrorMessage);
+        Assert.Collection(
+            events,
+            item => AssertStartedEvent(item, 0, "Debit", SagaExecutionDirection.Compensation),
+            item =>
+            {
+                SagaFailed failed = Assert.IsType<SagaFailed>(item);
+                Assert.Equal("COMPENSATION_FAILED", failed.ErrorCode);
+                Assert.Equal("nope", failed.ErrorMessage);
+            });
     }
 }

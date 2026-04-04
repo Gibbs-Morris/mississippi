@@ -36,14 +36,46 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                           {
                                               using System;
 
+                                              public enum SagaRecoveryMode
+                                              {
+                                                  Automatic,
+                                                  ManualOnly,
+                                              }
+
+                                              [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+                                              public sealed class SagaRecoveryAttribute : Attribute
+                                              {
+                                                  public SagaRecoveryAttribute(SagaRecoveryMode mode = SagaRecoveryMode.Automatic)
+                                                  {
+                                                      Mode = mode;
+                                                  }
+
+                                                  public SagaRecoveryMode Mode { get; }
+
+                                                  public string? Profile { get; set; }
+                                              }
+
+                                              public enum SagaStepRecoveryPolicy
+                                              {
+                                                  Automatic,
+                                                  ManualOnly,
+                                              }
+
+                                              public sealed record SagaRecoveryInfo(SagaRecoveryMode Mode, string? Profile);
+
                                               [AttributeUsage(AttributeTargets.Class, Inherited = false)]
                                               public sealed class SagaStepAttribute<TSaga> : Attribute
                                               {
-                                                  public SagaStepAttribute(int order)
+                                                  public SagaStepAttribute(int order, SagaStepRecoveryPolicy forwardRecoveryPolicy)
                                                   {
                                                       Order = order;
+                                                      ForwardRecoveryPolicy = forwardRecoveryPolicy;
                                                       Saga = typeof(TSaga);
                                                   }
+
+                                                  public SagaStepRecoveryPolicy CompensationRecoveryPolicy { get; set; }
+
+                                                  public SagaStepRecoveryPolicy ForwardRecoveryPolicy { get; }
 
                                                   public int Order { get; }
 
@@ -81,6 +113,17 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                           {
                                               public static class SagaRegistrations
                                               {
+                                              }
+                                          }
+
+                                          namespace Mississippi.DomainModeling.Abstractions
+                                          {
+                                              using Microsoft.Extensions.DependencyInjection;
+
+                                              public static class SagaRecoveryInfoRegistrations
+                                              {
+                                                  public static IServiceCollection AddSagaRecoveryInfo<TSaga>(this IServiceCollection services, SagaRecoveryInfo recovery)
+                                                      where TSaga : class, ISagaState => services;
                                               }
                                           }
 
@@ -187,17 +230,21 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                           public string AccountId { get; init; }
                                       }
 
+                                      [SagaRecovery(SagaRecoveryMode.ManualOnly, Profile = "critical-payments")]
                                       [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
                                       public sealed record TransferSagaState : ISagaState
                                       {
                                       }
 
-                                      [SagaStep<TransferSagaState>(0)]
+                                      [SagaStep<TransferSagaState>(
+                                          0,
+                                          SagaStepRecoveryPolicy.Automatic,
+                                          CompensationRecoveryPolicy = SagaStepRecoveryPolicy.ManualOnly)]
                                       public sealed class DebitStep : ISagaStep<TransferSagaState>, ICompensatable<TransferSagaState>
                                       {
                                       }
 
-                                      [SagaStep<TransferSagaState>(1)]
+                                      [SagaStep<TransferSagaState>(1, SagaStepRecoveryPolicy.ManualOnly)]
                                       public sealed class CreditStep : ISagaStep<TransferSagaState>
                                       {
                                       }
@@ -230,7 +277,19 @@ public sealed class SagaSiloRegistrationGeneratorTests
             "AddSagaStepInfo<global::TestApp.Domain.Sagas.TransferSagaState>",
             generatedCode,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "AddSagaRecoveryInfo<global::TestApp.Domain.Sagas.TransferSagaState>(new(global::Mississippi.DomainModeling.Abstractions.SagaRecoveryMode.ManualOnly, \"critical-payments\"));",
+            generatedCode,
+            StringComparison.Ordinal);
         Assert.Contains("typeof(global::TestApp.Domain.Sagas.CreditStep)", generatedCode, StringComparison.Ordinal);
+        Assert.Contains(
+            "global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy.Automatic",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy.ManualOnly",
+            generatedCode,
+            StringComparison.Ordinal);
         Assert.Contains(
             "AddReducer<global::TestApp.Domain.Sagas.TransferStarted",
             generatedCode,
@@ -259,7 +318,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       {
                                       }
 
-                                      [SagaStep<TransferSagaState>(0)]
+                                      [SagaStep<TransferSagaState>(0, SagaStepRecoveryPolicy.Automatic)]
                                       public sealed class MissingSagaStep
                                       {
                                       }
@@ -305,6 +364,120 @@ public sealed class SagaSiloRegistrationGeneratorTests
     }
 
     /// <summary>
+    ///     Verifies explicit enum casts that do not map to named members are preserved in generated code.
+    /// </summary>
+    [Fact]
+    public void PreservesExplicitUnknownEnumCastsInGeneratedCode()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [SagaRecovery((SagaRecoveryMode)123)]
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+
+                                      [SagaStep<TransferSagaState>(0, (SagaStepRecoveryPolicy)456)]
+                                      public sealed class DebitStep : ISagaStep<TransferSagaState>
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, sagaSource);
+        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        Assert.Contains(
+            "(global::Mississippi.DomainModeling.Abstractions.SagaRecoveryMode)(int)123",
+            generatedCode,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "(global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy)(int)456",
+            generatedCode,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies compensatable steps must declare compensation recovery policy explicitly.
+    /// </summary>
+    [Fact]
+    public void ReportsDiagnosticWhenCompensatableStepOmitsCompensationRecoveryPolicy()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+
+                                      [SagaStep<TransferSagaState>(0, SagaStepRecoveryPolicy.Automatic)]
+                                      public sealed class DebitStep : ISagaStep<TransferSagaState>, ICompensatable<TransferSagaState>
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult _) =
+            RunGenerator(AttributeStubs, sagaSource);
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1010"));
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+    }
+
+    /// <summary>
+    ///     Verifies non-compensatable steps cannot declare compensation recovery policy.
+    /// </summary>
+    [Fact]
+    public void ReportsDiagnosticWhenNonCompensatableStepSetsCompensationRecoveryPolicy()
+    {
+        const string sagaSource = """
+                                  using Mississippi.DomainModeling.Abstractions;
+                                  using Mississippi.Inlet.Generators.Abstractions;
+
+                                  namespace TestApp.Domain.Sagas
+                                  {
+                                      public sealed record TransferInput
+                                      {
+                                          public string AccountId { get; init; }
+                                      }
+
+                                      [GenerateSagaEndpoints(InputType = typeof(TransferInput))]
+                                      public sealed record TransferSagaState : ISagaState
+                                      {
+                                      }
+
+                                      [SagaStep<TransferSagaState>(
+                                          0,
+                                          SagaStepRecoveryPolicy.Automatic,
+                                          CompensationRecoveryPolicy = SagaStepRecoveryPolicy.ManualOnly)]
+                                      public sealed class DebitStep : ISagaStep<TransferSagaState>
+                                      {
+                                      }
+                                  }
+                                  """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult _) =
+            RunGenerator(AttributeStubs, sagaSource);
+        Diagnostic diagnostic = Assert.Single(diagnostics.Where(d => d.Id == "MSI1011"));
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+    }
+
+    /// <summary>
     ///     Verifies saga registration accessors can be read via reflection.
     /// </summary>
     [Fact]
@@ -327,7 +500,7 @@ public sealed class SagaSiloRegistrationGeneratorTests
                                       {
                                       }
 
-                                      [SagaStep<TransferSagaState>(0)]
+                                      [SagaStep<TransferSagaState>(0, SagaStepRecoveryPolicy.Automatic)]
                                       public sealed class DebitStep : ISagaStep<TransferSagaState>
                                       {
                                       }

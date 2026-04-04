@@ -22,6 +22,11 @@ public sealed class SagaFailedStatusReducerTests
         MoneyTransferStatusProjection initial = new()
         {
             Phase = SagaPhase.Running,
+            PendingDirection = SagaExecutionDirection.Forward,
+            PendingStepIndex = 1,
+            PendingStepName = "Deposit",
+            BlockedReason = "Needs manual resume.",
+            ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired,
         };
         DateTimeOffset failedAt = new(2026, 2, 3, 11, 45, 0, TimeSpan.Zero);
         SagaFailed @event = new()
@@ -35,6 +40,11 @@ public sealed class SagaFailedStatusReducerTests
         result.ErrorCode.Should().Be(@event.ErrorCode);
         result.ErrorMessage.Should().Be(@event.ErrorMessage);
         result.CompletedAt.Should().Be(failedAt);
+        result.PendingDirection.Should().BeNull();
+        result.PendingStepIndex.Should().BeNull();
+        result.PendingStepName.Should().BeNull();
+        result.BlockedReason.Should().BeNull();
+        result.ResumeDisposition.Should().Be(SagaResumeDisposition.Terminal);
     }
 
     /// <summary>

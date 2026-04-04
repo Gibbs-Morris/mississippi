@@ -48,12 +48,63 @@ public sealed class SagaStatusReducersGeneratorTests
                                                          Failed,
                                                      }
 
+                                                     public enum SagaRecoveryMode
+                                                     {
+                                                         Automatic,
+                                                         ManualOnly,
+                                                     }
+
+                                                     public enum SagaExecutionDirection
+                                                     {
+                                                         Forward,
+                                                         Compensation,
+                                                     }
+
+                                                     public enum SagaResumeDisposition
+                                                     {
+                                                         Idle,
+                                                         AutomaticPending,
+                                                         ManualInterventionRequired,
+                                                         Terminal,
+                                                         WorkflowMismatch,
+                                                     }
+
+                                                     public enum SagaResumeSource
+                                                     {
+                                                         Initial,
+                                                         Reminder,
+                                                         Manual,
+                                                     }
+
                                                      public sealed record SagaStartedEvent
                                                      {
                                                          public Guid SagaId { get; init; }
                                                          public string? CorrelationId { get; init; }
                                                          public DateTimeOffset StartedAt { get; init; }
                                                          public string? StepHash { get; init; }
+                                                         public SagaRecoveryMode RecoveryMode { get; init; }
+                                                         public string? RecoveryProfile { get; init; }
+                                                     }
+
+                                                     public sealed record SagaStepExecutionStarted
+                                                     {
+                                                         public Guid AttemptId { get; init; }
+                                                         public SagaExecutionDirection Direction { get; init; }
+                                                         public string? OperationKey { get; init; }
+                                                         public SagaResumeSource Source { get; init; }
+                                                         public DateTimeOffset StartedAt { get; init; }
+                                                         public int StepIndex { get; init; }
+                                                         public string? StepName { get; init; }
+                                                     }
+
+                                                     public sealed record SagaResumeBlocked
+                                                     {
+                                                         public DateTimeOffset BlockedAt { get; init; }
+                                                         public string? BlockedReason { get; init; }
+                                                         public SagaExecutionDirection Direction { get; init; }
+                                                         public SagaResumeSource Source { get; init; }
+                                                         public int StepIndex { get; init; }
+                                                         public string? StepName { get; init; }
                                                      }
 
                                                      public sealed record SagaStepCompleted
@@ -86,6 +137,14 @@ public sealed class SagaStatusReducersGeneratorTests
                                                      public sealed record SagaCompensating
                                                      {
                                                          public int FromStepIndex { get; init; }
+                                                     }
+
+                                                     public sealed record SagaStepCompensated
+                                                     {
+                                                         public Guid AttemptId { get; init; }
+                                                         public string? OperationKey { get; init; }
+                                                         public int StepIndex { get; init; }
+                                                         public string? StepName { get; init; }
                                                      }
 
                                                      public sealed record SagaCompensated
@@ -127,6 +186,74 @@ public sealed class SagaStatusReducersGeneratorTests
             out Compilation outputCompilation,
             out ImmutableArray<Diagnostic> diagnostics);
         return (outputCompilation, diagnostics, driver.GetRunResult());
+    }
+
+    /// <summary>
+    ///     Generated reducers should include recovery-metadata reducers when the projection defines matching fields.
+    /// </summary>
+    [Fact]
+    public void GeneratedReducersIncludeRecoveryAssignmentsWhenProjectionDefinesRecoveryFields()
+    {
+        const string projectionSource = """
+                                        using Mississippi.DomainModeling.Abstractions;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.SagaStatus
+                                        {
+                                            [GenerateSagaStatusReducers]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public SagaPhase Phase { get; init; }
+                                                public int LastCompletedStepIndex { get; init; }
+                                                public string? ErrorCode { get; init; }
+                                                public string? ErrorMessage { get; init; }
+                                                public DateTimeOffset? StartedAt { get; init; }
+                                                public DateTimeOffset? CompletedAt { get; init; }
+                                                public SagaRecoveryMode RecoveryMode { get; init; }
+                                                public string? RecoveryProfile { get; init; }
+                                                public SagaExecutionDirection? PendingDirection { get; init; }
+                                                public int? PendingStepIndex { get; init; }
+                                                public string? PendingStepName { get; init; }
+                                                public SagaResumeDisposition ResumeDisposition { get; init; }
+                                                public string? BlockedReason { get; init; }
+                                                public SagaResumeSource? LastResumeSource { get; init; }
+                                                public DateTimeOffset? LastResumeAttemptedAt { get; init; }
+                                                public int AutomaticAttemptCount { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeAndBaseStubs, projectionSource);
+        string? reducersSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("SagaStatusReducers", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(reducersSource);
+        Assert.Contains("RecoveryMode = eventData.RecoveryMode", reducersSource, StringComparison.Ordinal);
+        Assert.Contains("PendingDirection = SagaExecutionDirection.Forward", reducersSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "class SagaStatusRecoveryReasonClassifier",
+            reducersSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SagaStatusRecoveryReasonClassifier.IsWorkflowMismatch(eventData.BlockedReason)",
+            reducersSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "? SagaResumeDisposition.WorkflowMismatch : SagaResumeDisposition.ManualInterventionRequired",
+            reducersSource,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "SagaResumeDisposition.WorkflowMismatch",
+            reducersSource,
+            StringComparison.Ordinal);
+        Assert.Contains("class SagaStepExecutionStartedStatusReducer", reducersSource, StringComparison.Ordinal);
+        Assert.Contains("class SagaResumeBlockedStatusReducer", reducersSource, StringComparison.Ordinal);
+        Assert.Contains("class SagaStepCompensatedStatusReducer", reducersSource, StringComparison.Ordinal);
+        Assert.Contains(
+            "AutomaticAttemptCount = eventData.Source is SagaResumeSource.Reminder",
+            reducersSource,
+            StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
@@ -32,6 +33,9 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
     private const string ReducerRegistrationsTypeFullName = "Mississippi.Tributary.Runtime.ReducerRegistrations";
+
+    private const string SagaRecoveryAttributeFullName =
+        "Mississippi.DomainModeling.Abstractions.SagaRecoveryAttribute";
 
     private const string SagaRegistrationsTypeFullName = "Mississippi.DomainModeling.Runtime.SagaRegistrations";
 
@@ -72,6 +76,22 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         "MSI1009",
         "Saga step order non-contiguous",
         "Saga '{0}' has non-contiguous step order. Expected {1} but found {2}.",
+        DiagnosticCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    private static readonly DiagnosticDescriptor SagaCompensationRecoveryPolicyMissingDescriptor = new(
+        "MSI1010",
+        "Compensation recovery policy missing",
+        "Saga step '{0}' implements ICompensatable<{1}> and must explicitly set CompensationRecoveryPolicy",
+        DiagnosticCategory,
+        DiagnosticSeverity.Error,
+        true);
+
+    private static readonly DiagnosticDescriptor SagaCompensationRecoveryPolicyUnexpectedDescriptor = new(
+        "MSI1011",
+        "Compensation recovery policy unexpected",
+        "Saga step '{0}' sets CompensationRecoveryPolicy but does not implement ICompensatable<{1}>",
         DiagnosticCategory,
         DiagnosticSeverity.Error,
         true);
@@ -138,6 +158,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 typeSymbol,
                 context.SagaAttrSymbol,
                 context.SagaAttrGenericSymbol,
+                context.SagaRecoveryAttrSymbol,
                 context.SagaStateSymbol,
                 targetRootNamespace,
                 diagnostics);
@@ -232,6 +253,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.AppendLine("ArgumentNullException.ThrowIfNull(services);");
         sb.AppendLine($"services.AddSagaOrchestration<{saga.SagaStateTypeName}, {saga.InputTypeName}>();");
+        sb.AppendLine(
+            $"services.AddSagaRecoveryInfo<{saga.SagaStateTypeName}>(new({saga.RecoveryModeExpression}, {ToStringLiteral(saga.RecoveryProfile)}));");
         sb.AppendLine($"services.AddSnapshotStateConverter<{saga.SagaStateTypeName}>();");
         foreach (StepInfo step in saga.Steps)
         {
@@ -245,7 +268,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             foreach (StepInfo step in saga.Steps)
             {
                 sb.AppendLine(
-                    $"new({step.StepIndex}, \"{step.StepName}\", typeof({step.StepTypeName}), hasCompensation: {(step.HasCompensation ? "true" : "false")}),");
+                    $"new({step.StepIndex}, \"{step.StepName}\", typeof({step.StepTypeName}), hasCompensation: {(step.HasCompensation ? "true" : "false")}, {step.ForwardRecoveryPolicyExpression}, {step.CompensationRecoveryPolicyExpression ?? "null"}),");
             }
 
             sb.CloseBrace();
@@ -294,6 +317,75 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static Diagnostic? GetCompensationPolicyDiagnostic(
+        bool hasCompensation,
+        bool hasCompensationRecoveryPolicy,
+        Location? location,
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol sagaStateSymbol,
+        ref string? compensationRecoveryPolicyExpression
+    )
+    {
+        if (hasCompensation && !hasCompensationRecoveryPolicy)
+        {
+            return Diagnostic.Create(
+                SagaCompensationRecoveryPolicyMissingDescriptor,
+                location,
+                typeSymbol.Name,
+                sagaStateSymbol.Name);
+        }
+
+        if (!hasCompensation && hasCompensationRecoveryPolicy)
+        {
+            compensationRecoveryPolicyExpression = null;
+            return Diagnostic.Create(
+                SagaCompensationRecoveryPolicyUnexpectedDescriptor,
+                location,
+                typeSymbol.Name,
+                sagaStateSymbol.Name);
+        }
+
+        return null;
+    }
+
+    private static string GetEnumUnderlyingValueExpression(
+        ITypeSymbol underlyingType,
+        object value
+    )
+    {
+        string underlyingTypeExpression = underlyingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        return value switch
+        {
+            byte byteValue => $"({underlyingTypeExpression}){byteValue}",
+            sbyte sbyteValue => $"({underlyingTypeExpression}){sbyteValue}",
+            short shortValue => $"({underlyingTypeExpression}){shortValue}",
+            ushort ushortValue => $"({underlyingTypeExpression}){ushortValue}",
+            int intValue => $"({underlyingTypeExpression}){intValue}",
+            uint uintValue => $"({underlyingTypeExpression}){uintValue}U",
+            long longValue => $"({underlyingTypeExpression}){longValue}L",
+            ulong ulongValue => $"({underlyingTypeExpression}){ulongValue}UL",
+            var _ => throw new InvalidOperationException(
+                $"Unsupported enum constant value type '{value.GetType().FullName}'."),
+        };
+    }
+
+    private static string GetForwardRecoveryPolicyExpression(
+        AttributeData attr
+    )
+    {
+        TypedConstant forwardRecoveryPolicyArgument = attr.ConstructorArguments.Length > 1
+            ? attr.ConstructorArguments[1]
+            : default;
+        string forwardRecoveryPolicyExpression =
+            "global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy.Automatic";
+        if (TryGetEnumValueExpression(forwardRecoveryPolicyArgument, out string? parsedForwardRecoveryPolicyExpression))
+        {
+            forwardRecoveryPolicyExpression = parsedForwardRecoveryPolicyExpression!;
+        }
+
+        return forwardRecoveryPolicyExpression;
+    }
+
     private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
         Compilation compilation
     )
@@ -332,12 +424,29 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         return new(sagas, diagnostics);
     }
 
+    private static bool HasCompensationInterface(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? compensatableInterfaceSymbol
+    ) =>
+        compensatableInterfaceSymbol is not null &&
+        typeSymbol.AllInterfaces.Any(i =>
+            i.OriginalDefinition is not null &&
+            SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, compensatableInterfaceSymbol));
+
     private static bool HasRegistrationDependencies(
         Compilation compilation
     ) =>
         compilation.GetTypeByMetadataName(SagaRegistrationsTypeFullName) is not null &&
         compilation.GetTypeByMetadataName(ReducerRegistrationsTypeFullName) is not null &&
         compilation.GetTypeByMetadataName(SnapshotRegistrationsTypeFullName) is not null;
+
+    private static bool MatchesAttribute(
+        AttributeData attributeData,
+        INamedTypeSymbol? attributeSymbol
+    ) =>
+        attributeSymbol is not null &&
+        attributeData.AttributeClass is not null &&
+        SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol);
 
     private static bool MatchesSagaAttribute(
         AttributeData attr,
@@ -412,6 +521,39 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static INamedTypeSymbol? ResolveSagaStateSymbol(
+        AttributeData attr,
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol sagaStepInterfaceSymbol
+    )
+    {
+        if (attr.AttributeClass is not null && attr.AttributeClass.IsGenericType)
+        {
+            INamedTypeSymbol? genericSagaState = attr.AttributeClass.TypeArguments.FirstOrDefault() as INamedTypeSymbol;
+            if (genericSagaState is not null)
+            {
+                return genericSagaState;
+            }
+        }
+
+        INamedTypeSymbol? sagaInterface = typeSymbol.AllInterfaces.FirstOrDefault(iface =>
+            iface.OriginalDefinition is not null &&
+            SymbolEqualityComparer.Default.Equals(iface.OriginalDefinition, sagaStepInterfaceSymbol));
+        return sagaInterface?.TypeArguments[0] as INamedTypeSymbol;
+    }
+
+    private static string ToStringLiteral(
+        string? value
+    )
+    {
+        if (value is null)
+        {
+            return "null";
+        }
+
+        return SyntaxFactory.Literal(value).ToFullString();
+    }
+
     private static SagaSymbolContext? TryBuildSymbolContext(
         Compilation compilation
     )
@@ -419,6 +561,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol? sagaAttrSymbol = compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeFullName);
         INamedTypeSymbol? sagaAttrGenericSymbol =
             compilation.GetTypeByMetadataName(GenerateSagaEndpointsAttributeGenericFullName);
+        INamedTypeSymbol? sagaRecoveryAttrSymbol = compilation.GetTypeByMetadataName(SagaRecoveryAttributeFullName);
         INamedTypeSymbol? sagaStateSymbol = compilation.GetTypeByMetadataName(SagaStateInterfaceFullName);
         INamedTypeSymbol? sagaStepAttrGenericSymbol =
             compilation.GetTypeByMetadataName(SagaStepAttributeGenericFullName);
@@ -438,11 +581,42 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         return new(
             sagaAttrSymbol,
             sagaAttrGenericSymbol,
+            sagaRecoveryAttrSymbol,
             sagaStateSymbol,
             sagaStepAttrGenericSymbol,
             sagaStepInterfaceSymbol,
             compensatableInterfaceSymbol,
             reducerBaseSymbol);
+    }
+
+    private static bool TryGetEnumValueExpression(
+        TypedConstant constant,
+        out string? expression
+    )
+    {
+        expression = null;
+        if (constant.Type is not INamedTypeSymbol enumType || constant.Value is null)
+        {
+            return false;
+        }
+
+        IFieldSymbol? enumMember = enumType.GetMembers()
+            .OfType<IFieldSymbol>()
+            .FirstOrDefault(member => member.HasConstantValue && Equals(member.ConstantValue, constant.Value));
+        if (enumMember is not null)
+        {
+            expression = $"{enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{enumMember.Name}";
+            return true;
+        }
+
+        if (enumType.EnumUnderlyingType is null)
+        {
+            return false;
+        }
+
+        expression = $"({enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})" +
+                     GetEnumUnderlyingValueExpression(enumType.EnumUnderlyingType, constant.Value);
+        return true;
     }
 
     private static bool TryGetInputType(
@@ -464,6 +638,24 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         inputTypeSymbol =
             attr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "InputType").Value.Value as INamedTypeSymbol;
         return inputTypeSymbol is not null;
+    }
+
+    private static bool TryGetNamedEnumValueExpression(
+        AttributeData attributeData,
+        string argumentName,
+        out string? expression
+    )
+    {
+        KeyValuePair<string, TypedConstant> namedArgument = attributeData.NamedArguments
+            .Where(candidate => candidate.Key == argumentName)
+            .FirstOrDefault();
+        if (namedArgument.Key is not null)
+        {
+            return TryGetEnumValueExpression(namedArgument.Value, out expression);
+        }
+
+        expression = null;
+        return false;
     }
 
     private static ReducerInfo? TryGetReducerInfo(
@@ -497,6 +689,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         INamedTypeSymbol typeSymbol,
         INamedTypeSymbol? sagaAttrSymbol,
         INamedTypeSymbol? sagaAttrGenericSymbol,
+        INamedTypeSymbol? sagaRecoveryAttrSymbol,
         INamedTypeSymbol sagaStateSymbol,
         string targetRootNamespace,
         List<Diagnostic> diagnostics
@@ -531,10 +724,23 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
 
         INamedTypeSymbol inputType = inputTypeSymbol;
+        AttributeData? recoveryAttribute = typeSymbol.GetAttributes()
+            .FirstOrDefault(attributeData => MatchesAttribute(attributeData, sagaRecoveryAttrSymbol));
+        string recoveryModeExpression = "global::Mississippi.DomainModeling.Abstractions.SagaRecoveryMode.Automatic";
+        if (recoveryAttribute is not null &&
+            TryGetEnumValueExpression(
+                recoveryAttribute.ConstructorArguments.Length > 0 ? recoveryAttribute.ConstructorArguments[0] : default,
+                out string? parsedRecoveryModeExpression))
+        {
+            recoveryModeExpression = parsedRecoveryModeExpression!;
+        }
+
+        string? recoveryProfile =
+            recoveryAttribute?.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Profile").Value.Value as string;
         string outputNamespace = NamingConventions.GetSiloRegistrationNamespace(
             typeSymbol.ContainingNamespace.ToDisplayString(),
             targetRootNamespace);
-        return new(typeSymbol, inputType, outputNamespace);
+        return new(typeSymbol, inputType, outputNamespace, recoveryModeExpression, recoveryProfile);
     }
 
     private static StepInfoResult TryGetStepInfo(
@@ -568,20 +774,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 null);
         }
 
-        INamedTypeSymbol? sagaStateSymbol = null;
-        if (attr.AttributeClass is not null && attr.AttributeClass.IsGenericType)
-        {
-            sagaStateSymbol = attr.AttributeClass.TypeArguments.FirstOrDefault() as INamedTypeSymbol;
-        }
-
-        if (sagaStateSymbol is null)
-        {
-            INamedTypeSymbol? sagaInterface = typeSymbol.AllInterfaces.FirstOrDefault(iface =>
-                iface.OriginalDefinition is not null &&
-                SymbolEqualityComparer.Default.Equals(iface.OriginalDefinition, sagaStepInterfaceSymbol));
-            sagaStateSymbol = sagaInterface?.TypeArguments[0] as INamedTypeSymbol;
-        }
-
+        string forwardRecoveryPolicyExpression = GetForwardRecoveryPolicyExpression(attr);
+        INamedTypeSymbol? sagaStateSymbol = ResolveSagaStateSymbol(attr, typeSymbol, sagaStepInterfaceSymbol);
         if (sagaStateSymbol is null)
         {
             return new(null, Diagnostic.Create(SagaStepMissingSagaDescriptor, location, typeSymbol.Name), null);
@@ -607,15 +801,29 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 sagaStateSymbol);
         }
 
-        bool hasCompensation = false;
-        if (compensatableInterfaceSymbol is not null)
-        {
-            hasCompensation = typeSymbol.AllInterfaces.Any(i =>
-                i.OriginalDefinition is not null &&
-                SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, compensatableInterfaceSymbol));
-        }
-
-        return new(new(sagaStateSymbol, typeSymbol, stepIndex, hasCompensation, location), null, sagaStateSymbol);
+        bool hasCompensation = HasCompensationInterface(typeSymbol, compensatableInterfaceSymbol);
+        bool hasCompensationRecoveryPolicy = TryGetNamedEnumValueExpression(
+            attr,
+            "CompensationRecoveryPolicy",
+            out string? compensationRecoveryPolicyExpression);
+        Diagnostic? compensationPolicyDiagnostic = GetCompensationPolicyDiagnostic(
+            hasCompensation,
+            hasCompensationRecoveryPolicy,
+            location,
+            typeSymbol,
+            sagaStateSymbol,
+            ref compensationRecoveryPolicyExpression);
+        return new(
+            new(
+                sagaStateSymbol,
+                typeSymbol,
+                stepIndex,
+                hasCompensation,
+                forwardRecoveryPolicyExpression,
+                compensationRecoveryPolicyExpression,
+                location),
+            compensationPolicyDiagnostic,
+            sagaStateSymbol);
     }
 
     private static void ValidateSteps(
@@ -766,12 +974,16 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         public SagaRegistrationInfo(
             INamedTypeSymbol sagaStateType,
             INamedTypeSymbol inputType,
-            string outputNamespace
+            string outputNamespace,
+            string recoveryModeExpression,
+            string? recoveryProfile
         )
         {
             SagaStateType = sagaStateType;
             InputType = inputType;
             OutputNamespace = outputNamespace;
+            RecoveryModeExpression = recoveryModeExpression;
+            RecoveryProfile = recoveryProfile;
             SagaNamespace = sagaStateType.ContainingNamespace.ToDisplayString();
             SagaName = RemoveSagaSuffix(sagaStateType.Name);
             SagaStateTypeName = sagaStateType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -785,6 +997,10 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         public string InputTypeName { get; }
 
         public string OutputNamespace { get; }
+
+        public string RecoveryModeExpression { get; }
+
+        public string? RecoveryProfile { get; }
 
         public List<ReducerInfo> Reducers { get; }
 
@@ -811,6 +1027,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         public SagaSymbolContext(
             INamedTypeSymbol? sagaAttrSymbol,
             INamedTypeSymbol? sagaAttrGenericSymbol,
+            INamedTypeSymbol? sagaRecoveryAttrSymbol,
             INamedTypeSymbol sagaStateSymbol,
             INamedTypeSymbol sagaStepAttrGenericSymbol,
             INamedTypeSymbol sagaStepInterfaceSymbol,
@@ -820,6 +1037,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         {
             SagaAttrSymbol = sagaAttrSymbol;
             SagaAttrGenericSymbol = sagaAttrGenericSymbol;
+            SagaRecoveryAttrSymbol = sagaRecoveryAttrSymbol;
             SagaStateSymbol = sagaStateSymbol;
             SagaStepAttrGenericSymbol = sagaStepAttrGenericSymbol;
             SagaStepInterfaceSymbol = sagaStepInterfaceSymbol;
@@ -835,6 +1053,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
 
         public INamedTypeSymbol? SagaAttrSymbol { get; }
 
+        public INamedTypeSymbol? SagaRecoveryAttrSymbol { get; }
+
         public INamedTypeSymbol SagaStateSymbol { get; }
 
         public INamedTypeSymbol SagaStepAttrGenericSymbol { get; }
@@ -849,6 +1069,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             INamedTypeSymbol stepType,
             int stepIndex,
             bool hasCompensation,
+            string forwardRecoveryPolicyExpression,
+            string? compensationRecoveryPolicyExpression,
             Location? location
         )
         {
@@ -856,10 +1078,16 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             StepType = stepType;
             StepIndex = stepIndex;
             HasCompensation = hasCompensation;
+            ForwardRecoveryPolicyExpression = forwardRecoveryPolicyExpression;
+            CompensationRecoveryPolicyExpression = compensationRecoveryPolicyExpression;
             Location = location;
             StepTypeName = stepType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             StepName = stepType.Name;
         }
+
+        public string? CompensationRecoveryPolicyExpression { get; }
+
+        public string ForwardRecoveryPolicyExpression { get; }
 
         public bool HasCompensation { get; }
 

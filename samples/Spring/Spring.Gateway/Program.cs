@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Authentication;
@@ -6,7 +8,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 using Mississippi.Aqueduct.Gateway;
 using Mississippi.Brooks.Serialization.Json;
@@ -25,18 +29,26 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
 using Orleans.Hosting;
+using Orleans.Runtime;
 
 using Scalar.AspNetCore;
 
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 SpringAuthOptions springAuthOptions = builder.Configuration.GetSection("SpringAuth").Get<SpringAuthOptions>() ?? new();
-builder.Services.Configure<SpringAuthOptions>(builder.Configuration.GetSection("SpringAuth"));
+builder.Services.AddOptions<SpringAuthOptions>().Bind(builder.Configuration.GetSection("SpringAuth")).ValidateOnStart();
 if (springAuthOptions.Enabled && !builder.Environment.IsDevelopment())
 {
     throw new InvalidOperationException("Spring local development authentication can only be enabled in Development.");
 }
 
+builder.Services.AddOptions<SagaRecoveryOptions>().Bind(builder.Configuration.GetSection("SagaRecovery"));
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<SpringSagaAccessContextProvider>();
+builder.Services.AddSingleton<ISagaAccessContextProvider>(sp =>
+    sp.GetRequiredService<SpringSagaAccessContextProvider>());
+builder.Services.AddSingleton<IValidateOptions<SpringAuthOptions>, SpringSagaAccessOptionsValidator>();
+builder.Services.AddHealthChecks().AddCheck<SpringSagaAuthorizationHealthCheck>("spring-saga-access");
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = springAuthOptions.Scheme;
@@ -66,6 +78,7 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 
 // Configure Orleans client - Aspire injects clustering config via environment variables
 builder.UseOrleansClient(clientBuilder => { clientBuilder.AddActivityPropagation(); });
+builder.Services.AddSpringSagaRecoverySupport();
 
 // Add controllers for aggregate API endpoints
 builder.Services.AddControllers();
@@ -142,6 +155,39 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.Use(async (
+    context,
+    next
+) =>
+{
+    object? previousFingerprint = RequestContext.Get(SpringSagaAccessContextProvider.RequestContextKey);
+    try
+    {
+        string? fingerprint = context.RequestServices.GetRequiredService<SpringSagaAccessContextProvider>()
+            .GetFingerprint();
+        if (string.IsNullOrWhiteSpace(fingerprint))
+        {
+            RequestContext.Remove(SpringSagaAccessContextProvider.RequestContextKey);
+        }
+        else
+        {
+            RequestContext.Set(SpringSagaAccessContextProvider.RequestContextKey, fingerprint);
+        }
+
+        await next();
+    }
+    finally
+    {
+        if (previousFingerprint is null)
+        {
+            RequestContext.Remove(SpringSagaAccessContextProvider.RequestContextKey);
+        }
+        else
+        {
+            RequestContext.Set(SpringSagaAccessContextProvider.RequestContextKey, previousFingerprint);
+        }
+    }
+});
 
 // OpenAPI documentation endpoints
 app.MapOpenApi();
@@ -167,11 +213,28 @@ app.MapInletHub();
 // Health check endpoint for Aspire resource health monitoring
 app.MapGet(
     "/health",
-    () => Results.Ok(
-        new
+    async (
+        HealthCheckService healthCheckService,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        HealthReport report = await healthCheckService.CheckHealthAsync(cancellationToken);
+        object payload = new
         {
-            status = "healthy",
-        }));
+            Status = report.Status == HealthStatus.Unhealthy ? "Unhealthy" : "Healthy",
+            Service = "MississippiSamples.Spring.Gateway",
+            Checks = report.Entries.ToDictionary(
+                entry => entry.Key,
+                entry => new
+                {
+                    Status = entry.Value.Status.ToString(),
+                    entry.Value.Description,
+                }),
+        };
+        return report.Status == HealthStatus.Unhealthy
+            ? Results.Json(payload, statusCode: StatusCodes.Status503ServiceUnavailable)
+            : Results.Ok(payload);
+    });
 
 // Fallback to index.html for SPA routing
 app.MapFallbackToFile("index.html");

@@ -18,6 +18,20 @@ namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.MoneyTransferSaga.
 /// </summary>
 public sealed class DepositToDestinationStepTests
 {
+    private static SagaStepExecutionContext CreateContext() =>
+        new()
+        {
+            AttemptId = Guid.NewGuid(),
+            AttemptStartedAt = new(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
+            Direction = SagaExecutionDirection.Forward,
+            IsReplay = false,
+            OperationKey = "deposit-step-op",
+            SagaId = Guid.NewGuid(),
+            Source = SagaResumeSource.Manual,
+            StepIndex = 1,
+            StepName = nameof(DepositToDestinationStep),
+        };
+
     /// <summary>
     ///     Verifies a successful deposit returns a succeeded step result.
     /// </summary>
@@ -40,7 +54,7 @@ public sealed class DepositToDestinationStepTests
                 Amount = 50m,
             },
         };
-        StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
+        StepResult result = await step.ExecuteAsync(state, CreateContext(), CancellationToken.None);
         result.Success.Should().BeTrue();
         grain.Verify(g => g.ExecuteAsync(It.IsAny<DepositFunds>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -63,7 +77,7 @@ public sealed class DepositToDestinationStepTests
                 Amount = 10m,
             },
         };
-        StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
+        StepResult result = await step.ExecuteAsync(state, CreateContext(), CancellationToken.None);
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be(AggregateErrorCodes.InvalidCommand);
     }
@@ -78,7 +92,7 @@ public sealed class DepositToDestinationStepTests
         Mock<IAggregateGrainFactory> factory = new();
         DepositToDestinationStep step = new(factory.Object);
         MoneyTransferSagaState state = new();
-        StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
+        StepResult result = await step.ExecuteAsync(state, CreateContext(), CancellationToken.None);
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be(AggregateErrorCodes.InvalidState);
     }

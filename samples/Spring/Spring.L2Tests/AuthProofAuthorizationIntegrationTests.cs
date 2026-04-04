@@ -4,6 +4,8 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
 
+using Mississippi.DomainModeling.Abstractions;
+
 
 namespace MississippiSamples.Spring.L2Tests;
 
@@ -39,6 +41,16 @@ public sealed class AuthProofAuthorizationIntegrationTests
     ) =>
         new($"api/projections/auth-proof/{aggregateId}", UriKind.Relative);
 
+    private static Uri BuildSagaResumeUri(
+        Guid sagaId
+    ) =>
+        new($"api/sagas/auth-proof/{sagaId}/resume", UriKind.Relative);
+
+    private static Uri BuildSagaRuntimeStatusUri(
+        Guid sagaId
+    ) =>
+        new($"api/sagas/auth-proof/{sagaId}/runtime-status", UriKind.Relative);
+
     private static Uri BuildSagaStatusUri(
         Guid sagaId
     ) =>
@@ -52,6 +64,26 @@ public sealed class AuthProofAuthorizationIntegrationTests
     )
     {
         using HttpRequestMessage request = new(HttpMethod.Get, BuildProjectionUri(aggregateId));
+        if (headers is not null)
+        {
+            foreach ((string key, string value) in headers)
+            {
+                request.Headers.Remove(key);
+                request.Headers.Add(key, value);
+            }
+        }
+
+        return await client.SendAsync(request, cancellationToken);
+    }
+
+    private static async Task<HttpResponseMessage> GetAuthProofSagaRuntimeStatusAsync(
+        HttpClient client,
+        Guid sagaId,
+        IReadOnlyDictionary<string, string>? headers = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using HttpRequestMessage request = new(HttpMethod.Get, BuildSagaRuntimeStatusUri(sagaId));
         if (headers is not null)
         {
             foreach ((string key, string value) in headers)
@@ -91,6 +123,31 @@ public sealed class AuthProofAuthorizationIntegrationTests
     )
     {
         using HttpRequestMessage request = new(HttpMethod.Post, BuildCommandUri(aggregateId, route))
+        {
+            Content = JsonContent.Create(
+                new
+                {
+                }),
+        };
+        if (headers is not null)
+        {
+            foreach ((string key, string value) in headers)
+            {
+                request.Headers.Remove(key);
+                request.Headers.Add(key, value);
+            }
+        }
+
+        return await client.SendAsync(request);
+    }
+
+    private static async Task<HttpResponseMessage> PostAuthProofSagaResumeAsync(
+        HttpClient client,
+        Guid sagaId,
+        IReadOnlyDictionary<string, string>? headers = null
+    )
+    {
+        using HttpRequestMessage request = new(HttpMethod.Post, BuildSagaResumeUri(sagaId))
         {
             Content = JsonContent.Create(
                 new
@@ -156,6 +213,45 @@ public sealed class AuthProofAuthorizationIntegrationTests
                 using HttpResponseMessage response = await GetAuthProofProjectionAsync(
                     client,
                     aggregateId,
+                    headers,
+                    timeoutToken);
+                lastStatusCode = response.StatusCode;
+                if (response.StatusCode == expectedStatusCode)
+                {
+                    return response.StatusCode;
+                }
+
+                await Task.Delay(PollingInterval, timeoutToken);
+            }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return lastStatusCode;
+        }
+
+        return lastStatusCode;
+    }
+
+    private static async Task<HttpStatusCode> WaitForSagaRuntimeStatusCodeAsync(
+        HttpClient client,
+        Guid sagaId,
+        IReadOnlyDictionary<string, string> headers,
+        HttpStatusCode expectedStatusCode,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using CancellationTokenSource timeoutSource =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(EventualConsistencyTimeout);
+        CancellationToken timeoutToken = timeoutSource.Token;
+        HttpStatusCode lastStatusCode = HttpStatusCode.NotFound;
+        try
+        {
+            while (!timeoutToken.IsCancellationRequested)
+            {
+                using HttpResponseMessage response = await GetAuthProofSagaRuntimeStatusAsync(
+                    client,
+                    sagaId,
                     headers,
                     timeoutToken);
                 lastStatusCode = response.StatusCode;
@@ -419,5 +515,115 @@ public sealed class AuthProofAuthorizationIntegrationTests
                 ["X-Spring-Roles"] = "none",
             });
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    /// <summary>
+    ///     Verifies manual resume returns an unauthorized disposition for a different authenticated caller once the start
+    ///     fingerprint is captured.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task SagaResumeShouldReturnUnauthorizedDispositionForDifferentAuthenticatedCaller()
+    {
+        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        using HttpClient client = fixture.CreateHttpClient();
+        Guid sagaId = Guid.NewGuid();
+        Dictionary<string, string> originatingHeaders = new()
+        {
+            ["X-Spring-User"] = "auth-proof-originator",
+            ["X-Spring-Roles"] = "auth-proof-operator",
+        };
+        using (HttpResponseMessage startResponse =
+               await PostAuthProofSagaStartAsync(client, sagaId, originatingHeaders))
+        {
+            startResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        HttpStatusCode runtimeStatusCode = await WaitForSagaRuntimeStatusCodeAsync(
+            client,
+            sagaId,
+            originatingHeaders,
+            HttpStatusCode.OK);
+        runtimeStatusCode.Should().Be(HttpStatusCode.OK);
+        using HttpResponseMessage response = await PostAuthProofSagaResumeAsync(
+            client,
+            sagaId,
+            new Dictionary<string, string>
+            {
+                ["X-Spring-User"] = "auth-proof-different-user",
+                ["X-Spring-Roles"] = "auth-proof-operator",
+            });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        SagaResumeResponse payload = (await response.Content.ReadFromJsonAsync<SagaResumeResponse>())!;
+        payload.Disposition.Should().Be(SagaResumeRequestDisposition.Unauthorized);
+        payload.Message.Should().Be("The current caller is not authorized for this saga.");
+    }
+
+    /// <summary>
+    ///     Verifies runtime-status remains visible to the originating caller after the saga start fingerprint is propagated
+    ///     into runtime recovery metadata.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task SagaRuntimeStatusShouldReturn200ForOriginatingCaller()
+    {
+        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        using HttpClient client = fixture.CreateHttpClient();
+        Guid sagaId = Guid.NewGuid();
+        Dictionary<string, string> headers = new()
+        {
+            ["X-Spring-User"] = "auth-proof-originator",
+            ["X-Spring-Roles"] = "auth-proof-operator",
+        };
+        using (HttpResponseMessage startResponse = await PostAuthProofSagaStartAsync(client, sagaId, headers))
+        {
+            startResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        HttpStatusCode runtimeStatusCode = await WaitForSagaRuntimeStatusCodeAsync(
+            client,
+            sagaId,
+            headers,
+            HttpStatusCode.OK);
+        runtimeStatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    /// <summary>
+    ///     Verifies runtime-status fails closed for a different authenticated caller once the saga access fingerprint is
+    ///     captured.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task SagaRuntimeStatusShouldReturn404ForDifferentAuthenticatedCaller()
+    {
+        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        using HttpClient client = fixture.CreateHttpClient();
+        Guid sagaId = Guid.NewGuid();
+        Dictionary<string, string> originatingHeaders = new()
+        {
+            ["X-Spring-User"] = "auth-proof-originator",
+            ["X-Spring-Roles"] = "auth-proof-operator",
+        };
+        using (HttpResponseMessage startResponse =
+               await PostAuthProofSagaStartAsync(client, sagaId, originatingHeaders))
+        {
+            startResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        HttpStatusCode runtimeStatusCode = await WaitForSagaRuntimeStatusCodeAsync(
+            client,
+            sagaId,
+            originatingHeaders,
+            HttpStatusCode.OK);
+        runtimeStatusCode.Should().Be(HttpStatusCode.OK);
+        using HttpResponseMessage response = await GetAuthProofSagaRuntimeStatusAsync(
+            client,
+            sagaId,
+            new Dictionary<string, string>
+            {
+                ["X-Spring-User"] = "auth-proof-different-user",
+                ["X-Spring-Roles"] = "auth-proof-operator",
+            });
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

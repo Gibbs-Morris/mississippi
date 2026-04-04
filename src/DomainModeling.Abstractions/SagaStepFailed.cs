@@ -1,3 +1,5 @@
+using System;
+
 using Mississippi.Brooks.Abstractions.Attributes;
 
 using Orleans;
@@ -10,9 +12,15 @@ namespace Mississippi.DomainModeling.Abstractions;
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Abstractions.SagaStepFailed")]
-[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPFAILED")]
+[EventStorageName("MISSISSIPPI", "SAGAS", "SAGASTEPFAILED", 1)]
 public sealed record SagaStepFailed
 {
+    /// <summary>
+    ///     Gets the unique attempt identifier that failed.
+    /// </summary>
+    [Id(4)]
+    public required Guid AttemptId { get; init; }
+
     /// <summary>
     ///     Gets the error code describing the failure.
     /// </summary>
@@ -24,6 +32,12 @@ public sealed record SagaStepFailed
     /// </summary>
     [Id(3)]
     public string? ErrorMessage { get; init; }
+
+    /// <summary>
+    ///     Gets the framework-issued operation key for the failed step operation.
+    /// </summary>
+    [Id(5)]
+    public required string OperationKey { get; init; }
 
     /// <summary>
     ///     Gets the step index that failed.

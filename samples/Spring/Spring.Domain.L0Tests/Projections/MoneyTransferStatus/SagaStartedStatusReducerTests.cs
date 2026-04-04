@@ -44,6 +44,7 @@ public sealed class SagaStartedStatusReducerTests
             StepHash = "HASH",
             StartedAt = startedAt,
             CorrelationId = "corr-1",
+            RecoveryMode = SagaRecoveryMode.Automatic,
         };
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
         result.Phase.Should().Be(SagaPhase.Running);
@@ -52,5 +53,14 @@ public sealed class SagaStartedStatusReducerTests
         result.ErrorCode.Should().BeNull();
         result.ErrorMessage.Should().BeNull();
         result.CompletedAt.Should().BeNull();
+        result.RecoveryMode.Should().Be(SagaRecoveryMode.Automatic);
+        result.PendingDirection.Should().Be(SagaExecutionDirection.Forward);
+        result.PendingStepIndex.Should().Be(0);
+        result.PendingStepName.Should().BeNull();
+        result.BlockedReason.Should().BeNull();
+        result.LastResumeSource.Should().BeNull();
+        result.LastResumeAttemptedAt.Should().BeNull();
+        result.AutomaticAttemptCount.Should().Be(0);
+        result.ResumeDisposition.Should().Be(SagaResumeDisposition.AutomaticPending);
     }
 }

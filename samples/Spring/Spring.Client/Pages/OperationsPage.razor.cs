@@ -422,6 +422,22 @@ public sealed partial class OperationsPage
 
     private void RequestReconnect() => Dispatch(new RequestSignalRConnectionAction());
 
+    private void ResumeTransferA() => ResumeTransferForPanel(panelA);
+
+    private void ResumeTransferB() => ResumeTransferForPanel(panelB);
+
+    private void ResumeTransferForPanel(
+        AccountPanelState panel
+    )
+    {
+        if (!Guid.TryParse(panel.TransferSagaId, out Guid sagaId))
+        {
+            return;
+        }
+
+        Dispatch(new ResumeMoneyTransferSagaAction(sagaId));
+    }
+
     private void SetAccountPair(
         string? accountAId,
         string? accountBId,

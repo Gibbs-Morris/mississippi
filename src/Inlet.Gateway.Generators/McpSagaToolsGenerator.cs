@@ -24,6 +24,8 @@ namespace Mississippi.Inlet.Gateway.Generators;
 ///         <item>A tools class with [McpServerToolType] for each saga.</item>
 ///         <item>A start tool method that initiates the saga with input parameters.</item>
 ///         <item>A status tool method that reads the current saga state as JSON.</item>
+///         <item>A runtime-status tool method that reads metadata-only recovery status as JSON.</item>
+///         <item>A resume tool method that requests a manual saga resume and returns typed JSON.</item>
 ///     </list>
 ///     <para>
 ///         The generator scans referenced assemblies to find saga state types decorated with
@@ -34,6 +36,11 @@ namespace Mississippi.Inlet.Gateway.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 {
+    private const string CancellationTokenDefaultParameter = "CancellationToken cancellationToken = default";
+
+    private const string CancellationTokenParamComment =
+        "/// <param name=\"cancellationToken\">Cancellation token.</param>";
+
     private const string GenerateMcpParameterDescriptionAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateMcpParameterDescriptionAttribute";
 
@@ -46,7 +53,13 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
+    private const string McpServerToolAttributePrefix = "[McpServerTool(Name = \"";
+
+    private const string OpenWorldFalseFragment = ", OpenWorld = false";
+
     private const string SagaStateInterfaceFullName = "Mississippi.DomainModeling.Abstractions.ISagaState";
+
+    private const string TitleFragment = ", Title = \"";
 
     private static void AddDescriptionIfPresent(
         ISymbol symbol,
@@ -163,6 +176,104 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         }
     }
 
+    private static void GenerateResumeToolMethod(
+        SourceBuilder sb,
+        McpSagaInfo saga
+    )
+    {
+        string baseDescription = saga.Description ?? $"the {saga.SagaName} saga";
+        string trimmed = baseDescription.TrimEnd('.');
+        if ((trimmed.Length > 0) && char.IsUpper(trimmed[0]))
+        {
+            trimmed = char.ToLowerInvariant(trimmed[0]) + trimmed.Substring(1);
+        }
+
+        string description = $"Requests a manual resume for {trimmed}.";
+        string toolName = saga.ToolPrefix + "_resume";
+        string methodName = "Resume" + saga.SagaName + "Async";
+        string title = saga.Title is not null ? saga.Title + " Resume" : string.Empty;
+        sb.AppendSummary(description);
+        sb.AppendLine("/// <param name=\"sagaId\">The saga identifier returned when the saga was started.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
+        sb.AppendLine("/// <returns>A JSON representation of the typed manual-resume response.</returns>");
+        StringBuilder toolAttrBuilder = new();
+        toolAttrBuilder.Append(McpServerToolAttributePrefix).Append(toolName).Append('"');
+        if (!string.IsNullOrEmpty(title))
+        {
+            toolAttrBuilder.Append(TitleFragment).Append(EscapeForStringLiteral(title)).Append('"');
+        }
+
+        toolAttrBuilder.Append(", Destructive = true");
+        toolAttrBuilder.Append(", ReadOnly = false");
+        toolAttrBuilder.Append(", Idempotent = false");
+        toolAttrBuilder.Append(OpenWorldFalseFragment);
+        toolAttrBuilder.Append(")]");
+        sb.AppendLine(toolAttrBuilder.ToString());
+        sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
+        sb.AppendLine($"public async Task<string> {methodName}(");
+        sb.IncreaseIndent();
+        sb.AppendLine(
+            "[Description(\"The saga identifier (GUID) returned when the saga was started\")] string sagaId,");
+        sb.AppendLine(CancellationTokenDefaultParameter);
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+        sb.AppendLine(
+            "SagaResumeResponse? response = await SagaRecoveryService.ResumeAsync(sagaId, cancellationToken);");
+        sb.AppendLine();
+        sb.AppendLine("return JsonSerializer.Serialize(response, JsonSerializerOptions.Web);");
+        sb.CloseBrace();
+    }
+
+    private static void GenerateRuntimeStatusToolMethod(
+        SourceBuilder sb,
+        McpSagaInfo saga
+    )
+    {
+        string baseDescription = saga.Description ?? $"the {saga.SagaName} saga";
+        string trimmed = baseDescription.TrimEnd('.');
+        if ((trimmed.Length > 0) && char.IsUpper(trimmed[0]))
+        {
+            trimmed = char.ToLowerInvariant(trimmed[0]) + trimmed.Substring(1);
+        }
+
+        string description = $"Gets the metadata-only runtime recovery status of {trimmed}.";
+        string toolName = saga.ToolPrefix + "_runtime_status";
+        string methodName = "Get" + saga.SagaName + "RuntimeStatusAsync";
+        string title = saga.Title is not null ? saga.Title + " Runtime Status" : string.Empty;
+        sb.AppendSummary(description);
+        sb.AppendLine("/// <param name=\"sagaId\">The saga identifier returned when the saga was started.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
+        sb.AppendLine("/// <returns>A JSON representation of the saga runtime status.</returns>");
+        StringBuilder toolAttrBuilder = new();
+        toolAttrBuilder.Append(McpServerToolAttributePrefix).Append(toolName).Append('"');
+        if (!string.IsNullOrEmpty(title))
+        {
+            toolAttrBuilder.Append(TitleFragment).Append(EscapeForStringLiteral(title)).Append('"');
+        }
+
+        toolAttrBuilder.Append(", Destructive = false");
+        toolAttrBuilder.Append(", ReadOnly = true");
+        toolAttrBuilder.Append(", Idempotent = true");
+        toolAttrBuilder.Append(OpenWorldFalseFragment);
+        toolAttrBuilder.Append(")]");
+        sb.AppendLine(toolAttrBuilder.ToString());
+        sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
+        sb.AppendLine($"public async Task<string> {methodName}(");
+        sb.IncreaseIndent();
+        sb.AppendLine(
+            "[Description(\"The saga identifier (GUID) returned when the saga was started\")] string sagaId,");
+        sb.AppendLine(CancellationTokenDefaultParameter);
+        sb.DecreaseIndent();
+        sb.AppendLine(")");
+        sb.OpenBrace();
+        sb.AppendLine(
+            "SagaRuntimeStatus? status = await SagaRecoveryService.GetRuntimeStatusAsync(sagaId, cancellationToken);");
+        sb.AppendLine();
+        sb.AppendLine("return JsonSerializer.Serialize(status, JsonSerializerOptions.Web);");
+        sb.CloseBrace();
+    }
+
     private static void GenerateStartToolMethod(
         SourceBuilder sb,
         McpSagaInfo saga
@@ -181,20 +292,20 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             sb.AppendLine($"/// <param name=\"{paramName}\">{EscapeForStringLiteral(paramDoc)}</param>");
         }
 
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine(
             "/// <returns>A message indicating whether the saga was started, including the saga identifier.</returns>");
         StringBuilder toolAttrBuilder = new();
-        toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
+        toolAttrBuilder.Append(McpServerToolAttributePrefix).Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(saga.Title))
         {
-            toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(saga.Title!)).Append('"');
+            toolAttrBuilder.Append(TitleFragment).Append(EscapeForStringLiteral(saga.Title!)).Append('"');
         }
 
         toolAttrBuilder.Append(", Destructive = true");
         toolAttrBuilder.Append(", ReadOnly = false");
         toolAttrBuilder.Append(", Idempotent = false");
-        toolAttrBuilder.Append(", OpenWorld = false");
+        toolAttrBuilder.Append(OpenWorldFalseFragment);
         toolAttrBuilder.Append(")]");
         sb.AppendLine(toolAttrBuilder.ToString());
         sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
@@ -213,7 +324,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             sb.AppendLine($"[Description(\"{descriptionText}\")] {paramType} {paramName},");
         }
 
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
@@ -280,19 +391,19 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         string title = saga.Title is not null ? saga.Title + " Status" : string.Empty;
         sb.AppendSummary(description);
         sb.AppendLine("/// <param name=\"sagaId\">The saga identifier returned when the saga was started.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine("/// <returns>A JSON representation of the saga state.</returns>");
         StringBuilder toolAttrBuilder = new();
-        toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
+        toolAttrBuilder.Append(McpServerToolAttributePrefix).Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(title))
         {
-            toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(title)).Append('"');
+            toolAttrBuilder.Append(TitleFragment).Append(EscapeForStringLiteral(title)).Append('"');
         }
 
         toolAttrBuilder.Append(", Destructive = false");
         toolAttrBuilder.Append(", ReadOnly = true");
         toolAttrBuilder.Append(", Idempotent = true");
-        toolAttrBuilder.Append(", OpenWorld = false");
+        toolAttrBuilder.Append(OpenWorldFalseFragment);
         toolAttrBuilder.Append(")]");
         sb.AppendLine(toolAttrBuilder.ToString());
         sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
@@ -300,16 +411,12 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.IncreaseIndent();
         sb.AppendLine(
             "[Description(\"The saga identifier (GUID) returned when the saga was started\")] string sagaId,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
-        sb.AppendLine($"IGenericAggregateGrain<{saga.SagaStateTypeName}> grain =");
-        sb.IncreaseIndent();
-        sb.AppendLine($"AggregateGrainFactory.GetGenericAggregate<{saga.SagaStateTypeName}>(sagaId);");
-        sb.DecreaseIndent();
-        sb.AppendLine();
-        sb.AppendLine($"{saga.SagaStateTypeName}? state = await grain.GetStateAsync(cancellationToken);");
+        sb.AppendLine(
+            $"{saga.SagaStateTypeName}? state = await SagaRecoveryService.GetStateAsync(sagaId, cancellationToken);");
         sb.AppendLine();
         sb.AppendLine("if (state is null)");
         sb.OpenBrace();
@@ -361,18 +468,25 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         // DI property
         sb.AppendSummary("Gets the aggregate grain factory.");
         sb.AppendLine("private IAggregateGrainFactory AggregateGrainFactory { get; }");
+        sb.AppendSummary(
+            "Gets the saga recovery service used for raw status, runtime-status, and manual-resume operations.");
+        sb.AppendLine($"private ISagaRecoveryService<{saga.SagaStateTypeName}> SagaRecoveryService {{ get; }}");
         sb.AppendLine();
 
         // Constructor
         sb.AppendSummary($"Initializes a new instance of the <see cref=\"{saga.ToolsClassName}\" /> class.");
         sb.AppendLine("/// <param name=\"aggregateGrainFactory\">Factory for resolving saga grains.</param>");
+        sb.AppendLine(
+            "/// <param name=\"sagaRecoveryService\">Service for raw-status, runtime-status, and manual-resume saga operations.</param>");
         sb.AppendLine($"public {saga.ToolsClassName}(");
         sb.IncreaseIndent();
-        sb.AppendLine("IAggregateGrainFactory aggregateGrainFactory");
+        sb.AppendLine("IAggregateGrainFactory aggregateGrainFactory,");
+        sb.AppendLine($"ISagaRecoveryService<{saga.SagaStateTypeName}> sagaRecoveryService");
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
         sb.AppendLine("AggregateGrainFactory = aggregateGrainFactory;");
+        sb.AppendLine("SagaRecoveryService = sagaRecoveryService;");
         sb.CloseBrace();
         sb.AppendLine();
 
@@ -382,6 +496,14 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 
         // Generate status tool method
         GenerateStatusToolMethod(sb, saga);
+        sb.AppendLine();
+
+        // Generate runtime-status tool method
+        GenerateRuntimeStatusToolMethod(sb, saga);
+        sb.AppendLine();
+
+        // Generate resume tool method
+        GenerateResumeToolMethod(sb, saga);
         sb.CloseBrace();
         return sb.ToString();
     }

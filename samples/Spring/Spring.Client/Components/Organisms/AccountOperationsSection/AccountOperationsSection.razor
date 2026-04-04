@@ -140,14 +140,63 @@
                 <span>@TransferStatusProjection.Phase</span>
             </div>
             <div>
+                <span>Recovery Mode:</span>
+                <span>@TransferStatusProjection.RecoveryMode</span>
+            </div>
+            <div>
+                <span>Resume Disposition:</span>
+                <span>@TransferStatusProjection.ResumeDisposition</span>
+            </div>
+            <div>
                 <span>Last Step:</span>
                 <span>@TransferStatusProjection.LastCompletedStepIndex</span>
             </div>
+            @if (TransferStatusProjection.PendingDirection is not null)
+            {
+                <div>
+                    <span>Pending Direction:</span>
+                    <span>@TransferStatusProjection.PendingDirection</span>
+                </div>
+            }
+            @if (TransferStatusProjection.PendingStepIndex is not null || !string.IsNullOrWhiteSpace(TransferStatusProjection.PendingStepName))
+            {
+                <div>
+                    <span>Pending Step:</span>
+                    <span>@GetPendingStepDisplay(TransferStatusProjection)</span>
+                </div>
+            }
+            <div>
+                <span>Automatic Attempts:</span>
+                <span>@TransferStatusProjection.AutomaticAttemptCount</span>
+            </div>
+            @if (TransferStatusProjection.LastResumeSource is not null || TransferStatusProjection.LastResumeAttemptedAt is not null)
+            {
+                <div>
+                    <span>Last Resume:</span>
+                    <span>@TransferStatusProjection.LastResumeSource at @FormatTimestamp(TransferStatusProjection.LastResumeAttemptedAt)</span>
+                </div>
+            }
             @if (!string.IsNullOrEmpty(TransferStatusProjection.ErrorMessage))
             {
                 <div>
                     <span>Error:</span>
                     <span>@TransferStatusProjection.ErrorMessage</span>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(TransferStatusProjection.BlockedReason))
+            {
+                <div role="alert">
+                    <strong>Blocked:</strong> @TransferStatusProjection.BlockedReason
+                </div>
+            }
+            @if (CanResumeTransfer)
+            {
+                <div>
+                    <button type="button"
+                            @onclick="OnResumeTransfer"
+                            disabled="@string.IsNullOrWhiteSpace(TransferSagaId)">
+                        Resume Transfer
+                    </button>
                 </div>
             }
         </div>

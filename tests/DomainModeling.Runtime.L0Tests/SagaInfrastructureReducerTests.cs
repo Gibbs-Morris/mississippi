@@ -105,6 +105,7 @@ public sealed class SagaInfrastructureReducerTests
         SagaStartedEvent @event = new()
         {
             SagaId = sagaId,
+            RecoveryMode = SagaRecoveryMode.Automatic,
             StepHash = "HASH",
             StartedAt = startedAt,
             CorrelationId = "corr-1",
@@ -133,9 +134,11 @@ public sealed class SagaInfrastructureReducerTests
         };
         SagaStepCompleted @event = new()
         {
+            AttemptId = Guid.NewGuid(),
             StepIndex = 2,
             StepName = "Credit",
             CompletedAt = new(2025, 2, 11, 11, 0, 0, TimeSpan.Zero),
+            OperationKey = "operation-key",
         };
         TestSagaState updated = reducer.Reduce(initial, @event);
         Assert.Equal(2, updated.LastCompletedStepIndex);

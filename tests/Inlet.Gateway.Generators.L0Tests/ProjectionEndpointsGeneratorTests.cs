@@ -1110,6 +1110,59 @@ public class ProjectionEndpointsGeneratorTests
     }
 
     /// <summary>
+    ///     Generated DTOs and mappers should include nullable top-level enum properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedProjectionIncludesNullableEnumDtoAndMapper()
+    {
+        const string projectionSource = """
+                                        using System;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.Sagas
+                                        {
+                                            public enum SagaResumeSource
+                                            {
+                                                Initial = 0,
+                                                Reminder = 1,
+                                                Manual = 2,
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("saga-status")]
+                                            public sealed record SagaStatusProjection
+                                            {
+                                                public SagaResumeSource? LastResumeSource { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        string? enumDtoSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("SagaResumeSourceDto", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(enumDtoSource);
+        Assert.Contains("public enum SagaResumeSourceDto", enumDtoSource, StringComparison.Ordinal);
+        string? enumMapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("SagaResumeSourceDtoMapper", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(enumMapperSource);
+        Assert.Contains("IMapper<SagaResumeSource, SagaResumeSourceDto>", enumMapperSource, StringComparison.Ordinal);
+        string? projectionMapperSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("SagaStatusProjectionMapper", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(projectionMapperSource);
+        Assert.Contains(
+            "LastResumeSource = source.LastResumeSource.HasValue ? (SagaResumeSourceDto?)source.LastResumeSource.Value : null",
+            projectionMapperSource,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Generated registrations should be internal static class.
     /// </summary>
     [Fact]

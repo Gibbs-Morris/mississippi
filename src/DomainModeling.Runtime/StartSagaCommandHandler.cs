@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 
 using Mississippi.DomainModeling.Abstractions;
 
@@ -19,50 +17,34 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
     /// <summary>
     ///     Initializes a new instance of the <see cref="StartSagaCommandHandler{TSaga,TInput}" /> class.
     /// </summary>
+    /// <param name="sagaAccessContextProvider">Provider for the persisted saga access-context fingerprint.</param>
     /// <param name="stepInfoProvider">The saga step metadata provider.</param>
+    /// <param name="recoveryInfoProvider">The saga recovery metadata provider.</param>
     /// <param name="timeProvider">The time provider.</param>
     public StartSagaCommandHandler(
+        ISagaAccessContextProvider sagaAccessContextProvider,
         ISagaStepInfoProvider<TSaga> stepInfoProvider,
+        ISagaRecoveryInfoProvider<TSaga> recoveryInfoProvider,
         TimeProvider timeProvider
     )
     {
+        ArgumentNullException.ThrowIfNull(sagaAccessContextProvider);
         ArgumentNullException.ThrowIfNull(stepInfoProvider);
+        ArgumentNullException.ThrowIfNull(recoveryInfoProvider);
         ArgumentNullException.ThrowIfNull(timeProvider);
+        SagaAccessContextProvider = sagaAccessContextProvider;
         StepInfoProvider = stepInfoProvider;
+        RecoveryInfoProvider = recoveryInfoProvider;
         TimeProvider = timeProvider;
     }
+
+    private ISagaRecoveryInfoProvider<TSaga> RecoveryInfoProvider { get; }
+
+    private ISagaAccessContextProvider SagaAccessContextProvider { get; }
 
     private ISagaStepInfoProvider<TSaga> StepInfoProvider { get; }
 
     private TimeProvider TimeProvider { get; }
-
-    private static string ComputeStepHash(
-        IReadOnlyList<SagaStepInfo> steps
-    )
-    {
-        ArgumentNullException.ThrowIfNull(steps);
-        StringBuilder builder = new();
-        for (int i = 0; i < steps.Count; i++)
-        {
-            SagaStepInfo step = steps[i];
-            if (i > 0)
-            {
-                builder.Append('|');
-            }
-
-            string stepTypeName = step.StepType.FullName ?? step.StepType.Name;
-            builder.Append(step.StepIndex)
-                .Append(':')
-                .Append(step.StepName)
-                .Append(':')
-                .Append(stepTypeName)
-                .Append(':')
-                .Append(step.HasCompensation);
-        }
-
-        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
-        return Convert.ToHexString(bytes);
-    }
 
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
@@ -87,8 +69,11 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
 
         SagaStartedEvent started = new()
         {
+            AccessContextFingerprint = SagaAccessContextProvider.GetFingerprint(),
             SagaId = command.SagaId,
-            StepHash = ComputeStepHash(StepInfoProvider.Steps),
+            RecoveryMode = RecoveryInfoProvider.Recovery.Mode,
+            RecoveryProfile = RecoveryInfoProvider.Recovery.Profile,
+            StepHash = SagaStepHash.Compute(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps),
             StartedAt = TimeProvider.GetUtcNow(),
             CorrelationId = command.CorrelationId,
         };

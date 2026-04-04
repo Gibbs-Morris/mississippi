@@ -355,6 +355,7 @@
       "Mississippi.DomainModeling.Runtime": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.Orleans.Reminders": "[10.0.1, )",
           "Microsoft.Orleans.Sdk": "[10.0.1, )",
           "Mississippi.Brooks.Runtime": "[1.0.0, )",
           "Mississippi.Brooks.Serialization.Abstractions": "[1.0.0, )",
@@ -460,6 +461,26 @@
           "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
           "Microsoft.CodeAnalysis.Common": "[5.0.0]",
           "System.Composition": "9.0.0"
+        }
+      },
+      "Microsoft.Orleans.Reminders": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.1, )",
+        "resolved": "10.0.1",
+        "contentHash": "sHKN/EMxLqHT7cXjiyWowtpeDNDkapaS9lmMNjTCeR/XLkEZhzWsiAaRl1kIThiHbx+wNPEmhiEMzckHNjcrqg==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.11.0",
+          "Microsoft.CodeAnalysis.Common": "5.0.0",
+          "Microsoft.CodeAnalysis.Workspaces.Common": "5.0.0",
+          "Microsoft.Extensions.DependencyModel": "10.0.0",
+          "Microsoft.Orleans.Analyzers": "10.0.1",
+          "Microsoft.Orleans.CodeGenerator": "10.0.1",
+          "Microsoft.Orleans.Core.Abstractions": "10.0.1",
+          "Microsoft.Orleans.Runtime": "10.0.1",
+          "Microsoft.Orleans.Sdk": "10.0.1",
+          "Newtonsoft.Json": "13.0.4",
+          "System.IO.Hashing": "10.0.0",
+          "System.Memory.Data": "10.0.0"
         }
       },
       "Microsoft.Orleans.Sdk": {

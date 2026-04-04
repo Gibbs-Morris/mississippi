@@ -22,6 +22,11 @@ public sealed class SagaCompletedStatusReducerTests
         MoneyTransferStatusProjection initial = new()
         {
             Phase = SagaPhase.Running,
+            PendingDirection = SagaExecutionDirection.Forward,
+            PendingStepIndex = 2,
+            PendingStepName = "Complete",
+            BlockedReason = "Needs manual resume.",
+            ResumeDisposition = SagaResumeDisposition.ManualInterventionRequired,
         };
         DateTimeOffset completedAt = new(2026, 2, 3, 11, 15, 0, TimeSpan.Zero);
         SagaCompleted @event = new()
@@ -31,6 +36,11 @@ public sealed class SagaCompletedStatusReducerTests
         MoneyTransferStatusProjection result = reducer.Apply(initial, @event);
         result.Phase.Should().Be(SagaPhase.Completed);
         result.CompletedAt.Should().Be(completedAt);
+        result.PendingDirection.Should().BeNull();
+        result.PendingStepIndex.Should().BeNull();
+        result.PendingStepName.Should().BeNull();
+        result.BlockedReason.Should().BeNull();
+        result.ResumeDisposition.Should().Be(SagaResumeDisposition.Terminal);
     }
 
     /// <summary>

@@ -49,6 +49,7 @@ namespace Mississippi.DomainModeling.Runtime;
 [Alias("Mississippi.DomainModeling.Runtime.GenericAggregateGrain`1")]
 internal sealed class GenericAggregateGrain<TAggregate>
     : IGenericAggregateGrain<TAggregate>,
+      IRemindable,
       IGrainBase
     where TAggregate : class
 {
@@ -81,6 +82,12 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ///     Optional root event effect dispatcher for running side effects after events are persisted.
     ///     When null, no effects are executed.
     /// </param>
+    /// <param name="aggregateReminderHandler">
+    ///     Optional reminder handler for aggregate types that participate in Orleans reminder callbacks.
+    /// </param>
+    /// <param name="aggregateReminderReconciler">
+    ///     Optional reminder reconciler for aggregate types that need Orleans reminder lifecycle management.
+    /// </param>
     public GenericAggregateGrain(
         IGrainContext grainContext,
         IGrainFactory grainFactory,
@@ -92,7 +99,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
         IOptions<AggregateEffectOptions> effectOptions,
         ILogger<GenericAggregateGrain<TAggregate>> logger,
         IEnumerable<IFireAndForgetEffectRegistration<TAggregate>> fireAndForgetEffectRegistrations,
-        IRootEventEffect<TAggregate>? rootEventEffect = null
+        IRootEventEffect<TAggregate>? rootEventEffect = null,
+        IAggregateReminderHandler<TAggregate>? aggregateReminderHandler = null,
+        IAggregateReminderReconciler<TAggregate>? aggregateReminderReconciler = null
     )
     {
         GrainContext = grainContext ?? throw new ArgumentNullException(nameof(grainContext));
@@ -106,6 +115,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         FireAndForgetEffectRegistrations = fireAndForgetEffectRegistrations?.ToArray() ?? [];
         RootEventEffect = rootEventEffect;
+        AggregateReminderHandler = aggregateReminderHandler;
+        AggregateReminderReconciler = aggregateReminderReconciler;
     }
 
     /// <summary>
@@ -117,6 +128,10 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
     /// <inheritdoc />
     public IGrainContext GrainContext { get; }
+
+    private IAggregateReminderHandler<TAggregate>? AggregateReminderHandler { get; }
+
+    private IAggregateReminderReconciler<TAggregate>? AggregateReminderReconciler { get; }
 
     private IBrookEventConverter BrookEventConverter { get; }
 
@@ -217,7 +232,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ///     Thrown when the <see cref="BrookNameAttribute" />
     ///     is missing from the <typeparamref name="TAggregate" /> type.
     /// </exception>
-    public Task OnActivateAsync(
+    public async Task OnActivateAsync(
         CancellationToken token
     )
     {
@@ -234,7 +249,50 @@ internal sealed class GenericAggregateGrain<TAggregate>
             entityId,
             RootReducer.GetReducerHash());
         Logger.Activated(brookKey);
-        return Task.CompletedTask;
+        await ReconcileReminderStateIfRegisteredAsync(token);
+    }
+
+    /// <inheritdoc />
+    public async Task ReceiveReminder(
+        string reminderName,
+        TickStatus status
+    )
+    {
+        string aggregateKey = brookKey;
+        Logger.ReminderReceived(reminderName, aggregateKey);
+        if (AggregateReminderHandler is null)
+        {
+            Logger.ReminderIgnored(reminderName, aggregateKey);
+            return;
+        }
+
+        bool commandExecuted = false;
+        bool handled = await AggregateReminderHandler.ReceiveReminderAsync(
+            this.GetPrimaryKeyString(),
+            reminderName,
+            status,
+            cancellationToken => GetStateAsync(cancellationToken),
+            async (
+                command,
+                cancellationToken
+            ) =>
+            {
+                commandExecuted = true;
+                return await ExecuteAsync(command, cancellationToken);
+            },
+            CancellationToken.None);
+        if (handled)
+        {
+            if (!commandExecuted)
+            {
+                await ReconcileReminderStateIfRegisteredAsync(CancellationToken.None);
+            }
+
+            Logger.ReminderProcessed(reminderName, aggregateKey);
+            return;
+        }
+
+        Logger.ReminderIgnored(reminderName, aggregateKey);
     }
 
     /// <summary>
@@ -474,6 +532,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
                 commandTypeName,
                 aggregateKey,
                 cancellationToken);
+            await ReconcileReminderStateIfRegisteredAsync(cancellationToken);
         }
 
         sw.Stop();
@@ -542,6 +601,22 @@ internal sealed class GenericAggregateGrain<TAggregate>
             aggregateKey,
             cancellationToken);
         await DispatchFireAndForgetEffectsIfRegisteredAsync(events, currentPosition, cancellationToken);
+    }
+
+    private async Task ReconcileReminderStateIfRegisteredAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        if (AggregateReminderReconciler is null)
+        {
+            return;
+        }
+
+        await AggregateReminderReconciler.ReconcileAsync(
+            this,
+            this.GetPrimaryKeyString(),
+            cancellationToken => GetStateAsync(cancellationToken),
+            cancellationToken);
     }
 
     private OperationResult RecordCommandFailure(

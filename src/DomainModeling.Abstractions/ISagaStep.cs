@@ -15,10 +15,12 @@ public interface ISagaStep<TSaga>
     ///     Executes the step against the current saga state.
     /// </summary>
     /// <param name="state">The current saga state.</param>
+    /// <param name="context">The step execution context.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The step execution result.</returns>
     Task<StepResult> ExecuteAsync(
         TSaga state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     );
 }
@@ -34,10 +36,12 @@ public interface ICompensatable<TSaga>
     ///     Compensates the effects of the step against the current saga state.
     /// </summary>
     /// <param name="state">The current saga state.</param>
+    /// <param name="context">The step execution context.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The compensation result.</returns>
     Task<CompensationResult> CompensateAsync(
         TSaga state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     );
 }

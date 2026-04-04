@@ -1,3 +1,6 @@
+using System;
+using System.Globalization;
+
 using Microsoft.AspNetCore.Components;
 
 using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos;
@@ -84,6 +87,10 @@ public sealed partial class AccountOperationsSection
     [Parameter]
     public EventCallback OnOpenAccount { get; set; }
 
+    /// <summary>Gets or sets the callback to manually resume a blocked transfer.</summary>
+    [Parameter]
+    public EventCallback OnResumeTransfer { get; set; }
+
     /// <summary>Gets or sets the callback to start a transfer.</summary>
     [Parameter]
     public EventCallback OnStartTransfer { get; set; }
@@ -147,4 +154,31 @@ public sealed partial class AccountOperationsSection
     /// <summary>Gets or sets the callback when the withdraw amount changes.</summary>
     [Parameter]
     public EventCallback<decimal> WithdrawAmountChanged { get; set; }
+
+    private bool CanResumeTransfer =>
+        !string.IsNullOrWhiteSpace(TransferSagaId) &&
+        TransferStatusProjection is not null &&
+        (TransferStatusProjection.ResumeDisposition == SagaResumeDispositionDto.ManualInterventionRequired);
+
+    private static string FormatTimestamp(
+        DateTimeOffset? timestamp
+    ) =>
+        timestamp?.ToString("u", CultureInfo.InvariantCulture) ?? "—";
+
+    private static string GetPendingStepDisplay(
+        MoneyTransferStatusProjectionDto projection
+    )
+    {
+        string? pendingStepName = string.IsNullOrWhiteSpace(projection.PendingStepName)
+            ? null
+            : projection.PendingStepName;
+        if (projection.PendingStepIndex is null)
+        {
+            return pendingStepName ?? "—";
+        }
+
+        return pendingStepName is null
+            ? $"Step {projection.PendingStepIndex.Value}"
+            : $"Step {projection.PendingStepIndex.Value}: {pendingStepName}";
+    }
 }

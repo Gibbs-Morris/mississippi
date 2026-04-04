@@ -18,6 +18,24 @@ namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.MoneyTransferSaga.
 /// </summary>
 public sealed class WithdrawFromSourceStepTests
 {
+    private static SagaStepExecutionContext CreateContext(
+        SagaExecutionDirection direction = SagaExecutionDirection.Forward
+    ) =>
+        new()
+        {
+            AttemptId = Guid.NewGuid(),
+            AttemptStartedAt = new(2026, 2, 3, 10, 0, 0, TimeSpan.Zero),
+            Direction = direction,
+            IsReplay = false,
+            OperationKey = direction is SagaExecutionDirection.Compensation
+                ? "withdraw-compensation-op"
+                : "withdraw-step-op",
+            SagaId = Guid.NewGuid(),
+            Source = SagaResumeSource.Manual,
+            StepIndex = 0,
+            StepName = nameof(WithdrawFromSourceStep),
+        };
+
     /// <summary>
     ///     Verifies compensation failure surfaces as a failed result.
     /// </summary>
@@ -40,7 +58,10 @@ public sealed class WithdrawFromSourceStepTests
                 Amount = 25m,
             },
         };
-        CompensationResult result = await step.CompensateAsync(state, CancellationToken.None);
+        CompensationResult result = await step.CompensateAsync(
+            state,
+            CreateContext(SagaExecutionDirection.Compensation),
+            CancellationToken.None);
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be("ERR");
         grain.Verify(g => g.ExecuteAsync(It.IsAny<DepositFunds>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -56,7 +77,10 @@ public sealed class WithdrawFromSourceStepTests
         Mock<IAggregateGrainFactory> factory = new();
         WithdrawFromSourceStep step = new(factory.Object);
         MoneyTransferSagaState state = new();
-        CompensationResult result = await step.CompensateAsync(state, CancellationToken.None);
+        CompensationResult result = await step.CompensateAsync(
+            state,
+            CreateContext(SagaExecutionDirection.Compensation),
+            CancellationToken.None);
         result.Skipped.Should().BeTrue();
     }
 
@@ -78,7 +102,7 @@ public sealed class WithdrawFromSourceStepTests
                 Amount = 10m,
             },
         };
-        StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
+        StepResult result = await step.ExecuteAsync(state, CreateContext(), CancellationToken.None);
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be(AggregateErrorCodes.InvalidCommand);
     }
@@ -105,7 +129,7 @@ public sealed class WithdrawFromSourceStepTests
                 Amount = 25m,
             },
         };
-        StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
+        StepResult result = await step.ExecuteAsync(state, CreateContext(), CancellationToken.None);
         result.Success.Should().BeTrue();
         grain.Verify(g => g.ExecuteAsync(It.IsAny<WithdrawFunds>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -120,7 +144,7 @@ public sealed class WithdrawFromSourceStepTests
         Mock<IAggregateGrainFactory> factory = new();
         WithdrawFromSourceStep step = new(factory.Object);
         MoneyTransferSagaState state = new();
-        StepResult result = await step.ExecuteAsync(state, CancellationToken.None);
+        StepResult result = await step.ExecuteAsync(state, CreateContext(), CancellationToken.None);
         result.Success.Should().BeFalse();
         result.ErrorCode.Should().Be(AggregateErrorCodes.InvalidState);
     }

@@ -15,13 +15,27 @@ public sealed class SagaStepAttribute<TSaga> : Attribute
     ///     Initializes a new instance of the <see cref="SagaStepAttribute{TSaga}" /> class.
     /// </summary>
     /// <param name="order">The zero-based step order.</param>
+    /// <param name="forwardRecoveryPolicy">The forward-path recovery policy.</param>
     public SagaStepAttribute(
-        int order
+        int order,
+        SagaStepRecoveryPolicy forwardRecoveryPolicy
     )
     {
         Order = order;
+        ForwardRecoveryPolicy = forwardRecoveryPolicy;
         Saga = typeof(TSaga);
     }
+
+    /// <summary>
+    ///     Gets the compensation-path recovery policy when the step implements
+    ///     <see cref="ICompensatable{TSaga}" />; otherwise, this value is ignored.
+    /// </summary>
+    public SagaStepRecoveryPolicy CompensationRecoveryPolicy { get; init; }
+
+    /// <summary>
+    ///     Gets the forward-path recovery policy.
+    /// </summary>
+    public SagaStepRecoveryPolicy ForwardRecoveryPolicy { get; }
 
     /// <summary>
     ///     Gets the zero-based step order.

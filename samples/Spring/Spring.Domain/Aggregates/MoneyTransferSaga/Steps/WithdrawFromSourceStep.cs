@@ -14,7 +14,10 @@ namespace MississippiSamples.Spring.Domain.Aggregates.MoneyTransferSaga.Steps;
 /// <summary>
 ///     Saga step that withdraws funds from the source account.
 /// </summary>
-[SagaStep<MoneyTransferSagaState>(0)]
+[SagaStep<MoneyTransferSagaState>(
+    0,
+    SagaStepRecoveryPolicy.ManualOnly,
+    CompensationRecoveryPolicy = SagaStepRecoveryPolicy.ManualOnly)]
 internal sealed class WithdrawFromSourceStep
     : ISagaStep<MoneyTransferSagaState>,
       ICompensatable<MoneyTransferSagaState>
@@ -36,10 +39,12 @@ internal sealed class WithdrawFromSourceStep
     /// <inheritdoc />
     public async Task<CompensationResult> CompensateAsync(
         MoneyTransferSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(context);
         StartMoneyTransferCommand? input = state.Input;
         if (input is null)
         {
@@ -64,10 +69,12 @@ internal sealed class WithdrawFromSourceStep
     /// <inheritdoc />
     public async Task<StepResult> ExecuteAsync(
         MoneyTransferSagaState state,
+        SagaStepExecutionContext context,
         CancellationToken cancellationToken
     )
     {
         ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(context);
         StartMoneyTransferCommand? input = state.Input;
         if (input is null)
         {
