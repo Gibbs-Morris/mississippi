@@ -12,6 +12,18 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests;
 /// </summary>
 public sealed class SagaRecoveryPlannerTests
 {
+    private static readonly IReadOnlyList<SagaStepInfo> CompensationWithNoOpStep =
+    [
+        new(0, "Validate", typeof(SagaNonCompensatableStep), false, SagaStepRecoveryPolicy.Automatic, null),
+        new(
+            1,
+            "Debit",
+            typeof(SagaSuccessStep),
+            true,
+            SagaStepRecoveryPolicy.Automatic,
+            SagaStepRecoveryPolicy.Automatic),
+    ];
+
     private static readonly IReadOnlyList<SagaStepInfo> ForwardThenCompensatingSteps =
     [
         new(
@@ -159,6 +171,32 @@ public sealed class SagaRecoveryPlannerTests
         Assert.Equal(SagaExecutionDirection.Forward, plan.Direction);
         Assert.NotNull(plan.Step);
         Assert.Equal(1, plan.Step.StepIndex);
+    }
+
+    /// <summary>
+    ///     Verifies recovery can continue through non-compensatable steps during compensation because the live
+    ///     orchestration path treats them as no-op compensations.
+    /// </summary>
+    [Fact]
+    public void PlanExecutesNonCompensatableStepDuringCompensationRecovery()
+    {
+        SagaRecoveryPlanner<TestSagaState> planner = CreatePlanner(steps: CompensationWithNoOpStep);
+        TestSagaState state = new()
+        {
+            Phase = SagaPhase.Compensating,
+            StepHash = ComputeHash(steps: CompensationWithNoOpStep),
+        };
+        SagaRecoveryCheckpoint checkpoint = new()
+        {
+            PendingDirection = SagaExecutionDirection.Compensation,
+            PendingStepIndex = 0,
+            StepHash = ComputeHash(steps: CompensationWithNoOpStep),
+        };
+        SagaRecoveryPlan plan = planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        Assert.Equal(SagaRecoveryPlanDisposition.ExecuteStep, plan.Disposition);
+        Assert.Equal(SagaExecutionDirection.Compensation, plan.Direction);
+        Assert.NotNull(plan.Step);
+        Assert.Equal(0, plan.Step.StepIndex);
     }
 
     /// <summary>

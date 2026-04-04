@@ -121,6 +121,7 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         SagaRecoveryCheckpoint? checkpoint,
         bool workflowHashMatches,
         SagaRecoveryMode recoveryMode,
+        SagaRecoveryPlan reminderPlan,
         bool automaticRecoveryEnabled
     )
     {
@@ -141,9 +142,21 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
 
         if (checkpoint?.PendingDirection is not null)
         {
+            if (!checkpoint.PendingStepIndex.HasValue)
+            {
+                return SagaResumeDisposition.WorkflowMismatch;
+            }
+
             return recoveryMode is SagaRecoveryMode.ManualOnly || !automaticRecoveryEnabled
                 ? SagaResumeDisposition.ManualInterventionRequired
-                : SagaResumeDisposition.AutomaticPending;
+                : reminderPlan.Disposition switch
+                {
+                    SagaRecoveryPlanDisposition.Blocked => SagaResumeDisposition.ManualInterventionRequired,
+                    SagaRecoveryPlanDisposition.WorkflowMismatch => SagaResumeDisposition.WorkflowMismatch,
+                    SagaRecoveryPlanDisposition.ExecuteStep or SagaRecoveryPlanDisposition.CompleteSaga
+                        or SagaRecoveryPlanDisposition.CompensateSaga => SagaResumeDisposition.AutomaticPending,
+                    var _ => SagaResumeDisposition.Idle,
+                };
         }
 
         return SagaResumeDisposition.Idle;
@@ -184,6 +197,14 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
         SagaRecoveryMode recoveryMode = checkpoint?.RecoveryMode ?? RecoveryInfoProvider.Recovery.Mode;
         bool automaticRecoveryEnabled = RecoveryOptions.Enabled && !RecoveryOptions.ForceManualOnly;
         bool workflowHashMatches = state.Phase is SagaPhase.NotStarted || HasMatchingWorkflowHash(state, checkpoint);
+        SagaRecoveryPlan reminderPlan = Plan(state, checkpoint, SagaResumeSource.Reminder);
+        SagaResumeDisposition resumeDisposition = DetermineStatusDisposition(
+            state,
+            checkpoint,
+            workflowHashMatches,
+            recoveryMode,
+            reminderPlan,
+            automaticRecoveryEnabled);
         return new()
         {
             AutomaticAttemptCount = checkpoint?.AutomaticAttemptCount ?? 0,
@@ -196,13 +217,8 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
             PendingStepName = checkpoint?.PendingStepName,
             Phase = state.Phase.ToString(),
             RecoveryMode = recoveryMode,
-            ReminderArmed = automaticRecoveryEnabled && (checkpoint?.ReminderArmed ?? false),
-            ResumeDisposition = DetermineStatusDisposition(
-                state,
-                checkpoint,
-                workflowHashMatches,
-                recoveryMode,
-                automaticRecoveryEnabled),
+            ReminderArmed = resumeDisposition is SagaResumeDisposition.AutomaticPending,
+            ResumeDisposition = resumeDisposition,
             SagaId = state.SagaId,
             WorkflowHashMatches = workflowHashMatches,
         };

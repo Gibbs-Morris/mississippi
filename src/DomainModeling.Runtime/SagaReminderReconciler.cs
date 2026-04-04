@@ -26,12 +26,14 @@ internal sealed class SagaReminderReconciler<TSaga> : IAggregateReminderReconcil
     /// </summary>
     /// <param name="checkpointAccessor">Loads the latest saga recovery checkpoint.</param>
     /// <param name="grainReminderManager">Manages Orleans reminder registrations.</param>
+    /// <param name="planner">Planner used to determine whether reminder-driven recovery can actually execute.</param>
     /// <param name="recoveryOptions">Runtime reminder recovery options.</param>
     /// <param name="timeProvider">Time provider used to compute reminder due times deterministically.</param>
     /// <param name="logger">Logger instance.</param>
     public SagaReminderReconciler(
         SagaRecoveryCheckpointAccessor<TSaga> checkpointAccessor,
         IGrainReminderManager grainReminderManager,
+        SagaRecoveryPlanner<TSaga> planner,
         IOptions<SagaRecoveryOptions> recoveryOptions,
         TimeProvider timeProvider,
         ILogger<SagaReminderReconciler<TSaga>> logger
@@ -39,6 +41,7 @@ internal sealed class SagaReminderReconciler<TSaga> : IAggregateReminderReconcil
     {
         CheckpointAccessor = checkpointAccessor ?? throw new ArgumentNullException(nameof(checkpointAccessor));
         GrainReminderManager = grainReminderManager ?? throw new ArgumentNullException(nameof(grainReminderManager));
+        Planner = planner ?? throw new ArgumentNullException(nameof(planner));
         RecoveryOptions = recoveryOptions?.Value ?? throw new ArgumentNullException(nameof(recoveryOptions));
         TimeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -49,6 +52,8 @@ internal sealed class SagaReminderReconciler<TSaga> : IAggregateReminderReconcil
     private IGrainReminderManager GrainReminderManager { get; }
 
     private ILogger<SagaReminderReconciler<TSaga>> Logger { get; }
+
+    private SagaRecoveryPlanner<TSaga> Planner { get; }
 
     private SagaRecoveryOptions RecoveryOptions { get; }
 
@@ -68,7 +73,10 @@ internal sealed class SagaReminderReconciler<TSaga> : IAggregateReminderReconcil
         string aggregateKey = BrookKey.ForType<TSaga>(entityId);
         TSaga? state = await loadStateAsync(cancellationToken);
         SagaRecoveryCheckpoint? checkpoint = await CheckpointAccessor.GetAsync(entityId, cancellationToken);
-        bool shouldArmReminder = ShouldArmReminder(state, checkpoint);
+        SagaRecoveryPlan? reminderPlan = state is null || checkpoint is null
+            ? null
+            : Planner.Plan(state, checkpoint, SagaResumeSource.Reminder);
+        bool shouldArmReminder = ShouldArmReminder(state, checkpoint, reminderPlan);
         IGrainReminder? existingReminder =
             await GrainReminderManager.GetReminderAsync(grain, SagaReminderNames.Recovery);
         if (!shouldArmReminder)
@@ -114,7 +122,8 @@ internal sealed class SagaReminderReconciler<TSaga> : IAggregateReminderReconcil
 
     private bool ShouldArmReminder(
         TSaga? state,
-        SagaRecoveryCheckpoint? checkpoint
+        SagaRecoveryCheckpoint? checkpoint,
+        SagaRecoveryPlan? reminderPlan
     )
     {
         if (!RecoveryOptions.Enabled || RecoveryOptions.ForceManualOnly || state is null || checkpoint is null)
@@ -142,6 +151,13 @@ internal sealed class SagaReminderReconciler<TSaga> : IAggregateReminderReconcil
             return false;
         }
 
-        return checkpoint.AutomaticAttemptCount < RecoveryOptions.MaxAutomaticAttempts;
+        if (checkpoint.AutomaticAttemptCount >= RecoveryOptions.MaxAutomaticAttempts)
+        {
+            return false;
+        }
+
+        return reminderPlan is not null &&
+               reminderPlan.Disposition is SagaRecoveryPlanDisposition.ExecuteStep
+                   or SagaRecoveryPlanDisposition.CompleteSaga or SagaRecoveryPlanDisposition.CompensateSaga;
     }
 }

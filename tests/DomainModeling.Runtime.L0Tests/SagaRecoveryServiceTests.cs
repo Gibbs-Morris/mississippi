@@ -227,6 +227,7 @@ public sealed class SagaRecoveryServiceTests
         Assert.Equal(0, status.PendingStepIndex);
         Assert.Equal("Debit", status.PendingStepName);
         Assert.Equal(SagaRecoveryMode.Automatic, status.RecoveryMode);
+        Assert.True(status.ReminderArmed);
     }
 
     /// <summary>
@@ -339,6 +340,47 @@ public sealed class SagaRecoveryServiceTests
         Assert.NotNull(status);
         Assert.Equal(SagaResumeDisposition.ManualInterventionRequired, status.ResumeDisposition);
         Assert.Equal("Manual approval required.", status.BlockedReason);
+    }
+
+    /// <summary>
+    ///     Verifies runtime status reports manual intervention when the currently pending step itself requires manual
+    ///     forward recovery.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task
+        GetRuntimeStatusAsyncReturnsManualInterventionRequiredWhenPendingStepRequiresManualForwardRecovery()
+    {
+        FakeAggregateGrainFactory aggregateGrainFactory = new()
+        {
+            Grain = new()
+            {
+                State = new()
+                {
+                    Phase = SagaPhase.Running,
+                    SagaId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    StepHash = ComputeHash(),
+                },
+            },
+        };
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        SetupCheckpointLoad(
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock,
+            "saga-123",
+            CreateCheckpoint(SagaExecutionDirection.Forward, 1));
+        SagaRecoveryService<ServiceSagaState> service = CreateService(
+            aggregateGrainFactory,
+            new(new(2026, 4, 4, 19, 5, 0, TimeSpan.Zero)),
+            brookGrainFactoryMock: brookGrainFactoryMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        SagaRuntimeStatus? status = await service.GetRuntimeStatusAsync("saga-123");
+        Assert.NotNull(status);
+        Assert.Equal(SagaResumeDisposition.ManualInterventionRequired, status.ResumeDisposition);
+        Assert.Equal(1, status.PendingStepIndex);
+        Assert.Equal("Credit", status.PendingStepName);
+        Assert.False(status.ReminderArmed);
     }
 
     /// <summary>
@@ -489,6 +531,50 @@ public sealed class SagaRecoveryServiceTests
         Assert.NotNull(status);
         Assert.Equal(SagaResumeDisposition.WorkflowMismatch, status.ResumeDisposition);
         Assert.False(status.WorkflowHashMatches);
+    }
+
+    /// <summary>
+    ///     Verifies runtime status reports workflow mismatch when the checkpoint carries a pending direction without the
+    ///     corresponding step index.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Fact]
+    public async Task GetRuntimeStatusAsyncReturnsWorkflowMismatchWhenPendingStepIndexMissing()
+    {
+        FakeAggregateGrainFactory aggregateGrainFactory = new()
+        {
+            Grain = new()
+            {
+                State = new()
+                {
+                    Phase = SagaPhase.Running,
+                    SagaId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    StepHash = ComputeHash(),
+                },
+            },
+        };
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        SetupCheckpointLoad(
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock,
+            "saga-123",
+            new()
+            {
+                PendingDirection = SagaExecutionDirection.Forward,
+                RecoveryMode = SagaRecoveryMode.Automatic,
+                SagaId = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                StepHash = ComputeHash(),
+            });
+        SagaRecoveryService<ServiceSagaState> service = CreateService(
+            aggregateGrainFactory,
+            new(new(2026, 4, 4, 19, 10, 0, TimeSpan.Zero)),
+            brookGrainFactoryMock: brookGrainFactoryMock,
+            snapshotGrainFactoryMock: snapshotGrainFactoryMock);
+        SagaRuntimeStatus? status = await service.GetRuntimeStatusAsync("saga-123");
+        Assert.NotNull(status);
+        Assert.Equal(SagaResumeDisposition.WorkflowMismatch, status.ResumeDisposition);
+        Assert.False(status.ReminderArmed);
     }
 
     /// <summary>

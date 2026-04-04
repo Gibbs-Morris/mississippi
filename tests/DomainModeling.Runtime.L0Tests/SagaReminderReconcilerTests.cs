@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,6 +32,23 @@ public sealed class SagaReminderReconcilerTests
         Phase = SagaPhase.Running,
     };
 
+    private static readonly IReadOnlyList<SagaStepInfo> Steps =
+    [
+        new(
+            0,
+            "Debit",
+            typeof(SagaSuccessStep),
+            true,
+            SagaStepRecoveryPolicy.Automatic,
+            SagaStepRecoveryPolicy.ManualOnly),
+        new(1, "Credit", typeof(SagaNonCompensatableStep), false, SagaStepRecoveryPolicy.ManualOnly, null),
+    ];
+
+    private static string ComputeHash(
+        SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic
+    ) =>
+        SagaStepHash.Compute(new(recoveryMode, null), Steps);
+
     private static SagaRecoveryCheckpoint CreateCheckpoint(
         DateTimeOffset? nextEligibleResumeAt = null,
         string? blockedReason = null,
@@ -50,7 +68,7 @@ public sealed class SagaReminderReconcilerTests
             ReminderArmed = reminderArmed,
             RecoveryMode = recoveryMode,
             SagaId = Guid.NewGuid(),
-            StepHash = "hash",
+            StepHash = ComputeHash(recoveryMode),
         };
 
     private static Mock<IGrainBase> CreateGrain(
@@ -69,18 +87,26 @@ public sealed class SagaReminderReconcilerTests
         Mock<IBrookGrainFactory>? brookGrainFactoryMock = null,
         Mock<ISnapshotGrainFactory>? snapshotGrainFactoryMock = null,
         SagaRecoveryOptions? options = null,
-        FakeTimeProvider? timeProvider = null
+        FakeTimeProvider? timeProvider = null,
+        IReadOnlyList<SagaStepInfo>? steps = null,
+        SagaRecoveryMode recoveryMode = SagaRecoveryMode.Automatic
     )
     {
         brookGrainFactoryMock ??= new();
         snapshotGrainFactoryMock ??= new();
+        SagaRecoveryOptions configuredOptions = options ?? new SagaRecoveryOptions();
         SagaRecoveryCheckpointAccessor<ReminderSagaState> checkpointAccessor = new(
             brookGrainFactoryMock.Object,
             snapshotGrainFactoryMock.Object);
+        SagaRecoveryPlanner<ReminderSagaState> planner = new(
+            new SagaStepInfoProvider<ReminderSagaState>(steps ?? Steps),
+            new SagaRecoveryInfoProvider<ReminderSagaState>(new(recoveryMode, null)),
+            Options.Create(configuredOptions));
         return new(
             checkpointAccessor,
             reminderManagerMock.Object,
-            Options.Create(options ?? new SagaRecoveryOptions()),
+            planner,
+            Options.Create(configuredOptions),
             timeProvider ?? new FakeTimeProvider(new(2025, 2, 15, 12, 0, 0, TimeSpan.Zero)),
             Mock.Of<ILogger<SagaReminderReconciler<ReminderSagaState>>>());
     }
@@ -158,6 +184,10 @@ public sealed class SagaReminderReconcilerTests
             brookGrainFactoryMock.Object,
             snapshotGrainFactoryMock.Object);
         Mock<IGrainReminderManager> reminderManagerMock = new();
+        SagaRecoveryPlanner<ReminderSagaState> planner = new(
+            new SagaStepInfoProvider<ReminderSagaState>(Steps),
+            new SagaRecoveryInfoProvider<ReminderSagaState>(new(SagaRecoveryMode.Automatic, null)),
+            Options.Create(new SagaRecoveryOptions()));
         IOptions<SagaRecoveryOptions> nullValueOptions =
             Mock.Of<IOptions<SagaRecoveryOptions>>(options => options.Value == null!);
         FakeTimeProvider timeProvider = new();
@@ -166,12 +196,14 @@ public sealed class SagaReminderReconcilerTests
         Assert.Throws<ArgumentNullException>(() => new SagaReminderReconciler<ReminderSagaState>(
             null!,
             reminderManagerMock.Object,
+            planner,
             Options.Create(new SagaRecoveryOptions()),
             timeProvider,
             logger));
         Assert.Throws<ArgumentNullException>(() => new SagaReminderReconciler<ReminderSagaState>(
             checkpointAccessor,
             null!,
+            planner,
             Options.Create(new SagaRecoveryOptions()),
             timeProvider,
             logger));
@@ -179,23 +211,34 @@ public sealed class SagaReminderReconcilerTests
             checkpointAccessor,
             reminderManagerMock.Object,
             null!,
+            Options.Create(new SagaRecoveryOptions()),
             timeProvider,
             logger));
         Assert.Throws<ArgumentNullException>(() => new SagaReminderReconciler<ReminderSagaState>(
             checkpointAccessor,
             reminderManagerMock.Object,
+            planner,
+            null!,
+            timeProvider,
+            logger));
+        Assert.Throws<ArgumentNullException>(() => new SagaReminderReconciler<ReminderSagaState>(
+            checkpointAccessor,
+            reminderManagerMock.Object,
+            planner,
             nullValueOptions,
             timeProvider,
             logger));
         Assert.Throws<ArgumentNullException>(() => new SagaReminderReconciler<ReminderSagaState>(
             checkpointAccessor,
             reminderManagerMock.Object,
+            planner,
             Options.Create(new SagaRecoveryOptions()),
             null!,
             logger));
         Assert.Throws<ArgumentNullException>(() => new SagaReminderReconciler<ReminderSagaState>(
             checkpointAccessor,
             reminderManagerMock.Object,
+            planner,
             Options.Create(new SagaRecoveryOptions()),
             timeProvider,
             null!));
@@ -374,6 +417,46 @@ public sealed class SagaReminderReconcilerTests
         reminderManagerMock.Verify(
             manager => manager.UnregisterReminderAsync(grainMock.Object, existingReminderMock.Object),
             Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies reminders are not armed for a pending step whose forward recovery policy already requires manual
+    ///     intervention.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ReconcileAsyncClearsReminderWhenPendingStepRequiresManualForwardRecovery()
+    {
+        Mock<IGrainReminderManager> reminderManagerMock = new();
+        Mock<IGrainReminder> existingReminderMock = new();
+        reminderManagerMock
+            .Setup(manager => manager.GetReminderAsync(It.IsAny<IGrainBase>(), SagaReminderNames.Recovery))
+            .ReturnsAsync(existingReminderMock.Object);
+        Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
+        Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
+        SetupCheckpoint(
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock,
+            CreateCheckpoint(pendingStepIndex: 1, reminderArmed: true));
+        SagaReminderReconciler<ReminderSagaState> reconciler = CreateReconciler(
+            reminderManagerMock,
+            brookGrainFactoryMock,
+            snapshotGrainFactoryMock);
+        Mock<IGrainBase> grainMock = CreateGrain();
+        await reconciler.ReconcileAsync(
+            grainMock.Object,
+            "saga-123",
+            _ => Task.FromResult<ReminderSagaState?>(RunningState));
+        reminderManagerMock.Verify(
+            manager => manager.UnregisterReminderAsync(grainMock.Object, existingReminderMock.Object),
+            Times.Once);
+        reminderManagerMock.Verify(
+            manager => manager.RegisterOrUpdateReminderAsync(
+                It.IsAny<IGrainBase>(),
+                It.IsAny<string>(),
+                It.IsAny<TimeSpan>(),
+                It.IsAny<TimeSpan>()),
+            Times.Never);
     }
 
     /// <summary>

@@ -117,9 +117,22 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             return false;
         }
 
-        SagaStepRecoveryPolicy recoveryPolicy = direction is SagaExecutionDirection.Forward
-            ? step.ForwardRecoveryPolicy
-            : step.CompensationRecoveryPolicy!.Value;
+        SagaStepRecoveryPolicy recoveryPolicy;
+        if (direction is SagaExecutionDirection.Forward)
+        {
+            recoveryPolicy = step.ForwardRecoveryPolicy;
+        }
+        else
+        {
+            if (!step.HasCompensation)
+            {
+                plan = null;
+                return false;
+            }
+
+            recoveryPolicy = step.CompensationRecoveryPolicy!.Value;
+        }
+
         if (recoveryPolicy is not SagaStepRecoveryPolicy.ManualOnly)
         {
             plan = null;
@@ -238,7 +251,9 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             return true;
         }
 
-        if (direction is SagaExecutionDirection.Compensation && step.CompensationRecoveryPolicy is null)
+        if (direction is SagaExecutionDirection.Compensation &&
+            step.HasCompensation &&
+            step.CompensationRecoveryPolicy is null)
         {
             plan = CreateWorkflowMismatchPlan(
                 SagaExecutionDirection.Compensation,
