@@ -589,13 +589,16 @@ public sealed class SagaReminderReconcilerTests
     }
 
     /// <summary>
-    ///     Verifies disabled recovery skips reminder-registry lookups when the checkpoint says no reminder is armed.
+    ///     Verifies disabled recovery still checks for and removes stale reminders even when the checkpoint says no reminder is armed.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task ReconcileAsyncSkipsReminderLookupWhenReminderIsNotApplicable()
+    public async Task ReconcileAsyncClearsStaleReminderWhenReminderArmedFlagIsFalse()
     {
         Mock<IGrainReminderManager> reminderManagerMock = new();
+        Mock<IGrainReminder> existingReminderMock = new();
+        reminderManagerMock.Setup(manager => manager.GetReminderAsync(It.IsAny<IGrainBase>(), SagaReminderNames.Recovery))
+            .ReturnsAsync(existingReminderMock.Object);
         Mock<IBrookGrainFactory> brookGrainFactoryMock = new();
         Mock<ISnapshotGrainFactory> snapshotGrainFactoryMock = new();
         SetupCheckpoint(brookGrainFactoryMock, snapshotGrainFactoryMock, CreateCheckpoint());
@@ -613,9 +616,9 @@ public sealed class SagaReminderReconcilerTests
 
         reminderManagerMock.Verify(
             manager => manager.GetReminderAsync(It.IsAny<IGrainBase>(), It.IsAny<string>()),
-            Times.Never);
+            Times.Once);
         reminderManagerMock.Verify(
-            manager => manager.UnregisterReminderAsync(It.IsAny<IGrainBase>(), It.IsAny<IGrainReminder>()),
-            Times.Never);
+            manager => manager.UnregisterReminderAsync(grainMock.Object, existingReminderMock.Object),
+            Times.Once);
     }
 }
