@@ -29,6 +29,7 @@ public static class SagaRegistrations
         services.AddAggregateSupport();
         services.AddEventType<SagaStartedEvent>();
         services.AddEventType<SagaInputProvided<TInput>>();
+        services.AddEventType<SagaStepExecutionStarted>();
         services.AddEventType<SagaStepCompleted>();
         services.AddEventType<SagaStepFailed>();
         services.AddEventType<SagaCompensating>();

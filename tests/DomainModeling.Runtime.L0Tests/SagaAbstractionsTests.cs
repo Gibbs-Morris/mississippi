@@ -156,11 +156,16 @@ public sealed class SagaAbstractionsTests
     [Fact]
     public void SagaStepCompensatedStoresStepDetails()
     {
+        Guid attemptId = Guid.NewGuid();
         SagaStepCompensated @event = new()
         {
+            AttemptId = attemptId,
+            OperationKey = "operation-key",
             StepIndex = 1,
             StepName = "Debit",
         };
+        Assert.Equal(attemptId, @event.AttemptId);
+        Assert.Equal("operation-key", @event.OperationKey);
         Assert.Equal(1, @event.StepIndex);
         Assert.Equal("Debit", @event.StepName);
     }
@@ -171,17 +176,49 @@ public sealed class SagaAbstractionsTests
     [Fact]
     public void SagaStepFailedStoresErrorDetails()
     {
+        Guid attemptId = Guid.NewGuid();
         SagaStepFailed @event = new()
         {
+            AttemptId = attemptId,
             StepIndex = 2,
             StepName = "Credit",
             ErrorCode = "ERR",
             ErrorMessage = "Bad",
+            OperationKey = "operation-key",
         };
+        Assert.Equal(attemptId, @event.AttemptId);
         Assert.Equal(2, @event.StepIndex);
         Assert.Equal("Credit", @event.StepName);
         Assert.Equal("ERR", @event.ErrorCode);
         Assert.Equal("Bad", @event.ErrorMessage);
+        Assert.Equal("operation-key", @event.OperationKey);
+    }
+
+    /// <summary>
+    ///     Verifies step execution-started event stores attempt metadata.
+    /// </summary>
+    [Fact]
+    public void SagaStepExecutionStartedStoresAttemptMetadata()
+    {
+        Guid attemptId = Guid.NewGuid();
+        DateTimeOffset startedAt = new(2026, 4, 4, 13, 0, 0, TimeSpan.Zero);
+        SagaStepExecutionStarted @event = new()
+        {
+            AttemptId = attemptId,
+            Direction = SagaExecutionDirection.Forward,
+            OperationKey = "operation-key",
+            Source = SagaResumeSource.Initial,
+            StartedAt = startedAt,
+            StepIndex = 3,
+            StepName = "Debit",
+        };
+        Assert.Equal(attemptId, @event.AttemptId);
+        Assert.Equal(SagaExecutionDirection.Forward, @event.Direction);
+        Assert.Equal("operation-key", @event.OperationKey);
+        Assert.Equal(SagaResumeSource.Initial, @event.Source);
+        Assert.Equal(startedAt, @event.StartedAt);
+        Assert.Equal(3, @event.StepIndex);
+        Assert.Equal("Debit", @event.StepName);
     }
 
     /// <summary>

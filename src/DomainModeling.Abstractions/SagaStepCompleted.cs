@@ -16,10 +16,22 @@ namespace Mississippi.DomainModeling.Abstractions;
 public sealed record SagaStepCompleted
 {
     /// <summary>
+    ///     Gets the unique attempt identifier that completed.
+    /// </summary>
+    [Id(3)]
+    public required Guid AttemptId { get; init; }
+
+    /// <summary>
     ///     Gets the timestamp when the step completed.
     /// </summary>
     [Id(2)]
     public required DateTimeOffset CompletedAt { get; init; }
+
+    /// <summary>
+    ///     Gets the framework-issued operation key for the completed step operation.
+    /// </summary>
+    [Id(4)]
+    public required string OperationKey { get; init; }
 
     /// <summary>
     ///     Gets the step index that completed.
