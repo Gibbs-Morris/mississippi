@@ -143,6 +143,40 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
                     StringComparison.Ordinal));
     }
 
+    private static SagaResumeDisposition DetermineBlockedDisposition(
+        string blockedReason
+    ) =>
+        IsWorkflowMismatchBlockedReason(blockedReason)
+            ? SagaResumeDisposition.WorkflowMismatch
+            : SagaResumeDisposition.ManualInterventionRequired;
+
+    private static SagaResumeDisposition DeterminePendingDisposition(
+        SagaRecoveryCheckpoint checkpoint,
+        SagaRecoveryMode recoveryMode,
+        SagaRecoveryPlan reminderPlan,
+        bool automaticRecoveryEnabled
+    )
+    {
+        if (!checkpoint.PendingStepIndex.HasValue)
+        {
+            return SagaResumeDisposition.WorkflowMismatch;
+        }
+
+        if (recoveryMode is SagaRecoveryMode.ManualOnly || !automaticRecoveryEnabled)
+        {
+            return SagaResumeDisposition.ManualInterventionRequired;
+        }
+
+        return reminderPlan.Disposition switch
+            {
+                SagaRecoveryPlanDisposition.Blocked => SagaResumeDisposition.ManualInterventionRequired,
+                SagaRecoveryPlanDisposition.WorkflowMismatch => SagaResumeDisposition.WorkflowMismatch,
+                SagaRecoveryPlanDisposition.ExecuteStep or SagaRecoveryPlanDisposition.CompleteSaga
+                    or SagaRecoveryPlanDisposition.CompensateSaga => SagaResumeDisposition.AutomaticPending,
+                var _ => SagaResumeDisposition.Idle,
+            };
+        }
+
     private static SagaResumeDisposition DetermineStatusDisposition(
         TSaga state,
         SagaRecoveryCheckpoint? checkpoint,
@@ -164,31 +198,19 @@ internal sealed class SagaRecoveryService<TSaga> : ISagaRecoveryService<TSaga>
 
         if (!string.IsNullOrWhiteSpace(checkpoint?.BlockedReason))
         {
-            return IsWorkflowMismatchBlockedReason(checkpoint.BlockedReason)
-                ? SagaResumeDisposition.WorkflowMismatch
-                : SagaResumeDisposition.ManualInterventionRequired;
+            return DetermineBlockedDisposition(checkpoint.BlockedReason);
         }
 
-        if (checkpoint?.PendingDirection is not null)
+        if (checkpoint?.PendingDirection is null)
         {
-            if (!checkpoint.PendingStepIndex.HasValue)
-            {
-                return SagaResumeDisposition.WorkflowMismatch;
-            }
-
-            return recoveryMode is SagaRecoveryMode.ManualOnly || !automaticRecoveryEnabled
-                ? SagaResumeDisposition.ManualInterventionRequired
-                : reminderPlan.Disposition switch
-                {
-                    SagaRecoveryPlanDisposition.Blocked => SagaResumeDisposition.ManualInterventionRequired,
-                    SagaRecoveryPlanDisposition.WorkflowMismatch => SagaResumeDisposition.WorkflowMismatch,
-                    SagaRecoveryPlanDisposition.ExecuteStep or SagaRecoveryPlanDisposition.CompleteSaga
-                        or SagaRecoveryPlanDisposition.CompensateSaga => SagaResumeDisposition.AutomaticPending,
-                    var _ => SagaResumeDisposition.Idle,
-                };
+            return SagaResumeDisposition.Idle;
         }
 
-        return SagaResumeDisposition.Idle;
+        return DeterminePendingDisposition(
+            checkpoint,
+            recoveryMode,
+            reminderPlan,
+            automaticRecoveryEnabled);
     }
 
     private static SagaResumeRequestDisposition MapRequestDisposition(
