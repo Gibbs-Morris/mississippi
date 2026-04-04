@@ -12,7 +12,7 @@ namespace MississippiSamples.Spring.Gateway;
 /// </summary>
 internal sealed class SpringSagaAccessRequestContextFilter : IOutgoingGrainCallFilter
 {
-    private readonly ISagaAccessContextProvider accessContextProvider;
+    private ISagaAccessContextProvider AccessContextProvider { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SpringSagaAccessRequestContextFilter" /> class.
@@ -23,7 +23,7 @@ internal sealed class SpringSagaAccessRequestContextFilter : IOutgoingGrainCallF
     )
     {
         ArgumentNullException.ThrowIfNull(accessContextProvider);
-        this.accessContextProvider = accessContextProvider;
+        AccessContextProvider = accessContextProvider;
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ internal sealed class SpringSagaAccessRequestContextFilter : IOutgoingGrainCallF
         object? previousValue = RequestContext.Get(SpringSagaAccessContextProvider.RequestContextKey);
         try
         {
-            string? fingerprint = accessContextProvider.GetFingerprint();
+            string? fingerprint = AccessContextProvider.GetFingerprint();
             if (string.IsNullOrWhiteSpace(fingerprint))
             {
                 RequestContext.Remove(SpringSagaAccessContextProvider.RequestContextKey);
