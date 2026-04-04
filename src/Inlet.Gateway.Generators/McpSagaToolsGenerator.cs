@@ -36,6 +36,11 @@ namespace Mississippi.Inlet.Gateway.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class McpSagaToolsGenerator : IIncrementalGenerator
 {
+    private const string CancellationTokenDefaultParameter = "CancellationToken cancellationToken = default";
+
+    private const string CancellationTokenParamComment =
+        "/// <param name=\"cancellationToken\">Cancellation token.</param>";
+
     private const string GenerateMcpParameterDescriptionAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateMcpParameterDescriptionAttribute";
 
@@ -48,7 +53,13 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
 
+    private const string McpServerToolAttributePrefix = "[McpServerTool(Name = \"";
+
+    private const string OpenWorldFalseFragment = ", OpenWorld = false";
+
     private const string SagaStateInterfaceFullName = "Mississippi.DomainModeling.Abstractions.ISagaState";
+
+    private const string TitleFragment = ", Title = \"";
 
     private static void AddDescriptionIfPresent(
         ISymbol symbol,
@@ -183,19 +194,19 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         string title = saga.Title is not null ? saga.Title + " Resume" : string.Empty;
         sb.AppendSummary(description);
         sb.AppendLine("/// <param name=\"sagaId\">The saga identifier returned when the saga was started.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine("/// <returns>A JSON representation of the typed manual-resume response.</returns>");
         StringBuilder toolAttrBuilder = new();
-        toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
+        toolAttrBuilder.Append(McpServerToolAttributePrefix).Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(title))
         {
-            toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(title)).Append('"');
+            toolAttrBuilder.Append(TitleFragment).Append(EscapeForStringLiteral(title)).Append('"');
         }
 
         toolAttrBuilder.Append(", Destructive = true");
         toolAttrBuilder.Append(", ReadOnly = false");
         toolAttrBuilder.Append(", Idempotent = false");
-        toolAttrBuilder.Append(", OpenWorld = false");
+        toolAttrBuilder.Append(OpenWorldFalseFragment);
         toolAttrBuilder.Append(")]");
         sb.AppendLine(toolAttrBuilder.ToString());
         sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
@@ -203,7 +214,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.IncreaseIndent();
         sb.AppendLine(
             "[Description(\"The saga identifier (GUID) returned when the saga was started\")] string sagaId,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
@@ -232,19 +243,19 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         string title = saga.Title is not null ? saga.Title + " Runtime Status" : string.Empty;
         sb.AppendSummary(description);
         sb.AppendLine("/// <param name=\"sagaId\">The saga identifier returned when the saga was started.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine("/// <returns>A JSON representation of the saga runtime status.</returns>");
         StringBuilder toolAttrBuilder = new();
-        toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
+        toolAttrBuilder.Append(McpServerToolAttributePrefix).Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(title))
         {
-            toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(title)).Append('"');
+            toolAttrBuilder.Append(TitleFragment).Append(EscapeForStringLiteral(title)).Append('"');
         }
 
         toolAttrBuilder.Append(", Destructive = false");
         toolAttrBuilder.Append(", ReadOnly = true");
         toolAttrBuilder.Append(", Idempotent = true");
-        toolAttrBuilder.Append(", OpenWorld = false");
+        toolAttrBuilder.Append(OpenWorldFalseFragment);
         toolAttrBuilder.Append(")]");
         sb.AppendLine(toolAttrBuilder.ToString());
         sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
@@ -252,7 +263,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.IncreaseIndent();
         sb.AppendLine(
             "[Description(\"The saga identifier (GUID) returned when the saga was started\")] string sagaId,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
@@ -281,20 +292,20 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             sb.AppendLine($"/// <param name=\"{paramName}\">{EscapeForStringLiteral(paramDoc)}</param>");
         }
 
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine(
             "/// <returns>A message indicating whether the saga was started, including the saga identifier.</returns>");
         StringBuilder toolAttrBuilder = new();
-        toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
+        toolAttrBuilder.Append(McpServerToolAttributePrefix).Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(saga.Title))
         {
-            toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(saga.Title!)).Append('"');
+            toolAttrBuilder.Append(TitleFragment).Append(EscapeForStringLiteral(saga.Title!)).Append('"');
         }
 
         toolAttrBuilder.Append(", Destructive = true");
         toolAttrBuilder.Append(", ReadOnly = false");
         toolAttrBuilder.Append(", Idempotent = false");
-        toolAttrBuilder.Append(", OpenWorld = false");
+        toolAttrBuilder.Append(OpenWorldFalseFragment);
         toolAttrBuilder.Append(")]");
         sb.AppendLine(toolAttrBuilder.ToString());
         sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
@@ -313,7 +324,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
             sb.AppendLine($"[Description(\"{descriptionText}\")] {paramType} {paramName},");
         }
 
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
@@ -380,19 +391,19 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         string title = saga.Title is not null ? saga.Title + " Status" : string.Empty;
         sb.AppendSummary(description);
         sb.AppendLine("/// <param name=\"sagaId\">The saga identifier returned when the saga was started.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine("/// <returns>A JSON representation of the saga state.</returns>");
         StringBuilder toolAttrBuilder = new();
-        toolAttrBuilder.Append("[McpServerTool(Name = \"").Append(toolName).Append('"');
+        toolAttrBuilder.Append(McpServerToolAttributePrefix).Append(toolName).Append('"');
         if (!string.IsNullOrEmpty(title))
         {
-            toolAttrBuilder.Append(", Title = \"").Append(EscapeForStringLiteral(title)).Append('"');
+            toolAttrBuilder.Append(TitleFragment).Append(EscapeForStringLiteral(title)).Append('"');
         }
 
         toolAttrBuilder.Append(", Destructive = false");
         toolAttrBuilder.Append(", ReadOnly = true");
         toolAttrBuilder.Append(", Idempotent = true");
-        toolAttrBuilder.Append(", OpenWorld = false");
+        toolAttrBuilder.Append(OpenWorldFalseFragment);
         toolAttrBuilder.Append(")]");
         sb.AppendLine(toolAttrBuilder.ToString());
         sb.AppendLine($"[Description(\"{EscapeForStringLiteral(description)}\")]");
@@ -400,7 +411,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         sb.IncreaseIndent();
         sb.AppendLine(
             "[Description(\"The saga identifier (GUID) returned when the saga was started\")] string sagaId,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();

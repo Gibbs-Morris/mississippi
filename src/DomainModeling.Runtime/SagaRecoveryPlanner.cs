@@ -42,6 +42,101 @@ internal sealed class SagaRecoveryPlanner<TSaga>
 
     private ISagaStepInfoProvider<TSaga> StepInfoProvider { get; }
 
+    private static SagaRecoveryPlan CreateDirectionalPlan(
+        SagaRecoveryPlanDisposition disposition,
+        SagaExecutionDirection direction
+    ) =>
+        new()
+        {
+            Disposition = disposition,
+            Direction = direction,
+        };
+
+    private static SagaRecoveryPlan CreateNoActionPlan() =>
+        new()
+        {
+            Disposition = SagaRecoveryPlanDisposition.NoAction,
+        };
+
+    private static SagaRecoveryPlan CreateWorkflowMismatchPlan(
+        SagaExecutionDirection direction,
+        string reason
+    ) =>
+        new()
+        {
+            Disposition = SagaRecoveryPlanDisposition.WorkflowMismatch,
+            Direction = direction,
+            Reason = reason,
+        };
+
+    private static bool IsReminderResumeBlocked(
+        SagaResumeSource source,
+        SagaRecoveryCheckpoint checkpoint,
+        SagaRecoveryOptions recoveryOptions
+    ) =>
+        source is SagaResumeSource.Reminder &&
+        (checkpoint.RecoveryMode is SagaRecoveryMode.ManualOnly ||
+         !recoveryOptions.Enabled ||
+         recoveryOptions.ForceManualOnly);
+
+    private static bool TryCreateBoundaryPlan(
+        SagaExecutionDirection direction,
+        int pendingStepIndex,
+        int stepCount,
+        out SagaRecoveryPlan? plan
+    )
+    {
+        if (direction is SagaExecutionDirection.Forward && (pendingStepIndex >= stepCount))
+        {
+            plan = CreateDirectionalPlan(SagaRecoveryPlanDisposition.CompleteSaga, SagaExecutionDirection.Forward);
+            return true;
+        }
+
+        if (direction is SagaExecutionDirection.Compensation && (pendingStepIndex < 0))
+        {
+            plan = CreateDirectionalPlan(
+                SagaRecoveryPlanDisposition.CompensateSaga,
+                SagaExecutionDirection.Compensation);
+            return true;
+        }
+
+        plan = null;
+        return false;
+    }
+
+    private static bool TryCreateReminderBlockedPlan(
+        SagaResumeSource source,
+        SagaExecutionDirection direction,
+        SagaStepInfo step,
+        out SagaRecoveryPlan? plan
+    )
+    {
+        if (source is not SagaResumeSource.Reminder)
+        {
+            plan = null;
+            return false;
+        }
+
+        SagaStepRecoveryPolicy recoveryPolicy = direction is SagaExecutionDirection.Forward
+            ? step.ForwardRecoveryPolicy
+            : step.CompensationRecoveryPolicy!.Value;
+        if (recoveryPolicy is not SagaStepRecoveryPolicy.ManualOnly)
+        {
+            plan = null;
+            return false;
+        }
+
+        string directionName = direction is SagaExecutionDirection.Forward ? "forward" : "compensation";
+        plan = new()
+        {
+            Disposition = SagaRecoveryPlanDisposition.Blocked,
+            Direction = direction,
+            Reason = $"Step '{step.StepName}' requires manual {directionName} recovery.",
+            Step = step,
+        };
+        return true;
+    }
+
     /// <summary>
     ///     Computes the next recovery action for the supplied saga state and checkpoint.
     /// </summary>
@@ -65,119 +160,93 @@ internal sealed class SagaRecoveryPlanner<TSaga>
             };
         }
 
-        if (source is SagaResumeSource.Reminder && checkpoint.RecoveryMode is SagaRecoveryMode.ManualOnly)
+        if (IsReminderResumeBlocked(source, checkpoint, RecoveryOptions))
         {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.NoAction,
-            };
-        }
-
-        if (source is SagaResumeSource.Reminder && (!RecoveryOptions.Enabled || RecoveryOptions.ForceManualOnly))
-        {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.NoAction,
-            };
+            return CreateNoActionPlan();
         }
 
         if (checkpoint.PendingDirection is null)
         {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.NoAction,
-            };
+            return CreateNoActionPlan();
         }
 
+        SagaExecutionDirection direction = checkpoint.PendingDirection.Value;
         if (!checkpoint.PendingStepIndex.HasValue)
         {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.WorkflowMismatch,
-                Direction = checkpoint.PendingDirection,
-                Reason = "Recovery checkpoint is missing a pending step index.",
-            };
+            return CreateWorkflowMismatchPlan(direction, "Recovery checkpoint is missing a pending step index.");
         }
 
         int pendingStepIndex = checkpoint.PendingStepIndex.Value;
-        string expectedHash = SagaStepHash.Compute(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps);
-        string? actualHash = string.IsNullOrWhiteSpace(checkpoint.StepHash) ? state.StepHash : checkpoint.StepHash;
-        if (string.IsNullOrWhiteSpace(actualHash) || !string.Equals(actualHash, expectedHash, StringComparison.Ordinal))
+        if (HasWorkflowHashMismatch(state, checkpoint))
         {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.WorkflowMismatch,
-                Direction = checkpoint.PendingDirection,
-                Reason = "Workflow hash mismatch prevents automatic resume.",
-            };
+            return CreateWorkflowMismatchPlan(direction, "Workflow hash mismatch prevents automatic resume.");
         }
 
-        if (checkpoint.PendingDirection is SagaExecutionDirection.Forward &&
-            (pendingStepIndex >= StepInfoProvider.Steps.Count))
+        if (TryCreateBoundaryPlan(
+                direction,
+                pendingStepIndex,
+                StepInfoProvider.Steps.Count,
+                out SagaRecoveryPlan? plan))
         {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.CompleteSaga,
-                Direction = SagaExecutionDirection.Forward,
-            };
+            return plan!;
         }
 
-        if (checkpoint.PendingDirection is SagaExecutionDirection.Compensation && (pendingStepIndex < 0))
+        if (TryCreatePendingStepPlan(direction, pendingStepIndex, out SagaStepInfo? step, out plan))
         {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.CompensateSaga,
-                Direction = SagaExecutionDirection.Compensation,
-            };
+            return plan!;
         }
 
-        SagaStepInfo? step = StepInfoProvider.Steps.FirstOrDefault(s => s.StepIndex == pendingStepIndex);
-        if (step is null)
+        if (TryCreateReminderBlockedPlan(source, direction, step!, out plan))
         {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.WorkflowMismatch,
-                Direction = checkpoint.PendingDirection,
-                Reason = $"Pending step index '{pendingStepIndex}' is not registered in the current saga definition.",
-            };
-        }
-
-        if (checkpoint.PendingDirection is SagaExecutionDirection.Compensation &&
-            step.CompensationRecoveryPolicy is null)
-        {
-            return new()
-            {
-                Disposition = SagaRecoveryPlanDisposition.WorkflowMismatch,
-                Direction = SagaExecutionDirection.Compensation,
-                Reason = $"Step '{step.StepName}' no longer supports compensation recovery.",
-            };
-        }
-
-        if (source is SagaResumeSource.Reminder)
-        {
-            SagaStepRecoveryPolicy recoveryPolicy = checkpoint.PendingDirection is SagaExecutionDirection.Forward
-                ? step.ForwardRecoveryPolicy
-                : step.CompensationRecoveryPolicy!.Value;
-            if (recoveryPolicy is SagaStepRecoveryPolicy.ManualOnly)
-            {
-                string directionName = checkpoint.PendingDirection is SagaExecutionDirection.Forward
-                    ? "forward"
-                    : "compensation";
-                return new()
-                {
-                    Disposition = SagaRecoveryPlanDisposition.Blocked,
-                    Direction = checkpoint.PendingDirection,
-                    Reason = $"Step '{step.StepName}' requires manual {directionName} recovery.",
-                    Step = step,
-                };
-            }
+            return plan!;
         }
 
         return new()
         {
             Disposition = SagaRecoveryPlanDisposition.ExecuteStep,
-            Direction = checkpoint.PendingDirection,
+            Direction = direction,
             Step = step,
         };
+    }
+
+    private bool HasWorkflowHashMismatch(
+        TSaga state,
+        SagaRecoveryCheckpoint checkpoint
+    )
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(checkpoint);
+        string expectedHash = SagaStepHash.Compute(RecoveryInfoProvider.Recovery, StepInfoProvider.Steps);
+        string? actualHash = string.IsNullOrWhiteSpace(checkpoint.StepHash) ? state.StepHash : checkpoint.StepHash;
+        return string.IsNullOrWhiteSpace(actualHash) ||
+               !string.Equals(actualHash, expectedHash, StringComparison.Ordinal);
+    }
+
+    private bool TryCreatePendingStepPlan(
+        SagaExecutionDirection direction,
+        int pendingStepIndex,
+        out SagaStepInfo? step,
+        out SagaRecoveryPlan? plan
+    )
+    {
+        step = StepInfoProvider.Steps.FirstOrDefault(candidate => candidate.StepIndex == pendingStepIndex);
+        if (step is null)
+        {
+            plan = CreateWorkflowMismatchPlan(
+                direction,
+                $"Pending step index '{pendingStepIndex}' is not registered in the current saga definition.");
+            return true;
+        }
+
+        if (direction is SagaExecutionDirection.Compensation && step.CompensationRecoveryPolicy is null)
+        {
+            plan = CreateWorkflowMismatchPlan(
+                SagaExecutionDirection.Compensation,
+                $"Step '{step.StepName}' no longer supports compensation recovery.");
+            return true;
+        }
+
+        plan = null;
+        return false;
     }
 }

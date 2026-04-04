@@ -317,6 +317,37 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         }
     }
 
+    private static Diagnostic? GetCompensationPolicyDiagnostic(
+        bool hasCompensation,
+        bool hasCompensationRecoveryPolicy,
+        Location? location,
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol sagaStateSymbol,
+        ref string? compensationRecoveryPolicyExpression
+    )
+    {
+        if (hasCompensation && !hasCompensationRecoveryPolicy)
+        {
+            return Diagnostic.Create(
+                SagaCompensationRecoveryPolicyMissingDescriptor,
+                location,
+                typeSymbol.Name,
+                sagaStateSymbol.Name);
+        }
+
+        if (!hasCompensation && hasCompensationRecoveryPolicy)
+        {
+            compensationRecoveryPolicyExpression = null;
+            return Diagnostic.Create(
+                SagaCompensationRecoveryPolicyUnexpectedDescriptor,
+                location,
+                typeSymbol.Name,
+                sagaStateSymbol.Name);
+        }
+
+        return null;
+    }
+
     private static string GetEnumUnderlyingValueExpression(
         ITypeSymbol underlyingType,
         object value
@@ -336,6 +367,23 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             var _ => throw new InvalidOperationException(
                 $"Unsupported enum constant value type '{value.GetType().FullName}'."),
         };
+    }
+
+    private static string GetForwardRecoveryPolicyExpression(
+        AttributeData attr
+    )
+    {
+        TypedConstant forwardRecoveryPolicyArgument = attr.ConstructorArguments.Length > 1
+            ? attr.ConstructorArguments[1]
+            : default;
+        string forwardRecoveryPolicyExpression =
+            "global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy.Automatic";
+        if (TryGetEnumValueExpression(forwardRecoveryPolicyArgument, out string? parsedForwardRecoveryPolicyExpression))
+        {
+            forwardRecoveryPolicyExpression = parsedForwardRecoveryPolicyExpression!;
+        }
+
+        return forwardRecoveryPolicyExpression;
     }
 
     private static IEnumerable<IAssemblySymbol> GetReferencedAssemblies(
@@ -375,6 +423,15 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
         FinalizeSagas(sagaMap, sagaStatesWithStepAttributes, sagas, diagnostics);
         return new(sagas, diagnostics);
     }
+
+    private static bool HasCompensationInterface(
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol? compensatableInterfaceSymbol
+    ) =>
+        compensatableInterfaceSymbol is not null &&
+        typeSymbol.AllInterfaces.Any(i =>
+            i.OriginalDefinition is not null &&
+            SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, compensatableInterfaceSymbol));
 
     private static bool HasRegistrationDependencies(
         Compilation compilation
@@ -462,6 +519,27 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                     stepResult.Step.StepName,
                     stepResult.Step.SagaStateSymbol.Name));
         }
+    }
+
+    private static INamedTypeSymbol? ResolveSagaStateSymbol(
+        AttributeData attr,
+        INamedTypeSymbol typeSymbol,
+        INamedTypeSymbol sagaStepInterfaceSymbol
+    )
+    {
+        if (attr.AttributeClass is not null && attr.AttributeClass.IsGenericType)
+        {
+            INamedTypeSymbol? genericSagaState = attr.AttributeClass.TypeArguments.FirstOrDefault() as INamedTypeSymbol;
+            if (genericSagaState is not null)
+            {
+                return genericSagaState;
+            }
+        }
+
+        INamedTypeSymbol? sagaInterface = typeSymbol.AllInterfaces.FirstOrDefault(iface =>
+            iface.OriginalDefinition is not null &&
+            SymbolEqualityComparer.Default.Equals(iface.OriginalDefinition, sagaStepInterfaceSymbol));
+        return sagaInterface?.TypeArguments[0] as INamedTypeSymbol;
     }
 
     private static string ToStringLiteral(
@@ -696,30 +774,8 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 null);
         }
 
-        TypedConstant forwardRecoveryPolicyArgument = attr.ConstructorArguments.Length > 1
-            ? attr.ConstructorArguments[1]
-            : default;
-        string forwardRecoveryPolicyExpression =
-            "global::Mississippi.DomainModeling.Abstractions.SagaStepRecoveryPolicy.Automatic";
-        if (TryGetEnumValueExpression(forwardRecoveryPolicyArgument, out string? parsedForwardRecoveryPolicyExpression))
-        {
-            forwardRecoveryPolicyExpression = parsedForwardRecoveryPolicyExpression!;
-        }
-
-        INamedTypeSymbol? sagaStateSymbol = null;
-        if (attr.AttributeClass is not null && attr.AttributeClass.IsGenericType)
-        {
-            sagaStateSymbol = attr.AttributeClass.TypeArguments.FirstOrDefault() as INamedTypeSymbol;
-        }
-
-        if (sagaStateSymbol is null)
-        {
-            INamedTypeSymbol? sagaInterface = typeSymbol.AllInterfaces.FirstOrDefault(iface =>
-                iface.OriginalDefinition is not null &&
-                SymbolEqualityComparer.Default.Equals(iface.OriginalDefinition, sagaStepInterfaceSymbol));
-            sagaStateSymbol = sagaInterface?.TypeArguments[0] as INamedTypeSymbol;
-        }
-
+        string forwardRecoveryPolicyExpression = GetForwardRecoveryPolicyExpression(attr);
+        INamedTypeSymbol? sagaStateSymbol = ResolveSagaStateSymbol(attr, typeSymbol, sagaStepInterfaceSymbol);
         if (sagaStateSymbol is null)
         {
             return new(null, Diagnostic.Create(SagaStepMissingSagaDescriptor, location, typeSymbol.Name), null);
@@ -745,37 +801,18 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
                 sagaStateSymbol);
         }
 
-        bool hasCompensation = false;
-        if (compensatableInterfaceSymbol is not null)
-        {
-            hasCompensation = typeSymbol.AllInterfaces.Any(i =>
-                i.OriginalDefinition is not null &&
-                SymbolEqualityComparer.Default.Equals(i.OriginalDefinition, compensatableInterfaceSymbol));
-        }
-
+        bool hasCompensation = HasCompensationInterface(typeSymbol, compensatableInterfaceSymbol);
         bool hasCompensationRecoveryPolicy = TryGetNamedEnumValueExpression(
             attr,
             "CompensationRecoveryPolicy",
             out string? compensationRecoveryPolicyExpression);
-        Diagnostic? compensationPolicyDiagnostic = null;
-        if (hasCompensation && !hasCompensationRecoveryPolicy)
-        {
-            compensationPolicyDiagnostic = Diagnostic.Create(
-                SagaCompensationRecoveryPolicyMissingDescriptor,
-                location,
-                typeSymbol.Name,
-                sagaStateSymbol.Name);
-        }
-        else if (!hasCompensation && hasCompensationRecoveryPolicy)
-        {
-            compensationRecoveryPolicyExpression = null;
-            compensationPolicyDiagnostic = Diagnostic.Create(
-                SagaCompensationRecoveryPolicyUnexpectedDescriptor,
-                location,
-                typeSymbol.Name,
-                sagaStateSymbol.Name);
-        }
-
+        Diagnostic? compensationPolicyDiagnostic = GetCompensationPolicyDiagnostic(
+            hasCompensation,
+            hasCompensationRecoveryPolicy,
+            location,
+            typeSymbol,
+            sagaStateSymbol,
+            ref compensationRecoveryPolicyExpression);
         return new(
             new(
                 sagaStateSymbol,

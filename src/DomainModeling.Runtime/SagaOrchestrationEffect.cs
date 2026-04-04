@@ -19,6 +19,10 @@ namespace Mississippi.DomainModeling.Runtime;
 public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     where TSaga : class, ISagaState
 {
+    private const string CompensationFailedErrorCode = "COMPENSATION_FAILED";
+
+    private const string StepMetadataNotFoundErrorMessage = "Step metadata not found.";
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="SagaOrchestrationEffect{TSaga}" /> class.
     /// </summary>
@@ -176,8 +180,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         {
             yield return new SagaFailed
             {
-                ErrorCode = "COMPENSATION_FAILED",
-                ErrorMessage = "Step metadata not found.",
+                ErrorCode = CompensationFailedErrorCode,
+                ErrorMessage = StepMetadataNotFoundErrorMessage,
                 FailedAt = TimeProvider.GetUtcNow(),
             };
             yield break;
@@ -223,7 +227,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         {
             yield return new SagaFailed
             {
-                ErrorCode = result.ErrorCode ?? "COMPENSATION_FAILED",
+                ErrorCode = result.ErrorCode ?? CompensationFailedErrorCode,
                 ErrorMessage = result.ErrorMessage,
                 FailedAt = TimeProvider.GetUtcNow(),
             };
@@ -240,8 +244,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         {
             yield return new SagaFailed
             {
-                ErrorCode = "COMPENSATION_FAILED",
-                ErrorMessage = "Step metadata not found.",
+                ErrorCode = CompensationFailedErrorCode,
+                ErrorMessage = StepMetadataNotFoundErrorMessage,
                 FailedAt = TimeProvider.GetUtcNow(),
             };
             yield break;
@@ -278,7 +282,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         {
             yield return new SagaFailed
             {
-                ErrorCode = result.ErrorCode ?? "COMPENSATION_FAILED",
+                ErrorCode = result.ErrorCode ?? CompensationFailedErrorCode,
                 ErrorMessage = result.ErrorMessage,
                 FailedAt = TimeProvider.GetUtcNow(),
             };
@@ -341,7 +345,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             yield return new SagaFailed
             {
                 ErrorCode = "STEP_METADATA_MISSING",
-                ErrorMessage = "Step metadata not found.",
+                ErrorMessage = StepMetadataNotFoundErrorMessage,
                 FailedAt = TimeProvider.GetUtcNow(),
             };
             yield break;
@@ -396,7 +400,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             yield return new SagaFailed
             {
                 ErrorCode = "STEP_METADATA_MISSING",
-                ErrorMessage = "Step metadata not found.",
+                ErrorMessage = StepMetadataNotFoundErrorMessage,
                 FailedAt = TimeProvider.GetUtcNow(),
             };
             yield break;

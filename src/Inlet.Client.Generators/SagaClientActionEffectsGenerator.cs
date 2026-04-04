@@ -16,6 +16,12 @@ namespace Mississippi.Inlet.Client.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
 {
+    private const string CommandIdArgument = "commandId,";
+
+    private const string InheritdocComment = "/// <inheritdoc />";
+
+    private const string UtcNowCallArgument = "TimeProvider.GetUtcNow());";
+
     private static void GenerateActionEffect(
         SourceProductionContext context,
         SagaClientGeneratorHelper.SagaClientInfo saga
@@ -72,13 +78,13 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.CloseBrace();
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritdocComment);
         sb.AppendLine($"protected override string AggregateRoutePrefix => \"/api/sagas/{saga.RoutePrefix}\";");
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritdocComment);
         sb.AppendLine("protected override string Route => string.Empty;");
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritdocComment);
         sb.AppendLine($"protected override string GetEndpoint({actionName} action) =>");
         sb.IncreaseIndent();
         sb.AppendLine("$\"{AggregateRoutePrefix}/{action.SagaId}\";");
@@ -144,7 +150,7 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("TimeProvider = timeProvider ?? TimeProvider.System;");
         sb.CloseBrace();
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritdocComment);
         sb.AppendLine("public bool CanHandle(");
         sb.IncreaseIndent();
         sb.AppendLine("IAction action");
@@ -154,7 +160,7 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine($"action is {actionName};");
         sb.DecreaseIndent();
         sb.AppendLine();
-        sb.AppendLine("/// <inheritdoc />");
+        sb.AppendLine(InheritdocComment);
         sb.AppendLine("public async IAsyncEnumerable<IAction> HandleAsync(");
         sb.IncreaseIndent();
         sb.AppendLine("IAction action,");
@@ -172,9 +178,9 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.AppendLine("string commandId = Guid.NewGuid().ToString(\"N\");");
         sb.AppendLine($"yield return Resume{saga.SagaName}SagaExecutingAction.Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("commandId,");
+        sb.AppendLine(CommandIdArgument);
         sb.AppendLine($"typeof({actionName}).Name,");
-        sb.AppendLine("TimeProvider.GetUtcNow());");
+        sb.AppendLine(UtcNowCallArgument);
         sb.DecreaseIndent();
         sb.AppendLine();
         sb.AppendLine("SagaResumeResponse? response = null;");
@@ -212,10 +218,10 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.AppendLine($"yield return Resume{saga.SagaName}SagaFailedAction.Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("commandId,");
+        sb.AppendLine(CommandIdArgument);
         sb.AppendLine("\"HttpError\",");
         sb.AppendLine("errorMessage,");
-        sb.AppendLine("TimeProvider.GetUtcNow());");
+        sb.AppendLine(UtcNowCallArgument);
         sb.DecreaseIndent();
         sb.AppendLine("yield break;");
         sb.CloseBrace();
@@ -224,19 +230,19 @@ public sealed class SagaClientActionEffectsGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.AppendLine($"yield return Resume{saga.SagaName}SagaFailedAction.Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("commandId,");
+        sb.AppendLine(CommandIdArgument);
         sb.AppendLine("\"NoResponse\",");
         sb.AppendLine("\"No response from server.\",");
-        sb.AppendLine("TimeProvider.GetUtcNow());");
+        sb.AppendLine(UtcNowCallArgument);
         sb.DecreaseIndent();
         sb.AppendLine("yield break;");
         sb.CloseBrace();
         sb.AppendLine();
         sb.AppendLine($"yield return Resume{saga.SagaName}SagaSucceededAction.Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("commandId,");
+        sb.AppendLine(CommandIdArgument);
         sb.AppendLine("response,");
-        sb.AppendLine("TimeProvider.GetUtcNow());");
+        sb.AppendLine(UtcNowCallArgument);
         sb.DecreaseIndent();
         sb.CloseBrace();
         sb.AppendLine();

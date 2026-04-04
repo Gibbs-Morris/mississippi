@@ -16,10 +16,14 @@ namespace Mississippi.Inlet.Runtime.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
 {
+    private const string BlockedReasonNullAssignment = "BlockedReason = null";
+
     private const string GenerateSagaStatusReducersAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaStatusReducersAttribute";
 
     private const string GeneratorName = "SagaStatusReducersGenerator";
+
+    private const string PendingStepNameNullAssignment = "PendingStepName = null";
 
     private static void AddAssignment(
         List<string> assignments,
@@ -126,8 +130,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
             properties.PendingDirection,
             "PendingDirection = SagaExecutionDirection.Forward");
         AddAssignment(sagaStartedAssignments, properties.PendingStepIndex, "PendingStepIndex = 0");
-        AddAssignment(sagaStartedAssignments, properties.PendingStepName, "PendingStepName = null");
-        AddAssignment(sagaStartedAssignments, properties.BlockedReason, "BlockedReason = null");
+        AddAssignment(sagaStartedAssignments, properties.PendingStepName, PendingStepNameNullAssignment);
+        AddAssignment(sagaStartedAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
         AddAssignment(sagaStartedAssignments, properties.LastResumeSource, "LastResumeSource = null");
         AddAssignment(sagaStartedAssignments, properties.LastResumeAttemptedAt, "LastResumeAttemptedAt = null");
         AddAssignment(sagaStartedAssignments, properties.AutomaticAttemptCount, "AutomaticAttemptCount = 0");
@@ -141,8 +145,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
             sagaStepCompletedAssignments,
             properties.PendingStepIndex,
             "PendingStepIndex = eventData.StepIndex + 1");
-        AddAssignment(sagaStepCompletedAssignments, properties.PendingStepName, "PendingStepName = null");
-        AddAssignment(sagaStepCompletedAssignments, properties.BlockedReason, "BlockedReason = null");
+        AddAssignment(sagaStepCompletedAssignments, properties.PendingStepName, PendingStepNameNullAssignment);
+        AddAssignment(sagaStepCompletedAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
         AddAssignment(sagaStepCompletedAssignments, properties.ResumeDisposition, pendingDisposition);
         List<string> sagaStepFailedAssignments =
         [
@@ -155,7 +159,7 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
             "PendingDirection = SagaExecutionDirection.Forward");
         AddAssignment(sagaStepFailedAssignments, properties.PendingStepIndex, "PendingStepIndex = eventData.StepIndex");
         AddAssignment(sagaStepFailedAssignments, properties.PendingStepName, "PendingStepName = eventData.StepName");
-        AddAssignment(sagaStepFailedAssignments, properties.BlockedReason, "BlockedReason = null");
+        AddAssignment(sagaStepFailedAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
         AddAssignment(sagaStepFailedAssignments, properties.ResumeDisposition, pendingDisposition);
         List<string> sagaFailedAssignments =
         [
@@ -166,8 +170,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         ];
         AddAssignment(sagaFailedAssignments, properties.PendingDirection, "PendingDirection = null");
         AddAssignment(sagaFailedAssignments, properties.PendingStepIndex, "PendingStepIndex = null");
-        AddAssignment(sagaFailedAssignments, properties.PendingStepName, "PendingStepName = null");
-        AddAssignment(sagaFailedAssignments, properties.BlockedReason, "BlockedReason = null");
+        AddAssignment(sagaFailedAssignments, properties.PendingStepName, PendingStepNameNullAssignment);
+        AddAssignment(sagaFailedAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
         AddAssignment(sagaFailedAssignments, properties.ResumeDisposition, TerminalDisposition);
         List<string> sagaCompletedAssignments =
         [
@@ -176,8 +180,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         ];
         AddAssignment(sagaCompletedAssignments, properties.PendingDirection, "PendingDirection = null");
         AddAssignment(sagaCompletedAssignments, properties.PendingStepIndex, "PendingStepIndex = null");
-        AddAssignment(sagaCompletedAssignments, properties.PendingStepName, "PendingStepName = null");
-        AddAssignment(sagaCompletedAssignments, properties.BlockedReason, "BlockedReason = null");
+        AddAssignment(sagaCompletedAssignments, properties.PendingStepName, PendingStepNameNullAssignment);
+        AddAssignment(sagaCompletedAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
         AddAssignment(sagaCompletedAssignments, properties.ResumeDisposition, TerminalDisposition);
         List<string> sagaCompensatingAssignments = ["Phase = SagaPhase.Compensating"];
         AddAssignment(
@@ -188,8 +192,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
             sagaCompensatingAssignments,
             properties.PendingStepIndex,
             "PendingStepIndex = eventData.FromStepIndex");
-        AddAssignment(sagaCompensatingAssignments, properties.PendingStepName, "PendingStepName = null");
-        AddAssignment(sagaCompensatingAssignments, properties.BlockedReason, "BlockedReason = null");
+        AddAssignment(sagaCompensatingAssignments, properties.PendingStepName, PendingStepNameNullAssignment);
+        AddAssignment(sagaCompensatingAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
         AddAssignment(sagaCompensatingAssignments, properties.ResumeDisposition, pendingDisposition);
         List<string> sagaCompensatedAssignments =
         [
@@ -198,8 +202,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         ];
         AddAssignment(sagaCompensatedAssignments, properties.PendingDirection, "PendingDirection = null");
         AddAssignment(sagaCompensatedAssignments, properties.PendingStepIndex, "PendingStepIndex = null");
-        AddAssignment(sagaCompensatedAssignments, properties.PendingStepName, "PendingStepName = null");
-        AddAssignment(sagaCompensatedAssignments, properties.BlockedReason, "BlockedReason = null");
+        AddAssignment(sagaCompensatedAssignments, properties.PendingStepName, PendingStepNameNullAssignment);
+        AddAssignment(sagaCompensatedAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
         AddAssignment(sagaCompensatedAssignments, properties.ResumeDisposition, TerminalDisposition);
         List<string> reducerBlocks =
         [
@@ -254,7 +258,7 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
                 executionStartedAssignments,
                 properties.PendingStepName,
                 "PendingStepName = eventData.StepName");
-            AddAssignment(executionStartedAssignments, properties.BlockedReason, "BlockedReason = null");
+            AddAssignment(executionStartedAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
             AddAssignment(
                 executionStartedAssignments,
                 properties.LastResumeSource,
@@ -321,8 +325,8 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
                 stepCompensatedAssignments,
                 properties.PendingStepIndex,
                 "PendingStepIndex = eventData.StepIndex - 1");
-            AddAssignment(stepCompensatedAssignments, properties.PendingStepName, "PendingStepName = null");
-            AddAssignment(stepCompensatedAssignments, properties.BlockedReason, "BlockedReason = null");
+            AddAssignment(stepCompensatedAssignments, properties.PendingStepName, PendingStepNameNullAssignment);
+            AddAssignment(stepCompensatedAssignments, properties.BlockedReason, BlockedReasonNullAssignment);
             AddAssignment(stepCompensatedAssignments, properties.ResumeDisposition, pendingDisposition);
             if (stepCompensatedAssignments.Count > 0)
             {

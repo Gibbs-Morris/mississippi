@@ -21,11 +21,18 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
 {
     private const string ActionsNamespace = "Mississippi.Inlet.Client.Abstractions.Actions";
 
+    private const string CommandIdParamComment =
+        "/// <param name=\"CommandId\">The unique command invocation identifier.</param>";
+
+    private const string CommandIdParameter = "string commandId,";
+
     private const string GeneratorName = "SagaClientActionsGenerator";
 
     private const string InheritdocComment = "/// <inheritdoc />";
 
     private const string SystemNamespace = "System";
+
+    private const string TimestampParameter = "DateTimeOffset timestamp";
 
     private static void GenerateActions(
         SourceProductionContext context,
@@ -55,7 +62,7 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(saga.ActionsNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Action dispatched when the {saga.SagaName} saga start request is executing.");
-        sb.AppendLine("/// <param name=\"CommandId\">The unique command invocation identifier.</param>");
+        sb.AppendLine(CommandIdParamComment);
         sb.AppendLine("/// <param name=\"CommandType\">The name of the command type.</param>");
         sb.AppendLine("/// <param name=\"Timestamp\">The timestamp when the request started.</param>");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
@@ -68,9 +75,9 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendLine(InheritdocComment);
         sb.AppendLine($"public static {actionName} Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("string commandId,");
+        sb.AppendLine(CommandIdParameter);
         sb.AppendLine("string commandType,");
-        sb.AppendLine("DateTimeOffset timestamp");
+        sb.AppendLine(TimestampParameter);
         sb.DecreaseIndent();
         sb.AppendLine(") =>");
         sb.IncreaseIndent();
@@ -93,7 +100,7 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(saga.ActionsNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Action dispatched when the {saga.SagaName} saga start request fails.");
-        sb.AppendLine("/// <param name=\"CommandId\">The unique command invocation identifier.</param>");
+        sb.AppendLine(CommandIdParamComment);
         sb.AppendLine("/// <param name=\"ErrorCode\">The error code.</param>");
         sb.AppendLine("/// <param name=\"ErrorMessage\">The error message.</param>");
         sb.AppendLine("/// <param name=\"Timestamp\">The timestamp when the request failed.</param>");
@@ -110,10 +117,10 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendLine(InheritdocComment);
         sb.AppendLine($"public static {actionName} Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("string commandId,");
+        sb.AppendLine(CommandIdParameter);
         sb.AppendLine("string? errorCode,");
         sb.AppendLine("string? errorMessage,");
-        sb.AppendLine("DateTimeOffset timestamp");
+        sb.AppendLine(TimestampParameter);
         sb.DecreaseIndent();
         sb.AppendLine(") =>");
         sb.IncreaseIndent();
@@ -174,7 +181,7 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(saga.ActionsNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Action dispatched when the {saga.SagaName} saga manual resume request is executing.");
-        sb.AppendLine("/// <param name=\"CommandId\">The unique command invocation identifier.</param>");
+        sb.AppendLine(CommandIdParamComment);
         sb.AppendLine("/// <param name=\"CommandType\">The name of the command type.</param>");
         sb.AppendLine("/// <param name=\"Timestamp\">The timestamp when the request started.</param>");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
@@ -187,9 +194,9 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendLine(InheritdocComment);
         sb.AppendLine($"public static {actionName} Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("string commandId,");
+        sb.AppendLine(CommandIdParameter);
         sb.AppendLine("string commandType,");
-        sb.AppendLine("DateTimeOffset timestamp");
+        sb.AppendLine(TimestampParameter);
         sb.DecreaseIndent();
         sb.AppendLine(") =>");
         sb.IncreaseIndent();
@@ -212,7 +219,7 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(saga.ActionsNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Action dispatched when the {saga.SagaName} saga manual resume request fails.");
-        sb.AppendLine("/// <param name=\"CommandId\">The unique command invocation identifier.</param>");
+        sb.AppendLine(CommandIdParamComment);
         sb.AppendLine("/// <param name=\"ErrorCode\">The error code.</param>");
         sb.AppendLine("/// <param name=\"ErrorMessage\">The error message.</param>");
         sb.AppendLine("/// <param name=\"Timestamp\">The timestamp when the request failed.</param>");
@@ -229,10 +236,10 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendLine(InheritdocComment);
         sb.AppendLine($"public static {actionName} Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("string commandId,");
+        sb.AppendLine(CommandIdParameter);
         sb.AppendLine("string? errorCode,");
         sb.AppendLine("string? errorMessage,");
-        sb.AppendLine("DateTimeOffset timestamp");
+        sb.AppendLine(TimestampParameter);
         sb.DecreaseIndent();
         sb.AppendLine(") =>");
         sb.IncreaseIndent();
@@ -279,7 +286,7 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(saga.ActionsNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Action dispatched when the {saga.SagaName} saga manual resume request succeeds.");
-        sb.AppendLine("/// <param name=\"CommandId\">The unique command invocation identifier.</param>");
+        sb.AppendLine(CommandIdParamComment);
         sb.AppendLine("/// <param name=\"Response\">The typed manual-resume response.</param>");
         sb.AppendLine("/// <param name=\"Timestamp\">The timestamp when the request succeeded.</param>");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
@@ -288,9 +295,9 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.OpenBrace();
         sb.AppendLine($"public static {actionName} Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("string commandId,");
+        sb.AppendLine(CommandIdParameter);
         sb.AppendLine("SagaResumeResponse response,");
-        sb.AppendLine("DateTimeOffset timestamp");
+        sb.AppendLine(TimestampParameter);
         sb.DecreaseIndent();
         sb.AppendLine(") =>");
         sb.IncreaseIndent();
@@ -313,7 +320,7 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendFileScopedNamespace(saga.ActionsNamespace);
         sb.AppendLine();
         sb.AppendSummary($"Action dispatched when the {saga.SagaName} saga start request succeeds.");
-        sb.AppendLine("/// <param name=\"CommandId\">The unique command invocation identifier.</param>");
+        sb.AppendLine(CommandIdParamComment);
         sb.AppendLine("/// <param name=\"Timestamp\">The timestamp when the request succeeded.</param>");
         sb.AppendGeneratedCodeAttribute(GeneratorName);
         sb.AppendLine(
@@ -322,8 +329,8 @@ public sealed class SagaClientActionsGenerator : IIncrementalGenerator
         sb.AppendLine(InheritdocComment);
         sb.AppendLine($"public static {actionName} Create(");
         sb.IncreaseIndent();
-        sb.AppendLine("string commandId,");
-        sb.AppendLine("DateTimeOffset timestamp");
+        sb.AppendLine(CommandIdParameter);
+        sb.AppendLine(TimestampParameter);
         sb.DecreaseIndent();
         sb.AppendLine(") =>");
         sb.IncreaseIndent();

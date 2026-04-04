@@ -20,6 +20,13 @@ namespace Mississippi.Inlet.Gateway.Generators;
 [Generator(LanguageNames.CSharp)]
 public sealed class SagaControllerGenerator : IIncrementalGenerator
 {
+    private const string CancellationTokenDefaultParameter = "CancellationToken cancellationToken = default";
+
+    private const string CancellationTokenParamComment =
+        "/// <param name=\"cancellationToken\">Cancellation token.</param>";
+
+    private const string FromRouteSagaIdParameter = "[FromRoute] Guid sagaId,";
+
     private const string GenerateAllowAnonymousAttributeFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateAllowAnonymousAttribute";
 
@@ -31,6 +38,8 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
     private const string GenerateSagaEndpointsAttributeGenericFullName =
         "Mississippi.Inlet.Generators.Abstractions.GenerateSagaEndpointsAttribute`1";
+
+    private const string SagaIdParamComment = "/// <param name=\"sagaId\">The saga identifier.</param>";
 
     private const string SagaStateInterfaceFullName = "Mississippi.DomainModeling.Abstractions.ISagaState";
 
@@ -132,16 +141,16 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
         // Start endpoint
         sb.AppendSummary($"Starts the {saga.SagaName} saga.");
-        sb.AppendLine("/// <param name=\"sagaId\">The saga identifier.</param>");
+        sb.AppendLine(SagaIdParamComment);
         sb.AppendLine("/// <param name=\"request\">The saga start request.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine("/// <returns>The operation result.</returns>");
         sb.AppendLine("[HttpPost]");
         sb.AppendLine("public Task<ActionResult<OperationResult>> StartAsync(");
         sb.IncreaseIndent();
-        sb.AppendLine("[FromRoute] Guid sagaId,");
+        sb.AppendLine(FromRouteSagaIdParameter);
         sb.AppendLine($"[FromBody] {saga.StartDtoTypeName} request,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
@@ -153,14 +162,14 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
         // Status endpoint
         sb.AppendSummary($"Gets the current state for the {saga.SagaName} saga.");
-        sb.AppendLine("/// <param name=\"sagaId\">The saga identifier.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(SagaIdParamComment);
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine("/// <returns>The saga state.</returns>");
         sb.AppendLine("[HttpGet(\"status\")]");
         sb.AppendLine($"public async Task<ActionResult<{saga.SagaStateTypeName}?>> GetStatusAsync(");
         sb.IncreaseIndent();
-        sb.AppendLine("[FromRoute] Guid sagaId,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(FromRouteSagaIdParameter);
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
@@ -177,14 +186,14 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
         // Runtime-status endpoint
         sb.AppendSummary($"Gets the runtime recovery status for the {saga.SagaName} saga.");
-        sb.AppendLine("/// <param name=\"sagaId\">The saga identifier.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(SagaIdParamComment);
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine("/// <returns>The metadata-only saga runtime status.</returns>");
         sb.AppendLine("[HttpGet(\"runtime-status\")]");
         sb.AppendLine("public async Task<ActionResult<SagaRuntimeStatus>> GetRuntimeStatusAsync(");
         sb.IncreaseIndent();
-        sb.AppendLine("[FromRoute] Guid sagaId,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(FromRouteSagaIdParameter);
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
@@ -201,14 +210,14 @@ public sealed class SagaControllerGenerator : IIncrementalGenerator
 
         // Resume endpoint
         sb.AppendSummary($"Requests an explicit manual resume for the {saga.SagaName} saga.");
-        sb.AppendLine("/// <param name=\"sagaId\">The saga identifier.</param>");
-        sb.AppendLine("/// <param name=\"cancellationToken\">Cancellation token.</param>");
+        sb.AppendLine(SagaIdParamComment);
+        sb.AppendLine(CancellationTokenParamComment);
         sb.AppendLine("/// <returns>The typed manual-resume response.</returns>");
         sb.AppendLine("[HttpPost(\"resume\")]");
         sb.AppendLine("public async Task<ActionResult<SagaResumeResponse>> ResumeAsync(");
         sb.IncreaseIndent();
-        sb.AppendLine("[FromRoute] Guid sagaId,");
-        sb.AppendLine("CancellationToken cancellationToken = default");
+        sb.AppendLine(FromRouteSagaIdParameter);
+        sb.AppendLine(CancellationTokenDefaultParameter);
         sb.DecreaseIndent();
         sb.AppendLine(")");
         sb.OpenBrace();
