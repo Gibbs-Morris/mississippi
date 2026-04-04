@@ -201,6 +201,40 @@ public sealed class SagaAbstractionsTests
     }
 
     /// <summary>
+    ///     Verifies saga step info rejects missing compensation recovery policy when compensation is enabled.
+    /// </summary>
+    [Fact]
+    public void SagaStepInfoThrowsWhenCompensationPolicyMissingForCompensatableStep()
+    {
+        ArgumentException exception = Assert.Throws<ArgumentException>(() =>
+            new SagaStepInfo(
+                0,
+                "Debit",
+                typeof(SagaStepMarker),
+                true,
+                SagaStepRecoveryPolicy.Automatic,
+                null));
+        Assert.Equal("compensationRecoveryPolicy", exception.ParamName);
+    }
+
+    /// <summary>
+    ///     Verifies saga step info rejects compensation recovery policy for non-compensatable steps.
+    /// </summary>
+    [Fact]
+    public void SagaStepInfoThrowsWhenCompensationPolicyProvidedForNonCompensatableStep()
+    {
+        ArgumentException exception = Assert.Throws<ArgumentException>(() =>
+            new SagaStepInfo(
+                0,
+                "Debit",
+                typeof(SagaStepMarker),
+                false,
+                SagaStepRecoveryPolicy.Automatic,
+                SagaStepRecoveryPolicy.ManualOnly));
+        Assert.Equal("compensationRecoveryPolicy", exception.ParamName);
+    }
+
+    /// <summary>
     ///     Verifies failed step results capture error details.
     /// </summary>
     [Fact]

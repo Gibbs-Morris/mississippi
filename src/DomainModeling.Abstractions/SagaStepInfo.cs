@@ -28,6 +28,20 @@ public sealed record SagaStepInfo
     {
         ArgumentNullException.ThrowIfNull(stepName);
         ArgumentNullException.ThrowIfNull(stepType);
+        if (hasCompensation && compensationRecoveryPolicy is null)
+        {
+            throw new ArgumentException(
+                "Compensation recovery policy is required when the step supports compensation.",
+                nameof(compensationRecoveryPolicy));
+        }
+
+        if (!hasCompensation && compensationRecoveryPolicy is not null)
+        {
+            throw new ArgumentException(
+                "Compensation recovery policy must be null when the step does not support compensation.",
+                nameof(compensationRecoveryPolicy));
+        }
+
         StepIndex = stepIndex;
         StepName = stepName;
         StepType = stepType;
