@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
@@ -590,7 +591,7 @@ public sealed class SagaSiloRegistrationGenerator : IIncrementalGenerator
             return "null";
         }
 
-        return $"\"{value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n")}\"";
+        return SyntaxFactory.Literal(value).ToFullString();
     }
 
     private static StepInfoResult TryGetStepInfo(
