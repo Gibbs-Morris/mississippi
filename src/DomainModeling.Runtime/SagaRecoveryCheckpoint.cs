@@ -13,7 +13,7 @@ namespace Mississippi.DomainModeling.Runtime;
 /// </summary>
 [GenerateSerializer]
 [Alias("Mississippi.DomainModeling.Runtime.SagaRecoveryCheckpoint")]
-[SnapshotStorageName("MISSISSIPPI", "SAGAS", "SAGARECOVERYCHECKPOINT")]
+[SnapshotStorageName("MISSISSIPPI", "SAGAS", "SAGARECOVERYCHECKPOINT", version: 1)]
 internal sealed record SagaRecoveryCheckpoint
 {
     /// <summary>
