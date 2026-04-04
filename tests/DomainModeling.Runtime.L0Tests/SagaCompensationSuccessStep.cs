@@ -16,12 +16,7 @@ internal sealed class SagaCompensationSuccessStep
     /// <summary>
     ///     Gets the last compensation context observed by the step.
     /// </summary>
-    internal static SagaStepExecutionContext? LastCompensationContext { get; private set; }
-
-    /// <summary>
-    ///     Clears the captured compensation context.
-    /// </summary>
-    internal static void Reset() => LastCompensationContext = null;
+    internal SagaStepExecutionContext? LastCompensationContext { get; private set; }
 
     /// <inheritdoc />
     public Task<CompensationResult> CompensateAsync(

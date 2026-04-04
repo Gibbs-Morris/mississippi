@@ -212,10 +212,10 @@ public sealed class SagaOrchestrationEffectTests
         ];
         using ServiceProvider provider = CreateProvider(services =>
         {
-            services.AddTransient<SagaCompensationSuccessStep>();
+            services.AddSingleton<SagaCompensationSuccessStep>();
             services.AddTransient<SagaNonCompensatableStep>();
         });
-        SagaCompensationSuccessStep.Reset();
+        SagaCompensationSuccessStep step = provider.GetRequiredService<SagaCompensationSuccessStep>();
         SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
         List<object> events = await CollectAsync(
             effect.HandleAsync(
@@ -242,11 +242,11 @@ public sealed class SagaOrchestrationEffectTests
                 Assert.Equal(started.AttemptId, compensated.AttemptId);
                 Assert.Equal(started.OperationKey, compensated.OperationKey);
             });
-        Assert.NotNull(SagaCompensationSuccessStep.LastCompensationContext);
+        Assert.NotNull(step.LastCompensationContext);
         Assert.Equal(
             SagaExecutionDirection.Compensation,
-            SagaCompensationSuccessStep.LastCompensationContext!.Direction);
-        Assert.Equal(SagaResumeSource.Initial, SagaCompensationSuccessStep.LastCompensationContext.Source);
+            step.LastCompensationContext!.Direction);
+        Assert.Equal(SagaResumeSource.Initial, step.LastCompensationContext.Source);
     }
 
     /// <summary>
