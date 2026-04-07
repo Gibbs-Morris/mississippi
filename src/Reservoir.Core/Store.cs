@@ -42,9 +42,9 @@ public class Store : IStore
 
     private readonly StoreEventSubject<StoreEventBase> storeEventSubject = new();
 
-    private readonly TimeProvider timeProvider;
-
     private bool disposed;
+
+    private TimeProvider TimeProvider { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="Store" /> class.
@@ -63,7 +63,7 @@ public class Store : IStore
     )
     {
         ArgumentNullException.ThrowIfNull(timeProvider);
-        this.timeProvider = timeProvider;
+        TimeProvider = timeProvider;
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public class Store : IStore
         ArgumentNullException.ThrowIfNull(featureRegistrations);
         ArgumentNullException.ThrowIfNull(middlewaresCollection);
         ArgumentNullException.ThrowIfNull(timeProvider);
-        this.timeProvider = timeProvider;
+        TimeProvider = timeProvider;
 
         // Initialize feature states from registrations
         foreach (IFeatureStateRegistration registration in featureRegistrations)
@@ -110,7 +110,7 @@ public class Store : IStore
         }
 
         // Emit initialization event
-        storeEventSubject.OnNext(new StoreInitializedEvent(timeProvider.GetUtcNow(), GetStateSnapshot()));
+        storeEventSubject.OnNext(new StoreInitializedEvent(TimeProvider.GetUtcNow(), GetStateSnapshot()));
     }
 
     /// <inheritdoc />
@@ -285,13 +285,13 @@ public class Store : IStore
     )
     {
         // Emit pre-dispatch event
-        storeEventSubject.OnNext(new ActionDispatchingEvent(timeProvider.GetUtcNow(), action));
+        storeEventSubject.OnNext(new ActionDispatchingEvent(TimeProvider.GetUtcNow(), action));
 
         // Run reducers for feature states
         ReduceFeatureStates(action);
 
         // Emit post-dispatch event with current state snapshot
-        storeEventSubject.OnNext(new ActionDispatchedEvent(timeProvider.GetUtcNow(), action, GetStateSnapshot()));
+        storeEventSubject.OnNext(new ActionDispatchedEvent(TimeProvider.GetUtcNow(), action, GetStateSnapshot()));
 
         // Notify listeners of state change
         NotifyListeners();
@@ -305,7 +305,7 @@ public class Store : IStore
     )
     {
         // Emit pre-dispatch event for system actions too
-        storeEventSubject.OnNext(new ActionDispatchingEvent(timeProvider.GetUtcNow(), systemAction));
+        storeEventSubject.OnNext(new ActionDispatchingEvent(TimeProvider.GetUtcNow(), systemAction));
         IReadOnlyDictionary<string, object> previousSnapshot = GetStateSnapshot();
         IReadOnlyDictionary<string, object> newSnapshot;
         bool notify;
@@ -328,7 +328,7 @@ public class Store : IStore
 
         // Emit state restored event
         storeEventSubject.OnNext(
-            new StateRestoredEvent(timeProvider.GetUtcNow(), previousSnapshot, newSnapshot, systemAction));
+            new StateRestoredEvent(TimeProvider.GetUtcNow(), previousSnapshot, newSnapshot, systemAction));
         if (notify)
         {
             NotifyListeners();
