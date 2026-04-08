@@ -13,6 +13,12 @@ namespace Mississippi.DomainModeling.TestHarness.Effects;
 ///         and provides a base for fluent assertions. Domain-specific fixtures
 ///         can inherit from this class to add domain-specific assertion methods.
 ///     </para>
+///     <para>
+///         This class is public because it is part of the test harness API and intended
+///         to be inherited by domain-specific test fixture classes (for example,
+///         <c>HighValueEffectResult</c> in the Spring sample). It is not sealed by design
+///         to support this extensibility pattern.
+///     </para>
 /// </remarks>
 public class EffectTestResult
 {

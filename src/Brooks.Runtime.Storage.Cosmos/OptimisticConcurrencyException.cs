@@ -6,7 +6,11 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos;
 /// <summary>
 ///     Exception thrown when an optimistic concurrency conflict occurs during event storage operations.
 /// </summary>
-public class OptimisticConcurrencyException : Exception
+/// <remarks>
+///     This exception is public to enable consumers to catch and handle concurrency conflicts
+///     from the Brooks event storage API. It is sealed because there is no designed extensibility point.
+/// </remarks>
+public sealed class OptimisticConcurrencyException : Exception
 {
     /// <summary>
     ///     Initializes a new instance of the <see cref="OptimisticConcurrencyException" /> class.
