@@ -1,7 +1,3 @@
-// <copyright file="Program.cs" company="Gibbs-Morris LLC">
-// Licensed under the Gibbs-Morris commercial license.
-// </copyright>
-
 #pragma warning disable ASPIRECOSMOSDB001 // RunAsPreviewEmulator is experimental
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;

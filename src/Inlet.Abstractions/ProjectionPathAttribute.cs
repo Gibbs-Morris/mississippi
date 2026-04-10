@@ -35,15 +35,7 @@ namespace Mississippi.Inlet.Abstractions;
 ///         </list>
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             // Server-side projection (in Domain project):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesProjection { ... }
-///             // Client-side DTO (in Contracts project, WASM-safe):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesDto { ... }
-///         </code>
+///         See sample implementations in the repository for usage patterns.
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]

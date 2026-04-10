@@ -24,27 +24,11 @@ public static class AqueductGrainsRegistrations
     /// <remarks>
     ///     <para>
     ///         This method registers the Aqueduct grains and configures the options.
-    ///         Use the <see cref="AqueductSiloOptions" /> to configure stream providers:
+    ///         Use the <see cref="AqueductSiloOptions" /> to configure stream providers.
     ///     </para>
-    ///     <code>
-    ///     // Basic setup - configure streams yourself
-    ///     siloBuilder.UseAqueduct(options =>
-    ///     {
-    ///         options.StreamProviderName = "MyStreams";
-    ///     });
-    ///
-    ///     // Development/testing with in-memory streams
-    ///     siloBuilder.UseAqueduct(options =>
-    ///     {
-    ///         options.UseMemoryStreams();
-    ///     });
-    ///
-    ///     // Production with custom stream configuration
-    ///     siloBuilder.UseAqueduct(options =>
-    ///     {
-    ///         options.UseMemoryStreams("CustomStreamProvider", "CustomPubSubStore");
-    ///     });
-    ///     </code>
+    ///     <para>
+    ///         See sample implementations in the repository for usage patterns.
+    ///     </para>
     /// </remarks>
     public static ISiloBuilder UseAqueduct(
         this ISiloBuilder siloBuilder,
