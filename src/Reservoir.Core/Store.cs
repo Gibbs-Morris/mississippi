@@ -430,7 +430,9 @@ public class Store : IStore
             {
                 // Expected when effect is cancelled; don't propagate
             }
+#pragma warning disable CA1031 // Action effects should handle their own errors by emitting error actions; swallow to prevent effect failures from breaking dispatch
             catch (Exception)
+#pragma warning restore CA1031
             {
                 // Action effects should handle their own errors by emitting error actions.
                 // Swallow exceptions here to prevent effect failures from breaking dispatch.

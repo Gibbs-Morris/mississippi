@@ -135,7 +135,9 @@ internal sealed class BlobDistributedLock : IDistributedLock
                 "Failed to renew brook lock - lease has been lost. Operation aborted to prevent data corruption.",
                 ex);
         }
+#pragma warning disable CA1031 // Re-throw as InvalidOperationException to prevent data corruption from lease renewal failures
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             throw new InvalidOperationException(
                 "Failed to renew brook lock. Operation aborted to prevent data corruption.",
