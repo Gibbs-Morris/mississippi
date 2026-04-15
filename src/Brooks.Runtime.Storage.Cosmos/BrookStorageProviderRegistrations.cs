@@ -63,6 +63,10 @@ public static class BrookStorageProviderRegistrations
         // Ensure Cosmos DB resources are created asynchronously on host start
         services.AddHostedService<CosmosContainerInitializer>();
 
+        // Register factory for resolving keyed CosmosClient by service key
+        services.AddSingleton<Func<string, CosmosClient>>(
+            provider => serviceKey => provider.GetRequiredKeyedService<CosmosClient>(serviceKey));
+
         // Configure Cosmos DB Container factory using keyed services to avoid conflicts with other Cosmos providers
         // Uses CosmosClientServiceKey from options (defaults to BrookCosmosDefaults.CosmosClientServiceKey)
         services.AddKeyedSingleton<Container>(
@@ -195,24 +199,24 @@ public static class BrookStorageProviderRegistrations
             "S1144:Unused private members should be removed",
             Justification = "Constructed via DI reflection")]
         public CosmosContainerInitializer(
-            IServiceProvider serviceProvider,
+            Func<string, CosmosClient> cosmosClientFactory,
             IOptions<BrookStorageOptions> options
         )
         {
-            ServiceProvider = serviceProvider;
+            CosmosClientFactory = cosmosClientFactory;
             Options = options;
         }
 
-        private IOptions<BrookStorageOptions> Options { get; }
+        private Func<string, CosmosClient> CosmosClientFactory { get; }
 
-        private IServiceProvider ServiceProvider { get; }
+        private IOptions<BrookStorageOptions> Options { get; }
 
         public async Task StartAsync(
             CancellationToken cancellationToken
         )
         {
             BrookStorageOptions o = Options.Value;
-            CosmosClient cosmosClient = ServiceProvider.GetRequiredKeyedService<CosmosClient>(o.CosmosClientServiceKey);
+            CosmosClient cosmosClient = CosmosClientFactory(o.CosmosClientServiceKey);
 
             // Ensure database exists
             DatabaseResponse dbResponse = await cosmosClient.CreateDatabaseIfNotExistsAsync(

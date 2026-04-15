@@ -50,6 +50,10 @@ public static class SnapshotStorageProviderRegistrations
         // Ensure container exists asynchronously on host start
         services.AddHostedService<CosmosContainerInitializer>();
 
+        // Register factory for resolving keyed CosmosClient by service key
+        services.AddSingleton<Func<string, CosmosClient>>(
+            provider => serviceKey => provider.GetRequiredKeyedService<CosmosClient>(serviceKey));
+
         // Provide container handle using keyed services to avoid conflicts with other Cosmos providers
         // Uses CosmosClientServiceKey from options (defaults to SnapshotCosmosDefaults.CosmosClientServiceKey)
         services.AddKeyedSingleton<Container>(
@@ -135,24 +139,24 @@ public static class SnapshotStorageProviderRegistrations
 
         [SuppressMessage("Major Code Smell", "S1144", Justification = "Used by DI")]
         public CosmosContainerInitializer(
-            IServiceProvider serviceProvider,
+            Func<string, CosmosClient> cosmosClientFactory,
             IOptions<SnapshotStorageOptions> options
         )
         {
-            ServiceProvider = serviceProvider;
+            CosmosClientFactory = cosmosClientFactory;
             Options = options;
         }
 
-        private IOptions<SnapshotStorageOptions> Options { get; }
+        private Func<string, CosmosClient> CosmosClientFactory { get; }
 
-        private IServiceProvider ServiceProvider { get; }
+        private IOptions<SnapshotStorageOptions> Options { get; }
 
         public async Task StartAsync(
             CancellationToken cancellationToken
         )
         {
             SnapshotStorageOptions o = Options.Value;
-            CosmosClient cosmosClient = ServiceProvider.GetRequiredKeyedService<CosmosClient>(o.CosmosClientServiceKey);
+            CosmosClient cosmosClient = CosmosClientFactory(o.CosmosClientServiceKey);
             DatabaseResponse db = await cosmosClient.CreateDatabaseIfNotExistsAsync(
                 o.DatabaseId,
                 cancellationToken: cancellationToken);
