@@ -33,13 +33,13 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
 
     private readonly IHostEnvironment? hostEnvironment;
 
-    private readonly ILogger<DevToolsInitializationCheckerService> logger;
-
     private readonly ReservoirDevToolsOptions options;
 
     private readonly TimeProvider timeProvider;
 
     private readonly DevToolsInitializationTracker tracker;
+
+    private ILogger<DevToolsInitializationCheckerService> Logger { get; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="DevToolsInitializationCheckerService" /> class.
@@ -84,7 +84,7 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(options);
         this.tracker = tracker;
-        this.logger = logger;
+        Logger = logger;
         this.timeProvider = timeProvider;
         this.options = options.Value;
         this.hostEnvironment = hostEnvironment;
@@ -105,7 +105,7 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
         try
         {
             await Task.Delay(checkDelay, timeProvider, stoppingToken);
-            logger.DevToolsInitializationCheckResult(tracker.WasInitialized);
+            Logger.DevToolsInitializationCheckResult(tracker.WasInitialized);
             if (tracker.WasInitialized)
             {
                 return;
@@ -113,14 +113,14 @@ internal sealed class DevToolsInitializationCheckerService : BackgroundService
 
             if (ShouldThrow())
             {
-                logger.DevToolsNotInitializedError();
+                Logger.DevToolsNotInitializedError();
                 throw new InvalidOperationException(
                     "DevTools is registered and enabled but Initialize() was not called. " +
                     "Add <ReservoirDevToolsInitializerComponent/> to your App.razor or root layout. " +
                     "Set ThrowOnMissingInitializer to false in ReservoirDevToolsOptions to log a warning instead.");
             }
 
-            logger.DevToolsNotInitialized();
+            Logger.DevToolsNotInitialized();
         }
         catch (OperationCanceledException)
         {
