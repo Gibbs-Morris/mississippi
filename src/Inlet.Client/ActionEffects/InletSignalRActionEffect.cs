@@ -42,8 +42,6 @@ internal sealed class InletSignalRActionEffect
 
     private readonly IDisposable hubCallbackRegistration;
 
-    private readonly IHubConnectionProvider hubConnectionProvider;
-
     private readonly Lazy<IInletStore> lazyStore;
 
     /// <summary>
@@ -69,21 +67,23 @@ internal sealed class InletSignalRActionEffect
         ArgumentNullException.ThrowIfNull(projectionFetcher);
         ArgumentNullException.ThrowIfNull(projectionDtoRegistry);
         this.lazyStore = lazyStore;
-        this.hubConnectionProvider = hubConnectionProvider;
+        HubConnectionProvider = hubConnectionProvider;
         ProjectionFetcher = projectionFetcher;
         ProjectionDtoRegistry = projectionDtoRegistry;
         TimeProvider = timeProvider ?? TimeProvider.System;
 
         // Subscribe to projection update notifications from the server
-        hubCallbackRegistration = hubConnectionProvider.RegisterHandler<string, string, long>(
+        hubCallbackRegistration = HubConnectionProvider.RegisterHandler<string, string, long>(
             InletHubConstants.ProjectionUpdatedMethod,
             OnProjectionUpdatedAsync);
 
         // Handle reconnection - re-subscribe to all active subscriptions
-        hubConnectionProvider.OnReconnected(OnReconnectedAsync);
+        HubConnectionProvider.OnReconnected(OnReconnectedAsync);
     }
 
-    private HubConnection HubConnection => hubConnectionProvider.Connection;
+    private HubConnection HubConnection => HubConnectionProvider.Connection;
+
+    private IHubConnectionProvider HubConnectionProvider { get; }
 
     private IProjectionDtoRegistry ProjectionDtoRegistry { get; }
 
@@ -148,7 +148,7 @@ internal sealed class InletSignalRActionEffect
     )
     {
         // Ensure connection is started (HubConnectionProvider handles state dispatching)
-        await hubConnectionProvider.EnsureConnectedAsync(cancellationToken);
+        await HubConnectionProvider.EnsureConnectedAsync(cancellationToken);
 
         // For connection request, we're done after ensuring connection
         if (action is RequestSignalRConnectionAction)
