@@ -23,7 +23,11 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     ///     Initializes a new instance of the <see cref="SagaOrchestrationEffect{TSaga}" /> class.
     /// </summary>
     /// <param name="stepInfoProvider">The step metadata provider.</param>
-    /// <param name="serviceProvider">The service provider used to resolve steps.</param>
+    /// <param name="serviceProvider">
+    ///     The service provider used to resolve saga steps. This is a factory pattern exception
+    ///     to the no-service-locator rule - the orchestrator must resolve steps by type metadata
+    ///     at runtime since specific step implementations are defined by saga configuration.
+    /// </param>
     /// <param name="timeProvider">The time provider.</param>
     /// <param name="logger">The logger.</param>
     public SagaOrchestrationEffect(
