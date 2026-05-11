@@ -26,24 +26,7 @@ namespace Mississippi.Inlet.Abstractions;
 ///     <para>
 ///         Full entity paths are constructed by appending the entity ID:
 ///         <c>{feature}/{module}/{entityId}</c>, for example <c>chat/channels/abc-123</c>.
-///     </para>
-///     <para>
-///         The path is used for:
-///         <list type="bullet">
-///             <item>API routes: <c>GET /api/projections/{path}/{entityId}</c></item>
-///             <item>SignalR subscriptions: subscribe to <c>{path}</c> with entity ID</item>
-///         </list>
-///     </para>
-///     <para>
-///         Example usage:
-///         <code>
-///             // Server-side projection (in Domain project):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesProjection { ... }
-///             // Client-side DTO (in Contracts project, WASM-safe):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesDto { ... }
-///         </code>
+///         See sample applications in the repository for usage patterns.
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]

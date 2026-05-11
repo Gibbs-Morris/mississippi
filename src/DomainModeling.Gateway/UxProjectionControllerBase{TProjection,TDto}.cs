@@ -21,20 +21,8 @@ namespace Mississippi.DomainModeling.Gateway;
 ///     <para>
 ///         Inherit from this controller to expose a UX projection as a RESTful API with automatic
 ///         mapping from the projection type to a DTO. This is useful when you want to decouple
-///         the internal projection representation from the public API contract.
-///     </para>
-///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserProjectionController : UxProjectionControllerBase&lt;UserProjection, UserDto&gt;
-///             {
-///                 public UserProjectionController(
-///                     IUxProjectionGrainFactory factory,
-///                     IMapper&lt;UserProjection, UserDto&gt; mapper,
-///                     ILogger&lt;UserProjectionController&gt; logger) : base(factory, mapper, logger) { }
-///             }
-///         </code>
+///         the internal projection representation from the public API contract. See sample
+///         applications in the repository for concrete usage patterns.
 ///     </para>
 ///     <para>
 ///         This provides three endpoints:
