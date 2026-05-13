@@ -199,6 +199,9 @@ public static class BrookStorageProviderRegistrations
             IOptions<BrookStorageOptions> options
         )
         {
+            // Factory pattern exception: IServiceProvider is necessary to resolve keyed services
+            // dynamically based on runtime configuration (BrookStorageOptions.CosmosClientServiceKey).
+            // This initialization happens once at startup, not for every request.
             ServiceProvider = serviceProvider;
             Options = options;
         }

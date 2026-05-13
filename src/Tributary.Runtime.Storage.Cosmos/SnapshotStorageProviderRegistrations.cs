@@ -139,6 +139,9 @@ public static class SnapshotStorageProviderRegistrations
             IOptions<SnapshotStorageOptions> options
         )
         {
+            // Factory pattern exception: IServiceProvider is necessary to resolve keyed services
+            // dynamically based on runtime configuration (SnapshotStorageOptions.CosmosClientServiceKey).
+            // This initialization happens once at startup, not for every request.
             ServiceProvider = serviceProvider;
             Options = options;
         }

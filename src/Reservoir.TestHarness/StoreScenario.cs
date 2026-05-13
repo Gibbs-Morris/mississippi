@@ -36,7 +36,11 @@ public sealed class StoreScenario<TState> : IDisposable
     /// <param name="reducers">The reducers to use.</param>
     /// <param name="effectFactories">Factories for creating effects.</param>
     /// <param name="initialState">The initial state.</param>
-    /// <param name="services">The service collection for effect dependencies.</param>
+    /// <param name="services">
+    ///     The service collection for effect dependencies. This is a test infrastructure exception
+    ///     to the no-service-locator rule - the test harness must build a service provider to resolve
+    ///     effects with their dependencies for testing in isolation.
+    /// </param>
     internal StoreScenario(
         List<Func<TState, IAction, TState>> reducers,
         List<Func<IServiceProvider, IActionEffect<TState>>> effectFactories,
