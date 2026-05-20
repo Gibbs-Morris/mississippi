@@ -11,21 +11,12 @@ using Mississippi.Tributary.Abstractions;
 namespace Mississippi.DomainModeling.TestHarness.Projections;
 
 /// <summary>
-///     A fluent scenario builder for Given/When/Then style projection testing.
+///     Represents a Given/When/Then scenario for projection testing.
 /// </summary>
-/// <typeparam name="TProjection">The projection type being tested.</typeparam>
 /// <remarks>
-///     <para>
-///         Use this class to build readable test scenarios that establish state via events (Given),
-///         apply a new event (When), and verify the resulting projection (Then).
-///     </para>
-///     <code>
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p =&gt; p.Balance.Should().Be(150m));
-///     </code>
+///     This class provides a fluent API for arranging event sequences and asserting projection state.
 /// </remarks>
+/// <typeparam name="TProjection">The projection type being tested. Must have a parameterless constructor.</typeparam>
 public sealed class ProjectionScenario<TProjection>
     where TProjection : new()
 {

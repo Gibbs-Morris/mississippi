@@ -13,6 +13,9 @@ namespace Mississippi.DomainModeling.TestHarness.Effects;
 ///         and provides a base for fluent assertions. Domain-specific fixtures
 ///         can inherit from this class to add domain-specific assertion methods.
 ///     </para>
+///     <para>
+///         Public and unsealed to support domain-specific test harness extensions.
+///     </para>
 /// </remarks>
 public class EffectTestResult
 {

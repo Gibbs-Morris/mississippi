@@ -9,46 +9,13 @@ using Mississippi.Tributary.Abstractions;
 namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 
 /// <summary>
-///     A fluent test harness for testing aggregate command handlers and reducers together.
+///     A fluent test harness for testing aggregate command handlers and reducers.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This harness enables full aggregate testing by combining command handlers
-///         (which produce events) with reducers (which apply events to state).
-///         It supports Given/When/Then style scenarios for complete aggregate workflows.
+///         This harness provides a fluent Given/When/Then style API for testing aggregates
+///         in-memory without external dependencies (L0 tests).
 ///     </para>
-///     <para>
-///         <strong>Pattern Overview:</strong>
-///     </para>
-///     <list type="number">
-///         <item>
-///             <term>Given (events)</term>
-///             <description>Establish starting state by replaying historical events through reducers.</description>
-///         </item>
-///         <item>
-///             <term>When (command)</term>
-///             <description>Execute a command against current state via handlers, producing new events.</description>
-///         </item>
-///         <item>
-///             <term>Then (assertions)</term>
-///             <description>Assert on emitted events and/or resulting state after applying events.</description>
-///         </item>
-///     </list>
-///     <para>
-///         <strong>Example:</strong>
-///     </para>
-///     <code>
-///         CommandHandlerTestExtensions.ForAggregate&lt;BankAccountAggregate&gt;()
-///             .WithHandler&lt;OpenAccountHandler&gt;()
-///             .WithHandler&lt;DepositFundsHandler&gt;()
-///             .WithReducer&lt;AccountOpenedReducer&gt;()
-///             .WithReducer&lt;FundsDepositedReducer&gt;()
-///             .CreateScenario()
-///             .Given(new AccountOpened { HolderName = "Test", InitialDeposit = 100m })
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
-///     </code>
 ///     <para>
 ///         <strong>Unified Testing Approach:</strong>
 ///         This harness shares design patterns with

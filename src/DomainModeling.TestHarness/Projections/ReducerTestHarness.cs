@@ -17,33 +17,6 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///         using a fluent Given/When/Then style API. It is designed for L0 (pure unit) tests
 ///         that remain in-memory without external dependencies.
 ///     </para>
-///     <para>
-///         <strong>Single Reducer Testing (L0):</strong>
-///         Use the extension methods directly on reducers for isolated unit tests.
-///     </para>
-///     <code>
-///         // Quick apply and assert
-///         var result = reducer.Apply(initialState, eventData);
-///         result.Balance.Should().Be(expected);
-///         // Or use ShouldProduce for expected output assertions
-///         reducer.ShouldProduce(initialState, eventData, expectedProjection);
-///     </code>
-///     <para>
-///         <strong>Multi-Reducer Scenario Testing (L0):</strong>
-///         Use the harness to compose multiple reducers and test event replay scenarios.
-///     </para>
-///     <code>
-///         // Create a harness with all reducers for a projection
-///         var harness = ReducerTestExtensions.ForProjection&lt;BankAccountBalanceProjection&gt;()
-///             .WithReducer&lt;AccountOpenedBalanceReducer&gt;()
-///             .WithReducer&lt;FundsDepositedBalanceReducer&gt;()
-///             .WithReducer&lt;FundsWithdrawnBalanceReducer&gt;();
-///         // Run a scenario with Given/When/Then
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p =&gt; p.Balance.Should().Be(150m));
-///     </code>
 /// </remarks>
 /// <typeparam name="TProjection">The projection type being tested. Must have a parameterless constructor.</typeparam>
 /// <seealso cref="ProjectionScenario{TProjection}" />
