@@ -18,7 +18,7 @@ namespace Mississippi.Reservoir.Core;
 ///     Central state container implementing Redux-like dispatch pattern.
 ///     Supports local feature states with actions, action reducers, middleware, and action effects.
 /// </summary>
-public class Store : IStore
+public sealed class Store : IStore
 {
     private readonly ConcurrentDictionary<string, object> featureStates = new();
 
