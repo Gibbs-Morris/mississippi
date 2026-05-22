@@ -158,7 +158,8 @@ internal sealed class SignalRGroupGrain
         foreach (string connectionId in state.ConnectionIds)
         {
             ISignalRClientGrain clientGrain = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
-            await clientGrain.SendMessageAsync(method, args).ConfigureAwait(false);
+            await clientGrain.SendMessageAsync(method, args)
+                .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
         }
 
         AqueductMetrics.RecordGroupMessageSent(hubName, method, state.ConnectionIds.Count);

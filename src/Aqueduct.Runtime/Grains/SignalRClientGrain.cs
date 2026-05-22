@@ -158,7 +158,7 @@ internal sealed class SignalRClientGrain
             MethodName = method,
             Args = args.AsSpan().ToArray(),
         };
-        await stream.OnNextAsync(message).ConfigureAwait(false);
+        await stream.OnNextAsync(message).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
         sw.Stop();
         AqueductMetrics.RecordClientMessageSent(state.HubName, method, sw.Elapsed.TotalMilliseconds);
     }
