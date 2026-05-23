@@ -1,5 +1,3 @@
-using System.Net;
-
 using Microsoft.Extensions.Hosting;
 
 using Mississippi.Brooks.Abstractions.Streaming;
@@ -243,12 +241,27 @@ public sealed class CrescentFixture
     private static bool IsTransientCosmosReadinessFailure(
         CosmosException exception
     ) =>
-        exception.StatusCode == HttpStatusCode.NotFound ||
-        exception.StatusCode == HttpStatusCode.ServiceUnavailable ||
-        exception.StatusCode == HttpStatusCode.RequestTimeout ||
-        exception.StatusCode == HttpStatusCode.TooManyRequests ||
-        (int)exception.StatusCode >= 500 ||
+        (exception.StatusCode == HttpStatusCode.NotFound) ||
+        (exception.StatusCode == HttpStatusCode.ServiceUnavailable) ||
+        (exception.StatusCode == HttpStatusCode.RequestTimeout) ||
+        (exception.StatusCode == HttpStatusCode.TooManyRequests) ||
+        ((int)exception.StatusCode >= 500) ||
         exception.Message.Contains("pgcosmos extension is still starting", StringComparison.OrdinalIgnoreCase);
+
+    private static string MaskConnectionString(
+        string connectionString
+    )
+    {
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            return "(empty)";
+        }
+
+        // Show first 50 chars and mask the rest
+        return connectionString.Length > 50
+            ? $"{connectionString[..50]}...(length={connectionString.Length})"
+            : connectionString;
+    }
 
     private static async Task WaitForCosmosDataPlaneReadyAsync(
         string cosmosConnectionString,
@@ -260,15 +273,12 @@ public sealed class CrescentFixture
         {
             cancellationToken.ThrowIfCancellationRequested();
             attempt++;
-
             try
             {
                 Console.WriteLine($"[Fixture] Cosmos readiness attempt {attempt}: validating data plane access...");
-
                 using CancellationTokenSource probeCts = CancellationTokenSource.CreateLinkedTokenSource(
                     cancellationToken);
                 probeCts.CancelAfter(TimeSpan.FromSeconds(30));
-
                 using CosmosClient bootstrapClient = new(
                     cosmosConnectionString,
                     CreateCosmosClientOptions(cosmosConnectionString));
@@ -283,7 +293,6 @@ public sealed class CrescentFixture
                     "snapshots",
                     "/snapshotPartitionKey",
                     cancellationToken: probeCts.Token);
-
                 using CosmosClient verificationClient = new(
                     cosmosConnectionString,
                     CreateCosmosClientOptions(cosmosConnectionString));
@@ -296,7 +305,6 @@ public sealed class CrescentFixture
                 await verificationClient.GetDatabase("aspire-l2tests")
                     .GetContainer("snapshots")
                     .ReadContainerAsync(cancellationToken: probeCts.Token);
-
                 Console.WriteLine($"[Fixture] Cosmos data plane became ready on attempt {attempt}.");
                 return;
             }
@@ -312,21 +320,6 @@ public sealed class CrescentFixture
 
             await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
         }
-    }
-
-    private static string MaskConnectionString(
-        string connectionString
-    )
-    {
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            return "(empty)";
-        }
-
-        // Show first 50 chars and mask the rest
-        return connectionString.Length > 50
-            ? $"{connectionString[..50]}...(length={connectionString.Length})"
-            : connectionString;
     }
 
     /// <summary>
