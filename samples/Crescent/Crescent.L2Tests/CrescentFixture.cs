@@ -255,9 +255,11 @@ public sealed class CrescentFixture
         CancellationToken cancellationToken
     )
     {
-        for (int attempt = 1; ; attempt++)
+        int attempt = 0;
+        while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            attempt++;
 
             try
             {
@@ -298,7 +300,7 @@ public sealed class CrescentFixture
                 Console.WriteLine($"[Fixture] Cosmos data plane became ready on attempt {attempt}.");
                 return;
             }
-            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
                 Console.WriteLine($"[Fixture] Cosmos readiness attempt {attempt} timed out; retrying...");
             }
