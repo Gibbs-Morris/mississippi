@@ -64,6 +64,8 @@ IResourceBuilder<ProjectResource> springGateway = builder.AddProject<Spring_Gate
 if (springAuthProofModeEnabled)
 {
     springGateway.WithEnvironment("SpringAuth__Enabled", "true");
+    springGateway.WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
+    springGateway.WithEnvironment("DOTNET_ENVIRONMENT", "Development");
 }
 
 await builder.Build().RunAsync();
