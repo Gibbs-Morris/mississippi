@@ -205,6 +205,49 @@ public sealed class CrescentFixture
         return host;
     }
 
+    private static CosmosClientOptions CreateCosmosClientOptions(
+        string cosmosConnectionString
+    )
+    {
+        // Detect if we're using the preview emulator (HTTP) or regular emulator (HTTPS)
+        bool isHttpEndpoint = cosmosConnectionString.Contains("http://", StringComparison.OrdinalIgnoreCase);
+        CosmosClientOptions options = new()
+        {
+            ConnectionMode = ConnectionMode.Gateway, // Emulator works better with Gateway mode
+            LimitToEndpoint = true, // Required for emulator - prevents SDK from trying to discover replicas
+        };
+
+        // Only add certificate bypass for HTTPS endpoints (non-preview emulator)
+        if (!isHttpEndpoint)
+        {
+#pragma warning disable CA5400 // HttpClient certificate check - emulator uses self-signed cert
+#pragma warning disable IDISP014, IDISP001 // Use a single instance of HttpClient - CosmosClient manages its own lifecycle
+            options.HttpClientFactory = () =>
+            {
+                HttpClientHandler handler = new()
+                {
+                    ServerCertificateCustomValidationCallback =
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                };
+                return new(handler);
+            };
+#pragma warning restore IDISP014, IDISP001
+#pragma warning restore CA5400
+        }
+
+        return options;
+    }
+
+    private static bool IsTransientCosmosReadinessFailure(
+        CosmosException exception
+    ) =>
+        (exception.StatusCode == HttpStatusCode.NotFound) ||
+        (exception.StatusCode == HttpStatusCode.ServiceUnavailable) ||
+        (exception.StatusCode == HttpStatusCode.RequestTimeout) ||
+        (exception.StatusCode == HttpStatusCode.TooManyRequests) ||
+        ((int)exception.StatusCode >= 500) ||
+        exception.Message.Contains("pgcosmos extension is still starting", StringComparison.OrdinalIgnoreCase);
+
     private static string MaskConnectionString(
         string connectionString
     )
@@ -218,6 +261,65 @@ public sealed class CrescentFixture
         return connectionString.Length > 50
             ? $"{connectionString[..50]}...(length={connectionString.Length})"
             : connectionString;
+    }
+
+    private static async Task WaitForCosmosDataPlaneReadyAsync(
+        string cosmosConnectionString,
+        CancellationToken cancellationToken
+    )
+    {
+        int attempt = 0;
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            attempt++;
+            try
+            {
+                Console.WriteLine($"[Fixture] Cosmos readiness attempt {attempt}: validating data plane access...");
+                using CancellationTokenSource probeCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken);
+                probeCts.CancelAfter(TimeSpan.FromSeconds(30));
+                using CosmosClient bootstrapClient = new(
+                    cosmosConnectionString,
+                    CreateCosmosClientOptions(cosmosConnectionString));
+                DatabaseResponse runtimeDatabaseResponse = await bootstrapClient.CreateDatabaseIfNotExistsAsync(
+                    "aspire-l2tests",
+                    cancellationToken: probeCts.Token);
+                await runtimeDatabaseResponse.Database.CreateContainerIfNotExistsAsync(
+                    "brooks",
+                    "/brookPartitionKey",
+                    cancellationToken: probeCts.Token);
+                await runtimeDatabaseResponse.Database.CreateContainerIfNotExistsAsync(
+                    "snapshots",
+                    "/snapshotPartitionKey",
+                    cancellationToken: probeCts.Token);
+                using CosmosClient verificationClient = new(
+                    cosmosConnectionString,
+                    CreateCosmosClientOptions(cosmosConnectionString));
+                await verificationClient.GetDatabase("testdb")
+                    .GetContainer("testcontainer")
+                    .ReadContainerAsync(cancellationToken: probeCts.Token);
+                await verificationClient.GetDatabase("aspire-l2tests")
+                    .GetContainer("brooks")
+                    .ReadContainerAsync(cancellationToken: probeCts.Token);
+                await verificationClient.GetDatabase("aspire-l2tests")
+                    .GetContainer("snapshots")
+                    .ReadContainerAsync(cancellationToken: probeCts.Token);
+                Console.WriteLine($"[Fixture] Cosmos data plane became ready on attempt {attempt}.");
+                return;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine($"[Fixture] Cosmos readiness attempt {attempt} timed out; retrying...");
+            }
+            catch (CosmosException ex) when (IsTransientCosmosReadinessFailure(ex))
+            {
+                Console.WriteLine(
+                    $"[Fixture] Cosmos readiness attempt {attempt} returned {ex.StatusCode}: {ex.Message}");
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        }
     }
 
     /// <summary>
@@ -249,37 +351,16 @@ public sealed class CrescentFixture
         // Detect if we're using the preview emulator (HTTP) or regular emulator (HTTPS)
         bool isHttpEndpoint = CosmosConnectionString.Contains("http://", StringComparison.OrdinalIgnoreCase);
         Console.WriteLine($"[CreateCosmosClient] Is HTTP endpoint: {isHttpEndpoint}");
-        CosmosClientOptions options = new()
-        {
-            ConnectionMode = ConnectionMode.Gateway, // Emulator works better with Gateway mode
-            LimitToEndpoint = true, // Required for emulator - prevents SDK from trying to discover replicas
-        };
-
-        // Only add certificate bypass for HTTPS endpoints (non-preview emulator)
         if (!isHttpEndpoint)
         {
             Console.WriteLine("[CreateCosmosClient] Using HTTPS - adding certificate bypass for self-signed cert");
-#pragma warning disable CA5400 // HttpClient certificate check - emulator uses self-signed cert
-#pragma warning disable IDISP014, IDISP001 // Use a single instance of HttpClient - CosmosClient manages its own lifecycle
-            options.HttpClientFactory = () =>
-            {
-                Console.WriteLine("[CreateCosmosClient] HttpClientFactory invoked - creating handler with cert bypass");
-                HttpClientHandler handler = new()
-                {
-                    ServerCertificateCustomValidationCallback =
-                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
-                };
-                return new(handler);
-            };
-#pragma warning restore IDISP014, IDISP001
-#pragma warning restore CA5400
         }
         else
         {
             Console.WriteLine("[CreateCosmosClient] Using HTTP (preview emulator) - no certificate bypass needed");
         }
 
-        CosmosClient client = new(CosmosConnectionString, options);
+        CosmosClient client = new(CosmosConnectionString, CreateCosmosClientOptions(CosmosConnectionString));
         Console.WriteLine($"[CreateCosmosClient] CosmosClient created successfully, endpoint: {client.Endpoint}");
         Console.WriteLine("=== END CREATE COSMOS CLIENT DEBUG ===");
         return client;
@@ -349,8 +430,16 @@ public sealed class CrescentFixture
             await app.ResourceNotifications.WaitForResourceHealthyAsync("cosmos", cts.Token)
                 .WaitAsync(DefaultTimeout, cts.Token);
 
+            // Wait for Cosmos data-plane child resources so the emulator has finished provisioning.
+            await app.ResourceNotifications.WaitForResourceHealthyAsync("testdb", cts.Token)
+                .WaitAsync(DefaultTimeout, cts.Token);
+            await app.ResourceNotifications.WaitForResourceHealthyAsync("testcontainer", cts.Token)
+                .WaitAsync(DefaultTimeout, cts.Token);
+
             // Wait for Azure Storage emulator (Azurite)
             await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cts.Token)
+                .WaitAsync(DefaultTimeout, cts.Token);
+            await app.ResourceNotifications.WaitForResourceHealthyAsync("blobs", cts.Token)
                 .WaitAsync(DefaultTimeout, cts.Token);
 
             // Get connection strings for tests
@@ -367,6 +456,10 @@ public sealed class CrescentFixture
                 $"[Fixture] Blob connection string obtained: {MaskConnectionString(BlobConnectionString)}");
             Console.WriteLine($"[Fixture] Full Cosmos connection string: {CosmosConnectionString}");
             Console.WriteLine("=== END FIXTURE DEBUG ===");
+
+            // The preview emulator can report healthy before pgcosmos finishes starting.
+            // Probe the actual data plane before Orleans or tests begin using Cosmos.
+            await WaitForCosmosDataPlaneReadyAsync(CosmosConnectionString, cts.Token);
 
             // Start Orleans silo with Mississippi event sourcing configured to use the Crescent emulators
             Console.WriteLine("[Fixture] Starting Orleans silo with Mississippi...");

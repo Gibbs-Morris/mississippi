@@ -10,18 +10,18 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly.Server": {
         "type": "Direct",
-        "requested": "[10.0.5, )",
-        "resolved": "10.0.5",
-        "contentHash": "wDK4Yiuz9oq3LLO8ies4UzpRLGQ56WGHj099h0MzkFyU8YcaZJ9h76ZkBpcgJQPNECjxL0lXg4hQz2fhrt0qHQ==",
+        "requested": "[10.0.8, )",
+        "resolved": "10.0.8",
+        "contentHash": "T450RZXJyy8ACXjHK+MuIyvPlZvQUVnaOKm11UPMNNy2Pp3wnm+jE6O34VVBvKwaeMUKNM32Vrw1dELIsgBKRg==",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.5"
+          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.8"
         }
       },
       "Microsoft.CodeAnalysis.NetAnalyzers": {
         "type": "Direct",
-        "requested": "[10.0.201, )",
-        "resolved": "10.0.201",
-        "contentHash": "MTE+F0fj0N8dtfkEGIcX3/rEycMbOf54DXq/n6n8cE6ZfDIPEElY8lc4X5BpZ+c7DBoQDGLG0iBY/W0YZ3nhtw=="
+        "requested": "[10.0.300, )",
+        "resolved": "10.0.300",
+        "contentHash": "WsPMVkfrmoZ0qKSasuVtYaxnd/MvqPOz7ZXld5NzyF8/kwwtPGjtmEKp4xDHG+pj4QqETpSVfkmKa0UFu/n1GQ=="
       },
       "Microsoft.VisualStudio.Threading.Analyzers": {
         "type": "Direct",
@@ -31,9 +31,9 @@
       },
       "SonarAnalyzer.CSharp": {
         "type": "Direct",
-        "requested": "[10.21.0.135717, )",
-        "resolved": "10.21.0.135717",
-        "contentHash": "i5awvO2aapfOLXq5v7uvCxLvx+p5H79RhGi2+gPMTDKpw4IBOX3Nw+1fuIcH4ZIzQ7+g5PYJi3fBYHFh0Iz+Fw=="
+        "requested": "[10.26.0.140279, )",
+        "resolved": "10.26.0.140279",
+        "contentHash": "n6+KDAbvKCJs0oYIQlxFdsmvcj1YSJ7TiqEd5jYq58T1s1Q4bwymFMeVFGDUyDKqSH9YO/7Fobvm0u9WJ7MaRQ=="
       },
       "StyleCop.Analyzers.Unstable": {
         "type": "Direct",
@@ -43,19 +43,19 @@
       },
       "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
         "type": "Transitive",
-        "resolved": "10.0.104",
-        "contentHash": "OkWFygvFdm9emwxRW5ahcsU6saKO9EOYCFVNEXWl+23A4ssZy40VCQuqPhyurU7IyaPEhgA4iXh0/o7fhyNngA=="
+        "resolved": "10.0.108",
+        "contentHash": "NLGmqCbkWslYuPGrOR8BRq3yTaYYTe8xtnRnCSNE3kwOBSjRhW60vH28l6s6/wywBPyjStfx94uuxJusGVWnhA=="
       },
       "Microsoft.JSInterop.WebAssembly": {
         "type": "Transitive",
-        "resolved": "10.0.5",
-        "contentHash": "9iva1I1opPJA1xMSGTNmbyLhyzw383l6StST9gebB/UEBrYuadzwsv7O3eKAhmJVsPUGy6wWo4SVUcfFnPNQXA=="
+        "resolved": "10.0.8",
+        "contentHash": "sXmjUtF9Kb7heF2cDuT1X8wdJQnyXXJ5wMVN52AtBKUDOzMCfSNTCWoYb3y9LH+6YBAqci8NQkYnHAV+WHC8VA=="
       },
       "Mississippi.LightSpeed.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.5, )",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.104, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.8, )",
+          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.108, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
           "Mississippi.Refraction.Client": "[1.0.0, )",
           "Mississippi.Refraction.Client.StateManagement": "[1.0.0, )",
@@ -84,7 +84,7 @@
       "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.5, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.8, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
@@ -97,11 +97,11 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {
         "type": "CentralTransitive",
-        "requested": "[10.0.5, )",
-        "resolved": "10.0.5",
-        "contentHash": "fjmhjvZpYTJVl/sxpDStP8+fQ6XEG8r9iuhafuTCp2nAAGPcJhsSND58he9BOekbxs6nMv2OECUGwtWqHBGFcg==",
+        "requested": "[10.0.8, )",
+        "resolved": "10.0.8",
+        "contentHash": "/bxlPbfqxqgWOXHab7EUblZUzoqPIF0Wa6pm6CiwVlSWERLSH9dXPgexNINbaNqEt348XM97fCv0c9r7ef2DdQ==",
         "dependencies": {
-          "Microsoft.JSInterop.WebAssembly": "10.0.5"
+          "Microsoft.JSInterop.WebAssembly": "10.0.8"
         }
       }
     }
