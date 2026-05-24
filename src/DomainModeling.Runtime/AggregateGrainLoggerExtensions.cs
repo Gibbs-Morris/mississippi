@@ -191,7 +191,7 @@ internal static partial class AggregateGrainLoggerExtensions
     /// <param name="errorMessage">The recovery failure message.</param>
     [LoggerMessage(
         23,
-        LogLevel.Warning,
+        LogLevel.Error,
         "Reminder cannot safely recover saga for aggregate {AggregateKey}: {ErrorCode} - {ErrorMessage}")]
     public static partial void SagaReminderFailingRecovery(
         this ILogger logger,

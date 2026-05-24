@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
+
+using Moq;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
@@ -41,11 +45,13 @@ public sealed class SagaOrchestrationEffectTests
     /// <param name="steps">The configured saga steps.</param>
     /// <param name="provider">The service provider.</param>
     /// <param name="timeProvider">Optional time provider.</param>
+    /// <param name="logger">Optional logger.</param>
     /// <returns>The effect instance.</returns>
     private static SagaOrchestrationEffect<TestSagaState> CreateEffect(
         IReadOnlyList<SagaStepInfo> steps,
         ServiceProvider provider,
-        FakeTimeProvider? timeProvider = null
+        FakeTimeProvider? timeProvider = null,
+        ILogger<SagaOrchestrationEffect<TestSagaState>>? logger = null
     )
     {
         SagaStepInfoProvider<TestSagaState> stepInfoProvider = new(steps);
@@ -53,7 +59,7 @@ public sealed class SagaOrchestrationEffectTests
             stepInfoProvider,
             provider,
             timeProvider ?? new FakeTimeProvider(),
-            NullLogger<SagaOrchestrationEffect<TestSagaState>>.Instance);
+            logger ?? NullLogger<SagaOrchestrationEffect<TestSagaState>>.Instance);
     }
 
     /// <summary>
@@ -68,6 +74,86 @@ public sealed class SagaOrchestrationEffectTests
         ServiceCollection services = new();
         configureServices?.Invoke(services);
         return services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    ///     Verifies an exception log entry was written with the expected exception and rendered fragments.
+    /// </summary>
+    /// <param name="loggerMock">The logger mock.</param>
+    /// <param name="logLevel">The expected log level.</param>
+    /// <param name="eventId">The expected event id.</param>
+    /// <param name="expectedExceptionMessage">The expected exception message.</param>
+    /// <param name="expectedMessageFragments">The rendered message fragments that must be present.</param>
+    private static void VerifyExceptionLog(
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock,
+        LogLevel logLevel,
+        int eventId,
+        string expectedExceptionMessage,
+        params string[] expectedMessageFragments
+    )
+    {
+        loggerMock.Verify(
+            l => l.Log(
+                logLevel,
+                It.Is<EventId>(id => id.Id == eventId),
+                It.Is<It.IsAnyType>((
+                    state,
+                    _
+                ) => expectedMessageFragments.All(fragment =>
+                    state.ToString()!.Contains(fragment, StringComparison.Ordinal))),
+                It.Is<Exception>(ex => ex.Message == expectedExceptionMessage),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies a log entry was written with the expected level, event id, and rendered fragments.
+    /// </summary>
+    /// <param name="loggerMock">The logger mock.</param>
+    /// <param name="logLevel">The expected log level.</param>
+    /// <param name="eventId">The expected event id.</param>
+    /// <param name="expectedMessageFragments">The rendered message fragments that must be present.</param>
+    private static void VerifyLog(
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock,
+        LogLevel logLevel,
+        int eventId,
+        params string[] expectedMessageFragments
+    )
+    {
+        loggerMock.Verify(
+            l => l.Log(
+                logLevel,
+                It.Is<EventId>(id => id.Id == eventId),
+                It.Is<It.IsAnyType>((
+                    state,
+                    _
+                ) => expectedMessageFragments.All(fragment =>
+                    state.ToString()!.Contains(fragment, StringComparison.Ordinal))),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies a log entry was not written for an event id.
+    /// </summary>
+    /// <param name="loggerMock">The logger mock.</param>
+    /// <param name="logLevel">The log level.</param>
+    /// <param name="eventId">The event id.</param>
+    private static void VerifyNoLog(
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock,
+        LogLevel logLevel,
+        int eventId
+    )
+    {
+        loggerMock.Verify(
+            l => l.Log(
+                logLevel,
+                It.Is<EventId>(id => id.Id == eventId),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
     }
 
     /// <summary>
@@ -289,21 +375,29 @@ public sealed class SagaOrchestrationEffectTests
     [Fact]
     public async Task HandleAsyncEmitsStepFailedAndCompensatingWhenStepThrows()
     {
+        Guid sagaId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+        const string correlationId = "transfer-46";
         SagaStepInfo[] steps =
         [
             new(0, "Debit", typeof(SagaThrowingStep), false),
         ];
         using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaThrowingStep>());
-        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, logger: loggerMock.Object);
         List<object> events = await CollectAsync(
             effect.HandleAsync(
                 new SagaStartedEvent
                 {
-                    SagaId = Guid.NewGuid(),
+                    SagaId = sagaId,
                     StartedAt = new(2025, 2, 12, 12, 30, 0, TimeSpan.Zero),
                     StepHash = "HASH",
                 },
-                new(),
+                new()
+                {
+                    SagaId = sagaId,
+                    CorrelationId = correlationId,
+                },
                 "saga",
                 0,
                 CancellationToken.None));
@@ -322,6 +416,17 @@ public sealed class SagaOrchestrationEffectTests
                 SagaCompensating compensating = Assert.IsType<SagaCompensating>(item);
                 Assert.Equal(-1, compensating.FromStepIndex);
             });
+        VerifyExceptionLog(
+            loggerMock,
+            LogLevel.Error,
+            3,
+            "kapow",
+            "Debit",
+            "SAGA_STEP_EXCEPTION",
+            sagaId.ToString(),
+            correlationId,
+            "saga");
+        VerifyNoLog(loggerMock, LogLevel.Error, 5);
     }
 
     /// <summary>
@@ -466,26 +571,207 @@ public sealed class SagaOrchestrationEffectTests
     [Fact]
     public async Task HandleAsyncFailsWhenCompensationThrows()
     {
+        Guid sagaId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+        const string correlationId = "transfer-47";
         SagaStepInfo[] steps =
         [
             new(0, "Debit", typeof(SagaCompensationThrowingStep), true),
         ];
         using ServiceProvider provider = CreateProvider(services =>
             services.AddTransient<SagaCompensationThrowingStep>());
-        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, logger: loggerMock.Object);
         List<object> events = await CollectAsync(
             effect.HandleAsync(
                 new SagaCompensating
                 {
                     FromStepIndex = 0,
                 },
-                new(),
+                new()
+                {
+                    SagaId = sagaId,
+                    CorrelationId = correlationId,
+                },
                 "saga",
                 0,
                 CancellationToken.None));
         SagaFailed failed = Assert.IsType<SagaFailed>(Assert.Single(events));
         Assert.Equal("COMPENSATION_EXCEPTION", failed.ErrorCode);
         Assert.Equal("compensation blew up", failed.ErrorMessage);
+        VerifyExceptionLog(
+            loggerMock,
+            LogLevel.Error,
+            4,
+            "compensation blew up",
+            "Debit",
+            "COMPENSATION_EXCEPTION",
+            sagaId.ToString(),
+            correlationId,
+            "saga");
+        VerifyNoLog(loggerMock, LogLevel.Error, 6);
+    }
+
+    /// <summary>
+    ///     Verifies compensation failures are logged with structured fields for observability.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncLogsCompensationFailureWithStructuredFields()
+    {
+        Guid sagaId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        const string correlationId = "transfer-43";
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaCompensationFailStep), true),
+        ];
+        using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaCompensationFailStep>());
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, logger: loggerMock.Object);
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaCompensating
+                {
+                    FromStepIndex = 0,
+                },
+                new()
+                {
+                    SagaId = sagaId,
+                    CorrelationId = correlationId,
+                },
+                "saga",
+                0,
+                CancellationToken.None));
+        SagaFailed failed = Assert.IsType<SagaFailed>(Assert.Single(events));
+        Assert.Equal("FAIL", failed.ErrorCode);
+        VerifyLog(loggerMock, LogLevel.Error, 6, "Debit", "FAIL", "nope", sagaId.ToString(), correlationId, "saga");
+    }
+
+    /// <summary>
+    ///     Verifies missing compensation metadata is logged with structured fields for observability.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncLogsMissingCompensationMetadataWithStructuredFields()
+    {
+        Guid sagaId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+        const string correlationId = "transfer-44";
+        using ServiceProvider provider = CreateProvider();
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(
+            Array.Empty<SagaStepInfo>(),
+            provider,
+            logger: loggerMock.Object);
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaCompensating
+                {
+                    FromStepIndex = 0,
+                },
+                new()
+                {
+                    SagaId = sagaId,
+                    CorrelationId = correlationId,
+                },
+                "saga",
+                0,
+                CancellationToken.None));
+        SagaFailed failed = Assert.IsType<SagaFailed>(Assert.Single(events));
+        Assert.Equal("COMPENSATION_FAILED", failed.ErrorCode);
+        VerifyLog(
+            loggerMock,
+            LogLevel.Error,
+            8,
+            "COMPENSATION_FAILED",
+            "Step metadata not found.",
+            sagaId.ToString(),
+            correlationId,
+            "saga");
+    }
+
+    /// <summary>
+    ///     Verifies missing step metadata is logged with structured fields for observability.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncLogsMissingStepMetadataWithStructuredFields()
+    {
+        Guid sagaId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+        const string correlationId = "transfer-45";
+        using ServiceProvider provider = CreateProvider();
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(
+            Array.Empty<SagaStepInfo>(),
+            provider,
+            logger: loggerMock.Object);
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaStartedEvent
+                {
+                    SagaId = sagaId,
+                    StartedAt = new(2025, 2, 12, 14, 0, 0, TimeSpan.Zero),
+                    StepHash = "HASH",
+                },
+                new()
+                {
+                    SagaId = sagaId,
+                    CorrelationId = correlationId,
+                },
+                "saga",
+                0,
+                CancellationToken.None));
+        SagaFailed failure = Assert.IsType<SagaFailed>(Assert.Single(events));
+        Assert.Equal("STEP_METADATA_MISSING", failure.ErrorCode);
+        VerifyLog(
+            loggerMock,
+            LogLevel.Error,
+            7,
+            "STEP_METADATA_MISSING",
+            "Step metadata not found.",
+            sagaId.ToString(),
+            correlationId,
+            "saga");
+    }
+
+    /// <summary>
+    ///     Verifies step failures are logged with structured fields for observability.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncLogsStepFailureWithStructuredFields()
+    {
+        Guid sagaId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        const string correlationId = "transfer-42";
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaFailStep), false),
+        ];
+        using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaFailStep>());
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider, logger: loggerMock.Object);
+        TestSagaState state = new()
+        {
+            SagaId = sagaId,
+            CorrelationId = correlationId,
+        };
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaStartedEvent
+                {
+                    SagaId = sagaId,
+                    StartedAt = new(2025, 2, 12, 12, 0, 0, TimeSpan.Zero),
+                    StepHash = "HASH",
+                },
+                state,
+                "saga",
+                0,
+                CancellationToken.None));
+        Assert.Equal(2, events.Count);
+        VerifyLog(loggerMock, LogLevel.Error, 5, "Debit", "ERR", "boom", sagaId.ToString(), correlationId, "saga");
     }
 
     /// <summary>

@@ -58,6 +58,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
         Mock<IBrookEventConverter>? brookEventConverterMock = null,
         Mock<ISagaReminderRegistry>? reminderRegistryMock = null,
         Mock<IRootEventEffect<TestSagaState>>? rootEventEffectMock = null,
+        Mock<ILogger<GenericAggregateGrain<TestSagaState>>>? loggerMock = null,
         TimeProvider? timeProvider = null
     )
     {
@@ -70,6 +71,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
             brookEventConverterMock: brookEventConverterMock,
             rootCommandHandlerMock: rootCommandHandlerMock,
             snapshotFactoryMock: snapshotFactoryMock,
+            loggerMock: loggerMock,
             reminderRegistryMock: reminderRegistryMock,
             rootEventEffectMock: rootEventEffectMock,
             timeProvider: timeProvider);
@@ -563,6 +565,8 @@ public sealed class GenericAggregateGrainSagaReminderTests
         Mock<ISagaReminderRegistry> reminderRegistryMock = new();
         reminderRegistryMock.Setup(r => r.GetReminderAsync(It.IsAny<IGrainBase>(), SagaReminderName))
             .ReturnsAsync(grainReminderMock.Object);
+        Mock<ILogger<GenericAggregateGrain<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
         GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
             cursorMock: cursorMock,
             readerMock: readerMock,
@@ -570,6 +574,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
             snapshotFactoryMock: snapshotFactoryMock,
             brookEventConverterMock: converterMock,
             reminderRegistryMock: reminderRegistryMock,
+            loggerMock: loggerMock,
             timeProvider: timeProvider);
         await grain.ReceiveReminder(SagaReminderName, default);
         IReadOnlyList<object> writtenEvents = Assert.Single(convertedWrites);
@@ -584,6 +589,17 @@ public sealed class GenericAggregateGrainSagaReminderTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
         reminderRegistryMock.Verify(r => r.UnregisterAsync(grain, grainReminderMock.Object), Times.Once);
+        loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id => id.Id == 23),
+                It.Is<It.IsAnyType>((
+                    state,
+                    _
+                ) => state.ToString()!.Contains("SAGA_RECOVERY_UNSAFE_TAIL", StringComparison.Ordinal)),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     /// <summary>
