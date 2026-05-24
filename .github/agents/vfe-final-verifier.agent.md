@@ -54,7 +54,7 @@ Create or return artifact-ready content for `12-final-verification.md` containin
 Check:
 
 - Do the final changes satisfy the original task?
-- Do the tests prove the important behaviour?
+- Do the tests prove the important behavior?
 - Do the C4 diagrams still match the implementation?
 - Were all Critical and High review findings fixed?
 - Were accepted risks recorded?
