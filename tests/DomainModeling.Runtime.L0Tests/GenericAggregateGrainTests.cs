@@ -105,6 +105,7 @@ public class GenericAggregateGrainTests
             snapshotGrainFactoryMock.Object,
             rootReducerMock.Object,
             effectOptions,
+            TimeProvider.System,
             loggerMock.Object,
             fireAndForgetEffectRegistrations,
             sagaReminderRegistryMock.Object,
@@ -149,6 +150,7 @@ public class GenericAggregateGrainTests
             snapshotFactoryMock.Object,
             rootReducerMock.Object,
             effectOptions,
+            TimeProvider.System,
             loggerMock.Object,
             [],
             reminderRegistryMock.Object));
@@ -299,6 +301,7 @@ public class GenericAggregateGrainTests
             snapshotFactoryMock.Object,
             rootReducerMock.Object,
             Options.Create(new AggregateEffectOptions()),
+            TimeProvider.System,
             loggerMock.Object,
             registrations,
             reminderRegistryMock.Object);

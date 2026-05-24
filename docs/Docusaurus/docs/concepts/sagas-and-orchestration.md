@@ -87,7 +87,7 @@ flowchart TB
 
 The reminder callback only resumes from lifecycle boundaries that the saga system knows how to replay safely. For example, it can replay `SagaStartedEvent`, `SagaStepCompleted`, `SagaCompensating`, and `SagaStepCompensated` through `SagaOrchestrationEffect<TSaga>`. If the confirmed tail is `SagaStepFailed`, the callback records a `SagaCompensating` boundary so compensation can continue. If the snapshot or tail event is terminal, the callback unregisters the reminder.
 
-The callback deliberately does not replay arbitrary business events. If the latest confirmed tail is not a supported saga lifecycle boundary, Mississippi logs the unsafe tail and leaves the saga state unchanged rather than guessing how to repeat business work.
+The callback deliberately does not replay arbitrary business events. If the latest confirmed tail is not a supported saga lifecycle boundary, or if the callback cannot read enough confirmed state to choose a safe resume boundary, Mississippi records a terminal `SagaFailed` event rather than leaving the saga in a non-terminal running state indefinitely.
 
 ## Guarantees
 
@@ -99,6 +99,7 @@ The callback deliberately does not replay arbitrary business events. If the late
 - Non-cancellation exceptions thrown by saga steps are converted into `SagaStepFailed` plus `SagaCompensating`; non-cancellation exceptions thrown by compensation steps are converted into terminal `SagaFailed`.
 - Orchestration-driving lifecycle boundaries (`SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, and `SagaStepCompensated`) are covered by a durable Orleans reminder, so a later reminder tick can resume saga orchestration after a silo or pod stops between lifecycle boundaries.
 - Reminder-based recovery reads from the confirmed brook cursor and latest confirmed snapshot before taking recovery action.
+- Reminder-based recovery never knowingly leaves a non-terminal saga running forever when it cannot safely resume; unrecoverable recovery states are finalized with `SagaFailed`.
 
 ## Non-Guarantees
 
@@ -107,7 +108,7 @@ The callback deliberately does not replay arbitrary business events. If the late
 - A saga can still end in `Failed` state during compensation if a compensating step cannot complete successfully.
 - Reminder-based recovery is at-least-once at safe lifecycle boundaries. Saga steps and compensation logic should be written so repeated boundary execution is safe for the domain.
 - Reminder-based recovery does not provide exact intra-step resume. If a step started external work and the process stopped before the next lifecycle event was recorded, the framework cannot infer whether that external side effect happened, so the step must be safe to retry or complete idempotently.
-- Mississippi does not replay arbitrary non-saga business tail events during reminder recovery. Unsupported tails are logged and left unchanged.
+- Mississippi does not replay arbitrary non-saga business tail events during reminder recovery. Unsupported tails are marked as terminal saga failures so operators and business processes can handle the failed workflow explicitly.
 
 ## Hosting Requirements
 

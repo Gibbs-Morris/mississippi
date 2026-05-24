@@ -53,6 +53,14 @@ internal sealed class GenericAggregateGrain<TAggregate>
       IRemindable
     where TAggregate : class
 {
+    private const string SagaRecoveryEffectUnavailableErrorCode = "SAGA_RECOVERY_EFFECT_UNAVAILABLE";
+
+    private const string SagaRecoveryNoSnapshotErrorCode = "SAGA_RECOVERY_NO_SNAPSHOT";
+
+    private const string SagaRecoveryNoTailEventsErrorCode = "SAGA_RECOVERY_NO_TAIL_EVENTS";
+
+    private const string SagaRecoveryUnsafeTailErrorCode = "SAGA_RECOVERY_UNSAFE_TAIL";
+
     private const string SagaResumeReminderName = "mississippi.saga.resume";
 
     private static readonly TimeSpan SagaResumeReminderDueTime = TimeSpan.FromMinutes(1);
@@ -86,6 +94,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
     /// <param name="snapshotGrainFactory">Factory for resolving snapshot grains.</param>
     /// <param name="rootReducer">The root event reducer for obtaining the reducers hash.</param>
     /// <param name="effectOptions">Options controlling aggregate effect processing.</param>
+    /// <param name="timeProvider">Time provider for saga recovery failure timestamps.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="fireAndForgetEffectRegistrations">
     ///     Registrations for fire-and-forget effects that run in separate worker grains.
@@ -104,6 +113,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         ISnapshotGrainFactory snapshotGrainFactory,
         IRootReducer<TAggregate> rootReducer,
         IOptions<AggregateEffectOptions> effectOptions,
+        TimeProvider timeProvider,
         ILogger<GenericAggregateGrain<TAggregate>> logger,
         IEnumerable<IFireAndForgetEffectRegistration<TAggregate>> fireAndForgetEffectRegistrations,
         ISagaReminderRegistry sagaReminderRegistry,
@@ -118,6 +128,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         SnapshotGrainFactory = snapshotGrainFactory ?? throw new ArgumentNullException(nameof(snapshotGrainFactory));
         RootReducer = rootReducer ?? throw new ArgumentNullException(nameof(rootReducer));
         EffectOptions = effectOptions?.Value ?? throw new ArgumentNullException(nameof(effectOptions));
+        TimeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         FireAndForgetEffectRegistrations = fireAndForgetEffectRegistrations?.ToArray() ?? [];
         SagaReminderRegistry = sagaReminderRegistry ?? throw new ArgumentNullException(nameof(sagaReminderRegistry));
@@ -157,6 +168,8 @@ internal sealed class GenericAggregateGrain<TAggregate>
     private ISagaReminderRegistry SagaReminderRegistry { get; }
 
     private ISnapshotGrainFactory SnapshotGrainFactory { get; }
+
+    private TimeProvider TimeProvider { get; }
 
     private static OperationResult? CheckForConcurrencyConflict(
         BrookPosition? expectedVersion,
@@ -306,10 +319,9 @@ internal sealed class GenericAggregateGrain<TAggregate>
             if (currentState is null)
             {
                 Logger.SagaReminderNoSnapshot(brookKey, confirmedPosition.Value);
-                return;
             }
 
-            if (IsTerminalSagaPhase(currentState))
+            if (currentState is not null && IsTerminalSagaPhase(currentState))
             {
                 Logger.SagaReminderTerminalState(brookKey, ((ISagaState)currentState).Phase, reminderName);
                 await UnregisterSagaReminderIfExistsAsync();
@@ -344,6 +356,28 @@ internal sealed class GenericAggregateGrain<TAggregate>
             nameof(ReceiveReminder),
             brookKey,
             CancellationToken.None);
+    }
+
+    private async Task AppendSagaRecoveryFailureAsync(
+        string errorCode,
+        string errorMessage,
+        BrookPosition confirmedPosition
+    )
+    {
+        SagaFailed failed = new()
+        {
+            ErrorCode = errorCode,
+            ErrorMessage = errorMessage,
+            FailedAt = TimeProvider.GetUtcNow(),
+        };
+        Logger.SagaReminderFailingRecovery(brookKey, errorCode, errorMessage);
+        await PersistEventsAndDispatchEffectsAsync(
+            [failed],
+            confirmedPosition,
+            nameof(ReceiveReminder),
+            brookKey,
+            CancellationToken.None);
+        await UnregisterSagaReminderIfExistsAsync();
     }
 
     /// <summary>
@@ -734,24 +768,35 @@ internal sealed class GenericAggregateGrain<TAggregate>
     private async Task RecoverFromStartInputTailAsync(
         List<(object Event, long Position)> tailEvents,
         object latestEvent,
-        TAggregate currentState
+        TAggregate currentState,
+        BrookPosition confirmedPosition
     )
     {
         if ((tailEvents.Count <= 1) || tailEvents[^2].Event is not SagaStartedEvent)
         {
             Logger.SagaReminderUnsafeTail(latestEvent.GetType().Name, brookKey);
+            await AppendSagaRecoveryFailureAsync(
+                SagaRecoveryUnsafeTailErrorCode,
+                $"Cannot safely resume saga because the confirmed tail event '{latestEvent.GetType().Name}' is not preceded by a saga start boundary.",
+                confirmedPosition);
             return;
         }
 
         (object Event, long Position) boundary = tailEvents[^2];
         Logger.SagaReminderReplayingBoundary(boundary.Event.GetType().Name, brookKey, boundary.Position);
-        await ReplaySagaBoundaryAsync(boundary.Event, currentState, boundary.Position, CancellationToken.None);
+        if (!await ReplaySagaBoundaryAsync(boundary.Event, currentState, boundary.Position, CancellationToken.None))
+        {
+            await AppendSagaRecoveryFailureAsync(
+                SagaRecoveryEffectUnavailableErrorCode,
+                $"Cannot safely resume saga because no saga orchestration effect is available for boundary event '{boundary.Event.GetType().Name}'.",
+                confirmedPosition);
+        }
     }
 
     private async Task RecoverSagaFromTailAsync(
         string reminderName,
         BrookPosition confirmedPosition,
-        TAggregate currentState
+        TAggregate? currentState
     )
     {
         List<(object Event, long Position)> tailEvents = await ReadConfirmedTailEventsAsync(
@@ -759,6 +804,10 @@ internal sealed class GenericAggregateGrain<TAggregate>
             confirmedPosition);
         if (tailEvents.Count == 0)
         {
+            await AppendSagaRecoveryFailureAsync(
+                SagaRecoveryNoTailEventsErrorCode,
+                $"Cannot safely resume saga because no tail events were readable at confirmed position {confirmedPosition.Value}.",
+                confirmedPosition);
             return;
         }
 
@@ -770,6 +819,15 @@ internal sealed class GenericAggregateGrain<TAggregate>
             return;
         }
 
+        if (currentState is null)
+        {
+            await AppendSagaRecoveryFailureAsync(
+                SagaRecoveryNoSnapshotErrorCode,
+                $"Cannot safely resume saga because no snapshot was available at confirmed position {confirmedPosition.Value}.",
+                confirmedPosition);
+            return;
+        }
+
         if (latest.Event is SagaStepFailed failed)
         {
             await AppendSagaCompensationAsync(failed, confirmedPosition);
@@ -778,18 +836,29 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
         if (SagaLifecycleEventClassifier.IsStartInputEvent(latest.Event))
         {
-            await RecoverFromStartInputTailAsync(tailEvents, latest.Event, currentState);
+            await RecoverFromStartInputTailAsync(tailEvents, latest.Event, currentState, confirmedPosition);
             return;
         }
 
         if (SagaLifecycleEventClassifier.IsReplayBoundaryEvent(latest.Event))
         {
             Logger.SagaReminderReplayingBoundary(latest.Event.GetType().Name, brookKey, latest.Position);
-            await ReplaySagaBoundaryAsync(latest.Event, currentState, latest.Position, CancellationToken.None);
+            if (!await ReplaySagaBoundaryAsync(latest.Event, currentState, latest.Position, CancellationToken.None))
+            {
+                await AppendSagaRecoveryFailureAsync(
+                    SagaRecoveryEffectUnavailableErrorCode,
+                    $"Cannot safely resume saga because no saga orchestration effect is available for boundary event '{latest.Event.GetType().Name}'.",
+                    confirmedPosition);
+            }
+
             return;
         }
 
         Logger.SagaReminderUnsafeTail(latest.Event.GetType().Name, brookKey);
+        await AppendSagaRecoveryFailureAsync(
+            SagaRecoveryUnsafeTailErrorCode,
+            $"Cannot safely resume saga because confirmed tail event '{latest.Event.GetType().Name}' is not a supported saga lifecycle boundary.",
+            confirmedPosition);
     }
 
     private async Task RegisterSagaReminderIfNeededAsync(
@@ -809,7 +878,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
             SagaResumeReminderPeriod);
     }
 
-    private async Task ReplaySagaBoundaryAsync(
+    private async Task<bool> ReplaySagaBoundaryAsync(
         object boundaryEvent,
         TAggregate currentState,
         long eventPosition,
@@ -818,10 +887,11 @@ internal sealed class GenericAggregateGrain<TAggregate>
     {
         if (RootEventEffect is null || (RootEventEffect.EffectCount <= 0))
         {
-            return;
+            return false;
         }
 
         await DispatchEffectsAsync([boundaryEvent], currentState, brookKey, eventPosition, cancellationToken);
+        return true;
     }
 
     private async Task UnregisterSagaReminderIfExistsAsync()

@@ -183,6 +183,24 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when reminder recovery cannot safely resume and marks the saga failed instead.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="errorCode">The recovery failure error code.</param>
+    /// <param name="errorMessage">The recovery failure message.</param>
+    [LoggerMessage(
+        23,
+        LogLevel.Warning,
+        "Reminder cannot safely recover saga for aggregate {AggregateKey}: {ErrorCode} - {ErrorMessage}")]
+    public static partial void SagaReminderFailingRecovery(
+        this ILogger logger,
+        string aggregateKey,
+        string errorCode,
+        string errorMessage
+    );
+
+    /// <summary>
     ///     Logs when a reminder with an unknown name is ignored.
     /// </summary>
     /// <param name="logger">The logger.</param>
@@ -337,7 +355,7 @@ internal static partial class AggregateGrainLoggerExtensions
     [LoggerMessage(
         19,
         LogLevel.Warning,
-        "Reminder found unsupported tail event {EventType} for aggregate {AggregateKey}; no replay will occur")]
+        "Reminder found unsupported tail event {EventType} for aggregate {AggregateKey}; saga will be failed rather than replaying unsupported work")]
     public static partial void SagaReminderUnsafeTail(
         this ILogger logger,
         string eventType,
