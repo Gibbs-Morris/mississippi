@@ -65,7 +65,7 @@ Saga orchestration also has a durable wake-up path for lifecycle events that wer
 
 Mississippi does not infer reminder eligibility from arbitrary domain events. The runtime uses a fixed set of orchestration-driving saga lifecycle events: `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, and `SagaStepCompensated`. These are the event types that either make `SagaOrchestrationEffect<TSaga>` continue the next step or compensation path, or need recovery help to create the next compensation boundary after a stopped activation.
 
-When one of those orchestration-driving lifecycle events is about to be appended, the base aggregate grain registers a deterministic Orleans reminder before writing the event. `SagaInputProvided<TInput>` does not register a reminder by itself; it is covered by the same start command batch that records `SagaStartedEvent`. Terminal events such as `SagaCompleted`, `SagaCompensated`, and `SagaFailed` do not register new resume reminders. If a later reminder tick sees terminal state or a terminal tail event, it unregisters the existing reminder.
+When saga orchestration starts from one of those lifecycle boundaries, the base aggregate grain makes sure a deterministic Orleans reminder is registered before writing the boundary event. Lifecycle events yielded by the saga effect rely on that already registered reminder rather than updating the reminder from inside the effect-yield persistence loop. `SagaInputProvided<TInput>` does not register a reminder by itself; it is covered by the same start command batch that records `SagaStartedEvent`. Terminal events such as `SagaCompleted`, `SagaCompensated`, and `SagaFailed` do not register new resume reminders. If a later reminder tick sees terminal state, a terminal tail event, or no confirmed event after a pre-append registration, it unregisters the existing reminder.
 
 If the same grain activation is already running saga work when the reminder ticks, the callback exits without doing more work. If no local saga work is active, the callback reloads the confirmed brook cursor, the latest confirmed snapshot, and the tail lifecycle event. It then resumes from a safe lifecycle boundary by dispatching the same saga orchestration effect used by the normal write path.
 
@@ -95,7 +95,7 @@ The callback deliberately does not replay arbitrary business events. If the late
 - Start commands capture input into saga state through `SagaInputProvided<TInput>` so later steps can read the original input.
 - Compensation runs only for steps that implement `ICompensatable<TSaga>`.
 - Saga lifecycle transitions are represented as explicit events such as `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaCompleted`, `SagaCompensated`, and `SagaFailed`.
-- Orchestration-driving lifecycle events (`SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, and `SagaStepCompensated`) register a durable Orleans reminder before they are appended, so a later reminder tick can resume saga orchestration after a silo or pod stops between lifecycle boundaries.
+- Orchestration-driving lifecycle boundaries (`SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, and `SagaStepCompensated`) are covered by a durable Orleans reminder, so a later reminder tick can resume saga orchestration after a silo or pod stops between lifecycle boundaries.
 - Reminder-based recovery reads from the confirmed brook cursor and latest confirmed snapshot before taking recovery action.
 
 ## Non-Guarantees

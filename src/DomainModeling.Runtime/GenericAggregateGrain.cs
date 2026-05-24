@@ -294,6 +294,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
             if (confirmedPosition.NotSet)
             {
                 Logger.SagaReminderNoConfirmedCursor(reminderName, brookKey);
+                await UnregisterSagaReminderIfExistsAsync();
                 return;
             }
 
@@ -411,7 +412,6 @@ internal sealed class GenericAggregateGrain<TAggregate>
                     ImmutableArray<BrookEvent> brookEvents =
                         BrookEventConverter.ToStorageEvents(brookKey, [resultEvent]);
                     BrookPosition expectedPos = lastKnownPosition!.Value;
-                    await RegisterSagaReminderIfNeededAsync([resultEvent]);
                     await BrookGrainFactory.GetBrookWriterGrain(brookKey)
                         .AppendEventsAsync(brookEvents, expectedPos, cancellationToken);
                     lastKnownPosition = new BrookPosition(expectedPos.Value + 1);
