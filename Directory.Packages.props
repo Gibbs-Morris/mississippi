@@ -44,6 +44,7 @@
         <PackageVersion Include="Microsoft.Orleans.Sdk" Version="10.1.0" />
         <PackageVersion Include="Microsoft.Orleans.TestingHost" Version="10.1.0" />
         <PackageVersion Include="Microsoft.Orleans.Reminders" Version="10.1.0" />
+        <PackageVersion Include="Microsoft.Orleans.Reminders.AzureStorage" Version="10.1.0" />
         <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="10.0.1" />
         <PackageVersion Include="Microsoft.Orleans.Server" Version="10.1.0" />
         <PackageVersion Include="Microsoft.Orleans.Client" Version="10.1.0" />
