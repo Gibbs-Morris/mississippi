@@ -21,6 +21,9 @@ IResourceBuilder<AzureBlobStorageResource> blobs = storage.AddBlobs("blobs");
 // Add Azure Table Storage for Orleans clustering
 IResourceBuilder<AzureTableStorageResource> clusteringTable = storage.AddTables("clustering");
 
+// Add Azure Table Storage for Orleans reminders
+IResourceBuilder<AzureTableStorageResource> reminderTable = storage.AddTables("reminders");
+
 // Add Azure Blob Storage for Orleans grain state
 IResourceBuilder<AzureBlobStorageResource> grainState = storage.AddBlobs("grainstate");
 
@@ -38,6 +41,7 @@ _ = cosmos.AddCosmosDatabase("spring-db");
 // Configure Orleans with Azure Storage for clustering, grain state, and in-memory streaming
 OrleansService orleans = builder.AddOrleans("default")
     .WithClustering(clusteringTable)
+    .WithReminders(reminderTable)
     .WithGrainStorage("Default", grainState)
     .WithMemoryGrainStorage("PubSubStore")
     .WithMemoryStreaming("StreamProvider");

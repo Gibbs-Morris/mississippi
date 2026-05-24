@@ -23,6 +23,7 @@ internal sealed class TestSiloConfigurations : ISiloConfigurator
     {
         // Host configures stream infrastructure
         siloBuilder.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
+        siloBuilder.UseInMemoryReminderService();
 
         // Tell Brooks which stream provider to use
         siloBuilder.AddEventSourcing();

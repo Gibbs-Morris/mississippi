@@ -1,5 +1,6 @@
 using System;
 
+using Mississippi.Brooks.Abstractions.Attributes;
 using Mississippi.DomainModeling.Abstractions;
 
 
@@ -8,6 +9,8 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests;
 /// <summary>
 ///     Test saga state used by saga runtime tests.
 /// </summary>
+[BrookName("TEST", "SAGAS", "REMINDER")]
+[SnapshotStorageName("MISSISSIPPI", "TESTS", "TESTSAGA")]
 internal sealed record TestSagaState : ISagaState
 {
     /// <summary>
