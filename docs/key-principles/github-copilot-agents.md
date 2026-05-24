@@ -224,8 +224,8 @@ You are a [role description]. Your job is to [mission].
 | `argument-hint` | No | string | Input guidance shown for user-invocable agents |
 | `agents` | No | array | Restricts which custom agents this agent may invoke as sub-agents; omit to allow all, or use an empty array to allow none |
 | `user-invocable` | No | boolean | Whether the agent appears in the picker; defaults to `true` |
-| `disable-model-invocation` | No | boolean | Whether other agents are prevented from invoking this agent as a subagent; defaults to `false` |
-| `metadata` | No | object | Arbitrary key-value pairs for organisational use; agent behavior must not depend on hosts preserving it |
+| `disable-model-invocation` | No | boolean | Whether other agents are prevented from invoking this agent as a sub-agent; defaults to `false` |
+| `metadata` | No | object | Arbitrary key-value pairs for organizational use; agent behavior must not depend on hosts preserving it |
 | `handoffs` | No | array | User-visible transition definitions to other agents (see Key-Line 3) |
 | `hooks` | No | object | Inline lifecycle hooks scoped to the agent |
 
@@ -237,7 +237,7 @@ Common tool aliases include:
 | `search` | Search files or text |
 | `edit` | Edit files |
 | `execute` | Run shell commands |
-| `agent` | Invoke custom agents as subagents |
+| `agent` | Invoke custom agents as sub-agents |
 | `web` | Fetch URLs and web content |
 | `todo` | Manage task lists |
 
