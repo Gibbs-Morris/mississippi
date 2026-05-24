@@ -327,6 +327,24 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
     }
 
+    private async Task AppendSagaCompensationAsync(
+        SagaStepFailed failed,
+        BrookPosition confirmedPosition
+    )
+    {
+        SagaCompensating compensating = new()
+        {
+            FromStepIndex = failed.StepIndex - 1,
+        };
+        Logger.SagaReminderAppendingCompensation(failed.StepIndex, compensating.FromStepIndex, brookKey);
+        await PersistEventsAndDispatchEffectsAsync(
+            [compensating],
+            confirmedPosition,
+            nameof(ReceiveReminder),
+            brookKey,
+            CancellationToken.None);
+    }
+
     /// <summary>
     ///     Dispatches events to the root event effect and persists any yielded events.
     /// </summary>
@@ -648,6 +666,29 @@ internal sealed class GenericAggregateGrain<TAggregate>
         await DispatchFireAndForgetEffectsIfRegisteredAsync(events, currentPosition, cancellationToken);
     }
 
+    private async Task<List<(object Event, long Position)>> ReadConfirmedTailEventsAsync(
+        string reminderName,
+        BrookPosition confirmedPosition
+    )
+    {
+        BrookPosition readFrom = new(Math.Max(0, confirmedPosition.Value - 1));
+        ImmutableArray<BrookEvent> tailStorageEvents = await BrookGrainFactory.GetBrookReaderGrain(brookKey)
+            .ReadEventsBatchAsync(readFrom, confirmedPosition, CancellationToken.None);
+        if (tailStorageEvents.IsDefaultOrEmpty)
+        {
+            Logger.SagaReminderNoConfirmedCursor(reminderName, brookKey);
+            return [];
+        }
+
+        List<(object Event, long Position)> tailEvents = new(tailStorageEvents.Length);
+        for (int i = 0; i < tailStorageEvents.Length; i++)
+        {
+            tailEvents.Add((BrookEventConverter.ToDomainEvent(tailStorageEvents[i]), readFrom.Value + i));
+        }
+
+        return tailEvents;
+    }
+
     private OperationResult RecordCommandFailure(
         OperationResult<IReadOnlyList<object>> handlerResult,
         string commandTypeName,
@@ -688,6 +729,23 @@ internal sealed class GenericAggregateGrain<TAggregate>
             commandTypeName,
             sw.Elapsed.TotalMilliseconds,
             AggregateErrorCodes.ConcurrencyConflict);
+    }
+
+    private async Task RecoverFromStartInputTailAsync(
+        List<(object Event, long Position)> tailEvents,
+        object latestEvent,
+        TAggregate currentState
+    )
+    {
+        if ((tailEvents.Count <= 1) || tailEvents[^2].Event is not SagaStartedEvent)
+        {
+            Logger.SagaReminderUnsafeTail(latestEvent.GetType().Name, brookKey);
+            return;
+        }
+
+        (object Event, long Position) boundary = tailEvents[^2];
+        Logger.SagaReminderReplayingBoundary(boundary.Event.GetType().Name, brookKey, boundary.Position);
+        await ReplaySagaBoundaryAsync(boundary.Event, currentState, boundary.Position, CancellationToken.None);
     }
 
     private async Task RecoverSagaFromTailAsync(
@@ -732,64 +790,6 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
 
         Logger.SagaReminderUnsafeTail(latest.Event.GetType().Name, brookKey);
-    }
-
-    private async Task<List<(object Event, long Position)>> ReadConfirmedTailEventsAsync(
-        string reminderName,
-        BrookPosition confirmedPosition
-    )
-    {
-        BrookPosition readFrom = new(Math.Max(0, confirmedPosition.Value - 1));
-        ImmutableArray<BrookEvent> tailStorageEvents = await BrookGrainFactory.GetBrookReaderGrain(brookKey)
-            .ReadEventsBatchAsync(readFrom, confirmedPosition, CancellationToken.None);
-        if (tailStorageEvents.IsDefaultOrEmpty)
-        {
-            Logger.SagaReminderNoConfirmedCursor(reminderName, brookKey);
-            return [];
-        }
-
-        List<(object Event, long Position)> tailEvents = new(tailStorageEvents.Length);
-        for (int i = 0; i < tailStorageEvents.Length; i++)
-        {
-            tailEvents.Add((BrookEventConverter.ToDomainEvent(tailStorageEvents[i]), readFrom.Value + i));
-        }
-
-        return tailEvents;
-    }
-
-    private async Task AppendSagaCompensationAsync(
-        SagaStepFailed failed,
-        BrookPosition confirmedPosition
-    )
-    {
-        SagaCompensating compensating = new()
-        {
-            FromStepIndex = failed.StepIndex - 1,
-        };
-        Logger.SagaReminderAppendingCompensation(failed.StepIndex, compensating.FromStepIndex, brookKey);
-        await PersistEventsAndDispatchEffectsAsync(
-            [compensating],
-            confirmedPosition,
-            nameof(ReceiveReminder),
-            brookKey,
-            CancellationToken.None);
-    }
-
-    private async Task RecoverFromStartInputTailAsync(
-        List<(object Event, long Position)> tailEvents,
-        object latestEvent,
-        TAggregate currentState
-    )
-    {
-        if ((tailEvents.Count <= 1) || tailEvents[^2].Event is not SagaStartedEvent)
-        {
-            Logger.SagaReminderUnsafeTail(latestEvent.GetType().Name, brookKey);
-            return;
-        }
-
-        (object Event, long Position) boundary = tailEvents[^2];
-        Logger.SagaReminderReplayingBoundary(boundary.Event.GetType().Name, brookKey, boundary.Position);
-        await ReplaySagaBoundaryAsync(boundary.Event, currentState, boundary.Position, CancellationToken.None);
     }
 
     private async Task RegisterSagaReminderIfNeededAsync(
