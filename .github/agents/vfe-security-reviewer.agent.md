@@ -56,11 +56,11 @@ Check:
 
 - Input validation.
 - Authentication impact.
-- Authorisation impact.
+- Authorization impact.
 - Secret handling.
 - Logging of sensitive data.
 - Injection risks.
-- Deserialisation risks.
+- Deserialization risks.
 - Dependency risks.
 - File system risks.
 - Network exposure.
