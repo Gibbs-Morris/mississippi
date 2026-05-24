@@ -228,6 +228,24 @@ internal static partial class AggregateGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs when the reminder callback has a confirmed cursor but cannot read any tail events.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="confirmedPosition">The confirmed cursor position.</param>
+    [LoggerMessage(
+        22,
+        LogLevel.Warning,
+        "Reminder {ReminderName} found no tail events at confirmed position {ConfirmedPosition} for aggregate {AggregateKey}")]
+    public static partial void SagaReminderNoTailEvents(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey,
+        long confirmedPosition
+    );
+
+    /// <summary>
     ///     Logs when the deterministic saga reminder is being registered or updated.
     /// </summary>
     /// <param name="logger">The logger.</param>

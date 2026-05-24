@@ -676,7 +676,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
             .ReadEventsBatchAsync(readFrom, confirmedPosition, CancellationToken.None);
         if (tailStorageEvents.IsDefaultOrEmpty)
         {
-            Logger.SagaReminderNoConfirmedCursor(reminderName, brookKey);
+            Logger.SagaReminderNoTailEvents(reminderName, brookKey, confirmedPosition.Value);
             return [];
         }
 

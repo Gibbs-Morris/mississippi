@@ -528,6 +528,52 @@ public sealed class GenericAggregateGrainSagaReminderTests
     }
 
     /// <summary>
+    ///     Exits without replay when a confirmed cursor exists but the tail read returns no events.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ReceiveReminderNoOpsWhenConfirmedTailReadIsEmpty()
+    {
+        Mock<IBrookCursorGrain> cursorMock = new();
+        cursorMock.Setup(c => c.GetLatestPositionConfirmedAsync()).ReturnsAsync(new BrookPosition(3));
+        Mock<IBrookReaderGrain> readerMock = new();
+        readerMock.Setup(r => r.ReadEventsBatchAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ImmutableArray<BrookEvent>.Empty);
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<ISnapshotCacheGrain<TestSagaState>> snapshotCacheMock = new();
+        snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreateRunningState(Guid.NewGuid()));
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestSagaState>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheMock.Object);
+        Mock<IRootEventEffect<TestSagaState>> effectMock = CreateEffectReturningNoEvents();
+        GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
+            cursorMock: cursorMock,
+            readerMock: readerMock,
+            writerMock: writerMock,
+            snapshotFactoryMock: snapshotFactoryMock,
+            rootEventEffectMock: effectMock);
+        await grain.ReceiveReminder(SagaReminderName, default);
+        writerMock.Verify(
+            w => w.AppendEventsAsync(
+                It.IsAny<ImmutableArray<BrookEvent>>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        effectMock.Verify(
+            e => e.DispatchAsync(
+                It.IsAny<object>(),
+                It.IsAny<TestSagaState>(),
+                It.IsAny<string>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
     ///     Skips reminder recovery when the same grain activation is already dispatching saga work.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
