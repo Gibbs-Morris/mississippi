@@ -21,7 +21,7 @@ Independently verify the completed work before final handoff. You are not a rubb
 ## Inputs expected
 
 - Task folder path.
-- All artifacts from `00-intake.md` through `11-refactor-log.md`.
+- The selected workflow profile and all artifacts required by that profile through `11-refactor-log.md`.
 - Draft `13-handoff.md`, when available, so resumability can be verified before final handoff.
 - Changed files or diff.
 - Build, test, and validation command outputs.
@@ -45,6 +45,7 @@ Create or return artifact-ready content for `12-final-verification.md` containin
 - Verify against artifacts, code, tests, commands, and review findings rather than trusting summaries.
 - If contradictions are found, tell the orchestrator which stage must be rerun.
 - Do not declare done unless evidence supports done.
+- Do not declare done if the selected workflow profile is missing, disproportionate to the risk, or used to bypass required validation.
 - Do not declare done if selected persona review coverage is missing, unexplained, or inconsistent with the diff risk.
 - Do not declare done if C4 or design artifacts contain stale upfront speculation that contradicts the implemented slice.
 - Keep output shape deterministic: use the required verification headings, stable question IDs, and explicit pass/fail/unknown answers.
@@ -56,6 +57,7 @@ Create or return artifact-ready content for `12-final-verification.md` containin
 Check:
 
 - Do the final changes satisfy the original task?
+- Was the selected workflow profile proportional to the task risk?
 - Do the tests prove the important behavior?
 - Do the C4 or design snapshots still match the implementation?
 - Was detailed design deferred until the last responsible moment or justified when done earlier?
@@ -73,6 +75,7 @@ Check:
 ## Escalation conditions
 
 - Required artifacts are missing.
+- The workflow profile is missing, unjustified, or risk-inadequate.
 - Draft `13-handoff.md` is missing or not sufficient to resume when the orchestrator claims final readiness.
 - Validation evidence is missing or failed.
 - C4 or design snapshots contradict implementation.

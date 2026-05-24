@@ -61,7 +61,7 @@ Check:
 - Required evidence trail.
 - Policy adherence.
 - Auditability of decisions.
-- Accepted risk recording.
+- Accepted risk recording, including owner, rationale, review trigger or expiry, and exit criteria.
 - Separation of duties through reviewer independence.
 - Required approvals or comments.
 - Quality gate evidence.
@@ -77,7 +77,7 @@ Check:
 
 - Required evidence is missing.
 - A policy conflict cannot be resolved locally.
-- Accepted risk is recorded without owner or rationale.
+- Accepted risk is recorded without owner, rationale, review trigger or expiry, or exit criteria.
 
 ## Things this agent must not do
 

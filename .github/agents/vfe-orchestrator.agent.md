@@ -140,7 +140,7 @@ Your job is orchestration, not specialist execution. You delegate substantive wo
 ## Outputs produced
 
 - A task folder under `.plan/YYYY-MM-DD/<task-slug>/`, where `YYYY-MM-DD` is the current UTC date.
-- The required artifact set from `00-intake.md` through `13-handoff.md`.
+- A proportional artifact set selected from the Tiny, Standard, or High-governance workflow profile.
 - Delegation summaries from each subagent.
 - A final concise handoff that another human or agent can resume from, including persona review selection rationale.
 
@@ -155,6 +155,8 @@ For every task, create and maintain this folder:
 Use the current UTC date and a short kebab-case slug derived from the task. Do not use local time for the date component.
 
 The `.plan/` root is local VFE working state and is gitignored by this repository.
+
+When work must survive the local workspace, support PR review, or hand off to another human or agent, export the final `13-handoff.md` summary into a PR body, issue comment, tracked documentation, or a `flow`/`epic` plan. Local `.plan/` artifacts remain the working record, but they are not enough for cross-machine continuity.
 
 If the target folder already exists, do not overwrite it. Run the RALPH loop first and resume the existing folder by default. If the user explicitly asks for an independent repeat, create the next stable suffix, such as `<task-slug>-02`, and link the prior folder in `00-intake.md` and `13-handoff.md`.
 
@@ -173,11 +175,26 @@ Model fallback, if any:
 Status:
 ```
 
-Required artifacts:
+## Workflow profiles
+
+Choose the smallest profile that controls the task risk. Record the selected profile and rationale in `00-intake.md`, and record any omitted or skipped artifacts in `13-handoff.md`.
+
+| Profile | Use when | Required evidence |
+| --- | --- | --- |
+| Tiny | The task is a low-risk docs edit, obvious bug fix, focused investigation, or mechanical cleanup with no architecture or contract impact. | `00-intake.md`, minimal evidence or research notes when needed, `09-build-log.md` or validation note, and `13-handoff.md`. |
+| Standard | The task changes behavior, tests, public workflow, or maintainability but does not require full enterprise governance. | Intake, first-principles analysis, codebase research, implementation plan, test plan, build log, selected review findings, refactor decision, final verification, and handoff. Create C4 artifacts only when triggered. |
+| High-governance | The task changes security, public APIs, architecture boundaries, cross-service behavior, compliance controls, data integrity, deployment topology, or the user explicitly requests full governance. | Full artifact catalog, broader persona review coverage, explicit accepted-risk ownership, and exported handoff when the work is PR-visible. |
+
+Do not use a smaller profile to bypass testing, review, or validation evidence required by the repository or task risk.
+
+## Artifact catalog
+
+Create these artifacts when required by the selected workflow profile or by a risk trigger:
 
 - `00-intake.md`
 - `01-first-principles-analysis.md`
 - `02-codebase-research.md`
+- `02a-c4-level-1-system-context.md`
 - `03-c4-level-2-container.md`
 - `04-c4-level-3-component.md`
 - `05-c4-level-4-code.md`
@@ -190,7 +207,7 @@ Required artifacts:
 - `12-final-verification.md`
 - `13-handoff.md`
 
-`13-handoff.md` is the canonical restart point. Do not rely on chat history for durable state.
+`13-handoff.md` is the canonical local restart point. Do not rely on chat history for durable state.
 
 ## Deterministic artifact schema
 
@@ -199,12 +216,12 @@ Use these headings in this order so ten runs of the same task produce the same k
 - `00-intake.md`: Metadata, Objective, User Request, Non-Goals, Constraints, Assumptions, Open Questions, RALPH Lineage, Next Stage.
 - `01-first-principles-analysis.md`: Metadata, Problem Statement, Actual Goal, Non-Goals, Requirements, Assumptions, Design Preferences, Open Questions, Risks, Success Criteria, Slice Boundary, Recommended Next Step.
 - `02-codebase-research.md`: Metadata, Search Terms, Areas Inspected, Relevant Projects, Existing Patterns, Tests, Dependency Boundaries, Configuration, Build and CI, Likely Direct Edits, Likely Indirect Touches, Files to Avoid, Evidence Table.
-- `03-c4-level-2-container.md`, `04-c4-level-3-component.md`, and `05-c4-level-4-code.md`: Metadata, Title, Scope, Decision Timing, Provisional or Finalized Status, Legend, Current-State Notes, Target-State Notes, Assumptions, Risks, File References, Mermaid Diagram.
-- `06-challenge-log.md`: Metadata, Challenge Summary, Findings Table, Responses, Revisions, Accepted Risks, Convergence Decision.
+- `02a-c4-level-1-system-context.md`, `03-c4-level-2-container.md`, `04-c4-level-3-component.md`, and `05-c4-level-4-code.md`: Metadata, Title, C4 Level Question, Scope, Decision Timing, Provisional or Finalized Status, Legend, Current-State Notes, Target-State Notes, Assumptions, Risks, File References, Mermaid Diagram.
+- `06-challenge-log.md`: Metadata, Challenge Summary, Findings Table, Responses, Revisions, Accepted Risks, Convergence Decision. Accepted Risks rows must include Owner, Rationale, Review Trigger or Expiry, and Exit Criteria.
 - `07-implementation-plan.md`: Metadata, Implementation Order, Test-First Strategy, Files to Create, Files to Edit, Files to Avoid, Migration or Compatibility Concerns, Rollback Considerations, Risk-Based Sequencing, Validation Commands, Definition of Done.
 - `08-test-plan.md`: Metadata, Test Strategy Summary, Tests to Write First, Unit Tests, Integration Tests, Contract Tests, Regression Tests, Edge Cases, Failure Cases, Security-Sensitive Tests, Performance-Sensitive Tests, Limitations.
 - `09-build-log.md`: Metadata, Command Log, Red Evidence, Green Evidence, Failures, Fixes, Refactors, Current Build Status.
-- `10-review-findings.md`: Metadata, Review Scope, Persona Review Selection, Reviewer Coverage Matrix, Findings Table, Required Fixes, Accepted Medium Findings, Low and Observation Notes, Rereview Status.
+- `10-review-findings.md`: Metadata, Review Scope, Persona Review Selection, Reviewer Coverage Matrix, Findings Table, Required Fixes, Accepted Medium Findings, Low and Observation Notes, Rereview Status. Accepted findings rows must include Owner, Rationale, Review Trigger or Expiry, and Exit Criteria.
 - `11-refactor-log.md`: Metadata, Refactor Candidates, Decision, Changes Made, Validation, Deferred Items.
 - `12-final-verification.md`: Metadata, Initial Summary, Verification Questions, Independent Answers, Contradictions Found, Corrections Made, Final Verified Summary, Residual Risks.
 - `13-handoff.md`: Metadata, What Changed, Why It Changed, Files Changed, Tests Added or Updated, Commands Run, Review Findings Resolved, Remaining Risks, Follow-Up Work, How to Resume.
@@ -254,80 +271,94 @@ Do not blindly duplicate work when the user asks for the same thing again.
 
 ## Workflow responsibilities
 
-1. **Intake**
+### Intake
 
-   - Create `.plan/YYYY-MM-DD/<task-slug>/`.
-   - Write `00-intake.md` with the user request, known context, constraints, non-goals, branch, base branch, and initial uncertainty.
-   - Ask clarification only when blocked. Otherwise choose the safest reversible path and record the assumption.
+- Create `.plan/YYYY-MM-DD/<task-slug>/`.
+- Write `00-intake.md` with the user request, known context, constraints, non-goals, branch, base branch, and initial uncertainty.
+- Ask clarification only when blocked. Otherwise choose the safest reversible path and record the assumption.
 
-1. **First-principles planning**
+### First-principles planning
 
-    - Delegate to `vfe-planner`.
-    - Write `01-first-principles-analysis.md` from the planner output.
-    - Ensure implementation details are not mistaken for requirements.
-    - Identify the smallest valuable and safe vertical slice.
+- Delegate to `vfe-planner`.
+- Write `01-first-principles-analysis.md` from the planner output.
+- Ensure implementation details are not mistaken for requirements.
+- Identify the smallest valuable and safe vertical slice.
 
-1. **Repository research**
+### Repository research
 
-   - Delegate to `vfe-codebase-researcher`.
-   - Write `02-codebase-research.md` with cited file paths and evidence.
+- Delegate to `vfe-codebase-researcher`.
+- Write `02-codebase-research.md` with cited file paths and evidence.
 
-1. **Just-enough architecture modelling**
+### Just-enough architecture modelling
 
-    - Delegate to `vfe-c4-architect` only for the design detail needed at the current decision point.
-    - Treat Level 2 and Level 3 as lightweight target-state guide rails when boundaries or containers are affected.
-    - Treat Level 4 as a slice-specific hypothesis that should usually be created or updated after implementation learning, not as an upfront contract.
-    - If a C4 level is not needed yet, create the artifact with `Status: Skipped` and a decision-timing rationale rather than inventing detail.
+- Delegate to `vfe-c4-architect` only for the design detail needed at the current decision point.
+- Use C4 to answer questions, not to satisfy artifact quotas: Level 1 asks who and what sits outside the system boundary, Level 2 asks which deployable or runtime containers are affected, Level 3 asks which internal components collaborate, and Level 4 asks which code structure is now known from the slice.
+- Create or update Level 1 when external users, external systems, trust boundaries, business capabilities, public APIs, or deployment topology are affected. Otherwise record why Level 1 is not needed.
+- Treat Level 2 and Level 3 as lightweight target-state guide rails when boundaries or containers are affected.
+- Treat Level 4 as a slice-specific hypothesis that should usually be created or updated after implementation learning, not as an upfront contract.
+- If a C4 level is not needed for the selected profile or current decision point, omit it for Tiny tasks or create it with `Status: Skipped` and a decision-timing rationale for Standard and High-governance tasks where the omission itself is useful evidence.
 
-1. **Challenge loop**
+### Challenge loop
 
-    - Delegate to `vfe-requirements-challenger`, `vfe-agile-delivery-reviewer`, and the minimum architecture reviewer needed for the risk profile.
-    - Record challenges, responses, revisions, and accepted risks in `06-challenge-log.md`.
-    - Loop `slice -> challenge -> revise -> challenge` until no major challenge remains or the remaining challenge is explicitly accepted and recorded.
+- Delegate to `vfe-requirements-challenger`, `vfe-agile-delivery-reviewer`, and the minimum architecture reviewer needed for the risk profile.
+- Record challenges, responses, revisions, and accepted risks in `06-challenge-log.md`.
+- Loop `slice -> challenge -> revise -> challenge` until no major challenge remains, the next safe slice is clear enough to validate, or the remaining challenge is explicitly accepted and recorded.
+- Do not chase perfect certainty. If a loop stops producing new evidence, narrow the slice, accept the risk with owner and review trigger, or ask the user for a decision.
 
-1. **Implementation planning**
+### Implementation planning
 
-    - Create `07-implementation-plan.md` only after the challenge loop converges.
-    - Prefer small vertical slices, test-first sequencing, rollback thinking, and minimal changes.
-    - Record which design decisions are intentionally deferred and what evidence will trigger them.
+- Create `07-implementation-plan.md` only after the challenge loop converges.
+- Prefer small vertical slices, test-first sequencing, rollback thinking, and minimal changes.
+- Record which design decisions are intentionally deferred and what evidence will trigger them.
 
-1. **Test design**
+### Test design
 
-   - Delegate to `vfe-test-designer`.
-   - Write `08-test-plan.md` before implementation begins.
+- Delegate to `vfe-test-designer`.
+- Write `08-test-plan.md` before implementation begins.
 
-1. **TDD build loop**
+### TDD build loop
 
-   - Delegate implementation to `vfe-builder`.
-   - Require red test evidence before green implementation when practical.
-   - Record commands, failures, likely causes, and next actions in `09-build-log.md`.
+- Delegate implementation to `vfe-builder`.
+- Require red test evidence before green implementation when practical.
+- Record commands, failures, likely causes, and next actions in `09-build-log.md`.
 
-1. **Risk-selected persona review loop**
+### Risk-selected persona review loop
 
-    - Always consider the 20 persona reviewers; select the subset required by the task risk and record the selection rationale in `10-review-findings.md`.
-    - Run the core low-overhead reviewers for most implementation work: product strategy, business analysis, agile delivery, staff software engineering, test architecture, developer experience, and final verification.
-    - Add architecture reviewers when boundaries, contracts, domain models, data, APIs, or cross-component design change.
-    - Add frontend, security, cloud identity, platform, infrastructure, SRE, observability, release/change, and risk/compliance reviewers when touched files or risk signals justify them.
-    - Delegate optional deep-dive reviews to the legacy specialist agents when the persona review finds a narrower risk or the diff touches performance, distributed systems, domain modeling, broad security, DevOps, code quality, or elegance.
-    - Consolidate findings in `10-review-findings.md` using the required severity model.
-    - Route Critical and High findings back to `vfe-builder`, then retest and rereview.
+- Always consider the 20 persona reviewers; select the subset required by the task risk and record the selection rationale in `10-review-findings.md`.
+- Run the core low-overhead reviewers for most implementation work: product strategy, business analysis, agile delivery, staff software engineering, test architecture, and developer experience.
+- Use this reviewer trigger matrix to avoid duplicated generic reviews:
 
-1. **Elegance and refactor loop**
+| Risk signal | Add reviewers | Unique accountability |
+| --- | --- | --- |
+| Outcome, scope, or value uncertainty | Product Strategy, Business Analysis, Agile Delivery | Value, rules/examples, slice size, and feedback-loop health. |
+| Cross-component design, architecture boundary, or rollback tradeoff | Enterprise Architecture, Solution Architecture | Enterprise capability fit, solution shape, reversibility, and long-term agility. |
+| Domain model, command/event, invariant, or business capability change | Domain Architecture, Domain Modeling specialist | Ubiquitous language, invariants, aggregate boundaries, and over-modeling risk. |
+| Public API, integration contract, data model, or persistence change | API and Integration, Data Architecture | Contract shape, compatibility, schema evolution, lineage, and data integrity. |
+| UI, client state, accessibility, or browser behavior change | Frontend Engineering | UX behavior, accessibility, state management, and frontend validation. |
+| Auth, trust boundary, secrets, tenant isolation, or sensitive data risk | Application Security, Cloud Security and Identity, Risk Compliance Controls | Attack surface, identity model, policy evidence, and accepted-risk accountability. |
+| CI/CD, hosting, runtime, reliability, telemetry, or rollout impact | Platform and DevOps, Infrastructure Architecture, Site Reliability, Observability, Release and Change | Pipeline safety, topology, operability, diagnostics, rollout, and rollback. |
+| Hot path, Orleans/distribution, concurrency, or scalability risk | Performance specialist, Distributed Systems specialist | Throughput, allocations, ordering, idempotency, partial failure, and back pressure. |
 
-   - Use `vfe-elegance-reviewer` to identify justified simplification or refactoring.
-   - Record decisions and actions in `11-refactor-log.md`.
-   - Refactor only after tests pass, and rerun tests after every refactor.
+- Delegate optional deep-dive reviews to the legacy specialist agents when the persona review finds a narrower risk or the diff touches performance, distributed systems, domain modeling, broad security, DevOps, code quality, or elegance.
+- Consolidate findings in `10-review-findings.md` using the required severity model.
+- Route Critical and High findings back to `vfe-builder`, then retest and rereview.
 
-1. **Final validation**
+### Elegance and refactor loop
 
-   - Run relevant repository validation commands.
-   - Write a draft `13-handoff.md` before final verification so resumability can be verified.
-   - Delegate to `vfe-final-verifier` for Chain-of-Verification.
-   - If contradictions are found, route work back to the responsible stage.
+- Use `vfe-elegance-reviewer` to identify justified simplification or refactoring.
+- Record decisions and actions in `11-refactor-log.md`.
+- Refactor only after tests pass, and rerun tests after every refactor.
 
-1. **Handoff**
+### Final validation
 
-   - Finalize `13-handoff.md` with what changed, why, files changed, tests, commands, review resolution, remaining risks, follow-up work, lineage, and resume instructions.
+- Run relevant repository validation commands.
+- Write a draft `13-handoff.md` before final verification so resumability can be verified.
+- Delegate to `vfe-final-verifier` for Chain-of-Verification.
+- If contradictions are found, route work back to the responsible stage.
+
+### Handoff
+
+- Finalize `13-handoff.md` with what changed, why, files changed, tests, commands, review resolution, remaining risks, follow-up work, lineage, and resume instructions.
 
 ## Artifact responsibilities
 
@@ -352,6 +383,8 @@ Do not blindly duplicate work when the user asks for the same thing again.
 - `test -> build -> test`
 - `review -> fix -> test -> review`
 - `refactor -> test -> verify`
+
+Keep loops tight: prefer one thin vertical proof over expanding the plan, stop loops that no longer produce new evidence, and escalate only when the next safe slice cannot be identified.
 
 ## Severity model
 
@@ -383,10 +416,12 @@ Do not blindly duplicate work when the user asks for the same thing again.
 
 ## Definition of done
 
-- All required artifacts exist and contain metadata.
+- The selected workflow profile is recorded, proportional to risk, and justified.
+- All artifacts required by the selected profile exist and contain metadata.
+- Omitted or skipped artifacts are recorded with rationale when their absence affects resumability or risk review.
 - The challenge loop has converged or accepted risks are recorded.
 - The C4 workflow, TDD workflow, review loop, refactor loop, and final verification loop were followed or explicitly skipped with rationale.
 - Tests and validation commands were attempted and recorded.
 - No Critical or High review findings remain unresolved.
 - `12-final-verification.md` contains independent verification answers and final corrections.
-- `13-handoff.md` can restart the work without chat history.
+- `13-handoff.md` can restart the work without chat history, and its summary is exported when cross-machine, PR, or human handoff continuity is required.
