@@ -59,6 +59,35 @@ The runtime behavior is:
 7. On failure, the effect yields `SagaStepFailed` followed by `SagaCompensating`.
 8. Compensation walks backward through prior steps. When no earlier step remains, the effect yields `SagaCompensated`.
 
+### Reminder-Based Resume
+
+Saga orchestration also has a durable wake-up path for lifecycle events that were recorded before a silo or pod stopped running the active grain.
+
+Mississippi does not infer reminder eligibility from arbitrary domain events. The runtime uses a fixed set of orchestration-driving saga lifecycle events: `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, and `SagaStepCompensated`. These are the event types that either make `SagaOrchestrationEffect<TSaga>` continue the next step or compensation path, or need recovery help to create the next compensation boundary after a stopped activation.
+
+When one of those orchestration-driving lifecycle events is about to be appended, the base aggregate grain registers a deterministic Orleans reminder before writing the event. `SagaInputProvided<TInput>` does not register a reminder by itself; it is covered by the same start command batch that records `SagaStartedEvent`. Terminal events such as `SagaCompleted`, `SagaCompensated`, and `SagaFailed` do not register new resume reminders. If a later reminder tick sees terminal state or a terminal tail event, it unregisters the existing reminder.
+
+If the same grain activation is already running saga work when the reminder ticks, the callback exits without doing more work. If no local saga work is active, the callback reloads the confirmed brook cursor, the latest confirmed snapshot, and the tail lifecycle event. It then resumes from a safe lifecycle boundary by dispatching the same saga orchestration effect used by the normal write path.
+
+This diagram shows the recovery path after a lifecycle event is durable.
+
+```mermaid
+flowchart TB
+    A[Orchestration-driving lifecycle event] --> B[Register saga resume reminder]
+    B --> C[Append event to brook]
+    C --> D[Silo or pod may stop before next effect]
+    D --> E[Reminder ticks later]
+    E --> F{Saga work already active?}
+    F -->|Yes| G[Exit without duplicate recovery]
+    F -->|No| H[Load confirmed cursor and snapshot]
+    H --> I[Inspect tail lifecycle event]
+    I --> J[Replay safe boundary or start compensation]
+```
+
+The reminder callback only resumes from lifecycle boundaries that the saga system knows how to replay safely. For example, it can replay `SagaStartedEvent`, `SagaStepCompleted`, `SagaCompensating`, and `SagaStepCompensated` through `SagaOrchestrationEffect<TSaga>`. If the confirmed tail is `SagaStepFailed`, the callback records a `SagaCompensating` boundary so compensation can continue. If the snapshot or tail event is terminal, the callback unregisters the reminder.
+
+The callback deliberately does not replay arbitrary business events. If the latest confirmed tail is not a supported saga lifecycle boundary, Mississippi logs the unsafe tail and leaves the saga state unchanged rather than guessing how to repeat business work.
+
 ## Guarantees
 
 - Saga state has a defined contract through `ISagaState`, including `SagaId`, `Phase`, `LastCompletedStepIndex`, `StartedAt`, and `StepHash`.
@@ -66,18 +95,30 @@ The runtime behavior is:
 - Start commands capture input into saga state through `SagaInputProvided<TInput>` so later steps can read the original input.
 - Compensation runs only for steps that implement `ICompensatable<TSaga>`.
 - Saga lifecycle transitions are represented as explicit events such as `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaCompleted`, `SagaCompensated`, and `SagaFailed`.
+- Orchestration-driving lifecycle events (`SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, and `SagaStepCompensated`) register a durable Orleans reminder before they are appended, so a later reminder tick can resume saga orchestration after a silo or pod stops between lifecycle boundaries.
+- Reminder-based recovery reads from the confirmed brook cursor and latest confirmed snapshot before taking recovery action.
 
 ## Non-Guarantees
 
 - Mississippi sagas are not distributed transactions. They coordinate work and compensation, but they do not make several aggregates commit atomically.
 - Compensation is business-defined. The framework can call compensating steps, but it cannot infer what a safe undo operation should be.
 - A saga can still end in `Failed` state during compensation if a compensating step cannot complete successfully.
+- Reminder-based recovery is at-least-once at safe lifecycle boundaries. Saga steps and compensation logic should be written so repeated boundary execution is safe for the domain.
+- Reminder-based recovery does not provide exact intra-step resume. If a step started external work and the process stopped before the next lifecycle event was recorded, the framework cannot infer or replay that external side effect.
+- Mississippi does not replay arbitrary non-saga business tail events during reminder recovery. Unsupported tails are logged and left unchanged.
+
+## Hosting Requirements
+
+Any Orleans silo that can host saga aggregate grains must configure an Orleans reminder provider. Without a reminder provider, the runtime cannot register the durable wake-up reminder before saga lifecycle events are appended.
+
+Use the reminder provider that matches the deployment environment. For example, local tests can use an in-memory reminder service, while a production cluster should use a persistent reminder store supported by the Orleans hosting setup.
 
 ## Trade-Offs
 
 - Explicit lifecycle events make saga progress observable and testable, but they also add more state and event types than a one-off workflow service would.
 - Ordered steps are easier to reason about than implicit orchestration, but they require developers to model forward progress and rollback rules carefully.
 - Saga orchestration reuses the aggregate/event infrastructure, which keeps the model consistent. It also means teams need to learn the same evented thinking for workflows, not just for aggregates.
+- Reminder-based resume improves liveness after grain activation or silo failure, but it is intentionally conservative: it resumes known lifecycle boundaries and refuses to guess at arbitrary business-event recovery.
 
 ## Testability
 
@@ -90,6 +131,7 @@ Start commands, lifecycle events, ordered steps, and compensation outcomes are a
 - Use [Write Model](./write-model.md) for single-aggregate command handling.
 - Use [Read Models and Client Sync](./read-models-and-client-sync.md) for status projections and client update paths.
 - Use [Domain Modeling](../domain-modeling/index.md) when you need the package boundary around saga abstractions and runtime support.
+- Use [Glossary](../reference/glossary.md) when you need a quick definition of Orleans grains, silos, reminders, sagas, or compensation.
 
 ## Summary
 

@@ -56,8 +56,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return eventData is SagaStartedEvent or SagaStepCompleted or SagaStepFailed or SagaCompensating
-            or SagaStepCompensated;
+        return SagaLifecycleEventClassifier.IsOrchestrationLifecycleEvent(eventData);
     }
 
     /// <inheritdoc />

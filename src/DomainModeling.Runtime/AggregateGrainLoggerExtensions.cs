@@ -2,6 +2,8 @@ using System;
 
 using Microsoft.Extensions.Logging;
 
+using Mississippi.DomainModeling.Abstractions;
+
 
 namespace Mississippi.DomainModeling.Runtime;
 
@@ -145,6 +147,183 @@ internal static partial class AggregateGrainLoggerExtensions
         this ILogger logger,
         string aggregateKey,
         long version
+    );
+
+    /// <summary>
+    ///     Logs when a failed step is converted into a compensating boundary.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="failedStepIndex">The failed step index.</param>
+    /// <param name="fromStepIndex">The compensation starting index.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        20,
+        LogLevel.Debug,
+        "Reminder appending compensation from step {FromStepIndex} after failed step {FailedStepIndex} for aggregate {AggregateKey}")]
+    public static partial void SagaReminderAppendingCompensation(
+        this ILogger logger,
+        int failedStepIndex,
+        int fromStepIndex,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when reminder replay fails.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="exception">The exception.</param>
+    [LoggerMessage(21, LogLevel.Error, "Reminder {ReminderName} failed for aggregate {AggregateKey}")]
+    public static partial void SagaReminderFailed(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey,
+        Exception exception
+    );
+
+    /// <summary>
+    ///     Logs when a reminder with an unknown name is ignored.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(11, LogLevel.Debug, "Ignoring unknown reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void SagaReminderIgnoredUnknown(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when the reminder callback finds no confirmed cursor.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        14,
+        LogLevel.Debug,
+        "Reminder {ReminderName} found no confirmed cursor for aggregate {AggregateKey}")]
+    public static partial void SagaReminderNoConfirmedCursor(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when the callback cannot load the snapshot at the confirmed position.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="confirmedPosition">The confirmed position.</param>
+    [LoggerMessage(
+        15,
+        LogLevel.Warning,
+        "Reminder could not load a snapshot at confirmed position {ConfirmedPosition} for aggregate {AggregateKey}")]
+    public static partial void SagaReminderNoSnapshot(
+        this ILogger logger,
+        string aggregateKey,
+        long confirmedPosition
+    );
+
+    /// <summary>
+    ///     Logs when the deterministic saga reminder is being registered or updated.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(13, LogLevel.Debug, "Registering or updating reminder {ReminderName} for aggregate {AggregateKey}")]
+    public static partial void SagaReminderRegistering(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when replay resumes from a safe lifecycle boundary.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="boundaryType">The boundary event type.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="eventPosition">The persisted event position.</param>
+    [LoggerMessage(
+        16,
+        LogLevel.Debug,
+        "Reminder replaying boundary {BoundaryType} at position {EventPosition} for aggregate {AggregateKey}")]
+    public static partial void SagaReminderReplayingBoundary(
+        this ILogger logger,
+        string boundaryType,
+        string aggregateKey,
+        long eventPosition
+    );
+
+    /// <summary>
+    ///     Logs when a reminder tick is skipped because saga work is already in progress.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        12,
+        LogLevel.Debug,
+        "Skipping reminder {ReminderName} for aggregate {AggregateKey} because saga work is already active")]
+    public static partial void SagaReminderSkippedAlreadyActive(
+        this ILogger logger,
+        string reminderName,
+        string aggregateKey
+    );
+
+    /// <summary>
+    ///     Logs when a terminal saga tail event causes reminder unregistration.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="eventType">The terminal tail event type.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    [LoggerMessage(
+        18,
+        LogLevel.Information,
+        "Reminder {ReminderName} found terminal tail event {EventType} for aggregate {AggregateKey}; unregistering")]
+    public static partial void SagaReminderTerminalEvent(
+        this ILogger logger,
+        string eventType,
+        string aggregateKey,
+        string reminderName
+    );
+
+    /// <summary>
+    ///     Logs when terminal saga state causes reminder unregistration.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    /// <param name="phase">The terminal saga phase.</param>
+    /// <param name="reminderName">The reminder name.</param>
+    [LoggerMessage(
+        17,
+        LogLevel.Information,
+        "Reminder {ReminderName} found terminal phase {Phase} for aggregate {AggregateKey}; unregistering")]
+    public static partial void SagaReminderTerminalState(
+        this ILogger logger,
+        string aggregateKey,
+        SagaPhase phase,
+        string reminderName
+    );
+
+    /// <summary>
+    ///     Logs when a business or otherwise unsafe tail event is encountered.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="eventType">The tail event type.</param>
+    /// <param name="aggregateKey">The aggregate key.</param>
+    [LoggerMessage(
+        19,
+        LogLevel.Warning,
+        "Reminder found unsupported tail event {EventType} for aggregate {AggregateKey}; no replay will occur")]
+    public static partial void SagaReminderUnsafeTail(
+        this ILogger logger,
+        string eventType,
+        string aggregateKey
     );
 
     /// <summary>
