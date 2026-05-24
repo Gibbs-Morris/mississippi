@@ -24,14 +24,25 @@ internal sealed class SpringGatewayOrleansClientConnectionRetryFilter : IClientC
         CancellationToken cancellationToken
     )
     {
-        ArgumentNullException.ThrowIfNull(exception);
-
-        if (Interlocked.Increment(ref connectionAttempts) > MaxConnectionAttempts)
+        if (exception is null || cancellationToken.IsCancellationRequested)
         {
             return false;
         }
 
-        await Task.Delay(RetryDelay, cancellationToken);
-        return true;
+        int attempt = Interlocked.Increment(ref connectionAttempts);
+        if (attempt > MaxConnectionAttempts)
+        {
+            return false;
+        }
+
+        try
+        {
+            await Task.Delay(RetryDelay, cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
     }
 }
