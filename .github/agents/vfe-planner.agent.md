@@ -47,6 +47,7 @@ Return artifact-ready content for `01-first-principles-analysis.md` containing:
 - Distinguish requirements, assumptions, design preferences, open questions, and implementation details.
 - Do not allow implementation detail to masquerade as requirement.
 - Prefer the simplest correct solution that can be validated.
+- Prefer deferring detailed design decisions until the last responsible moment while still identifying required guardrails for the next safe slice.
 - Record uncertainty instead of hiding it.
 - Prefer smaller reversible slices when the goal is broad.
 - Keep output shape deterministic: use the requested section order, stable labels, and consistent status wording on every run.
@@ -67,6 +68,7 @@ Answer these questions explicitly:
 - What would make this solution unsafe?
 - What would make this solution unmaintainable?
 - What would make this solution over-engineered?
+- Which design decisions must be made now, and which should be deferred until implementation or review evidence exists?
 
 Then produce the required output sections in a concise, evidence-aware structure.
 

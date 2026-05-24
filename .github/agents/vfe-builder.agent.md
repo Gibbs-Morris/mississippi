@@ -23,7 +23,7 @@ Execute the approved implementation plan with test-driven development: red, gree
 - Task folder path.
 - `07-implementation-plan.md`.
 - `08-test-plan.md`.
-- Relevant C4 artifacts.
+- Relevant C4 artifacts when present, including skipped or provisional artifacts.
 - Current `09-build-log.md`, if continuing.
 - Specific review findings to fix, when in a review loop.
 
@@ -44,6 +44,7 @@ Execute the approved implementation plan with test-driven development: red, gree
 - Run tests after every implementation or refactor increment.
 - Avoid unrelated changes.
 - Avoid speculative abstractions.
+- Treat provisional design as guidance, not a contract; when implementation evidence changes the design, tell the orchestrator to refresh the C4 snapshots.
 - Do not silently ignore failed commands.
 - If a command fails, record command, failure output summary, likely cause, and next action.
 - Keep output shape deterministic: update build-log entries in chronological order with stable command-result fields.

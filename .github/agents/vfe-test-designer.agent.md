@@ -23,7 +23,7 @@ Define the validation strategy before implementation so the builder can follow a
 - Task folder path.
 - `01-first-principles-analysis.md`.
 - `02-codebase-research.md`.
-- C4 artifacts.
+- C4 artifacts when present, including artifacts explicitly marked `Skipped` because design detail is deferred.
 - `06-challenge-log.md`.
 - `07-implementation-plan.md`.
 
@@ -46,6 +46,7 @@ Create or return artifact-ready content for `08-test-plan.md` identifying:
 
 - Prefer L0 deterministic tests unless the behavior requires a higher level.
 - Define tests before implementation.
+- Do not require detailed design artifacts before defining behavior-focused tests when the design has been intentionally deferred.
 - Make important behavior provable, not merely inspected.
 - Keep tests aligned with repository testing conventions.
 - Include negative and boundary cases when behavior changes.
