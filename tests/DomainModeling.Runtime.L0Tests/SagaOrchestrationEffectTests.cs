@@ -283,6 +283,48 @@ public sealed class SagaOrchestrationEffectTests
     }
 
     /// <summary>
+    ///     Verifies thrown step exceptions emit failure and compensating events.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncEmitsStepFailedAndCompensatingWhenStepThrows()
+    {
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaThrowingStep), false),
+        ];
+        using ServiceProvider provider = CreateProvider(services => services.AddTransient<SagaThrowingStep>());
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaStartedEvent
+                {
+                    SagaId = Guid.NewGuid(),
+                    StartedAt = new(2025, 2, 12, 12, 30, 0, TimeSpan.Zero),
+                    StepHash = "HASH",
+                },
+                new(),
+                "saga",
+                0,
+                CancellationToken.None));
+        Assert.Collection(
+            events,
+            item =>
+            {
+                SagaStepFailed failed = Assert.IsType<SagaStepFailed>(item);
+                Assert.Equal("SAGA_STEP_EXCEPTION", failed.ErrorCode);
+                Assert.Equal("kapow", failed.ErrorMessage);
+                Assert.Equal(0, failed.StepIndex);
+                Assert.Equal("Debit", failed.StepName);
+            },
+            item =>
+            {
+                SagaCompensating compensating = Assert.IsType<SagaCompensating>(item);
+                Assert.Equal(-1, compensating.FromStepIndex);
+            });
+    }
+
+    /// <summary>
     ///     Verifies completed steps trigger the next step execution when available.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -415,6 +457,35 @@ public sealed class SagaOrchestrationEffectTests
         SagaFailed failed = Assert.IsType<SagaFailed>(Assert.Single(events));
         Assert.Equal("FAIL", failed.ErrorCode);
         Assert.Equal("nope", failed.ErrorMessage);
+    }
+
+    /// <summary>
+    ///     Verifies thrown compensation exceptions emit a terminal saga failure.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Fact]
+    public async Task HandleAsyncFailsWhenCompensationThrows()
+    {
+        SagaStepInfo[] steps =
+        [
+            new(0, "Debit", typeof(SagaCompensationThrowingStep), true),
+        ];
+        using ServiceProvider provider = CreateProvider(services =>
+            services.AddTransient<SagaCompensationThrowingStep>());
+        SagaOrchestrationEffect<TestSagaState> effect = CreateEffect(steps, provider);
+        List<object> events = await CollectAsync(
+            effect.HandleAsync(
+                new SagaCompensating
+                {
+                    FromStepIndex = 0,
+                },
+                new(),
+                "saga",
+                0,
+                CancellationToken.None));
+        SagaFailed failed = Assert.IsType<SagaFailed>(Assert.Single(events));
+        Assert.Equal("COMPENSATION_EXCEPTION", failed.ErrorCode);
+        Assert.Equal("compensation blew up", failed.ErrorMessage);
     }
 
     /// <summary>

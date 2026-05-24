@@ -56,8 +56,9 @@ The runtime behavior is:
 4. On `SagaStartedEvent`, it resolves the first step using `ISagaStepInfoProvider<TSaga>` and dependency injection.
 5. Each successful step may emit domain events and then yields `SagaStepCompleted`.
 6. When there is no next step, the effect yields `SagaCompleted`.
-7. On failure, the effect yields `SagaStepFailed` followed by `SagaCompensating`.
+7. On a failed step result, or a non-cancellation exception thrown by a step, the effect yields `SagaStepFailed` followed by `SagaCompensating`.
 8. Compensation walks backward through prior steps. When no earlier step remains, the effect yields `SagaCompensated`.
+9. If a compensation step returns failure or throws a non-cancellation exception, the effect yields terminal `SagaFailed`.
 
 ### Reminder-Based Resume
 
@@ -95,6 +96,7 @@ The callback deliberately does not replay arbitrary business events. If the late
 - Start commands capture input into saga state through `SagaInputProvided<TInput>` so later steps can read the original input.
 - Compensation runs only for steps that implement `ICompensatable<TSaga>`.
 - Saga lifecycle transitions are represented as explicit events such as `SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, `SagaCompleted`, `SagaCompensated`, and `SagaFailed`.
+- Non-cancellation exceptions thrown by saga steps are converted into `SagaStepFailed` plus `SagaCompensating`; non-cancellation exceptions thrown by compensation steps are converted into terminal `SagaFailed`.
 - Orchestration-driving lifecycle boundaries (`SagaStartedEvent`, `SagaStepCompleted`, `SagaStepFailed`, `SagaCompensating`, and `SagaStepCompensated`) are covered by a durable Orleans reminder, so a later reminder tick can resume saga orchestration after a silo or pod stops between lifecycle boundaries.
 - Reminder-based recovery reads from the confirmed brook cursor and latest confirmed snapshot before taking recovery action.
 
@@ -104,7 +106,7 @@ The callback deliberately does not replay arbitrary business events. If the late
 - Compensation is business-defined. The framework can call compensating steps, but it cannot infer what a safe undo operation should be.
 - A saga can still end in `Failed` state during compensation if a compensating step cannot complete successfully.
 - Reminder-based recovery is at-least-once at safe lifecycle boundaries. Saga steps and compensation logic should be written so repeated boundary execution is safe for the domain.
-- Reminder-based recovery does not provide exact intra-step resume. If a step started external work and the process stopped before the next lifecycle event was recorded, the framework cannot infer or replay that external side effect.
+- Reminder-based recovery does not provide exact intra-step resume. If a step started external work and the process stopped before the next lifecycle event was recorded, the framework cannot infer whether that external side effect happened, so the step must be safe to retry or complete idempotently.
 - Mississippi does not replay arbitrary non-saga business tail events during reminder recovery. Unsupported tails are logged and left unchanged.
 
 ## Hosting Requirements
