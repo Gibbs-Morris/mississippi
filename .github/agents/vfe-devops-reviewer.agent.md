@@ -66,7 +66,7 @@ Check:
 - Health checks.
 - Rollback.
 - Infrastructure assumptions.
-- Containerisation impact.
+- Containerization impact.
 
 ## Artifact responsibilities
 

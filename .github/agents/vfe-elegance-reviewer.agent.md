@@ -1,6 +1,6 @@
 ---
 name: vfe-elegance-reviewer
-description: 'Internal elegance review subagent for verification-first enterprise development. Use when: checking for unnecessary complexity, pattern theatre, poor boundaries, weak naming, hidden side effects, and justified refactoring opportunities.'
+description: 'Internal elegance review subagent for verification-first enterprise development. Use when: checking for unnecessary complexity, pattern theater, poor boundaries, weak naming, hidden side effects, and justified refactoring opportunities.'
 model:
   - 'Claude Sonnet 4.6 (copilot)'
   - 'Claude Sonnet 4.5 (copilot)'
@@ -58,7 +58,7 @@ Required before merge: Yes/No
 Check for:
 
 - Unnecessary complexity.
-- Over-generalisation.
+- Over-generalization.
 - Tight coupling.
 - Poor naming.
 - Weak boundaries.
@@ -68,7 +68,7 @@ Check for:
 - Leaky abstractions.
 - Duplicate logic.
 - Inconsistent patterns.
-- Pattern theatre.
+- Pattern theater.
 
 For every new abstraction, ask:
 

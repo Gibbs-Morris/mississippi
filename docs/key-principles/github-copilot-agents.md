@@ -222,10 +222,11 @@ You are a [role description]. Your job is to [mission].
 | `tools` | No | array | Tool aliases, extension tools, or MCP tool groups available to the agent |
 | `model` | No | string or array | Preferred model or ordered fallback list; host default is used when omitted |
 | `argument-hint` | No | string | Input guidance shown for user-invocable agents |
+| `agents` | No | array | Restricts which custom agents this agent may invoke as sub-agents; omit to allow all, or use an empty array to allow none |
 | `user-invocable` | No | boolean | Whether the agent appears in the picker; defaults to `true` |
 | `disable-model-invocation` | No | boolean | Whether other agents are prevented from invoking this agent as a subagent; defaults to `false` |
-| `metadata` | No | object | Arbitrary key-value pairs for organisational use |
-| `handoffs` | No | array | Sub-agent delegation definitions (see Key-Line 3) |
+| `metadata` | No | object | Arbitrary key-value pairs for organisational use; agent behavior must not depend on hosts preserving it |
+| `handoffs` | No | array | User-visible transition definitions to other agents (see Key-Line 3) |
 | `hooks` | No | object | Inline lifecycle hooks scoped to the agent |
 
 Common tool aliases include:
@@ -309,14 +310,34 @@ Sub-agents are other custom agents that an agent can **delegate work to**. This
 enables multi-agent workflows where a coordinator agent breaks a task into parts
 and hands each part to a specialist.
 
-### Defining Handoffs
+### Restricting Available Sub-Agents
 
-Handoffs are defined in the YAML frontmatter of the delegating agent:
+Use the `agents` frontmatter field when a coordinator should only invoke a
+specific set of sub-agents:
 
 ```yaml
 ---
 name: "Coordinator"
 description: "Coordinates multi-step implementation tasks."
+tools: [agent, read, search]
+agents: [test-writer, technical-writer, reviewer]
+---
+```
+
+The `agents` field is the delegation allowlist. Omit it to allow all available
+custom agents, or set it to an empty array to prevent sub-agent invocation.
+
+### Defining Handoffs
+
+Handoffs are user-visible transitions defined in the YAML frontmatter of the
+delegating agent. They should target agents that are also present in the
+`agents` allowlist when an allowlist is configured:
+
+```yaml
+---
+name: "Coordinator"
+description: "Coordinates multi-step implementation tasks."
+agents: [test-writer, technical-writer]
 handoffs:
   - label: "Write Tests"
     agent: test-writer
@@ -337,6 +358,20 @@ handoffs:
 | `agent` | Yes | string | Name of the target agent file (without `.agent.md`) |
 | `prompt` | No | string | Pre-filled prompt text for the handoff |
 | `send` | No | boolean | If `true`, the handoff is sent automatically. If `false` (default), the user can review and edit before sending. |
+
+### Agents vs Handoffs
+
+`agents` and `handoffs` solve different problems:
+
+| Field | Primary job | Use it for |
+|---|---|---|
+| `agents` | Sub-agent invocation control | Constraining which agents a coordinator can invoke |
+| `handoffs` | User-facing transitions | Providing labelled next-step prompts with reviewable context |
+
+A workflow coordinator should use `agents` to bound the available sub-agents and
+`handoffs` to make common transitions explicit. Handoff prompts should include
+enough context for a stateless sub-agent: task folder path, objective,
+constraints, input artifacts, expected output shape, and escalation conditions.
 
 ### How Handoffs Work at Runtime
 
@@ -525,9 +560,11 @@ matching instructions.
 ### Step-by-Step: Adding a Sub-Agent Handoff
 
 1. **Ensure the target agent exists** (e.g., `.github/agents/reviewer.agent.md`).
-2. **Add `handoffs` to the parent agent's frontmatter**:
+2. **Add the target to the parent agent's `agents` allowlist and define a
+   `handoffs` entry**:
 
    ```yaml
+   agents: [reviewer]
    handoffs:
      - label: "Review Changes"
        agent: reviewer
@@ -620,9 +657,9 @@ This enables tooling to discover and organise related agents programmatically.
 
 | Source | Reference |
 |---|---|
-| **VS Code Custom Agents** | *Custom chat agents*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/copilot-extensibility-overview> |
+| **VS Code Custom Agents** | *Custom agents*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/customization/custom-agents> |
 | **VS Code Custom Instructions** | *Custom instructions*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/copilot-customization> |
-| **VS Code Sub-Agents** | *Sub-agents*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/copilot-extensibility-overview#_subagents> |
+| **VS Code Sub-Agents** | *Sub-agents*. VS Code documentation. <https://code.visualstudio.com/docs/copilot/customization/custom-agents#_subagents> |
 | **GitHub Copilot Customization** | *Customizing Copilot*. GitHub documentation. <https://docs.github.com/en/copilot/customizing-copilot> |
 | **Chain of Verification** | Dhuliawala, S. et al. (2023). *Chain-of-Verification Reduces Hallucination in Large Language Models*. arXiv:2309.11495 |
 | **Mississippi Repository** | Real-world examples under `.github/agents/` and `.github/instructions/` in this repository |

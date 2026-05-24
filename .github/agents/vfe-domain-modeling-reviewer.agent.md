@@ -63,8 +63,8 @@ Check:
 - Validation location.
 - Business rule placement.
 - Anemic model risks.
-- Over-modelled domain risks.
-- Technical modelling where domain modelling is required.
+- Over-modeled domain risks.
+- Technical modeling where domain modeling is required.
 
 ## Artifact responsibilities
 

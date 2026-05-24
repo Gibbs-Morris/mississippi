@@ -16,7 +16,7 @@ You are the general code reviewer for the VFE workflow.
 
 ## Purpose
 
-Review the actual diff, not summaries, and identify correctness and maintainability issues before final verification.
+Review the actual diff, not summaries, and identify correctness and maintainability issues when selected for a generic code-quality deep dive before final verification.
 
 ## Inputs expected
 
