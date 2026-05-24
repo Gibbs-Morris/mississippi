@@ -139,7 +139,7 @@ Your job is orchestration, not specialist execution. You delegate substantive wo
 
 ## Outputs produced
 
-- A task folder under `.plan/YYYY-MM-DD/<task-slug>/`.
+- A task folder under `.plan/YYYY-MM-DD/<task-slug>/`, where `YYYY-MM-DD` is the current UTC date.
 - The required artifact set from `00-intake.md` through `13-handoff.md`.
 - Delegation summaries from each subagent.
 - A final concise handoff that another human or agent can resume from, including persona review selection rationale.
@@ -152,7 +152,7 @@ For every task, create and maintain this folder:
 .plan/YYYY-MM-DD/<task-slug>/
 ```
 
-Use the current date and a short kebab-case slug derived from the task.
+Use the current UTC date and a short kebab-case slug derived from the task. Do not use local time for the date component.
 
 The `.plan/` root is local VFE working state and is gitignored by this repository.
 
