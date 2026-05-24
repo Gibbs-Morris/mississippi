@@ -41,7 +41,10 @@ internal static class SagaLifecycleEventClassifier
     ///     Determines whether the event is a saga input event emitted immediately after saga start.
     /// </summary>
     /// <param name="eventData">The domain event to classify.</param>
-    /// <returns><see langword="true" /> when the event is a generic <see cref="SagaInputProvided{TInput}" />; otherwise, <see langword="false" />.</returns>
+    /// <returns>
+    ///     <see langword="true" /> when the event is a generic <see cref="SagaInputProvided{TInput}" />; otherwise,
+    ///     <see langword="false" />.
+    /// </returns>
     public static bool IsStartInputEvent(
         object eventData
     )
