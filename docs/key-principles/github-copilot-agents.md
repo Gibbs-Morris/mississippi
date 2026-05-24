@@ -219,8 +219,31 @@ You are a [role description]. Your job is to [mission].
 |---|---|---|---|
 | `name` | Yes | string | Display name of the agent |
 | `description` | Yes | string | One-line description shown in the picker and used for routing |
+| `tools` | No | array | Tool aliases, extension tools, or MCP tool groups available to the agent |
+| `model` | No | string or array | Preferred model or ordered fallback list; host default is used when omitted |
+| `argument-hint` | No | string | Input guidance shown for user-invocable agents |
+| `user-invocable` | No | boolean | Whether the agent appears in the picker; defaults to `true` |
+| `disable-model-invocation` | No | boolean | Whether other agents are prevented from invoking this agent as a subagent; defaults to `false` |
 | `metadata` | No | object | Arbitrary key-value pairs for organisational use |
 | `handoffs` | No | array | Sub-agent delegation definitions (see Key-Line 3) |
+| `hooks` | No | object | Inline lifecycle hooks scoped to the agent |
+
+Common tool aliases include:
+
+| Alias | Purpose |
+|---|---|
+| `read` | Read file contents |
+| `search` | Search files or text |
+| `edit` | Edit files |
+| `execute` | Run shell commands |
+| `agent` | Invoke custom agents as subagents |
+| `web` | Fetch URLs and web content |
+| `todo` | Manage task lists |
+
+Agents should still use the smallest practical tool set. For example, review
+agents usually need `read`, `search`, and sometimes `execute`, while builder or
+orchestrator agents may need `edit`, `execute`, `agent`, or `todo` because their
+role requires delegation, validation, or task tracking.
 
 ### The Markdown Body (System Prompt)
 
