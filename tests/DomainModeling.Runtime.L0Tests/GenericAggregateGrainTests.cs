@@ -69,6 +69,7 @@ public class GenericAggregateGrainTests
         Mock<IRootReducer<AggregateGrainTestAggregate>>? rootReducerMock = null,
         IOptions<AggregateEffectOptions>? effectOptions = null,
         Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>>? loggerMock = null,
+        Mock<ISagaReminderRegistry>? sagaReminderRegistryMock = null,
         IEnumerable<IFireAndForgetEffectRegistration<AggregateGrainTestAggregate>>? fireAndForgetEffectRegistrations =
             null,
         IRootEventEffect<AggregateGrainTestAggregate>? rootEventEffect = null,
@@ -93,6 +94,7 @@ public class GenericAggregateGrainTests
         rootReducerMock.Setup(r => r.GetReducerHash()).Returns(TestReducerHash);
         effectOptions ??= Options.Create(new AggregateEffectOptions());
         loggerMock ??= new();
+        sagaReminderRegistryMock ??= new();
         fireAndForgetEffectRegistrations ??= [];
         return new(
             throwOnNullContext ? null! : grainContextMock!.Object,
@@ -103,8 +105,10 @@ public class GenericAggregateGrainTests
             snapshotGrainFactoryMock.Object,
             rootReducerMock.Object,
             effectOptions,
+            TimeProvider.System,
             loggerMock.Object,
             fireAndForgetEffectRegistrations,
+            sagaReminderRegistryMock.Object,
             rootEventEffect);
     }
 
@@ -136,6 +140,7 @@ public class GenericAggregateGrainTests
         Mock<IRootReducer<AggregateGrainTestAggregate>> rootReducerMock = new();
         IOptions<AggregateEffectOptions> effectOptions = Options.Create(new AggregateEffectOptions());
         Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>> loggerMock = new();
+        Mock<ISagaReminderRegistry> reminderRegistryMock = new();
         Assert.Throws<ArgumentNullException>(() => new GenericAggregateGrain<AggregateGrainTestAggregate>(
             grainContextMock.Object,
             grainFactoryMock.Object,
@@ -145,8 +150,10 @@ public class GenericAggregateGrainTests
             snapshotFactoryMock.Object,
             rootReducerMock.Object,
             effectOptions,
+            TimeProvider.System,
             loggerMock.Object,
-            []));
+            [],
+            reminderRegistryMock.Object));
     }
 
     /// <summary>
@@ -283,6 +290,7 @@ public class GenericAggregateGrainTests
         Mock<IRootReducer<AggregateGrainTestAggregate>> rootReducerMock = new();
         rootReducerMock.Setup(r => r.GetReducerHash()).Returns(TestReducerHash);
         Mock<ILogger<GenericAggregateGrain<AggregateGrainTestAggregate>>> loggerMock = new();
+        Mock<ISagaReminderRegistry> reminderRegistryMock = new();
         IFireAndForgetEffectRegistration<AggregateGrainTestAggregate>[] registrations = [registrationMock.Object];
         GenericAggregateGrain<AggregateGrainTestAggregate> grain = new(
             grainContextMock.Object,
@@ -293,8 +301,10 @@ public class GenericAggregateGrainTests
             snapshotFactoryMock.Object,
             rootReducerMock.Object,
             Options.Create(new AggregateEffectOptions()),
+            TimeProvider.System,
             loggerMock.Object,
-            registrations);
+            registrations,
+            reminderRegistryMock.Object);
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act

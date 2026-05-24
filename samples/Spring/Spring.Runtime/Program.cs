@@ -68,10 +68,11 @@ builder.Services.AddOpenTelemetry()
     .WithLogging()
     .UseOtlpExporter();
 
-// Add Aspire-managed Azure Storage clients for Orleans clustering and grain state
+// Add Aspire-managed Azure Storage clients for Orleans clustering, reminders, and grain state
 // These are configured by the AppHost via WithReference
 // Must use Keyed variants so Orleans can resolve via GetRequiredKeyedService<T>(serviceKey)
 builder.AddKeyedAzureTableServiceClient("clustering");
+builder.AddKeyedAzureTableServiceClient("reminders");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
 
 // Add Aspire-managed Cosmos client for event sourcing storage (Brooks + Snapshots)

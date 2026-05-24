@@ -59,6 +59,9 @@ StrykerOutput/
 .scratchpad/
 !.scratchpad/.gitignore
 
+# Local VFE planning artifacts (ephemeral, do not commit)
+.plan/
+
 # Local Clean Squad working state (ephemeral, do not commit)
 .thinking/
 
