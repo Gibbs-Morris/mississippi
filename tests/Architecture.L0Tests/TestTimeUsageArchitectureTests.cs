@@ -31,8 +31,8 @@ public sealed partial class TestTimeUsageArchitectureTests
 
     private static IEnumerable<string> EnumerateTestFiles()
     {
-        string testsRoot = Path.Combine(RepositoryRoot, "tests");
-        string samplesRoot = Path.Combine(RepositoryRoot, "samples");
+        string testsRoot = Path.Join(RepositoryRoot, "tests");
+        string samplesRoot = Path.Join(RepositoryRoot, "samples");
         IEnumerable<string> repositoryTests = Directory.EnumerateFiles(testsRoot, "*.cs", SearchOption.AllDirectories);
         IEnumerable<string> sampleTests = Directory.EnumerateFiles(samplesRoot, "*.cs", SearchOption.AllDirectories)
             .Where(static path => IsSampleTestPath(path));
@@ -43,7 +43,7 @@ public sealed partial class TestTimeUsageArchitectureTests
     {
         for (DirectoryInfo? current = new(AppContext.BaseDirectory); current is not null; current = current.Parent)
         {
-            if (File.Exists(Path.Combine(current.FullName, "go.ps1")))
+            if (File.Exists(Path.Join(current.FullName, "go.ps1")))
             {
                 return current.FullName;
             }
