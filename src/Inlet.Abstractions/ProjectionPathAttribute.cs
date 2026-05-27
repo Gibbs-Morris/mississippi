@@ -34,17 +34,7 @@ namespace Mississippi.Inlet.Abstractions;
 ///             <item>SignalR subscriptions: subscribe to <c>{path}</c> with entity ID</item>
 ///         </list>
 ///     </para>
-///     <para>
-///         Example usage:
-///         <code>
-///             // Server-side projection (in Domain project):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesProjection { ... }
-///             // Client-side DTO (in Contracts project, WASM-safe):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesDto { ... }
-///         </code>
-///     </para>
+         Refer to sample implementations in the repository for usage examples.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class ProjectionPathAttribute : Attribute
