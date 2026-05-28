@@ -26,19 +26,19 @@ namespace Mississippi.DomainModeling.Gateway;
 ///             [Route("api/users/{entityId}")]
 ///             public class UserController : AggregateControllerBase&lt;UserAggregate&gt;
 ///             {
-///                 private readonly IUserService _service;
 ///                 public UserController(
 ///                     IUserService service,
 ///                     ILogger&lt;UserController&gt; logger) : base(logger)
 ///                 {
-///                     _service = service;
+///                     Service = service;
 ///                 }
+///                 private IUserService Service { get; }
 ///                 [HttpPost("register")]
 ///                 public Task&lt;ActionResult&lt;OperationResult&gt;&gt; RegisterAsync(
 ///                     [FromRoute] string entityId,
 ///                     [FromBody] RegisterUser command,
 ///                     CancellationToken ct = default)
-///                     =&gt; ExecuteAsync(entityId, command, _service.RegisterAsync, ct);
+///                     =&gt; ExecuteAsync(entityId, command, Service.RegisterAsync, ct);
 ///             }
 ///         </code>
 ///     </para>
