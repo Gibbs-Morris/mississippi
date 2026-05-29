@@ -35,15 +35,9 @@ namespace Mississippi.Inlet.Abstractions;
 ///         </list>
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             // Server-side projection (in Domain project):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesProjection { ... }
-///             // Client-side DTO (in Contracts project, WASM-safe):
-///             [ProjectionPath("chat/channels")]
-///             public sealed record ChannelMessagesDto { ... }
-///         </code>
+///         Both server-side projections and client-side DTOs use this attribute
+///         with matching path values to enable subscription routing.
+///         Refer to the samples for complete projection and DTO pairing patterns.
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
