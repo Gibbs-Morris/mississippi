@@ -44,6 +44,8 @@ public sealed class SpringFixture
 
     private bool disposed;
 
+    private HttpClient? gatewayHttpClient;
+
     private IPlaywright? playwright;
 
     private string? previousAuthProofModeValue;
@@ -72,25 +74,12 @@ public sealed class SpringFixture
     /// <exception cref="InvalidOperationException">Thrown if the app is not initialized.</exception>
     public HttpClient CreateHttpClient()
     {
-        if (app is null)
+        if (gatewayHttpClient is null)
         {
             throw new InvalidOperationException("Application not initialized.");
         }
 
-#pragma warning disable CA2000 // L2 test fixture hands HttpClient ownership to the returned client
-#pragma warning disable CA5400 // L2 tests intentionally trust the local dev certificate
-#pragma warning disable IDISP014 // L2 tests create one short-lived client per call
-        HttpClientHandler handler = new()
-        {
-            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
-        };
-        return new HttpClient(handler, disposeHandler: true)
-        {
-            BaseAddress = GatewayBaseUri,
-        };
-#pragma warning restore CA5400
-#pragma warning restore IDISP014
-#pragma warning restore CA2000
+        return gatewayHttpClient;
     }
 
     /// <summary>
@@ -121,6 +110,7 @@ public sealed class SpringFixture
 #pragma warning disable VSTHRD002 // Synchronous waiting is acceptable in Dispose for resource cleanup
         browser?.DisposeAsync().AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
+        gatewayHttpClient?.Dispose();
         playwright?.Dispose();
         app?.Dispose();
         Environment.SetEnvironmentVariable(AuthProofModeEnvironmentVariable, previousAuthProofModeValue);
@@ -140,6 +130,7 @@ public sealed class SpringFixture
             await browser.DisposeAsync();
         }
 
+        gatewayHttpClient?.Dispose();
         playwright?.Dispose();
         if (app is not null)
         {
@@ -186,6 +177,10 @@ public sealed class SpringFixture
 
             // Get the gateway HTTP endpoint (returns Uri directly)
             GatewayBaseUri = app.GetEndpoint("spring-gateway", "http");
+            gatewayHttpClient = new()
+            {
+                BaseAddress = GatewayBaseUri,
+            };
 
             // Initialize Playwright
             playwright = await Playwright.CreateAsync();
