@@ -77,7 +77,20 @@ public sealed class SpringFixture
             throw new InvalidOperationException("Application not initialized.");
         }
 
-        return app.CreateHttpClient("spring-gateway");
+#pragma warning disable CA2000 // L2 test fixture hands HttpClient ownership to the returned client
+#pragma warning disable CA5400 // L2 tests intentionally trust the local dev certificate
+#pragma warning disable IDISP014 // L2 tests create one short-lived client per call
+        HttpClientHandler handler = new()
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+        };
+        return new HttpClient(handler, disposeHandler: true)
+        {
+            BaseAddress = GatewayBaseUri,
+        };
+#pragma warning restore CA5400
+#pragma warning restore IDISP014
+#pragma warning restore CA2000
     }
 
     /// <summary>
