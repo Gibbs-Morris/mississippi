@@ -66,11 +66,13 @@ public sealed class SpringFixture
     public bool IsInitialized { get; private set; }
 
     /// <summary>
-    ///     Creates an <see cref="HttpClient" /> configured to communicate with the Spring gateway.
-    ///     Uses Aspire's <see cref="DistributedApplicationHostingTestingExtensions.CreateHttpClient" />
-    ///     which handles internal proxy routing correctly.
+    ///     Returns the fixture-owned <see cref="HttpClient" /> configured to communicate with the Spring gateway.
+    ///     The client targets the plain HTTP endpoint obtained via <c>app.GetEndpoint("spring-gateway", "http")</c>.
+    ///     No certificate validation bypass is required because the Spring gateway does not configure
+    ///     HTTPS redirection middleware, so HTTP requests are served directly without TLS.
+    ///     Callers must not dispose the returned client — its lifetime is managed by the fixture.
     /// </summary>
-    /// <returns>An <see cref="HttpClient" /> configured for the Spring gateway.</returns>
+    /// <returns>The shared <see cref="HttpClient" /> configured for the Spring gateway.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the app is not initialized.</exception>
     public HttpClient CreateHttpClient()
     {
