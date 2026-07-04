@@ -44,6 +44,8 @@ public sealed class SpringFixture
 
     private bool disposed;
 
+    private HttpClient? gatewayHttpClient;
+
     private IPlaywright? playwright;
 
     private string? previousAuthProofModeValue;
@@ -64,20 +66,22 @@ public sealed class SpringFixture
     public bool IsInitialized { get; private set; }
 
     /// <summary>
-    ///     Creates an <see cref="HttpClient" /> configured to communicate with the Spring gateway.
-    ///     Uses Aspire's <see cref="DistributedApplicationHostingTestingExtensions.CreateHttpClient" />
-    ///     which handles internal proxy routing correctly.
+    ///     Returns the fixture-owned <see cref="HttpClient" /> configured to communicate with the Spring gateway.
+    ///     The client targets the plain HTTP endpoint obtained via <c>app.GetEndpoint("spring-gateway", "http")</c>.
+    ///     No certificate validation bypass is required because the Spring gateway does not configure
+    ///     HTTPS redirection middleware, so HTTP requests are served directly without TLS.
+    ///     Callers must not dispose the returned client — its lifetime is managed by the fixture.
     /// </summary>
-    /// <returns>An <see cref="HttpClient" /> configured for the Spring gateway.</returns>
+    /// <returns>The shared <see cref="HttpClient" /> configured for the Spring gateway.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the app is not initialized.</exception>
     public HttpClient CreateHttpClient()
     {
-        if (app is null)
+        if (gatewayHttpClient is null)
         {
             throw new InvalidOperationException("Application not initialized.");
         }
 
-        return app.CreateHttpClient("spring-gateway");
+        return gatewayHttpClient;
     }
 
     /// <summary>
@@ -108,6 +112,7 @@ public sealed class SpringFixture
 #pragma warning disable VSTHRD002 // Synchronous waiting is acceptable in Dispose for resource cleanup
         browser?.DisposeAsync().AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
+        gatewayHttpClient?.Dispose();
         playwright?.Dispose();
         app?.Dispose();
         Environment.SetEnvironmentVariable(AuthProofModeEnvironmentVariable, previousAuthProofModeValue);
@@ -127,6 +132,7 @@ public sealed class SpringFixture
             await browser.DisposeAsync();
         }
 
+        gatewayHttpClient?.Dispose();
         playwright?.Dispose();
         if (app is not null)
         {
@@ -173,6 +179,10 @@ public sealed class SpringFixture
 
             // Get the gateway HTTP endpoint (returns Uri directly)
             GatewayBaseUri = app.GetEndpoint("spring-gateway", "http");
+            gatewayHttpClient = new()
+            {
+                BaseAddress = GatewayBaseUri,
+            };
 
             // Initialize Playwright
             playwright = await Playwright.CreateAsync();
