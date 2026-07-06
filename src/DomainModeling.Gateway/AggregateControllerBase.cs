@@ -21,26 +21,13 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         or add additional endpoints.
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserController : AggregateControllerBase&lt;UserAggregate&gt;
-///             {
-///                 private readonly IUserService _service;
-///                 public UserController(
-///                     IUserService service,
-///                     ILogger&lt;UserController&gt; logger) : base(logger)
-///                 {
-///                     _service = service;
-///                 }
-///                 [HttpPost("register")]
-///                 public Task&lt;ActionResult&lt;OperationResult&gt;&gt; RegisterAsync(
-///                     [FromRoute] string entityId,
-///                     [FromBody] RegisterUser command,
-///                     CancellationToken ct = default)
-///                     =&gt; ExecuteAsync(entityId, command, _service.RegisterAsync, ct);
-///             }
-///         </code>
+///         Derived controllers typically implement command-specific actions that delegate to
+///         <c>ExecuteAsync</c> so they can reuse the common logging, exception handling, and
+///         success/failure response formatting in this base type.
+///     </para>
+///     <para>
+///         Override <c>OnBeforeExecuteAsync</c> to short-circuit requests or add pre-execution checks,
+///         and override <c>OnAfterExecuteAsync</c> for post-execution concerns such as headers or metrics.
 ///     </para>
 ///     <para>
 ///         This base class provides:
