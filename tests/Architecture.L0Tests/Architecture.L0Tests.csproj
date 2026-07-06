@@ -22,6 +22,7 @@
         <ProjectReference Include="..\..\src\Tributary.Runtime\Tributary.Runtime.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Abstractions\Tributary.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Abstractions\Tributary.Runtime.Storage.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Blobs\Tributary.Runtime.Storage.Blobs.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Serialization.Abstractions\Brooks.Serialization.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Brooks.Serialization.Json\Brooks.Serialization.Json.csproj" />
         <ProjectReference Include="..\..\src\Tributary.Runtime.Storage.Cosmos\Tributary.Runtime.Storage.Cosmos.csproj" />
