@@ -10,15 +10,15 @@ This document is a visual companion to [WORKFLOW.md](WORKFLOW.md).
 ```mermaid
 flowchart TD
     Authority["Authority note:<br/>WORKFLOW.md is authoritative.<br/>This Mermaid file is a visual companion only."]
-    Principles["Cross-cutting note:<br/>All agents apply first principles and CoV.<br/>cs Entrepreneur is the optional pre-governed public intake agent.<br/>cs Product Owner is the sole governed orchestrator."]
-    SharedState["Cross-cutting note:<br/>Governed agents share state through .thinking/&lt;task&gt;/.<br/>cs Entrepreneur is the explicit pre-governed exception and does not create or use this shared state.<br/>workflow-audit.json is the authoritative execution record.<br/>Activity-log and handover updates are mandatory secondary evidence."]
-    AuditOwnership["Cross-cutting note:<br/>cs Product Owner writes canonical audit events for Phases 1-9.<br/>cs PR Manager executes only bounded delegated Phase 9 PR-surface work and does not write canonical facts.<br/>cs Scribe publishes derived audit output only."]
+    Principles["Cross-cutting note:<br/>All agents apply first principles and CoV.<br/>cs Entrepreneur is the optional pre-governed public intake agent.<br/>cs River Orchestrator is the sole governed orchestrator."]
+    SharedState["Cross-cutting note:<br/>Governed agents share state through .thinking/&lt;task&gt;/.<br/>cs Entrepreneur is the explicit pre-governed exception and does not create or use this shared state.<br/>workflow-audit/ with immutable meta.json plus immutable seven-digit event files is the authoritative execution record.<br/>Activity-log and handover updates are mandatory secondary evidence."]
+    AuditOwnership["Cross-cutting note:<br/>cs River Orchestrator writes canonical audit events for Phases 1-9.<br/>cs PR Manager executes only bounded delegated Phase 9 PR-surface work and does not write canonical facts.<br/>cs Scribe publishes derived audit output only."]
     AuditRules["Cross-cutting note:<br/>sequence is the only ordering authority.<br/>Canonical eventUtc timestamps are mandatory for timing and diagnostics only and never override sequence.<br/>Narrative logs, Mermaid, and PR prose are supporting or derived evidence only."]
-    AuditDelegation["Cross-cutting note:<br/>Only one canonical writer may be active for the workflow run at a time.<br/>Phase 9 specialist work starts only after explicit Product Owner delegation that names the bounded task slice, expected artifact output or artifact bundle, completion signal, closure condition, details.allowedActions, and details.authorizedTargets without transferring canonical ownership.<br/>Blocked startup or recovery never transfers canonical ownership away from cs Product Owner.<br/>A bounded stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active so stale publication has no integrity window.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch.<br/>The first canonical append uses sequence 1 with expected prior sequence 0."]
-    AuditEventContract["Cross-cutting note:<br/>Every canonical event uses the v3 semantic envelope: sequence, eventUtc, logicalEventId, actor, phase, eventType,<br/>appendPrecondition, workItemId and rootWorkItemId when meaningful, spanId, causedBy, closes, outcome, summary, reasonCode,<br/>artifacts as evidence bindings, artifactTransitions for lifecycle meaning, iterationId, provenance, and details."]
-    StateSupportContract["Cross-cutting note:<br/>state.json is runtime support only and mirrors the workflow state contract exactly.<br/>It includes workflowContractFingerprint, currentSequence, currentOwner, openWait, and lastCompiledAtUtc.<br/>currentOwner means canonical ownership only and never delegated execution ownership.<br/>It never repairs canonical facts from workflow-audit.json."]
+    AuditDelegation["Cross-cutting note:<br/>Only one canonical writer may be active for the workflow run at a time.<br/>Phase 9 specialist work starts only after explicit cs River Orchestrator delegation that names the bounded task slice, a fresh expected artifact output or artifact bundle, completion signal, closure condition, details.allowedActions, and details.authorizedTargets without transferring canonical ownership.<br/>Delegated pass-back is file-first, and cs River Orchestrator validates returned artifact existence and containment before canonical completion.<br/>Blocked startup or recovery never transfers canonical ownership away from cs River Orchestrator.<br/>A bounded stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active so stale publication has no integrity window.<br/>Every canonical append declares the expected prior sequence and fails closed on tail mismatch.<br/>The first canonical append uses sequence 1 with expected prior sequence 0."]
+    AuditEventContract["Cross-cutting note:<br/>Every canonical event uses the v4 semantic envelope and is stored as one immutable event file: sequence, eventUtc, logicalEventId, actor, phase, eventType,<br/>appendPrecondition, workItemId and rootWorkItemId when meaningful, spanId, causedBy, closes, outcome, summary, reasonCode,<br/>artifacts as evidence bindings, artifactTransitions for lifecycle meaning, iterationId, provenance, and details."]
+    StateSupportContract["Cross-cutting note:<br/>state.json is runtime support only and mirrors the workflow state contract exactly.<br/>It includes workflowContractFingerprint, currentSequence, currentOwner, openWait, and lastCompiledAtUtc.<br/>currentSequence matches the highest durable event file or 0 when only meta.json exists.<br/>currentOwner means canonical ownership only and never delegated execution ownership.<br/>It never repairs canonical facts from workflow-audit/."]
     TrustModel["Cross-cutting note:<br/>Reviewer-facing audit output is policy-authoritative and freshness-verifiable within this repo,<br/>but not tamper-resistant or authenticated.<br/>Evidence-bearing artifacts require content digests or immutable external identities before publication."]
-    ProvenanceContract["Cross-cutting note:<br/>Every detailed audit artifact binds to HEAD SHA, ledger watermark, ledgerDigest, workflowContractFingerprint,<br/>generation timestamp, and generator identity.<br/>When merge readiness depends on CI, cs Product Owner verifies and attaches the current normalized required CI-result identity set before publication or directed PR-surface publication.<br/>Required CI identity changes alone do not force detailed-audit recompilation, and merge readiness never passes with stale, missing, or mismatched provenance."]
+    ProvenanceContract["Cross-cutting note:<br/>Every detailed audit artifact binds to HEAD SHA, ledger watermark, ledgerDigest, workflowContractFingerprint,<br/>generation timestamp, and generator identity.<br/>When merge readiness depends on CI, cs River Orchestrator verifies and attaches the current normalized required CI-result identity set before publication or directed PR-surface publication.<br/>Required CI identity changes alone do not force detailed-audit recompilation, and merge readiness never passes with stale, missing, or mismatched provenance."]
     VerdictContract["Cross-cutting note:<br/>Verdicts are Conformant, ConformantWithDeviations, NonConformant, Blocked, or Untrusted.<br/>Missing, malformed, or policy-violating evidence never yields a conformant verdict from current policy-authoritative evidence."]
     EvidenceContract["Cross-cutting note:<br/>Major completion claims require sufficient artifact evidence.<br/>Schema validation is required where the contract defines canonical or derived metadata structure.<br/>Supporting logs may corroborate but never repair missing canonical facts.<br/>Missing evidence maps to NonConformant, Blocked, or Untrusted based on policy violation, incomplete run, or trust failure."]
     TimingContract["Cross-cutting note:<br/>Timing uses elapsed, active-agent, human-wait, and system-wait totals derived from canonical eventUtc values.<br/>Buckets are mutually exclusive; unmatched or overlapping waits and impossible totals invalidate trust."]
@@ -28,7 +28,7 @@ flowchart TD
 
     subgraph EntryPoint["Public Intake"]
         User([User request]) -->|rough idea| Entrepreneur["cs Entrepreneur shapes one Story Pack candidate before governed intake"]
-        User -->|direct governed intake| ProductOwner["cs Product Owner starts governed work and remains the sole governed orchestrator"]
+        User -->|direct governed intake| ProductOwner["cs River Orchestrator starts governed work and remains the sole governed orchestrator"]
         Entrepreneur --> StoryPack["Story Pack candidate"]
         StoryPack --> G0{"G0 Intake Gate<br/>Story Pack candidate"}
         G0 -->|APPROVED| ProductOwner
@@ -36,12 +36,12 @@ flowchart TD
     end
 
     subgraph Phase1["Phase 1: Intake & Discovery"]
-        P1Setup["Create .thinking/&lt;date&gt;-&lt;task-slug&gt;/, state.json, workflow-audit.json, activity-log.md, and 00-intake.md"]
+        P1Setup["Create .thinking/&lt;date&gt;-&lt;task-slug&gt;/, state.json, workflow-audit/ with meta.json and 0000001.json, activity-log.md, and 00-intake.md"]
         P1Ask["Ask 5 discovery questions"]
         P1Clear{"Requirements sufficiently clear?"}
         P1Analyze["Invoke cs Requirements Analyst for gap analysis and the next 5 questions"]
         P1Record["Record answers and ask the next 5 questions"]
-        P1Synthesis["Write 01-discovery/requirements-synthesis.md"]
+        P1Synthesis["Invoke cs Discovery Synthesizer to write 01-discovery/requirements-synthesis.md"]
 
         P1Setup --> P1Ask --> P1Clear
         P1Clear -- No --> P1Analyze --> P1Record --> P1Clear
@@ -51,7 +51,7 @@ flowchart TD
     subgraph Phase2["Phase 2: Three Amigos + Adoption"]
         P2Invoke["Invoke cs Business Analyst, cs Tech Lead, cs QA Analyst, and cs Developer Evangelist one at a time"]
         P2Outputs["Each sub-agent writes its perspective document"]
-        P2Synthesis["Write 02-three-amigos/synthesis.md"]
+        P2Synthesis["Invoke cs Three Amigos Synthesizer to write 02-three-amigos/synthesis.md"]
         P2Gaps{"Critical gaps identified?"}
         P2Questions["Ask the user additional questions before proceeding"]
 
@@ -108,7 +108,7 @@ flowchart TD
         P6Diff["Use git diff main...HEAD to identify changed files"]
         P6Review["Invoke cs Reviewer Pedantic, cs Reviewer Strategic, cs Reviewer Security, cs Reviewer DX, cs Reviewer Performance, and cs Developer Evangelist in sequence"]
         P6Experts["Invoke relevant approved domain experts from the Agent Roster"]
-        P6Synthesis["Synthesize all review output"]
+        P6Synthesis["Invoke cs Code Review Synthesizer to deduplicate and prioritize all review output"]
         P6Findings{"Review findings remain?"}
         P6Remediate["Fix each finding or document why it was declined"]
 
@@ -120,15 +120,16 @@ flowchart TD
         P7Lead["Invoke cs QA Lead to review test strategy and coverage"]
         P7Exploratory["Invoke cs QA Exploratory"]
         P7Mutation["Invoke cs Test Engineer for mutation testing validation"]
+        P7Synthesis["Invoke cs QA Synthesizer to write 07-qa/qa-readiness.md"]
         P7Gaps{"QA gaps identified?"}
         P7Remediate["Feed QA gaps back for remediation of the current increment"]
 
-        P7Lead --> P7Exploratory --> P7Mutation --> P7Gaps
+        P7Lead --> P7Exploratory --> P7Mutation --> P7Synthesis --> P7Gaps
         P7Gaps -- Yes --> P7Remediate
     end
 
     subgraph Phase8["Phase 8: Documentation"]
-        P8Scope["Assess documentation scope from the branch diff and .thinking artifacts"]
+        P8Scope["Invoke cs Documentation Scope Synthesizer to assess documentation scope from the branch diff and .thinking artifacts"]
         P8UserFacing{"User-facing changes exist?"}
         P8Skip["Record the documentation skip reason in scope-assessment.md"]
         P8Writer["Invoke cs Technical Writer"]
@@ -146,22 +147,22 @@ flowchart TD
     end
 
     subgraph Phase9["Phase 9: PR Creation & Merge Readiness"]
-        P9Manager["cs Product Owner remains the canonical Phase 9 owner and records every reviewer-significant Phase 9 fact"]
-        P9Startup["Record a bounded delegation to cs PR Manager that names the bounded task slice, details.expectedOutputPath, completion signal, closure condition, details.allowedActions, and details.authorizedTargets; blocked startup or recovery never transfers ownership"]
-        P9Scribe["cs Product Owner invokes cs Scribe when HEAD, ledger, workflow contract, or reviewer-meaningful canonical facts require a fresh stable-snapshot audit"]
+        P9Manager["cs River Orchestrator remains the canonical Phase 9 owner and records every reviewer-significant Phase 9 fact"]
+        P9Startup["Record a bounded delegation to cs PR Manager that names the bounded task slice, a fresh details.expectedOutputPath, completion signal, closure condition, details.allowedActions, and details.authorizedTargets; blocked startup or recovery never transfers ownership"]
+        P9Scribe["cs River Orchestrator invokes cs Scribe when HEAD, ledger, workflow contract, or reviewer-meaningful canonical facts require a fresh stable-snapshot audit"]
         P9Execute["cs PR Manager executes only the delegated PR-surface work and returns artifacts and evidence"]
-        P9Stale["At first observation, cs Product Owner records invalidation canonically and the continuously delegated stale-marker capability marks the PR surface stale immediately; do not let the 300-second wait delay invalidation"]
-        P9Verify["cs Product Owner verifies workflow-audit provenance plus the current required CI identity set before republication or merge-readiness evaluation"]
-        P9Publish["cs Product Owner decides publication or republication; cs PR Manager applies the PR-surface mutation only when delegated"]
+        P9Stale["At first observation, cs River Orchestrator records invalidation canonically and the continuously delegated stale-marker capability marks the PR surface stale immediately; do not let the 300-second wait delay invalidation"]
+        P9Verify["cs River Orchestrator verifies workflow-audit provenance plus the current required CI identity set before republication or merge-readiness evaluation"]
+        P9Publish["cs River Orchestrator decides publication or republication; cs PR Manager applies the PR-surface mutation only when delegated"]
         P9Wait["After pushing to an open PR, wait 300 seconds unless stale invalidation work preempts the wait"]
         P9Poll["Poll for unresolved review comments"]
         P9Comments{"New unaddressed comments?"}
         P9Scope{"Comment is in scope?"}
         P9Address["Fix, commit, push, reply with evidence, and resolve the thread"]
         P9OutOfScope["Reply with reasoned explanation and leave the thread open for the reviewer"]
-        P9Record["cs Product Owner records the resulting canonical fact, closes or reissues the delegation, and decides whether publication or merge readiness changed"]
+        P9Record["cs River Orchestrator records the resulting canonical fact, closes or reissues the delegation, and decides whether publication or merge readiness changed"]
         P9Cap{"Iteration cap reached?"}
-        P9Ready["cs Product Owner assembles the merge-readiness package and evaluates current evidence canonically"]
+        P9Ready["cs River Orchestrator invokes cs Merge Readiness Evaluator and evaluates current evidence canonically"]
         G3{"G3 Merge Gate<br/>Merge-readiness package + rolled-up review, QA, and documentation conclusions"}
         P9Stop(["Stop and report remaining unresolved threads for human review"])
         P9Done([Done])
@@ -172,8 +173,8 @@ flowchart TD
         P9Scope -- No --> P9OutOfScope --> P9Record --> P9Cap
         P9Cap -- No --> P9Wait
         P9Cap -- Yes --> P9Stop
-        P9Comments -- No --> G3
-        G3 --|APPROVED| P9Ready --> P9Done
+            P9Comments -- No --> P9Ready --> G3
+            G3 --|APPROVED| P9Done
         G3 --|CHANGES_REQUESTED| ProductOwner
         G3 --|DEFERRED or CANCELLED| Stop3(["Stop or hold after late-stage review"])
     end
@@ -217,14 +218,14 @@ flowchart TD
     Delegation -.-> ProductOwner
 
     P3AdrNote["Architecture note:<br/>For each significant architectural decision, invoke cs ADR Keeper to publish an ADR."]
-    P3ExpertNote["Architecture note:<br/>The Product Owner may invoke approved domain experts from the Agent Roster when specialist architectural input is needed."]
+    P3ExpertNote["Architecture note:<br/>cs River Orchestrator may invoke approved domain experts from the Agent Roster when specialist architectural input is needed."]
     P4Note["Planning note:<br/>Repeat for 3 to 5 review cycles total.<br/>The reviewer subset varies by task complexity."]
     P5Note["Implementation note:<br/>Each increment is small enough to review like its own PR and includes relevant tests.<br/>TDD is used where practical."]
     P6Note["Code review note:<br/>Every changed file is reviewed by at least cs Reviewer Pedantic and cs Reviewer Strategic."]
     P8Note["Documentation note:<br/>Documentation may be skipped only when all documented skip criteria are true and the evidence is recorded."]
     P9Note["PR note:<br/>Merge readiness also requires a PR, green CI, no unresolved review comments, no open review threads,<br/>and a current Reviewer Audit Summary with verified provenance and freshness for the current HEAD and required CI identity set."]
     P9Timing["Timing note:<br/>Active agent time excludes human replies and system wait such as CI or review polling."]
-    P9Derived["Audit note:<br/>workflow-audit.md and the Reviewer Audit Summary are derived only.<br/>Missing canonical facts are fixed in workflow-audit.json, not backfilled from secondary logs.<br/>Freshness breaks must show a stale marker before any refreshed summary is republished, and the 300-second wait never delays that stale marker.<br/>If only required CI identity changes, reuse the current detailed audit and refresh the PR-surface freshness stamp instead of recompiling workflow-audit.md."]
+    P9Derived["Audit note:<br/>workflow-audit.md and the Reviewer Audit Summary are derived only.<br/>Missing canonical facts are fixed in workflow-audit/, not backfilled from secondary logs.<br/>Freshness breaks must show a stale marker before any refreshed summary is republished, and the 300-second wait never delays that stale marker.<br/>If only required CI identity changes, reuse the current detailed audit and refresh the PR-surface freshness stamp instead of recompiling workflow-audit.md."]
 
     P3AdrNote -.-> P3Adr
     P3ExpertNote -.-> P3Design
@@ -239,29 +240,32 @@ flowchart TD
 
 ## Canonical Event Contract Mirror
 
-This section explicitly mirrors the v3 canonical event contract from [WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow differ, [WORKFLOW.md](WORKFLOW.md) governs.
+This section explicitly mirrors the v4 canonical event and ledger-file contract from [WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow differ, [WORKFLOW.md](WORKFLOW.md) governs.
 
-- `workflow-audit.json` now uses `schemaVersion = clean-squad-workflow-audit/v3`.
+- `workflow-audit/` is the authoritative canonical ledger and stays flat in v4.
+- `workflow-audit/meta.json` now uses `schemaVersion = clean-squad-workflow-audit/v4`.
+- `workflow-audit/0000001.json`, `0000002.json`, and later seven-digit files store one immutable canonical event per file, named from the trusted integer `sequence` only.
 - Reviewer-significant meaning MUST be explicit in structured fields. Cause, closure, outcome, artifact lineage, and provenance MUST NOT be reconstructed from chronology, prose, secondary logs, or path changes alone.
 - Every meaningful event carries `workItemId`, `rootWorkItemId`, `spanId`, `causedBy`, `closes`, `outcome`, `artifactTransitions`, and `provenance` whenever the writer-obligation matrix requires them.
 - Every canonical event carries `appendPrecondition`, whose `expectedPriorSequence` encodes the fail-closed append expectation.
-- Every Phase 9 `delegation-recorded` event carries capability-scoped `details.allowedActions` and `details.authorizedTargets`, and the stale-marker delegation stays active while a fresh reviewer summary is published or a polling wait is active.
+- A stable snapshot captures the watermark first, then verifies immutable `meta.json` plus the contiguous `0000001.json` through `000000N.json` file set with no gaps, duplicates, unexpected sibling files, or filename and payload mismatches.
+- Every bounded delegation names a fresh expected output path or bundle path; delegated specialists write substantive outputs there first, return only concise status metadata plus artifact paths, and `cs River Orchestrator` validates returned artifact existence and containment before canonical completion.
 - `artifacts` remains evidence binding only. Artifact lifecycle meaning lives in `artifactTransitions`.
 - `details` is always serialized in canonical order and MUST use `{}` when no event-type-specific members apply.
 - The first canonical append uses `sequence = 1` and expected prior `sequence = 0`.
-- Canonical event serialization keeps the full top-level property set in the declared order; absent conditional scalars or objects use `null`, absent conditional arrays use `[]`, and empty `details` uses `{}`.
-- The digest form is minified UTF-8 JSON with no BOM, no trailing newline, and no insignificant whitespace outside JSON string values.
+- `meta.json` and each event file are minified UTF-8 JSON with no BOM, no trailing newline, and no insignificant whitespace outside JSON string values.
 - Nested object property order matches the shapes defined in `WORKFLOW.md` for `appendPrecondition`, `causedBy`, `closes`, `artifacts[]`, `artifactTransitions[]`, and `provenance`.
-- `ledgerDigestAlgorithm = sha256-canonical-json-v1` hashes the UTF-8 bytes of that canonical JSON form for the exact snapshot being compared or compiled.
+- `ledgerDigestAlgorithm = sha256-canonical-ledger-files-v1` hashes the UTF-8 bytes of canonical `meta.json`, then line-feed separators, then the exact UTF-8 bytes of each canonical event file in ascending sequence order for the verified stable snapshot.
 
-Canonical top-level shape mirror:
+Canonical `meta.json` shape mirror:
 
 ```json
 {
-    "schemaVersion": "clean-squad-workflow-audit/v3",
+    "schemaVersion": "clean-squad-workflow-audit/v4",
     "workflowContractFingerprint": "<sha256 of UTF-8 bytes of .github/clean-squad/WORKFLOW.md>",
-    "ledgerDigestAlgorithm": "sha256-canonical-json-v1",
-    "events": []
+    "ledgerDigestAlgorithm": "sha256-canonical-ledger-files-v1",
+    "sequenceFilePattern": "0000001.json (fixed-width seven digits)",
+    "createdUtc": "<ISO-8601 UTC>"
 }
 ```
 
@@ -272,7 +276,7 @@ Canonical event property-order mirror:
     "sequence": 1,
     "eventUtc": "2026-03-25T00:00:00.0000000Z",
     "logicalEventId": "phase-03-start",
-    "actor": "cs Product Owner",
+    "actor": "cs River Orchestrator",
     "phase": "architecture",
     "eventType": "phase-started",
     "appendPrecondition": {
@@ -295,12 +299,24 @@ Canonical event property-order mirror:
     "iterationId": null,
     "provenance": {
         "sourceKind": "system-triggered",
-        "recordedBy": "cs Product Owner",
+        "recordedBy": "cs River Orchestrator",
         "evidence": []
     },
     "details": {}
 }
 ```
+
+## Delegated Handoff Mirror
+
+This section explicitly mirrors the file-first delegated handoff rules from
+[WORKFLOW.md](WORKFLOW.md). If any wording here and the authoritative workflow
+differ, [WORKFLOW.md](WORKFLOW.md) governs.
+
+- Every bounded delegation names one fresh single artifact path or one fresh bundle directory in `details.expectedOutputPath` unless the delegation explicitly authorizes a different target.
+- Delegated specialists write substantive outputs only to that declared path or bundle and return only a concise summary, metadata-sized status information, artifact paths, blockers, and next-action guidance.
+- Material revisions to previously handed-back delegated artifacts publish new paths rather than silently overwriting the earlier delegated output in place.
+- `cs River Orchestrator` validates returned artifact existence and path containment before recording delegated completion canonically.
+- `artifactTransitions` is the preferred lineage mechanism when a delegated artifact is revised, replaced, or superseded.
 
 ## Human Advancement Gates Mirror
 
@@ -352,11 +368,11 @@ Reviewer-facing audit output becomes stale on any of these events:
 
 Publication and recovery rules:
 
-1. The Product Owner MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait, by recording the canonical invalidation fact and ensuring the Reviewer Audit Summary is marked stale on the PR surface with the stale reason and the last known freshness stamp.
-2. The Product Owner MUST keep a bounded stale-marker delegation active for the current PR surface whenever a fresh Reviewer Audit Summary is published or a review-polling wait is active so stale-marker publication never waits on a new delegation round-trip.
-3. The Product Owner MUST regenerate `workflow-audit.md` from a fresh stable ledger snapshot only when HEAD, ledger snapshot, workflow contract fingerprint, or reviewer-meaningful canonical output changed.
-4. When only the required CI-result identity set changes for unchanged HEAD and unchanged reviewer-meaningful canonical facts, the Product Owner MUST refresh the Reviewer Audit Summary freshness stamp and merge-readiness evaluation without regenerating `workflow-audit.md`.
-5. The Product Owner MUST republish only after `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, `workflowContractFingerprint`, and any attached required CI-result identity set.
+1. cs River Orchestrator MUST invalidate immediately at first observation of a relevant change, including during any active 300-second review-polling wait, by recording the canonical invalidation fact and ensuring the Reviewer Audit Summary is marked stale on the PR surface with the stale reason and the last known freshness stamp.
+2. cs River Orchestrator MUST keep a bounded stale-marker delegation active for the current PR surface whenever a fresh Reviewer Audit Summary is published or a review-polling wait is active so stale-marker publication never waits on a new delegation round-trip.
+3. cs River Orchestrator MUST regenerate `workflow-audit.md` from a fresh stable ledger snapshot only when HEAD, ledger snapshot, workflow contract fingerprint, or reviewer-meaningful canonical output changed.
+4. When only the required CI-result identity set changes for unchanged HEAD and unchanged reviewer-meaningful canonical facts, cs River Orchestrator MUST refresh the Reviewer Audit Summary freshness stamp and merge-readiness evaluation without regenerating `workflow-audit.md`.
+5. cs River Orchestrator MUST republish only after `workflow-audit.md` provenance matches the current HEAD SHA, ledger watermark, `ledgerDigest`, `workflowContractFingerprint`, and any attached required CI-result identity set.
 6. Keep invalidation more granular than publication so the PR description does not churn on low-signal changes.
 
 ## State and Runtime Support Mirror
@@ -376,10 +392,10 @@ This section explicitly mirrors the `state.json` runtime support contract from [
     "prNumber": null,
     "lastCommitSha": null,
     "lastCommitTimeUtc": null,
-    "workflowContractFingerprint": "<same value used by workflow-audit.json>",
+    "workflowContractFingerprint": "<same value used by workflow-audit/meta.json>",
     "audit": {
         "currentSequence": 0,
-        "currentOwner": "cs Product Owner|null",
+        "currentOwner": "cs River Orchestrator|null",
         "openWait": null,
         "lastCompiledAtUtc": null
     },
