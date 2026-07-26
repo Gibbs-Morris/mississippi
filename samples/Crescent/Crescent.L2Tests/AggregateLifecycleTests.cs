@@ -106,7 +106,7 @@ public sealed class AggregateLifecycleTests
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
         projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(160, "Final count should be 100 + 10 + 20 + 30 = 160");
+        projection.CurrentCount.Should().Be(160, "Final count should be 100 + 10 + 20 + 30 = 160");
         projection.TotalOperations.Should().Be(20, "Operations: 1 + 10 + 5 + 1 + 3 = 20");
         output.WriteLine(
             $"[Test] Projection verified: Count={projection.CurrentCount}, Operations={projection.TotalOperations}");
@@ -150,7 +150,7 @@ public sealed class AggregateLifecycleTests
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
         projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(concurrentOps, $"Count should be {concurrentOps}");
+        projection.CurrentCount.Should().Be(concurrentOps, $"Count should be {concurrentOps}");
         projection.TotalOperations.Should().Be(concurrentOps + 1, $"Operations should be {concurrentOps + 1}");
         output.WriteLine($"[Test] Concurrent completed: {successCount}/{concurrentOps} operations succeeded");
         output.WriteLine("[Test] PASSED: Concurrent commands all succeeded!");
@@ -197,7 +197,7 @@ public sealed class AggregateLifecycleTests
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
         projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(operationCount, $"Count should be {operationCount}");
+        projection.CurrentCount.Should().Be(operationCount, $"Count should be {operationCount}");
         projection.TotalOperations.Should()
             .Be(operationCount + 1, $"Operations should be {operationCount + 1} (1 init + {operationCount} inc)");
         output.WriteLine($"[Test] Throughput completed: {successCount}/{operationCount} operations succeeded");
@@ -247,7 +247,7 @@ public sealed class AggregateLifecycleTests
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
         projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(10, "Count should be 10 (only init succeeded)");
+        projection.CurrentCount.Should().Be(10, "Count should be 10 (only init succeeded)");
         projection.TotalOperations.Should().Be(1, "Only 1 successful operation (init)");
         output.WriteLine("[Test] PASSED: Validation errors properly detected!");
     }

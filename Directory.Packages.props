@@ -87,7 +87,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageVersion>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.28.0.143324">
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.30.0.144632">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>

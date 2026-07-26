@@ -160,7 +160,7 @@ public sealed class SnapshotContainerOperationsTests
             TestDocumentId,
             CancellationToken.None);
         Assert.NotNull(result);
-        Assert.Equal(TestDocumentId, result!.Id);
+        Assert.Equal(TestDocumentId, result.Id);
         Assert.Equal(expectedDoc.Data, result.Data);
     }
 

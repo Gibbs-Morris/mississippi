@@ -97,7 +97,7 @@ public class GenericAggregateGrainTests
         sagaReminderRegistryMock ??= new();
         fireAndForgetEffectRegistrations ??= [];
         return new(
-            throwOnNullContext ? null! : grainContextMock!.Object,
+            throwOnNullContext ? null! : grainContextMock.Object,
             grainFactoryMock.Object,
             brookGrainFactoryMock.Object,
             brookEventConverterMock.Object,

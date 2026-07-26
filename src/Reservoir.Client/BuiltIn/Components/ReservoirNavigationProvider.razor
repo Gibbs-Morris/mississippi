@@ -4,12 +4,22 @@
 @implements IDisposable
 
 @code {
+    private NavigationManager? navigationManager;
+    private IStore? store;
 
     [Inject]
-    private NavigationManager NavigationManager { get; set; } = default!;
+    private NavigationManager NavigationManager
+    {
+        get => navigationManager ?? throw new InvalidOperationException("NavigationManager has not been injected.");
+        set => navigationManager = value;
+    }
 
     [Inject]
-    private IStore Store { get; set; } = default!;
+    private IStore Store
+    {
+        get => store ?? throw new InvalidOperationException("Store has not been injected.");
+        set => store = value;
+    }
 
     /// <inheritdoc />
     public void Dispose()

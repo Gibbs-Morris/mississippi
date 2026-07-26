@@ -141,7 +141,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     )
     {
         ArgumentNullException.ThrowIfNull(connection);
-        await EnsureStreamSetupAsync().ConfigureAwait(false);
+        await EnsureStreamSetupAsync(connection.ConnectionAborted).ConfigureAwait(false);
         ConnectionRegistry.TryAdd(connection.ConnectionId, connection);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.ConnectAsync(hubName, ServerId).ConfigureAwait(false);

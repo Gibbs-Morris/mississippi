@@ -52,9 +52,9 @@ public sealed class SmokeConfirmTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.True(attr!.CaptureUnmatchedValues);
+        Assert.True(attr.CaptureUnmatchedValues);
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public sealed class SmokeConfirmTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
         Assert.Equal("Cancel", component.CancelText);
     }
@@ -86,7 +86,7 @@ public sealed class SmokeConfirmTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
         Assert.Equal("Confirm", component.ConfirmText);
     }
@@ -102,9 +102,9 @@ public sealed class SmokeConfirmTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.Equal(typeof(string), prop!.PropertyType);
+        Assert.Equal(typeof(string), prop.PropertyType);
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public sealed class SmokeConfirmTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        Assert.Equal(typeof(EventCallback), prop!.PropertyType);
+        Assert.Equal(typeof(EventCallback), prop.PropertyType);
     }
 
     /// <summary>
@@ -132,7 +132,7 @@ public sealed class SmokeConfirmTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        Assert.Equal(typeof(EventCallback), prop!.PropertyType);
+        Assert.Equal(typeof(EventCallback), prop.PropertyType);
     }
 
     /// <summary>
@@ -146,7 +146,7 @@ public sealed class SmokeConfirmTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 
@@ -161,7 +161,7 @@ public sealed class SmokeConfirmTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 
