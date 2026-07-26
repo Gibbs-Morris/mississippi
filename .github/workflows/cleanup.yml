@@ -30,6 +30,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Detect changed files
+        id: changed-files
+        shell: pwsh
+        env:
+          BASE_BRANCH: ${{ github.base_ref || github.event.repository.default_branch }}
+        run: |
+          $baseRef = "origin/$env:BASE_BRANCH"
+          $fileList = Join-Path $env:RUNNER_TEMP "cleanup-changed-files.txt"
+          $changedFiles = @(git diff --name-only --diff-filter=ACMR "$baseRef...HEAD")
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to determine changed files relative to $baseRef."
+          }
+
+          Set-Content -LiteralPath $fileList -Value $changedFiles
+          "file_list=$fileList" >> $env:GITHUB_OUTPUT
+          Write-Host "Found $($changedFiles.Count) changed file(s) relative to $baseRef."
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -104,29 +121,16 @@ jobs:
           dotnet tool install -g JetBrains.ReSharper.GlobalTools
         continue-on-error: false
 
-      - name: Generate legacy solution file
+      - name: Run ReSharper Cleanup Code on changed files
         shell: pwsh
         run: |
-          $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
-          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
-          Write-Host "Generating $slnPath from $slnxPath ..."
-          dotnet tool run slngen "$slnxPath" --solutionfile "$slnPath" --launch false
-          Get-Item "$slnPath" | Format-List
-
-      - name: Run ReSharper Cleanup Code
-        shell: pwsh
-        run: |
-          $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
-          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
-          Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
           $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-          dotnet tool run jb cleanupcode `
-            --profile="Built-in: Full Cleanup" `
-            --settings="${{ env.DOTSETTINGS_PATH }}" `
-            --caches-home="${{ runner.temp }}/.jb-caches" `
-            --no-updates `
-            "$slnPath" `
-            --LogLevel=TRACE
+          $fileList = "${{ steps.changed-files.outputs.file_list }}"
+          if ("${{ matrix.solution }}" -eq "samples.slnx") {
+            ./clean-up-targeted.ps1 -FileListPath $fileList -SkipMississippi
+          } else {
+            ./clean-up-targeted.ps1 -FileListPath $fileList -SkipSamples
+          }
           $stopwatch.Stop()
           $elapsed = $stopwatch.Elapsed
           Write-Host ""
@@ -139,9 +143,6 @@ jobs:
           Write-Host "========================================" -ForegroundColor Cyan
           Write-Host ""
           Write-Host "Cleanup completed."
-          echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
-          $slnFileName = Split-Path -Path $slnPath -Leaf
-          echo "SLN_FILE_NAME=$slnFileName" >> $env:GITHUB_ENV
 
       - name: Check for Uncommitted Changes
         shell: pwsh
@@ -155,19 +156,8 @@ jobs:
             git diff --color=always -- . ':!**/packages*.lock.json'
             Write-Host ""
             Write-Host "To resolve this locally run:"
-            $slnFileName = $env:SLN_FILE_NAME
-            if (-not $slnFileName -and $env:SLN_PATH) {
-              $slnFileName = Split-Path -Path $env:SLN_PATH -Leaf
-            }
-
-            if ([string]::IsNullOrWhiteSpace($slnFileName)) {
-              Write-Host "Unable to determine the solution file name for local cleanup. Check workflow logs for details."
-            }
-            else {
-              $localCommand = "dotnet tool run jb cleanupcode --profile=`"Built-in: Full Cleanup`" --settings=`"Directory.DotSettings`" $slnFileName"
-              Write-Host "Run the following from the repository root:"
-              Write-Host $localCommand
-            }
+            Write-Host "Run the following from the repository root:"
+            Write-Host "pwsh ./clean-up-targeted.ps1"
             exit 1
           } else {
             Write-Host "No modifications detected. Cleanup check passed."
