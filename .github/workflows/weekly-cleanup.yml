@@ -55,7 +55,7 @@ jobs:
             throw "Unable to inspect cleanup changes."
           }
 
-          $branchName = "automation/weekly-cleanup-${{ github.run_id }}"
+          $branchName = "automation/weekly-cleanup-${{ github.run_id }}-${{ github.run_attempt }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch --create $branchName
