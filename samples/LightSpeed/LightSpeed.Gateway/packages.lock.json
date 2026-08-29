@@ -43,8 +43,8 @@
       },
       "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
         "type": "Transitive",
-        "resolved": "10.0.110",
-        "contentHash": "v2QuCGg7GLcuILPU+S57gi2bnLMcROOBFvLjqFKb3fF420eimHOmmZdALkRkd+qMku83SaGLy2bsL8Z1WFWbVw=="
+        "resolved": "10.0.111",
+        "contentHash": "tuRbRMAM9mpzlzaHrMFFNdR3Agj9TfVvo4Exsj+vSOqTWX/dTcgFejAdmyeFsMYPCf0g6ndsAVVe3yuQUauRNw=="
       },
       "Microsoft.JSInterop.WebAssembly": {
         "type": "Transitive",
@@ -55,7 +55,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
-          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.110, )",
+          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.111, )",
           "Mississippi.Refraction.Abstractions": "[1.0.0, )",
           "Mississippi.Refraction.Client": "[1.0.0, )",
           "Mississippi.Refraction.Client.StateManagement": "[1.0.0, )",
