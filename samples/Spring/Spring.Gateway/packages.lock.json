@@ -23,20 +23,20 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly.Server": {
         "type": "Direct",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "4VZTIYe3nJ3im3ILpcpPp9LJbJ43lYeDAJSQQosAogz889by8FRaMCpjo8YFeXLBFDGpNYJSBPNBYLdeq8bn1A==",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "El0lkzjqwWVKmFC4tS0orMxysMNwElGNM1lLNYyqBh8SLsP5c+EDDrZS4FAv0bcqc+t1nxosnzqrd0ob+XASPQ==",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.10"
+          "Microsoft.AspNetCore.Components.WebAssembly": "10.0.11"
         }
       },
       "Microsoft.AspNetCore.OpenApi": {
         "type": "Direct",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "d4Atx9IHq7JgX0F/h7Db+m9zAUzC+cKdI9k+OWnnyQIOUQtfvjIEuhvbjPigVMkAmPUgCbJ8Yp6M9ghUqHtJSQ==",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "R/1EATnPLU+gRfB6lwVkMcymmyAY5ppBBdRN/5lhNEiT3xP1sWccuSFkU/f1lQvN/WgRq5Vn8AhCdE3fqgsL/w==",
         "dependencies": {
-          "Microsoft.OpenApi": "2.0.0"
+          "Microsoft.OpenApi": "[2.7.5, 3.0.0)"
         }
       },
       "Microsoft.CodeAnalysis.NetAnalyzers": {
@@ -200,13 +200,13 @@
       },
       "Microsoft.AspNetCore.Http.Connections.Client": {
         "type": "Transitive",
-        "resolved": "10.0.10",
-        "contentHash": "85adEQWKkB+d0fevCrToFlN99hhPfBPT7ZluCzrakxp8u63kKuA/5Wt9gRs0x6AMDOW6rOOJhh2TnCKlPeGq6g=="
+        "resolved": "10.0.11",
+        "contentHash": "dib9kKN5aiTDGW8ecYDnJi4Zkqgy6CPf7/K26eO5le2XNDuvWVysx/4hNtteoLFvwrrqhiNZ/l+4AYcXzjtYwQ=="
       },
       "Microsoft.AspNetCore.SignalR.Client.Core": {
         "type": "Transitive",
-        "resolved": "10.0.10",
-        "contentHash": "1y+34HyOpeSUkkKKaQdXARnYtQLObre7GJoPK3TYbQJYe5GqXamL17WuEroX7EBDWzmTCylSc8QNMXXerGiirw=="
+        "resolved": "10.0.11",
+        "contentHash": "eaT/epxfM+o9hsqaU87BnrhENi72KeS0XYDBsAbPM8ZBdVlDh6CZ2n04MB3PZ1cSK8SnQUUxep4OgEkDOh8N3Q=="
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
@@ -265,8 +265,8 @@
       },
       "Microsoft.JSInterop.WebAssembly": {
         "type": "Transitive",
-        "resolved": "10.0.10",
-        "contentHash": "FjPAGQWbCP85FWY2Wl9opHSsY+u9nZb8Ui6eTVHEMY/RJateOhW78jEtC4QOQ/6slkS1MKyIAF6ZHIrUR1fX/w=="
+        "resolved": "10.0.11",
+        "contentHash": "WtlvldXFOdft4tFW4Y3lTnRqZfGYebOBPMXZAy9Yp3gv0A88rNbDtXcuoppvqsVWe4cIG95iEXFmXB+nvuEN3Q=="
       },
       "Microsoft.Orleans.Analyzers": {
         "type": "Transitive",
@@ -532,7 +532,7 @@
       "Mississippi.Hosting.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.11, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Client": "[1.0.0, )"
         }
@@ -543,8 +543,8 @@
       "Mississippi.Inlet.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
-          "Microsoft.AspNetCore.SignalR.Client": "[10.0.10, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.11, )",
+          "Microsoft.AspNetCore.SignalR.Client": "[10.0.11, )",
           "Mississippi.Inlet.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Client.Abstractions": "[1.0.0, )",
           "Mississippi.Inlet.Gateway.Abstractions": "[1.0.0, )",
@@ -600,7 +600,7 @@
       "Mississippi.Reservoir.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.11, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
@@ -635,8 +635,8 @@
       "Mississippi.Spring.Client": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.10, )",
-          "Microsoft.AspNetCore.SignalR.Client": "[10.0.10, )",
+          "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.11, )",
+          "Microsoft.AspNetCore.SignalR.Client": "[10.0.11, )",
           "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.111, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
           "Mississippi.Spring.Domain": "[1.0.0, )"
@@ -685,21 +685,21 @@
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {
         "type": "CentralTransitive",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "0Zib7U6HmGw4Noj/+yJz1YuEJwo3XOV0iLezXDLFsrHTaC8L+KUOR/1+1tX7AAeipDG6jP3gPZOwpirk6G3LYQ==",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "OaZ+pEJzfejOtCkmepeJYYItNu3PA6Y2EajBwS8vr30mUjCOZWjVCr2sCqUOVw7D6+wmJwpNKtHqyzbtX/F7qQ==",
         "dependencies": {
-          "Microsoft.JSInterop.WebAssembly": "10.0.10"
+          "Microsoft.JSInterop.WebAssembly": "10.0.11"
         }
       },
       "Microsoft.AspNetCore.SignalR.Client": {
         "type": "CentralTransitive",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "g4MtTk+83S4phUGVvilHgKWa0gfX9qhnRQGIaeq7Kgz3MIAHkPt1h9XnlK3bRTPcsDVFuKhb7rKAtFvxl7NtDQ==",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "axdL5Zyv3wGD9rKOOBOOzO2jmsebEI3+7Hjfwpd33SZLea6W/72Gt9LbynGdVkPFESg3bybP7KD0SO5Q7K66Rw==",
         "dependencies": {
-          "Microsoft.AspNetCore.Http.Connections.Client": "10.0.10",
-          "Microsoft.AspNetCore.SignalR.Client.Core": "10.0.10"
+          "Microsoft.AspNetCore.Http.Connections.Client": "10.0.11",
+          "Microsoft.AspNetCore.SignalR.Client.Core": "10.0.11"
         }
       },
       "Microsoft.CodeAnalysis.Common": {
