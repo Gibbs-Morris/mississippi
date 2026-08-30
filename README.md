@@ -95,6 +95,8 @@ Common script entry points:
 - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 [-Configuration Debug|Release]` – build the Mississippi solution.
 - `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run unit/integration tests with coverage for Mississippi projects.
 - `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
+- `pwsh ./clean-up.ps1` – apply the full repository ReSharper cleanup.
+- `pwsh ./clean-up.ps1 -FileListPath ./changed-files.txt` – apply targeted cleanup to selected files.
 - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
 
 ## Samples

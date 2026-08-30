@@ -1,0 +1,130 @@
+name: Monthly ReSharper Cleanup
+
+on:
+  schedule:
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: monthly-resharper-cleanup
+  cancel-in-progress: false
+
+env:
+  CONFIGURATION: Release
+  CLEANUP_PR_TITLE: 'Apply monthly ReSharper cleanup drift +semver: skip'
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Cache JetBrains analysis data
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/.jb-caches
+          key: jb-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.editorconfig', '**/*.DotSettings', '**/Directory.Build.props', '**/Directory.Build.targets', 'mississippi.slnx', 'samples.slnx') }}
+          restore-keys: |
+            jb-${{ runner.os }}-
+
+      - name: Run full canonical cleanup
+        shell: pwsh
+        env:
+          CACHE_HOME: ${{ runner.temp }}/.jb-caches
+        run: |
+          ./clean-up.ps1 `
+            -Configuration $env:CONFIGURATION `
+            -CachesHome $env:CACHE_HOME `
+            -NoUpdates
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Monthly canonical cleanup failed.'
+          }
+
+      - name: Create or reuse cleanup pull request
+        shell: pwsh
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add --all -- . ':(exclude,glob)**/packages*.lock.json'
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host 'No cleanup drift detected.'
+            exit 0
+          }
+          if ($LASTEXITCODE -ne 1) {
+            throw 'Unable to inspect cleanup drift.'
+          }
+
+          $stagedFiles = @(git diff --cached --name-only)
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to list cleanup drift files.'
+          }
+
+          $pullRequestJson = gh pr list `
+            --base $env:DEFAULT_BRANCH `
+            --state open `
+            --limit 100 `
+            --json number,title,headRefName,url
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to check for an existing monthly cleanup pull request.'
+          }
+
+          $existingPullRequests = @(
+            ($pullRequestJson | ConvertFrom-Json) |
+              Where-Object { $_.title -eq $env:CLEANUP_PR_TITLE }
+          )
+          if ($existingPullRequests.Count -gt 0) {
+            $existing = $existingPullRequests[0]
+            Write-Host "Cleanup drift is already tracked by PR #$($existing.number): $($existing.url)"
+            Write-Host 'Skipping duplicate cleanup PR creation.'
+            exit 0
+          }
+
+          $branchName = "automation/monthly-cleanup-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch --create $branchName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to create cleanup branch '$branchName'."
+          }
+
+          git commit --message $env:CLEANUP_PR_TITLE
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to commit monthly cleanup drift.'
+          }
+          git push --set-upstream origin $branchName
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to push cleanup branch '$branchName'."
+          }
+
+          $body = "Automated monthly full-repository ReSharper cleanup found drift in $($stagedFiles.Count) file(s)."
+          gh pr create `
+            --base $env:DEFAULT_BRANCH `
+            --head $branchName `
+            --title $env:CLEANUP_PR_TITLE `
+            --body $body
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to create the monthly cleanup pull request.'
+          }

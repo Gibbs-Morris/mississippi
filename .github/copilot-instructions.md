@@ -12,7 +12,7 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 
 - Copilot **MUST** follow all repository instruction files, especially shared guardrails, C#, naming, logging, and testing guidance. Why: Keeps suggestions compliant.
 - Build/tidy guidance **MUST** use canonical scripts: `pwsh ./go.ps1` for full pipeline; `pwsh ./clean-up.ps1` to format/tidy; extra formatters **MUST NOT** be assumed. Why: Ensures consistent gates.
-- For local iteration speed, Copilot **SHOULD** prefer `pwsh ./clean-up-targeted.ps1` with `-Files` or `-FileListPath` to clean only changed files, then **MUST** run full `pwsh ./clean-up.ps1` before completion/handoff. Why: Preserves canonical gates while reducing local feedback time.
+- For local iteration speed, Copilot **SHOULD** prefer `pwsh ./clean-up.ps1` with `-Files` or `-FileListPath` to clean only selected files, then **MUST** run full `pwsh ./clean-up.ps1` before completion/handoff. Why: Preserves canonical gates while reducing local feedback time.
 - When build warnings include StyleCop/formatting issues (SA1137 indentation, SA1517 blank lines, SA1000 spacing, etc.), agents **MUST** run `pwsh ./clean-up.ps1` first rather than manually fixing formatting. Why: ReSharper CleanupCode applies `Directory.DotSettings` rules (expression bodies, brace placement, blank lines, wrapping, member ordering) consistently and fixes most formatting warnings automatically—manual fixes often introduce new violations or miss related issues.
 - Package changes **MUST** use `dotnet add/remove package`; `Directory.Packages.props` **MUST** hold versions and project `PackageReference` items **MUST NOT** specify `Version`. Why: CPM compliance.
 - After touching `.Abstractions`, Copilot **MUST** follow abstractions-project rules (create/use abstractions when triggers apply). Why: Maintains contract/implementation split.
@@ -58,16 +58,11 @@ The `./clean-up.ps1` script runs JetBrains ReSharper CleanupCode on both solutio
 
 Run `pwsh ./clean-up.ps1` after making code changes and before committing to ensure formatting compliance. The script processes both `mississippi.slnx` and `samples.slnx`.
 
-For faster local loops, use targeted cleanup first:
+For faster local loops, use targeted cleanup first. The canonical script resolves selected files to their owning projects and does not assume `main` as a base:
 
-- Explicit files: `pwsh ./clean-up-targeted.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
-- File list: `pwsh ./clean-up-targeted.ps1 -FileListPath .scratchpad/cleanup-files.txt`
-- Changed-vs-main mode: `pwsh ./clean-up-targeted.ps1`
+- Explicit files: `pwsh ./clean-up.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
+- File list: `pwsh ./clean-up.ps1 -FileListPath .scratchpad/cleanup-files.txt`
 
-Measured sample (3 runs, 20 changed files, `jb cleanupcode --no-build`):
-
-- Targeted average: `59.448s`
-- Full cleanup average (mississippi + samples): `607.558s`
-- Approximate speed-up: `10.22x` (~`90.2%` faster)
+The pull-request workflow supplies the actual base/head diff and uses the same file-list mode. Changes to global cleanup inputs deliberately fall back to full cleanup.
 
 Use targeted cleanup to iterate quickly, then run full cleanup before final handoff.

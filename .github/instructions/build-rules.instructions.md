@@ -12,7 +12,7 @@ Governing thought: Every change ships only after a clean build, cleanup, tests, 
 
 - Builds **MUST** finish with zero compiler/analyzer warnings; agents **MUST NOT** add `NoWarn`, relax severity, or suppress rules without explicit approval. Why: Zero-warnings is a hard gate.
 - Agents **MUST** run and pass build, cleanup, unit tests, and mutation tests (for Mississippi projects) before calling work complete. Why: Full quality pipeline prevents regressions.
-- For local iteration, agents **SHOULD** run `pwsh ./clean-up-targeted.ps1` against changed files to shorten feedback loops, but full `pwsh ./clean-up.ps1` **MUST** still pass before completion. Why: Faster inner loop without weakening gates.
+- For local iteration, agents **SHOULD** run `pwsh ./clean-up.ps1 -Files ...` or `-FileListPath ...` against changed files to shorten feedback loops, but full `pwsh ./clean-up.ps1` **MUST** still pass before completion. Why: Faster inner loop without weakening gates.
 - Agents **MUST NOT** add `[SuppressMessage]` or `#pragma warning disable` except for explicitly approved, minimal scopes. Why: Suppressions hide defects.
 - Agents **MUST** keep StyleCop/ReSharper cleanup clean. Why: Consistent formatting enables readable diffs.
 - Solution files **MUST** be edited in `.slnx` form only; `.sln` files **MUST NOT** be hand-edited because automation regenerates them with SlnGen during builds/cleanup for legacy tooling compatibility. Why: Prevents drift between canonical and generated solutions.
@@ -36,11 +36,10 @@ All contributors changing Mississippi or Samples solutions.
 
 Targeted cleanup (iteration only):
 
-- Changed files: `pwsh ./clean-up-targeted.ps1`
-- Explicit list: `pwsh ./clean-up-targeted.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
-- File list: `pwsh ./clean-up-targeted.ps1 -FileListPath .scratchpad/cleanup-files.txt`
+- Explicit list: `pwsh ./clean-up.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
+- File list: `pwsh ./clean-up.ps1 -FileListPath .scratchpad/cleanup-files.txt`
 
-Sample benchmark (20 files, 3 runs, `jb cleanupcode --no-build`) shows targeted cleanup around `10.22x` faster than full cleanup (`~59.448s` vs `~607.558s`).
+Targeted mode restores, builds, and cleans only the projects owning the selected files. Global cleanup-input changes use an explicit full-cleanup fallback.
 
 ## Core Principles
 

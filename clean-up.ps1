@@ -1,59 +1,162 @@
 #!/usr/bin/env pwsh
 
-<#
-.SYNOPSIS
-    Runs code-style cleanup (ReSharper CleanupCode) for both solutions in the repository.
-.DESCRIPTION
-        This is a convenience wrapper that sequentially invokes:
-            • eng/src/agent-scripts/clean-up-mississippi-solution.ps1
-            • eng/src/agent-scripts/clean-up-sample-solution.ps1
-    It ensures both the core and sample solutions are formatted with the same rules.
-#>
-
+[CmdletBinding(DefaultParameterSetName = 'Full')]
 param(
-    # Switch to skip cleaning the sample solution if desired.
+    [Parameter(ParameterSetName = 'ExplicitFiles', Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string[]]$Files,
+
+    [Parameter(ParameterSetName = 'FileList', Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$FileListPath,
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration = 'Release',
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [string]$SettingsPath,
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [string]$Profile = 'Built-in: Full Cleanup',
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [string]$CachesHome,
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [switch]$NoUpdates,
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
     [switch]$SkipSamples,
 
-    # Switch to skip cleaning the main Mississippi solution if desired.
-    [switch]$SkipMississippi
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [switch]$SkipMississippi,
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [switch]$SkipToolRestore,
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [switch]$SkipRestore,
+
+    [Parameter(ParameterSetName = 'Full')]
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [switch]$SkipBuild,
+
+    [Parameter(ParameterSetName = 'ExplicitFiles')]
+    [Parameter(ParameterSetName = 'FileList')]
+    [switch]$PlanOnly
 )
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 
-# Determine repository root (this file lives there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$modulePath = Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1'
+Import-Module -Name $modulePath -Force
 
-# Paths to the per-solution cleanup scripts
-$mississippiCleanup = Join-Path $repoRoot 'eng\src\agent-scripts\clean-up-mississippi-solution.ps1'
-$sampleCleanup      = Join-Path $repoRoot 'eng\src\agent-scripts\clean-up-sample-solution.ps1'
+function Get-SelectedCleanupPaths {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Selection,
+        [string[]]$ExplicitFiles,
+        [string]$SelectionFilePath
+    )
+
+    if ($Selection -eq 'ExplicitFiles') {
+        return @($ExplicitFiles)
+    }
+
+    $resolvedFileList = Resolve-Path -LiteralPath $SelectionFilePath
+    return @(
+        Get-Content -LiteralPath $resolvedFileList.Path -Encoding UTF8 |
+            ForEach-Object { $_.Trim() } |
+            Where-Object {
+                -not [string]::IsNullOrWhiteSpace($_) -and
+                -not $_.StartsWith('#', [System.StringComparison]::Ordinal)
+            }
+    )
+}
 
 try {
-    if (-not $SkipMississippi) {
-        Write-Host "=== STEP 1: MISSISSIPPI SOLUTION CLEANUP ===" -ForegroundColor Yellow
-        Write-Host "Running ReSharper CleanupCode on mississippi.slnx..."
-        & $mississippiCleanup
-        if ($LASTEXITCODE -ne 0) {
-            throw "Mississippi solution cleanup failed with exit code: $LASTEXITCODE"
-        }
-        Write-Host "SUCCESS: Mississippi solution cleanup completed successfully" -ForegroundColor Green
-        Write-Host ""
+    if ($SkipSamples -and $SkipMississippi) {
+        throw 'Both -SkipSamples and -SkipMississippi were provided. At least one solution must be enabled.'
     }
 
-    if (-not $SkipSamples) {
-        Write-Host "=== STEP 2: SAMPLE SOLUTION CLEANUP ===" -ForegroundColor Yellow
-        Write-Host "Running ReSharper CleanupCode on samples.slnx..."
-        & $sampleCleanup
-        if ($LASTEXITCODE -ne 0) {
-            throw "Sample solution cleanup failed with exit code: $LASTEXITCODE"
-        }
-        Write-Host "SUCCESS: Sample solution cleanup completed successfully" -ForegroundColor Green
-        Write-Host ""
+    $isTargeted = $PSCmdlet.ParameterSetName -ne 'Full'
+    if (-not $isTargeted -and $PlanOnly) {
+        throw '-PlanOnly requires -Files or -FileListPath.'
     }
 
-    Write-Host "=== ALL CLEANUP OPERATIONS COMPLETED SUCCESSFULLY ===" -ForegroundColor Green
-    Write-Host "Both mississippi.slnx and samples.slnx have been cleaned with ReSharper rules"
-} catch {
-    Write-Error "=== FAILURE: Cleanup operation failed: $_"
+    if (-not $isTargeted) {
+        if ($PlanOnly) {
+            throw '-PlanOnly requires -Files or -FileListPath.'
+        }
+
+        $null = Invoke-RepositoryCleanup -Mode Full `
+            -RepoRoot $repoRoot `
+            -Configuration $Configuration `
+            -SettingsPath $SettingsPath `
+            -Profile $Profile `
+            -CachesHome $CachesHome `
+            -NoUpdates:$NoUpdates `
+            -SkipSamples:$SkipSamples `
+            -SkipMississippi:$SkipMississippi `
+            -SkipToolRestore:$SkipToolRestore `
+            -SkipRestore:$SkipRestore `
+            -SkipBuild:$SkipBuild
+        exit 0
+    }
+
+    $selectedPaths = Get-SelectedCleanupPaths `
+        -Selection $PSCmdlet.ParameterSetName `
+        -ExplicitFiles $Files `
+        -SelectionFilePath $FileListPath
+    $plan = Get-CleanupPlan `
+        -Paths ([string[]]@($selectedPaths)) `
+        -RepoRoot $repoRoot `
+        -SkipSamples:$SkipSamples `
+        -SkipMississippi:$SkipMississippi
+
+    if ($PlanOnly) {
+        $plan | ConvertTo-Json -Depth 10 -Compress | Write-Output
+        exit 0
+    }
+
+    $null = Invoke-RepositoryCleanup -Mode Targeted `
+        -RepoRoot $repoRoot `
+        -Paths $selectedPaths `
+        -Configuration $Configuration `
+        -SettingsPath $SettingsPath `
+        -Profile $Profile `
+        -CachesHome $CachesHome `
+        -NoUpdates:$NoUpdates `
+        -SkipSamples:$SkipSamples `
+        -SkipMississippi:$SkipMississippi `
+        -SkipToolRestore:$SkipToolRestore `
+        -SkipRestore:$SkipRestore `
+        -SkipBuild:$SkipBuild
+    exit 0
+}
+catch {
+    Write-Error "Cleanup failed: $($_.Exception.Message)"
     exit 1
 }
