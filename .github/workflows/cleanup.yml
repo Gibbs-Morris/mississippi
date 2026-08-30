@@ -84,7 +84,7 @@ jobs:
         env:
           FILE_LIST: ${{ steps.detect.outputs.file_list }}
         run: |
-          $planJson = @(./clean-up.ps1 -FileListPath $env:FILE_LIST -PlanOnly)
+          $planJson = @(./clean-up-core.ps1 -FileListPath $env:FILE_LIST -PlanOnly)
           if ($LASTEXITCODE -ne 0) {
             throw 'Cleanup preflight planning failed.'
           }
@@ -144,7 +144,7 @@ jobs:
               -CachesHome $env:CACHE_HOME `
               -NoUpdates
           } else {
-            ./clean-up.ps1 `
+            ./clean-up-core.ps1 `
               -Configuration $env:CONFIGURATION `
               -FileListPath $env:FILE_LIST `
               -CachesHome $env:CACHE_HOME `
@@ -175,7 +175,7 @@ jobs:
             exit 0
           }
 
-          if ($env:RUN_MODE -eq 'targeted' -and $env:PLAN_MODE -ne 'FullFallback' -and $env:FILE_LIST -and (Test-Path -LiteralPath $env:FILE_LIST)) {
+          if ($env:RUN_MODE -eq 'targeted' -and $env:FILE_LIST -and (Test-Path -LiteralPath $env:FILE_LIST)) {
             $prChangedPaths = @(
               Get-Content -LiteralPath $env:FILE_LIST -Encoding UTF8 |
                 ForEach-Object { $_.Trim() } |
@@ -216,7 +216,7 @@ jobs:
               if ($env:PLAN_MODE -eq 'FullFallback') {
                 Write-Host 'pwsh ./clean-up.ps1'
               } else {
-                Write-Host 'pwsh ./clean-up.ps1 -FileListPath <changed-files.txt>'
+                Write-Host 'pwsh ./clean-up-core.ps1 -FileListPath <changed-files.txt>'
               }
               exit 1
             }

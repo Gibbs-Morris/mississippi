@@ -448,7 +448,7 @@ function Get-CleanupGlobalFallbackReasons {
             '(^|/)global\.json$' { 'global.json changed.'; break }
             '^\.config/dotnet-tools\.json$' { 'The pinned .NET tool manifest changed.'; break }
             '^(mississippi|samples)\.slnx$' { 'Solution project membership changed.'; break }
-            '^clean-up\.ps1$' { 'The canonical cleanup dispatcher changed.'; break }
+            '^clean-up(-core)?\.ps1$' { 'A cleanup entrypoint changed.'; break }
             '(^|/)clean-up-[^/]+\.ps1$' { 'A cleanup script changed.'; break }
             '(^|/)RepositoryAutomation\.psm1$' { 'The shared cleanup automation module changed.'; break }
             '^\.github/workflows/cleanup\.yml$' { 'The pull-request cleanup workflow changed.'; break }
@@ -461,6 +461,72 @@ function Get-CleanupGlobalFallbackReasons {
     }
 
     return @($reasons)
+}
+
+function Get-CleanupChangedPaths {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [ValidateNotNullOrEmpty()][string]$BaseRef = 'main',
+        [ValidateNotNullOrEmpty()][string]$HeadRef = 'HEAD'
+    )
+
+    $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
+    if (-not (Test-Path -LiteralPath $rootFullPath -PathType Container)) {
+        throw "Repository root '$RepoRoot' was not found."
+    }
+
+    $paths = New-Object System.Collections.Generic.List[string]
+    Push-Location -LiteralPath $rootFullPath
+    try {
+        $mergeBaseOutput = @(git merge-base $HeadRef $BaseRef)
+        $mergeBaseExitCode = $LASTEXITCODE
+        if ($mergeBaseExitCode -ne 0) {
+            throw "Unable to find the merge base for '$HeadRef' and '$BaseRef' (git exit code $mergeBaseExitCode)."
+        }
+
+        $mergeBase = [string]($mergeBaseOutput | Select-Object -First 1)
+        if ([string]::IsNullOrWhiteSpace($mergeBase)) {
+            throw "Git returned no merge base for '$HeadRef' and '$BaseRef'."
+        }
+
+        $branchDiffArguments = @(
+            'diff',
+            '--name-only',
+            '--diff-filter=ACMR',
+            "$($mergeBase)...$HeadRef",
+            '--'
+        )
+        $branchPaths = @(git @branchDiffArguments)
+        $branchDiffExitCode = $LASTEXITCODE
+        if ($branchDiffExitCode -ne 0) {
+            throw "Unable to list changes between '$BaseRef' and '$HeadRef' (git exit code $branchDiffExitCode)."
+        }
+
+        $stagedPaths = @(git diff --name-only --diff-filter=ACMR --cached --)
+        $stagedDiffExitCode = $LASTEXITCODE
+        if ($stagedDiffExitCode -ne 0) {
+            throw "Unable to list staged changes (git exit code $stagedDiffExitCode)."
+        }
+
+        $unstagedPaths = @(git diff --name-only --diff-filter=ACMR --)
+        $unstagedDiffExitCode = $LASTEXITCODE
+        if ($unstagedDiffExitCode -ne 0) {
+            throw "Unable to list unstaged changes (git exit code $unstagedDiffExitCode)."
+        }
+
+        foreach ($path in @($branchPaths + $stagedPaths + $unstagedPaths)) {
+            $normalizedPath = ([string]$path).Trim() -replace '\\', '/'
+            if (-not [string]::IsNullOrWhiteSpace($normalizedPath) -and -not $paths.Contains($normalizedPath)) {
+                $paths.Add($normalizedPath)
+            }
+        }
+
+        return @($paths)
+    }
+    finally {
+        Pop-Location
+    }
 }
 
 function Get-CleanupProjectCatalog {
@@ -1301,4 +1367,4 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Get-CleanupGlobalFallbackReasons, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline

@@ -6,6 +6,23 @@ $modulePath = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'src', 'agent
 $modulePath = [System.IO.Path]::GetFullPath($modulePath)
 Import-Module -Name $modulePath -Force
 
+BeforeAll {
+    $script:invokeGitTestCommand = {
+        param(
+            [Parameter(Mandatory)][string]$WorkingDirectory,
+            [Parameter(Mandatory)][string[]]$Arguments
+        )
+
+        $output = @(git -C $WorkingDirectory @Arguments)
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0) {
+            throw "Git command failed with exit code $($exitCode): git $($Arguments -join ' ')"
+        }
+
+        return @($output)
+    }
+}
+
 Describe 'Cleanup planning' {
     BeforeEach {
         $script:fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
@@ -144,6 +161,54 @@ Describe 'Cleanup planning' {
     }
 }
 
+Describe 'Changed cleanup path discovery' {
+    It 'combines branch, staged, and unstaged tracked paths while excluding deletions and untracked files' {
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'src') -Force | Out-Null
+
+        @(
+            'src/Deleted.cs',
+            'src/Staged.cs',
+            'src/Unstaged.cs'
+        ) | ForEach-Object {
+            Set-Content -LiteralPath (Join-Path $fixtureRoot $_) -Value 'class FixtureType { }' -Encoding utf8
+        }
+
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create cleanup fixture') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'feature') | Out-Null
+
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Branch.cs') -Value 'class BranchFixtureType { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', 'src/Branch.cs') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Add branch file') | Out-Null
+
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Staged.cs') -Value 'class StagedFixtureType { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', 'src/Staged.cs') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Unstaged.cs') -Value 'class UnstagedFixtureType { }' -Encoding utf8
+        Remove-Item -LiteralPath (Join-Path $fixtureRoot 'src/Deleted.cs')
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Untracked.cs') -Value 'class UntrackedFixtureType { }' -Encoding utf8
+
+        $paths = @(
+            Get-CleanupChangedPaths `
+                -RepoRoot $fixtureRoot `
+                -BaseRef 'main' `
+                -HeadRef 'HEAD'
+        )
+
+        $paths | Should -HaveCount 3
+        $paths | Should -Contain 'src/Branch.cs'
+        $paths | Should -Contain 'src/Staged.cs'
+        $paths | Should -Contain 'src/Unstaged.cs'
+        $paths | Should -Not -Contain 'src/Deleted.cs'
+        $paths | Should -Not -Contain 'src/Untracked.cs'
+    }
+}
+
 Describe 'CleanupCode invocation' {
     It 'preserves settings, include paths, cache, and no-update options' {
         $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
@@ -218,13 +283,68 @@ Describe 'Canonical cleanup entry point' {
         $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
         $fileListPath = Join-Path $TestDrive 'cleanup-files.txt'
         Set-Content -LiteralPath $fileListPath -Value 'README.md' -Encoding utf8
-        $scriptPath = Join-Path $repoRoot 'clean-up.ps1'
+        $scriptPath = Join-Path $repoRoot 'clean-up-core.ps1'
 
         $json = @(& pwsh -NoProfile -File $scriptPath -FileListPath $fileListPath -PlanOnly)
 
         $LASTEXITCODE | Should -Be 0
         $plan = ($json -join "`n") | ConvertFrom-Json
         $plan.Mode | Should -Be 'NoOp'
+    }
+
+    It 'supports explicit file preflight through the core dispatcher' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $scriptPath = Join-Path $repoRoot 'clean-up-core.ps1'
+
+        $json = @(& pwsh -NoProfile -File $scriptPath -Files README.md -PlanOnly)
+
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+    }
+
+    It 'discovers no changes in a clean repository when the targeted base and head are identical' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        $fixtureScriptsRoot = Join-Path $fixtureRoot 'eng/src/agent-scripts'
+        New-Item -ItemType Directory -Path $fixtureScriptsRoot -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up-targeted.ps1') -Destination $fixtureRoot
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up-core.ps1') -Destination $fixtureRoot
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Destination $fixtureScriptsRoot
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'README.md') -Value 'cleanup fixture' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create clean cleanup fixture') | Out-Null
+
+        $scriptPath = Join-Path $fixtureRoot 'clean-up-targeted.ps1'
+        $json = @(
+            & pwsh -NoProfile -File $scriptPath -BaseRef main -HeadRef HEAD -PlanOnly
+        )
+
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+    }
+
+    It 'returns a failure when the targeted base cannot be resolved' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $scriptPath = Join-Path $repoRoot 'clean-up-targeted.ps1'
+
+        & pwsh -NoProfile -File $scriptPath -BaseRef missing-cleanup-base -HeadRef HEAD -PlanOnly
+
+        $LASTEXITCODE | Should -Be 1
+    }
+
+    It 'forwards invalid solution selections and returns the core failure code' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $scriptPath = Join-Path $repoRoot 'clean-up.ps1'
+
+        & pwsh -NoProfile -File $scriptPath -SkipSamples -SkipMississippi
+
+        $LASTEXITCODE | Should -Be 1
     }
 }
 

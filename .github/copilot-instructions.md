@@ -11,8 +11,8 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 ## Rules (RFC 2119)
 
 - Copilot **MUST** follow all repository instruction files, especially shared guardrails, C#, naming, logging, and testing guidance. Why: Keeps suggestions compliant.
-- Build/tidy guidance **MUST** use canonical scripts: `pwsh ./go.ps1` for full pipeline; `pwsh ./clean-up.ps1` to format/tidy; extra formatters **MUST NOT** be assumed. Why: Ensures consistent gates.
-- For local iteration speed, Copilot **SHOULD** prefer `pwsh ./clean-up.ps1` with `-Files` or `-FileListPath` to clean only selected files, then **MUST** run full `pwsh ./clean-up.ps1` before completion/handoff. Why: Preserves canonical gates while reducing local feedback time.
+- Build/tidy guidance **MUST** use canonical scripts: `pwsh ./go.ps1` for full pipeline; `pwsh ./clean-up.ps1` for full cleanup; extra formatters **MUST NOT** be assumed. Why: Ensures consistent gates.
+- For local iteration speed, Copilot **SHOULD** prefer `pwsh ./clean-up-targeted.ps1` for changed tracked files, then **MUST** run full `pwsh ./clean-up.ps1` before completion/handoff. Why: Preserves canonical gates while reducing local feedback time.
 - When build warnings include StyleCop/formatting issues (SA1137 indentation, SA1517 blank lines, SA1000 spacing, etc.), agents **MUST** run `pwsh ./clean-up.ps1` first rather than manually fixing formatting. Why: ReSharper CleanupCode applies `Directory.DotSettings` rules (expression bodies, brace placement, blank lines, wrapping, member ordering) consistently and fixes most formatting warnings automatically—manual fixes often introduce new violations or miss related issues.
 - Package changes **MUST** use `dotnet add/remove package`; `Directory.Packages.props` **MUST** hold versions and project `PackageReference` items **MUST NOT** specify `Version`. Why: CPM compliance.
 - After touching `.Abstractions`, Copilot **MUST** follow abstractions-project rules (create/use abstractions when triggers apply). Why: Maintains contract/implementation split.
@@ -28,7 +28,7 @@ These rules apply to Copilot chat/search responses for this repository.
 ## At-a-Glance Quick-Start
 
 - Use shared guardrails and C#/naming/logging/testing instructions as the baseline.
-- Build/test with `pwsh ./go.ps1`; tidy with `pwsh ./clean-up.ps1`.
+- Build/test with `pwsh ./go.ps1`; full tidy with `pwsh ./clean-up.ps1`; targeted tidy with `pwsh ./clean-up-targeted.ps1`.
 - **When you see StyleCop/formatting warnings (SA1xxx), run cleanup first**—don't manually fix indentation/spacing.
 - Manage packages with `dotnet add/remove package`; never add `Version` attributes.
 - Verify SOLID after each C# change; fix violations before proceeding.
@@ -58,10 +58,11 @@ The `./clean-up.ps1` script runs JetBrains ReSharper CleanupCode on both solutio
 
 Run `pwsh ./clean-up.ps1` after making code changes and before committing to ensure formatting compliance. The script processes both `mississippi.slnx` and `samples.slnx`.
 
-For faster local loops, use targeted cleanup first. The canonical script resolves selected files to their owning projects and does not assume `main` as a base:
+For faster local loops, use targeted cleanup first. The targeted entry point compares the merge-base of `HEAD` and `main`, then includes staged and unstaged tracked files:
 
-- Explicit files: `pwsh ./clean-up.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
-- File list: `pwsh ./clean-up.ps1 -FileListPath .scratchpad/cleanup-files.txt`
+- Changed tracked files: `pwsh ./clean-up-targeted.ps1`
+- Explicit files: `pwsh ./clean-up-core.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
+- File list: `pwsh ./clean-up-core.ps1 -FileListPath .scratchpad/cleanup-files.txt`
 
 The pull-request workflow supplies the actual base/head diff and uses the same file-list mode. Changes to global cleanup inputs deliberately fall back to full cleanup.
 
