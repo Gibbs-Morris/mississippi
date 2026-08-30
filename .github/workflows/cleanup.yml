@@ -46,9 +46,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
       - name: Cache JetBrains analysis caches
         uses: actions/cache@v4
@@ -147,12 +147,10 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Checking for modifications after cleanup..."
-          # Exclude packages lock files as Aspire dependencies may differ between platforms
-          # Matches both packages.lock.json and OS-specific variants like packages.linux-x64.lock.json
-          $changes = git status --porcelain | Where-Object { $_ -notmatch 'packages.*\.lock\.json$' }
+          $changes = git status --porcelain
           if ($changes) {
             Write-Host "ERROR: ReSharper cleanup modified files. The following changes are required:"
-            git diff --color=always -- . ':!**/packages*.lock.json'
+            git diff --color=always -- .
             Write-Host ""
             Write-Host "To resolve this locally run:"
             $slnFileName = $env:SLN_FILE_NAME

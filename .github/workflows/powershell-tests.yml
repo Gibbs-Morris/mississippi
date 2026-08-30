@@ -41,9 +41,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
+            ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v3.2.1
@@ -65,5 +65,4 @@ jobs:
       - name: Run PowerShell test orchestrator
         shell: pwsh
         run: pwsh ./eng/tests/orchestrate-powershell-tests.ps1
-
 
