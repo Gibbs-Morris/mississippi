@@ -186,12 +186,14 @@ Describe 'CleanupCode invocation' {
             -RepoRoot $fixtureRoot `
             -SettingsPath $settingsPath
 
+        $temporarySolutionXPattern = Join-Path $projectDirectory '.cleanup-targeted-*.slnx'
+        $temporarySolutionPattern = Join-Path $projectDirectory '.cleanup-targeted-*.sln'
         Should -Invoke Invoke-SlnGeneration -ModuleName RepositoryAutomation -Times 1 -ParameterFilter {
-            $SolutionPath -like "$projectDirectory\.cleanup-targeted-*.slnx" -and
-            $OutputPath -like "$projectDirectory\.cleanup-targeted-*.sln"
+            $SolutionPath -like $temporarySolutionXPattern -and
+            $OutputPath -like $temporarySolutionPattern
         }
         Should -Invoke Invoke-ReSharperCleanup -ModuleName RepositoryAutomation -Times 1 -ParameterFilter {
-            $SolutionPath -like "$projectDirectory\.cleanup-targeted-*.sln" -and
+            $SolutionPath -like $temporarySolutionPattern -and
             ($IncludePaths -join ';') -eq 'Foo.cs;Sub/Other.cs'
         }
         @(Get-ChildItem -LiteralPath $projectDirectory -Filter '.cleanup-targeted-*' -Force) | Should -HaveCount 0

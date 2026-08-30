@@ -159,22 +159,69 @@ jobs:
       - name: Check for cleanup changes
         if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
         shell: pwsh
+        env:
+          FILE_LIST: ${{ steps.detect.outputs.file_list }}
+          RUN_MODE: ${{ steps.manual.outputs.run_mode || steps.detect.outputs.run_mode }}
         run: |
-         $changes = @(
-           git status --porcelain=v1 --untracked-files=all |
-             Where-Object { $_ -notmatch '(?i)packages(?:\.[^/\\]+)?\.lock\.json$' }
+          $trackedChanges = @(git diff --name-only HEAD -- . ':!**/packages*.lock.json')
+          $untrackedChanges = @(
+            git ls-files --others --exclude-standard -- . |
+              Where-Object { $_ -notmatch '(?i)packages(?:\.[^/\\]+)?\.lock\.json$' }
           )
-          if ($changes.Count -gt 0) {
-            Write-Host 'ERROR: ReSharper cleanup changed tracked cleanup-owned files:'
-            git diff --color=always -- . ':!**/packages*.lock.json'
-            Write-Host ''
-            Write-Host 'Reproduce locally with:'
-            if ("${{ steps.manual.outputs.run_mode }}" -eq 'full') {
-              Write-Host 'pwsh ./clean-up.ps1'
-            } else {
-              Write-Host 'pwsh ./clean-up.ps1 -FileListPath <changed-files.txt>'
-            }
-            exit 1
+          $changes = @($trackedChanges + $untrackedChanges | Sort-Object -Unique)
+          if ($changes.Count -eq 0) {
+            Write-Host 'No cleanup changes detected.'
+            exit 0
           }
 
-          Write-Host 'No cleanup changes detected.'
+          if ($env:RUN_MODE -eq 'targeted' -and $env:FILE_LIST -and (Test-Path -LiteralPath $env:FILE_LIST)) {
+            $prChangedPaths = @(
+              Get-Content -LiteralPath $env:FILE_LIST -Encoding UTF8 |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                Sort-Object -Unique
+            )
+            $prChangedSet = [System.Collections.Generic.HashSet[string]]::new(
+              [System.StringComparer]::OrdinalIgnoreCase
+            )
+            foreach ($path in $prChangedPaths) {
+              $null = $prChangedSet.Add($path -replace '\\', '/')
+            }
+
+            $prChanges = @(
+              $changes | Where-Object {
+                $normalizedPath = $_ -replace '\\', '/'
+                $prChangedSet.Contains($normalizedPath)
+              }
+            )
+            $unrelatedChanges = @(
+              $changes | Where-Object {
+                $normalizedPath = $_ -replace '\\', '/'
+                -not $prChangedSet.Contains($normalizedPath)
+              }
+            )
+
+            if ($unrelatedChanges.Count -gt 0) {
+              Write-Warning "Full-fallback cleanup found $($unrelatedChanges.Count) pre-existing drift file(s) outside the PR change set. The monthly full-cleanup workflow owns this drift."
+              $unrelatedChanges | ForEach-Object { Write-Host "  Drift: $_" -ForegroundColor Yellow }
+            }
+
+            if ($prChanges.Count -gt 0) {
+              Write-Host 'ERROR: ReSharper cleanup changed files from the PR change set:'
+              git diff --color=always -- $prChanges
+              Write-Host ''
+              Write-Host 'Reproduce locally with:'
+              Write-Host 'pwsh ./clean-up.ps1 -FileListPath <changed-files.txt>'
+              exit 1
+            }
+
+            Write-Host 'No PR-owned cleanup changes detected.'
+            exit 0
+          }
+
+          Write-Host 'ERROR: ReSharper cleanup changed tracked cleanup-owned files:'
+          git diff --color=always -- . ':!**/packages*.lock.json'
+          Write-Host ''
+          Write-Host 'Reproduce locally with:'
+          Write-Host 'pwsh ./clean-up.ps1'
+          exit 1
