@@ -115,7 +115,7 @@ jobs:
           $appHost = Join-Path $env:GITHUB_WORKSPACE "samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj"
           $started = $false
           try {
-            $output = @(aspire run --apphost $appHost --detach --format Json --no-build --non-interactive 2>&1)
+            $output = @(aspire run --project $appHost --detach --format Json --no-build --non-interactive 2>&1)
             $startExitCode = $LASTEXITCODE
             $output | ForEach-Object { Write-Host $_ }
             if ($startExitCode -ne 0) {
@@ -146,7 +146,7 @@ jobs:
             }
           }
           finally {
-            $stopOutput = @(aspire stop --apphost $appHost --non-interactive 2>&1)
+            $stopOutput = @(aspire stop --project $appHost --non-interactive 2>&1)
             $stopExitCode = $LASTEXITCODE
             $stopOutput | ForEach-Object { Write-Host $_ }
             if ($started -and $stopExitCode -ne 0) {
