@@ -214,3 +214,10 @@ Describe 'Canonical cleanup entry point' {
         $plan.Mode | Should -Be 'NoOp'
     }
 }
+
+Describe 'Cleanup module exports' {
+    It 'exports the standalone solution cleanup functions used by wrapper scripts' {
+        Get-Command -Name Invoke-MississippiSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
+        Get-Command -Name Invoke-SampleSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
+    }
+}
