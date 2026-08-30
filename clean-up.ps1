@@ -107,10 +107,6 @@ try {
     }
 
     if (-not $isTargeted) {
-        if ($PlanOnly) {
-            throw '-PlanOnly requires -Files or -FileListPath.'
-        }
-
         $null = Invoke-RepositoryCleanup -Mode Full `
             -RepoRoot $repoRoot `
             -Configuration $Configuration `
