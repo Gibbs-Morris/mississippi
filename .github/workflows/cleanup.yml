@@ -185,7 +185,8 @@ jobs:
               [System.StringComparer]::OrdinalIgnoreCase
             )
             foreach ($path in $prChangedPaths) {
-              $null = $prChangedSet.Add($path -replace '\\', '/')
+              $normalizedPath = $path -replace '\\', '/'
+              $null = $prChangedSet.Add($normalizedPath)
             }
 
             $prChanges = @(
