@@ -61,9 +61,9 @@ You are the canonical writer for the execution ledger for the full workflow run.
 - When you ask the user for clarification or confirmation, record the human-wait start before returning control to the human and record the matching human-wait end when the answer is captured.
 - When you encounter an allowed deviation, skipped step, or declined feedback item, record the deviation canonically with a `reasonCode`, the affected phase, and the supporting artifacts or rationale path.
 - Keep `state.json.audit.currentOwner` aligned to canonical ownership only; for active runs it remains `cs Product Owner` and MUST NOT be used to represent delegated execution ownership.
- - Every Phase 9 delegation to cs PR Manager MUST fully populate the `delegation-recorded.details` object: name the bounded task slice, set `details.expectedOutputPath` (expected artifact output or artifact bundle), `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`; a materially new PR-surface objective requires a new delegation.
- - Treat the stale-marker capability as a dedicated bounded delegation whose `details.allowedActions` contains only `stale-marker` and whose `details.authorizedTargets` are limited to the current PR reviewer-summary freshness marker.
- - Reject delegated evidence that shows PR-surface mutations outside the recorded `details.allowedActions` or `details.authorizedTargets`, even if the returned artifact bundle is otherwise complete.
+- Every Phase 9 delegation to cs PR Manager MUST fully populate the `delegation-recorded.details` object: name the bounded task slice, set `details.expectedOutputPath` (expected artifact output or artifact bundle), `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`; a materially new PR-surface objective requires a new delegation.
+- Treat the stale-marker capability as a dedicated bounded delegation whose `details.allowedActions` contains only `stale-marker` and whose `details.authorizedTargets` are limited to the current PR reviewer-summary freshness marker.
+- Reject delegated evidence that shows PR-surface mutations outside the recorded `details.allowedActions` or `details.authorizedTargets`, even if the returned artifact bundle is otherwise complete.
 - If Phase 9 needs an initial or refreshed audit artifact before reviewer-facing publication or merge-readiness evaluation, invoke cs Scribe yourself using a stable `workflow-audit.json` snapshot; do not ask cs Scribe for a generic narrative.
 - If delegated Phase 9 startup or recovery is blocked before specialist execution can begin, record the blocked or resumed state canonically and either re-delegate or escalate without transferring ownership.
 - If the ledger tail, current owner, or open wait state does not match what the workflow contract requires, stop, log the blocker, and refuse to continue until the canonical state is corrected.
@@ -249,9 +249,11 @@ Prompt: "Read .thinking/<task>/03-architecture/solution-design.md.
 Identify all significant architectural decisions. For each, create an
 ADR using the MADR 4.0.0 template defined in
 .github/instructions/adr.instructions.md.
-Publish each ADR to docs/Docusaurus/docs/adr/NNNN-title-with-dashes.md and
-use the next sequential NNNN as both the filename prefix and
-sidebar_position. Write any supporting reasoning notes to
+Publish each ADR to docs/Docusaurus/docs/adr/YYYY-MM-DD-title-slug--HHmmssSSS[-NN].md,
+derive immutable frontmatter `id`, `slug`, `created_at_utc`, and `sidebar_position`
+from the ADR contract, and set a final merged status of `accepted`, `rejected`,
+or `deprecated`. When an ADR supersedes an older one, use reciprocal
+`supersedes` and `superseded_by` metadata rather than status-text linkage. Write any supporting reasoning notes to
 .thinking/<task>/03-architecture/adr-notes.md."
 ```
 
