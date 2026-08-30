@@ -237,6 +237,13 @@ Describe 'Changed cleanup path discovery' {
     }
 }
 
+Describe 'Cleanup module exports' {
+    It 'exports solution cleanup functions for standalone entrypoints' {
+        Get-Command -Name Invoke-MississippiSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
+        Get-Command -Name Invoke-SampleSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
+    }
+}
+
 Describe 'CleanupCode invocation' {
     It 'preserves settings, include paths, cache, and no-update options' {
         $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
