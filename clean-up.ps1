@@ -130,13 +130,13 @@ try {
         -Selection $PSCmdlet.ParameterSetName `
         -ExplicitFiles $Files `
         -SelectionFilePath $FileListPath
-    $plan = Get-CleanupPlan `
-        -Paths ([string[]]@($selectedPaths)) `
-        -RepoRoot $repoRoot `
-        -SkipSamples:$SkipSamples `
-        -SkipMississippi:$SkipMississippi
 
     if ($PlanOnly) {
+        $plan = Get-CleanupPlan `
+            -Paths ([string[]]@($selectedPaths)) `
+            -RepoRoot $repoRoot `
+            -SkipSamples:$SkipSamples `
+            -SkipMississippi:$SkipMississippi
         $plan | ConvertTo-Json -Depth 10 -Compress | Write-Output
         exit 0
     }
