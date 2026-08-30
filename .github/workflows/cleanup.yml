@@ -205,7 +205,7 @@ jobs:
             )
 
             if ($unrelatedChanges.Count -gt 0) {
-              Write-Warning "Full-fallback cleanup found $($unrelatedChanges.Count) pre-existing drift file(s) outside the PR change set. The monthly full-cleanup workflow owns this drift."
+              Write-Warning "Targeted cleanup found $($unrelatedChanges.Count) pre-existing drift file(s) outside the PR change set. The monthly full-cleanup workflow owns this drift."
               $unrelatedChanges | ForEach-Object { Write-Host "  Drift: $_" -ForegroundColor Yellow }
             }
 
