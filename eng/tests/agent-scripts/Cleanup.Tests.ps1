@@ -166,11 +166,13 @@ Describe 'Changed cleanup path discovery' {
         $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
         New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'src') -Force | Out-Null
+        $unicodeFileName = 'Caf' + [char]0x00E9 + '.cs'
 
         @(
             'src/Deleted.cs',
             'src/Staged.cs',
-            'src/Unstaged.cs'
+            'src/Unstaged.cs',
+            ('src/' + $unicodeFileName)
         ) | ForEach-Object {
             Set-Content -LiteralPath (Join-Path $fixtureRoot $_) -Value 'class FixtureType { }' -Encoding utf8
         }
@@ -179,6 +181,7 @@ Describe 'Changed cleanup path discovery' {
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'core.quotePath', 'true') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create cleanup fixture') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'feature') | Out-Null
@@ -186,6 +189,10 @@ Describe 'Changed cleanup path discovery' {
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Branch.cs') -Value 'class BranchFixtureType { }' -Encoding utf8
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', 'src/Branch.cs') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Add branch file') | Out-Null
+
+        Set-Content -LiteralPath (Join-Path $fixtureRoot ('src/' + $unicodeFileName)) -Value 'class ChangedCafeFixtureType { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Change non-ASCII path') | Out-Null
 
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Staged.cs') -Value 'class StagedFixtureType { }' -Encoding utf8
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', 'src/Staged.cs') | Out-Null
@@ -200,40 +207,13 @@ Describe 'Changed cleanup path discovery' {
                 -HeadRef 'HEAD'
         )
 
-        $paths | Should -HaveCount 3
+        $paths | Should -HaveCount 4
         $paths | Should -Contain 'src/Branch.cs'
         $paths | Should -Contain 'src/Staged.cs'
         $paths | Should -Contain 'src/Unstaged.cs'
+        $paths | Should -Contain ('src/' + $unicodeFileName)
         $paths | Should -Not -Contain 'src/Deleted.cs'
         $paths | Should -Not -Contain 'src/Untracked.cs'
-    }
-
-    It 'preserves literal non-ASCII paths when Git path quoting is enabled' {
-        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
-        $unicodeFileName = 'Caf' + [char]0x00E9 + '.cs'
-        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'src') -Force | Out-Null
-        Set-Content -LiteralPath (Join-Path $fixtureRoot ('src/' + $unicodeFileName)) -Value 'class CafeFixtureType { }' -Encoding utf8
-
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'core.quotePath', 'true') | Out-Null
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create cleanup fixture') | Out-Null
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'feature') | Out-Null
-        Set-Content -LiteralPath (Join-Path $fixtureRoot ('src/' + $unicodeFileName)) -Value 'class ChangedCafeFixtureType { }' -Encoding utf8
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
-        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Change non-ASCII path') | Out-Null
-
-        $paths = @(
-            Get-CleanupChangedPaths `
-                -RepoRoot $fixtureRoot `
-                -BaseRef 'main' `
-                -HeadRef 'HEAD'
-        )
-
-        $paths | Should -Contain ('src/' + $unicodeFileName)
     }
 }
 
