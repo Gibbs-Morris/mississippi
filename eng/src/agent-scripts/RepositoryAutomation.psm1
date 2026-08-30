@@ -490,7 +490,9 @@ function Get-CleanupChangedPaths {
             throw "Git returned no merge base for '$HeadRef' and '$BaseRef'."
         }
 
+        $gitPathArguments = @('-c', 'core.quotePath=false')
         $branchDiffArguments = @(
+            $gitPathArguments
             'diff',
             '--name-only',
             '--diff-filter=ACMR',
@@ -503,13 +505,13 @@ function Get-CleanupChangedPaths {
             throw "Unable to list changes between '$BaseRef' and '$HeadRef' (git exit code $branchDiffExitCode)."
         }
 
-        $stagedPaths = @(git diff --name-only --diff-filter=ACMR --cached --)
+        $stagedPaths = @(git @gitPathArguments diff --name-only --diff-filter=ACMR --cached --)
         $stagedDiffExitCode = $LASTEXITCODE
         if ($stagedDiffExitCode -ne 0) {
             throw "Unable to list staged changes (git exit code $stagedDiffExitCode)."
         }
 
-        $unstagedPaths = @(git diff --name-only --diff-filter=ACMR --)
+        $unstagedPaths = @(git @gitPathArguments diff --name-only --diff-filter=ACMR --)
         $unstagedDiffExitCode = $LASTEXITCODE
         if ($unstagedDiffExitCode -ne 0) {
             throw "Unable to list unstaged changes (git exit code $unstagedDiffExitCode)."
