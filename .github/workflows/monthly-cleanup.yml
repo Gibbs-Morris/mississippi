@@ -97,8 +97,51 @@ jobs:
           )
           if ($existingPullRequests.Count -gt 0) {
             $existing = $existingPullRequests[0]
-            Write-Host "Cleanup drift is already tracked by PR #$($existing.number): $($existing.url)"
-            Write-Host 'Skipping duplicate cleanup PR creation.'
+            $existingBranch = [string]$existing.headRefName
+            if ([string]::IsNullOrWhiteSpace($existingBranch)) {
+              throw "Existing cleanup pull request #$($existing.number) does not expose a head branch."
+            }
+
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit --message $env:CLEANUP_PR_TITLE
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Unable to commit monthly cleanup drift before updating the existing pull request.'
+            }
+            $cleanupCommit = (git rev-parse HEAD).Trim()
+            if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($cleanupCommit)) {
+              throw 'Unable to resolve the monthly cleanup commit.'
+            }
+
+            git fetch --no-tags origin "refs/heads/$existingBranch"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to fetch the existing cleanup branch '$existingBranch'."
+            }
+            git switch --create $existingBranch --track "origin/$existingBranch"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to check out the existing cleanup branch '$existingBranch'."
+            }
+
+            git cherry-pick $cleanupCommit
+            if ($LASTEXITCODE -ne 0) {
+              $conflicts = @(git diff --name-only --diff-filter=U)
+              if ($conflicts.Count -gt 0) {
+                git cherry-pick --abort
+                throw "Unable to apply current cleanup drift to existing branch '$existingBranch'. Conflicts: $($conflicts -join ', ')"
+              }
+
+              git cherry-pick --skip
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to finish applying current cleanup drift to existing branch '$existingBranch'."
+              }
+              Write-Host "Current cleanup drift is already present in PR #$($existing.number)."
+            }
+
+            git push --set-upstream origin $existingBranch
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to push updated cleanup branch '$existingBranch'."
+            }
+            Write-Host "Updated existing cleanup PR #$($existing.number): $($existing.url)"
             exit 0
           }
 
