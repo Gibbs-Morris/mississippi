@@ -135,10 +135,11 @@ jobs:
         env:
           FILE_LIST: ${{ steps.detect.outputs.file_list }}
           RUN_MODE: ${{ steps.manual.outputs.run_mode || steps.detect.outputs.run_mode }}
+          PLAN_MODE: ${{ steps.plan.outputs.mode }}
           CACHE_HOME: ${{ runner.temp }}/.jb-caches
         run: |
           $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-          if ($env:RUN_MODE -eq 'full') {
+          if ($env:RUN_MODE -eq 'full' -or $env:PLAN_MODE -eq 'FullFallback') {
             ./clean-up.ps1 `
               -Configuration $env:CONFIGURATION `
               -CachesHome $env:CACHE_HOME `
@@ -162,6 +163,7 @@ jobs:
         env:
           FILE_LIST: ${{ steps.detect.outputs.file_list }}
           RUN_MODE: ${{ steps.manual.outputs.run_mode || steps.detect.outputs.run_mode }}
+          PLAN_MODE: ${{ steps.plan.outputs.mode }}
         run: |
           $trackedChanges = @(git diff --name-only HEAD -- . ':!**/packages*.lock.json')
           $untrackedChanges = @(
@@ -174,7 +176,7 @@ jobs:
             exit 0
           }
 
-          if ($env:RUN_MODE -eq 'targeted' -and $env:FILE_LIST -and (Test-Path -LiteralPath $env:FILE_LIST)) {
+          if ($env:RUN_MODE -eq 'targeted' -and $env:PLAN_MODE -ne 'FullFallback' -and $env:FILE_LIST -and (Test-Path -LiteralPath $env:FILE_LIST)) {
             $prChangedPaths = @(
               Get-Content -LiteralPath $env:FILE_LIST -Encoding UTF8 |
                 ForEach-Object { $_.Trim() } |
