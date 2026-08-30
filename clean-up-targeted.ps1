@@ -67,38 +67,8 @@ try {
     }
 
     $pwshPath = (Get-Command pwsh -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
-    $coreArguments = @(
-        '-FileListPath', $temporaryFilePath,
-        '-Configuration', $Configuration,
-        '-Profile', $Profile
-    )
-    if (-not [string]::IsNullOrWhiteSpace($SettingsPath)) {
-        $coreArguments += @('-SettingsPath', $SettingsPath)
-    }
-    if (-not [string]::IsNullOrWhiteSpace($CachesHome)) {
-        $coreArguments += @('-CachesHome', $CachesHome)
-    }
-    if ($NoUpdates) {
-        $coreArguments += '-NoUpdates'
-    }
-    if ($SkipSamples) {
-        $coreArguments += '-SkipSamples'
-    }
-    if ($SkipMississippi) {
-        $coreArguments += '-SkipMississippi'
-    }
-    if ($SkipToolRestore) {
-        $coreArguments += '-SkipToolRestore'
-    }
-    if ($SkipRestore) {
-        $coreArguments += '-SkipRestore'
-    }
-    if ($SkipBuild) {
-        $coreArguments += '-SkipBuild'
-    }
-    if ($PlanOnly) {
-        $coreArguments += '-PlanOnly'
-    }
+    $coreArguments = @('-FileListPath', $temporaryFilePath)
+    $coreArguments += ConvertTo-CleanupArgumentList -Parameters $PSBoundParameters
 
     & $pwshPath -NoProfile -File $coreScriptPath @coreArguments
     $exitCode = $LASTEXITCODE

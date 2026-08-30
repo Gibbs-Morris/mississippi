@@ -27,43 +27,19 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$modulePath = Join-Path $PSScriptRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1'
 $coreScriptPath = Join-Path $PSScriptRoot 'clean-up-core.ps1'
 $exitCode = 0
 
 try {
+    Import-Module -Name $modulePath -Force -ErrorAction Stop
+
     if (-not (Test-Path -LiteralPath $coreScriptPath -PathType Leaf)) {
         throw "Cleanup core script not found: $coreScriptPath"
     }
 
     $pwshPath = (Get-Command pwsh -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
-    $coreArguments = @(
-        '-Configuration', $Configuration,
-        '-Profile', $Profile
-    )
-    if (-not [string]::IsNullOrWhiteSpace($SettingsPath)) {
-        $coreArguments += @('-SettingsPath', $SettingsPath)
-    }
-    if (-not [string]::IsNullOrWhiteSpace($CachesHome)) {
-        $coreArguments += @('-CachesHome', $CachesHome)
-    }
-    if ($NoUpdates) {
-        $coreArguments += '-NoUpdates'
-    }
-    if ($SkipSamples) {
-        $coreArguments += '-SkipSamples'
-    }
-    if ($SkipMississippi) {
-        $coreArguments += '-SkipMississippi'
-    }
-    if ($SkipToolRestore) {
-        $coreArguments += '-SkipToolRestore'
-    }
-    if ($SkipRestore) {
-        $coreArguments += '-SkipRestore'
-    }
-    if ($SkipBuild) {
-        $coreArguments += '-SkipBuild'
-    }
+    $coreArguments = ConvertTo-CleanupArgumentList -Parameters $PSBoundParameters
 
     & $pwshPath -NoProfile -File $coreScriptPath @coreArguments
 

@@ -135,6 +135,54 @@ function Invoke-RepositoryProcess {
 
 }
 
+function ConvertTo-CleanupArgumentList {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Parameters
+    )
+
+    $argumentNames = @(
+        'Configuration',
+        'Profile',
+        'SettingsPath',
+        'CachesHome',
+        'NoUpdates',
+        'SkipSamples',
+        'SkipMississippi',
+        'SkipToolRestore',
+        'SkipRestore',
+        'SkipBuild',
+        'PlanOnly'
+    )
+    $arguments = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($name in $argumentNames) {
+        if ($Parameters.Keys -notcontains $name) {
+            continue
+        }
+
+        $value = $Parameters[$name]
+        if ($value -is [System.Management.Automation.SwitchParameter]) {
+            if ($value.IsPresent) {
+                $null = $arguments.Add("-$name")
+            }
+            continue
+        }
+
+        if ($null -eq $value) {
+            continue
+        }
+
+        $valueString = [string]$value
+        if (-not [string]::IsNullOrWhiteSpace($valueString)) {
+            $null = $arguments.Add("-$name")
+            $null = $arguments.Add($valueString)
+        }
+    }
+
+    return $arguments.ToArray()
+}
+
 function Invoke-DotnetToolRestore {
     [CmdletBinding()]
     param(
@@ -1369,4 +1417,4 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, ConvertTo-CleanupArgumentList, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
