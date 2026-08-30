@@ -51,7 +51,7 @@ jobs:
           }
 
           $fileList = Join-Path $env:RUNNER_TEMP 'cleanup-pr-files.txt'
-          $changedFiles = @(git diff --name-only --diff-filter=ACMR "$($env:BASE_SHA)...$($env:HEAD_SHA)")
+          $changedFiles = @(git diff --name-only --diff-filter=ACMRD "$($env:BASE_SHA)...$($env:HEAD_SHA)")
           if ($LASTEXITCODE -ne 0) {
             throw "Unable to calculate the PR delta between '$($env:BASE_SHA)' and '$($env:HEAD_SHA)'."
           }
