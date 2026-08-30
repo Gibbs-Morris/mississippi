@@ -460,21 +460,7 @@ function Get-CleanupProjectCatalog {
     )
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
-    $projectFiles = @(
-        Get-ChildItem -LiteralPath $rootFullPath -Recurse -Filter '*.csproj' -File |
-            Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' }
-    )
-
     $catalogByPath = @{}
-    foreach ($projectFile in $projectFiles) {
-        $relativeProjectPath = ConvertTo-CleanupRelativePath -Path $projectFile.FullName -RepoRoot $rootFullPath
-        $catalogByPath[$relativeProjectPath.ToLowerInvariant()] = [pscustomobject]@{
-            ProjectPath    = $projectFile.FullName
-            RelativePath   = $relativeProjectPath
-            DirectoryPath  = $projectFile.DirectoryName
-            SolutionPaths  = [System.Collections.Generic.List[string]]::new()
-        }
-    }
 
     foreach ($solutionName in @('mississippi.slnx', 'samples.slnx')) {
         $solutionPath = Join-Path $rootFullPath $solutionName
@@ -487,9 +473,19 @@ function Get-CleanupProjectCatalog {
         foreach ($projectNode in $projectNodes) {
             $projectPath = [string]$projectNode.Path
             $relativeProjectPath = ConvertTo-CleanupRelativePath -Path $projectPath -RepoRoot $rootFullPath
+            $projectFullPath = [System.IO.Path]::GetFullPath((Join-Path $rootFullPath ($relativeProjectPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)))
+            if (-not (Test-Path -LiteralPath $projectFullPath -PathType Leaf)) {
+                throw "Solution '$solutionName' references project '$relativeProjectPath', but that project was not found."
+            }
+
             $catalogKey = $relativeProjectPath.ToLowerInvariant()
             if (-not $catalogByPath.ContainsKey($catalogKey)) {
-                throw "Solution '$solutionName' references project '$relativeProjectPath', but that project was not found."
+                $catalogByPath[$catalogKey] = [pscustomobject]@{
+                    ProjectPath   = $projectFullPath
+                    RelativePath  = $relativeProjectPath
+                    DirectoryPath = Split-Path -Parent $projectFullPath
+                    SolutionPaths = [System.Collections.Generic.List[string]]::new()
+                }
             }
 
             $catalogEntry = $catalogByPath[$catalogKey]

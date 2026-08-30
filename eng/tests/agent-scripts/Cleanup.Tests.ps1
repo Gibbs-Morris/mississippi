@@ -76,6 +76,19 @@ Describe 'Cleanup planning' {
         @($plan.Groups | Where-Object { $_.RelativePath -eq 'samples/App/App.csproj' }).SolutionPaths | Should -Contain 'samples.slnx'
     }
 
+    It 'builds the project catalog from solution membership without scanning the repository' {
+        Mock -CommandName Get-ChildItem -ModuleName RepositoryAutomation -MockWith {
+            throw 'The project catalog should not recursively scan the repository.'
+        }
+
+        $catalog = @(Get-CleanupProjectCatalog -RepoRoot $script:fixtureRoot)
+
+        @($catalog) | Should -HaveCount 3
+        @($catalog.RelativePath) | Should -Not -Contain 'orphan/Orphan.csproj'
+        @($catalog | Where-Object { $_.RelativePath -eq 'samples/App/App.csproj' }).SolutionPaths | Should -Contain 'samples.slnx'
+        Should -Invoke Get-ChildItem -ModuleName RepositoryAutomation -Times 0
+    }
+
     It 'ignores documentation and deleted paths without scheduling cleanup' {
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
