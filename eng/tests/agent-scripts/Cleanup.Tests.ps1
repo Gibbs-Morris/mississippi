@@ -2,7 +2,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$modulePath = Join-Path $PSScriptRoot '..\..\src\agent-scripts\RepositoryAutomation.psm1'
+$modulePath = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'src', 'agent-scripts', 'RepositoryAutomation.psm1')
 $modulePath = [System.IO.Path]::GetFullPath($modulePath)
 Import-Module -Name $modulePath -Force
 
