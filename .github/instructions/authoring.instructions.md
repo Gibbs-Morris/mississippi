@@ -36,4 +36,3 @@ Anyone creating or updating `*.instructions.md`.
 ## References
 
 - RFC keywords: `.github/instructions/rfc2119.instructions.md`
-- Sync policy: `.github/instructions/instruction-mdc-sync.instructions.md`
