@@ -54,20 +54,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-aspire-
 
-      - name: Restore Samples in locked mode
+      - name: Restore AppHosts in locked mode
         shell: pwsh
         run: |
-          dotnet restore "${{ github.workspace }}/samples.slnx" --locked-mode
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
+          $appHosts = @(
+            "${{ github.workspace }}/samples/Crescent/Crescent.AppHost/Crescent.AppHost.csproj"
+            "${{ github.workspace }}/samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj"
+            "${{ github.workspace }}/samples/Spring/Spring.AppHost/Spring.AppHost.csproj"
+            "${{ github.workspace }}/tests/Aqueduct.Gateway.L2Tests.AppHost/Aqueduct.Gateway.L2Tests.AppHost.csproj"
+          )
 
-      - name: Restore Mississippi in locked mode
-        shell: pwsh
-        run: |
-          dotnet restore "${{ github.workspace }}/mississippi.slnx" --locked-mode
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
+          foreach ($appHost in $appHosts) {
+            dotnet restore $appHost --locked-mode --no-dependencies
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
           }
 
       - name: Verify restore does not modify the checkout
@@ -90,7 +91,7 @@ jobs:
       - name: Build representative AppHost
         shell: pwsh
         run: |
-          dotnet build "${{ github.workspace }}/samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj" `
+          dotnet build "${{ github.workspace }}/tests/Aqueduct.Gateway.L2Tests.AppHost/Aqueduct.Gateway.L2Tests.AppHost.csproj" `
             --configuration Debug --no-restore --no-incremental -warnaserror
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
@@ -116,7 +117,7 @@ jobs:
 
           $toolPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           $aspireExecutable = if ($IsWindows) {
-            Join-Path $toolPath "aspire.exe"
+            Join-Path $toolPath "aspire.cmd"
           } else {
             Join-Path $toolPath "aspire"
           }
@@ -128,7 +129,7 @@ jobs:
       - name: Smoke-start and stop representative AppHost
         shell: pwsh
         run: |
-          $appHost = Join-Path $env:GITHUB_WORKSPACE "samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj"
+          $appHost = Join-Path $env:GITHUB_WORKSPACE "tests/Aqueduct.Gateway.L2Tests.AppHost/Aqueduct.Gateway.L2Tests.AppHost.csproj"
           $started = $false
           try {
             $output = @(aspire run --project $appHost --detach --format Json --no-build --non-interactive 2>&1)
