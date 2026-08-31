@@ -280,7 +280,7 @@ After all sub-plans, reviews, dependency graph, and instruction updates are comp
 
 1. Ensure all files are saved
 2. Create branch: `epic/<name>/plan`
-3. Commit: plan folder + sub-plans + `dependencies.json` + instruction updates + MDC sync output
+3. Commit: plan folder + sub-plans + `dependencies.json` + instruction updates
 4. Auto-create PR via MCP with:
    - Title: `<task description> — master plan + sub-plans +semver: skip`
    - Body: master plan summary + Mermaid dependency graph + sub-plan list table
@@ -379,6 +379,6 @@ You may only declare the plan "final" when:
 - All twelve persona reviews completed per sub-plan
 - Per-sub-plan synthesis completed
 - `PLAN.md` exists with dependency graph; `dependencies.json` exists; other docs moved to `audit/`
-- Instruction extraction completed (if applicable); MDC sync ran
+- Instruction extraction completed (if applicable); canonical instruction updates are included
 - PR 1 created via MCP
 - Handoff protocol offered for ready sub-plans
