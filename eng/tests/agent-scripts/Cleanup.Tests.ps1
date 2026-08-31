@@ -1,4 +1,8 @@
+#!/usr/bin/env pwsh
+
 #requires -Module Pester
+
+Set-StrictMode -Version Latest
 
 $ErrorActionPreference = 'Stop'
 
@@ -48,6 +52,8 @@ Describe 'Cleanup planning' {
 
         @(
             'src/Foo/Foo.cs',
+            'src/Foo/Foo.razor.css',
+            'src/Foo/site.js',
             'src/Bar/Bar.cs',
             'samples/App/App.cs',
             'orphan/orphan.cs'
@@ -91,6 +97,17 @@ Describe 'Cleanup planning' {
         @($plan.AffectedProjects) | Should -Contain 'src/Bar/Bar.csproj'
         @($plan.AffectedProjects) | Should -Contain 'samples/App/App.csproj'
         @($plan.Groups | Where-Object { $_.RelativePath -eq 'samples/App/App.csproj' }).SolutionPaths | Should -Contain 'samples.slnx'
+    }
+
+    It 'keeps project-owned web assets in the targeted cleanup scope' {
+        $plan = Get-CleanupPlan `
+            -RepoRoot $script:fixtureRoot `
+            -Paths @('src/Foo/Foo.razor.css', 'src/Foo/site.js')
+
+        $plan.Mode | Should -Be 'Targeted'
+        @($plan.EligiblePaths) | Should -Be @('src/Foo/Foo.razor.css', 'src/Foo/site.js')
+        @($plan.Groups) | Should -HaveCount 1
+        @($plan.Groups[0].IncludePaths) | Should -Be @('src/Foo/Foo.razor.css', 'src/Foo/site.js')
     }
 
     It 'builds the project catalog from solution membership without scanning the repository' {
@@ -290,6 +307,135 @@ Describe 'CleanupCode invocation' {
             ($IncludePaths -join ';') -eq 'Foo.cs;Sub/Other.cs'
         }
         @(Get-ChildItem -LiteralPath $projectDirectory -Filter '.cleanup-targeted-*' -Force) | Should -HaveCount 0
+    }
+}
+
+Describe 'Repository cleanup dispatch' {
+    BeforeEach {
+        $script:dispatcherRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        New-Item -ItemType Directory -Path $script:dispatcherRoot -Force | Out-Null
+        Set-Content `
+            -LiteralPath (Join-Path $script:dispatcherRoot 'Directory.DotSettings') `
+            -Value '<ApplicationSettings />' `
+            -Encoding utf8
+
+        $script:dispatcherProject = Join-Path $script:dispatcherRoot 'src/Foo/Foo.csproj'
+        New-Item -ItemType Directory -Path (Split-Path -Parent $script:dispatcherProject) -Force | Out-Null
+        Set-Content -LiteralPath $script:dispatcherProject -Value '<Project />' -Encoding utf8
+
+        Mock -CommandName Invoke-DotnetToolRestore -ModuleName RepositoryAutomation -MockWith { }
+        Mock -CommandName Invoke-SolutionRestore -ModuleName RepositoryAutomation -MockWith { }
+        Mock -CommandName Invoke-SolutionBuild -ModuleName RepositoryAutomation -MockWith { }
+        Mock -CommandName Invoke-TargetedProjectCleanup -ModuleName RepositoryAutomation -MockWith { }
+        Mock -CommandName Invoke-MississippiSolutionCleanup -ModuleName RepositoryAutomation -MockWith { }
+        Mock -CommandName Invoke-SampleSolutionCleanup -ModuleName RepositoryAutomation -MockWith { }
+    }
+
+    It 'returns before tool, restore, build, and cleanup work for a no-op plan' {
+        Mock -CommandName Get-CleanupPlan -ModuleName RepositoryAutomation -MockWith {
+            [pscustomobject]@{
+                Mode             = 'NoOp'
+                Reason           = 'Nothing to clean.'
+                InputPaths       = @('README.md')
+                EligiblePaths    = @()
+                IgnoredPaths     = @('README.md')
+                Groups           = @()
+                AffectedProjects = @()
+            }
+        }
+
+        $plan = Invoke-RepositoryCleanup `
+            -Mode Targeted `
+            -RepoRoot $script:dispatcherRoot `
+            -Paths @('README.md')
+
+        $plan.Mode | Should -Be 'NoOp'
+        Should -Invoke Invoke-DotnetToolRestore -ModuleName RepositoryAutomation -Times 0
+        Should -Invoke Invoke-SolutionRestore -ModuleName RepositoryAutomation -Times 0
+        Should -Invoke Invoke-SolutionBuild -ModuleName RepositoryAutomation -Times 0
+        Should -Invoke Invoke-TargetedProjectCleanup -ModuleName RepositoryAutomation -Times 0
+    }
+
+    It 'restores, builds, and cleans each targeted project once' {
+        Mock -CommandName Get-CleanupPlan -ModuleName RepositoryAutomation -MockWith {
+            [pscustomobject]@{
+                Mode             = 'Targeted'
+                Reason           = 'One project selected.'
+                InputPaths       = @('src/Foo/Foo.cs')
+                EligiblePaths    = @('src/Foo/Foo.cs')
+                IgnoredPaths     = @()
+                Groups           = @(
+                    [pscustomobject]@{
+                        ProjectPath   = $script:dispatcherProject
+                        RelativePath  = 'src/Foo/Foo.csproj'
+                        SolutionPaths = @('mississippi.slnx')
+                        IncludePaths  = @('src/Foo/Foo.cs')
+                    }
+                )
+                AffectedProjects = @('src/Foo/Foo.csproj')
+            }
+        }
+
+        $plan = Invoke-RepositoryCleanup `
+            -Mode Targeted `
+            -RepoRoot $script:dispatcherRoot `
+            -Paths @('src/Foo/Foo.cs')
+
+        $plan.Mode | Should -Be 'Targeted'
+        Should -Invoke Invoke-DotnetToolRestore -ModuleName RepositoryAutomation -Times 1
+        Should -Invoke Invoke-SolutionRestore -ModuleName RepositoryAutomation -Times 1 -ParameterFilter {
+            $SolutionPath -eq $script:dispatcherProject
+        }
+        Should -Invoke Invoke-SolutionBuild -ModuleName RepositoryAutomation -Times 1 -ParameterFilter {
+            $SolutionPath -eq $script:dispatcherProject -and
+            $AdditionalArguments -contains '-p:RunAnalyzers=false'
+        }
+        Should -Invoke Invoke-TargetedProjectCleanup -ModuleName RepositoryAutomation -Times 1 -ParameterFilter {
+            $ProjectGroup.RelativePath -eq 'src/Foo/Foo.csproj'
+        }
+    }
+
+    It 'routes a full-fallback plan through strict full cleanup' {
+        Mock -CommandName Get-CleanupPlan -ModuleName RepositoryAutomation -MockWith {
+            [pscustomobject]@{
+                Mode             = 'FullFallback'
+                Reason           = 'Global settings changed.'
+                InputPaths       = @('Directory.DotSettings')
+                EligiblePaths    = @()
+                IgnoredPaths     = @('Directory.DotSettings')
+                Groups           = @()
+                AffectedProjects = @()
+            }
+        }
+
+        $plan = Invoke-RepositoryCleanup `
+            -Mode Targeted `
+            -RepoRoot $script:dispatcherRoot `
+            -Paths @('Directory.DotSettings')
+
+        $plan.Mode | Should -Be 'FullFallback'
+        Should -Invoke Invoke-DotnetToolRestore -ModuleName RepositoryAutomation -Times 1
+        Should -Invoke Invoke-SolutionRestore -ModuleName RepositoryAutomation -Times 2
+        Should -Invoke Invoke-SolutionBuild -ModuleName RepositoryAutomation -Times 2
+        Should -Invoke Invoke-MississippiSolutionCleanup -ModuleName RepositoryAutomation -Times 1
+        Should -Invoke Invoke-SampleSolutionCleanup -ModuleName RepositoryAutomation -Times 1
+    }
+
+    It 'honors full-cleanup skip switches without running unnecessary preparation' {
+        $plan = Invoke-RepositoryCleanup `
+            -Mode Full `
+            -RepoRoot $script:dispatcherRoot `
+            -SkipSamples `
+            -SkipToolRestore `
+            -SkipRestore `
+            -SkipBuild
+
+        $plan.Mode | Should -Be 'Full'
+        Should -Invoke Invoke-DotnetToolRestore -ModuleName RepositoryAutomation -Times 0
+        Should -Invoke Invoke-SolutionRestore -ModuleName RepositoryAutomation -Times 0
+        Should -Invoke Invoke-SolutionBuild -ModuleName RepositoryAutomation -Times 0
+        Should -Invoke Invoke-MississippiSolutionCleanup -ModuleName RepositoryAutomation -Times 1
+        Should -Invoke Invoke-SampleSolutionCleanup -ModuleName RepositoryAutomation -Times 0
     }
 }
 
