@@ -83,7 +83,7 @@ jobs:
         shell: pwsh
         run: |
           dotnet build "${{ github.workspace }}/samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj" `
-            --configuration Release --no-restore --no-incremental -warnaserror
+            --configuration Debug --no-restore --no-incremental -warnaserror
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
