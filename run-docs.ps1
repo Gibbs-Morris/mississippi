@@ -64,7 +64,7 @@ if (-not (Test-Path $packageJsonPath)) {
 
 $npmCommand = Get-Command npm -ErrorAction SilentlyContinue
 if ($null -eq $npmCommand) {
-    Stop-Script -Message 'npm was not found on PATH. Install Node.js 20+ and ensure npm is available.'
+    Stop-Script -Message 'npm was not found on PATH. Install Node.js 24+ and ensure npm is available.'
 }
 
 $script:NpmExecutable = $npmCommand.Source
