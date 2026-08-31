@@ -352,7 +352,7 @@ function Invoke-TargetedProjectCleanup {
     $projectRelativeIncludes = @(
         foreach ($relativePath in @($ProjectGroup.IncludePaths)) {
             $fullPath = [System.IO.Path]::GetFullPath(
-                (Join-Path $rootFullPath ($relativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar))
+                (Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $relativePath))
             )
             $includePath = [System.IO.Path]::GetRelativePath($projectDirectory, $fullPath)
             if ($includePath -eq '..' -or
@@ -391,6 +391,16 @@ function Invoke-TargetedProjectCleanup {
     }
 }
 
+function ConvertTo-CleanupPlatformPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $directorySeparator = [string][System.IO.Path]::DirectorySeparatorChar
+    return $Path.Replace('/', $directorySeparator).Replace('\', $directorySeparator)
+}
+
 function ConvertTo-CleanupRelativePath {
     [CmdletBinding()]
     param(
@@ -404,7 +414,7 @@ function ConvertTo-CleanupRelativePath {
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
     $pathValue = $Path.Trim()
-    $pathForCurrentPlatform = $pathValue -replace '[\\/]', [System.IO.Path]::DirectorySeparatorChar
+    $pathForCurrentPlatform = ConvertTo-CleanupPlatformPath -Path $pathValue
     $fullPath = if ([System.IO.Path]::IsPathRooted($pathForCurrentPlatform)) {
         [System.IO.Path]::GetFullPath($pathForCurrentPlatform)
     }
@@ -473,7 +483,7 @@ function Get-CleanupProjectCatalog {
         foreach ($projectNode in $projectNodes) {
             $projectPath = [string]$projectNode.Path
             $relativeProjectPath = ConvertTo-CleanupRelativePath -Path $projectPath -RepoRoot $rootFullPath
-            $projectFullPath = [System.IO.Path]::GetFullPath((Join-Path $rootFullPath ($relativeProjectPath -replace '/', [System.IO.Path]::DirectorySeparatorChar)))
+            $projectFullPath = [System.IO.Path]::GetFullPath((Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $relativeProjectPath)))
             if (-not (Test-Path -LiteralPath $projectFullPath -PathType Leaf)) {
                 throw "Solution '$solutionName' references project '$relativeProjectPath', but that project was not found."
             }
@@ -507,7 +517,7 @@ function Resolve-CleanupProject {
     )
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
-    $fullPath = [System.IO.Path]::GetFullPath((Join-Path $rootFullPath ($RelativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)))
+    $fullPath = [System.IO.Path]::GetFullPath((Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $RelativePath)))
     $extension = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
 
     if ($extension -eq '.csproj') {
@@ -571,7 +581,7 @@ function Get-CleanupPlan {
     $ignoredPaths = New-Object System.Collections.Generic.List[string]
 
     foreach ($relativePath in @($normalizedPaths)) {
-        $fullPath = Join-Path $rootFullPath ($relativePath -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+        $fullPath = Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $relativePath)
         $extension = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
         if ($cleanupExtensions -notcontains $extension -or -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
             $ignoredPaths.Add($relativePath)
