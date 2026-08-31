@@ -65,6 +65,7 @@ jobs:
         shell: pwsh
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
           GH_TOKEN: ${{ github.token }}
         run: |
           git add --all -- . ':(exclude,glob)**/packages*.lock.json'
@@ -86,14 +87,19 @@ jobs:
             --base $env:DEFAULT_BRANCH `
             --state open `
             --limit 100 `
-            --json number,title,headRefName,url
+            --json number,title,headRefName,url,isCrossRepository,headRepositoryOwner
           if ($LASTEXITCODE -ne 0) {
             throw 'Unable to check for an existing monthly cleanup pull request.'
           }
 
           $existingPullRequests = @(
             ($pullRequestJson | ConvertFrom-Json) |
-              Where-Object { $_.title -eq $env:CLEANUP_PR_TITLE }
+              Where-Object {
+                $_.title -eq $env:CLEANUP_PR_TITLE -and
+                $_.headRefName -like 'automation/monthly-cleanup-*' -and
+                -not ([bool]$_.isCrossRepository) -and
+                [string]$_.headRepositoryOwner.login -eq $env:REPOSITORY_OWNER
+              }
           )
           if ($existingPullRequests.Count -gt 0) {
             $existing = $existingPullRequests[0]
