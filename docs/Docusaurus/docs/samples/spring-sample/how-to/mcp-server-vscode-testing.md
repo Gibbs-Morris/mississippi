@@ -24,6 +24,7 @@ Reference: [Spring.Gateway Program.cs](https://github.com/Gibbs-Morris/mississip
 - VS Code with GitHub Copilot Chat enabled
 - This repository checked out locally
 - .NET SDK installed
+- Aspire CLI installed with `dotnet tool install -g Aspire.Cli` for direct AppHost workflows. When `aspire` is not on `PATH`, `dotnet run` can use the SDK-paired CLI through DNX.
 
 ## Step 1: Start Spring Locally
 

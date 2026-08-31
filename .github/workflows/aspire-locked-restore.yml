@@ -1,0 +1,172 @@
+name: "Aspire AppHost Locked Restore"
+
+on:
+  workflow_dispatch:
+  merge_group:
+  pull_request:
+    branches:
+      - main
+      - feature/**
+      - topic/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  apphost-locked-restore:
+    name: "AppHost locked restore (${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Clear preinstalled NuGet caches
+        shell: pwsh
+        run: |
+          dotnet nuget locals all --clear
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-aspire-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-aspire-
+
+      - name: Restore AppHosts in locked mode
+        shell: pwsh
+        run: |
+          $appHosts = @(
+            "${{ github.workspace }}/samples/Crescent/Crescent.AppHost/Crescent.AppHost.csproj"
+            "${{ github.workspace }}/samples/LightSpeed/LightSpeed.AppHost/LightSpeed.AppHost.csproj"
+            "${{ github.workspace }}/samples/Spring/Spring.AppHost/Spring.AppHost.csproj"
+            "${{ github.workspace }}/tests/Aqueduct.Gateway.L2Tests.AppHost/Aqueduct.Gateway.L2Tests.AppHost.csproj"
+          )
+
+          foreach ($appHost in $appHosts) {
+            dotnet restore $appHost --locked-mode --no-dependencies
+            if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+            }
+          }
+
+      - name: Verify restore does not modify the checkout
+        shell: pwsh
+        run: |
+          git diff --exit-code
+          $diffExitCode = $LASTEXITCODE
+          if ($diffExitCode -ne 0) {
+            git diff --color=always
+            exit $diffExitCode
+          }
+
+          $changes = @(git status --porcelain)
+          if ($changes.Count -gt 0) {
+            Write-Host "Restore created unexpected working-tree changes:"
+            $changes
+            exit 1
+          }
+
+      - name: Build representative AppHost
+        shell: pwsh
+        run: |
+          dotnet build "${{ github.workspace }}/tests/Aqueduct.Gateway.L2Tests.AppHost/Aqueduct.Gateway.L2Tests.AppHost.csproj" `
+            --configuration Debug --no-restore --no-incremental -warnaserror
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Install matching Aspire CLI
+        shell: pwsh
+        run: |
+          [xml]$packages = Get-Content -LiteralPath "Directory.Packages.props" -Raw
+          $aspireVersion = ($packages.Project.ItemGroup.PackageVersion |
+            Where-Object { $_.Include -eq "Aspire.Hosting.AppHost" } |
+            Select-Object -First 1).Version
+          if ([string]::IsNullOrWhiteSpace($aspireVersion)) {
+            throw "Unable to determine the Aspire package version from Directory.Packages.props."
+          }
+
+          $toolPath = Join-Path $env:RUNNER_TEMP "aspire-cli"
+          New-Item -ItemType Directory -Path $toolPath -Force | Out-Null
+          dotnet tool install --tool-path $toolPath Aspire.Cli --version $aspireVersion
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          $toolPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $aspireExecutable = if ($IsWindows) {
+            Join-Path $toolPath "aspire.cmd"
+          } else {
+            Join-Path $toolPath "aspire"
+          }
+          & $aspireExecutable --version
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      - name: Smoke-start and stop representative AppHost
+        shell: pwsh
+        run: |
+          $appHost = Join-Path $env:GITHUB_WORKSPACE "tests/Aqueduct.Gateway.L2Tests.AppHost/Aqueduct.Gateway.L2Tests.AppHost.csproj"
+          $started = $false
+          try {
+            $output = @(aspire run --project $appHost --detach --format Json --no-build --non-interactive 2>&1)
+            $startExitCode = $LASTEXITCODE
+            $output | ForEach-Object { Write-Host $_ }
+            if ($startExitCode -ne 0) {
+              throw "Aspire CLI failed to start the AppHost (exit code $startExitCode)."
+            }
+
+            $started = $true
+            $outputText = $output -join [Environment]::NewLine
+            if ($outputText -match "ASPIRE009|ASPIRE010|ASPIRE011") {
+              throw "Aspire CLI reported a bundle-resolution diagnostic."
+            }
+
+            $jsonStart = $outputText.IndexOf('{')
+            $jsonEnd = $outputText.LastIndexOf('}')
+            if ($jsonStart -lt 0 -or $jsonEnd -le $jsonStart) {
+              throw "Aspire CLI did not report detached AppHost details as JSON."
+            }
+
+            $result = $outputText.Substring($jsonStart, $jsonEnd - $jsonStart + 1) | ConvertFrom-Json
+            $appHostPid = $result.appHostPid -as [long]
+            if ($null -eq $appHostPid -or $appHostPid -le 0) {
+              throw "Aspire CLI did not report a valid AppHost process ID."
+            }
+
+            $appHostProcess = Get-Process -Id $appHostPid -ErrorAction SilentlyContinue
+            if ($null -eq $appHostProcess) {
+              throw "Aspire AppHost exited before the detached process could be inspected."
+            }
+          }
+          finally {
+            $stopOutput = @(aspire stop --project $appHost --non-interactive 2>&1)
+            $stopExitCode = $LASTEXITCODE
+            $stopOutput | ForEach-Object { Write-Host $_ }
+            if ($started -and $stopExitCode -ne 0) {
+              throw "Aspire CLI failed to stop the AppHost (exit code $stopExitCode)."
+            }
+          }

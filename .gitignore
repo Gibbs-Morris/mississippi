@@ -65,6 +65,9 @@ StrykerOutput/
 # Local Clean Squad working state (ephemeral, do not commit)
 .thinking/
 
+# Aspire CLI local AppHost selection
+aspire.config.json
+
 # Temporary Claude files (ephemeral, do not commit)
 tmpclaude-*
 
