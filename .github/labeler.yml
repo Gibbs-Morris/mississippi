@@ -204,7 +204,7 @@ config-agentic:
           - ".github/instructions/**"
           - ".github/agents/**"
           - ".cursor/**"
-          - "agents.md"
+          - "AGENTS.md"
 
 # Root build configuration (high-impact, review carefully)
 # No lockfile exclusion needed — explicit file names, none are lockfiles

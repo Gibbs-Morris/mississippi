@@ -1,6 +1,6 @@
 ---
 description: RFC 2119 Keyword Usage
-globs: ["**/*.instructions.md", ".github/copilot-instructions.md", "agents.md"]
+globs: ["**/*.instructions.md", ".github/copilot-instructions.md", "AGENTS.md"]
 alwaysApply: false
 ---
 # RFC 2119 Keyword Usage
