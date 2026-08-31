@@ -132,7 +132,7 @@ Notes:
 
 - `-TestProject` can be the project name (convention: `<Project>.L0Tests`) or a path to the `.csproj`.
 - If the source project can’t be inferred from `<ProjectReference>`, set `-SourceProject` to the target `.csproj`.
-- The script prints a concise summary (RESULT, COVERAGE, MUTATION_SCORE) that tools like Cursor or Copilot can parse easily.
+- The script prints a concise summary (RESULT, COVERAGE, MUTATION_SCORE) that GitHub Copilot can parse easily.
 
 ## License
 
