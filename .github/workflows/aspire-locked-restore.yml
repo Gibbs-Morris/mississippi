@@ -38,6 +38,14 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Clear preinstalled NuGet caches
+        shell: pwsh
+        run: |
+          dotnet nuget locals all --clear
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
