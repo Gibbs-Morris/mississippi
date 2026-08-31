@@ -576,7 +576,23 @@ function Get-CleanupPlan {
     }
 
     $globalReasons = @(Get-CleanupGlobalFallbackReasons -Paths @($normalizedPaths))
-    $cleanupExtensions = @('.cs', '.csproj', '.props', '.targets', '.razor', '.cshtml', '.xaml', '.axaml', '.resx')
+    $cleanupExtensions = @(
+        '.axaml',
+        '.cs',
+        '.cshtml',
+        '.csproj',
+        '.css',
+        '.html',
+        '.js',
+        '.jsx',
+        '.props',
+        '.razor',
+        '.resx',
+        '.targets',
+        '.ts',
+        '.tsx',
+        '.xaml'
+    )
     $eligiblePaths = New-Object System.Collections.Generic.List[string]
     $ignoredPaths = New-Object System.Collections.Generic.List[string]
 

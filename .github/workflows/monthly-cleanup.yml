@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -62,6 +63,7 @@ jobs:
           }
 
       - name: Create or reuse cleanup pull request
+        id: pull-request
         shell: pwsh
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -69,24 +71,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           git add --all -- . ':(exclude,glob)**/packages*.lock.json'
-          git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host 'No cleanup drift detected.'
-            exit 0
-          }
-          if ($LASTEXITCODE -ne 1) {
-            throw 'Unable to inspect cleanup drift.'
-          }
 
-          $stagedFiles = @(git diff --cached --name-only)
-          if ($LASTEXITCODE -ne 0) {
-            throw 'Unable to list cleanup drift files.'
-          }
-
+          $search = '"' + $env:CLEANUP_PR_TITLE + '" in:title'
           $pullRequestJson = gh pr list `
             --base $env:DEFAULT_BRANCH `
             --state open `
-            --limit 100 `
+            --search $search `
+            --limit 1000 `
             --json number,title,headRefName,url,isCrossRepository,headRepositoryOwner
           if ($LASTEXITCODE -ne 0) {
             throw 'Unable to check for an existing monthly cleanup pull request.'
@@ -101,8 +92,32 @@ jobs:
                 [string]$_.headRepositoryOwner.login -eq $env:REPOSITORY_OWNER
               }
           )
-          if ($existingPullRequests.Count -gt 0) {
-            $existing = $existingPullRequests[0]
+          $existing = $existingPullRequests | Select-Object -First 1
+
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host 'No cleanup drift detected.'
+            if ($null -ne $existing) {
+              gh pr close $existing.number `
+                --comment 'Closing this automation PR because the current default branch no longer has cleanup drift.' `
+                --delete-branch
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to close stale monthly cleanup PR #$($existing.number)."
+              }
+              Write-Host "Closed stale monthly cleanup PR #$($existing.number)."
+            }
+            exit 0
+          }
+          if ($LASTEXITCODE -ne 1) {
+            throw 'Unable to inspect cleanup drift.'
+          }
+
+          $stagedFiles = @(git diff --cached --name-only)
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to list cleanup drift files.'
+          }
+
+          if ($null -ne $existing) {
             $existingBranch = [string]$existing.headRefName
             if ([string]::IsNullOrWhiteSpace($existingBranch)) {
               throw "Existing cleanup pull request #$($existing.number) does not expose a head branch."
@@ -119,34 +134,32 @@ jobs:
               throw 'Unable to resolve the monthly cleanup commit.'
             }
 
-            git fetch --no-tags origin "refs/heads/$existingBranch"
+            $remoteTrackingRef = "refs/remotes/origin/$existingBranch"
+            git fetch --no-tags origin "refs/heads/$($existingBranch):$remoteTrackingRef"
             if ($LASTEXITCODE -ne 0) {
               throw "Unable to fetch the existing cleanup branch '$existingBranch'."
             }
-            git switch --create $existingBranch --track "origin/$existingBranch"
-            if ($LASTEXITCODE -ne 0) {
-              throw "Unable to check out the existing cleanup branch '$existingBranch'."
+            $expectedRemoteSha = (git rev-parse $remoteTrackingRef).Trim()
+            if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRemoteSha)) {
+              throw "Unable to resolve the existing cleanup branch '$existingBranch'."
             }
 
-            git cherry-pick $cleanupCommit
-            if ($LASTEXITCODE -ne 0) {
-              $conflicts = @(git diff --name-only --diff-filter=U)
-              if ($conflicts.Count -gt 0) {
-                git cherry-pick --abort
-                throw "Unable to apply current cleanup drift to existing branch '$existingBranch'. Conflicts: $($conflicts -join ', ')"
-              }
-
-              git cherry-pick --skip
-              if ($LASTEXITCODE -ne 0) {
-                throw "Unable to finish applying current cleanup drift to existing branch '$existingBranch'."
-              }
-              Write-Host "Current cleanup drift is already present in PR #$($existing.number)."
-            }
-
-            git push --set-upstream origin $existingBranch
+            $lease = "refs/heads/$($existingBranch):$expectedRemoteSha"
+            git push `
+              --force-with-lease=$lease `
+              origin `
+              "$($cleanupCommit):refs/heads/$existingBranch"
             if ($LASTEXITCODE -ne 0) {
               throw "Unable to push updated cleanup branch '$existingBranch'."
             }
+
+            $body = "Automated monthly full-repository ReSharper cleanup found current drift in $($stagedFiles.Count) file(s)."
+            gh pr edit $existing.number --body $body
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to update monthly cleanup PR #$($existing.number)."
+            }
+
+            "branch=$existingBranch" >> $env:GITHUB_OUTPUT
             Write-Host "Updated existing cleanup PR #$($existing.number): $($existing.url)"
             exit 0
           }
@@ -177,3 +190,36 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Unable to create the monthly cleanup pull request.'
           }
+
+          "branch=$branchName" >> $env:GITHUB_OUTPUT
+
+      - name: Trigger cleanup pull request validation
+        if: steps.pull-request.outputs.branch != ''
+        shell: pwsh
+        env:
+          CLEANUP_BRANCH: ${{ steps.pull-request.outputs.branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $workflows = @(
+            'aspire-locked-restore.yml',
+            'cleanup.yml',
+            'docusaurus.yml',
+            'full-build.yml',
+            'l0-tests.yml',
+            'l1-tests.yml',
+            'l2-tests.yml',
+            'markdown-lint.yml',
+            'powershell-tests.yml',
+            'project-reference-hygiene-gate.yml',
+            'sonar-cloud.yml',
+            'src-csproj-description-check.yml'
+          )
+
+          foreach ($workflow in $workflows) {
+            gh workflow run $workflow --ref $env:CLEANUP_BRANCH
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to dispatch '$workflow' for cleanup branch '$env:CLEANUP_BRANCH'."
+            }
+          }
+
+          Write-Host "Dispatched $($workflows.Count) validation workflows for '$env:CLEANUP_BRANCH'."
