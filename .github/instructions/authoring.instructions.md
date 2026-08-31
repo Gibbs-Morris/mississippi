@@ -15,7 +15,7 @@ Governing thought: Every instruction file follows the same concise template—fr
 - Files **MUST** live in `.github/instructions/` with kebab-case `<topic>.instructions.md`; one cohesive topic per file **SHOULD** be maintained. Why: Improves discoverability.
 - Authoring **MUST** use concise, factual US English; Rules bullets **MUST** contain one requirement per sentence with a brief “Why” when not obvious. Why: Reduces tokens and ambiguity.
 - Command examples **MUST** reference real scripts/tools; secrets **MUST NOT** appear in content or examples. Why: Keeps docs actionable and safe.
-- Changes to instructions **MUST** follow repository review policy and **MUST** be mirrored to Cursor `.mdc` files per sync instructions. Why: Maintains parity across tools.
+- Changes to instructions **MUST** follow repository review policy and remain in the canonical Markdown files. Why: Keeps policy maintenance focused on one source of truth.
 
 ## Scope and Audience
 
@@ -36,4 +36,3 @@ Anyone creating or updating `*.instructions.md`.
 ## References
 
 - RFC keywords: `.github/instructions/rfc2119.instructions.md`
-- Sync policy: `.github/instructions/instruction-mdc-sync.instructions.md`

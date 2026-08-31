@@ -6,7 +6,7 @@ applyTo: '**'
 
 Governing thought: `.scratchpad/` is an ephemeral, untracked workspace for task handoff—never store secrets or couple code to it.
 
-> Drift check: If instructions change, sync Cursor rules via `pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1`; scripts stay authoritative.
+> Drift check: Keep scratchpad task handling aligned with the repository's canonical instructions; referenced scripts remain authoritative.
 
 ## Rules (RFC 2119)
 
