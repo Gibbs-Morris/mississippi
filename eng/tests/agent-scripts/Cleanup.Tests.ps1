@@ -162,7 +162,7 @@ Describe 'Cleanup planning' {
 }
 
 Describe 'Changed cleanup path discovery' {
-    It 'combines branch, staged, and unstaged tracked paths while excluding deletions and untracked files' {
+    It 'combines branch, staged, and unstaged tracked paths including deletions' {
         $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
         New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'src') -Force | Out-Null
@@ -207,12 +207,12 @@ Describe 'Changed cleanup path discovery' {
                 -HeadRef 'HEAD'
         )
 
-        $paths | Should -HaveCount 4
+        $paths | Should -HaveCount 5
         $paths | Should -Contain 'src/Branch.cs'
         $paths | Should -Contain 'src/Staged.cs'
         $paths | Should -Contain 'src/Unstaged.cs'
         $paths | Should -Contain ('src/' + $unicodeFileName)
-        $paths | Should -Not -Contain 'src/Deleted.cs'
+        $paths | Should -Contain 'src/Deleted.cs'
         $paths | Should -Not -Contain 'src/Untracked.cs'
     }
 }
