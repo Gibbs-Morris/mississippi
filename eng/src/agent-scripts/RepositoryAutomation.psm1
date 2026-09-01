@@ -500,6 +500,7 @@ function Get-CleanupGlobalFallbackReasons {
             '(^|/)clean-up-[^/]+\.ps1$' { 'A cleanup script changed.'; break }
             '(^|/)RepositoryAutomation\.psm1$' { 'The shared cleanup automation module changed.'; break }
             '^\.github/workflows/cleanup\.yml$' { 'The pull-request cleanup workflow changed.'; break }
+            '^\.github/workflows/monthly-cleanup\.yml$' { 'The monthly cleanup workflow changed.'; break }
             default { $null }
         }
 
@@ -839,10 +840,22 @@ function Get-CleanupPlan {
     }
 
     if ($globalReasons.Count -gt 0) {
+        $requiresRepositoryValidation = @(
+            $normalizedPaths | Where-Object {
+                $_ -match '(^|/)\.editorconfig$' -or
+                $_ -match '(^|/)[^/]+\.DotSettings$' -or
+                $_ -match '(^|/)Directory\.Build\.(props|targets)$' -or
+                $_ -match '(^|/)Directory\.Packages\.props$' -or
+                $_ -match '(^|/)global\.json$' -or
+                $_ -match '^\.config/dotnet-tools\.json$' -or
+                $_ -match '^(mississippi|samples)\.slnx$'
+            }
+        ).Count -gt 0
         return [pscustomobject]@{
             Mode              = 'FullFallback'
             Reason            = ($globalReasons -join ' ')
             FallbackReasons   = $globalReasons
+            ValidationScope   = if ($requiresRepositoryValidation) { 'Repository' } else { 'ChangedPaths' }
             InputPaths        = @($normalizedPaths)
             EligiblePaths     = @($eligiblePaths)
             IgnoredPaths      = @($ignoredPaths)
@@ -856,6 +869,7 @@ function Get-CleanupPlan {
             Mode              = 'NoOp'
             Reason            = 'No existing cleanup-eligible files were selected.'
             FallbackReasons   = @()
+            ValidationScope   = 'None'
             InputPaths        = @($normalizedPaths)
             EligiblePaths     = @()
             IgnoredPaths      = @($ignoredPaths)
@@ -910,6 +924,7 @@ function Get-CleanupPlan {
             Mode              = 'FullFallback'
             Reason            = ($fallbackReasons -join ' ')
             FallbackReasons   = $fallbackReasons
+            ValidationScope   = 'Repository'
             InputPaths        = @($normalizedPaths)
             EligiblePaths     = @($eligiblePaths)
             IgnoredPaths      = @($ignoredPaths)
@@ -935,6 +950,7 @@ function Get-CleanupPlan {
             Mode              = 'NoOp'
             Reason            = 'No selected solution projects contain the provided files.'
             FallbackReasons   = @()
+            ValidationScope   = 'None'
             InputPaths        = @($normalizedPaths)
             EligiblePaths     = @($eligiblePaths)
             IgnoredPaths      = @($ignoredPaths)
@@ -947,6 +963,7 @@ function Get-CleanupPlan {
         Mode              = 'Targeted'
         Reason            = "Targeted cleanup selected $($groups.Count) project(s)."
         FallbackReasons   = @()
+        ValidationScope   = 'ChangedPaths'
         InputPaths        = @($normalizedPaths)
         EligiblePaths     = @($eligiblePaths)
         IgnoredPaths      = @($ignoredPaths)

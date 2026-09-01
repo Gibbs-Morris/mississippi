@@ -162,6 +162,17 @@ Describe 'Cleanup planning' {
         $plan.Mode | Should -Be 'FullFallback'
         $plan.Reason | Should -Match 'settings'
         @($plan.FallbackReasons) | Should -HaveCount 1
+        $plan.ValidationScope | Should -Be 'Repository'
+    }
+
+    It 'runs cleanup automation changes fully but validates only PR-owned drift' {
+        $plan = Get-CleanupPlan `
+            -RepoRoot $script:fixtureRoot `
+            -Paths @('.github/workflows/monthly-cleanup.yml', 'clean-up.ps1')
+
+        $plan.Mode | Should -Be 'FullFallback'
+        @($plan.FallbackReasons) | Should -HaveCount 2
+        $plan.ValidationScope | Should -Be 'ChangedPaths'
     }
 
     It 'falls back to full cleanup when a file cannot be mapped to a solution project' {
@@ -172,6 +183,7 @@ Describe 'Cleanup planning' {
         $plan.Mode | Should -Be 'FullFallback'
         $plan.Reason | Should -Match 'could not be mapped'
         $plan.Reason | Should -Match 'orphan/orphan.cs'
+        $plan.ValidationScope | Should -Be 'Repository'
     }
 
     It 'honors a solution skip switch without falling back to another solution' {
