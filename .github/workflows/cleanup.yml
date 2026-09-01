@@ -49,7 +49,7 @@ jobs:
             }
           }
 
-          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force -ErrorAction Stop
           $changedFiles = @(
             Get-CleanupChangedPaths -RepoRoot $env:GITHUB_WORKSPACE -BaseRef $env:BASE_SHA -HeadRef $env:HEAD_SHA
           )
@@ -168,7 +168,7 @@ jobs:
           PLAN_MODE: ${{ steps.plan.outputs.mode }}
           VALIDATION_SCOPE: ${{ steps.plan.outputs.validation_scope }}
         run: |
-          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force -ErrorAction Stop
           $changes = @(
             Get-CleanupChangedPaths -RepoRoot $env:GITHUB_WORKSPACE -BaseRef HEAD -HeadRef HEAD |
               Where-Object { $_ -notmatch '(?i)packages(?:\.[^/\\]+)?\.lock\.json$' } |

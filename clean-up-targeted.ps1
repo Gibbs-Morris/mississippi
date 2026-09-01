@@ -20,7 +20,7 @@ try {
         throw "Repository automation module not found: $modulePath"
     }
 
-    Import-Module -Name $modulePath -Force
+    Import-Module -Name $modulePath -Force -ErrorAction Stop
 
     $changedPaths = @(
         Get-CleanupChangedPaths `
