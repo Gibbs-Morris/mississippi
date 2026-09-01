@@ -139,7 +139,7 @@ jobs:
           CACHE_HOME: ${{ runner.temp }}/.jb-caches
         run: |
           $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-          if ($env:RUN_MODE -eq 'full' -or $env:PLAN_MODE -eq 'FullFallback') {
+          if ($env:RUN_MODE -eq 'full' -or $env:PLAN_MODE -in @('FullFallback', 'FullValidation')) {
             ./clean-up.ps1 `
               -Configuration $env:CONFIGURATION `
               -CachesHome $env:CACHE_HOME `
@@ -215,7 +215,7 @@ jobs:
               git diff --color=always -- $prChanges
               Write-Host ''
               Write-Host 'Reproduce locally with:'
-              if ($env:PLAN_MODE -eq 'FullFallback') {
+              if ($env:PLAN_MODE -in @('FullFallback', 'FullValidation')) {
                 Write-Host 'pwsh ./clean-up.ps1'
               } else {
                 Write-Host 'pwsh ./clean-up.ps1 -FileListPath <changed-files.txt>'

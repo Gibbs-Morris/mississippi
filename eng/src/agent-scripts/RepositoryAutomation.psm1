@@ -623,7 +623,7 @@ function Get-CleanupPlan {
             }
         ).Count -gt 0
         return [pscustomobject]@{
-            Mode              = 'FullFallback'
+            Mode              = if ($requiresRepositoryValidation) { 'FullFallback' } else { 'FullValidation' }
             Reason            = ($globalReasons -join ' ')
             FallbackReasons   = $globalReasons
             ValidationScope   = if ($requiresRepositoryValidation) { 'Repository' } else { 'ChangedPaths' }
@@ -1164,7 +1164,7 @@ function Invoke-RepositoryCleanup {
             return $plan
         }
 
-        if ($plan.Mode -eq 'FullFallback') {
+        if ($plan.Mode -in @('FullFallback', 'FullValidation')) {
             Write-Host "Targeted cleanup is falling back to full cleanup: $($plan.Reason)" -ForegroundColor ([ConsoleColor]::Yellow)
             $null = Invoke-RepositoryCleanup -Mode Full -RepoRoot $rootFullPath -Configuration $Configuration -SettingsPath $settingsPathToUse -Profile $Profile -CachesHome $CachesHome -NoUpdates:$NoUpdates -SkipSamples:$SkipSamples -SkipMississippi:$SkipMississippi -SkipToolRestore:$SkipToolRestore -SkipRestore:$SkipRestore -SkipBuild:$SkipBuild
             return $plan

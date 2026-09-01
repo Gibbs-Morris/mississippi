@@ -146,7 +146,7 @@ Describe 'Cleanup planning' {
             -RepoRoot $script:fixtureRoot `
             -Paths @('.github/workflows/monthly-cleanup.yml', 'clean-up.ps1')
 
-        $plan.Mode | Should -Be 'FullFallback'
+        $plan.Mode | Should -Be 'FullValidation'
         @($plan.FallbackReasons) | Should -HaveCount 2
         $plan.ValidationScope | Should -Be 'ChangedPaths'
     }
@@ -327,14 +327,14 @@ Describe 'Repository cleanup dispatch' {
         }
     }
 
-    It 'routes a full-fallback plan through strict full cleanup' {
+    It 'routes a full-validation plan through full cleanup' {
         Mock -CommandName Get-CleanupPlan -ModuleName RepositoryAutomation -MockWith {
             [pscustomobject]@{
-                Mode             = 'FullFallback'
-                Reason           = 'Global settings changed.'
-                InputPaths       = @('Directory.DotSettings')
+                Mode             = 'FullValidation'
+                Reason           = 'Cleanup automation changed.'
+                InputPaths       = @('clean-up.ps1')
                 EligiblePaths    = @()
-                IgnoredPaths     = @('Directory.DotSettings')
+                IgnoredPaths     = @('clean-up.ps1')
                 Groups           = @()
                 AffectedProjects = @()
             }
@@ -343,9 +343,9 @@ Describe 'Repository cleanup dispatch' {
         $plan = Invoke-RepositoryCleanup `
             -Mode Targeted `
             -RepoRoot $script:dispatcherRoot `
-            -Paths @('Directory.DotSettings')
+            -Paths @('clean-up.ps1')
 
-        $plan.Mode | Should -Be 'FullFallback'
+        $plan.Mode | Should -Be 'FullValidation'
         Should -Invoke Invoke-DotnetToolRestore -ModuleName RepositoryAutomation -Times 1
         Should -Invoke Invoke-SolutionRestore -ModuleName RepositoryAutomation -Times 2
         Should -Invoke Invoke-SolutionBuild -ModuleName RepositoryAutomation -Times 2
