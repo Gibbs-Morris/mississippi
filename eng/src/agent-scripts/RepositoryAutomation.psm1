@@ -401,10 +401,6 @@ function ConvertTo-CleanupPlatformPath {
         return $Path.Replace('/', '\')
     }
 
-    if (-not $Path.Contains('/')) {
-        return $Path.Replace('\', '/')
-    }
-
     return $Path
 }
 
@@ -421,6 +417,21 @@ function ConvertTo-CleanupRelativePath {
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
     $pathForCurrentPlatform = ConvertTo-CleanupPlatformPath -Path $Path
+    if (
+        [System.IO.Path]::DirectorySeparatorChar -ne '\' -and
+        -not [System.IO.Path]::IsPathRooted($Path) -and
+        $Path.Contains('\') -and
+        -not $Path.Contains('/')
+    ) {
+        $literalCandidate = [System.IO.Path]::GetFullPath(
+            [System.IO.Path]::Combine($rootFullPath, $Path)
+        )
+        if (-not [System.IO.File]::Exists($literalCandidate) -and
+            -not [System.IO.Directory]::Exists($literalCandidate)) {
+            $pathForCurrentPlatform = $Path.Replace('\', '/')
+        }
+    }
+
     $fullPath = if ([System.IO.Path]::IsPathRooted($pathForCurrentPlatform)) {
         [System.IO.Path]::GetFullPath($pathForCurrentPlatform)
     }

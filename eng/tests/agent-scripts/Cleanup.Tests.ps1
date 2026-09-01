@@ -230,6 +230,16 @@ Describe 'Cleanup planning' {
 
         $plan.Mode | Should -Be 'Targeted'
         @($plan.EligiblePaths) | Should -Be @($literalPath)
+
+        $rootLiteralPath = 'Root\One.cs'
+        [System.IO.File]::WriteAllText(
+            [System.IO.Path]::Combine($script:fixtureRoot, $rootLiteralPath),
+            'class RootOne { }',
+            [System.Text.UTF8Encoding]::new($false))
+
+        ConvertTo-CleanupRelativePath `
+            -RepoRoot $script:fixtureRoot `
+            -Path $rootLiteralPath | Should -Be $rootLiteralPath
     }
 
     It 'falls back to full cleanup for global cleanup inputs' {
