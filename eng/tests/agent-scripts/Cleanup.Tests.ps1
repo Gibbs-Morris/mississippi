@@ -17,10 +17,12 @@ BeforeAll {
             [Parameter(Mandatory)][string[]]$Arguments
         )
 
+        $disabledHooksPath = Join-Path $WorkingDirectory '.git/disabled-hooks'
         $output = @(
             git -C $WorkingDirectory `
                 -c commit.gpgSign=false `
                 -c tag.gpgSign=false `
+                -c "core.hooksPath=$disabledHooksPath" `
                 @Arguments
         )
         $exitCode = $LASTEXITCODE
@@ -268,6 +270,27 @@ Describe 'Changed cleanup path discovery' {
                 -BaseRef '--help' `
                 -HeadRef 'HEAD'
         } | Should -Throw "*do not start with '-'*"
+    }
+}
+
+Describe 'Git path output parsing' {
+    It 'preserves leading, trailing, tab, and newline characters from NUL-delimited output' {
+        InModuleScope RepositoryAutomation {
+            $separator = [char]0
+            $gitOutput =
+                ' leading-whitespace.cs' + $separator +
+                'trailing-whitespace.cs ' + $separator +
+                "src/Control`tCharacter.cs" + $separator +
+                "src/Line`nBreak.cs" + $separator
+
+            $paths = @(ConvertFrom-CleanupGitPathOutput -GitOutput $gitOutput)
+
+            $paths | Should -HaveCount 4
+            $paths | Should -Contain ' leading-whitespace.cs'
+            $paths | Should -Contain 'trailing-whitespace.cs '
+            $paths | Should -Contain "src/Control`tCharacter.cs"
+            $paths | Should -Contain "src/Line`nBreak.cs"
+        }
     }
 }
 

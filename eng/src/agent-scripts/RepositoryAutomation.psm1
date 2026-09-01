@@ -511,6 +511,70 @@ function Get-CleanupGlobalFallbackReasons {
     return @($reasons)
 }
 
+function ConvertFrom-CleanupGitPathOutput {
+    [CmdletBinding()]
+    param(
+        [AllowEmptyString()][string]$GitOutput
+    )
+
+    if ($GitOutput.Length -eq 0) {
+        return @()
+    }
+
+    return @(
+        $GitOutput.Split(
+            [char[]]@([char]0),
+            [System.StringSplitOptions]::RemoveEmptyEntries
+        )
+    )
+}
+
+function Invoke-CleanupGitPathList {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string[]]$Arguments,
+        [Parameter(Mandatory)][string]$ErrorMessage
+    )
+
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = 'git'
+    $startInfo.WorkingDirectory = $RepoRoot
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
+    foreach ($argument in $Arguments) {
+        $null = $startInfo.ArgumentList.Add($argument)
+    }
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    try {
+        $null = $process.Start()
+        $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
+        $standardErrorTask = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $standardOutput = $standardOutputTask.GetAwaiter().GetResult()
+        $standardError = $standardErrorTask.GetAwaiter().GetResult()
+
+        if ($process.ExitCode -ne 0) {
+            $errorDetail = $standardError.Trim()
+            if ($errorDetail) {
+                throw "$ErrorMessage (git exit code $($process.ExitCode)): $errorDetail"
+            }
+
+            throw "$ErrorMessage (git exit code $($process.ExitCode))."
+        }
+
+        return @(ConvertFrom-CleanupGitPathOutput -GitOutput $standardOutput)
+    }
+    finally {
+        $process.Dispose()
+    }
+}
+
 function Get-CleanupChangedPaths {
     [CmdletBinding()]
     param(
@@ -577,38 +641,49 @@ function Get-CleanupChangedPaths {
             'diff',
             '--no-renames',
             '--name-only',
+            '-z',
             '--diff-filter=ACDMRT',
             "$($mergeBase)...$headCommit",
             '--'
         )
-        $branchPaths = @(git @branchDiffArguments)
-        $branchDiffExitCode = $LASTEXITCODE
-        if ($branchDiffExitCode -ne 0) {
-            throw "Unable to list changes between '$BaseRef' and '$HeadRef' (git exit code $branchDiffExitCode)."
-        }
+        $branchPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments $branchDiffArguments `
+                -ErrorMessage "Unable to list changes between '$BaseRef' and '$HeadRef'"
+        )
 
-        $stagedPaths = @(git @gitPathArguments diff --no-renames --name-only --diff-filter=ACDMRT --cached --)
-        $stagedDiffExitCode = $LASTEXITCODE
-        if ($stagedDiffExitCode -ne 0) {
-            throw "Unable to list staged changes (git exit code $stagedDiffExitCode)."
-        }
+        $stagedPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @(
+                    $gitPathArguments
+                    'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT', '--cached', '--'
+                ) `
+                -ErrorMessage 'Unable to list staged changes'
+        )
 
-        $unstagedPaths = @(git @gitPathArguments diff --no-renames --name-only --diff-filter=ACDMRT --)
-        $unstagedDiffExitCode = $LASTEXITCODE
-        if ($unstagedDiffExitCode -ne 0) {
-            throw "Unable to list unstaged changes (git exit code $unstagedDiffExitCode)."
-        }
+        $unstagedPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @(
+                    $gitPathArguments
+                    'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT', '--'
+                ) `
+                -ErrorMessage 'Unable to list unstaged changes'
+        )
 
-        $untrackedPaths = @(git @gitPathArguments ls-files --others --exclude-standard --)
-        $untrackedExitCode = $LASTEXITCODE
-        if ($untrackedExitCode -ne 0) {
-            throw "Unable to list untracked changes (git exit code $untrackedExitCode)."
-        }
+        $untrackedPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @($gitPathArguments + @('ls-files', '--others', '--exclude-standard', '-z', '--')) `
+                -ErrorMessage 'Unable to list untracked changes'
+        )
 
         foreach ($path in @($branchPaths + $stagedPaths + $unstagedPaths + $untrackedPaths)) {
-            $normalizedPath = ([string]$path).Trim() -replace '\\', '/'
-            if (-not [string]::IsNullOrWhiteSpace($normalizedPath) -and -not $paths.Contains($normalizedPath)) {
-                $paths.Add($normalizedPath)
+            $literalPath = [string]$path
+            if ($literalPath.Length -gt 0 -and -not $paths.Contains($literalPath)) {
+                $paths.Add($literalPath)
             }
         }
 

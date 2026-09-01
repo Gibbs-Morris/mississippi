@@ -175,7 +175,12 @@ jobs:
             exit 0
           }
 
-          if ($env:RUN_MODE -eq 'targeted' -and $env:FILE_LIST -and (Test-Path -LiteralPath $env:FILE_LIST)) {
+          if (
+            $env:RUN_MODE -eq 'targeted' -and
+            $env:PLAN_MODE -ne 'FullFallback' -and
+            $env:FILE_LIST -and
+            (Test-Path -LiteralPath $env:FILE_LIST)
+          ) {
             $prChangedPaths = @(
               Get-Content -LiteralPath $env:FILE_LIST -Encoding UTF8 |
                 ForEach-Object { $_.Trim() } |
