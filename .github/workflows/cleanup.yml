@@ -49,16 +49,18 @@ jobs:
             }
           }
 
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          $changedFiles = @(
+            Get-CleanupChangedPaths -RepoRoot $env:GITHUB_WORKSPACE -BaseRef $env:BASE_SHA -HeadRef $env:HEAD_SHA
+          )
           $fileList = Join-Path $env:RUNNER_TEMP 'cleanup-pr-files.txt'
-          $changedFiles = @(git diff --name-only --diff-filter=ACMRD "$($env:BASE_SHA)...$($env:HEAD_SHA)")
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unable to calculate the PR delta between '$($env:BASE_SHA)' and '$($env:HEAD_SHA)'."
-          }
-
-          New-Item -ItemType File -Path $fileList -Force | Out-Null
-          if ($changedFiles.Count -gt 0) {
-            Set-Content -LiteralPath $fileList -Value $changedFiles -Encoding utf8NoBOM
-          }
+          $pathListContent = if ($changedFiles.Count -gt 0) {
+            ($changedFiles -join [char]0) + [char]0
+          } else { '' }
+          [System.IO.File]::WriteAllText(
+            $fileList,
+            $pathListContent,
+            [System.Text.UTF8Encoding]::new($false))
 
           "run_mode=targeted" >> $env:GITHUB_OUTPUT
           "file_list=$fileList" >> $env:GITHUB_OUTPUT
@@ -166,12 +168,12 @@ jobs:
           PLAN_MODE: ${{ steps.plan.outputs.mode }}
           VALIDATION_SCOPE: ${{ steps.plan.outputs.validation_scope }}
         run: |
-          $trackedChanges = @(git diff --name-only HEAD -- . ':!**/packages*.lock.json')
-          $untrackedChanges = @(
-            git ls-files --others --exclude-standard -- . |
-              Where-Object { $_ -notmatch '(?i)packages(?:\.[^/\\]+)?\.lock\.json$' }
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          $changes = @(
+            Get-CleanupChangedPaths -RepoRoot $env:GITHUB_WORKSPACE -BaseRef HEAD -HeadRef HEAD |
+              Where-Object { $_ -notmatch '(?i)packages(?:\.[^/\\]+)?\.lock\.json$' } |
+              Sort-Object -Unique
           )
-          $changes = @($trackedChanges + $untrackedChanges | Sort-Object -Unique)
           if ($changes.Count -eq 0) {
             Write-Host 'No cleanup changes detected.'
             exit 0
@@ -183,12 +185,7 @@ jobs:
             $env:FILE_LIST -and
             (Test-Path -LiteralPath $env:FILE_LIST)
           ) {
-            $prChangedPaths = @(
-              Get-Content -LiteralPath $env:FILE_LIST -Encoding UTF8 |
-                ForEach-Object { $_.Trim() } |
-                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-                Sort-Object -Unique
-            )
+            $prChangedPaths = @(Read-CleanupPathList -Path $env:FILE_LIST | Sort-Object -Unique)
             $prChangedSet = [System.Collections.Generic.HashSet[string]]::new(
               [System.StringComparer]::OrdinalIgnoreCase
             )

@@ -82,9 +82,10 @@ Describe 'Cleanup planning' {
     }
 
     It 'normalizes and de-duplicates explicit paths before grouping them' {
+        $platformPath = [System.IO.Path]::Combine('src', 'Foo', 'Foo.cs')
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
-            -Paths @('src\Foo\Foo.cs', './src/Foo/Foo.cs', 'README.md')
+            -Paths @($platformPath, './src/Foo/Foo.cs', 'README.md')
 
         $plan.Mode | Should -Be 'Targeted'
         @($plan.InputPaths) | Should -HaveCount 2
@@ -147,11 +148,21 @@ Describe 'Cleanup planning' {
 
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
-            -Paths @('src/Foo/Old.cs', 'src\Foo\Renamed.cs')
+            -Paths @('src/Foo/Old.cs', 'src/Foo/Renamed.cs')
 
         $plan.Mode | Should -Be 'Targeted'
         @($plan.EligiblePaths) | Should -Be @('src/Foo/Renamed.cs')
         @($plan.IgnoredPaths) | Should -Be @('src/Foo/Old.cs')
+    }
+
+    It 'preserves a literal backslash in a Unix filename' -Skip:([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+        $literalPath = 'src/Foo/Part\One.cs'
+        Set-Content -LiteralPath (Join-Path $script:fixtureRoot $literalPath) -Value 'class PartOne { }' -Encoding utf8
+
+        $plan = Get-CleanupPlan -RepoRoot $script:fixtureRoot -Paths @($literalPath)
+
+        $plan.Mode | Should -Be 'Targeted'
+        @($plan.EligiblePaths) | Should -Be @($literalPath)
     }
 
     It 'falls back to full cleanup for global cleanup inputs' {
@@ -295,7 +306,9 @@ Describe 'Git path output parsing' {
                 "src/Control`tCharacter.cs" + $separator +
                 "src/Line`nBreak.cs" + $separator
 
-            $paths = @(ConvertFrom-CleanupGitPathOutput -GitOutput $gitOutput)
+            $pathList = Join-Path $TestDrive 'nul-cleanup-paths.txt'
+            [System.IO.File]::WriteAllText($pathList, $gitOutput, [System.Text.UTF8Encoding]::new($false))
+            $paths = @(Read-CleanupPathList -Path $pathList)
 
             $paths | Should -HaveCount 4
             $paths | Should -Contain ' leading-whitespace.cs'
@@ -515,7 +528,9 @@ Describe 'Canonical cleanup entry point' {
     It 'supports file-list preflight without invoking cleanup tooling' {
         $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
         $fileListPath = Join-Path $TestDrive 'cleanup-files.txt'
-        Set-Content -LiteralPath $fileListPath -Value 'README.md' -Encoding utf8
+        $fileListPaths = @(' leading-whitespace.cs', "src/Line`nBreak.cs")
+        $content = ($fileListPaths -join [char]0) + [char]0
+        [System.IO.File]::WriteAllText($fileListPath, $content, [System.Text.UTF8Encoding]::new($false))
         $scriptPath = Join-Path $repoRoot 'clean-up.ps1'
 
         $json = @(& pwsh -NoProfile -File $scriptPath -FileListPath $fileListPath -PlanOnly)
@@ -523,17 +538,7 @@ Describe 'Canonical cleanup entry point' {
         $LASTEXITCODE | Should -Be 0
         $plan = ($json -join "`n") | ConvertFrom-Json
         $plan.Mode | Should -Be 'NoOp'
-    }
-
-    It 'supports explicit file preflight through the canonical dispatcher' {
-        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
-        $scriptPath = Join-Path $repoRoot 'clean-up.ps1'
-
-        $json = @(& pwsh -NoProfile -File $scriptPath -Files README.md -PlanOnly)
-
-        $LASTEXITCODE | Should -Be 0
-        $plan = ($json -join "`n") | ConvertFrom-Json
-        $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths) | Should -Be $fileListPaths
     }
 
     It 'discovers no changes in a clean repository when the targeted base and head are identical' {

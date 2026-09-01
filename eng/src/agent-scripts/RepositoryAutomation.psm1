@@ -135,54 +135,6 @@ function Invoke-RepositoryProcess {
 
 }
 
-function ConvertTo-CleanupArgumentList {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][System.Collections.IDictionary]$Parameters
-    )
-
-    $argumentNames = @(
-        'Configuration',
-        'Profile',
-        'SettingsPath',
-        'CachesHome',
-        'NoUpdates',
-        'SkipSamples',
-        'SkipMississippi',
-        'SkipToolRestore',
-        'SkipRestore',
-        'SkipBuild',
-        'PlanOnly'
-    )
-    $arguments = [System.Collections.Generic.List[string]]::new()
-
-    foreach ($name in $argumentNames) {
-        if ($Parameters.Keys -notcontains $name) {
-            continue
-        }
-
-        $value = $Parameters[$name]
-        if ($value -is [System.Management.Automation.SwitchParameter]) {
-            if ($value.IsPresent) {
-                $null = $arguments.Add("-$name")
-            }
-            continue
-        }
-
-        if ($null -eq $value) {
-            continue
-        }
-
-        $valueString = [string]$value
-        if (-not [string]::IsNullOrWhiteSpace($valueString)) {
-            $null = $arguments.Add("-$name")
-            $null = $arguments.Add($valueString)
-        }
-    }
-
-    return $arguments.ToArray()
-}
-
 function Invoke-DotnetToolRestore {
     [CmdletBinding()]
     param(
@@ -445,8 +397,11 @@ function ConvertTo-CleanupPlatformPath {
         [Parameter(Mandatory)][string]$Path
     )
 
-    $directorySeparator = [string][System.IO.Path]::DirectorySeparatorChar
-    return $Path.Replace('/', $directorySeparator).Replace('\', $directorySeparator)
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+        return $Path.Replace('/', '\')
+    }
+
+    return $Path
 }
 
 function ConvertTo-CleanupRelativePath {
@@ -461,8 +416,7 @@ function ConvertTo-CleanupRelativePath {
     }
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
-    $pathValue = $Path.Trim()
-    $pathForCurrentPlatform = ConvertTo-CleanupPlatformPath -Path $pathValue
+    $pathForCurrentPlatform = ConvertTo-CleanupPlatformPath -Path $Path
     $fullPath = if ([System.IO.Path]::IsPathRooted($pathForCurrentPlatform)) {
         [System.IO.Path]::GetFullPath($pathForCurrentPlatform)
     }
@@ -477,7 +431,11 @@ function ConvertTo-CleanupRelativePath {
         throw "Path '$Path' is outside repository root '$RepoRoot'."
     }
 
-    return ($relativePath -replace '\\', '/').TrimStart('/')
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+        return $relativePath.Replace('\', '/').TrimStart('/')
+    }
+
+    return $relativePath.TrimStart('/')
 }
 
 function Get-CleanupGlobalFallbackReasons {
@@ -527,6 +485,28 @@ function ConvertFrom-CleanupGitPathOutput {
             [char[]]@([char]0),
             [System.StringSplitOptions]::RemoveEmptyEntries
         )
+    )
+}
+
+function Read-CleanupPathList {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $resolvedPath = (Resolve-Path -LiteralPath $Path).Path
+    $content = [System.IO.File]::ReadAllText($resolvedPath, [System.Text.UTF8Encoding]::new($false))
+    if ($content.IndexOf([char]0) -ge 0) {
+        return @(ConvertFrom-CleanupGitPathOutput -GitOutput $content)
+    }
+
+    return @(
+        $content -split '\r?\n' |
+            ForEach-Object { $_.Trim() } |
+            Where-Object {
+                -not [string]::IsNullOrWhiteSpace($_) -and
+                -not $_.StartsWith('#', [System.StringComparison]::Ordinal)
+            }
     )
 }
 
@@ -714,7 +694,7 @@ function Get-CleanupProjectCatalog {
         $projectNodes = @($solutionDocument.SelectNodes('//Project[@Path]'))
         foreach ($projectNode in $projectNodes) {
             $projectPath = [string]$projectNode.Path
-            $relativeProjectPath = ConvertTo-CleanupRelativePath -Path $projectPath -RepoRoot $rootFullPath
+            $relativeProjectPath = ConvertTo-CleanupRelativePath -Path ($projectPath.Replace('\', '/')) -RepoRoot $rootFullPath
             $projectFullPath = [System.IO.Path]::GetFullPath((Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $relativeProjectPath)))
             if (-not (Test-Path -LiteralPath $projectFullPath -PathType Leaf)) {
                 throw "Solution '$solutionName' references project '$relativeProjectPath', but that project was not found."
@@ -1565,4 +1545,4 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, ConvertTo-CleanupArgumentList, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Read-CleanupPathList, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
