@@ -54,7 +54,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 ### Prerequisites
 
-- .NET 10.0 SDK or later
+- .NET 10.0.301 SDK or later (required by the Roslyn 5.6 source generators)
 - PowerShell 7.0 or later (for build scripts)
 - Aspire CLI for direct AppHost workflows (`dotnet tool install -g Aspire.Cli`). The AppHosts use the CLI bundle; `dotnet run` can fall back to the SDK-paired CLI through DNX when `aspire` is not on `PATH`.
 - JetBrains Rider or other compatible IDE
