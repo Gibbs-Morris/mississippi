@@ -182,6 +182,7 @@ function Invoke-MonthlyCleanupPullRequestValidation {
             'powershell-tests.yml',
             'project-reference-hygiene-gate.yml',
             'sonar-cloud.yml',
+            'stryker.yml',
             'src-csproj-description-check.yml'
         )
     )

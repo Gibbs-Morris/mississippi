@@ -401,6 +401,10 @@ function ConvertTo-CleanupPlatformPath {
         return $Path.Replace('/', '\')
     }
 
+    if (-not $Path.Contains('/')) {
+        return $Path.Replace('\', '/')
+    }
+
     return $Path
 }
 
@@ -425,7 +429,8 @@ function ConvertTo-CleanupRelativePath {
     }
 
     $relativePath = [System.IO.Path]::GetRelativePath($rootFullPath, $fullPath)
-    if ($relativePath -eq '..' -or
+    if ([System.IO.Path]::IsPathRooted($relativePath) -or
+        $relativePath -eq '..' -or
         $relativePath.StartsWith("..$([System.IO.Path]::DirectorySeparatorChar)") -or
         $relativePath.StartsWith("..$([System.IO.Path]::AltDirectorySeparatorChar)")) {
         throw "Path '$Path' is outside repository root '$RepoRoot'."
@@ -436,6 +441,56 @@ function ConvertTo-CleanupRelativePath {
     }
 
     return $relativePath.TrimStart('/')
+}
+
+function Get-CleanupGitDiffPaths {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string]$BaseRef,
+        [Parameter(Mandatory)][string]$HeadRef
+    )
+
+    foreach ($ref in @($BaseRef, $HeadRef)) {
+        if ([string]::IsNullOrWhiteSpace($ref) -or $ref.StartsWith('-', [System.StringComparison]::Ordinal)) {
+            throw "Git refs must be non-empty names that do not start with '-'. Received '$ref'."
+        }
+    }
+
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = 'git'
+    $startInfo.WorkingDirectory = [System.IO.Path]::GetFullPath($RepoRoot)
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
+    foreach ($argument in @(
+        '-c', 'core.quotePath=false',
+        'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT',
+        "$BaseRef...$HeadRef", '--')) {
+        $null = $startInfo.ArgumentList.Add($argument)
+    }
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    try {
+        $null = $process.Start()
+        $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
+        $standardErrorTask = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $standardOutput = $standardOutputTask.GetAwaiter().GetResult()
+        $standardError = $standardErrorTask.GetAwaiter().GetResult()
+        if ($process.ExitCode -ne 0) {
+            $errorDetail = $standardError.Trim()
+            throw "Unable to calculate the cleanup delta between '$BaseRef' and '$HeadRef' (git exit code $($process.ExitCode)): $errorDetail"
+        }
+
+        return @(ConvertFrom-CleanupGitPathOutput -GitOutput $standardOutput)
+    }
+    finally {
+        $process.Dispose()
+    }
 }
 
 function Get-CleanupGlobalFallbackReasons {
@@ -579,6 +634,18 @@ function Get-CleanupChangedPaths {
     $paths = New-Object System.Collections.Generic.List[string]
     Push-Location -LiteralPath $rootFullPath
     try {
+        $gitPathArguments = @('-c', 'core.quotePath=false')
+        $unmergedPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @($gitPathArguments + @(
+                    'diff', '--name-only', '-z', '--diff-filter=U', '--')) `
+                -ErrorMessage 'Unable to inspect unresolved merge conflicts'
+        )
+        if ($unmergedPaths.Count -gt 0) {
+            throw "Targeted cleanup cannot run with unresolved merge conflicts: $($unmergedPaths -join ', ')."
+        }
+
         $resolveCommit = {
             param(
                 [Parameter(Mandatory)][string[]]$Candidates,
@@ -598,9 +665,11 @@ function Get-CleanupChangedPaths {
             throw "Unable to resolve $Description from: $($Candidates -join ', ')."
         }
 
-        $baseCandidates = @($BaseRef)
-        if ($BaseRef -eq 'main') {
-            $baseCandidates += 'origin/main'
+        $baseCandidates = if ($BaseRef -eq 'main') {
+            @('refs/remotes/origin/main', 'refs/heads/main')
+        }
+        else {
+            @($BaseRef)
         }
 
         try {
@@ -634,7 +703,6 @@ function Get-CleanupChangedPaths {
             throw "Git returned no merge base for '$HeadRef' and '$BaseRef'."
         }
 
-        $gitPathArguments = @('-c', 'core.quotePath=false')
         $branchDiffArguments = @(
             $gitPathArguments
             'diff',
@@ -814,6 +882,7 @@ function Get-CleanupPlan {
         '.css',
         '.html',
         '.js',
+        '.json',
         '.jsx',
         '.props',
         '.razor',
@@ -829,12 +898,40 @@ function Get-CleanupPlan {
     foreach ($relativePath in @($normalizedPaths)) {
         $fullPath = [System.IO.Path]::Combine($rootFullPath, (ConvertTo-CleanupPlatformPath -Path $relativePath))
         $extension = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
-        if ($cleanupExtensions -notcontains $extension -or -not [System.IO.File]::Exists($fullPath)) {
+        $isPackageLock = $relativePath -match '(?i)(^|/)packages(?:\.[^/\\]+)?\.lock\.json$'
+        if ($isPackageLock -or
+            $cleanupExtensions -notcontains $extension -or
+            -not [System.IO.File]::Exists($fullPath)) {
             $ignoredPaths.Add($relativePath)
             continue
         }
 
         $eligiblePaths.Add($relativePath)
+    }
+
+    $projectCatalog = if ($eligiblePaths.Count -gt 0) {
+        @(Get-CleanupProjectCatalog -RepoRoot $rootFullPath)
+    }
+    else {
+        @()
+    }
+    $resolvedProjects = @{}
+    $unmappedPaths = New-Object System.Collections.Generic.List[string]
+    foreach ($relativePath in @($eligiblePaths)) {
+        $project = Resolve-CleanupProject -RelativePath $relativePath -RepoRoot $rootFullPath -ProjectCatalog $projectCatalog
+        if ($null -eq $project -or $project.SolutionPaths.Count -eq 0) {
+            $unmappedPaths.Add($relativePath)
+            continue
+        }
+
+        $resolvedProjects[$relativePath] = $project
+    }
+
+    if ($unmappedPaths.Count -gt 0) {
+        throw @(
+            'Cleanup-eligible files must belong to a project in mississippi.slnx or samples.slnx.',
+            "Unmapped paths: $($unmappedPaths -join ', ')"
+        ) -join ' '
     }
 
     if ($globalReasons.Count -gt 0) {
@@ -879,22 +976,11 @@ function Get-CleanupPlan {
         }
     }
 
-    $projectCatalog = @(Get-CleanupProjectCatalog -RepoRoot $rootFullPath)
     $projectGroups = @{}
     $projectEntries = @{}
-    $unmappedPaths = New-Object System.Collections.Generic.List[string]
 
     foreach ($relativePath in @($eligiblePaths)) {
-        $project = Resolve-CleanupProject -RelativePath $relativePath -RepoRoot $rootFullPath -ProjectCatalog $projectCatalog
-        if ($null -eq $project) {
-            $unmappedPaths.Add($relativePath)
-            continue
-        }
-
-        if ($project.SolutionPaths.Count -eq 0) {
-            $unmappedPaths.Add($relativePath)
-            continue
-        }
+        $project = $resolvedProjects[$relativePath]
 
         $selectedSolutions = @(
             $project.SolutionPaths | Where-Object {
@@ -914,13 +1000,6 @@ function Get-CleanupPlan {
         if (-not $projectGroups[$project.ProjectPath].Contains($relativePath)) {
             $projectGroups[$project.ProjectPath].Add($relativePath)
         }
-    }
-
-    if ($unmappedPaths.Count -gt 0) {
-        throw @(
-            'Cleanup-eligible files must belong to a project in mississippi.slnx or samples.slnx.',
-            "Unmapped paths: $($unmappedPaths -join ', ')"
-        ) -join ' '
     }
 
     $groups = @(
@@ -1555,4 +1634,4 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Read-CleanupPathList, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Read-CleanupPathList, Get-CleanupGitDiffPaths, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline

@@ -186,25 +186,21 @@ jobs:
             (Test-Path -LiteralPath $env:FILE_LIST)
           ) {
             $prChangedPaths = @(Read-CleanupPathList -Path $env:FILE_LIST | Sort-Object -Unique)
-            $prChangedSet = [System.Collections.Generic.HashSet[string]]::new(
+            $pathComparer = if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
               [System.StringComparer]::OrdinalIgnoreCase
-            )
+            } else {
+              [System.StringComparer]::Ordinal
+            }
+            $prChangedSet = [System.Collections.Generic.HashSet[string]]::new($pathComparer)
             foreach ($path in $prChangedPaths) {
-              $normalizedPath = $path -replace '\\', '/'
-              $null = $prChangedSet.Add($normalizedPath)
+              $null = $prChangedSet.Add($path)
             }
 
             $prChanges = @(
-              $changes | Where-Object {
-                $normalizedPath = $_ -replace '\\', '/'
-                $prChangedSet.Contains($normalizedPath)
-              }
+              $changes | Where-Object { $prChangedSet.Contains($_) }
             )
             $unrelatedChanges = @(
-              $changes | Where-Object {
-                $normalizedPath = $_ -replace '\\', '/'
-                -not $prChangedSet.Contains($normalizedPath)
-              }
+              $changes | Where-Object { -not $prChangedSet.Contains($_) }
             )
 
             if ($unrelatedChanges.Count -gt 0) {

@@ -64,6 +64,8 @@ Describe 'Cleanup planning' {
             'src/Foo/Foo.cs',
             'src/Foo/Foo.razor.css',
             'src/Foo/site.js',
+            'src/Foo/appsettings.json',
+            'src/Foo/packages.lock.json',
             'src/Bar/Bar.cs',
             'samples/App/App.cs',
             'orphan/orphan.cs'
@@ -88,7 +90,7 @@ Describe 'Cleanup planning' {
         $platformPath = [System.IO.Path]::Combine('src', 'Foo', 'Foo.cs')
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
-            -Paths @($platformPath, './src/Foo/Foo.cs', 'README.md')
+            -Paths @($platformPath, 'src\Foo\Foo.cs', './src/Foo/Foo.cs', 'README.md')
 
         $plan.Mode | Should -Be 'Targeted'
         @($plan.InputPaths) | Should -HaveCount 2
@@ -119,6 +121,17 @@ Describe 'Cleanup planning' {
         @($plan.EligiblePaths) | Should -Be @('src/Foo/Foo.razor.css', 'src/Foo/site.js')
         @($plan.Groups) | Should -HaveCount 1
         @($plan.Groups[0].IncludePaths) | Should -Be @('src/Foo/Foo.razor.css', 'src/Foo/site.js')
+    }
+
+    It 'targets project JSON files while ignoring package lock files' {
+        $plan = Get-CleanupPlan `
+            -RepoRoot $script:fixtureRoot `
+            -Paths @('src/Foo/appsettings.json', 'src/Foo/packages.lock.json')
+
+        $plan.Mode | Should -Be 'Targeted'
+        @($plan.EligiblePaths) | Should -Be @('src/Foo/appsettings.json')
+        @($plan.IgnoredPaths) | Should -Contain 'src/Foo/packages.lock.json'
+        @($plan.Groups[0].IncludePaths) | Should -Be @('src/Foo/appsettings.json')
     }
 
     It 'builds the project catalog from solution membership without scanning the repository' {
@@ -209,6 +222,25 @@ Describe 'Cleanup planning' {
                 -RepoRoot $script:fixtureRoot `
                 -Paths @('orphan/orphan.cs')
         } | Should -Throw '*must belong to a project*orphan/orphan.cs*'
+    }
+
+    It 'rejects an unmapped cleanup file even when a global fallback input also changed' {
+        {
+            Get-CleanupPlan `
+                -RepoRoot $script:fixtureRoot `
+                -Paths @('mississippi.slnx', 'orphan/orphan.cs')
+        } | Should -Throw '*must belong to a project*orphan/orphan.cs*'
+    }
+
+    It 'rejects an absolute path on another drive' -Skip:([System.IO.Path]::DirectorySeparatorChar -ne '\') {
+        $repoDrive = [System.IO.Path]::GetPathRoot($script:fixtureRoot).Substring(0, 1).ToUpperInvariant()
+        $otherDrive = if ($repoDrive -eq 'Z') { 'Y' } else { 'Z' }
+
+        {
+            ConvertTo-CleanupRelativePath `
+                -RepoRoot $script:fixtureRoot `
+                -Path "$otherDrive`:\outside.cs"
+        } | Should -Throw '*outside repository root*'
     }
 
     It 'honors a solution skip switch without falling back to another solution' {
@@ -305,6 +337,65 @@ Describe 'Changed cleanup path discovery' {
                 -HeadRef 'HEAD'
         } | Should -Throw "*do not start with '-'*"
     }
+
+    It 'prefers the remote-tracking default branch over a stale local branch or same-named tag' {
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Base.cs') -Value 'class Base { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create base') | Out-Null
+        $staleCommit = @(& $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('rev-parse', 'HEAD'))[0]
+
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Upstream.cs') -Value 'class Upstream { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Advance upstream') | Out-Null
+        $remoteRoot = Join-Path $TestDrive "$([Guid]::NewGuid()).git"
+        & $script:invokeGitTestCommand -WorkingDirectory $TestDrive -Arguments @('clone', '--bare', $fixtureRoot, $remoteRoot) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('remote', 'add', 'origin', $remoteRoot) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('fetch', 'origin') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'feature') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Feature.cs') -Value 'class Feature { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Add feature') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-f', 'main', $staleCommit) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('tag', 'main', $staleCommit) | Out-Null
+
+        $paths = @(Get-CleanupChangedPaths -RepoRoot $fixtureRoot)
+
+        $paths | Should -Be @('Feature.cs')
+    }
+
+    It 'fails clearly when the index contains unresolved merge conflicts' {
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Conflict.cs') -Value 'class Base { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create conflict base') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'other') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Conflict.cs') -Value 'class Other { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Change other') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', 'main') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Conflict.cs') -Value 'class Main { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Change main') | Out-Null
+
+        git -C $fixtureRoot -c commit.gpgSign=false merge other 2>$null | Out-Null
+        $LASTEXITCODE | Should -Not -Be 0
+
+        {
+            Get-CleanupChangedPaths -RepoRoot $fixtureRoot
+        } | Should -Throw '*unresolved merge conflicts*Conflict.cs*'
+    }
 }
 
 Describe 'Git path output parsing' {
@@ -327,6 +418,57 @@ Describe 'Git path output parsing' {
             $paths | Should -Contain "src/Control`tCharacter.cs"
             $paths | Should -Contain "src/Line`nBreak.cs"
         }
+    }
+}
+
+Describe 'Git cleanup path handling' {
+    It 'round-trips non-ASCII paths through a NUL-delimited Git diff' {
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'src') -Force | Out-Null
+        $invokeGit = {
+            param([Parameter(Mandatory)][string[]]$GitArguments)
+
+            $output = @(
+                git -C $fixtureRoot `
+                    -c commit.gpgSign=false `
+                    -c tag.gpgSign=false `
+                    -c "core.hooksPath=$(Join-Path $fixtureRoot '.git/disabled-hooks')" `
+                    @GitArguments
+            )
+            if ($LASTEXITCODE -ne 0) {
+                throw "Git command failed: git $($GitArguments -join ' ')"
+            }
+
+            return @($output)
+        }
+
+        & $invokeGit -GitArguments @('init') | Out-Null
+        & $invokeGit -GitArguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $invokeGit -GitArguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'README.md') -Value 'fixture' -Encoding utf8
+        & $invokeGit -GitArguments @('add', '--all') | Out-Null
+        & $invokeGit -GitArguments @('commit', '-m', 'Create fixture') | Out-Null
+        $baseCommit = @(& $invokeGit -GitArguments @('rev-parse', 'HEAD'))[0]
+
+        $unicodePath = 'src/Café.cs'
+        Set-Content -LiteralPath (Join-Path $fixtureRoot $unicodePath) -Value 'class Café { }' -Encoding utf8
+        & $invokeGit -GitArguments @('add', '--all') | Out-Null
+        & $invokeGit -GitArguments @('commit', '-m', 'Add Unicode path') | Out-Null
+        $headCommit = @(& $invokeGit -GitArguments @('rev-parse', 'HEAD'))[0]
+
+        $paths = @(Get-CleanupGitDiffPaths -RepoRoot $fixtureRoot -BaseRef $baseCommit -HeadRef $headCommit)
+
+        $paths | Should -Be @($unicodePath)
+    }
+
+    It 'reads NUL-delimited paths without trimming path characters' {
+        $pathList = Join-Path $TestDrive 'cleanup-paths.txt'
+        $content = " Café.cs$([char]0)trailing.cs $([char]0)"
+        [System.IO.File]::WriteAllText($pathList, $content, [System.Text.UTF8Encoding]::new($false))
+
+        $paths = @(Read-CleanupPathList -Path $pathList)
+
+        $paths | Should -Be @(' Café.cs', 'trailing.cs ')
     }
 }
 
@@ -699,6 +841,18 @@ Describe 'Monthly cleanup pull request publishing' {
         Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 2 -ParameterFilter {
             $FilePath -eq 'gh' -and $Arguments[0] -eq 'workflow' -and $Arguments[1] -eq 'run' -and
             $Arguments -contains '--ref' -and $Arguments -contains 'automation/monthly-cleanup-123-1'
+        }
+    }
+
+    It 'dispatches mutation testing as part of the default validation set' {
+        $result = Invoke-MonthlyCleanupPullRequestValidation `
+            -CleanupBranch 'automation/monthly-cleanup-123-1' `
+            -DefaultBranch 'main'
+
+        $result.WorkflowCount | Should -BeGreaterThan 2
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 1 -ParameterFilter {
+            $FilePath -eq 'gh' -and $Arguments[0] -eq 'workflow' -and $Arguments[1] -eq 'run' -and
+            $Arguments -contains 'stryker.yml'
         }
     }
 }
