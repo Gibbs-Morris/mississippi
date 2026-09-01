@@ -159,7 +159,7 @@ Describe 'Cleanup planning' {
         $literalFileName = 'Part\One.cs'
         $literalPath = "src/Foo/$literalFileName"
         $fullPath = [System.IO.Path]::Combine($script:fixtureRoot, 'src', 'Foo', $literalFileName)
-        Set-Content -LiteralPath $fullPath -Value 'class PartOne { }' -Encoding utf8
+        [System.IO.File]::WriteAllText($fullPath, 'class PartOne { }', [System.Text.UTF8Encoding]::new($false))
 
         $plan = Get-CleanupPlan -RepoRoot $script:fixtureRoot -Paths @($literalPath)
 
