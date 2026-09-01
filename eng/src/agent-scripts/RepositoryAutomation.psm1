@@ -457,7 +457,7 @@ function Get-CleanupGlobalFallbackReasons {
             '^(mississippi|samples)\.slnx$' { 'Solution project membership changed.'; break }
             '^clean-up\.ps1$' { 'A cleanup entrypoint changed.'; break }
             '(^|/)clean-up-[^/]+\.ps1$' { 'A cleanup script changed.'; break }
-            '(^|/)RepositoryAutomation\.psm1$' { 'The shared cleanup automation module changed.'; break }
+            '(^|/)(RepositoryAutomation|MonthlyCleanupAutomation)\.psm1$' { 'A shared cleanup automation module changed.'; break }
             '^\.github/workflows/cleanup\.yml$' { 'The pull-request cleanup workflow changed.'; break }
             '^\.github/workflows/monthly-cleanup\.yml$' { 'The monthly cleanup workflow changed.'; break }
             default { $null }
@@ -905,21 +905,10 @@ function Get-CleanupPlan {
     }
 
     if ($unmappedPaths.Count -gt 0) {
-        $fallbackReasons = @(
-            'One or more cleanup-eligible files could not be mapped unambiguously to a project.',
+        throw @(
+            'Cleanup-eligible files must belong to a project in mississippi.slnx or samples.slnx.',
             "Unmapped paths: $($unmappedPaths -join ', ')"
-        )
-        return [pscustomobject]@{
-            Mode              = 'FullFallback'
-            Reason            = ($fallbackReasons -join ' ')
-            FallbackReasons   = $fallbackReasons
-            ValidationScope   = 'Repository'
-            InputPaths        = @($normalizedPaths)
-            EligiblePaths     = @($eligiblePaths)
-            IgnoredPaths      = @($ignoredPaths)
-            Groups            = @()
-            AffectedProjects  = @()
-        }
+        ) -join ' '
     }
 
     $groups = @(

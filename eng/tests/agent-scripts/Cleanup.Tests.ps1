@@ -9,6 +9,9 @@ $ErrorActionPreference = 'Stop'
 $modulePath = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'src', 'agent-scripts', 'RepositoryAutomation.psm1')
 $modulePath = [System.IO.Path]::GetFullPath($modulePath)
 Import-Module -Name $modulePath -Force
+$monthlyModulePath = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'src', 'agent-scripts', 'MonthlyCleanupAutomation.psm1')
+$monthlyModulePath = [System.IO.Path]::GetFullPath($monthlyModulePath)
+Import-Module -Name $monthlyModulePath -Force
 
 BeforeAll {
     $script:invokeGitTestCommand = {
@@ -181,22 +184,22 @@ Describe 'Cleanup planning' {
     It 'runs cleanup automation changes fully but validates only PR-owned drift' {
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
-            -Paths @('.github/workflows/monthly-cleanup.yml', 'clean-up.ps1')
+            -Paths @(
+                '.github/workflows/monthly-cleanup.yml',
+                'clean-up.ps1',
+                'eng/src/agent-scripts/MonthlyCleanupAutomation.psm1')
 
         $plan.Mode | Should -Be 'FullValidation'
-        @($plan.FallbackReasons) | Should -HaveCount 2
+        @($plan.FallbackReasons) | Should -HaveCount 3
         $plan.ValidationScope | Should -Be 'ChangedPaths'
     }
 
-    It 'falls back to full cleanup when a file cannot be mapped to a solution project' {
-        $plan = Get-CleanupPlan `
-            -RepoRoot $script:fixtureRoot `
-            -Paths @('orphan/orphan.cs')
-
-        $plan.Mode | Should -Be 'FullFallback'
-        $plan.Reason | Should -Match 'could not be mapped'
-        $plan.Reason | Should -Match 'orphan/orphan.cs'
-        $plan.ValidationScope | Should -Be 'Repository'
+    It 'rejects a cleanup file outside the canonical solutions' {
+        {
+            Get-CleanupPlan `
+                -RepoRoot $script:fixtureRoot `
+                -Paths @('orphan/orphan.cs')
+        } | Should -Throw '*must belong to a project*orphan/orphan.cs*'
     }
 
     It 'honors a solution skip switch without falling back to another solution' {
@@ -577,6 +580,157 @@ Describe 'Canonical cleanup entry point' {
         $LASTEXITCODE | Should -Be 1
     }
 
+}
+
+Describe 'Monthly cleanup pull request publishing' {
+    BeforeEach {
+        $script:monthlyPatchPath = Join-Path $TestDrive 'cleanup.patch'
+        Set-Content -LiteralPath $script:monthlyPatchPath -Value 'fixture patch' -Encoding utf8
+        $script:publisherParameters = @{
+            DriftState      = 'true'
+            PatchPath       = $script:monthlyPatchPath
+            DefaultBranch   = 'main'
+            RepositoryOwner = 'Gibbs-Morris'
+            PullRequestTitle = 'Monthly cleanup'
+            RunId           = '123'
+            RunAttempt      = '1'
+        }
+    }
+
+    It 'closes an existing automation pull request when drift has disappeared' {
+        Mock -CommandName Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -MockWith {
+            if ($FilePath -eq 'gh' -and $Arguments[0] -eq 'pr' -and $Arguments[1] -eq 'list') {
+                return [pscustomobject]@{
+                    ExitCode = 0
+                    Output   = @('[{"number":42,"title":"Monthly cleanup","headRefName":"automation/monthly-cleanup-old","url":"https://example.test/42","isCrossRepository":false,"headRepositoryOwner":{"login":"Gibbs-Morris"}}]')
+                }
+            }
+            return [pscustomobject]@{ ExitCode = 0; Output = @() }
+        }
+        $script:publisherParameters.DriftState = 'false'
+
+        $result = Publish-MonthlyCleanupPullRequest @script:publisherParameters
+
+        $result.Action | Should -Be 'NoDrift'
+        $result.Branch | Should -BeNullOrEmpty
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 1 -ParameterFilter {
+            $FilePath -eq 'gh' -and $Arguments[0] -eq 'pr' -and $Arguments[1] -eq 'close' -and
+            $Arguments -contains '42' -and $Arguments -contains '--delete-branch'
+        }
+    }
+
+    It 'replaces an existing automation branch with a guarded lease' {
+        Mock -CommandName Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -MockWith {
+            if ($FilePath -eq 'gh' -and $Arguments[0] -eq 'pr' -and $Arguments[1] -eq 'list') {
+                return [pscustomobject]@{
+                    ExitCode = 0
+                    Output   = @('[{"number":42,"title":"Monthly cleanup","headRefName":"automation/monthly-cleanup-old","url":"https://example.test/42","isCrossRepository":false,"headRepositoryOwner":{"login":"Gibbs-Morris"}}]')
+                }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'diff' -and $Arguments -contains '--quiet') {
+                return [pscustomobject]@{ ExitCode = 1; Output = @() }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'diff') {
+                return [pscustomobject]@{ ExitCode = 0; Output = @('src/Foo.cs') }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'rev-parse') {
+                $sha = if ($Arguments[1] -eq 'HEAD') { 'cleanup-sha' } else { 'remote-sha' }
+                return [pscustomobject]@{ ExitCode = 0; Output = @($sha) }
+            }
+            return [pscustomobject]@{ ExitCode = 0; Output = @() }
+        }
+
+        $result = Publish-MonthlyCleanupPullRequest @script:publisherParameters
+
+        $result.Action | Should -Be 'Updated'
+        $result.Branch | Should -Be 'automation/monthly-cleanup-old'
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 1 -ParameterFilter {
+            $FilePath -eq 'git' -and $Arguments[0] -eq 'push' -and
+            $Arguments -contains '--force-with-lease=refs/heads/automation/monthly-cleanup-old:remote-sha'
+        }
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 1 -ParameterFilter {
+            $FilePath -eq 'gh' -and $Arguments[0] -eq 'pr' -and $Arguments[1] -eq 'edit'
+        }
+    }
+
+    It 'creates a new automation branch and pull request when none exists' {
+        Mock -CommandName Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -MockWith {
+            if ($FilePath -eq 'gh' -and $Arguments[0] -eq 'pr' -and $Arguments[1] -eq 'list') {
+                return [pscustomobject]@{ ExitCode = 0; Output = @('[]') }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'diff' -and $Arguments -contains '--quiet') {
+                return [pscustomobject]@{ ExitCode = 1; Output = @() }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'diff') {
+                return [pscustomobject]@{ ExitCode = 0; Output = @('src/Foo.cs') }
+            }
+            return [pscustomobject]@{ ExitCode = 0; Output = @() }
+        }
+
+        $result = Publish-MonthlyCleanupPullRequest @script:publisherParameters
+
+        $result.Action | Should -Be 'Created'
+        $result.Branch | Should -Be 'automation/monthly-cleanup-123-1'
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 1 -ParameterFilter {
+            $FilePath -eq 'git' -and $Arguments[0] -eq 'switch' -and
+            $Arguments -contains 'automation/monthly-cleanup-123-1'
+        }
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 1 -ParameterFilter {
+            $FilePath -eq 'gh' -and $Arguments[0] -eq 'pr' -and $Arguments[1] -eq 'create'
+        }
+    }
+
+    It 'stops without editing the pull request when the replacement lease fails' {
+        Mock -CommandName Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -MockWith {
+            if ($FilePath -eq 'gh' -and $Arguments[0] -eq 'pr' -and $Arguments[1] -eq 'list') {
+                return [pscustomobject]@{
+                    ExitCode = 0
+                    Output   = @('[{"number":42,"title":"Monthly cleanup","headRefName":"automation/monthly-cleanup-old","url":"https://example.test/42","isCrossRepository":false,"headRepositoryOwner":{"login":"Gibbs-Morris"}}]')
+                }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'diff' -and $Arguments -contains '--quiet') {
+                return [pscustomobject]@{ ExitCode = 1; Output = @() }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'diff') {
+                return [pscustomobject]@{ ExitCode = 0; Output = @('src/Foo.cs') }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'rev-parse') {
+                $sha = if ($Arguments[1] -eq 'HEAD') { 'cleanup-sha' } else { 'remote-sha' }
+                return [pscustomobject]@{ ExitCode = 0; Output = @($sha) }
+            }
+            if ($FilePath -eq 'git' -and $Arguments[0] -eq 'push') {
+                throw 'force-with-lease rejected'
+            }
+            return [pscustomobject]@{ ExitCode = 0; Output = @() }
+        }
+
+        { Publish-MonthlyCleanupPullRequest @script:publisherParameters } |
+            Should -Throw '*force-with-lease rejected*'
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 0 -ParameterFilter {
+            $FilePath -eq 'gh' -and $Arguments[0] -eq 'pr' -and $Arguments[1] -eq 'edit'
+        }
+    }
+
+    It 'reconciles the branch with the latest base before dispatching validation' {
+        Mock -CommandName Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -MockWith {
+            [pscustomobject]@{ ExitCode = 0; Output = @() }
+        }
+
+        $result = Invoke-MonthlyCleanupPullRequestValidation `
+            -CleanupBranch 'automation/monthly-cleanup-123-1' `
+            -DefaultBranch 'main' `
+            -Workflows @('cleanup.yml', 'full-build.yml')
+
+        $result.WorkflowCount | Should -Be 2
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 1 -ParameterFilter {
+            $FilePath -eq 'git' -and $Arguments[0] -eq 'merge' -and
+            $Arguments -contains 'refs/remotes/origin/main'
+        }
+        Should -Invoke Invoke-MonthlyCleanupCommand -ModuleName MonthlyCleanupAutomation -Times 2 -ParameterFilter {
+            $FilePath -eq 'gh' -and $Arguments[0] -eq 'workflow' -and $Arguments[1] -eq 'run' -and
+            $Arguments -contains '--ref' -and $Arguments -contains 'automation/monthly-cleanup-123-1'
+        }
+    }
 }
 
 Describe 'Cleanup module exports' {
