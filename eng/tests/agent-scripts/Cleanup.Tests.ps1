@@ -42,6 +42,8 @@ Describe 'Cleanup planning' {
         $script:fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
         New-Item -ItemType Directory -Path $script:fixtureRoot -Force | Out-Null
         $directories = @(
+            '.config',
+            'docs/Docusaurus',
             'src/Foo',
             'src/Bar',
             'samples/App',
@@ -71,6 +73,18 @@ Describe 'Cleanup planning' {
             'orphan/orphan.cs'
         ) | ForEach-Object {
             Set-Content -LiteralPath (Join-Path $script:fixtureRoot $_) -Value 'class FixtureType { }' -Encoding utf8
+        }
+
+        @{
+            '.config/dotnet-tools.json'           = '{}'
+            'Directory.Build.props'               = '<Project />'
+            'global.json'                         = '{}'
+            'stryker-config.json'                 = '{}'
+            'docs/Docusaurus/package.json'        = '{}'
+            'docs/Docusaurus/playwright.config.ts' = 'export default {};'
+            'docs/Docusaurus/sidebars.ts'         = 'export default {};'
+        }.GetEnumerator() | ForEach-Object {
+            Set-Content -LiteralPath (Join-Path $script:fixtureRoot $_.Key) -Value $_.Value -Encoding utf8
         }
 
         Set-Content -LiteralPath (Join-Path $script:fixtureRoot 'mississippi.slnx') -Value @'
@@ -142,6 +156,30 @@ Describe 'Cleanup planning' {
         @($plan.EligiblePaths) | Should -Be @('src/Foo/appsettings.json')
         @($plan.IgnoredPaths) | Should -Contain 'src/Foo/packages.lock.json'
         @($plan.Groups[0].IncludePaths) | Should -Be @('src/Foo/appsettings.json')
+    }
+
+    It 'uses full fallback for recognized global files with eligible extensions' {
+        $plan = Get-CleanupPlan `
+            -RepoRoot $script:fixtureRoot `
+            -Paths @('Directory.Build.props', 'global.json', '.config/dotnet-tools.json')
+
+        $plan.Mode | Should -Be 'FullFallback'
+        $plan.ValidationScope | Should -Be 'Repository'
+        @($plan.InputPaths) | Should -HaveCount 3
+    }
+
+    It 'ignores web and tooling assets outside canonical projects' {
+        $paths = @(
+            'stryker-config.json',
+            'docs/Docusaurus/package.json',
+            'docs/Docusaurus/playwright.config.ts',
+            'docs/Docusaurus/sidebars.ts')
+
+        $plan = Get-CleanupPlan -RepoRoot $script:fixtureRoot -Paths $paths
+
+        $plan.Mode | Should -Be 'NoOp'
+        @($plan.EligiblePaths) | Should -HaveCount 0
+        @($plan.IgnoredPaths) | Should -Be $paths
     }
 
     It 'builds the project catalog from solution membership without scanning the repository' {
