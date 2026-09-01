@@ -136,7 +136,7 @@ jobs:
           PATCH_PATH: ${{ runner.temp }}/monthly-cleanup/cleanup.patch
           GH_TOKEN: ${{ github.token }}
         run: |
-          Import-Module ./eng/src/agent-scripts/MonthlyCleanupAutomation.psm1 -Force
+          Import-Module ./eng/src/agent-scripts/MonthlyCleanupAutomation.psm1 -Force -ErrorAction Stop
           $result = Publish-MonthlyCleanupPullRequest `
             -DriftState $env:DRIFT_PRESENT `
             -PatchPath $env:PATCH_PATH `
@@ -156,7 +156,7 @@ jobs:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          Import-Module ./eng/src/agent-scripts/MonthlyCleanupAutomation.psm1 -Force
+          Import-Module ./eng/src/agent-scripts/MonthlyCleanupAutomation.psm1 -Force -ErrorAction Stop
           $result = Invoke-MonthlyCleanupPullRequestValidation `
             -CleanupBranch $env:CLEANUP_BRANCH `
             -DefaultBranch $env:DEFAULT_BRANCH

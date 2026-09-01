@@ -619,7 +619,9 @@ function Get-CleanupPlan {
                 $_ -match '(^|/)Directory\.Packages\.props$' -or
                 $_ -match '(^|/)global\.json$' -or
                 $_ -match '^\.config/dotnet-tools\.json$' -or
-                $_ -match '^(mississippi|samples)\.slnx$'
+                $_ -match '^(mississippi|samples)\.slnx$' -or
+                $_ -match '^clean-up\.ps1$' -or
+                $_ -match '(^|/)RepositoryAutomation\.psm1$'
             }
         ).Count -gt 0
         return [pscustomobject]@{
