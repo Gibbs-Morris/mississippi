@@ -603,7 +603,17 @@ function Get-CleanupChangedPaths {
             $baseCandidates += 'origin/main'
         }
 
-        $baseCommit = & $resolveCommit -Candidates $baseCandidates -Description "base ref '$BaseRef'"
+        try {
+            $baseCommit = & $resolveCommit -Candidates $baseCandidates -Description "base ref '$BaseRef'"
+        }
+        catch {
+            if ($BaseRef -ne 'main') { throw }
+            $fetchArguments = @('fetch', '--no-tags')
+            if (([string](git rev-parse --is-shallow-repository)).Trim() -eq 'true') { $fetchArguments += '--unshallow' }
+            git @fetchArguments origin 'refs/heads/main:refs/remotes/origin/main'
+            if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the default base ref '$BaseRef' from origin." }
+            $baseCommit = & $resolveCommit -Candidates $baseCandidates -Description "base ref '$BaseRef'"
+        }
         $headCommit = & $resolveCommit -Candidates @($HeadRef) -Description "head ref '$HeadRef'"
 
         $mergeBaseOutput = @(git merge-base $headCommit $baseCommit)

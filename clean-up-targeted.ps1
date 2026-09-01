@@ -6,17 +6,6 @@ param(
     [string]$BaseRef = 'main',
     [ValidateNotNullOrEmpty()]
     [string]$HeadRef = 'HEAD',
-    [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release',
-    [string]$SettingsPath,
-    [string]$Profile = 'Built-in: Full Cleanup',
-    [string]$CachesHome,
-    [switch]$NoUpdates,
-    [switch]$SkipSamples,
-    [switch]$SkipMississippi,
-    [switch]$SkipToolRestore,
-    [switch]$SkipRestore,
-    [switch]$SkipBuild,
     [switch]$PlanOnly
 )
 
@@ -45,9 +34,7 @@ try {
     if ($PlanOnly) {
         Get-CleanupPlan `
             -Paths $changedPaths `
-            -RepoRoot $repoRoot `
-            -SkipSamples:$SkipSamples `
-            -SkipMississippi:$SkipMississippi |
+            -RepoRoot $repoRoot |
             ConvertTo-Json -Depth 10 -Compress |
             Write-Output
         exit 0
@@ -56,17 +43,7 @@ try {
     $null = Invoke-RepositoryCleanup `
         -Mode Targeted `
         -RepoRoot $repoRoot `
-        -Paths $changedPaths `
-        -Configuration $Configuration `
-        -SettingsPath $SettingsPath `
-        -Profile $Profile `
-        -CachesHome $CachesHome `
-        -NoUpdates:$NoUpdates `
-        -SkipSamples:$SkipSamples `
-        -SkipMississippi:$SkipMississippi `
-        -SkipToolRestore:$SkipToolRestore `
-        -SkipRestore:$SkipRestore `
-        -SkipBuild:$SkipBuild
+        -Paths $changedPaths
     exit 0
 }
 catch {

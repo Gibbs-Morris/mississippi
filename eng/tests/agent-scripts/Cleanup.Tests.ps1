@@ -238,12 +238,9 @@ Describe 'Changed cleanup path discovery' {
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'core.quotePath', 'true') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create cleanup fixture') | Out-Null
-        $mainCommit = @(
-            & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('rev-parse', 'HEAD')
-        )[0]
-        & $script:invokeGitTestCommand `
-            -WorkingDirectory $fixtureRoot `
-            -Arguments @('update-ref', 'refs/remotes/origin/main', $mainCommit) | Out-Null
+        $remoteRoot = Join-Path $TestDrive "$([Guid]::NewGuid()).git"
+        & $script:invokeGitTestCommand -WorkingDirectory $TestDrive -Arguments @('clone', '--bare', $fixtureRoot, $remoteRoot) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('remote', 'add', 'origin', $remoteRoot) | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'feature') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-D', 'main') | Out-Null
 
