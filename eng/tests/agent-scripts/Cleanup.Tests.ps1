@@ -156,8 +156,10 @@ Describe 'Cleanup planning' {
     }
 
     It 'preserves a literal backslash in a Unix filename' -Skip:([System.IO.Path]::DirectorySeparatorChar -eq '\') {
-        $literalPath = 'src/Foo/Part\One.cs'
-        Set-Content -LiteralPath (Join-Path $script:fixtureRoot $literalPath) -Value 'class PartOne { }' -Encoding utf8
+        $literalFileName = 'Part\One.cs'
+        $literalPath = "src/Foo/$literalFileName"
+        $fullPath = [System.IO.Path]::Combine($script:fixtureRoot, 'src', 'Foo', $literalFileName)
+        Set-Content -LiteralPath $fullPath -Value 'class PartOne { }' -Encoding utf8
 
         $plan = Get-CleanupPlan -RepoRoot $script:fixtureRoot -Paths @($literalPath)
 
