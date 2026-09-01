@@ -443,89 +443,6 @@ function ConvertTo-CleanupRelativePath {
     return $relativePath.TrimStart('/')
 }
 
-function Get-CleanupGitDiffPaths {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$RepoRoot,
-        [Parameter(Mandatory)][string]$BaseRef,
-        [Parameter(Mandatory)][string]$HeadRef
-    )
-
-    foreach ($ref in @($BaseRef, $HeadRef)) {
-        if ([string]::IsNullOrWhiteSpace($ref) -or $ref.StartsWith('-', [System.StringComparison]::Ordinal)) {
-            throw "Git refs must be non-empty names that do not start with '-'. Received '$ref'."
-        }
-    }
-
-    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = 'git'
-    $startInfo.WorkingDirectory = [System.IO.Path]::GetFullPath($RepoRoot)
-    $startInfo.UseShellExecute = $false
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
-    $startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
-    foreach ($argument in @(
-        '-c', 'core.quotePath=false',
-        'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT',
-        "$BaseRef...$HeadRef", '--')) {
-        $null = $startInfo.ArgumentList.Add($argument)
-    }
-
-    $process = [System.Diagnostics.Process]::new()
-    $process.StartInfo = $startInfo
-    try {
-        $null = $process.Start()
-        $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
-        $standardErrorTask = $process.StandardError.ReadToEndAsync()
-        $process.WaitForExit()
-        $standardOutput = $standardOutputTask.GetAwaiter().GetResult()
-        $standardError = $standardErrorTask.GetAwaiter().GetResult()
-        if ($process.ExitCode -ne 0) {
-            $errorDetail = $standardError.Trim()
-            throw "Unable to calculate the cleanup delta between '$BaseRef' and '$HeadRef' (git exit code $($process.ExitCode)): $errorDetail"
-        }
-
-        return @(ConvertFrom-CleanupGitPathOutput -GitOutput $standardOutput)
-    }
-    finally {
-        $process.Dispose()
-    }
-}
-
-function Get-CleanupGlobalFallbackReasons {
-    [CmdletBinding()]
-    param(
-        [AllowEmptyCollection()][string[]]$Paths
-    )
-
-    $reasons = New-Object System.Collections.Generic.List[string]
-    foreach ($path in @($Paths)) {
-        $reason = switch -Regex ($path) {
-            '^\.gitignore$' { 'The root .gitignore file changed.'; break }
-            '(^|/)\.editorconfig$' { 'An .editorconfig file changed.'; break }
-            '(^|/)[^/]+\.DotSettings$' { 'A ReSharper settings file changed.'; break }
-            '(^|/)Directory\.Build\.(props|targets)$' { 'A Directory.Build.props/targets file changed.'; break }
-            '(^|/)Directory\.Packages\.props$' { 'Directory.Packages.props changed.'; break }
-            '(^|/)global\.json$' { 'global.json changed.'; break }
-            '^\.config/dotnet-tools\.json$' { 'The pinned .NET tool manifest changed.'; break }
-            '^(mississippi|samples)\.slnx$' { 'Solution project membership changed.'; break }
-            '^clean-up\.ps1$' { 'A cleanup entrypoint changed.'; break }
-            '(^|/)clean-up-[^/]+\.ps1$' { 'A cleanup script changed.'; break }
-            '(^|/)(RepositoryAutomation|MonthlyCleanupAutomation)\.psm1$' { 'A shared cleanup automation module changed.'; break }
-            '^\.github/workflows/cleanup\.yml$' { 'The pull-request cleanup workflow changed.'; break }
-            '^\.github/workflows/monthly-cleanup\.yml$' { 'The monthly cleanup workflow changed.'; break }
-            default { $null }
-        }
-
-        if ($reason -and -not $reasons.Contains($reason)) {
-            $reasons.Add($reason)
-        }
-    }
-
-    return @($reasons)
-}
-
 function ConvertFrom-CleanupGitPathOutput {
     [CmdletBinding()]
     param(
@@ -564,6 +481,39 @@ function Read-CleanupPathList {
                 -not $_.StartsWith('#', [System.StringComparison]::Ordinal)
             }
     )
+}
+
+function Get-CleanupGlobalFallbackReasons {
+    [CmdletBinding()]
+    param(
+        [AllowEmptyCollection()][string[]]$Paths
+    )
+
+    $reasons = New-Object System.Collections.Generic.List[string]
+    foreach ($path in @($Paths)) {
+        $reason = switch -Regex ($path) {
+            '^\.gitignore$' { 'The root .gitignore file changed.'; break }
+            '(^|/)\.editorconfig$' { 'An .editorconfig file changed.'; break }
+            '(^|/)[^/]+\.DotSettings$' { 'A ReSharper settings file changed.'; break }
+            '(^|/)Directory\.Build\.(props|targets)$' { 'A Directory.Build.props/targets file changed.'; break }
+            '(^|/)Directory\.Packages\.props$' { 'Directory.Packages.props changed.'; break }
+            '(^|/)global\.json$' { 'global.json changed.'; break }
+            '^\.config/dotnet-tools\.json$' { 'The pinned .NET tool manifest changed.'; break }
+            '^(mississippi|samples)\.slnx$' { 'Solution project membership changed.'; break }
+            '^clean-up\.ps1$' { 'A cleanup entrypoint changed.'; break }
+            '(^|/)clean-up-[^/]+\.ps1$' { 'A cleanup script changed.'; break }
+            '(^|/)(RepositoryAutomation|MonthlyCleanupAutomation)\.psm1$' { 'A shared cleanup automation module changed.'; break }
+            '^\.github/workflows/cleanup\.yml$' { 'The pull-request cleanup workflow changed.'; break }
+            '^\.github/workflows/monthly-cleanup\.yml$' { 'The monthly cleanup workflow changed.'; break }
+            default { $null }
+        }
+
+        if ($reason -and -not $reasons.Contains($reason)) {
+            $reasons.Add($reason)
+        }
+    }
+
+    return @($reasons)
 }
 
 function Invoke-CleanupGitPathList {
@@ -703,23 +653,16 @@ function Get-CleanupChangedPaths {
             throw "Git returned no merge base for '$HeadRef' and '$BaseRef'."
         }
 
-        $branchDiffArguments = @(
-            $gitPathArguments
-            'diff',
-            '--no-renames',
-            '--name-only',
-            '-z',
-            '--diff-filter=ACDMRT',
-            "$($mergeBase)...$headCommit",
-            '--'
-        )
         $branchPaths = @(
             Invoke-CleanupGitPathList `
                 -RepoRoot $rootFullPath `
-                -Arguments $branchDiffArguments `
+                -Arguments @(
+                    $gitPathArguments
+                    'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT',
+                    "$($mergeBase)...$headCommit", '--'
+                ) `
                 -ErrorMessage "Unable to list changes between '$BaseRef' and '$HeadRef'"
         )
-
         $stagedPaths = @(
             Invoke-CleanupGitPathList `
                 -RepoRoot $rootFullPath `
@@ -729,7 +672,6 @@ function Get-CleanupChangedPaths {
                 ) `
                 -ErrorMessage 'Unable to list staged changes'
         )
-
         $unstagedPaths = @(
             Invoke-CleanupGitPathList `
                 -RepoRoot $rootFullPath `
@@ -739,7 +681,6 @@ function Get-CleanupChangedPaths {
                 ) `
                 -ErrorMessage 'Unable to list unstaged changes'
         )
-
         $untrackedPaths = @(
             Invoke-CleanupGitPathList `
                 -RepoRoot $rootFullPath `
@@ -1634,4 +1575,4 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Read-CleanupPathList, Get-CleanupGitDiffPaths, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Read-CleanupPathList, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline

@@ -288,7 +288,6 @@ Describe 'Changed cleanup path discovery' {
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Branch.cs') -Value 'class BranchFixtureType { }' -Encoding utf8
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', 'src/Branch.cs') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Add branch file') | Out-Null
-
         Set-Content -LiteralPath (Join-Path $fixtureRoot ('src/' + $unicodeFileName)) -Value 'class ChangedCafeFixtureType { }' -Encoding utf8
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Change non-ASCII path') | Out-Null
@@ -350,7 +349,6 @@ Describe 'Changed cleanup path discovery' {
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create base') | Out-Null
         $staleCommit = @(& $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('rev-parse', 'HEAD'))[0]
-
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'Upstream.cs') -Value 'class Upstream { }' -Encoding utf8
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Advance upstream') | Out-Null
@@ -456,7 +454,7 @@ Describe 'Git cleanup path handling' {
         & $invokeGit -GitArguments @('commit', '-m', 'Add Unicode path') | Out-Null
         $headCommit = @(& $invokeGit -GitArguments @('rev-parse', 'HEAD'))[0]
 
-        $paths = @(Get-CleanupGitDiffPaths -RepoRoot $fixtureRoot -BaseRef $baseCommit -HeadRef $headCommit)
+        $paths = @(Get-CleanupChangedPaths -RepoRoot $fixtureRoot -BaseRef $baseCommit -HeadRef $headCommit)
 
         $paths | Should -Be @($unicodePath)
     }
