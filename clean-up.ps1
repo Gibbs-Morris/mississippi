@@ -85,15 +85,7 @@ function Get-SelectedCleanupPaths {
         return @($ExplicitFiles)
     }
 
-    $resolvedFileList = Resolve-Path -LiteralPath $SelectionFilePath
-    return @(
-        Get-Content -LiteralPath $resolvedFileList.Path -Encoding UTF8 |
-            ForEach-Object { $_.Trim() } |
-            Where-Object {
-                -not [string]::IsNullOrWhiteSpace($_) -and
-                -not $_.StartsWith('#', [System.StringComparison]::Ordinal)
-            }
-    )
+    return @(Read-CleanupPathList -Path $SelectionFilePath)
 }
 
 try {

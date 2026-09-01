@@ -49,16 +49,21 @@ jobs:
             }
           }
 
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force -ErrorAction Stop
+          $changedFiles = @(
+            Get-CleanupGitDiffPaths `
+              -RepoRoot $env:GITHUB_WORKSPACE `
+              -BaseRef $env:BASE_SHA `
+              -HeadRef $env:HEAD_SHA
+          )
           $fileList = Join-Path $env:RUNNER_TEMP 'cleanup-pr-files.txt'
-          $changedFiles = @(git diff --name-only --diff-filter=ACMRD "$($env:BASE_SHA)...$($env:HEAD_SHA)")
-          if ($LASTEXITCODE -ne 0) {
-            throw "Unable to calculate the PR delta between '$($env:BASE_SHA)' and '$($env:HEAD_SHA)'."
-          }
-
-          New-Item -ItemType File -Path $fileList -Force | Out-Null
-          if ($changedFiles.Count -gt 0) {
-            Set-Content -LiteralPath $fileList -Value $changedFiles -Encoding utf8NoBOM
-          }
+          $pathListContent = if ($changedFiles.Count -gt 0) {
+            ($changedFiles -join [char]0) + [char]0
+          } else { '' }
+          [System.IO.File]::WriteAllText(
+            $fileList,
+            $pathListContent,
+            [System.Text.UTF8Encoding]::new($false))
 
           "run_mode=targeted" >> $env:GITHUB_OUTPUT
           "file_list=$fileList" >> $env:GITHUB_OUTPUT
