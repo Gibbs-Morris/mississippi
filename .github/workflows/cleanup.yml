@@ -168,43 +168,39 @@ jobs:
           PLAN_MODE: ${{ steps.plan.outputs.mode }}
           VALIDATION_SCOPE: ${{ steps.plan.outputs.validation_scope }}
         run: |
-          $trackedChanges = @(git diff --name-only HEAD -- . ':!**/packages*.lock.json')
-          $untrackedChanges = @(
-            git ls-files --others --exclude-standard -- . |
-              Where-Object { $_ -notmatch '(?i)packages(?:\.[^/\\]+)?\.lock\.json$' }
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force -ErrorAction Stop
+          $changes = @(
+            Get-CleanupChangedPaths -RepoRoot $env:GITHUB_WORKSPACE -BaseRef HEAD -HeadRef HEAD |
+              Where-Object { $_ -notmatch '(?i)packages(?:\.[^/\\]+)?\.lock\.json$' } |
+              Sort-Object -Unique
           )
-          $changes = @($trackedChanges + $untrackedChanges | Sort-Object -Unique)
           if ($changes.Count -eq 0) {
             Write-Host 'No cleanup changes detected.'
             exit 0
           }
 
-          if ($env:RUN_MODE -eq 'targeted' -and $env:VALIDATION_SCOPE -eq 'ChangedPaths' -and $env:FILE_LIST -and (Test-Path -LiteralPath $env:FILE_LIST)) {
-            $prChangedPaths = @(
-              Get-Content -LiteralPath $env:FILE_LIST -Encoding UTF8 |
-                ForEach-Object { $_.Trim() } |
-                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-                Sort-Object -Unique
-            )
-            $prChangedSet = [System.Collections.Generic.HashSet[string]]::new(
+          if (
+            $env:RUN_MODE -eq 'targeted' -and
+            $env:VALIDATION_SCOPE -eq 'ChangedPaths' -and
+            $env:FILE_LIST -and
+            (Test-Path -LiteralPath $env:FILE_LIST)
+          ) {
+            $prChangedPaths = @(Read-CleanupPathList -Path $env:FILE_LIST | Sort-Object -Unique)
+            $pathComparer = if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
               [System.StringComparer]::OrdinalIgnoreCase
-            )
+            } else {
+              [System.StringComparer]::Ordinal
+            }
+            $prChangedSet = [System.Collections.Generic.HashSet[string]]::new($pathComparer)
             foreach ($path in $prChangedPaths) {
-              $normalizedPath = $path -replace '\\', '/'
-              $null = $prChangedSet.Add($normalizedPath)
+              $null = $prChangedSet.Add($path)
             }
 
             $prChanges = @(
-              $changes | Where-Object {
-                $normalizedPath = $_ -replace '\\', '/'
-                $prChangedSet.Contains($normalizedPath)
-              }
+              $changes | Where-Object { $prChangedSet.Contains($_) }
             )
             $unrelatedChanges = @(
-              $changes | Where-Object {
-                $normalizedPath = $_ -replace '\\', '/'
-                -not $prChangedSet.Contains($normalizedPath)
-              }
+              $changes | Where-Object { -not $prChangedSet.Contains($_) }
             )
 
             if ($unrelatedChanges.Count -gt 0) {

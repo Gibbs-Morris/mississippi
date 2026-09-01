@@ -98,6 +98,17 @@ Describe 'Cleanup planning' {
         @($plan.Groups[0].IncludePaths) | Should -Be @('src/Foo/Foo.cs')
     }
 
+    It 'preserves leading whitespace in a Git-provided filename' {
+        $relativePath = 'src/Foo/ Leading.cs'
+        Set-Content -LiteralPath (Join-Path $script:fixtureRoot $relativePath) -Value 'class Leading { }' -Encoding utf8
+
+        $plan = Get-CleanupPlan -RepoRoot $script:fixtureRoot -Paths @($relativePath)
+
+        $plan.Mode | Should -Be 'Targeted'
+        @($plan.EligiblePaths) | Should -Be @($relativePath)
+        @($plan.Groups[0].IncludePaths) | Should -Be @($relativePath)
+    }
+
     It 'groups changed files by owning project across both solutions' {
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `

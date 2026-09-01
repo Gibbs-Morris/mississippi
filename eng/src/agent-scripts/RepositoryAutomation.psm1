@@ -413,8 +413,7 @@ function ConvertTo-CleanupRelativePath {
     }
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
-    $pathValue = $Path.Trim()
-    $pathForCurrentPlatform = ConvertTo-CleanupPlatformPath -Path $pathValue
+    $pathForCurrentPlatform = ConvertTo-CleanupPlatformPath -Path $Path
     $fullPath = if ([System.IO.Path]::IsPathRooted($pathForCurrentPlatform)) {
         [System.IO.Path]::GetFullPath($pathForCurrentPlatform)
     }
