@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR head
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
@@ -109,13 +109,13 @@ jobs:
 
       - name: Setup .NET
         if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           global-json-file: global.json
 
       - name: Cache NuGet packages
         if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -124,7 +124,7 @@ jobs:
 
       - name: Cache JetBrains analysis data
         if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ runner.temp }}/.jb-caches
           key: jb-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.editorconfig', '**/*.DotSettings', '**/Directory.Build.props', '**/Directory.Build.targets', 'mississippi.slnx', 'samples.slnx') }}

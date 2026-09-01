@@ -858,9 +858,23 @@ function Get-CleanupPlan {
     }
     $resolvedProjects = @{}
     $unmappedPaths = New-Object System.Collections.Generic.List[string]
+    $projectAssetExtensions = @('.css', '.html', '.js', '.json', '.jsx', '.ts', '.tsx')
     foreach ($relativePath in @($eligiblePaths)) {
+        if (@(Get-CleanupGlobalFallbackReasons -Paths @($relativePath)).Count -gt 0) {
+            continue
+        }
+
         $project = Resolve-CleanupProject -RelativePath $relativePath -RepoRoot $rootFullPath -ProjectCatalog $projectCatalog
         if ($null -eq $project -or $project.SolutionPaths.Count -eq 0) {
+            $extension = [System.IO.Path]::GetExtension($relativePath).ToLowerInvariant()
+            if ($projectAssetExtensions -contains $extension) {
+                $null = $eligiblePaths.Remove($relativePath)
+                if (-not $ignoredPaths.Contains($relativePath)) {
+                    $ignoredPaths.Add($relativePath)
+                }
+                continue
+            }
+
             $unmappedPaths.Add($relativePath)
             continue
         }
