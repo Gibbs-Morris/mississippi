@@ -361,7 +361,7 @@ function Invoke-TargetedProjectCleanup {
                 throw "Cleanup path '$relativePath' is outside the targeted project directory '$projectDirectory'."
             }
 
-            $includePath -replace '\\', '/'
+            if ([System.IO.Path]::DirectorySeparatorChar -eq '\') { $includePath.Replace('\', '/') } else { $includePath }
         }
     )
 
@@ -608,6 +608,13 @@ function Get-CleanupChangedPaths {
 
         $mergeBaseOutput = @(git merge-base $headCommit $baseCommit)
         $mergeBaseExitCode = $LASTEXITCODE
+        if ($mergeBaseExitCode -ne 0 -and ([string](git rev-parse --is-shallow-repository)).Trim() -eq 'true') {
+            git fetch --no-tags --unshallow origin
+            if ($LASTEXITCODE -ne 0) { throw "Unable to deepen the shallow repository while resolving '$BaseRef'." }
+
+            $mergeBaseOutput = @(git merge-base $headCommit $baseCommit)
+            $mergeBaseExitCode = $LASTEXITCODE
+        }
         if ($mergeBaseExitCode -ne 0) {
             throw "Unable to find the merge base for '$HeadRef' and '$BaseRef' (git exit code $mergeBaseExitCode)."
         }

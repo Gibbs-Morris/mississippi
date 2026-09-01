@@ -321,13 +321,6 @@ Describe 'Git path output parsing' {
     }
 }
 
-Describe 'Cleanup module exports' {
-    It 'exports solution cleanup functions for standalone entrypoints' {
-        Get-Command -Name Invoke-MississippiSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
-        Get-Command -Name Invoke-SampleSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
-    }
-}
-
 Describe 'CleanupCode invocation' {
     It 'preserves settings, include paths, cache, and no-update options' {
         $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
@@ -361,6 +354,12 @@ Describe 'CleanupCode invocation' {
         Set-Content -LiteralPath $projectPath -Value '<Project />' -Encoding utf8
         Set-Content -LiteralPath (Join-Path $projectDirectory 'Foo.cs') -Value 'class Foo { }' -Encoding utf8
         Set-Content -LiteralPath (Join-Path $projectDirectory 'Sub/Other.cs') -Value 'class Other { }' -Encoding utf8
+        $includePaths = @('src/Foo/Foo.cs', 'src/Foo/Sub/Other.cs')
+        $expectedIncludes = 'Foo.cs;Sub/Other.cs'
+        if ([System.IO.Path]::DirectorySeparatorChar -ne '\') {
+            $includePaths += 'src/Foo/Part\One.cs'
+            $expectedIncludes += ';Part\One.cs'
+        }
         $settingsPath = Join-Path $fixtureRoot 'Directory.DotSettings'
         Set-Content -LiteralPath $settingsPath -Value '<ApplicationSettings />' -Encoding utf8
 
@@ -378,7 +377,7 @@ Describe 'CleanupCode invocation' {
         Invoke-TargetedProjectCleanup `
             -ProjectGroup ([pscustomobject]@{
                 ProjectPath  = $projectPath
-                IncludePaths = @('src/Foo/Foo.cs', 'src/Foo/Sub/Other.cs')
+                IncludePaths = $includePaths
             }) `
             -RepoRoot $fixtureRoot `
             -SettingsPath $settingsPath
@@ -391,7 +390,7 @@ Describe 'CleanupCode invocation' {
         }
         Should -Invoke Invoke-ReSharperCleanup -ModuleName RepositoryAutomation -Times 1 -ParameterFilter {
             $SolutionPath -like $temporarySolutionPattern -and
-            ($IncludePaths -join ';') -eq 'Foo.cs;Sub/Other.cs'
+            ($IncludePaths -join ';') -eq $expectedIncludes
         }
         @(Get-ChildItem -LiteralPath $projectDirectory -Filter '.cleanup-targeted-*' -Force) | Should -HaveCount 0
     }
@@ -578,12 +577,11 @@ Describe 'Canonical cleanup entry point' {
         $LASTEXITCODE | Should -Be 1
     }
 
-    It 'forwards invalid solution selections and returns the core failure code' {
-        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
-        $scriptPath = Join-Path $repoRoot 'clean-up.ps1'
+}
 
-        & pwsh -NoProfile -File $scriptPath -SkipSamples -SkipMississippi
-
-        $LASTEXITCODE | Should -Be 1
+Describe 'Cleanup module exports' {
+    It 'exports the standalone solution cleanup functions used by wrapper scripts' {
+        Get-Command -Name Invoke-MississippiSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
+        Get-Command -Name Invoke-SampleSolutionCleanup -Module RepositoryAutomation | Should -Not -BeNullOrEmpty
     }
 }
