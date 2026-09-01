@@ -441,6 +441,7 @@ function Get-CleanupGlobalFallbackReasons {
     $reasons = New-Object System.Collections.Generic.List[string]
     foreach ($path in @($Paths)) {
         $reason = switch -Regex ($path) {
+            '^\.gitignore$' { 'The root .gitignore file changed.'; break }
             '(^|/)\.editorconfig$' { 'An .editorconfig file changed.'; break }
             '(^|/)[^/]+\.DotSettings$' { 'A ReSharper settings file changed.'; break }
             '(^|/)Directory\.Build\.(props|targets)$' { 'A Directory.Build.props/targets file changed.'; break }
@@ -611,6 +612,7 @@ function Get-CleanupPlan {
     if ($globalReasons.Count -gt 0) {
         $requiresRepositoryValidation = @(
             $normalizedPaths | Where-Object {
+                $_ -match '^\.gitignore$' -or
                 $_ -match '(^|/)\.editorconfig$' -or
                 $_ -match '(^|/)[^/]+\.DotSettings$' -or
                 $_ -match '(^|/)Directory\.Build\.(props|targets)$' -or

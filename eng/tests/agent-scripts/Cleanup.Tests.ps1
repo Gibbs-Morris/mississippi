@@ -133,11 +133,11 @@ Describe 'Cleanup planning' {
     It 'falls back to full cleanup for global cleanup inputs' {
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
-            -Paths @('Directory.DotSettings', 'src/Foo/Foo.cs')
+            -Paths @('.gitignore', 'Directory.DotSettings', 'src/Foo/Foo.cs')
 
         $plan.Mode | Should -Be 'FullFallback'
         $plan.Reason | Should -Match 'settings'
-        @($plan.FallbackReasons) | Should -HaveCount 1
+        @($plan.FallbackReasons) | Should -HaveCount 2
         $plan.ValidationScope | Should -Be 'Repository'
     }
 
