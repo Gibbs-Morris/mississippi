@@ -829,7 +829,7 @@ function Get-CleanupPlan {
     foreach ($relativePath in @($normalizedPaths)) {
         $fullPath = [System.IO.Path]::Combine($rootFullPath, (ConvertTo-CleanupPlatformPath -Path $relativePath))
         $extension = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
-        if ($cleanupExtensions -notcontains $extension -or -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+        if ($cleanupExtensions -notcontains $extension -or -not [System.IO.File]::Exists($fullPath)) {
             $ignoredPaths.Add($relativePath)
             continue
         }
