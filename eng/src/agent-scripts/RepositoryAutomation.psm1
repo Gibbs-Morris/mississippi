@@ -420,8 +420,7 @@ function ConvertTo-CleanupRelativePath {
     if (
         [System.IO.Path]::DirectorySeparatorChar -ne '\' -and
         -not [System.IO.Path]::IsPathRooted($Path) -and
-        $Path.Contains('\') -and
-        -not $Path.Contains('/')
+        $Path.Contains('\')
     ) {
         $literalCandidate = [System.IO.Path]::GetFullPath(
             [System.IO.Path]::Combine($rootFullPath, $Path)

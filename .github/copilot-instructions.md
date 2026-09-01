@@ -60,7 +60,7 @@ Run `pwsh ./clean-up.ps1` after making code changes and before committing to ens
 
 For faster local loops, use targeted cleanup first. The targeted entry point compares the merge-base of `HEAD` and `main`, then includes staged, unstaged, and untracked files:
 
-- Changed and untracked files: `pwsh ./clean-up-targeted.ps1`
+- Branch, staged, unstaged, and untracked files: `pwsh ./clean-up-targeted.ps1`
 - Explicit files: `pwsh ./clean-up.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
 - File list: `pwsh ./clean-up.ps1 -FileListPath .scratchpad/cleanup-files.txt`
 

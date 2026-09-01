@@ -36,7 +36,7 @@ All contributors changing Mississippi or Samples solutions.
 
 Targeted cleanup (iteration only):
 
-- Changed and untracked files: `pwsh ./clean-up-targeted.ps1`
+- Branch, staged, unstaged, and untracked files: `pwsh ./clean-up-targeted.ps1`
 - Explicit list: `pwsh ./clean-up.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
 - File list: `pwsh ./clean-up.ps1 -FileListPath .scratchpad/cleanup-files.txt`
 

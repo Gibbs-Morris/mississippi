@@ -104,7 +104,13 @@ Describe 'Cleanup planning' {
         $platformPath = [System.IO.Path]::Combine('src', 'Foo', 'Foo.cs')
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
-            -Paths @($platformPath, 'src\Foo\Foo.cs', './src/Foo/Foo.cs', 'README.md')
+            -Paths @(
+                $platformPath,
+                'src\Foo\Foo.cs',
+                'src\Foo/Foo.cs',
+                './src\Foo\Foo.cs',
+                './src/Foo/Foo.cs',
+                'README.md')
 
         $plan.Mode | Should -Be 'Targeted'
         @($plan.InputPaths) | Should -HaveCount 2
