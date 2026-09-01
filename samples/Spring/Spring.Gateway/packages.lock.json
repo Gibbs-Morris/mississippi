@@ -218,6 +218,11 @@
         "resolved": "3.11.0",
         "contentHash": "v/EW3UE8/lbEYHoC2Qq7AR/DnmvpgdtAMndfQNmpuIMx/Mto8L5JnuCfdBYtgvalQOtfNCnxFejxuRrryvUTsg=="
       },
+      "Microsoft.DotNet.HotReload.WebAssembly.Browser": {
+        "type": "Transitive",
+        "resolved": "10.0.111",
+        "contentHash": "tuRbRMAM9mpzlzaHrMFFNdR3Agj9TfVvo4Exsj+vSOqTWX/dTcgFejAdmyeFsMYPCf0g6ndsAVVe3yuQUauRNw=="
+      },
       "Microsoft.Extensions.AI.Abstractions": {
         "type": "Transitive",
         "resolved": "10.8.3",
@@ -632,6 +637,7 @@
         "dependencies": {
           "Microsoft.AspNetCore.Components.WebAssembly": "[10.0.11, )",
           "Microsoft.AspNetCore.SignalR.Client": "[10.0.11, )",
+          "Microsoft.DotNet.HotReload.WebAssembly.Browser": "[10.0.111, )",
           "Mississippi.Sdk.Client": "[1.0.0, )",
           "Mississippi.Spring.Domain": "[1.0.0, )"
         }
