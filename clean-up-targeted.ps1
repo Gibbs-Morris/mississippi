@@ -4,31 +4,19 @@
 param(
     [ValidateNotNullOrEmpty()]
     [string]$BaseRef = 'main',
-
     [ValidateNotNullOrEmpty()]
     [string]$HeadRef = 'HEAD',
-
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
-
     [string]$SettingsPath,
-
     [string]$Profile = 'Built-in: Full Cleanup',
-
     [string]$CachesHome,
-
     [switch]$NoUpdates,
-
     [switch]$SkipSamples,
-
     [switch]$SkipMississippi,
-
     [switch]$SkipToolRestore,
-
     [switch]$SkipRestore,
-
     [switch]$SkipBuild,
-
     [switch]$PlanOnly
 )
 
