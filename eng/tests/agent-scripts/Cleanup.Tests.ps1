@@ -181,17 +181,26 @@ Describe 'Cleanup planning' {
         $plan.ValidationScope | Should -Be 'Repository'
     }
 
-    It 'runs cleanup automation changes fully but validates only PR-owned drift' {
+    It 'runs publisher-only changes fully but validates only PR-owned drift' {
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
             -Paths @(
                 '.github/workflows/monthly-cleanup.yml',
-                'clean-up.ps1',
                 'eng/src/agent-scripts/MonthlyCleanupAutomation.psm1')
 
         $plan.Mode | Should -Be 'FullValidation'
-        @($plan.FallbackReasons) | Should -HaveCount 3
+        @($plan.FallbackReasons) | Should -HaveCount 2
         $plan.ValidationScope | Should -Be 'ChangedPaths'
+    }
+
+    It 'validates canonical cleanup implementation changes repository-wide' {
+        $plan = Get-CleanupPlan `
+            -RepoRoot $script:fixtureRoot `
+            -Paths @('clean-up.ps1', 'eng/src/agent-scripts/RepositoryAutomation.psm1')
+
+        $plan.Mode | Should -Be 'FullFallback'
+        @($plan.FallbackReasons) | Should -HaveCount 2
+        $plan.ValidationScope | Should -Be 'Repository'
     }
 
     It 'rejects a cleanup file outside the canonical solutions' {

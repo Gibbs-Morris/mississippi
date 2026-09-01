@@ -1,4 +1,7 @@
+#!/usr/bin/env pwsh
+
 Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
 function Invoke-MonthlyCleanupCommand {
     [CmdletBinding()]
