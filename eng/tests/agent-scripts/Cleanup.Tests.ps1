@@ -13,6 +13,30 @@ $monthlyModulePath = [System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'src',
 $monthlyModulePath = [System.IO.Path]::GetFullPath($monthlyModulePath)
 Import-Module -Name $monthlyModulePath -Force
 
+BeforeAll {
+    $script:invokeGitTestCommand = {
+        param(
+            [Parameter(Mandatory)][string]$WorkingDirectory,
+            [Parameter(Mandatory)][string[]]$Arguments
+        )
+
+        $disabledHooksPath = Join-Path $WorkingDirectory '.git/disabled-hooks'
+        $output = @(
+            git -C $WorkingDirectory `
+                -c commit.gpgSign=false `
+                -c tag.gpgSign=false `
+                -c "core.hooksPath=$disabledHooksPath" `
+                @Arguments
+        )
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0) {
+            throw "Git command failed with exit code $($exitCode): git $($Arguments -join ' ')"
+        }
+
+        return @($output)
+    }
+}
+
 Describe 'Cleanup planning' {
     BeforeEach {
         $script:fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
@@ -217,6 +241,148 @@ Describe 'Cleanup planning' {
     }
 }
 
+Describe 'Changed cleanup path discovery' {
+    It 'combines branch, staged, unstaged, untracked, renamed, deleted, and type-changed paths' {
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'src') -Force | Out-Null
+        $unicodeFileName = 'Caf' + [char]0x00E9 + '.cs'
+
+        @(
+            '.editorconfig',
+            'src/Deleted.cs',
+            'src/Staged.cs',
+            'src/TypeChanged.cs',
+            'src/Unstaged.cs',
+            ('src/' + $unicodeFileName)
+        ) | ForEach-Object {
+            Set-Content -LiteralPath (Join-Path $fixtureRoot $_) -Value 'class FixtureType { }' -Encoding utf8
+        }
+
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'core.quotePath', 'true') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create cleanup fixture') | Out-Null
+        $remoteRoot = Join-Path $TestDrive "$([Guid]::NewGuid()).git"
+        & $script:invokeGitTestCommand -WorkingDirectory $TestDrive -Arguments @('clone', '--bare', $fixtureRoot, $remoteRoot) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('remote', 'add', 'origin', $remoteRoot) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'feature') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-D', 'main') | Out-Null
+
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Branch.cs') -Value 'class BranchFixtureType { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', 'src/Branch.cs') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Add branch file') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot ('src/' + $unicodeFileName)) -Value 'class ChangedCafeFixtureType { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Change non-ASCII path') | Out-Null
+
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Staged.cs') -Value 'class StagedFixtureType { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', 'src/Staged.cs') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Unstaged.cs') -Value 'class UnstagedFixtureType { }' -Encoding utf8
+        Remove-Item -LiteralPath (Join-Path $fixtureRoot 'src/Deleted.cs')
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Untracked.cs') -Value 'class UntrackedFixtureType { }' -Encoding utf8
+        & $script:invokeGitTestCommand `
+            -WorkingDirectory $fixtureRoot `
+            -Arguments @('mv', '.editorconfig', '.editorconfig.bak') | Out-Null
+        $typeChangedBlob = @(
+            & $script:invokeGitTestCommand `
+                -WorkingDirectory $fixtureRoot `
+                -Arguments @('hash-object', '-w', 'src/TypeChanged.cs')
+        )[0]
+        & $script:invokeGitTestCommand `
+            -WorkingDirectory $fixtureRoot `
+            -Arguments @('update-index', '--cacheinfo', "120000,$typeChangedBlob,src/TypeChanged.cs") | Out-Null
+
+        $paths = @(
+            Get-CleanupChangedPaths `
+                -RepoRoot $fixtureRoot `
+                -BaseRef 'main' `
+                -HeadRef 'HEAD'
+        )
+
+        $paths | Should -HaveCount 9
+        $paths | Should -Contain '.editorconfig'
+        $paths | Should -Contain '.editorconfig.bak'
+        $paths | Should -Contain 'src/Branch.cs'
+        $paths | Should -Contain 'src/Staged.cs'
+        $paths | Should -Contain 'src/TypeChanged.cs'
+        $paths | Should -Contain 'src/Unstaged.cs'
+        $paths | Should -Contain ('src/' + $unicodeFileName)
+        $paths | Should -Contain 'src/Deleted.cs'
+        $paths | Should -Contain 'src/Untracked.cs'
+    }
+
+    It 'rejects ref names that can be parsed as Git options' {
+        {
+            Get-CleanupChangedPaths `
+                -RepoRoot $TestDrive `
+                -BaseRef '--help' `
+                -HeadRef 'HEAD'
+        } | Should -Throw "*do not start with '-'*"
+    }
+
+    It 'prefers the remote-tracking default branch over a stale local branch or same-named tag' {
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Base.cs') -Value 'class Base { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create base') | Out-Null
+        $staleCommit = @(& $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('rev-parse', 'HEAD'))[0]
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Upstream.cs') -Value 'class Upstream { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Advance upstream') | Out-Null
+        $remoteRoot = Join-Path $TestDrive "$([Guid]::NewGuid()).git"
+        & $script:invokeGitTestCommand -WorkingDirectory $TestDrive -Arguments @('clone', '--bare', $fixtureRoot, $remoteRoot) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('remote', 'add', 'origin', $remoteRoot) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('fetch', 'origin') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'feature') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Feature.cs') -Value 'class Feature { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Add feature') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-f', 'main', $staleCommit) | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('tag', 'main', $staleCommit) | Out-Null
+
+        $paths = @(Get-CleanupChangedPaths -RepoRoot $fixtureRoot)
+
+        $paths | Should -Be @('Feature.cs')
+    }
+
+    It 'fails clearly when the index contains unresolved merge conflicts' {
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Conflict.cs') -Value 'class Base { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create conflict base') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'other') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Conflict.cs') -Value 'class Other { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Change other') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', 'main') | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'Conflict.cs') -Value 'class Main { }' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Change main') | Out-Null
+
+        git -C $fixtureRoot -c commit.gpgSign=false merge other 2>$null | Out-Null
+        $LASTEXITCODE | Should -Not -Be 0
+
+        {
+            Get-CleanupChangedPaths -RepoRoot $fixtureRoot
+        } | Should -Throw '*unresolved merge conflicts*Conflict.cs*'
+    }
+}
+
 Describe 'Git cleanup path handling' {
     It 'round-trips non-ASCII paths through a NUL-delimited Git diff' {
         $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
@@ -252,7 +418,7 @@ Describe 'Git cleanup path handling' {
         & $invokeGit -GitArguments @('commit', '-m', 'Add Unicode path') | Out-Null
         $headCommit = @(& $invokeGit -GitArguments @('rev-parse', 'HEAD'))[0]
 
-        $paths = @(Get-CleanupGitDiffPaths -RepoRoot $fixtureRoot -BaseRef $baseCommit -HeadRef $headCommit)
+        $paths = @(Get-CleanupChangedPaths -RepoRoot $fixtureRoot -BaseRef $baseCommit -HeadRef $headCommit)
 
         $paths | Should -Be @($unicodePath)
     }

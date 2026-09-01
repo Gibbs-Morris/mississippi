@@ -473,56 +473,6 @@ function Read-CleanupPathList {
     )
 }
 
-function Get-CleanupGitDiffPaths {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$RepoRoot,
-        [Parameter(Mandatory)][string]$BaseRef,
-        [Parameter(Mandatory)][string]$HeadRef
-    )
-
-    foreach ($ref in @($BaseRef, $HeadRef)) {
-        if ([string]::IsNullOrWhiteSpace($ref) -or $ref.StartsWith('-', [System.StringComparison]::Ordinal)) {
-            throw "Git refs must be non-empty names that do not start with '-'. Received '$ref'."
-        }
-    }
-
-    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-    $startInfo.FileName = 'git'
-    $startInfo.WorkingDirectory = [System.IO.Path]::GetFullPath($RepoRoot)
-    $startInfo.UseShellExecute = $false
-    $startInfo.RedirectStandardOutput = $true
-    $startInfo.RedirectStandardError = $true
-    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
-    $startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
-    foreach ($argument in @(
-        '-c', 'core.quotePath=false',
-        'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT',
-        "$BaseRef...$HeadRef", '--')) {
-        $null = $startInfo.ArgumentList.Add($argument)
-    }
-
-    $process = [System.Diagnostics.Process]::new()
-    $process.StartInfo = $startInfo
-    try {
-        $null = $process.Start()
-        $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
-        $standardErrorTask = $process.StandardError.ReadToEndAsync()
-        $process.WaitForExit()
-        $standardOutput = $standardOutputTask.GetAwaiter().GetResult()
-        $standardError = $standardErrorTask.GetAwaiter().GetResult()
-        if ($process.ExitCode -ne 0) {
-            $errorDetail = $standardError.Trim()
-            throw "Unable to calculate the cleanup delta between '$BaseRef' and '$HeadRef' (git exit code $($process.ExitCode)): $errorDetail"
-        }
-
-        return @(ConvertFrom-CleanupGitPathOutput -GitOutput $standardOutput)
-    }
-    finally {
-        $process.Dispose()
-    }
-}
-
 function Get-CleanupGlobalFallbackReasons {
     [CmdletBinding()]
     param(
@@ -554,6 +504,192 @@ function Get-CleanupGlobalFallbackReasons {
     }
 
     return @($reasons)
+}
+
+function Invoke-CleanupGitPathList {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [Parameter(Mandatory)][string[]]$Arguments,
+        [Parameter(Mandatory)][string]$ErrorMessage
+    )
+
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = 'git'
+    $startInfo.WorkingDirectory = $RepoRoot
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $startInfo.StandardErrorEncoding = [System.Text.UTF8Encoding]::new($false)
+    foreach ($argument in $Arguments) {
+        $null = $startInfo.ArgumentList.Add($argument)
+    }
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    try {
+        $null = $process.Start()
+        $standardOutputTask = $process.StandardOutput.ReadToEndAsync()
+        $standardErrorTask = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $standardOutput = $standardOutputTask.GetAwaiter().GetResult()
+        $standardError = $standardErrorTask.GetAwaiter().GetResult()
+
+        if ($process.ExitCode -ne 0) {
+            $errorDetail = $standardError.Trim()
+            if ($errorDetail) {
+                throw "$ErrorMessage (git exit code $($process.ExitCode)): $errorDetail"
+            }
+
+            throw "$ErrorMessage (git exit code $($process.ExitCode))."
+        }
+
+        return @(ConvertFrom-CleanupGitPathOutput -GitOutput $standardOutput)
+    }
+    finally {
+        $process.Dispose()
+    }
+}
+
+function Get-CleanupChangedPaths {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$RepoRoot,
+        [ValidateNotNullOrEmpty()][string]$BaseRef = 'main',
+        [ValidateNotNullOrEmpty()][string]$HeadRef = 'HEAD'
+    )
+
+    $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
+    if (-not (Test-Path -LiteralPath $rootFullPath -PathType Container)) {
+        throw "Repository root '$RepoRoot' was not found."
+    }
+
+    foreach ($ref in @($BaseRef, $HeadRef)) {
+        if ([string]::IsNullOrWhiteSpace($ref) -or $ref.StartsWith('-', [System.StringComparison]::Ordinal)) {
+            throw "Git refs must be non-empty names that do not start with '-'. Received '$ref'."
+        }
+    }
+
+    $paths = New-Object System.Collections.Generic.List[string]
+    Push-Location -LiteralPath $rootFullPath
+    try {
+        $gitPathArguments = @('-c', 'core.quotePath=false')
+        $unmergedPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @($gitPathArguments + @(
+                    'diff', '--name-only', '-z', '--diff-filter=U', '--')) `
+                -ErrorMessage 'Unable to inspect unresolved merge conflicts'
+        )
+        if ($unmergedPaths.Count -gt 0) {
+            throw "Targeted cleanup cannot run with unresolved merge conflicts: $($unmergedPaths -join ', ')."
+        }
+
+        $resolveCommit = {
+            param(
+                [Parameter(Mandatory)][string[]]$Candidates,
+                [Parameter(Mandatory)][string]$Description
+            )
+
+            foreach ($candidate in $Candidates) {
+                $commitOutput = @(git rev-parse --verify --quiet --end-of-options "$candidate^{commit}")
+                if ($LASTEXITCODE -eq 0) {
+                    $commit = [string]($commitOutput | Select-Object -First 1)
+                    if (-not [string]::IsNullOrWhiteSpace($commit)) {
+                        return $commit
+                    }
+                }
+            }
+
+            throw "Unable to resolve $Description from: $($Candidates -join ', ')."
+        }
+
+        $baseCandidates = if ($BaseRef -eq 'main') {
+            @('refs/remotes/origin/main', 'refs/heads/main')
+        }
+        else {
+            @($BaseRef)
+        }
+
+        try {
+            $baseCommit = & $resolveCommit -Candidates $baseCandidates -Description "base ref '$BaseRef'"
+        }
+        catch {
+            if ($BaseRef -ne 'main') { throw }
+            $fetchArguments = @('fetch', '--no-tags')
+            if (([string](git rev-parse --is-shallow-repository)).Trim() -eq 'true') { $fetchArguments += '--unshallow' }
+            git @fetchArguments origin 'refs/heads/main:refs/remotes/origin/main'
+            if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the default base ref '$BaseRef' from origin." }
+            $baseCommit = & $resolveCommit -Candidates $baseCandidates -Description "base ref '$BaseRef'"
+        }
+        $headCommit = & $resolveCommit -Candidates @($HeadRef) -Description "head ref '$HeadRef'"
+
+        $mergeBaseOutput = @(git merge-base $headCommit $baseCommit)
+        $mergeBaseExitCode = $LASTEXITCODE
+        if ($mergeBaseExitCode -ne 0 -and ([string](git rev-parse --is-shallow-repository)).Trim() -eq 'true') {
+            git fetch --no-tags --unshallow origin
+            if ($LASTEXITCODE -ne 0) { throw "Unable to deepen the shallow repository while resolving '$BaseRef'." }
+
+            $mergeBaseOutput = @(git merge-base $headCommit $baseCommit)
+            $mergeBaseExitCode = $LASTEXITCODE
+        }
+        if ($mergeBaseExitCode -ne 0) {
+            throw "Unable to find the merge base for '$HeadRef' and '$BaseRef' (git exit code $mergeBaseExitCode)."
+        }
+
+        $mergeBase = [string]($mergeBaseOutput | Select-Object -First 1)
+        if ([string]::IsNullOrWhiteSpace($mergeBase)) {
+            throw "Git returned no merge base for '$HeadRef' and '$BaseRef'."
+        }
+
+        $branchPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @(
+                    $gitPathArguments
+                    'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT',
+                    "$($mergeBase)...$headCommit", '--'
+                ) `
+                -ErrorMessage "Unable to list changes between '$BaseRef' and '$HeadRef'"
+        )
+        $stagedPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @(
+                    $gitPathArguments
+                    'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT', '--cached', '--'
+                ) `
+                -ErrorMessage 'Unable to list staged changes'
+        )
+        $unstagedPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @(
+                    $gitPathArguments
+                    'diff', '--no-renames', '--name-only', '-z', '--diff-filter=ACDMRT', '--'
+                ) `
+                -ErrorMessage 'Unable to list unstaged changes'
+        )
+        $untrackedPaths = @(
+            Invoke-CleanupGitPathList `
+                -RepoRoot $rootFullPath `
+                -Arguments @($gitPathArguments + @('ls-files', '--others', '--exclude-standard', '-z', '--')) `
+                -ErrorMessage 'Unable to list untracked changes'
+        )
+
+        foreach ($path in @($branchPaths + $stagedPaths + $unstagedPaths + $untrackedPaths)) {
+            $literalPath = [string]$path
+            if ($literalPath.Length -gt 0 -and -not $paths.Contains($literalPath)) {
+                $paths.Add($literalPath)
+            }
+        }
+
+        return @($paths)
+    }
+    finally {
+        Pop-Location
+    }
 }
 
 function Get-CleanupProjectCatalog {
@@ -1429,4 +1565,4 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Read-CleanupPathList, Get-CleanupGitDiffPaths, Get-CleanupGlobalFallbackReasons, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Invoke-TargetedProjectCleanup, ConvertTo-CleanupRelativePath, Read-CleanupPathList, Get-CleanupGlobalFallbackReasons, Get-CleanupChangedPaths, Get-CleanupProjectCatalog, Resolve-CleanupProject, Get-CleanupPlan, Invoke-RepositoryCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline

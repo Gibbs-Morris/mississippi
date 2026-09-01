@@ -51,10 +51,7 @@ jobs:
 
           Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force -ErrorAction Stop
           $changedFiles = @(
-            Get-CleanupGitDiffPaths `
-              -RepoRoot $env:GITHUB_WORKSPACE `
-              -BaseRef $env:BASE_SHA `
-              -HeadRef $env:HEAD_SHA
+            Get-CleanupChangedPaths -RepoRoot $env:GITHUB_WORKSPACE -BaseRef $env:BASE_SHA -HeadRef $env:HEAD_SHA
           )
           $fileList = Join-Path $env:RUNNER_TEMP 'cleanup-pr-files.txt'
           $pathListContent = if ($changedFiles.Count -gt 0) {
