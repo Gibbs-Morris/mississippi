@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: monthly-resharper-cleanup
@@ -21,20 +19,25 @@ env:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      base_sha: ${{ steps.drift.outputs.base_sha }}
+      has_drift: ${{ steps.drift.outputs.has_drift }}
     steps:
       - name: Checkout default branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           ref: ${{ github.event.repository.default_branch }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           global-json-file: global.json
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/packages.*.lock.json') }}
@@ -42,7 +45,7 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Cache JetBrains analysis data
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ runner.temp }}/.jb-caches
           key: jb-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.editorconfig', '**/*.DotSettings', '**/Directory.Build.props', '**/Directory.Build.targets', 'mississippi.slnx', 'samples.slnx') }}
@@ -62,15 +65,90 @@ jobs:
             throw 'Monthly canonical cleanup failed.'
           }
 
+      - name: Package cleanup drift
+        id: drift
+        shell: pwsh
+        run: |
+          $baseSha = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($baseSha)) {
+            throw 'Unable to resolve the cleanup base commit.'
+          }
+          "base_sha=$baseSha" >> $env:GITHUB_OUTPUT
+
+          git add --all -- . ':(exclude,glob)**/packages*.lock.json'
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            'has_drift=false' >> $env:GITHUB_OUTPUT
+            Write-Host 'No cleanup drift detected.'
+            exit 0
+          }
+          if ($LASTEXITCODE -ne 1) {
+            throw 'Unable to inspect cleanup drift.'
+          }
+
+          $artifactRoot = Join-Path $env:RUNNER_TEMP 'monthly-cleanup'
+          New-Item -ItemType Directory -Path $artifactRoot -Force | Out-Null
+          $patchPath = Join-Path $artifactRoot 'cleanup.patch'
+          git diff --cached --binary "--output=$patchPath"
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $patchPath -PathType Leaf)) {
+            throw 'Unable to package cleanup drift.'
+          }
+
+          'has_drift=true' >> $env:GITHUB_OUTPUT
+
+      - name: Upload cleanup drift
+        if: steps.drift.outputs.has_drift == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: monthly-cleanup-drift
+          path: ${{ runner.temp }}/monthly-cleanup/cleanup.patch
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: cleanup
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout cleanup base
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.cleanup.outputs.base_sha }}
+
+      - name: Download cleanup drift
+        if: needs.cleanup.outputs.has_drift == 'true'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: monthly-cleanup-drift
+          path: ${{ runner.temp }}/monthly-cleanup
+
       - name: Create or reuse cleanup pull request
         id: pull-request
         shell: pwsh
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
+          DRIFT_PRESENT: ${{ needs.cleanup.outputs.has_drift }}
+          PATCH_PATH: ${{ runner.temp }}/monthly-cleanup/cleanup.patch
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add --all -- . ':(exclude,glob)**/packages*.lock.json'
+          if ($env:DRIFT_PRESENT -eq 'true') {
+            if (-not (Test-Path -LiteralPath $env:PATCH_PATH -PathType Leaf)) {
+              throw "Cleanup drift artifact not found: $env:PATCH_PATH"
+            }
+
+            git apply --index --whitespace=nowarn $env:PATCH_PATH
+            if ($LASTEXITCODE -ne 0) {
+              throw 'Unable to apply the cleanup drift artifact.'
+            }
+          }
+          elseif ($env:DRIFT_PRESENT -ne 'false') {
+            throw "Unexpected cleanup drift state '$env:DRIFT_PRESENT'."
+          }
 
           $search = '"' + $env:CLEANUP_PR_TITLE + '" in:title'
           $pullRequestJson = gh pr list `
