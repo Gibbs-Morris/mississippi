@@ -36,9 +36,9 @@ All contributors changing Mississippi or Samples solutions.
 
 Targeted cleanup (iteration only):
 
-- Changed tracked files: `pwsh ./clean-up-targeted.ps1`
-- Explicit list: `pwsh ./clean-up-core.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
-- File list: `pwsh ./clean-up-core.ps1 -FileListPath .scratchpad/cleanup-files.txt`
+- Changed and untracked files: `pwsh ./clean-up-targeted.ps1`
+- Explicit list: `pwsh ./clean-up.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
+- File list: `pwsh ./clean-up.ps1 -FileListPath .scratchpad/cleanup-files.txt`
 
 Targeted mode restores, builds, and cleans only the projects owning the selected files. Global cleanup-input changes use an explicit full-cleanup fallback.
 

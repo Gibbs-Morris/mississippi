@@ -496,7 +496,7 @@ function Get-CleanupGlobalFallbackReasons {
             '(^|/)global\.json$' { 'global.json changed.'; break }
             '^\.config/dotnet-tools\.json$' { 'The pinned .NET tool manifest changed.'; break }
             '^(mississippi|samples)\.slnx$' { 'Solution project membership changed.'; break }
-            '^clean-up(-core)?\.ps1$' { 'A cleanup entrypoint changed.'; break }
+            '^clean-up\.ps1$' { 'A cleanup entrypoint changed.'; break }
             '(^|/)clean-up-[^/]+\.ps1$' { 'A cleanup script changed.'; break }
             '(^|/)RepositoryAutomation\.psm1$' { 'The shared cleanup automation module changed.'; break }
             '^\.github/workflows/cleanup\.yml$' { 'The pull-request cleanup workflow changed.'; break }
@@ -524,10 +524,43 @@ function Get-CleanupChangedPaths {
         throw "Repository root '$RepoRoot' was not found."
     }
 
+    foreach ($ref in @($BaseRef, $HeadRef)) {
+        if ([string]::IsNullOrWhiteSpace($ref) -or $ref.StartsWith('-', [System.StringComparison]::Ordinal)) {
+            throw "Git refs must be non-empty names that do not start with '-'. Received '$ref'."
+        }
+    }
+
     $paths = New-Object System.Collections.Generic.List[string]
     Push-Location -LiteralPath $rootFullPath
     try {
-        $mergeBaseOutput = @(git merge-base $HeadRef $BaseRef)
+        $resolveCommit = {
+            param(
+                [Parameter(Mandatory)][string[]]$Candidates,
+                [Parameter(Mandatory)][string]$Description
+            )
+
+            foreach ($candidate in $Candidates) {
+                $commitOutput = @(git rev-parse --verify --quiet --end-of-options "$candidate^{commit}")
+                if ($LASTEXITCODE -eq 0) {
+                    $commit = [string]($commitOutput | Select-Object -First 1)
+                    if (-not [string]::IsNullOrWhiteSpace($commit)) {
+                        return $commit
+                    }
+                }
+            }
+
+            throw "Unable to resolve $Description from: $($Candidates -join ', ')."
+        }
+
+        $baseCandidates = @($BaseRef)
+        if ($BaseRef -eq 'main') {
+            $baseCandidates += 'origin/main'
+        }
+
+        $baseCommit = & $resolveCommit -Candidates $baseCandidates -Description "base ref '$BaseRef'"
+        $headCommit = & $resolveCommit -Candidates @($HeadRef) -Description "head ref '$HeadRef'"
+
+        $mergeBaseOutput = @(git merge-base $headCommit $baseCommit)
         $mergeBaseExitCode = $LASTEXITCODE
         if ($mergeBaseExitCode -ne 0) {
             throw "Unable to find the merge base for '$HeadRef' and '$BaseRef' (git exit code $mergeBaseExitCode)."
@@ -542,9 +575,10 @@ function Get-CleanupChangedPaths {
         $branchDiffArguments = @(
             $gitPathArguments
             'diff',
+            '--no-renames',
             '--name-only',
-            '--diff-filter=ACMRD',
-            "$($mergeBase)...$HeadRef",
+            '--diff-filter=ACDMRT',
+            "$($mergeBase)...$headCommit",
             '--'
         )
         $branchPaths = @(git @branchDiffArguments)
@@ -553,19 +587,25 @@ function Get-CleanupChangedPaths {
             throw "Unable to list changes between '$BaseRef' and '$HeadRef' (git exit code $branchDiffExitCode)."
         }
 
-        $stagedPaths = @(git @gitPathArguments diff --name-only --diff-filter=ACMRD --cached --)
+        $stagedPaths = @(git @gitPathArguments diff --no-renames --name-only --diff-filter=ACDMRT --cached --)
         $stagedDiffExitCode = $LASTEXITCODE
         if ($stagedDiffExitCode -ne 0) {
             throw "Unable to list staged changes (git exit code $stagedDiffExitCode)."
         }
 
-        $unstagedPaths = @(git @gitPathArguments diff --name-only --diff-filter=ACMRD --)
+        $unstagedPaths = @(git @gitPathArguments diff --no-renames --name-only --diff-filter=ACDMRT --)
         $unstagedDiffExitCode = $LASTEXITCODE
         if ($unstagedDiffExitCode -ne 0) {
             throw "Unable to list unstaged changes (git exit code $unstagedDiffExitCode)."
         }
 
-        foreach ($path in @($branchPaths + $stagedPaths + $unstagedPaths)) {
+        $untrackedPaths = @(git @gitPathArguments ls-files --others --exclude-standard --)
+        $untrackedExitCode = $LASTEXITCODE
+        if ($untrackedExitCode -ne 0) {
+            throw "Unable to list untracked changes (git exit code $untrackedExitCode)."
+        }
+
+        foreach ($path in @($branchPaths + $stagedPaths + $unstagedPaths + $untrackedPaths)) {
             $normalizedPath = ([string]$path).Trim() -replace '\\', '/'
             if (-not [string]::IsNullOrWhiteSpace($normalizedPath) -and -not $paths.Contains($normalizedPath)) {
                 $paths.Add($normalizedPath)

@@ -58,11 +58,11 @@ The `./clean-up.ps1` script runs JetBrains ReSharper CleanupCode on both solutio
 
 Run `pwsh ./clean-up.ps1` after making code changes and before committing to ensure formatting compliance. The script processes both `mississippi.slnx` and `samples.slnx`.
 
-For faster local loops, use targeted cleanup first. The targeted entry point compares the merge-base of `HEAD` and `main`, then includes staged and unstaged tracked files:
+For faster local loops, use targeted cleanup first. The targeted entry point compares the merge-base of `HEAD` and `main`, then includes staged, unstaged, and untracked files:
 
-- Changed tracked files: `pwsh ./clean-up-targeted.ps1`
-- Explicit files: `pwsh ./clean-up-core.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
-- File list: `pwsh ./clean-up-core.ps1 -FileListPath .scratchpad/cleanup-files.txt`
+- Changed and untracked files: `pwsh ./clean-up-targeted.ps1`
+- Explicit files: `pwsh ./clean-up.ps1 -Files src/Foo/Bar.cs,tests/FooTests.cs`
+- File list: `pwsh ./clean-up.ps1 -FileListPath .scratchpad/cleanup-files.txt`
 
 The pull-request workflow supplies the actual base/head diff and uses the same file-list mode. Changes to global cleanup inputs deliberately fall back to full cleanup.
 

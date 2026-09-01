@@ -17,7 +17,12 @@ BeforeAll {
             [Parameter(Mandatory)][string[]]$Arguments
         )
 
-        $output = @(git -C $WorkingDirectory @Arguments)
+        $output = @(
+            git -C $WorkingDirectory `
+                -c commit.gpgSign=false `
+                -c tag.gpgSign=false `
+                @Arguments
+        )
         $exitCode = $LASTEXITCODE
         if ($exitCode -ne 0) {
             throw "Git command failed with exit code $($exitCode): git $($Arguments -join ' ')"
@@ -179,15 +184,17 @@ Describe 'Cleanup planning' {
 }
 
 Describe 'Changed cleanup path discovery' {
-    It 'combines branch, staged, and unstaged tracked paths including deletions' {
+    It 'combines branch, staged, unstaged, untracked, renamed, deleted, and type-changed paths' {
         $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
         New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $fixtureRoot 'src') -Force | Out-Null
         $unicodeFileName = 'Caf' + [char]0x00E9 + '.cs'
 
         @(
+            '.editorconfig',
             'src/Deleted.cs',
             'src/Staged.cs',
+            'src/TypeChanged.cs',
             'src/Unstaged.cs',
             ('src/' + $unicodeFileName)
         ) | ForEach-Object {
@@ -201,7 +208,14 @@ Describe 'Changed cleanup path discovery' {
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'core.quotePath', 'true') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create cleanup fixture') | Out-Null
+        $mainCommit = @(
+            & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('rev-parse', 'HEAD')
+        )[0]
+        & $script:invokeGitTestCommand `
+            -WorkingDirectory $fixtureRoot `
+            -Arguments @('update-ref', 'refs/remotes/origin/main', $mainCommit) | Out-Null
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('switch', '-c', 'feature') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-D', 'main') | Out-Null
 
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Branch.cs') -Value 'class BranchFixtureType { }' -Encoding utf8
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', 'src/Branch.cs') | Out-Null
@@ -216,6 +230,17 @@ Describe 'Changed cleanup path discovery' {
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Unstaged.cs') -Value 'class UnstagedFixtureType { }' -Encoding utf8
         Remove-Item -LiteralPath (Join-Path $fixtureRoot 'src/Deleted.cs')
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'src/Untracked.cs') -Value 'class UntrackedFixtureType { }' -Encoding utf8
+        & $script:invokeGitTestCommand `
+            -WorkingDirectory $fixtureRoot `
+            -Arguments @('mv', '.editorconfig', '.editorconfig.bak') | Out-Null
+        $typeChangedBlob = @(
+            & $script:invokeGitTestCommand `
+                -WorkingDirectory $fixtureRoot `
+                -Arguments @('hash-object', '-w', 'src/TypeChanged.cs')
+        )[0]
+        & $script:invokeGitTestCommand `
+            -WorkingDirectory $fixtureRoot `
+            -Arguments @('update-index', '--cacheinfo', "120000,$typeChangedBlob,src/TypeChanged.cs") | Out-Null
 
         $paths = @(
             Get-CleanupChangedPaths `
@@ -224,13 +249,25 @@ Describe 'Changed cleanup path discovery' {
                 -HeadRef 'HEAD'
         )
 
-        $paths | Should -HaveCount 5
+        $paths | Should -HaveCount 9
+        $paths | Should -Contain '.editorconfig'
+        $paths | Should -Contain '.editorconfig.bak'
         $paths | Should -Contain 'src/Branch.cs'
         $paths | Should -Contain 'src/Staged.cs'
+        $paths | Should -Contain 'src/TypeChanged.cs'
         $paths | Should -Contain 'src/Unstaged.cs'
         $paths | Should -Contain ('src/' + $unicodeFileName)
         $paths | Should -Contain 'src/Deleted.cs'
-        $paths | Should -Not -Contain 'src/Untracked.cs'
+        $paths | Should -Contain 'src/Untracked.cs'
+    }
+
+    It 'rejects ref names that can be parsed as Git options' {
+        {
+            Get-CleanupChangedPaths `
+                -RepoRoot $TestDrive `
+                -BaseRef '--help' `
+                -HeadRef 'HEAD'
+        } | Should -Throw "*do not start with '-'*"
     }
 }
 
@@ -444,7 +481,7 @@ Describe 'Canonical cleanup entry point' {
         $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
         $fileListPath = Join-Path $TestDrive 'cleanup-files.txt'
         Set-Content -LiteralPath $fileListPath -Value 'README.md' -Encoding utf8
-        $scriptPath = Join-Path $repoRoot 'clean-up-core.ps1'
+        $scriptPath = Join-Path $repoRoot 'clean-up.ps1'
 
         $json = @(& pwsh -NoProfile -File $scriptPath -FileListPath $fileListPath -PlanOnly)
 
@@ -453,9 +490,9 @@ Describe 'Canonical cleanup entry point' {
         $plan.Mode | Should -Be 'NoOp'
     }
 
-    It 'supports explicit file preflight through the core dispatcher' {
+    It 'supports explicit file preflight through the canonical dispatcher' {
         $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
-        $scriptPath = Join-Path $repoRoot 'clean-up-core.ps1'
+        $scriptPath = Join-Path $repoRoot 'clean-up.ps1'
 
         $json = @(& pwsh -NoProfile -File $scriptPath -Files README.md -PlanOnly)
 
@@ -470,7 +507,7 @@ Describe 'Canonical cleanup entry point' {
         $fixtureScriptsRoot = Join-Path $fixtureRoot 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $fixtureScriptsRoot -Force | Out-Null
         Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up-targeted.ps1') -Destination $fixtureRoot
-        Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up-core.ps1') -Destination $fixtureRoot
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up.ps1') -Destination $fixtureRoot
         Copy-Item -LiteralPath (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Destination $fixtureScriptsRoot
         Set-Content -LiteralPath (Join-Path $fixtureRoot 'README.md') -Value 'cleanup fixture' -Encoding utf8
         & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null

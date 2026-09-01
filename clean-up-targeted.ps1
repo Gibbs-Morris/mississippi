@@ -37,7 +37,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
 $modulePath = Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1'
-$coreScriptPath = Join-Path $repoRoot 'clean-up-core.ps1'
+$cleanupScriptPath = Join-Path $repoRoot 'clean-up.ps1'
 $temporaryFilePath = $null
 $exitCode = 0
 
@@ -46,8 +46,8 @@ try {
         throw "Repository automation module not found: $modulePath"
     }
 
-    if (-not (Test-Path -LiteralPath $coreScriptPath -PathType Leaf)) {
-        throw "Cleanup core script not found: $coreScriptPath"
+    if (-not (Test-Path -LiteralPath $cleanupScriptPath -PathType Leaf)) {
+        throw "Canonical cleanup script not found: $cleanupScriptPath"
     }
 
     Import-Module -Name $modulePath -Force
@@ -59,7 +59,7 @@ try {
             -HeadRef $HeadRef
     )
 
-    Write-Verbose "Discovered $($changedPaths.Count) changed tracked path(s) for cleanup."
+    Write-Verbose "Discovered $($changedPaths.Count) changed path(s) for cleanup."
 
     $temporaryFilePath = [System.IO.Path]::GetTempFileName()
     if ($changedPaths.Count -gt 0) {
@@ -67,10 +67,10 @@ try {
     }
 
     $pwshPath = (Get-Command pwsh -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
-    $coreArguments = @('-FileListPath', $temporaryFilePath)
-    $coreArguments += ConvertTo-CleanupArgumentList -Parameters $PSBoundParameters
+    $cleanupArguments = @('-FileListPath', $temporaryFilePath)
+    $cleanupArguments += ConvertTo-CleanupArgumentList -Parameters $PSBoundParameters
 
-    & $pwshPath -NoProfile -File $coreScriptPath @coreArguments
+    & $pwshPath -NoProfile -File $cleanupScriptPath @cleanupArguments
     $exitCode = $LASTEXITCODE
 }
 catch {
@@ -79,7 +79,12 @@ catch {
 }
 finally {
     if ($null -ne $temporaryFilePath -and (Test-Path -LiteralPath $temporaryFilePath -PathType Leaf)) {
-        Remove-Item -LiteralPath $temporaryFilePath -Force -ErrorAction Stop
+        try {
+            Remove-Item -LiteralPath $temporaryFilePath -Force -ErrorAction Stop
+        }
+        catch {
+            Write-Warning "Unable to remove temporary cleanup file '$temporaryFilePath': $($_.Exception.Message)"
+        }
     }
 }
 
