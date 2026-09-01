@@ -8,165 +8,226 @@ on:
       - feature/**
       - topic/**
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  DOTSETTINGS_PATH: ${{ github.workspace }}/Directory.DotSettings
   CONFIGURATION: Release
 
 jobs:
   cleanup:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest ]
-        solution: [ mississippi.slnx, samples.slnx ]
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - name: Checkout PR head
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
+      - name: Detect PR changed files
+        id: detect
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:BASE_SHA) -or [string]::IsNullOrWhiteSpace($env:HEAD_SHA)) {
+            throw 'The pull request base/head SHAs are required for cleanup scope detection.'
+          }
+
+          foreach ($sha in @($env:BASE_SHA, $env:HEAD_SHA)) {
+            git cat-file -e "$sha^{commit}" 2>$null
+            if ($LASTEXITCODE -ne 0) {
+              git fetch --no-tags origin $sha
+              if ($LASTEXITCODE -ne 0) {
+                throw "Unable to fetch commit '$sha' required for cleanup scope detection."
+              }
+            }
+          }
+
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force -ErrorAction Stop
+          $changedFiles = @(
+            Get-CleanupChangedPaths -RepoRoot $env:GITHUB_WORKSPACE -BaseRef $env:BASE_SHA -HeadRef $env:HEAD_SHA
+          )
+          $fileList = Join-Path $env:RUNNER_TEMP 'cleanup-pr-files.txt'
+          $pathListContent = if ($changedFiles.Count -gt 0) {
+            ($changedFiles -join [char]0) + [char]0
+          } else { '' }
+          [System.IO.File]::WriteAllText(
+            $fileList,
+            $pathListContent,
+            [System.Text.UTF8Encoding]::new($false))
+
+          "run_mode=targeted" >> $env:GITHUB_OUTPUT
+          "file_list=$fileList" >> $env:GITHUB_OUTPUT
+          "base_sha=$env:BASE_SHA" >> $env:GITHUB_OUTPUT
+          "head_sha=$env:HEAD_SHA" >> $env:GITHUB_OUTPUT
+          "changed_count=$($changedFiles.Count)" >> $env:GITHUB_OUTPUT
+          Write-Host "Cleanup base SHA: $env:BASE_SHA"
+          Write-Host "Cleanup head SHA: $env:HEAD_SHA"
+          Write-Host "Total PR changed files: $($changedFiles.Count)"
+
+      - name: Select full cleanup for manual dispatch
+        id: manual
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          "run_mode=full" >> $env:GITHUB_OUTPUT
+          Write-Host 'Manual dispatch selects full repository cleanup.'
+
+      - name: Plan targeted cleanup
+        id: plan
+        if: steps.detect.outputs.run_mode == 'targeted'
+        shell: pwsh
+        env:
+          FILE_LIST: ${{ steps.detect.outputs.file_list }}
+        run: |
+          $planJson = @(./clean-up.ps1 -FileListPath $env:FILE_LIST -PlanOnly)
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Cleanup preflight planning failed.'
+          }
+          $plan = ($planJson -join "`n") | ConvertFrom-Json
+          "mode=$($plan.Mode)" >> $env:GITHUB_OUTPUT
+          "validation_scope=$($plan.ValidationScope)" >> $env:GITHUB_OUTPUT
+          "eligible_count=$($plan.EligiblePaths.Count)" >> $env:GITHUB_OUTPUT
+          "ignored_count=$($plan.IgnoredPaths.Count)" >> $env:GITHUB_OUTPUT
+          "affected_projects=$((@($plan.AffectedProjects) -join ', '))" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Cleanup-eligible files: $($plan.EligiblePaths.Count)"
+          Write-Host "Ignored files: $($plan.IgnoredPaths.Count)"
+          Write-Host "Selected execution mode: $($plan.Mode)"
+          if ($plan.FallbackReasons.Count -gt 0) {
+            Write-Host "Fallback reasons: $($plan.FallbackReasons -join ' | ')" -ForegroundColor Yellow
+          }
+          if ($plan.AffectedProjects.Count -gt 0) {
+            Write-Host "Affected projects: $($plan.AffectedProjects -join ', ')"
+          }
+
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
           global-json-file: global.json
 
-      - name: Cache GitVersion tools
-        uses: actions/cache@v4
-        with:
-          path: ~/.gitversion
-          key: ${{ runner.os }}-gitversion
-          restore-keys: ${{ runner.os }}-gitversion
-
-      - name: Cache nugets
-        uses: actions/cache@v4
+      - name: Cache NuGet packages
+        if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
-      - name: Cache JetBrains analysis caches
-        uses: actions/cache@v4
+      - name: Cache JetBrains analysis data
+        if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ${{ runner.temp }}/.jb-caches
-          key: jb-${{ runner.os }}-${{ matrix.solution }}-${{ hashFiles('**/*.slnx', '**/*.csproj', '**/*.editorconfig', '**/*.DotSettings', '**/Directory.Build.props') }}
+          key: jb-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.editorconfig', '**/*.DotSettings', '**/Directory.Build.props', '**/Directory.Build.targets', 'mississippi.slnx', 'samples.slnx') }}
           restore-keys: |
-            jb-${{ runner.os }}-${{ matrix.solution }}-
             jb-${{ runner.os }}-
 
-      - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v3.2.1
-        with:
-          versionSpec: "6.0.5"
-
-      - name: Determine Version
-        id: gitversion
-        uses: gittools/actions/gitversion/execute@v3.2.1
-        with:
-          useConfigFile: true
-
-      - name: Restore dotnet packages
-        run: |
-          dotnet restore ${{ github.workspace }}/${{ matrix.solution }}
-
-      - name: Build dotnet projects
-        run: |
-          dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -warnaserror -p:Version=${{ steps.gitversion.outputs.SemVer }}
-
-      - name: Check for dotnet tools manifest
-        id: check-tools-manifest
+      - name: Run canonical cleanup
+        if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
         shell: pwsh
+        env:
+          FILE_LIST: ${{ steps.detect.outputs.file_list }}
+          RUN_MODE: ${{ steps.manual.outputs.run_mode || steps.detect.outputs.run_mode }}
+          PLAN_MODE: ${{ steps.plan.outputs.mode }}
+          CACHE_HOME: ${{ runner.temp }}/.jb-caches
         run: |
-          if (Test-Path ".config/dotnet-tools.json") {
-            echo "manifest_exists=true" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "manifest_exists=false" >> $env:GITHUB_OUTPUT
-          }
-
-      - name: Restore .NET Tools
-        if: steps.check-tools-manifest.outputs.manifest_exists == 'true'
-        shell: pwsh
-        run: |
-          Write-Host "Restoring dotnet tools..."
-          dotnet tool restore
-        continue-on-error: false
-
-      - name: Install ReSharper Global Tools
-        if: steps.check-tools-manifest.outputs.manifest_exists != 'true'
-        shell: pwsh
-        run: |
-          Write-Host "Installing JetBrains.ReSharper.GlobalTools..."
-          dotnet tool install -g JetBrains.ReSharper.GlobalTools
-        continue-on-error: false
-
-      - name: Generate legacy solution file
-        shell: pwsh
-        run: |
-          $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
-          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
-          Write-Host "Generating $slnPath from $slnxPath ..."
-          dotnet tool run slngen "$slnxPath" --solutionfile "$slnPath" --launch false
-          Get-Item "$slnPath" | Format-List
-
-      - name: Run ReSharper Cleanup Code
-        shell: pwsh
-        run: |
-          $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
-          $slnPath = $slnxPath -replace '\.slnx$', '.sln'
-          Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
           $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-          dotnet tool run jb cleanupcode `
-            --profile="Built-in: Full Cleanup" `
-            --settings="${{ env.DOTSETTINGS_PATH }}" `
-            --caches-home="${{ runner.temp }}/.jb-caches" `
-            --no-updates `
-            "$slnPath" `
-            --LogLevel=TRACE
-          $stopwatch.Stop()
-          $elapsed = $stopwatch.Elapsed
-          Write-Host ""
-          Write-Host "========================================" -ForegroundColor Cyan
-          Write-Host "CLEANUP TIMING SUMMARY" -ForegroundColor Cyan
-          Write-Host "========================================" -ForegroundColor Cyan
-          Write-Host "Solution: ${{ matrix.solution }}"
-          Write-Host "Duration: $($elapsed.ToString('hh\:mm\:ss\.fff'))"
-          Write-Host "Minutes:  $([math]::Round($elapsed.TotalMinutes, 2))"
-          Write-Host "========================================" -ForegroundColor Cyan
-          Write-Host ""
-          Write-Host "Cleanup completed."
-          echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
-          $slnFileName = Split-Path -Path $slnPath -Leaf
-          echo "SLN_FILE_NAME=$slnFileName" >> $env:GITHUB_ENV
-
-      - name: Check for Uncommitted Changes
-        shell: pwsh
-        run: |
-          Write-Host "Checking for modifications after cleanup..."
-          $changes = git status --porcelain
-          if ($changes) {
-            Write-Host "ERROR: ReSharper cleanup modified files. The following changes are required:"
-            git diff --color=always -- .
-            Write-Host ""
-            Write-Host "To resolve this locally run:"
-            $slnFileName = $env:SLN_FILE_NAME
-            if (-not $slnFileName -and $env:SLN_PATH) {
-              $slnFileName = Split-Path -Path $env:SLN_PATH -Leaf
-            }
-
-            if ([string]::IsNullOrWhiteSpace($slnFileName)) {
-              Write-Host "Unable to determine the solution file name for local cleanup. Check workflow logs for details."
-            }
-            else {
-              $localCommand = "dotnet tool run jb cleanupcode --profile=`"Built-in: Full Cleanup`" --settings=`"Directory.DotSettings`" $slnFileName"
-              Write-Host "Run the following from the repository root:"
-              Write-Host $localCommand
-            }
-            exit 1
+          if ($env:RUN_MODE -eq 'full' -or $env:PLAN_MODE -in @('FullFallback', 'FullValidation')) {
+            ./clean-up.ps1 `
+              -Configuration $env:CONFIGURATION `
+              -CachesHome $env:CACHE_HOME `
+              -NoUpdates
           } else {
-            Write-Host "No modifications detected. Cleanup check passed."
+            ./clean-up.ps1 `
+              -Configuration $env:CONFIGURATION `
+              -FileListPath $env:FILE_LIST `
+              -CachesHome $env:CACHE_HOME `
+              -NoUpdates
           }
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Canonical cleanup failed.'
+          }
+          $stopwatch.Stop()
+          Write-Host "Cleanup elapsed time: $($stopwatch.Elapsed.ToString('hh\:mm\:ss\.fff'))"
+
+      - name: Check for cleanup changes
+        if: steps.manual.outputs.run_mode == 'full' || steps.plan.outputs.mode != 'NoOp'
+        shell: pwsh
+        env:
+          FILE_LIST: ${{ steps.detect.outputs.file_list }}
+          RUN_MODE: ${{ steps.manual.outputs.run_mode || steps.detect.outputs.run_mode }}
+          PLAN_MODE: ${{ steps.plan.outputs.mode }}
+          VALIDATION_SCOPE: ${{ steps.plan.outputs.validation_scope }}
+        run: |
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force -ErrorAction Stop
+          $changes = @(
+            Get-CleanupChangedPaths -RepoRoot $env:GITHUB_WORKSPACE -BaseRef HEAD -HeadRef HEAD |
+              Where-Object { $_ -notmatch '(?i)packages(?:\.[^/\\]+)?\.lock\.json$' } |
+              Sort-Object -Unique
+          )
+          if ($changes.Count -eq 0) {
+            Write-Host 'No cleanup changes detected.'
+            exit 0
+          }
+
+          if (
+            $env:RUN_MODE -eq 'targeted' -and
+            $env:VALIDATION_SCOPE -eq 'ChangedPaths' -and
+            $env:FILE_LIST -and
+            (Test-Path -LiteralPath $env:FILE_LIST)
+          ) {
+            $prChangedPaths = @(Read-CleanupPathList -Path $env:FILE_LIST | Sort-Object -Unique)
+            $pathComparer = if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+              [System.StringComparer]::OrdinalIgnoreCase
+            } else {
+              [System.StringComparer]::Ordinal
+            }
+            $prChangedSet = [System.Collections.Generic.HashSet[string]]::new($pathComparer)
+            foreach ($path in $prChangedPaths) {
+              $null = $prChangedSet.Add($path)
+            }
+
+            $prChanges = @(
+              $changes | Where-Object { $prChangedSet.Contains($_) }
+            )
+            $unrelatedChanges = @(
+              $changes | Where-Object { -not $prChangedSet.Contains($_) }
+            )
+
+            if ($unrelatedChanges.Count -gt 0) {
+              Write-Warning "Pull-request cleanup found $($unrelatedChanges.Count) pre-existing drift file(s) outside the PR change set. The monthly full-cleanup workflow owns this drift."
+              $unrelatedChanges | ForEach-Object { Write-Host "  Drift: $_" -ForegroundColor Yellow }
+            }
+
+            if ($prChanges.Count -gt 0) {
+              Write-Host 'ERROR: ReSharper cleanup changed files from the PR change set:'
+              git diff --color=always -- $prChanges
+              Write-Host ''
+              Write-Host 'Reproduce locally with:'
+              if ($env:PLAN_MODE -in @('FullFallback', 'FullValidation')) {
+                Write-Host 'pwsh ./clean-up.ps1'
+              } else {
+                Write-Host 'pwsh ./clean-up.ps1 -FileListPath <changed-files.txt>'
+              }
+              exit 1
+            }
+
+            Write-Host 'No PR-owned cleanup changes detected.'
+            exit 0
+          }
+
+          Write-Host 'ERROR: ReSharper cleanup changed tracked cleanup-owned files:'
+          git diff --color=always -- . ':!**/packages*.lock.json'
+          Write-Host ''
+          Write-Host 'Reproduce locally with:'
+          Write-Host 'pwsh ./clean-up.ps1'
+          exit 1
