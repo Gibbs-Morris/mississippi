@@ -352,7 +352,7 @@ function Invoke-TargetedProjectCleanup {
     $projectRelativeIncludes = @(
         foreach ($relativePath in @($ProjectGroup.IncludePaths)) {
             $fullPath = [System.IO.Path]::GetFullPath(
-                (Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $relativePath))
+                [System.IO.Path]::Combine($rootFullPath, (ConvertTo-CleanupPlatformPath -Path $relativePath))
             )
             $includePath = [System.IO.Path]::GetRelativePath($projectDirectory, $fullPath)
             if ($includePath -eq '..' -or
@@ -361,7 +361,7 @@ function Invoke-TargetedProjectCleanup {
                 throw "Cleanup path '$relativePath' is outside the targeted project directory '$projectDirectory'."
             }
 
-            $includePath -replace '\\', '/'
+            if ([System.IO.Path]::DirectorySeparatorChar -eq '\') { $includePath.Replace('\', '/') } else { $includePath }
         }
     )
 
@@ -397,8 +397,11 @@ function ConvertTo-CleanupPlatformPath {
         [Parameter(Mandatory)][string]$Path
     )
 
-    $directorySeparator = [string][System.IO.Path]::DirectorySeparatorChar
-    return $Path.Replace('/', $directorySeparator).Replace('\', $directorySeparator)
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+        return $Path.Replace('/', '\')
+    }
+
+    return $Path
 }
 
 function ConvertTo-CleanupRelativePath {
@@ -414,11 +417,25 @@ function ConvertTo-CleanupRelativePath {
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
     $pathForCurrentPlatform = ConvertTo-CleanupPlatformPath -Path $Path
+    if (
+        [System.IO.Path]::DirectorySeparatorChar -ne '\' -and
+        -not [System.IO.Path]::IsPathRooted($Path) -and
+        $Path.Contains('\')
+    ) {
+        $literalCandidate = [System.IO.Path]::GetFullPath(
+            [System.IO.Path]::Combine($rootFullPath, $Path)
+        )
+        if (-not [System.IO.File]::Exists($literalCandidate) -and
+            -not [System.IO.Directory]::Exists($literalCandidate)) {
+            $pathForCurrentPlatform = $Path.Replace('\', '/')
+        }
+    }
+
     $fullPath = if ([System.IO.Path]::IsPathRooted($pathForCurrentPlatform)) {
         [System.IO.Path]::GetFullPath($pathForCurrentPlatform)
     }
     else {
-        [System.IO.Path]::GetFullPath((Join-Path $rootFullPath $pathForCurrentPlatform))
+        [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($rootFullPath, $pathForCurrentPlatform))
     }
 
     $relativePath = [System.IO.Path]::GetRelativePath($rootFullPath, $fullPath)
@@ -429,7 +446,11 @@ function ConvertTo-CleanupRelativePath {
         throw "Path '$Path' is outside repository root '$RepoRoot'."
     }
 
-    return ($relativePath -replace '\\', '/').TrimStart('/')
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+        return $relativePath.Replace('\', '/').TrimStart('/')
+    }
+
+    return $relativePath.TrimStart('/')
 }
 
 function ConvertFrom-CleanupGitPathOutput {
@@ -489,7 +510,7 @@ function Get-CleanupGlobalFallbackReasons {
             '(^|/)global\.json$' { 'global.json changed.'; break }
             '^\.config/dotnet-tools\.json$' { 'The pinned .NET tool manifest changed.'; break }
             '^(mississippi|samples)\.slnx$' { 'Solution project membership changed.'; break }
-            '^clean-up\.ps1$' { 'The canonical cleanup dispatcher changed.'; break }
+            '^clean-up\.ps1$' { 'A cleanup entrypoint changed.'; break }
             '(^|/)clean-up-[^/]+\.ps1$' { 'A cleanup script changed.'; break }
             '(^|/)(RepositoryAutomation|MonthlyCleanupAutomation)\.psm1$' { 'A shared cleanup automation module changed.'; break }
             '^\.github/workflows/cleanup\.yml$' { 'The pull-request cleanup workflow changed.'; break }
@@ -710,8 +731,8 @@ function Get-CleanupProjectCatalog {
         $projectNodes = @($solutionDocument.SelectNodes('//Project[@Path]'))
         foreach ($projectNode in $projectNodes) {
             $projectPath = [string]$projectNode.Path
-            $relativeProjectPath = ConvertTo-CleanupRelativePath -Path $projectPath -RepoRoot $rootFullPath
-            $projectFullPath = [System.IO.Path]::GetFullPath((Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $relativeProjectPath)))
+            $relativeProjectPath = ConvertTo-CleanupRelativePath -Path ($projectPath.Replace('\', '/')) -RepoRoot $rootFullPath
+            $projectFullPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($rootFullPath, (ConvertTo-CleanupPlatformPath -Path $relativeProjectPath)))
             if (-not (Test-Path -LiteralPath $projectFullPath -PathType Leaf)) {
                 throw "Solution '$solutionName' references project '$relativeProjectPath', but that project was not found."
             }
@@ -745,7 +766,7 @@ function Resolve-CleanupProject {
     )
 
     $rootFullPath = [System.IO.Path]::GetFullPath($RepoRoot)
-    $fullPath = [System.IO.Path]::GetFullPath((Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $RelativePath)))
+    $fullPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($rootFullPath, (ConvertTo-CleanupPlatformPath -Path $RelativePath)))
     $extension = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
 
     if ($extension -eq '.csproj') {
@@ -826,12 +847,12 @@ function Get-CleanupPlan {
     $ignoredPaths = New-Object System.Collections.Generic.List[string]
 
     foreach ($relativePath in @($normalizedPaths)) {
-        $fullPath = Join-Path $rootFullPath (ConvertTo-CleanupPlatformPath -Path $relativePath)
+        $fullPath = [System.IO.Path]::Combine($rootFullPath, (ConvertTo-CleanupPlatformPath -Path $relativePath))
         $extension = [System.IO.Path]::GetExtension($fullPath).ToLowerInvariant()
         $isPackageLock = $relativePath -match '(?i)(^|/)packages(?:\.[^/\\]+)?\.lock\.json$'
         if ($isPackageLock -or
             $cleanupExtensions -notcontains $extension -or
-            -not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+            -not [System.IO.File]::Exists($fullPath)) {
             $ignoredPaths.Add($relativePath)
             continue
         }

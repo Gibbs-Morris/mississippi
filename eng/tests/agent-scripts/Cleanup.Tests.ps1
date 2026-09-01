@@ -101,9 +101,16 @@ Describe 'Cleanup planning' {
     }
 
     It 'normalizes and de-duplicates explicit paths before grouping them' {
+        $platformPath = [System.IO.Path]::Combine('src', 'Foo', 'Foo.cs')
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
-            -Paths @('src\Foo\Foo.cs', './src/Foo/Foo.cs', 'README.md')
+            -Paths @(
+                $platformPath,
+                'src\Foo\Foo.cs',
+                'src\Foo/Foo.cs',
+                './src\Foo\Foo.cs',
+                './src/Foo/Foo.cs',
+                'README.md')
 
         $plan.Mode | Should -Be 'Targeted'
         @($plan.InputPaths) | Should -HaveCount 2
@@ -212,11 +219,33 @@ Describe 'Cleanup planning' {
 
         $plan = Get-CleanupPlan `
             -RepoRoot $script:fixtureRoot `
-            -Paths @('src/Foo/Old.cs', 'src\Foo\Renamed.cs')
+            -Paths @('src/Foo/Old.cs', 'src/Foo/Renamed.cs')
 
         $plan.Mode | Should -Be 'Targeted'
         @($plan.EligiblePaths) | Should -Be @('src/Foo/Renamed.cs')
         @($plan.IgnoredPaths) | Should -Be @('src/Foo/Old.cs')
+    }
+
+    It 'preserves a literal backslash in a Unix filename' -Skip:([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+        $literalFileName = 'Part\One.cs'
+        $literalPath = "src/Foo/$literalFileName"
+        $fullPath = [System.IO.Path]::Combine($script:fixtureRoot, 'src', 'Foo', $literalFileName)
+        [System.IO.File]::WriteAllText($fullPath, 'class PartOne { }', [System.Text.UTF8Encoding]::new($false))
+
+        $plan = Get-CleanupPlan -RepoRoot $script:fixtureRoot -Paths @($literalPath)
+
+        $plan.Mode | Should -Be 'Targeted'
+        @($plan.EligiblePaths) | Should -Be @($literalPath)
+
+        $rootLiteralPath = 'Root\One.cs'
+        [System.IO.File]::WriteAllText(
+            [System.IO.Path]::Combine($script:fixtureRoot, $rootLiteralPath),
+            'class RootOne { }',
+            [System.Text.UTF8Encoding]::new($false))
+
+        ConvertTo-CleanupRelativePath `
+            -RepoRoot $script:fixtureRoot `
+            -Path $rootLiteralPath | Should -Be $rootLiteralPath
     }
 
     It 'falls back to full cleanup for global cleanup inputs' {
@@ -432,6 +461,29 @@ Describe 'Changed cleanup path discovery' {
     }
 }
 
+Describe 'Git path output parsing' {
+    It 'preserves leading, trailing, tab, and newline characters from NUL-delimited output' {
+        InModuleScope RepositoryAutomation {
+            $separator = [char]0
+            $gitOutput =
+                ' leading-whitespace.cs' + $separator +
+                'trailing-whitespace.cs ' + $separator +
+                "src/Control`tCharacter.cs" + $separator +
+                "src/Line`nBreak.cs" + $separator
+
+            $pathList = Join-Path $TestDrive 'nul-cleanup-paths.txt'
+            [System.IO.File]::WriteAllText($pathList, $gitOutput, [System.Text.UTF8Encoding]::new($false))
+            $paths = @(Read-CleanupPathList -Path $pathList)
+
+            $paths | Should -HaveCount 4
+            $paths | Should -Contain ' leading-whitespace.cs'
+            $paths | Should -Contain 'trailing-whitespace.cs '
+            $paths | Should -Contain "src/Control`tCharacter.cs"
+            $paths | Should -Contain "src/Line`nBreak.cs"
+        }
+    }
+}
+
 Describe 'Git cleanup path handling' {
     It 'round-trips non-ASCII paths through a NUL-delimited Git diff' {
         $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
@@ -516,6 +568,12 @@ Describe 'CleanupCode invocation' {
         Set-Content -LiteralPath $projectPath -Value '<Project />' -Encoding utf8
         Set-Content -LiteralPath (Join-Path $projectDirectory 'Foo.cs') -Value 'class Foo { }' -Encoding utf8
         Set-Content -LiteralPath (Join-Path $projectDirectory 'Sub/Other.cs') -Value 'class Other { }' -Encoding utf8
+        $includePaths = @('src/Foo/Foo.cs', 'src/Foo/Sub/Other.cs')
+        $expectedIncludes = 'Foo.cs;Sub/Other.cs'
+        if ([System.IO.Path]::DirectorySeparatorChar -ne '\') {
+            $includePaths += 'src/Foo/Part\One.cs'
+            $expectedIncludes += ';Part\One.cs'
+        }
         $settingsPath = Join-Path $fixtureRoot 'Directory.DotSettings'
         Set-Content -LiteralPath $settingsPath -Value '<ApplicationSettings />' -Encoding utf8
 
@@ -533,7 +591,7 @@ Describe 'CleanupCode invocation' {
         Invoke-TargetedProjectCleanup `
             -ProjectGroup ([pscustomobject]@{
                 ProjectPath  = $projectPath
-                IncludePaths = @('src/Foo/Foo.cs', 'src/Foo/Sub/Other.cs')
+                IncludePaths = $includePaths
             }) `
             -RepoRoot $fixtureRoot `
             -SettingsPath $settingsPath
@@ -546,7 +604,7 @@ Describe 'CleanupCode invocation' {
         }
         Should -Invoke Invoke-ReSharperCleanup -ModuleName RepositoryAutomation -Times 1 -ParameterFilter {
             $SolutionPath -like $temporarySolutionPattern -and
-            ($IncludePaths -join ';') -eq 'Foo.cs;Sub/Other.cs'
+            ($IncludePaths -join ';') -eq $expectedIncludes
         }
         @(Get-ChildItem -LiteralPath $projectDirectory -Filter '.cleanup-targeted-*' -Force) | Should -HaveCount 0
     }
@@ -685,7 +743,9 @@ Describe 'Canonical cleanup entry point' {
     It 'supports file-list preflight without invoking cleanup tooling' {
         $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
         $fileListPath = Join-Path $TestDrive 'cleanup-files.txt'
-        Set-Content -LiteralPath $fileListPath -Value 'README.md' -Encoding utf8
+        $fileListPaths = @(' leading-whitespace.cs', "src/Line`nBreak.cs")
+        $content = ($fileListPaths -join [char]0) + [char]0
+        [System.IO.File]::WriteAllText($fileListPath, $content, [System.Text.UTF8Encoding]::new($false))
         $scriptPath = Join-Path $repoRoot 'clean-up.ps1'
 
         $json = @(& pwsh -NoProfile -File $scriptPath -FileListPath $fileListPath -PlanOnly)
@@ -693,7 +753,44 @@ Describe 'Canonical cleanup entry point' {
         $LASTEXITCODE | Should -Be 0
         $plan = ($json -join "`n") | ConvertFrom-Json
         $plan.Mode | Should -Be 'NoOp'
+        @($plan.InputPaths) | Should -Be $fileListPaths
     }
+
+    It 'discovers no changes in a clean repository when the targeted base and head are identical' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $fixtureRoot = Join-Path $TestDrive ([Guid]::NewGuid().ToString())
+        $fixtureScriptsRoot = Join-Path $fixtureRoot 'eng/src/agent-scripts'
+        New-Item -ItemType Directory -Path $fixtureScriptsRoot -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up-targeted.ps1') -Destination $fixtureRoot
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'clean-up.ps1') -Destination $fixtureRoot
+        Copy-Item -LiteralPath (Join-Path $repoRoot 'eng/src/agent-scripts/RepositoryAutomation.psm1') -Destination $fixtureScriptsRoot
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'README.md') -Value 'cleanup fixture' -Encoding utf8
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('init') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('branch', '-M', 'main') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.email', 'cleanup-tests@example.com') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('config', 'user.name', 'Cleanup Tests') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('add', '--all') | Out-Null
+        & $script:invokeGitTestCommand -WorkingDirectory $fixtureRoot -Arguments @('commit', '-m', 'Create clean cleanup fixture') | Out-Null
+
+        $scriptPath = Join-Path $fixtureRoot 'clean-up-targeted.ps1'
+        $json = @(
+            & pwsh -NoProfile -File $scriptPath -BaseRef main -HeadRef HEAD -PlanOnly
+        )
+
+        $LASTEXITCODE | Should -Be 0
+        $plan = ($json -join "`n") | ConvertFrom-Json
+        $plan.Mode | Should -Be 'NoOp'
+    }
+
+    It 'returns a failure when the targeted base cannot be resolved' {
+        $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
+        $scriptPath = Join-Path $repoRoot 'clean-up-targeted.ps1'
+
+        & pwsh -NoProfile -File $scriptPath -BaseRef missing-cleanup-base -HeadRef HEAD -PlanOnly
+
+        $LASTEXITCODE | Should -Be 1
+    }
+
 }
 
 Describe 'Monthly cleanup pull request publishing' {
