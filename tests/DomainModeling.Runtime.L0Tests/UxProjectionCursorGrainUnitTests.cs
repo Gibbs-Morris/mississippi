@@ -11,6 +11,7 @@ using Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 using Moq;
 
+using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 
 
@@ -399,6 +400,28 @@ public sealed class UxProjectionCursorGrainUnitTests
         BrookPosition position = await sut.GetPositionAsync();
 
         // Assert - should still be 10
+        Assert.Equal(10, position.Value);
+    }
+
+    /// <summary>
+    ///     Ensures a tokenless delivery does not clear the sequence watermark.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task OnNextAsyncRetainsSequenceWatermarkAcrossNullToken()
+    {
+        // Arrange
+        UxProjectionCursorGrain sut = CreateGrain(ValidPrimaryKey);
+        EventSequenceToken sequenceToken = new(10);
+        EventSequenceToken olderSequenceToken = new(5);
+
+        // Act
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)), sequenceToken);
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(11)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(12)), olderSequenceToken);
+        BrookPosition position = await sut.GetPositionAsync();
+
+        // Assert
         Assert.Equal(10, position.Value);
     }
 
