@@ -161,7 +161,7 @@ internal sealed class UxProjectionCursorGrain
     )
     {
         ArgumentNullException.ThrowIfNull(item);
-        if ((lastToken != null) && lastToken.Newer(token))
+        if ((lastToken != null) && (token != null) && lastToken.Newer(token))
         {
             return Task.CompletedTask;
         }
