@@ -638,18 +638,36 @@ public sealed class AqueductHubLifetimeManagerTests
         // Arrange
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
-        HubConnectionContext connection = HubConnectionContextFactory.Create("conn1");
+        using CancellationTokenSource callerCancellationSource = new();
+        using CancellationTokenSource connectionAbortSource = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn1",
+            connectionAborted: connectionAbortSource.Token);
         connectionRegistry.GetConnection("conn1").Returns(connection);
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken forwardedCancellationToken = default;
+        messageSender.SendAsync(
+                connection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                Arg.Do<CancellationToken>(token => forwardedCancellationToken = token))
+            .Returns(sendCompletion.Task);
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
             connectionRegistry: connectionRegistry,
             messageSender: messageSender);
         object?[] args = ["arg1", 42];
 
         // Act
-        await manager.SendConnectionAsync("conn1", "MethodName", args);
+        Task sendTask = manager.SendConnectionAsync("conn1", "MethodName", args, callerCancellationSource.Token);
 
         // Assert
-        await messageSender.Received(1).SendAsync(connection, "MethodName", args, connection.ConnectionAborted);
+        Assert.False(forwardedCancellationToken.IsCancellationRequested);
+        await connectionAbortSource.CancelAsync();
+        Assert.True(forwardedCancellationToken.IsCancellationRequested);
+        await callerCancellationSource.CancelAsync();
+        Assert.True(forwardedCancellationToken.IsCancellationRequested);
+        sendCompletion.SetResult();
+        await sendTask;
     }
 
     /// <summary>
