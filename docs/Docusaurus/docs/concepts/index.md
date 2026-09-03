@@ -1,12 +1,11 @@
 ---
-id: concepts-overview
-title: Concepts
+title: Architecture And Core Concepts
 sidebar_label: Overview
 sidebar_position: 1
-description: Start here to understand what Mississippi is for, how the pieces fit together, and where to go next.
+description: Understand Mississippi's application model, write and read paths, orchestration, design goals, and trade-offs.
 ---
 
-# Concepts
+# Architecture And Core Concepts
 
 ## Overview
 
@@ -16,15 +15,16 @@ Every subsystem in Mississippi — aggregates, event streams, reducers, projecti
 
 ## What This Section Covers
 
-Use this section when you need the framework-level mental model before choosing a subsystem or a sample.
+Use this section when you need the framework-level mental model, runtime flow,
+or trade-offs behind an implementation decision.
 
 | Question | Start here |
 | --- | --- |
-| What Mississippi is and how the product areas relate | [Architectural Model](./architectural-model.md) |
-| How commands, events, reducers, and effects work on the write side | [Write Model](./write-model.md) |
-| How projections, HTTP reads, SignalR notifications, and client state fit together | [Read Models and Client Sync](./read-models-and-client-sync.md) |
-| How saga orchestration and compensation work | [Sagas and Orchestration](./sagas-and-orchestration.md) |
-| Why Mississippi is opinionated, what it optimizes for, and what it trades away | [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) |
+| What Mississippi is and how the product areas relate | [Architectural Model](architectural-model.md) |
+| How commands, events, reducers, and effects work on the write side | [Write Model](write-model.md) |
+| How projections, HTTP reads, SignalR notifications, and client state fit together | [Read Models and Client Sync](read-models-and-client-sync.md) |
+| How saga orchestration and compensation work | [Sagas and Orchestration](sagas-and-orchestration.md) |
+| Why Mississippi is opinionated, what it optimizes for, and what it trades away | [Design Goals and Trade-Offs](design-goals-and-trade-offs.md) |
 
 ## Layer Model
 
@@ -68,25 +68,22 @@ flowchart TB
 
 If you are evaluating Mississippi as an architecture, read the pages in this order:
 
-1. [Architectural Model](./architectural-model.md)
-2. [Write Model](./write-model.md)
-3. [Read Models and Client Sync](./read-models-and-client-sync.md)
-4. [Sagas and Orchestration](./sagas-and-orchestration.md)
-5. [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md)
+1. [Architectural Model](architectural-model.md)
+2. [Write Model](write-model.md)
+3. [Read Models and Client Sync](read-models-and-client-sync.md)
+4. [Sagas and Orchestration](sagas-and-orchestration.md)
+5. [Design Goals and Trade-Offs](design-goals-and-trade-offs.md)
 
 ## Learn More
 
-- [Documentation Home](../index.md) - Return to the product-area docs landing page
-- [Architectural Model](./architectural-model.md) - Framework-wide subsystem map and composition model
-- [Write Model](./write-model.md) - Aggregate command, event, reducer, and effect flow
-- [Read Models and Client Sync](./read-models-and-client-sync.md) - How projections reach client state through HTTP and SignalR
-- [Sagas and Orchestration](./sagas-and-orchestration.md) - Long-running workflow coordination and compensation
-- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md) - Framework rationale, constraints, and trade-offs
-- [Domain Modeling](../domain-modeling/index.md) - Aggregates, sagas, effects, and projections in depth
-- [Brooks](../brooks/index.md) - Event stream identity, storage, and cursor mechanics
-- [Tributary](../tributary/index.md) - Event reducers and snapshot reconstruction
-- [Inlet](../inlet/index.md) - Code generation and projection subscriptions
-- [Reservoir](../reservoir/index.md) - Redux-style client state management
-- [Aqueduct](../aqueduct/index.md) - Orleans-backed SignalR infrastructure
-- [Refraction](../refraction/index.md) - Blazor component library and design-token system for client UIs
-- [Samples](../samples/index.md) - Complete Mississippi applications
+- [Documentation Overview](../index.md) - Return to the technical documentation entry page
+- [Package And Subsystem Map](../reference/package-map.md) - Find the package that owns a specific concern
+- [Architectural Model](architectural-model.md) - Framework-wide subsystem map and composition model
+- [Write Model](write-model.md) - Aggregate command, event, reducer, and effect flow
+- [Read Models and Client Sync](read-models-and-client-sync.md) - How projections reach client state through HTTP and SignalR
+- [Sagas and Orchestration](sagas-and-orchestration.md) - Long-running workflow coordination and compensation
+- [Design Goals and Trade-Offs](design-goals-and-trade-offs.md) - Framework rationale, constraints, and trade-offs
+- [Reservoir Builder Model](reservoir-builder-model.md) - Client-state registration and feature composition
+- [Spring Domain Model](spring-domain-model.md) - The event-sourcing vocabulary used by the sample
+- [Spring Host Architecture](spring-host-architecture.md) - Runtime, gateway, client, and domain responsibilities
+- [Spring Tutorials](../tutorials/spring/index.md) - Learn the model through a composed application

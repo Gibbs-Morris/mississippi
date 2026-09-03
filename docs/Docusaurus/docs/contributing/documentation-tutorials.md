@@ -1,5 +1,4 @@
 ---
-id: documentation-tutorials
 title: Tutorial Pages
 description: Teach Mississippi through one linear end-to-end path with complete verified steps and checkpoints.
 sidebar_label: Tutorials
@@ -76,6 +75,6 @@ They should keep the reader moving forward with explicit steps, verification che
 ## Next Steps
 ```
 
-- [Documentation Guide](./documentation-guide.md)
-- [Getting-Started Pages](./documentation-getting-started.md)
-- [Concept Pages](./documentation-concepts.md)
+- [Documentation Guide](documentation-guide.md)
+- [Getting-Started Pages](documentation-getting-started.md)
+- [Concept Pages](documentation-concepts.md)

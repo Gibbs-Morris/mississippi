@@ -1,5 +1,4 @@
 ---
-id: documentation-getting-started
 title: Getting-Started Pages
 description: Get a new Mississippi user to a first successful outcome with the smallest verified path and the least theory.
 sidebar_label: Getting Started
@@ -92,6 +91,6 @@ Create a minimal Reservoir feature and verify that actions update state in a run
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [Tutorial Pages](./documentation-tutorials.md)
-- [Concept Pages](./documentation-concepts.md)
+- [Documentation Guide](documentation-guide.md)
+- [Tutorial Pages](documentation-tutorials.md)
+- [Concept Pages](documentation-concepts.md)

@@ -1,6 +1,7 @@
-# Mississippi Documentation Site
+# Mississippi Product And Documentation Site
 
-This is a minimal Docusaurus site for Mississippi framework documentation.
+This Docusaurus application publishes Mississippi's product landing page and
+technical documentation from one build.
 
 ## Local Development
 
@@ -52,9 +53,13 @@ npm run serve
 
 This command serves the built website locally for testing.
 
-## Versioning
+## Documentation Versions
 
-This site is configured with versioning support. To create a new version:
+The technical documentation currently publishes one live corpus at `/docs/`.
+Do not create a version snapshot until Mississippi has a supported release whose
+documentation must remain available alongside newer material.
+
+When that lifecycle exists, Docusaurus can create the first snapshot with:
 
 ```bash
 npm run docusaurus docs:version 1.0.0
@@ -62,16 +67,20 @@ npm run docusaurus docs:version 1.0.0
 
 ## Features
 
-- Minimal setup with essential features only
-- Versioning support configured
+- One unversioned product landing page
+- One current technical documentation corpus
 - Playwright tests for build and runtime verification
 - GitHub Actions workflow for CI/CD
 - Dark mode support (respects system preference)
 
 ## Structure
 
-- `docs/` - Documentation content (current/next version)
-- `src/` - Custom pages and components
+- `docs/` - Published technical documentation, organized by reader intent:
+  getting started, tutorials, how-to guides, concepts, and reference
+- `archive/` - Historical documentation retained in source but excluded from the
+  published sidebar and routes, including the retired subsystem/page-type matrix
+- `src/pages/` - The unversioned marketing landing page and its page-scoped styles
+- `src/css/` - Shared site-shell and technical-documentation styles
 - `static/` - Static assets
 - `tests/` - Playwright tests
 - `docusaurus.config.ts` - Site configuration

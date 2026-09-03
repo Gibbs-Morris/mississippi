@@ -17,8 +17,8 @@ Governing thought: Mississippi technical documentation helps engineers make corr
 - Authors **MUST NOT** invent APIs, configuration keys, defaults, guarantees, limits, exception types, or runtime behavior. Why: Documentation is a contract surface.
 - Claims **MUST** be backed by source code, tests, verified samples, design docs, ADRs, or runtime evidence; if a claim cannot be verified, it **MUST NOT** be published as fact. Why: Truthfulness is non-negotiable.
 - Authors **MUST** distinguish guaranteed behavior, default behavior, typical behavior, implementation detail, unsupported behavior, and future intent. Why: Readers need to know what Mississippi actually promises.
-- Each page **MUST** answer one primary question and **MUST** use exactly one page type. Why: Mixed page types produce confusing documents.
-- Every public page **MUST** include `title`, `description`, and `sidebar_position` in frontmatter; authors **MAY** add `sidebar_label`, `pagination_label`, `slug`, `tags`, `draft`, and `id` when needed. Why: Core metadata keeps pages navigable while allowing repo-compatible stability fields.
+- Each non-navigation page **MUST** answer one primary question and **MUST** use exactly one page type. Authored category entry pages **MUST** add durable orientation and **MUST NOT** exist only to complete the tree. Why: Mixed page types and empty navigation pages both produce confusing documentation.
+- Every public page **MUST** include `title`, `description`, and `sidebar_position` in frontmatter; authors **MAY** add `sidebar_label`, `pagination_label`, `tags`, `draft`, `slug`, and `id` when needed. Custom `slug` and `id` values **MUST** have a deliberate routing or compatibility reason. Why: Core metadata keeps pages navigable while filesystem-derived identities prevent a parallel route taxonomy.
 - Authors **MUST** use `.md` unless the page genuinely needs MDX components. Why: Plain Markdown is easier to maintain.
 - Internal doc links **MUST** use relative Markdown links. Why: Relative links survive route and branch changes more reliably.
 - Tabs **MUST** be used only for true parallel variants such as operating system, language, or hosting mode. Why: Tabs hide information and should be reserved for real alternatives.
@@ -26,7 +26,7 @@ Governing thought: Mississippi technical documentation helps engineers make corr
 - Mermaid **SHOULD** be preferred over screenshots for diagrams, and every diagram **MUST** include an introductory sentence and a clear main point. Why: Source diagrams are reviewable and easier to maintain.
 - Mermaid flowcharts with more than four nodes **MUST** use `flowchart TB` (top-to-bottom); `flowchart LR` **MAY** be used only when the diagram has four or fewer nodes. Why: Docs render at a fixed width and readers scroll vertically; wide LR diagrams overflow or become unreadably compressed.
 - Runnable code examples **MUST** come from verified samples, newly verified samples, or executable verification tied to tests or builds. Why: Sample drift is worse than no sample.
-- Authors **MUST** make prerequisites explicit, use plain language, avoid hype, and end pages with relevant next steps or related links. Why: Readers need clear action, not filler.
+- Authors **MUST** make prerequisites explicit, use plain language, avoid hype, and end pages with relevant next steps or related links. Numbered ADRs **MUST** follow the repository decision-record format instead of this generic closing rule. Why: Readers need clear action, while architecture decisions need their established semantics.
 - The distributed-systems checklist **MUST** be applied when a page describes runtime semantics, lifecycle, persistence, messaging, deployment, or failure behavior. Why: Those topics are where under-specified docs cause the most damage.
 - A documentation change **MUST NOT** be considered complete until frontmatter is complete, links resolve, the Docusaurus site builds, examples are verified, terminology is repo-consistent, and adjacent content is linked. Why: Documentation quality is part of the build contract.
 
@@ -54,13 +54,16 @@ All contributors and agents writing or updating technical docs under `docs/Docus
 - `troubleshooting`
 - `migration`
 - `release-notes`
+- `decision-record`
+
+Category entry pages are navigation artifacts rather than a canonical page type.
 
 ## Core Principles
 
 - **Truth Before Style**: Verified technical content matters more than polished prose.
 - **Two Surfaces, Two Jobs**: Marketing may express an evidenced vision; technical documentation defines current behavior.
 - **Single Question Per Page**: Readers should know immediately whether they are in the right place.
-- **Page Type Is The Contract**: Physical location may migrate, but page type still governs structure and content.
+- **Page Type Is The Contract**: Reader intent governs placement, structure, and content; package ownership remains supporting context.
 - **Evidence And Adjacency**: Every page should say what is true, what is not guaranteed, and where the reader goes next.
 
 ## Distributed-Systems Checklist

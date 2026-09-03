@@ -1,8 +1,7 @@
 ---
-id: glossary
 title: Glossary
 sidebar_label: Glossary
-sidebar_position: 1
+sidebar_position: 2
 description: Look up Mississippi terms and add short definitions in one place.
 ---
 
@@ -66,13 +65,13 @@ Look up Mississippi and event-sourcing terminology in one place.
 
 | Term | Description |
 | --- | --- |
-| [Aqueduct](../aqueduct/index.md) | Mississippi's Orleans-backed SignalR backplane and push-delivery layer for distributed real-time messaging across hosts. |
-| [Brooks](../brooks/index.md) | Mississippi's event-stream and event-storage foundation. It owns append, read, cursor, serialization, and storage-provider boundaries. |
-| [Domain Modeling](../domain-modeling/index.md) | Mississippi's domain-facing layer for aggregates, sagas, event effects, and UX projections. It turns lower-level streams and state reconstruction into concrete domain behavior. |
-| [Inlet](../inlet/index.md) | Mississippi's composition and source-generation layer. It keeps projection DTOs, generated HTTP endpoints, runtime registrations, and client subscription wiring aligned across the stack. |
-| [Refraction](../refraction/index.md) | Mississippi's Blazor UX component library built around a state-down, events-up interaction model that keeps UI interaction contracts separate from application state. |
-| [Reservoir](../reservoir/index.md) | Mississippi's Redux-style client state-management library, including store, actions, reducers, selectors, effects, middleware, and UI integration patterns. |
-| [Tributary](../tributary/index.md) | Mississippi's reducer and snapshot layer. It turns event streams into derived state that can be rebuilt efficiently and persisted as snapshots. |
+| [Aqueduct](package-map.md) | Mississippi's Orleans-backed SignalR backplane and push-delivery layer for distributed real-time messaging across hosts. |
+| [Brooks](package-map.md) | Mississippi's event-stream and event-storage foundation. It owns append, read, cursor, serialization, and storage-provider boundaries. |
+| [Domain Modeling](package-map.md) | Mississippi's domain-facing layer for aggregates, sagas, event effects, and UX projections. It turns lower-level streams and state reconstruction into concrete domain behavior. |
+| [Inlet](package-map.md) | Mississippi's composition and source-generation layer. It keeps projection DTOs, generated HTTP endpoints, runtime registrations, and client subscription wiring aligned across the stack. |
+| [Refraction](package-map.md) | Mississippi's Blazor UX component library built around a state-down, events-up interaction model that keeps UI interaction contracts separate from application state. |
+| [Reservoir](package-map.md) | Mississippi's Redux-style client state-management library, including store, actions, reducers, selectors, effects, middleware, and UI integration patterns. |
+| [Tributary](package-map.md) | Mississippi's reducer and snapshot layer. It turns event streams into derived state that can be rebuilt efficiently and persisted as snapshots. |
 
 ## Summary
 

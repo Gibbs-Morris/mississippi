@@ -1,5 +1,5 @@
 ---
-applyTo: 'docs/Docusaurus/docs/**/*getting-started*.{md,mdx}'
+applyTo: 'docs/Docusaurus/docs/getting-started/**/*.{md,mdx}'
 ---
 
 # Getting-Started Documentation

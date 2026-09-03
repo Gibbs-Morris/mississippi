@@ -1,0 +1,9 @@
+label: Getting Started
+position: 2
+collapsed: false
+collapsible: true
+link:
+  type: generated-index
+  title: Getting Started
+  description: Reach a first working Mississippi client setup through the smallest verified path.
+  slug: /getting-started

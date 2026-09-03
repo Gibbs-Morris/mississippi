@@ -48,13 +48,6 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Enable versioning
-          versions: {
-            current: {
-              label: 'Next',
-              path: 'next',
-            },
-          },
         },
         blog: false, // Disable blog
         theme: {
@@ -88,17 +81,13 @@ const config: Config = {
           label: 'Docs',
         },
         {
-          type: 'docsVersionDropdown',
-          position: 'right',
-        },
-        {
           // NOSONAR: GitHub repository URL is intentionally hardcoded for navigation
           href: 'https://github.com/Gibbs-Morris/mississippi',
           label: 'GitHub',
           position: 'right',
         },
         {
-          to: '/docs/next/concepts/concepts-architectural-model',
+          to: '/docs/concepts/architectural-model',
           label: 'Evaluate the architecture',
           position: 'right',
           className: 'navbar__evaluate',
@@ -117,11 +106,11 @@ const config: Config = {
             },
             {
               label: 'Technical Documentation',
-              to: '/docs/next/',
+              to: '/docs/',
             },
             {
               label: 'Architectural Model',
-              to: '/docs/next/concepts/concepts-architectural-model',
+              to: '/docs/concepts/architectural-model',
             },
           ],
         },

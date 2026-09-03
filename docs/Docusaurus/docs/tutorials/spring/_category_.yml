@@ -1,0 +1,7 @@
+label: Spring Sample App
+position: 1
+collapsed: false
+collapsible: true
+link:
+  type: doc
+  id: tutorials/spring/index

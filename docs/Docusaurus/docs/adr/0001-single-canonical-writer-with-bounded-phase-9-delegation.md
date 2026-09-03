@@ -2,6 +2,8 @@
 title: "ADR-0001: Keep A Single Canonical Writer With Bounded Phase 9 Delegation"
 description: Keep cs Product Owner as the only canonical workflow writer while preserving cs PR Manager as a bounded Phase 9 specialist delegate.
 sidebar_position: 1
+# Preserve the decision number because Docusaurus strips numeric file prefixes.
+slug: /adr/0001-single-canonical-writer-with-bounded-phase-9-delegation
 status: "proposed"
 date: 2026-03-25
 decision_makers:

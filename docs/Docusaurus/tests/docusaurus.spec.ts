@@ -28,7 +28,7 @@ test.describe('Mississippi site', () => {
     );
     await primaryAction.click();
 
-    await expect(page).toHaveURL(/\/docs\/next\/concepts\/concepts-architectural-model\/?$/);
+    await expect(page).toHaveURL(/\/docs\/concepts\/architectural-model\/?$/);
     await expect(page.getByRole('heading', {level: 1})).toHaveText(
       'Architectural Model',
     );
@@ -128,12 +128,19 @@ test.describe('Mississippi site', () => {
     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
   });
 
-  test('technical documentation retains its navigation', async ({page}) => {
-    await page.goto('docs/next/');
+  test('technical documentation uses intent-first navigation', async ({page}) => {
+    await page.goto('docs/');
 
     await expect(page.getByRole('heading', {level: 1})).toHaveText(
       'Mississippi Documentation',
     );
-    expect(await page.locator('nav, aside, [class*="sidebar"]').count()).toBeGreaterThan(0);
+    const sidebar = page.locator('.theme-doc-sidebar-menu');
+    await expect(sidebar.getByRole('link', {name: 'Getting Started'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'Tutorials'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'How-To Guides'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'Concepts'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'Reference'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'Subsystems'})).toHaveCount(0);
+    await expect(page.getByRole('link', {name: 'Next', exact: true})).toHaveCount(0);
   });
 });

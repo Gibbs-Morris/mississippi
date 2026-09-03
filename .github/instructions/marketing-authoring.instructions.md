@@ -27,6 +27,8 @@ Governing thought: Mississippi marketing makes a bold, memorable startup case wh
 - Calls to action **MUST NOT** promise a frictionless demo, installation, or production path that has not been tested. Why: Unverified promises spend user trust immediately.
 - AI messaging **MUST** distinguish deterministic framework generation from developer-owned domain work. Why: Mississippi generates repeatable seams rather than the whole application.
 - AI messaging **MUST NOT** imply that generated MCP tools automatically inherit HTTP authorization. Why: Shared domain operations do not create a shared trust boundary.
+- Marketing MDX **SHOULD** use Markdown for headings, prose, lists, links, and code whenever layout or behavior does not require JSX. Why: The landing page should remain content-first and approachable to the same authors who maintain the technical docs.
+- JSX in marketing MDX **SHOULD** be limited to layout wrappers, styled calls to action, and genuinely interactive or reusable elements. Why: An `.mdx` extension should not conceal a second template language for ordinary copy.
 - Marketing copy moved into technical documentation **MUST** be rewritten for the technical documentation claim model. Why: Marketing and documentation have different jobs even in one publishing system.
 
 ## Scope and Audience

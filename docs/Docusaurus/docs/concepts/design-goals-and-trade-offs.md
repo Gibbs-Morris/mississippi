@@ -1,5 +1,4 @@
 ---
-id: concepts-design-goals-and-trade-offs
 title: Design Goals and Trade-Offs
 sidebar_label: Design Goals and Trade-Offs
 sidebar_position: 6
@@ -142,9 +141,9 @@ benchmarked.
 
 ## Related Tasks and Reference
 
-- Use [Architectural Model](./architectural-model.md) for the full subsystem picture.
-- Use [Write Model](./write-model.md) and [Read Models and Client Sync](./read-models-and-client-sync.md) for runtime behavior.
-- Use [Samples](../samples/index.md) when you want to see the generated and handwritten pieces together in one application.
+- Use [Architectural Model](architectural-model.md) for the full subsystem picture.
+- Use [Write Model](write-model.md) and [Read Models and Client Sync](read-models-and-client-sync.md) for runtime behavior.
+- Use [Samples](../tutorials/spring/index.md) when you want to see the generated and handwritten pieces together in one application.
 
 ## Summary
 
@@ -152,7 +151,7 @@ Mississippi trades some architectural freedom for delivery leverage. Its design 
 
 ## Next Steps
 
-- [Architectural Model](./architectural-model.md)
-- [Write Model](./write-model.md)
-- [Read Models and Client Sync](./read-models-and-client-sync.md)
-- [Samples](../samples/index.md)
+- [Architectural Model](architectural-model.md)
+- [Write Model](write-model.md)
+- [Read Models and Client Sync](read-models-and-client-sync.md)
+- [Samples](../tutorials/spring/index.md)

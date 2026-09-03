@@ -1,0 +1,9 @@
+label: Tutorials
+position: 3
+collapsed: true
+collapsible: true
+link:
+  type: generated-index
+  title: Tutorials
+  description: Learn Mississippi by building against verified sample applications.
+  slug: /tutorials

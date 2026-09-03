@@ -1,0 +1,7 @@
+label: Domain Behavior
+position: 2
+collapsed: true
+collapsible: true
+link:
+  type: doc
+  id: domain-modeling-overview

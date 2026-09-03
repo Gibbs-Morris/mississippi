@@ -1,3 +1,9 @@
 label: Reference
-position: 11
-collapsed: false
+position: 6
+collapsed: true
+collapsible: true
+link:
+  type: generated-index
+  title: Reference
+  description: Look up Mississippi package ownership, terminology, and exact registration surfaces.
+  slug: /reference

@@ -1,5 +1,4 @@
 ---
-id: documentation-release-notes
 title: Release Notes
 description: Summarize Mississippi release changes concisely with exact version identifiers, user impact, and upgrade links.
 sidebar_label: Release Notes
@@ -78,6 +77,6 @@ Mississippi 0.9 focuses on verified documentation governance, runtime fixes, and
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [Migration Pages](./documentation-migration.md)
-- [Reference Pages](./documentation-reference.md)
+- [Documentation Guide](documentation-guide.md)
+- [Migration Pages](documentation-migration.md)
+- [Reference Pages](documentation-reference.md)

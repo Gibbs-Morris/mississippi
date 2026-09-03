@@ -1,9 +1,8 @@
 ---
-id: home
 title: Documentation
-sidebar_label: Home
+sidebar_label: Overview
 sidebar_position: 1
-description: Choose a verified path through Mississippi concepts, subsystems, samples, reference material, and contribution guidance.
+description: Choose a verified Mississippi path to start, learn, complete a task, understand the model, or look up a contract.
 slug: /
 ---
 
@@ -15,64 +14,51 @@ These technical docs describe Mississippi's current APIs, architecture,
 runtime behavior, constraints, and examples. Mississippi is pre-1.0 and is not
 recommended for production use.
 
-Start with the architectural model when evaluating the complete framework. Use
-the subsystem sections when adopting one package area, or follow the Spring
-sample when you want to inspect a composed application.
+The navigation is organized around reader intent. You do not need to understand
+Mississippi's internal package names before finding a useful starting point.
 
 ## Start Here
 
 | Goal | Recommended Path |
 | --- | --- |
-| Understand the complete application model | [Architectural Model](./concepts/architectural-model.md) |
-| Understand writes, reads, and workflow coordination | [Concepts](./concepts/index.md) |
-| Examine a composed application | [Spring Sample](./samples/spring-sample/index.md) |
-| Evaluate one independently adoptable subsystem | Use the subsystem table below |
-| Look up exact terms or package contracts | [Reference](./reference/glossary.md) |
-| Contribute to the documentation | [Documentation Guide](./contributing/documentation-guide.md) |
+| Configure a complete Mississippi client | [Mississippi Client Setup](getting-started/mississippi-client.md) |
+| Configure Reservoir without the full client stack | [Reservoir-Only Client Setup](getting-started/reservoir-only-client.md) |
+| Learn by building a working domain | [Spring Tutorials](tutorials/spring/index.md) |
+| Complete a focused integration or verification task | [How-To Guides](how-to/compose-inlet-client.md) |
+| Understand the complete application model | [Architectural Model](concepts/architectural-model.md) |
+| Understand writes, reads, and workflow coordination | [Concepts](concepts/index.md) |
+| Find the package that owns a concern | [Package and Subsystem Map](reference/package-map.md) |
+| Look up an exact term or registration contract | [Reference](reference/glossary.md) |
+| Contribute to the documentation | [Documentation Guide](contributing/documentation-guide.md) |
 
-## Architecture Reading Path
+## Recommended Evaluation Path
 
 Use this sequence to understand the main runtime model.
 
-1. [Architectural Model](./concepts/architectural-model.md) explains the
+1. [Architectural Model](concepts/architectural-model.md) explains the
    component boundaries and end-to-end flow.
-2. [Write Model](./concepts/write-model.md) covers commands, aggregate-owned
+2. [Write Model](concepts/write-model.md) covers commands, aggregate-owned
    decisions, events, reducers, and effects.
-3. [Read Models and Client Sync](./concepts/read-models-and-client-sync.md)
+3. [Read Models and Client Sync](concepts/read-models-and-client-sync.md)
    covers projections, version-led delivery, and client state.
-4. [Sagas and Orchestration](./concepts/sagas-and-orchestration.md) covers
+4. [Sagas and Orchestration](concepts/sagas-and-orchestration.md) covers
    multi-step progress, failure, compensation, and recovery boundaries.
-5. [Design Goals and Trade-Offs](./concepts/design-goals-and-trade-offs.md)
+5. [Design Goals and Trade-Offs](concepts/design-goals-and-trade-offs.md)
    explains the conventions, generated surfaces, costs, and poor-fit cases.
 
-## Subsystems
+## How The Documentation Is Organized
 
-Each subsystem has focused concepts, getting-started, how-to, reference, and
-troubleshooting material where that content currently exists.
+- **Getting Started** reaches a first working client setup through the smallest
+  verified path.
+- **Tutorials** teach Mississippi by building against a composed sample.
+- **How-To Guides** solve focused integration and verification tasks.
+- **Concepts** explain the architecture, behavior, guarantees, and trade-offs.
+- **Reference** records package ownership, terminology, and exact registration
+  surfaces.
 
-| Area | Responsibility |
-| --- | --- |
-| [Domain Behavior](./domain-modeling/index.md) | Aggregates, command handling, effects, sagas, and projections |
-| [Reducers and Snapshots](./tributary/index.md) | State reconstruction, reducer execution, snapshots, and delta replay |
-| [Event Streams](./brooks/index.md) | Ordered event storage, cursors, metadata, and serialization |
-| [API and Client Sync](./inlet/index.md) | Generated gateway, runtime, client, subscription, and MCP surfaces |
-| [SignalR Backplane](./aqueduct/index.md) | Orleans-backed connection, group, user, and server routing |
-| [Client State](./reservoir/index.md) | Redux-style actions, reducers, effects, selectors, and test support |
-| [Blazor UI](./refraction/index.md) | Presentational components, design tokens, and state-connected scenes |
-
-Aqueduct, Brooks, Reservoir, and Refraction expose package entry points that can
-be evaluated independently. The complete Mississippi model composes these
-areas with Domain Modeling, Tributary, and Inlet.
-
-## Samples
-
-[Spring](./samples/spring-sample/index.md) is the current end-to-end sample. It
-demonstrates aggregates, projections, saga coordination, generated HTTP and MCP
-surfaces, SignalR delivery, Reservoir client state, and Aspire-hosted local
-infrastructure.
-
-The sample has more prerequisites than a single-package example. Review its
-setup guidance before treating it as a quick-start path.
+Subsystem names such as Brooks, Tributary, and Inlet appear in the
+[Package and Subsystem Map](reference/package-map.md). They are reference
+vocabulary, not prerequisites for navigating the documentation.
 
 ## Current Boundaries
 
@@ -87,13 +73,17 @@ Keep these constraints in view while evaluating the documentation:
 - Generated MCP tools reuse domain operations but do not automatically inherit
   generated HTTP endpoint authorization.
 
-Use the relevant concepts, operations, and reference pages for exact behavior.
+Use the relevant concepts and reference pages for exact behavior. Operational
+or troubleshooting sections will appear only when repository evidence supports
+specific, actionable guidance.
 
 ## Learn More
 
-- [Concepts](./concepts/index.md)
-- [Spring Sample](./samples/spring-sample/index.md)
-- [Reference](./reference/glossary.md)
-- [Architecture Decision Records](./adr/index.md)
-- [Contributing](./contributing/documentation-guide.md)
-- [Archived Documentation](./archived/index.md)
+- [Getting Started](getting-started/mississippi-client.md)
+- [Spring Tutorials](tutorials/spring/index.md)
+- [How-To Guides](how-to/compose-inlet-client.md)
+- [Concepts](concepts/index.md)
+- [Package and Subsystem Map](reference/package-map.md)
+- [Glossary](reference/glossary.md)
+- [Architecture Decision Records](adr/index.md)
+- [Contributing](contributing/documentation-guide.md)

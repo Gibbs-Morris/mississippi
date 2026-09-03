@@ -1,5 +1,5 @@
 ---
-applyTo: 'docs/Docusaurus/docs/**/*release-notes*.{md,mdx},docs/Docusaurus/docs/**/*releases*.{md,mdx}'
+applyTo: 'docs/Docusaurus/docs/release-notes/**/*.{md,mdx}'
 ---
 
 # Release Notes Documentation

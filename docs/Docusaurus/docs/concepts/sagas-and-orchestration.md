@@ -1,5 +1,4 @@
 ---
-id: concepts-sagas-and-orchestration
 title: Sagas and Orchestration
 sidebar_label: Sagas and Orchestration
 sidebar_position: 5
@@ -131,9 +130,9 @@ Start commands, lifecycle events, ordered steps, and compensation outcomes are a
 
 ## Related Tasks and Reference
 
-- Use [Write Model](./write-model.md) for single-aggregate command handling.
-- Use [Read Models and Client Sync](./read-models-and-client-sync.md) for status projections and client update paths.
-- Use [Domain Modeling](../domain-modeling/index.md) when you need the package boundary around saga abstractions and runtime support.
+- Use [Write Model](write-model.md) for single-aggregate command handling.
+- Use [Read Models and Client Sync](read-models-and-client-sync.md) for status projections and client update paths.
+- Use [Domain Modeling](../reference/package-map.md) when you need the package boundary around saga abstractions and runtime support.
 - Use [Glossary](../reference/glossary.md) when you need a quick definition of Orleans grains, silos, reminders, sagas, or compensation.
 
 ## Summary
@@ -142,7 +141,7 @@ Mississippi sagas turn multi-step workflows into observable, compensatable event
 
 ## Next Steps
 
-- [Read Models and Client Sync](./read-models-and-client-sync.md)
-- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md)
-- [Domain Modeling](../domain-modeling/index.md)
-- [Samples](../samples/index.md)
+- [Read Models and Client Sync](read-models-and-client-sync.md)
+- [Design Goals and Trade-Offs](design-goals-and-trade-offs.md)
+- [Domain Modeling](../reference/package-map.md)
+- [Samples](../tutorials/spring/index.md)

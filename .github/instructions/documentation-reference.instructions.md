@@ -1,5 +1,5 @@
 ---
-applyTo: 'docs/Docusaurus/docs/**/*reference*.{md,mdx}'
+applyTo: 'docs/Docusaurus/docs/reference/**/*.{md,mdx}'
 ---
 
 # Reference Documentation
