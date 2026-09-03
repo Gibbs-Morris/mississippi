@@ -477,8 +477,11 @@ public sealed class AqueductHubLifetimeManagerTests
         ISignalRClientGrain clientGrain = Substitute.For<ISignalRClientGrain>();
         grainFactory.GetClientGrain("TestAqueductHub", "conn1").Returns(clientGrain);
         HubConnectionContext connection = HubConnectionContextFactory.Create("conn1");
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
             grainFactory: grainFactory,
+            heartbeatManager: heartbeatManager,
             hostApplicationLifetime: hostApplicationLifetime,
             streamSubscriptionManager: streamSubscriptionManager);
 
@@ -492,6 +495,8 @@ public sealed class AqueductHubLifetimeManagerTests
                 Arg.Any<Func<ServerMessage, Task>>(),
                 Arg.Any<Func<AllMessage, Task>>(),
                 applicationStopping);
+        await heartbeatManager.Received(1)
+            .StartAsync(Arg.Any<Func<int>>(), applicationStopping);
     }
 
     /// <summary>
