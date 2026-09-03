@@ -1,14 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
+using Mississippi.Aqueduct.Abstractions.Messages;
 using Mississippi.Testing.Utilities.SignalR;
 
 using NSubstitute;
@@ -28,6 +32,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender? messageSender = null,
         IHeartbeatManager? heartbeatManager = null,
         IStreamSubscriptionManager? streamSubscriptionManager = null,
+        IHostApplicationLifetime? hostApplicationLifetime = null,
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>>? logger = null
     ) =>
         new(
@@ -37,6 +42,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender ?? Substitute.For<ILocalMessageSender>(),
             heartbeatManager ?? Substitute.For<IHeartbeatManager>(),
             streamSubscriptionManager ?? Substitute.For<IStreamSubscriptionManager>(),
+            hostApplicationLifetime ?? Substitute.For<IHostApplicationLifetime>(),
             logger ?? NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
 
     private static IServerIdProvider CreateServerIdProvider(
@@ -109,6 +115,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -120,6 +127,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger);
 
         // Assert
@@ -142,6 +150,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -153,6 +162,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
     }
 
@@ -172,6 +182,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -183,6 +194,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
     }
 
@@ -202,6 +214,7 @@ public sealed class AqueductHubLifetimeManagerTests
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -213,7 +226,36 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             null!,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when hostApplicationLifetime is null.
+    /// </summary>
+    [Fact(DisplayName = "Constructor Throws When Host Application Lifetime Is Null")]
+    public void ConstructorShouldThrowWhenHostApplicationLifetimeIsNull()
+    {
+        // Arrange
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
+            NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
+            serverIdProvider,
+            grainFactory,
+            connectionRegistry,
+            messageSender,
+            heartbeatManager,
+            streamSubscriptionManager,
+            null!,
+            logger).Dispose());
     }
 
     /// <summary>
@@ -233,6 +275,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
@@ -242,6 +285,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             null!));
     }
 
@@ -261,6 +305,7 @@ public sealed class AqueductHubLifetimeManagerTests
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -272,6 +317,7 @@ public sealed class AqueductHubLifetimeManagerTests
             null!,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
     }
 
@@ -291,6 +337,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -302,6 +349,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
     }
 
@@ -321,6 +369,7 @@ public sealed class AqueductHubLifetimeManagerTests
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -332,7 +381,64 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             null!,
+            hostApplicationLifetime,
             logger));
+    }
+
+    /// <summary>
+    ///     OnAllMessageAsync should continue when a connection aborts during delivery.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "OnAllMessageAsync Continues After Connection Aborts")]
+    public async Task OnAllMessageAsyncShouldContinueAfterConnectionAborts()
+    {
+        // Arrange
+        CancellationToken abortedConnectionToken = new(true);
+        HubConnectionContext abortedConnection = HubConnectionContextFactory.Create(
+            "aborted",
+            connectionAborted: abortedConnectionToken);
+        Assert.True(abortedConnection.ConnectionAborted.IsCancellationRequested);
+        HubConnectionContext healthyConnection = HubConnectionContextFactory.Create("healthy");
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        connectionRegistry.GetAll().Returns([abortedConnection, healthyConnection]);
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        object?[] args = [];
+        messageSender.SendAsync(
+                abortedConnection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                abortedConnection.ConnectionAborted)
+            .Returns(Task.FromCanceled(abortedConnection.ConnectionAborted));
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        Func<AllMessage, Task>? onAllMessage = null;
+        streamSubscriptionManager.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Do<Func<AllMessage, Task>>(callback => onAllMessage = callback),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            heartbeatManager: heartbeatManager,
+            messageSender: messageSender,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.SendAllAsync("MethodName", args);
+        Func<AllMessage, Task> callback = onAllMessage ??
+                                          throw new InvalidOperationException("All-message callback was not captured.");
+        await callback(
+            new()
+            {
+                MethodName = "MethodName",
+                Args = args,
+            });
+
+        // Assert
+        await messageSender.Received(1)
+            .SendAsync(healthyConnection, "MethodName", args, healthyConnection.ConnectionAborted);
     }
 
     /// <summary>
@@ -347,6 +453,40 @@ public sealed class AqueductHubLifetimeManagerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => manager.OnConnectedAsync(null!));
+    }
+
+    /// <summary>
+    ///     OnConnectedAsync should use the host application stopping token for stream setup.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "OnConnectedAsync Uses Host Application Stopping Token")]
+    public async Task OnConnectedAsyncShouldUseHostApplicationStoppingToken()
+    {
+        // Arrange
+        using CancellationTokenSource applicationStoppingSource = new();
+        CancellationToken applicationStopping = applicationStoppingSource.Token;
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
+        hostApplicationLifetime.ApplicationStopping.Returns(applicationStopping);
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        ISignalRClientGrain clientGrain = Substitute.For<ISignalRClientGrain>();
+        grainFactory.GetClientGrain("TestAqueductHub", "conn1").Returns(clientGrain);
+        HubConnectionContext connection = HubConnectionContextFactory.Create("conn1");
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            grainFactory: grainFactory,
+            hostApplicationLifetime: hostApplicationLifetime,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.OnConnectedAsync(connection);
+
+        // Assert
+        await streamSubscriptionManager.Received(1)
+            .EnsureInitializedAsync(
+                "TestAqueductHub",
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                applicationStopping);
     }
 
     /// <summary>
@@ -457,7 +597,7 @@ public sealed class AqueductHubLifetimeManagerTests
         await manager.SendConnectionAsync("conn1", "MethodName", args);
 
         // Assert
-        await messageSender.Received(1).SendAsync(connection, "MethodName", args);
+        await messageSender.Received(1).SendAsync(connection, "MethodName", args, connection.ConnectionAborted);
     }
 
     /// <summary>
