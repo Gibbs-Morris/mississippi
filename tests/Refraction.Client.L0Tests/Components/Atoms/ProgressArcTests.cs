@@ -25,9 +25,9 @@ public sealed class ProgressArcTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.True(attr!.CaptureUnmatchedValues);
+        Assert.True(attr.CaptureUnmatchedValues);
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ public sealed class ProgressArcTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
         Assert.Equal(100d, component.Max);
     }
@@ -59,7 +59,7 @@ public sealed class ProgressArcTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
         Assert.Equal(0d, component.Min);
     }
@@ -75,7 +75,7 @@ public sealed class ProgressArcTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 
@@ -90,9 +90,9 @@ public sealed class ProgressArcTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.Equal(typeof(double), prop!.PropertyType);
+        Assert.Equal(typeof(double), prop.PropertyType);
     }
 
     /// <summary>

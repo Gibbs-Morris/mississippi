@@ -254,7 +254,7 @@ public sealed class BankAccountIntegrationTests
 
         // Assert
         projectionResult.Should().NotBeNull("projection should exist after commands");
-        projectionResult!.HolderName.Should().Be(holderName);
+        projectionResult.HolderName.Should().Be(holderName);
         projectionResult.IsOpen.Should().BeTrue();
         projectionResult.Balance.Should().Be(expectedBalance, "balance should reflect all transactions");
     }
@@ -316,7 +316,7 @@ public sealed class BankAccountIntegrationTests
             sagaId,
             projection => projection.Phase == CompletedSagaPhase);
         transferProjection.Should().NotBeNull("the transfer status projection should be created for the saga");
-        transferProjection!.Phase.Should()
+        transferProjection.Phase.Should()
             .Be(CompletedSagaPhase, transferProjection.ErrorMessage ?? "the saga should complete successfully");
         transferProjection.LastCompletedStepIndex.Should().BeGreaterThanOrEqualTo(1);
         BankAccountBalanceResponse? sourceProjection = await WaitForProjectionAsync(
@@ -329,8 +329,8 @@ public sealed class BankAccountIntegrationTests
             destinationInitialDeposit + transferAmount);
         sourceProjection.Should().NotBeNull("the source account projection should exist after the transfer");
         destinationProjection.Should().NotBeNull("the destination account projection should exist after the transfer");
-        sourceProjection!.Balance.Should().Be(sourceInitialDeposit - transferAmount);
-        destinationProjection!.Balance.Should().Be(destinationInitialDeposit + transferAmount);
+        sourceProjection.Balance.Should().Be(sourceInitialDeposit - transferAmount);
+        destinationProjection.Balance.Should().Be(destinationInitialDeposit + transferAmount);
     }
 
     /// <summary>
@@ -365,7 +365,7 @@ public sealed class BankAccountIntegrationTests
 
         // Assert
         projectionResult.Should().NotBeNull("projection should exist after opening account");
-        projectionResult!.HolderName.Should().Be(holderName);
+        projectionResult.HolderName.Should().Be(holderName);
         projectionResult.IsOpen.Should().BeTrue();
         projectionResult.Balance.Should().Be(initialDeposit);
     }

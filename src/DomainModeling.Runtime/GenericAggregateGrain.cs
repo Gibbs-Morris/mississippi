@@ -543,7 +543,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         TAggregate? updatedState = await SnapshotGrainFactory.GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
             .GetStateAsync(cancellationToken);
         long startingPosition = currentPosition.Value + 1;
-        DispatchFireAndForgetEffects(events, updatedState!, startingPosition);
+        DispatchFireAndForgetEffects(events, updatedState, startingPosition);
     }
 
     private async Task DispatchSynchronousEffectsAsync(
@@ -572,7 +572,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
         try
         {
-            await DispatchEffectsAsync(events, updatedState!, aggregateKey, startingPosition, cancellationToken);
+            await DispatchEffectsAsync(events, updatedState, aggregateKey, startingPosition, cancellationToken);
         }
         catch (Exception ex) when (!IsCriticalException(ex))
         {

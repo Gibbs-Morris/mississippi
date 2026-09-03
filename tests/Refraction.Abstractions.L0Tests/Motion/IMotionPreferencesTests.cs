@@ -39,6 +39,6 @@ public sealed class IMotionPreferencesTests
 
         // Assert
         Assert.NotNull(prop);
-        Assert.Equal(typeof(double), prop!.PropertyType);
+        Assert.Equal(typeof(double), prop.PropertyType);
     }
 }

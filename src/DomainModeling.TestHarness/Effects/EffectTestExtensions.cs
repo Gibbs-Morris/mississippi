@@ -67,7 +67,7 @@ public static class EffectTestExtensions
         (Type AggregateType, string EntityId, object Command)? match = commands.FirstOrDefault(c =>
             (c.AggregateType == typeof(TAggregate)) && ((entityId == null) || (c.EntityId == entityId)));
         match.Should().NotBeNull($"because a command should have been dispatched to {typeof(TAggregate).Name}");
-        return match!.Value;
+        return match.Value;
     }
 
     /// <summary>

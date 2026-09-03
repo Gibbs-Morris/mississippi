@@ -382,12 +382,12 @@ public sealed class BatchSizeEstimatorTests
             Id = "sample",
             Type = "event",
             Position = 1,
-            EventId = rich.Id!,
+            EventId = rich.Id,
             Source = rich.Source,
-            EventType = rich.EventType!,
+            EventType = rich.EventType,
             DataContentType = rich.DataContentType,
             Data = rich.Data.ToArray(),
-            Time = rich.Time!.Value,
+            Time = rich.Time.Value,
         };
         string serialized = JsonConvert.SerializeObject(expectedDoc);
         long expected = (long)(Encoding.UTF8.GetByteCount(serialized) * 1.3);

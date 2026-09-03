@@ -129,7 +129,7 @@ public sealed class ProjectionClientDtoGenerator : IIncrementalGenerator
         List<PropertyModel> nestedTypeProperties = projection.Model.Properties
             .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
                            prop.ElementDtoTypeName is not null &&
-                           !generatedNestedTypes.Contains(prop.ElementDtoTypeName!))
+                           !generatedNestedTypes.Contains(prop.ElementDtoTypeName))
             .GroupBy(prop => prop.ElementDtoTypeName)
             .Select(g => g.First())
             .ToList();

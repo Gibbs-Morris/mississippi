@@ -339,7 +339,7 @@ public sealed class SnapshotCosmosRepositoryTests
             new StubMapper<SnapshotStorageModel, SnapshotDocument>(document));
         SnapshotEnvelope? result = await repository.ReadAsync(SnapshotKey, CancellationToken.None);
         Assert.NotNull(result);
-        Assert.Equal(envelope.Data, result!.Data);
+        Assert.Equal(envelope.Data, result.Data);
         Assert.Equal(envelope.DataContentType, result.DataContentType);
     }
 
