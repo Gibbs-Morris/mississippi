@@ -34,6 +34,15 @@ internal sealed class TestableNavigationManager : NavigationManager
 
     private List<NavigationRecord> NavigationsInternal { get; } = [];
 
+    /// <summary>
+    ///     Raises the location-changed event for component tests.
+    /// </summary>
+    /// <param name="isNavigationIntercepted">Whether the navigation was intercepted.</param>
+    public void TriggerLocationChanged(
+        bool isNavigationIntercepted
+    ) =>
+        NotifyLocationChanged(isNavigationIntercepted);
+
     /// <inheritdoc />
     protected override void NavigateToCore(
         string uri,
