@@ -248,15 +248,17 @@ public sealed class AqueductHubLifetimeManager<THub>
         HubConnectionContext? connection = ConnectionRegistry.GetConnection(connectionId);
         if (connection != null)
         {
+            object?[] messageArgs = args ?? [];
+            if (!cancellationToken.CanBeCanceled)
+            {
+                await MessageSender.SendAsync(connection, methodName, messageArgs, connection.ConnectionAborted)
+                    .ConfigureAwait(false);
+                return;
+            }
+
             using CancellationTokenSource linkedCancellationTokenSource =
-                CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationToken,
-                    connection.ConnectionAborted);
-            await MessageSender.SendAsync(
-                    connection,
-                    methodName,
-                    args ?? [],
-                    linkedCancellationTokenSource.Token)
+                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, connection.ConnectionAborted);
+            await MessageSender.SendAsync(connection, methodName, messageArgs, linkedCancellationTokenSource.Token)
                 .ConfigureAwait(false);
             return;
         }

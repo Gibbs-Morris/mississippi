@@ -761,6 +761,42 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     SendConnectionAsync should use the connection token when the caller token cannot cancel.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendConnectionAsync Uses Connection Token Without Caller Cancellation")]
+    public async Task SendConnectionAsyncShouldUseConnectionTokenWithoutCallerCancellation()
+    {
+        // Arrange
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        using CancellationTokenSource connectionAbortSource = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn1",
+            connectionAborted: connectionAbortSource.Token);
+        connectionRegistry.GetConnection("conn1").Returns(connection);
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken forwardedCancellationToken = default;
+        messageSender.SendAsync(
+                connection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                Arg.Do<CancellationToken>(token => forwardedCancellationToken = token))
+            .Returns(sendCompletion.Task);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            messageSender: messageSender);
+
+        // Act
+        Task sendTask = manager.SendConnectionAsync("conn1", "MethodName", [], CancellationToken.None);
+
+        // Assert
+        Assert.Equal(connection.ConnectionAborted, forwardedCancellationToken);
+        sendCompletion.SetResult();
+        await sendTask;
+    }
+
+    /// <summary>
     ///     SendConnectionsAsync should throw when connectionIds is null.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
