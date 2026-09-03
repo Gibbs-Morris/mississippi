@@ -119,6 +119,7 @@ internal sealed class StreamSubscriptionManager
                     message,
                     token
                 ) => await onServerMessage(message).ConfigureAwait(false))
+                .WaitAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             // Subscribe to hub broadcast stream
@@ -128,6 +129,7 @@ internal sealed class StreamSubscriptionManager
                     message,
                     token
                 ) => await onAllMessage(message).ConfigureAwait(false))
+                .WaitAsync(cancellationToken)
                 .ConfigureAwait(false);
             initialized = true;
             Logger.StreamsInitialized(hubName, ServerId);

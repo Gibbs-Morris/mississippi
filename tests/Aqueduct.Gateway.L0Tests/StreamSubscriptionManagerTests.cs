@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -170,6 +171,41 @@ public sealed class StreamSubscriptionManagerTests
 
         // Assert - Should not throw
         Assert.True(true);
+    }
+
+    /// <summary>
+    ///     EnsureInitializedAsync should cancel while subscribing to a stream.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "EnsureInitializedAsync Cancels Pending Subscription")]
+    public async Task EnsureInitializedAsyncShouldCancelPendingSubscription()
+    {
+        // Arrange
+        IClusterClient clusterClient = Substitute.For<IClusterClient>();
+        IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
+        ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
+        IStreamProvider streamProvider = Substitute.For<IStreamProvider>();
+        IAsyncStream<ServerMessage> serverStream = Substitute.For<IAsyncStream<ServerMessage>>();
+        CancellationToken cancellationToken = CancellationToken.None;
+        CancellationToken canceledSubscriptionToken = new(true);
+        ServiceCollection services = new();
+        services.AddKeyedSingleton<IStreamProvider>(options.Value.StreamProviderName, streamProvider);
+        using ServiceProvider serviceProvider = services.BuildServiceProvider();
+        clusterClient.ServiceProvider.Returns(serviceProvider);
+        streamProvider.GetStream<ServerMessage>(Arg.Any<StreamId>()).Returns(serverStream);
+        serverStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
+            .Returns(Task.FromCanceled<StreamSubscriptionHandle<ServerMessage>>(canceledSubscriptionToken));
+        using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
+
+        // Act
+        await Assert.ThrowsAsync<TaskCanceledException>(() => manager.EnsureInitializedAsync(
+            "TestHub",
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            cancellationToken));
+
+        // Assert
+        _ = serverStream.Received(1).SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>());
     }
 
     /// <summary>

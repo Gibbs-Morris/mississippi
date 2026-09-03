@@ -108,7 +108,9 @@ internal sealed class HeartbeatManager : IHeartbeatManager
 
             // Register with server directory
             ISignalRServerDirectoryGrain directoryGrain = GrainFactory.GetServerDirectoryGrain();
-            await directoryGrain.RegisterServerAsync(ServerId).ConfigureAwait(false);
+            await directoryGrain.RegisterServerAsync(ServerId, cancellationToken)
+                .WaitAsync(cancellationToken)
+                .ConfigureAwait(false);
             Logger.HeartbeatStarted(ServerId);
 
             // Start heartbeat timer
