@@ -671,6 +671,46 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     SendAllAsync and SendAllExceptAsync should use the host application stopping token for shared setup.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendAll Methods Use Host Application Stopping Token For Shared Setup")]
+    public async Task SendAllMethodsShouldUseHostApplicationStoppingTokenForSharedSetup()
+    {
+        // Arrange
+        using CancellationTokenSource applicationStoppingSource = new();
+        using CancellationTokenSource requestCancellationSource = new();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
+        hostApplicationLifetime.ApplicationStopping.Returns(applicationStoppingSource.Token);
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        streamSubscriptionManager.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            heartbeatManager: heartbeatManager,
+            hostApplicationLifetime: hostApplicationLifetime,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.SendAllAsync("MethodName", [], requestCancellationSource.Token);
+        await manager.SendAllExceptAsync("MethodName", [], ["excluded"], requestCancellationSource.Token);
+
+        // Assert
+        await streamSubscriptionManager.Received(2)
+            .EnsureInitializedAsync(
+                "TestAqueductHub",
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                applicationStoppingSource.Token);
+        await heartbeatManager.Received(2).StartAsync(Arg.Any<Func<int>>(), applicationStoppingSource.Token);
+    }
+
+    /// <summary>
     ///     SendConnectionAsync should cancel a forwarded token when the connection aborts.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
