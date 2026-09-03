@@ -724,9 +724,9 @@ public sealed class AqueductHubLifetimeManagerTests
 
         // Assert
         Assert.False(forwardedCancellationToken.IsCancellationRequested);
-        await connectionAbortSource.CancelAsync();
-        Assert.True(forwardedCancellationToken.IsCancellationRequested);
         await callerCancellationSource.CancelAsync();
+        Assert.True(forwardedCancellationToken.IsCancellationRequested);
+        await connectionAbortSource.CancelAsync();
         Assert.True(forwardedCancellationToken.IsCancellationRequested);
         sendCompletion.SetResult();
         await sendTask;
