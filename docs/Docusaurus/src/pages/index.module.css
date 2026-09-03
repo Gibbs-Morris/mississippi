@@ -738,6 +738,15 @@
   }
 }
 
+@media screen and (max-width: 720px) {
+  .splitHeading,
+  .sectionIntro,
+  .proofLayout,
+  .maturityLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media screen and (max-width: 560px) {
   .hero {
     padding: 3.5rem 1.15rem;
@@ -765,10 +774,6 @@
     padding-right: 1.15rem;
   }
 
-  .splitHeading,
-  .sectionIntro,
-  .proofLayout,
-  .maturityLayout,
   .fitGrid,
   .poorFit {
     grid-template-columns: 1fr;

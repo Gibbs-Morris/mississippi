@@ -138,6 +138,17 @@ test.describe('Mississippi site', () => {
     );
   });
 
+  test('two-column content collapses at narrow tablet widths', async ({page}) => {
+    await page.setViewportSize({width: 600, height: 900});
+    await page.goto('./');
+
+    const seamLayout = page.locator('#seam-heading').locator('..');
+    await expect(seamLayout).toHaveCSS(
+      'grid-template-columns',
+      /^\d+(?:\.\d+)?px$/,
+    );
+  });
+
   test('technical documentation uses intent-first navigation', async ({page}) => {
     await page.goto('docs/');
 
