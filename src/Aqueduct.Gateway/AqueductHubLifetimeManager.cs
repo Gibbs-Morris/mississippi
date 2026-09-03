@@ -422,8 +422,15 @@ public sealed class AqueductHubLifetimeManager<THub>
         HubConnectionContext? connection = ConnectionRegistry.GetConnection(message.ConnectionId);
         if (connection != null)
         {
-            await MessageSender.SendAsync(connection, message.MethodName, message.Args, connection.ConnectionAborted)
-                .ConfigureAwait(false);
+            try
+            {
+                await MessageSender.SendAsync(connection, message.MethodName, message.Args, connection.ConnectionAborted)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (connection.ConnectionAborted.IsCancellationRequested)
+            {
+                // A connection can abort after the registry lookup and before the write completes.
+            }
         }
     }
 }
