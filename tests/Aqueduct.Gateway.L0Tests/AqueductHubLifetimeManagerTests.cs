@@ -444,7 +444,11 @@ public sealed class AqueductHubLifetimeManagerTests
     public async Task OnAllMessageAsyncShouldContinueAfterConnectionAborts()
     {
         // Arrange
-        HubConnectionContext abortedConnection = HubConnectionContextFactory.Create("aborted");
+        CancellationToken abortedConnectionToken = new(canceled: true);
+        HubConnectionContext abortedConnection = HubConnectionContextFactory.Create(
+            "aborted",
+            connectionAborted: abortedConnectionToken);
+        Assert.True(abortedConnection.ConnectionAborted.IsCancellationRequested);
         HubConnectionContext healthyConnection = HubConnectionContextFactory.Create("healthy");
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         connectionRegistry.GetAll().Returns([abortedConnection, healthyConnection]);
@@ -455,7 +459,7 @@ public sealed class AqueductHubLifetimeManagerTests
                 "MethodName",
                 Arg.Any<IReadOnlyList<object?>>(),
                 abortedConnection.ConnectionAborted)
-            .Returns(Task.FromCanceled(new CancellationToken(canceled: true)));
+            .Returns(Task.FromCanceled(abortedConnection.ConnectionAborted));
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
         Func<AllMessage, Task>? onAllMessage = null;
         streamSubscriptionManager

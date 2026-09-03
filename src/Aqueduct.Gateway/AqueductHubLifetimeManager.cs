@@ -407,7 +407,7 @@ public sealed class AqueductHubLifetimeManager<THub>
                             connection.ConnectionAborted)
                         .ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (connection.ConnectionAborted.IsCancellationRequested)
                 {
                     // A connection can abort after the pre-check and before the write completes.
                 }
