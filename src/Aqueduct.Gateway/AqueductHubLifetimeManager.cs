@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Aqueduct.Abstractions;
@@ -70,6 +71,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     /// <param name="messageSender">The service for sending messages to local connections.</param>
     /// <param name="heartbeatManager">The manager for server heartbeat operations.</param>
     /// <param name="streamSubscriptionManager">The manager for Orleans stream subscriptions.</param>
+    /// <param name="applicationLifetime">The host application lifetime.</param>
     /// <param name="logger">Logger instance for backplane operations.</param>
     public AqueductHubLifetimeManager(
         IServerIdProvider serverIdProvider,
@@ -78,6 +80,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         ILocalMessageSender messageSender,
         IHeartbeatManager heartbeatManager,
         IStreamSubscriptionManager streamSubscriptionManager,
+        IHostApplicationLifetime applicationLifetime,
         ILogger<AqueductHubLifetimeManager<THub>> logger
     )
     {
@@ -88,10 +91,13 @@ public sealed class AqueductHubLifetimeManager<THub>
         HeartbeatManager = heartbeatManager ?? throw new ArgumentNullException(nameof(heartbeatManager));
         StreamSubscriptionManager = streamSubscriptionManager ??
                                     throw new ArgumentNullException(nameof(streamSubscriptionManager));
+        ApplicationLifetime = applicationLifetime ?? throw new ArgumentNullException(nameof(applicationLifetime));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         ServerId = serverIdProvider.ServerId;
         hubName = DeriveHubName();
     }
+
+    private IHostApplicationLifetime ApplicationLifetime { get; }
 
     private IConnectionRegistry ConnectionRegistry { get; }
 
@@ -141,7 +147,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     )
     {
         ArgumentNullException.ThrowIfNull(connection);
-        await EnsureStreamSetupAsync().ConfigureAwait(false);
+        await EnsureStreamSetupAsync(ApplicationLifetime.ApplicationStopping).ConfigureAwait(false);
         ConnectionRegistry.TryAdd(connection.ConnectionId, connection);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.ConnectAsync(hubName, ServerId).ConfigureAwait(false);
@@ -241,7 +247,8 @@ public sealed class AqueductHubLifetimeManager<THub>
         HubConnectionContext? connection = ConnectionRegistry.GetConnection(connectionId);
         if (connection != null)
         {
-            await MessageSender.SendAsync(connection, methodName, args ?? []).ConfigureAwait(false);
+            await MessageSender.SendAsync(connection, methodName, args ?? [], connection.ConnectionAborted)
+                .ConfigureAwait(false);
             return;
         }
 
@@ -390,7 +397,12 @@ public sealed class AqueductHubLifetimeManager<THub>
             bool isExcluded = message.ExcludedConnectionIds?.Contains(connection.ConnectionId) ?? false;
             if (!isExcluded)
             {
-                await MessageSender.SendAsync(connection, message.MethodName, message.Args).ConfigureAwait(false);
+                await MessageSender.SendAsync(
+                        connection,
+                        message.MethodName,
+                        message.Args,
+                        connection.ConnectionAborted)
+                    .ConfigureAwait(false);
             }
         }
     }
@@ -402,7 +414,8 @@ public sealed class AqueductHubLifetimeManager<THub>
         HubConnectionContext? connection = ConnectionRegistry.GetConnection(message.ConnectionId);
         if (connection != null)
         {
-            await MessageSender.SendAsync(connection, message.MethodName, message.Args).ConfigureAwait(false);
+            await MessageSender.SendAsync(connection, message.MethodName, message.Args, connection.ConnectionAborted)
+                .ConfigureAwait(false);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
@@ -28,10 +29,12 @@ public interface ILocalMessageSender
     /// <param name="connection">The target hub connection context.</param>
     /// <param name="methodName">The name of the hub method to invoke on the client.</param>
     /// <param name="args">The arguments to pass to the hub method.</param>
+    /// <param name="cancellationToken">The token that cancels the write operation.</param>
     /// <returns>A task representing the asynchronous send operation.</returns>
     Task SendAsync(
         HubConnectionContext connection,
         string methodName,
-        IReadOnlyList<object?> args
+        IReadOnlyList<object?> args,
+        CancellationToken cancellationToken
     );
 }
