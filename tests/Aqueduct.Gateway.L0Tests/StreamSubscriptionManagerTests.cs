@@ -186,26 +186,41 @@ public sealed class StreamSubscriptionManagerTests
         ILogger<StreamSubscriptionManager> logger = Substitute.For<ILogger<StreamSubscriptionManager>>();
         IStreamProvider streamProvider = Substitute.For<IStreamProvider>();
         IAsyncStream<ServerMessage> serverStream = Substitute.For<IAsyncStream<ServerMessage>>();
-        CancellationToken cancellationToken = CancellationToken.None;
-        CancellationToken canceledSubscriptionToken = new(true);
+        IAsyncStream<AllMessage> allStream = Substitute.For<IAsyncStream<AllMessage>>();
+        using CancellationTokenSource cancellationSource = new();
+        StreamSubscriptionHandle<ServerMessage> firstServerSubscription =
+            Substitute.For<StreamSubscriptionHandle<ServerMessage>>();
+        StreamSubscriptionHandle<ServerMessage> secondServerSubscription =
+            Substitute.For<StreamSubscriptionHandle<ServerMessage>>();
+        StreamSubscriptionHandle<AllMessage> allSubscription = Substitute.For<StreamSubscriptionHandle<AllMessage>>();
+        TaskCompletionSource<StreamSubscriptionHandle<ServerMessage>> firstSubscriptionCompletion =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
         ServiceCollection services = new();
         services.AddKeyedSingleton<IStreamProvider>(options.Value.StreamProviderName, streamProvider);
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
         clusterClient.ServiceProvider.Returns(serviceProvider);
         streamProvider.GetStream<ServerMessage>(Arg.Any<StreamId>()).Returns(serverStream);
+        streamProvider.GetStream<AllMessage>(Arg.Any<StreamId>()).Returns(allStream);
         serverStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
-            .Returns(Task.FromCanceled<StreamSubscriptionHandle<ServerMessage>>(canceledSubscriptionToken));
+            .Returns(firstSubscriptionCompletion.Task, Task.FromResult(secondServerSubscription));
+        allStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>()).Returns(Task.FromResult(allSubscription));
         using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act
-        await Assert.ThrowsAsync<TaskCanceledException>(() => manager.EnsureInitializedAsync(
+        Task initializationTask = manager.EnsureInitializedAsync(
             "TestHub",
             _ => Task.CompletedTask,
             _ => Task.CompletedTask,
-            cancellationToken));
+            cancellationSource.Token);
+        await cancellationSource.CancelAsync();
+        await Assert.ThrowsAsync<TaskCanceledException>(() => initializationTask.WaitAsync(CancellationToken.None));
+        firstSubscriptionCompletion.SetResult(firstServerSubscription);
+        await manager.EnsureInitializedAsync("TestHub", _ => Task.CompletedTask, _ => Task.CompletedTask);
 
         // Assert
-        _ = serverStream.Received(1).SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>());
+        await firstServerSubscription.Received(1).UnsubscribeAsync();
+        _ = serverStream.Received(2).SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>());
+        _ = allStream.Received(1).SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>());
     }
 
     /// <summary>

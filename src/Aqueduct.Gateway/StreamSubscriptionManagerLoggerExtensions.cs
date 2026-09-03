@@ -1,3 +1,5 @@
+using System;
+
 using Microsoft.Extensions.Logging;
 
 
@@ -26,5 +28,24 @@ internal static partial class StreamSubscriptionManagerLoggerExtensions
         this ILogger logger,
         string hubName,
         string serverId
+    );
+
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Debug,
+        Message = "Orleans stream subscription was canceled before a handle was created (serverId: {ServerId})")]
+    public static partial void SubscriptionCleanupCanceled(
+        this ILogger logger,
+        string serverId
+    );
+
+    [LoggerMessage(
+        EventId = 3,
+        Level = LogLevel.Warning,
+        Message = "Failed to clean up canceled Orleans stream subscription (serverId: {ServerId})")]
+    public static partial void SubscriptionCleanupFailed(
+        this ILogger logger,
+        string serverId,
+        Exception exception
     );
 }
