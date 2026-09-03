@@ -671,6 +671,47 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     SendConnectionAsync should cancel a forwarded token when the connection aborts.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendConnectionAsync Cancels Forwarded Token When Connection Aborts")]
+    public async Task SendConnectionAsyncShouldCancelForwardedTokenWhenConnectionAborts()
+    {
+        // Arrange
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        using CancellationTokenSource callerCancellationSource = new();
+        using CancellationTokenSource connectionAbortSource = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn1",
+            connectionAborted: connectionAbortSource.Token);
+        connectionRegistry.GetConnection("conn1").Returns(connection);
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken forwardedCancellationToken = default;
+        messageSender.SendAsync(
+                connection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                Arg.Do<CancellationToken>(token => forwardedCancellationToken = token))
+            .Returns(sendCompletion.Task);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            messageSender: messageSender);
+        object?[] args = ["arg1", 42];
+
+        // Act
+        Task sendTask = manager.SendConnectionAsync("conn1", "MethodName", args, callerCancellationSource.Token);
+
+        // Assert
+        Assert.False(forwardedCancellationToken.IsCancellationRequested);
+        await connectionAbortSource.CancelAsync();
+        Assert.True(forwardedCancellationToken.IsCancellationRequested);
+        Assert.False(callerCancellationSource.IsCancellationRequested);
+        sendCompletion.SetResult();
+        await sendTask;
+    }
+
+    /// <summary>
     ///     SendConnectionAsync should route via client grain if not local.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
