@@ -88,8 +88,8 @@ At a high level:
 ## Related Tasks And Reference
 
 - [Saga Public APIs](../reference/event-sourcing-sagas-public-apis.md) - Reference for saga contracts, events, results, and registration helpers
-- [Building a Saga](../../docs/samples/spring-sample/tutorials/building-a-saga.md) - Spring sample tutorial for a concrete money-transfer saga
-- [Building Projections](../../docs/samples/spring-sample/tutorials/building-projections.md) - Tutorial for projections, including saga status projection generation
+- [Building a Saga](../../docs/tutorials/spring/building-a-saga.md) - Spring sample tutorial for a concrete money-transfer saga
+- [Building Projections](../../docs/tutorials/spring/building-projections.md) - Tutorial for projections, including saga status projection generation
 - [Domain Registration Generators](../reference/domain-registration-generators.md) - Reference for generated host registration methods used by sample and framework hosts
 
 ## Summary
@@ -103,6 +103,6 @@ Use sagas when you need to coordinate multiple aggregates or irreversible action
 ## Next Steps
 
 - [Saga Public APIs](../reference/event-sourcing-sagas-public-apis.md) - Read the detailed saga contracts, lifecycle types, and registration helpers.
-- [Building a Saga](../../docs/samples/spring-sample/tutorials/building-a-saga.md) - Build a concrete saga end to end in the Spring sample.
-- [Building Projections](../../docs/samples/spring-sample/tutorials/building-projections.md) - Surface saga state to clients with status projections.
+- [Building a Saga](../../docs/tutorials/spring/building-a-saga.md) - Build a concrete saga end to end in the Spring sample.
+- [Building Projections](../../docs/tutorials/spring/building-projections.md) - Surface saga state to clients with status projections.
 - [Domain Registration Generators](../reference/domain-registration-generators.md) - Review the generated host registration helpers used to wire sagas into hosts.

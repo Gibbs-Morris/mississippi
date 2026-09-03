@@ -110,4 +110,4 @@ Representative source:
 
 - [Event Sourcing Sagas](../concepts/event-sourcing-sagas.md)
 - [Saga Public APIs](event-sourcing-sagas-public-apis.md)
-- [Spring Sample App](../../docs/samples/spring-sample/index.md)
+- [Spring Sample App](../../docs/tutorials/spring/index.md)
