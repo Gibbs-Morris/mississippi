@@ -20,7 +20,7 @@ Use this table to choose the page type that matches your question.
 
 | If you need to... | Start here | Page type |
 | --- | --- | --- |
-| Learn Mississippi by following a complete sample | [Spring Sample App](../docs/samples/spring-sample/index.md) | Overview + tutorials |
+| Learn Mississippi by following a complete sample | [Spring Sample App](../docs/tutorials/spring/index.md) | Overview + tutorials |
 | Understand Reservoir's dispatch model and feature surfaces | [Reservoir](client-state-management/reservoir.md) | Concepts + reference |
 | Understand saga orchestration and trade-offs | [Event Sourcing Sagas](concepts/event-sourcing-sagas.md) | Concepts |
 | Look up saga contracts or generated registration methods | [Reference](reference/index.md) | Reference |
@@ -30,7 +30,7 @@ Use this table to choose the page type that matches your question.
 
 The current docs set focuses on the documented surfaces that have source-backed pages today.
 
-- [Spring Sample App](../docs/samples/spring-sample/index.md) groups concept pages, tutorials, and how-to guides for the `samples/Spring` application.
+- [Spring Sample App](../docs/tutorials/spring/index.md) groups concept pages, tutorials, and how-to guides for the `samples/Spring` application.
 - [Client State Management](client-state-management/reservoir.md) groups Reservoir overview, reference pages, and testing guidance.
 - [Concepts](concepts/index.md) contains framework mental models.
 - [Reference](reference/index.md) contains framework contracts and generated-surface reference.
@@ -48,7 +48,7 @@ The following areas still need dedicated pages rather than being inferred from u
 
 ## Learn More
 
-- [Spring Sample App](../docs/samples/spring-sample/index.md) - Learn the domain-first Mississippi workflow through guided tutorials and local validation guides
+- [Spring Sample App](../docs/tutorials/spring/index.md) - Learn the domain-first Mississippi workflow through guided tutorials and local validation guides
 - [Reservoir](client-state-management/reservoir.md) - Understand Reservoir's dispatch pipeline and browse its reference pages
 - [Event Sourcing Sagas](concepts/event-sourcing-sagas.md) - Learn the saga model and how it fits Mississippi event sourcing
 - [Reference](reference/index.md) - Look up saga contracts and generated registration methods
