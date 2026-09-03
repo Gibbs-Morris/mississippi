@@ -45,6 +45,26 @@ public sealed class LocalMessageSenderTests
     }
 
     /// <summary>
+    ///     SendAsync should honor a canceled cancellation token.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendAsync Honors Canceled Cancellation Token")]
+    public async Task SendAsyncShouldHonorCanceledCancellationToken()
+    {
+        // Arrange
+        ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
+        LocalMessageSender sender = new(logger);
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn-1",
+            connectionAborted: CancellationToken.None);
+        CancellationToken canceledToken = new(true);
+
+        // Act & Assert
+        Task sendTask = sender.SendAsync(connection, "TestMethod", [], canceledToken);
+        Assert.True(sendTask.IsCanceled);
+    }
+
+    /// <summary>
     ///     SendAsync should succeed with empty args list.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>

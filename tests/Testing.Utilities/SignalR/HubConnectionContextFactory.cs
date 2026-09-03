@@ -1,9 +1,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.Logging.Abstractions;
 
 
@@ -72,5 +74,14 @@ public static class HubConnectionContextFactory
             ConnectionAborted = connectionAborted;
 
         public override CancellationToken ConnectionAborted { get; }
+
+        /// <inheritdoc />
+        public override ValueTask WriteAsync(
+            HubMessage message,
+            CancellationToken cancellationToken = default
+        ) =>
+            cancellationToken.IsCancellationRequested
+                ? ValueTask.FromCanceled(cancellationToken)
+                : ValueTask.CompletedTask;
     }
 }
