@@ -60,8 +60,11 @@ public sealed class LocalMessageSenderTests
         CancellationToken canceledToken = new(true);
 
         // Act & Assert
-        Task sendTask = sender.SendAsync(connection, "TestMethod", [], canceledToken);
-        Assert.True(sendTask.IsCanceled);
+        await Assert.ThrowsAsync<TaskCanceledException>(() => sender.SendAsync(
+            connection,
+            "TestMethod",
+            [],
+            canceledToken));
     }
 
     /// <summary>
