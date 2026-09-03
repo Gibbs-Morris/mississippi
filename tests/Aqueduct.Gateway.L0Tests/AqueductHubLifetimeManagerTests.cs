@@ -393,22 +393,22 @@ public sealed class AqueductHubLifetimeManagerTests
     public async Task OnAllMessageAsyncShouldContinueAfterConnectionAborts()
     {
         // Arrange
-        CancellationToken abortedConnectionToken = new(true);
+        using CancellationTokenSource abortedConnectionSource = new();
         HubConnectionContext abortedConnection = HubConnectionContextFactory.Create(
             "aborted",
-            connectionAborted: abortedConnectionToken);
-        Assert.True(abortedConnection.ConnectionAborted.IsCancellationRequested);
+            connectionAborted: abortedConnectionSource.Token);
         HubConnectionContext healthyConnection = HubConnectionContextFactory.Create("healthy");
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         connectionRegistry.GetAll().Returns([abortedConnection, healthyConnection]);
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         object?[] args = [];
+        TaskCompletionSource abortedSendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         messageSender.SendAsync(
                 abortedConnection,
                 "MethodName",
                 Arg.Any<IReadOnlyList<object?>>(),
                 abortedConnection.ConnectionAborted)
-            .Returns(Task.FromCanceled(abortedConnection.ConnectionAborted));
+            .Returns(abortedSendCompletion.Task);
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
         Func<AllMessage, Task>? onAllMessage = null;
         streamSubscriptionManager.EnsureInitializedAsync(
@@ -429,12 +429,15 @@ public sealed class AqueductHubLifetimeManagerTests
         await manager.SendAllAsync("MethodName", args);
         Func<AllMessage, Task> callback = onAllMessage ??
                                           throw new InvalidOperationException("All-message callback was not captured.");
-        await callback(
+        Task callbackTask = callback(
             new()
             {
                 MethodName = "MethodName",
                 Args = args,
             });
+        await abortedConnectionSource.CancelAsync();
+        abortedSendCompletion.SetCanceled(abortedConnectionSource.Token);
+        await callbackTask;
 
         // Assert
         await messageSender.Received(1)
