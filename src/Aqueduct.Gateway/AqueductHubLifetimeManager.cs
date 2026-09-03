@@ -267,11 +267,12 @@ public sealed class AqueductHubLifetimeManager<THub>
                 await MessageSender.SendAsync(connection, methodName, messageArgs, linkedCancellationTokenSource.Token)
                     .ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (
+            catch (OperationCanceledException exception) when (
                 connection.ConnectionAborted.IsCancellationRequested &&
                 !cancellationToken.IsCancellationRequested)
             {
                 // A connection can abort after the pre-check and before the write completes.
+                Logger.MessageDeliveryCanceled(connection.ConnectionId, "direct send", exception);
             }
 
             return;
@@ -431,9 +432,10 @@ public sealed class AqueductHubLifetimeManager<THub>
                             connection.ConnectionAborted)
                         .ConfigureAwait(false);
                 }
-                catch (OperationCanceledException) when (connection.ConnectionAborted.IsCancellationRequested)
+                catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested)
                 {
                     // A connection can abort after the pre-check and before the write completes.
+                    Logger.MessageDeliveryCanceled(connection.ConnectionId, "broadcast", exception);
                 }
             }
         }
@@ -455,9 +457,10 @@ public sealed class AqueductHubLifetimeManager<THub>
                         connection.ConnectionAborted)
                     .ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (connection.ConnectionAborted.IsCancellationRequested)
+            catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested)
             {
                 // A connection can abort after the registry lookup and before the write completes.
+                Logger.MessageDeliveryCanceled(connection.ConnectionId, "targeted send", exception);
             }
         }
     }
