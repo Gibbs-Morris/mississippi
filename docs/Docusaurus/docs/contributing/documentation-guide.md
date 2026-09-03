@@ -10,9 +10,25 @@ description: Author the right kind of Mississippi documentation page with verifi
 
 ## Overview
 
-Write documentation for engineers building on Mississippi, not marketing copy for a product launch.
+Write technical documentation for engineers building on Mississippi, not marketing copy for a product launch.
 
 These rules apply to public docs under `docs/Docusaurus/docs/` and define the writing contract the rest of the docs set should follow.
+
+## Boundary With Marketing
+
+Mississippi uses one Docusaurus deployment for two different communication jobs.
+
+- Marketing pages under `docs/Docusaurus/src/pages/` may use a bold,
+  opinionated startup voice, metaphor, and clearly framed ambition.
+- Technical pages under `docs/Docusaurus/docs/` define current behavior,
+  constraints, configuration, and failure semantics from evidence.
+- A marketing promise can link to technical proof, but it cannot be copied into
+  technical documentation and treated as a guarantee.
+- Technical documentation may explain why a capability matters when it ties the
+  benefit to a verified mechanism and does not imply measured impact.
+
+Security, compatibility, performance, production readiness, and quantified
+results always require evidence, regardless of which surface mentions them.
 
 ## Mission
 
@@ -196,13 +212,16 @@ Mississippi is in a hybrid transition.
 - Define the reader before writing.
 - Use active voice and present tense.
 - Use one idea per sentence.
-- Avoid marketing language and vague qualifiers.
+- Avoid promotional promises and vague qualifiers; explain practical value by
+  connecting it to a verified mechanism.
 - Use RFC 2119 terms only in rules sections.
 
 ## Summary
 
 - choose the page type before writing
 - keep every technical claim tied to repository evidence
+- keep startup promises on marketing surfaces and exact behavior in technical
+  documentation
 - follow the required structure and closing-section rules
 - validate links, examples, and build output before treating a docs change as complete
 

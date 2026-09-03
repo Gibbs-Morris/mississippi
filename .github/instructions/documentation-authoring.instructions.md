@@ -4,13 +4,16 @@ applyTo: 'docs/Docusaurus/docs/**/*.{md,mdx}'
 
 # Documentation Authoring
 
-Governing thought: Mississippi documentation exists to help engineers make correct decisions and complete real work without invented behavior, blurred guarantees, or navigation debt.
+Governing thought: Mississippi technical documentation helps engineers make correct decisions and complete real work, while marketing surfaces carry the startup's broader narrative and ambition.
 
 > Drift check: The public authoring model lives under `docs/Docusaurus/docs/contributing/`; keep this instruction aligned with that Docusaurus guidance.
 
 ## Rules (RFC 2119)
 
-- Authors **MUST** optimize for correctness, clarity, navigability, and maintainability; authors **MUST NOT** optimize for marketing tone. Why: Mississippi docs are engineering guidance, not promotional copy.
+- Authors **MUST** optimize technical documentation for correctness, clarity, navigability, and maintainability. Why: Technical documentation is a contract surface.
+- Promotional or aspirational copy **MUST** live on governed marketing surfaces. Why: Startup storytelling has a separate job and evidence model.
+- Authors **MAY** explain why a capability matters when the outcome is tied to a verified mechanism and clearly distinguished from measured impact or a current guarantee. Why: Engineering readers benefit from rationale without having to interpret sales language as runtime behavior.
+- Content moved between marketing and technical surfaces **MUST** be rewritten for the destination's claim model rather than copied unchanged. Why: A bold marketing promise and a technical guarantee require different evidence and wording.
 - Authors **MUST NOT** invent APIs, configuration keys, defaults, guarantees, limits, exception types, or runtime behavior. Why: Documentation is a contract surface.
 - Claims **MUST** be backed by source code, tests, verified samples, design docs, ADRs, or runtime evidence; if a claim cannot be verified, it **MUST NOT** be published as fact. Why: Truthfulness is non-negotiable.
 - Authors **MUST** distinguish guaranteed behavior, default behavior, typical behavior, implementation detail, unsupported behavior, and future intent. Why: Readers need to know what Mississippi actually promises.
@@ -29,7 +32,7 @@ Governing thought: Mississippi documentation exists to help engineers make corre
 
 ## Scope and Audience
 
-All contributors and agents writing or updating public docs under `docs/Docusaurus/docs/`.
+All contributors and agents writing or updating technical docs under `docs/Docusaurus/docs/`. Marketing pages under `docs/Docusaurus/src/pages/` follow the marketing-authoring instructions instead.
 
 ## At-a-Glance Quick-Start
 
@@ -54,7 +57,8 @@ All contributors and agents writing or updating public docs under `docs/Docusaur
 
 ## Core Principles
 
-- **Truth Before Style**: Verified content matters more than polished prose.
+- **Truth Before Style**: Verified technical content matters more than polished prose.
+- **Two Surfaces, Two Jobs**: Marketing may express an evidenced vision; technical documentation defines current behavior.
 - **Single Question Per Page**: Readers should know immediately whether they are in the right place.
 - **Page Type Is The Contract**: Physical location may migrate, but page type still governs structure and content.
 - **Evidence And Adjacency**: Every page should say what is true, what is not guaranteed, and where the reader goes next.
@@ -93,5 +97,6 @@ Before publishing, confirm that:
 ## References
 
 - Public guide: `docs/Docusaurus/docs/contributing/documentation-guide.md`
+- Marketing authoring: `.github/instructions/marketing-authoring.instructions.md`
 - Markdown standards: `.github/instructions/markdown.instructions.md`
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`

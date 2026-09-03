@@ -1,0 +1,286 @@
+---
+title: Mississippi
+description: An opinionated .NET application model for business state that must remain explainable, recoverable, and live.
+hide_table_of_contents: true
+wrapperClassName: marketing-landing
+---
+
+import Link from '@docusaurus/Link';
+import styles from './index.module.css';
+
+<div className={styles.page}>
+  <section className={styles.hero} aria-labelledby="mississippi-heading">
+    <div className={styles.heroGlow} aria-hidden="true" />
+    <div className={styles.heroContent}>
+      <div className={styles.heroCopy}>
+        <p className={styles.eyebrow}><span className={styles.statusDot} aria-hidden="true" />Early alpha · built for technical evaluation</p>
+        <h1 id="mississippi-heading">Software should remember <em>why</em> it changed.</h1>
+        <p className={styles.lede}>Mississippi gives every important business identity one place to decide, a durable history of what happened, and a coherent path from domain rule to live user experience.</p>
+        <div className={styles.actions}>
+          <Link className={styles.primaryAction} to="/docs/next/concepts/concepts-architectural-model">Evaluate the architecture <span aria-hidden="true">→</span></Link>
+          <a
+            className={styles.secondaryAction}
+            href="https://github.com/Gibbs-Morris/mississippi"
+          >Inspect the source</a>
+        </div>
+        <p className={styles.alphaNote}>Pre-1.0 and not recommended for production use.</p>
+      </div>
+
+      <aside className={styles.traceCard} aria-label="An illustrative Mississippi decision path">
+        <div className={styles.traceHeader}>
+          <span>Illustrative path</span>
+          <code>account/42</code>
+        </div>
+        <ol className={styles.traceList}>
+          <li>
+            <span className={styles.traceIndex}>01</span>
+            <div><strong>Intent</strong><code>ApproveTransfer</code></div>
+          </li>
+          <li>
+            <span className={styles.traceIndex}>02</span>
+            <div><strong>Owner</strong><code>Account grain</code></div>
+          </li>
+          <li>
+            <span className={styles.traceIndex}>03</span>
+            <div><strong>Fact</strong><code>TransferApproved</code></div>
+          </li>
+          <li>
+            <span className={styles.traceIndex}>04</span>
+            <div><strong>View</strong><code>Balance v118</code></div>
+          </li>
+          <li>
+            <span className={styles.traceIndex}>05</span>
+            <div><strong>Experience</strong><code>Client synchronized</code></div>
+          </li>
+        </ol>
+        <div className={styles.traceFooter}><span aria-hidden="true">◇</span>Conceptual flow · not runtime telemetry.</div>
+      </aside>
+    </div>
+  </section>
+
+  <section className={styles.principles} aria-label="Mississippi principles">
+    <div className={styles.sectionInner}>
+      <ol className={styles.principleList}>
+        <li><span>01</span><strong>Own</strong> the decision</li>
+        <li><span>02</span><strong>Preserve</strong> the fact</li>
+        <li><span>03</span><strong>Rebuild</strong> the view</li>
+        <li><span>04</span><strong>Deliver</strong> the version</li>
+      </ol>
+    </div>
+  </section>
+
+  <section className={styles.problemSection} aria-labelledby="seam-heading">
+    <div className={styles.sectionInner}>
+      <p className={styles.sectionLabel}>The seam problem</p>
+      <div className={styles.splitHeading}>
+        <h2 id="seam-heading">Your business rules are not the whole system.</h2>
+        <div>
+          <p>A decision starts in the domain, but it has to survive persistence, concurrency, APIs, background work, live delivery, and browser state. Every handwritten translation is another place for the meaning to drift.</p>
+          <p>Mississippi connects those stages around explicit domain types. It is not a bag of event-sourcing helpers. It is one opinionated path for state that matters over time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section
+    className={styles.flowSection}
+    aria-labelledby="how-it-works"
+  >
+    <div className={styles.sectionInner}>
+      <p className={styles.sectionLabel}>How it works</p>
+      <div className={styles.sectionIntro}>
+
+## One current from intent to interface. {#how-it-works}
+
+        <p>Each stage has one job. Together they form an inspectable path from a business decision to the state a user sees.</p>
+      </div>
+      <ol className={styles.flowGrid}>
+        <li>
+          <span className={styles.flowNumber}>01</span>
+          <h3>Express intent</h3>
+          <p>Typed commands say what someone or something is trying to do.</p>
+        </li>
+        <li>
+          <span className={styles.flowNumber}>02</span>
+          <h3>Give it an owner</h3>
+          <p>An addressable entity owns validation and serializes its changes.</p>
+        </li>
+        <li>
+          <span className={styles.flowNumber}>03</span>
+          <h3>Record the fact</h3>
+          <p>Accepted changes become ordered events instead of overwritten rows.</p>
+        </li>
+        <li>
+          <span className={styles.flowNumber}>04</span>
+          <h3>Derive the view</h3>
+          <p>Reducers and projections rebuild purpose-specific state from history.</p>
+        </li>
+        <li>
+          <span className={styles.flowNumber}>05</span>
+          <h3>Announce the version</h3>
+          <p>Live notifications move clients toward an exact projection version.</p>
+        </li>
+        <li>
+          <span className={styles.flowNumber}>06</span>
+          <h3>Update predictably</h3>
+          <p>Actions, effects, reducers, and selectors carry change into the UI.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section className={styles.aiSection} aria-labelledby="ai-heading">
+    <div className={styles.sectionInner}>
+      <div className={styles.aiLayout}>
+        <div className={styles.aiCopy}>
+          <p className={styles.sectionLabel}>Built for humans and coding agents</p>
+          <h2 id="ai-heading">Define the decisions. Generate the seams.</h2>
+          <p>AI is most useful when it works on the behavior that makes your product different—not when it repeatedly invents controllers, mappings, subscriptions, and state plumbing.</p>
+          <p>Mississippi gives developers and agents a constrained vocabulary: commands, handlers, events, reducers, projections, and sagas. Source generators turn those definitions into deterministic integration surfaces that remain available for review.</p>
+          <div className={styles.truthCallout}>
+            <strong>A constraint worth keeping</strong>
+            <p>Shared domain handling does not mean shared authorization. Every HTTP, client, or agent channel still needs an explicit trust boundary.</p>
+          </div>
+        </div>
+        <div className={styles.ownershipGrid}>
+          <div>
+            <p className={styles.ownershipLabel}>You define</p>
+            <ul>
+              <li>Business intent and invariants</li>
+              <li>Accepted facts and reducers</li>
+              <li>Read models and workflows</li>
+              <li>Security and operational policy</li>
+              <li>Tests in domain language</li>
+            </ul>
+          </div>
+          <div>
+            <p className={styles.ownershipLabel}>Mississippi derives</p>
+            <ul>
+              <li>Runtime registration</li>
+              <li>HTTP controllers and DTOs</li>
+              <li>Client actions and effects</li>
+              <li>Projection subscriptions</li>
+              <li>MCP operation tools</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section className={styles.proofSection} aria-labelledby="proof-heading">
+    <div className={styles.sectionInner}>
+      <p className={styles.sectionLabel}>A claim you can inspect</p>
+      <div className={styles.proofLayout}>
+        <div>
+          <h2 id="proof-heading">A few domain definitions. Several deliberate surfaces.</h2>
+          <p className={styles.proofLede}>The Spring sample marks its aggregate for storage identity, endpoint and MCP generation, and Orleans serialization. Companion command types declare the available operations. The model remains explicit, typed source.</p>
+          <div className={styles.proofLinks}>
+            <a href="https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs">Read the source <span aria-hidden="true">↗</span></a>
+            <a href="https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/BankAccountAggregateTests.cs">Read the scenarios <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <div className={styles.codeFrame}>
+          <div className={styles.codeHeader}>
+            <span>BankAccountAggregate.cs</span>
+            <span>Abridged excerpt</span>
+          </div>
+          <pre className={styles.codeBlock}><code>{`[BrookName("SPRING", "BANKING", "ACCOUNT")]
+[SnapshotStorageName("SPRING", "BANKING", "ACCOUNTSTATE")]
+[GenerateAggregateEndpoints]
+[GenerateMcpTools]
+[GenerateSerializer]
+[Alias("MississippiSamples.Spring.Domain.Aggregates.BankAccount.BankAccountAggregate")]
+public sealed record BankAccountAggregate
+{
+    [Id(0)]
+    public decimal Balance { get; init; }
+
+    // Additional [Id] members omitted.
+
+    [Id(1)]
+    public bool IsOpen { get; init; }
+}`}</code></pre>
+        </div>
+      </div>
+      <div className={styles.proofOutcomes}>
+        <div><span>Generated</span><strong>Aggregate endpoints</strong></div>
+        <div><span>Generated</span><strong>Runtime wiring</strong></div>
+        <div><span>Generated</span><strong>Agent tools</strong></div>
+        <div><span>Tested</span><strong>Domain behavior</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section className={styles.fitSection} aria-labelledby="fit-heading">
+    <div className={styles.sectionInner}>
+      <p className={styles.sectionLabel}>Where the model earns its keep</p>
+      <div className={styles.sectionIntro}>
+        <h2 id="fit-heading">High consequence. Long memory. Shared attention.</h2>
+        <p>Actors are not only a throughput tool. Identity, ownership, isolation, lifecycle, and recovery matter anywhere work unfolds over time.</p>
+      </div>
+      <div className={styles.fitGrid}>
+        <article>
+          <span>01</span>
+          <h3>Cases and investigations</h3>
+          <p>When the route to a decision matters as much as the latest status.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Approvals and reservations</h3>
+          <p>When concurrent intent needs one clear owner and visible conflicts.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Jobs, devices, and sessions</h3>
+          <p>When an identity persists, sleeps, wakes, and changes over time.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>Compensating workflows</h3>
+          <p>When multi-step progress and failure cannot disappear into a call stack.</p>
+        </article>
+      </div>
+      <div className={styles.poorFit}>
+        <p className={styles.ownershipLabel}>Choose something simpler when</p>
+        <p>your application is mainly stateless CRUD, historical decisions have little value, eventual consistency is unacceptable, or the team does not want an opinionated .NET, Orleans, event-sourcing, and Blazor path.</p>
+      </div>
+    </div>
+  </section>
+
+  <section className={styles.maturitySection} aria-labelledby="maturity-heading">
+    <div className={styles.sectionInner}>
+      <div className={styles.maturityLayout}>
+        <div>
+          <p className={styles.sectionLabel}>The honest edge</p>
+          <h2 id="maturity-heading">An architectural direction, ready to evaluate.</h2>
+        </div>
+        <div className={styles.maturityBody}>
+          <p>Mississippi is early alpha. The repository demonstrates the model; it does not yet establish production readiness, uptime, performance, commercial impact, or autonomous-agent safety.</p>
+          <ul>
+            <li>Cosmos DB is the current concrete event and snapshot provider.</li>
+            <li>Projection and client delivery are eventually consistent.</li>
+            <li>Sagas coordinate and compensate; they are not distributed transactions.</li>
+            <li>External effects still need domain-specific retry and idempotency.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section className={styles.finalSection} aria-labelledby="final-heading">
+    <div className={styles.finalCurrent} aria-hidden="true" />
+    <div className={styles.sectionInner}>
+      <p className={styles.sectionLabel}>Follow one decision through the system</p>
+      <h2 id="final-heading">See whether the model fits your hardest workflow.</h2>
+      <p>Start with the architectural model, inspect the Spring sample, and challenge every trade-off against the system you are actually building.</p>
+      <div className={styles.actions}>
+        <Link
+          className={styles.primaryAction}
+          to="/docs/next/concepts/concepts-architectural-model"
+        >Evaluate the architecture <span aria-hidden="true">→</span></Link>
+        <Link className={styles.secondaryAction} to="/docs/next/">Browse technical docs</Link>
+      </div>
+    </div>
+  </section>
+</div>
