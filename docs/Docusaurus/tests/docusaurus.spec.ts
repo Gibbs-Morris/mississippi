@@ -20,7 +20,13 @@ test.describe('Mississippi site', () => {
     await page.goto('./');
 
     const primaryAction = page.getByRole('link', {name: 'Evaluate the architecture'}).first();
-    await primaryAction.focus();
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await page.keyboard.press('Tab');
+      if (await primaryAction.evaluate((element) => element === document.activeElement)) {
+        break;
+      }
+    }
+    await expect(primaryAction).toBeFocused();
     await expect(primaryAction).toHaveCSS('outline-color', 'rgb(255, 253, 247)');
     await expect(primaryAction).toHaveCSS(
       'box-shadow',
