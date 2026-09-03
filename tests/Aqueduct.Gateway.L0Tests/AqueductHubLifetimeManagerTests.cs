@@ -410,7 +410,7 @@ public sealed class AqueductHubLifetimeManagerTests
     public async Task OnConnectedAsyncShouldUseHostApplicationStoppingToken()
     {
         // Arrange
-        CancellationToken applicationStopping = new(true);
+        CancellationToken applicationStopping = new(false);
         IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         hostApplicationLifetime.ApplicationStopping.Returns(applicationStopping);
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
