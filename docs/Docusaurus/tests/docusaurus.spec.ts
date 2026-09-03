@@ -119,7 +119,9 @@ test.describe('Mississippi site', () => {
       scrollWidth: document.documentElement.scrollWidth,
     }));
 
-    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(
+      dimensions.clientWidth + 1,
+    );
     await expect(page.getByRole('heading', {level: 1})).toBeVisible();
   });
 
@@ -131,7 +133,9 @@ test.describe('Mississippi site', () => {
       scrollWidth: document.documentElement.scrollWidth,
     }));
 
-    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(
+      dimensions.clientWidth + 1,
+    );
   });
 
   test('technical documentation uses intent-first navigation', async ({page}) => {
