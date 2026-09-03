@@ -441,6 +441,8 @@ public sealed class AqueductHubLifetimeManagerTests
 
         // Assert
         await messageSender.Received(1)
+            .SendAsync(abortedConnection, "MethodName", args, abortedConnection.ConnectionAborted);
+        await messageSender.Received(1)
             .SendAsync(healthyConnection, "MethodName", args, healthyConnection.ConnectionAborted);
     }
 
