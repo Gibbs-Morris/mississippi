@@ -504,6 +504,58 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     OnServerMessageAsync should ignore cancellation after a connection aborts.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "OnServerMessageAsync Ignores Connection Abort")]
+    public async Task OnServerMessageAsyncShouldIgnoreConnectionAbort()
+    {
+        // Arrange
+        CancellationToken abortedConnectionToken = new(true);
+        HubConnectionContext abortedConnection = HubConnectionContextFactory.Create(
+            "aborted",
+            connectionAborted: abortedConnectionToken);
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        connectionRegistry.GetConnection("aborted").Returns(abortedConnection);
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        object?[] args = [];
+        messageSender.SendAsync(abortedConnection, "MethodName", args, abortedConnection.ConnectionAborted)
+            .Returns(Task.FromCanceled(abortedConnection.ConnectionAborted));
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        Func<ServerMessage, Task>? onServerMessage = null;
+        streamSubscriptionManager.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Do<Func<ServerMessage, Task>>(callback => onServerMessage = callback),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            heartbeatManager: heartbeatManager,
+            messageSender: messageSender,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.SendAllAsync("MethodName", args);
+        Func<ServerMessage, Task> callback = onServerMessage ??
+                                             throw new InvalidOperationException(
+                                                 "Server-message callback was not captured.");
+        await callback(
+            new()
+            {
+                ConnectionId = "aborted",
+                MethodName = "MethodName",
+                Args = args,
+            });
+
+        // Assert
+        await messageSender.Received(1)
+            .SendAsync(abortedConnection, "MethodName", args, abortedConnection.ConnectionAborted);
+    }
+
+    /// <summary>
     ///     RemoveFromGroupAsync should call group grain.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
