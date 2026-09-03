@@ -802,6 +802,43 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     SendConnectionAsync should ignore cancellation caused only by a connection abort.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendConnectionAsync Ignores Connection-Only Cancellation")]
+    public async Task SendConnectionAsyncShouldIgnoreConnectionOnlyCancellation()
+    {
+        // Arrange
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        using CancellationTokenSource connectionAbortSource = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn1",
+            connectionAborted: connectionAbortSource.Token);
+        connectionRegistry.GetConnection("conn1").Returns(connection);
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        messageSender.SendAsync(
+                connection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                connection.ConnectionAborted)
+            .Returns(sendCompletion.Task);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            messageSender: messageSender);
+
+        // Act
+        Task sendTask = manager.SendConnectionAsync("conn1", "MethodName", [], CancellationToken.None);
+        await connectionAbortSource.CancelAsync();
+        sendCompletion.SetCanceled(connectionAbortSource.Token);
+
+        // Assert
+        await sendTask;
+        await messageSender.Received(1)
+            .SendAsync(connection, "MethodName", Arg.Any<IReadOnlyList<object?>>(), connection.ConnectionAborted);
+    }
+
+    /// <summary>
     ///     SendConnectionsAsync should throw when connectionIds is null.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
