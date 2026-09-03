@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
@@ -57,7 +58,7 @@ public sealed class LocalMessageSenderTests
         List<object?> args = [];
 
         // Act
-        await sender.SendAsync(connection, "TestMethod", args);
+        await sender.SendAsync(connection, "TestMethod", args, CancellationToken.None);
 
         // Assert - If we get here without exception, the test passes
         Assert.True(true);
@@ -77,7 +78,7 @@ public sealed class LocalMessageSenderTests
         List<object?> args = ["arg1", 42];
 
         // Act
-        await sender.SendAsync(connection, "TestMethod", args);
+        await sender.SendAsync(connection, "TestMethod", args, CancellationToken.None);
 
         // Assert - If we get here without exception, the test passes
         // The message was written to the connection's pipe
@@ -97,7 +98,11 @@ public sealed class LocalMessageSenderTests
         List<object?> args = ["arg1", 42];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => sender.SendAsync(null!, "TestMethod", args));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => sender.SendAsync(
+            null!,
+            "TestMethod",
+            args,
+            CancellationToken.None));
     }
 
     /// <summary>
@@ -114,7 +119,11 @@ public sealed class LocalMessageSenderTests
         List<object?> args = ["arg1", 42];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => sender.SendAsync(connection, string.Empty, args));
+        await Assert.ThrowsAsync<ArgumentException>(() => sender.SendAsync(
+            connection,
+            string.Empty,
+            args,
+            CancellationToken.None));
     }
 
     /// <summary>
@@ -131,7 +140,11 @@ public sealed class LocalMessageSenderTests
         List<object?> args = ["arg1", 42];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => sender.SendAsync(connection, null!, args));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => sender.SendAsync(
+            connection,
+            null!,
+            args,
+            CancellationToken.None));
     }
 
     /// <summary>
@@ -148,7 +161,7 @@ public sealed class LocalMessageSenderTests
         object?[] args = ["arg1", 42, null];
 
         // Act
-        await sender.SendAsync(connection, "TestMethod", args);
+        await sender.SendAsync(connection, "TestMethod", args, CancellationToken.None);
 
         // Assert - If we get here without exception, the test passes
         Assert.True(true);
