@@ -398,12 +398,19 @@ public sealed class AqueductHubLifetimeManager<THub>
             bool isExcluded = message.ExcludedConnectionIds?.Contains(connection.ConnectionId) ?? false;
             if (!isExcluded)
             {
-                await MessageSender.SendAsync(
-                        connection,
-                        message.MethodName,
-                        message.Args,
-                        connection.ConnectionAborted)
-                    .ConfigureAwait(false);
+                try
+                {
+                    await MessageSender.SendAsync(
+                            connection,
+                            message.MethodName,
+                            message.Args,
+                            connection.ConnectionAborted)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // A connection can abort after the pre-check and before the write completes.
+                }
             }
         }
     }

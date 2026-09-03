@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
@@ -433,6 +434,61 @@ public sealed class AqueductHubLifetimeManagerTests
                 Arg.Any<Func<ServerMessage, Task>>(),
                 Arg.Any<Func<AllMessage, Task>>(),
                 applicationStopping);
+    }
+
+    /// <summary>
+    ///     OnAllMessageAsync should continue when a connection aborts during delivery.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "OnAllMessageAsync Continues After Connection Aborts")]
+    public async Task OnAllMessageAsyncShouldContinueAfterConnectionAborts()
+    {
+        // Arrange
+        HubConnectionContext abortedConnection = HubConnectionContextFactory.Create("aborted");
+        HubConnectionContext healthyConnection = HubConnectionContextFactory.Create("healthy");
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        connectionRegistry.GetAll().Returns([abortedConnection, healthyConnection]);
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        object?[] args = [];
+        messageSender.SendAsync(
+                abortedConnection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                abortedConnection.ConnectionAborted)
+            .Returns(Task.FromCanceled(new CancellationToken(canceled: true)));
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        Func<AllMessage, Task>? onAllMessage = null;
+        streamSubscriptionManager
+            .EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Do<Func<AllMessage, Task>>(callback => onAllMessage = callback),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            heartbeatManager: heartbeatManager,
+            messageSender: messageSender,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.SendAllAsync("MethodName", args);
+        Func<AllMessage, Task> callback = onAllMessage ??
+                                         throw new InvalidOperationException("All-message callback was not captured.");
+        await callback(new AllMessage
+        {
+            MethodName = "MethodName",
+            Args = args,
+        });
+
+        // Assert
+        await messageSender.Received(1).SendAsync(
+            healthyConnection,
+            "MethodName",
+            args,
+            healthyConnection.ConnectionAborted);
     }
 
     /// <summary>
