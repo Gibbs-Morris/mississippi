@@ -1,11 +1,8 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
-using System.Threading.Tasks;
 
-using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.Logging.Abstractions;
 
 
@@ -61,27 +58,5 @@ public static class HubConnectionContextFactory
         return connectionAborted.HasValue
             ? new CancellableHubConnectionContext(connectionContext, options, connectionAborted.Value)
             : new HubConnectionContext(connectionContext, options, NullLoggerFactory.Instance);
-    }
-
-    private sealed class CancellableHubConnectionContext : HubConnectionContext
-    {
-        public CancellableHubConnectionContext(
-            ConnectionContext connectionContext,
-            HubConnectionContextOptions options,
-            CancellationToken connectionAborted
-        )
-            : base(connectionContext, options, NullLoggerFactory.Instance) =>
-            ConnectionAborted = connectionAborted;
-
-        public override CancellationToken ConnectionAborted { get; }
-
-        /// <inheritdoc />
-        public override ValueTask WriteAsync(
-            HubMessage message,
-            CancellationToken cancellationToken = default
-        ) =>
-            cancellationToken.IsCancellationRequested
-                ? ValueTask.FromCanceled(cancellationToken)
-                : ValueTask.CompletedTask;
     }
 }
