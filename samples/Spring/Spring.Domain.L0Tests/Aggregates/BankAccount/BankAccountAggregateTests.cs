@@ -250,6 +250,39 @@ public sealed class BankAccountAggregateTests
     }
 
     /// <summary>
+    ///     An emitted event should be passed to the assertion exactly once while preserving fluent chaining.
+    /// </summary>
+    [Fact]
+    public void ThenEmitsInvokesAssertionOnceWithEmittedEvent()
+    {
+        // Arrange
+        AggregateScenario<BankAccountAggregate> scenario = CreateHarness()
+            .CreateScenario()
+            .When(new OpenAccount("Alice", 500m));
+        AccountOpened? receivedEvent = null;
+        int assertionInvocationCount = 0;
+
+        // Act
+        AggregateScenario<BankAccountAggregate> returnedScenario = scenario.ThenEmits<AccountOpened>(evt =>
+        {
+            receivedEvent = evt;
+            assertionInvocationCount++;
+        });
+
+        // Assert
+        assertionInvocationCount.Should().Be(1);
+        receivedEvent.Should().BeSameAs(scenario.EmittedEvents.Single());
+        receivedEvent.Should()
+            .BeEquivalentTo(
+                new AccountOpened
+                {
+                    HolderName = "Alice",
+                    InitialDeposit = 500m,
+                });
+        returnedScenario.Should().BeSameAs(scenario);
+    }
+
+    /// <summary>
     ///     Missing events should record a scoped assertion failure without invoking the event assertion.
     /// </summary>
     [Fact]

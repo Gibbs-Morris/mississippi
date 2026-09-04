@@ -70,6 +70,7 @@ public class ProjectionEndpointsGeneratorTests
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.dll")),
+            MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Collections.Immutable.dll")),
         ];
 
         // Add netstandard if available (for compatibility)
@@ -332,6 +333,55 @@ public class ProjectionEndpointsGeneratorTests
             "public sealed partial class AccountBalanceController",
             controllerSource,
             StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Collections of custom types should generate nested DTOs and mappers with their properties.
+    /// </summary>
+    [Fact]
+    public void GeneratedDtoHandlesCollectionOfCustomTypes()
+    {
+        const string projectionSource = """
+                                        using System.Collections.Immutable;
+                                        using Mississippi.Inlet.Generators.Abstractions;
+                                        using Mississippi.Inlet.Abstractions;
+
+                                        namespace TestApp.Domain.Projections.AccountBalance
+                                        {
+                                            public sealed record TransactionRecord
+                                            {
+                                                public decimal Amount { get; init; }
+                                                public string Description { get; init; } = string.Empty;
+                                            }
+
+                                            [GenerateProjectionEndpoints]
+                                            [ProjectionPath("account-balance")]
+                                            public sealed record AccountBalanceProjection
+                                            {
+                                                public ImmutableArray<TransactionRecord> Transactions { get; init; }
+                                            }
+                                        }
+                                        """;
+        (Compilation _, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
+            RunGenerator(AttributeStubs, projectionSource);
+        Assert.Empty(diagnostics);
+        SyntaxTree nestedDtoTree = Assert.Single(
+            runResult.GeneratedTrees,
+            tree => tree.FilePath.EndsWith("TransactionRecordDto.g.cs", StringComparison.Ordinal));
+        string nestedDtoSource = nestedDtoTree.GetText().ToString();
+        Assert.Contains("public sealed record TransactionRecordDto", nestedDtoSource, StringComparison.Ordinal);
+        Assert.Contains("public required decimal Amount { get; init; }", nestedDtoSource, StringComparison.Ordinal);
+        Assert.Contains("public required string Description { get; init; }", nestedDtoSource, StringComparison.Ordinal);
+        SyntaxTree nestedMapperTree = Assert.Single(
+            runResult.GeneratedTrees,
+            tree => tree.FilePath.EndsWith("TransactionRecordDtoMapper.g.cs", StringComparison.Ordinal));
+        string nestedMapperSource = nestedMapperTree.GetText().ToString();
+        Assert.Contains(
+            "IMapper<TransactionRecord, TransactionRecordDto>",
+            nestedMapperSource,
+            StringComparison.Ordinal);
+        Assert.Contains("Amount = source.Amount", nestedMapperSource, StringComparison.Ordinal);
+        Assert.Contains("Description = source.Description", nestedMapperSource, StringComparison.Ordinal);
     }
 
     /// <summary>
