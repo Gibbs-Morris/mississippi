@@ -65,9 +65,9 @@ public sealed class PaneTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.True(attr!.CaptureUnmatchedValues);
+        Assert.True(attr.CaptureUnmatchedValues);
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public sealed class PaneTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        Assert.Equal(typeof(RenderFragment), prop!.PropertyType);
+        Assert.Equal(typeof(RenderFragment), prop.PropertyType);
         ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
@@ -97,7 +97,7 @@ public sealed class PaneTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 
@@ -112,7 +112,7 @@ public sealed class PaneTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        Assert.Equal(typeof(RenderFragment), prop!.PropertyType);
+        Assert.Equal(typeof(RenderFragment), prop.PropertyType);
         ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
@@ -128,7 +128,7 @@ public sealed class PaneTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 
@@ -143,7 +143,7 @@ public sealed class PaneTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 
@@ -158,7 +158,7 @@ public sealed class PaneTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 

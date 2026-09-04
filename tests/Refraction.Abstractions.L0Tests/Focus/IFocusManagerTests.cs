@@ -39,6 +39,6 @@ public sealed class IFocusManagerTests
 
         // Assert
         Assert.NotNull(method);
-        Assert.Equal(typeof(bool), method!.ReturnType);
+        Assert.Equal(typeof(bool), method.ReturnType);
     }
 }

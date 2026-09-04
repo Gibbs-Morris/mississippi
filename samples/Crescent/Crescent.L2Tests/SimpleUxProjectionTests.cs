@@ -88,7 +88,7 @@ public sealed class SimpleUxProjectionTests
         int expectedCount = 13;
         int expectedOperations = 8; // 1 init + 5 inc + 2 dec
         output.WriteLine($"[Test] Expected: Count={expectedCount}, Operations={expectedOperations}");
-        output.WriteLine($"[Test] Actual: Count={projection!.CurrentCount}, Operations={projection.TotalOperations}");
+        output.WriteLine($"[Test] Actual: Count={projection.CurrentCount}, Operations={projection.TotalOperations}");
         projection.CurrentCount.Should().Be(expectedCount, "Count should be 10 + 5 - 2 = 13");
         projection.TotalOperations.Should().Be(expectedOperations, "Operations should be 1 + 5 + 2 = 8");
         projection.IsPositive.Should().BeTrue("Count is positive");
@@ -159,7 +159,7 @@ public sealed class SimpleUxProjectionTests
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
         projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(100, "Should reflect first init value");
+        projection.CurrentCount.Should().Be(100, "Should reflect first init value");
         projection.TotalOperations.Should().Be(1, "Only one successful operation");
         output.WriteLine("[Test] PASSED: Re-initialization correctly prevented");
     }

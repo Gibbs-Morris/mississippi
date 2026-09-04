@@ -70,7 +70,7 @@ public sealed class ComprehensiveE2ETests
         projection.Should().NotBeNull();
 
         // Expected: 0 - 5 = -5, IsPositive = false, 6 operations
-        projection!.CurrentCount.Should().Be(-5, "Count should be -5");
+        projection.CurrentCount.Should().Be(-5, "Count should be -5");
         projection.TotalOperations.Should().Be(6, "Operations should be 6");
         projection.IsPositive.Should().BeFalse("IsPositive should be false for negative count");
         output.WriteLine($"[Test] Boundary: Count={projection.CurrentCount}, IsPositive={projection.IsPositive}");
@@ -99,7 +99,7 @@ public sealed class ComprehensiveE2ETests
         }
 
         afterZero.Should().NotBeNull("Projection should exist after incrementing back");
-        CounterSummaryProjection finalProjection = afterZero!;
+        CounterSummaryProjection finalProjection = afterZero;
         finalProjection.CurrentCount.Should().Be(0, "Count should be 0 after incrementing back");
         output.WriteLine("[Test] PASSED: Boundary conditions handled correctly!");
     }
@@ -149,11 +149,11 @@ public sealed class ComprehensiveE2ETests
         projection2.Should().NotBeNull();
 
         // Counter1: 100 + 10 = 110, 11 operations
-        projection1!.CurrentCount.Should().Be(110, "Counter1 should be 100 + 10 = 110");
+        projection1.CurrentCount.Should().Be(110, "Counter1 should be 100 + 10 = 110");
         projection1.TotalOperations.Should().Be(11, "Counter1 should have 11 operations");
 
         // Counter2: 200 - 5 = 195, 6 operations
-        projection2!.CurrentCount.Should().Be(195, "Counter2 should be 200 - 5 = 195");
+        projection2.CurrentCount.Should().Be(195, "Counter2 should be 200 - 5 = 195");
         projection2.TotalOperations.Should().Be(6, "Counter2 should have 6 operations");
         output.WriteLine($"[Test] Counter1: Count={projection1.CurrentCount}, Ops={projection1.TotalOperations}");
         output.WriteLine($"[Test] Counter2: Count={projection2.CurrentCount}, Ops={projection2.TotalOperations}");
@@ -189,7 +189,7 @@ public sealed class ComprehensiveE2ETests
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projGrain.GetAsync(CancellationToken.None);
         projection.Should().NotBeNull();
-        projection!.CurrentCount.Should().Be(opCount, $"Count should be {opCount}");
+        projection.CurrentCount.Should().Be(opCount, $"Count should be {opCount}");
         projection.TotalOperations.Should().Be(opCount + 1, $"Operations should be {opCount + 1}");
         output.WriteLine(
             $"[Test] Large sequence completed: Count={projection.CurrentCount}, Ops={projection.TotalOperations}");
@@ -221,7 +221,7 @@ public sealed class ComprehensiveE2ETests
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? beforeDeactivation = await projGrain.GetAsync(CancellationToken.None);
         beforeDeactivation.Should().NotBeNull();
-        int expectedCount = beforeDeactivation!.CurrentCount;
+        int expectedCount = beforeDeactivation.CurrentCount;
         int expectedOps = beforeDeactivation.TotalOperations;
 
         // Small delay to simulate some idle time
@@ -232,7 +232,7 @@ public sealed class ComprehensiveE2ETests
         afterDeactivation.Should().NotBeNull();
 
         // Assert - Values should match
-        afterDeactivation!.CurrentCount.Should().Be(expectedCount, "Count should persist");
+        afterDeactivation.CurrentCount.Should().Be(expectedCount, "Count should persist");
         afterDeactivation.TotalOperations.Should().Be(expectedOps, "Operations should persist");
 
         // Expected: 25 + 10 = 35, 11 operations
@@ -275,8 +275,8 @@ public sealed class ComprehensiveE2ETests
         first.Should().NotBeNull();
         second.Should().NotBeNull();
         third.Should().NotBeNull();
-        first!.CurrentCount.Should().Be(second!.CurrentCount);
-        second.CurrentCount.Should().Be(third!.CurrentCount);
+        first.CurrentCount.Should().Be(second.CurrentCount);
+        second.CurrentCount.Should().Be(third.CurrentCount);
         first.TotalOperations.Should().Be(second.TotalOperations);
         second.TotalOperations.Should().Be(third.TotalOperations);
 
@@ -331,7 +331,7 @@ public sealed class ComprehensiveE2ETests
         projection.Should().NotBeNull();
 
         // Expected: 0 + (1+2+3+4+5) - (1+2) = 12, 8 operations
-        projection!.CurrentCount.Should().Be(12, "Count should be 12");
+        projection.CurrentCount.Should().Be(12, "Count should be 12");
         projection.TotalOperations.Should().Be(8, "Operations should be 8");
         output.WriteLine($"[Test] Rapid updates: Count={projection.CurrentCount}, Ops={projection.TotalOperations}");
         output.WriteLine("[Test] PASSED: Rapid sequential updates maintain correct order!");
@@ -378,7 +378,7 @@ public sealed class ComprehensiveE2ETests
         projection.Should().NotBeNull();
 
         // Expected: 1000 + 3 = 1003, 10 operations (1 init + 5 inc + 1 reset + 3 inc)
-        projection!.CurrentCount.Should().Be(1003, "Count should be 1000 + 3 = 1003");
+        projection.CurrentCount.Should().Be(1003, "Count should be 1000 + 3 = 1003");
         projection.TotalOperations.Should().Be(10, "Operations should be 10");
         output.WriteLine(
             $"[Test] Reset and recovery: Count={projection.CurrentCount}, Ops={projection.TotalOperations}");

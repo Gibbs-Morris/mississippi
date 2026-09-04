@@ -24,7 +24,7 @@ public sealed class RefractionServiceCollectionExtensionsTests
 
         // Assert
         Assert.NotNull(method);
-        Assert.True(method!.IsStatic);
+        Assert.True(method.IsStatic);
     }
 
     /// <summary>

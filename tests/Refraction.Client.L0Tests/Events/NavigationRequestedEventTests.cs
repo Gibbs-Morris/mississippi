@@ -29,7 +29,7 @@ public sealed class NavigationRequestedEventTests
         // Assert
         Assert.Equal("details", evt.Target);
         Assert.NotNull(evt.Parameters);
-        Assert.Equal(42, evt.Parameters!["id"]);
+        Assert.Equal(42, evt.Parameters["id"]);
     }
 
     /// <summary>

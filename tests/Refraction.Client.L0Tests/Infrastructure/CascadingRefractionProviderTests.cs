@@ -27,7 +27,7 @@ public sealed class CascadingRefractionProviderTests
 
         // Assert
         Assert.NotNull(childContent);
-        Assert.Equal(typeof(RenderFragment), childContent!.PropertyType);
+        Assert.Equal(typeof(RenderFragment), childContent.PropertyType);
         Assert.NotNull(childContent.GetCustomAttribute<ParameterAttribute>());
     }
 
@@ -45,7 +45,7 @@ public sealed class CascadingRefractionProviderTests
 
         // Assert
         Assert.NotNull(reducedMotion);
-        Assert.Equal(typeof(bool), reducedMotion!.PropertyType);
+        Assert.Equal(typeof(bool), reducedMotion.PropertyType);
         Assert.NotNull(reducedMotion.GetCustomAttribute<ParameterAttribute>());
     }
 
@@ -76,7 +76,7 @@ public sealed class CascadingRefractionProviderTests
 
         // Assert
         Assert.NotNull(reducedMotion);
-        object? value = reducedMotion!.GetValue(provider);
+        object? value = reducedMotion.GetValue(provider);
         Assert.False((bool)value!);
     }
 }
