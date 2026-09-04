@@ -540,7 +540,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
 
         SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition!.Value.Value);
-        TAggregate? updatedState = await SnapshotGrainFactory.GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
+        TAggregate updatedState = await SnapshotGrainFactory.GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
             .GetStateAsync(cancellationToken);
         long startingPosition = currentPosition.Value + 1;
         DispatchFireAndForgetEffects(events, updatedState, startingPosition);
@@ -560,7 +560,7 @@ internal sealed class GenericAggregateGrain<TAggregate>
         }
 
         SnapshotKey postEventSnapshotKey = new(snapshotStreamKey, lastKnownPosition!.Value.Value);
-        TAggregate? updatedState = await SnapshotGrainFactory.GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
+        TAggregate updatedState = await SnapshotGrainFactory.GetSnapshotCacheGrain<TAggregate>(postEventSnapshotKey)
             .GetStateAsync(cancellationToken);
 
         // Events were persisted starting at positionBeforePersist + 1
