@@ -24,17 +24,9 @@ namespace Mississippi.DomainModeling.Gateway;
 ///         the internal projection representation from the public API contract.
 ///     </para>
 ///     <para>
-///         Example usage:
-///         <code>
-///             [Route("api/users/{entityId}")]
-///             public class UserProjectionController : UxProjectionControllerBase&lt;UserProjection, UserDto&gt;
-///             {
-///                 public UserProjectionController(
-///                     IUxProjectionGrainFactory factory,
-///                     IMapper&lt;UserProjection, UserDto&gt; mapper,
-///                     ILogger&lt;UserProjectionController&gt; logger) : base(factory, mapper, logger) { }
-///             }
-///         </code>
+///         Derived classes should apply a <c>[Route]</c> attribute and inherit the constructor,
+///         passing in the factory, mapper, and logger dependencies. Refer to sample implementations
+///         in the repository for concrete usage patterns.
 ///     </para>
 ///     <para>
 ///         This provides three endpoints:
