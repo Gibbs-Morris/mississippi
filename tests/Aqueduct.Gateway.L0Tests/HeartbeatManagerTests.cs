@@ -314,6 +314,55 @@ public sealed class HeartbeatManagerTests
     }
 
     /// <summary>
+    ///     Registration failures after startup cancellation must be observed without starting heartbeat delivery.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task StartAsyncShouldObserveRegistrationFailureAfterCancellation()
+    {
+        using CancellationTokenSource cancellation = new();
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        ISignalRServerDirectoryGrain directory = Substitute.For<ISignalRServerDirectoryGrain>();
+        grainFactory.GetServerDirectoryGrain().Returns(directory);
+        TaskCompletionSource registration = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        directory.RegisterServerAsync(Arg.Any<string>(), cancellation.Token).Returns(registration.Task);
+        TaskCompletionSource<Exception?> failureLogged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CallbackLogger<HeartbeatManager> logger = new((
+            eventId,
+            exception
+        ) =>
+        {
+            if (eventId.Id == 4)
+            {
+                failureLogged.TrySetResult(exception);
+            }
+        });
+        using HeartbeatManager manager = new(
+            CreateServerIdProvider(),
+            grainFactory,
+            Options.Create(new AqueductOptions()),
+            logger);
+        try
+        {
+            Task startup = manager.StartAsync(() => 5, cancellation.Token);
+            await cancellation.CancelAsync();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(registration.Task.IsCompleted);
+            Assert.False(failureLogged.Task.IsCompleted);
+            InvalidOperationException expected = new("Registration failed after cancellation");
+            registration.SetException(expected);
+            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            AggregateException aggregate = Assert.IsType<AggregateException>(loggedException);
+            Assert.Same(expected, Assert.Single(aggregate.InnerExceptions));
+            await directory.DidNotReceiveWithAnyArgs().HeartbeatAsync(default!, default);
+        }
+        finally
+        {
+            registration.TrySetResult();
+        }
+    }
+
+    /// <summary>
     ///     StartAsync should register server with directory.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
