@@ -23,7 +23,7 @@ internal static partial class StreamSubscriptionManagerLoggerExtensions
     [LoggerMessage(
         EventId = 5,
         Level = LogLevel.Debug,
-        Message = "Orleans stream initialization stopped for hub '{HubName}' (serverId: {ServerId})")]
+        Message = "Orleans stream initialization failed for hub '{HubName}' (serverId: {ServerId})")]
     public static partial void StreamInitializationFailed(
         this ILogger logger,
         string hubName,
