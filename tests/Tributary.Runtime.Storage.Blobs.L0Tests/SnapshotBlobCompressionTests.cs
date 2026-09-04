@@ -38,6 +38,18 @@ public sealed class SnapshotBlobCompressionTests
     }
 
     /// <summary>
+    ///     Verifies null compression metadata is treated as invalid persisted data.
+    /// </summary>
+    [Fact]
+    public void DecompressShouldThrowInvalidDataWhenCompressionIsNull()
+    {
+        InvalidDataException exception = Assert.Throws<InvalidDataException>(() => SnapshotBlobCompression.Decompress(
+            null,
+            [1, 2, 3]));
+        Assert.Contains("compression metadata", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies gzip decompression stops before exceeding the configured payload limit.
     /// </summary>
     [Fact]

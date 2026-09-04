@@ -56,12 +56,16 @@ internal static class SnapshotBlobCompression
     /// <param name="maximumPayloadSizeBytes">The maximum allowed uncompressed payload size in bytes.</param>
     /// <returns>The uncompressed payload bytes.</returns>
     public static byte[] Decompress(
-        string compression,
+        string? compression,
         byte[] storedBytes,
         long maximumPayloadSizeBytes = long.MaxValue
     )
     {
-        ArgumentNullException.ThrowIfNull(compression);
+        if (compression is null)
+        {
+            throw new InvalidDataException("Snapshot compression metadata must not be null.");
+        }
+
         ArgumentNullException.ThrowIfNull(storedBytes);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumPayloadSizeBytes);
         if (string.Equals(compression, None, StringComparison.Ordinal))

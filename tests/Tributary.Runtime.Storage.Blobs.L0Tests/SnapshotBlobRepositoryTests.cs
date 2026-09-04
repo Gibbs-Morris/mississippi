@@ -260,6 +260,28 @@ public sealed class SnapshotBlobRepositoryTests
     }
 
     /// <summary>
+    ///     Verifies null persisted compression metadata follows the invalid-data read path.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task ReadAsyncShouldThrowInvalidDataWhenCompressionIsNull()
+    {
+        SnapshotBlobDocument document = CreateDocument([1, 2, 3]);
+        JsonObject json = JsonNode.Parse(SnapshotBlobDocumentSerializer.Serialize(document).ToString())!.AsObject();
+        json["compression"] = null;
+        Mock<ISnapshotBlobOperations> operations = new();
+        operations.Setup(o => o.DownloadAsync(
+                SnapshotBlobPath.BuildSnapshotBlobName(SnapshotKey),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BinaryData(json.ToJsonString()));
+        SnapshotBlobRepository repository = CreateRepository(operations);
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() => repository.ReadAsync(
+            SnapshotKey,
+            CancellationToken.None));
+        Assert.Contains("compression", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies reads reject documents with mismatched uncompressed payload sizes.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
