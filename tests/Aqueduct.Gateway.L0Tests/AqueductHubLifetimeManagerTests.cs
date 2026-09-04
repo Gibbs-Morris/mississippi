@@ -103,6 +103,89 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     Caller cancellation must release a broadcast while shared startup continues for healthy callers.
+    /// </summary>
+    /// <param name="excludeConnections">Whether to use the exclusion overload.</param>
+    /// <param name="cancelDuringHeartbeat">Whether heartbeat registration is the pending startup operation.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task BroadcastShouldCancelOnlyItsOwnStartupWait(
+        bool excludeConnections,
+        bool cancelDuringHeartbeat
+    )
+    {
+        using CancellationTokenSource caller = new();
+        using CancellationTokenSource stopping = new();
+        IHostApplicationLifetime lifetime = Substitute.For<IHostApplicationLifetime>();
+        lifetime.ApplicationStopping.Returns(stopping.Token);
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        TaskCompletionSource setup = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        streams.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                stopping.Token)
+            .Returns(cancelDuringHeartbeat ? Task.CompletedTask : setup.Task);
+        heartbeat.StartAsync(Arg.Any<Func<int>>(), stopping.Token)
+            .Returns(cancelDuringHeartbeat ? setup.Task : Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat,
+            hostApplicationLifetime: lifetime);
+        Task canceledSend = excludeConnections
+            ? manager.SendAllExceptAsync("Canceled", [], ["excluded"], caller.Token)
+            : manager.SendAllAsync("Canceled", [], caller.Token);
+        await caller.CancelAsync();
+        try
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                canceledSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(stopping.IsCancellationRequested);
+            Task healthySend = manager.SendAllAsync("Healthy", []);
+            Assert.False(healthySend.IsCompleted);
+            setup.SetResult();
+            await healthySend;
+            await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(m => m.MethodName == "Healthy"));
+            await streams.DidNotReceive().PublishToAllAsync(Arg.Is<AllMessage>(m => m.MethodName == "Canceled"));
+        }
+        finally
+        {
+            setup.TrySetResult();
+        }
+    }
+
+    /// <summary>
+    ///     Cancellation racing successful setup must still prevent publishing.
+    /// </summary>
+    /// <param name="excludeConnections">Whether to use the exclusion overload.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BroadcastShouldCheckCancellationAfterSetup(
+        bool excludeConnections
+    )
+    {
+        using CancellationTokenSource caller = new();
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        heartbeat.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>())
+            .Returns(async _ => await caller.CancelAsync());
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => excludeConnections
+            ? manager.SendAllExceptAsync("Message", [], ["excluded"], caller.Token)
+            : manager.SendAllAsync("Message", [], caller.Token));
+        await streams.DidNotReceiveWithAnyArgs().PublishToAllAsync(default!);
+    }
+
+    /// <summary>
     ///     Canceled broadcasts must not start shared setup or publish.
     /// </summary>
     /// <param name="excludeConnections">Whether to use the exclusion overload.</param>

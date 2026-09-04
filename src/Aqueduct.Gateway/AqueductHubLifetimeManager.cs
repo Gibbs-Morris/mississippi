@@ -206,7 +206,10 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(methodName);
         cancellationToken.ThrowIfCancellationRequested();
-        await EnsureStreamSetupAsync(HostApplicationLifetime.ApplicationStopping).ConfigureAwait(false);
+        await EnsureStreamSetupAsync(HostApplicationLifetime.ApplicationStopping)
+            .WaitAsync(cancellationToken)
+            .ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         AllMessage message = new()
         {
             MethodName = methodName,
@@ -225,7 +228,10 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(methodName);
         cancellationToken.ThrowIfCancellationRequested();
-        await EnsureStreamSetupAsync(HostApplicationLifetime.ApplicationStopping).ConfigureAwait(false);
+        await EnsureStreamSetupAsync(HostApplicationLifetime.ApplicationStopping)
+            .WaitAsync(cancellationToken)
+            .ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         AllMessage message = new()
         {
             MethodName = methodName,
