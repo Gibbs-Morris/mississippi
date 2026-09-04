@@ -126,6 +126,13 @@ function Show-RepositoryCommand {
     }
 }
 
+function Show-RepositoryDiagnostic {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Message)
+
+    Write-Host $Message
+}
+
 function Invoke-RepositoryProcess {
     [CmdletBinding()]
     param(
@@ -166,7 +173,7 @@ function Invoke-RepositoryProcess {
         # Preserve PowerShell's native-command contract for the canonical script wrappers.
         $global:LASTEXITCODE = $process.ExitCode
         $errorText = $errorOutput.GetAwaiter().GetResult()
-        if ($errorText) { Write-Host $errorText }
+        if ($errorText) { Show-RepositoryDiagnostic -Message $errorText }
         if ($process.ExitCode -ne 0) {
             $message = if ($ErrorMessage) { $ErrorMessage } else { "Command '$FilePath' failed." }
             throw "$message Exit code: $($process.ExitCode)."
@@ -465,6 +472,115 @@ function Read-MutationReport {
     return [pscustomobject]@{ Report = $report; Score = $score; ReportPath = $ReportPath }
 }
 
+function Test-BuildFileHasSharedInputs {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+    $document = [xml](Get-Content -LiteralPath $Path -Raw)
+    if ($document.SelectNodes('//*[local-name()="Compile"]').Count -gt 0) { return $true }
+    $parentBuildPropsImport = '$([MSBuild]::GetPathOfFileAbove(''Directory.Build.props'', ''$(MSBuildThisFileDirectory)..''))'
+    $otherImports = @($document.SelectNodes('//*[local-name()="Import"]') | Where-Object { $_.GetAttribute('Project') -cne $parentBuildPropsImport })
+    return $otherImports.Count -gt 0
+}
+
+function Test-DependencyOnlyProjectDefinition {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ProjectPath,
+        [Parameter(Mandatory)][string]$RepoRoot
+    )
+
+    $document = [xml](Get-Content -LiteralPath $ProjectPath -Raw)
+    if ($document.Project.GetAttribute('Sdk') -notin @('Microsoft.NET.Sdk', 'Microsoft.NET.Sdk.Razor')) { return $false }
+    $allowedElements = @('Project', 'PropertyGroup', 'Description', 'ItemGroup', 'ProjectReference', 'FrameworkReference')
+    $otherElements = @($document.SelectNodes('//*') | Where-Object { $_.LocalName -notin $allowedElements })
+    if ($otherElements.Count -gt 0) { return $false }
+
+    $projectDirectory = Split-Path -Parent $ProjectPath
+    $sourceExtensions = @('.cs', '.csx', '.razor', '.cshtml', '.xaml', '.vb', '.fs', '.fsi', '.fsx')
+    $authoredInputs = @(
+        Get-ChildItem -LiteralPath $projectDirectory -Recurse -File |
+            Where-Object {
+                $relativePath = [System.IO.Path]::GetRelativePath($projectDirectory, $_.FullName)
+                $relativePath -notmatch '^(bin|obj)[\\/]' -and $_.Extension -in $sourceExtensions
+            }
+    )
+    if ($authoredInputs.Count -gt 0) { return $false }
+
+    $buildDirectories = @($RepoRoot, (Split-Path -Parent $projectDirectory), $projectDirectory)
+    foreach ($directory in $buildDirectories) {
+        foreach ($name in @('Directory.Build.props', 'Directory.Build.targets')) {
+            if (Test-BuildFileHasSharedInputs -Path (Join-Path $directory $name)) { return $false }
+        }
+    }
+    return $true
+}
+
+function Test-DependencyOnlySdkPair {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ProjectPath,
+        [Parameter(Mandatory)][string]$SourceProjectPath,
+        [Parameter(Mandatory)][string]$Configuration,
+        [Parameter(Mandatory)][hashtable]$SdkEnvironment
+    )
+
+    $sourceName = [System.IO.Path]::GetFileNameWithoutExtension($SourceProjectPath)
+    if ($sourceName -cnotin @('Sdk.Client', 'Sdk.Gateway', 'Sdk.Runtime')) { return $false }
+    $repoRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $ProjectPath)
+    $relativeSource = [System.IO.Path]::GetRelativePath($repoRoot, $SourceProjectPath).Replace('\', '/')
+    $relativeTest = [System.IO.Path]::GetRelativePath($repoRoot, $ProjectPath).Replace('\', '/')
+    if ($relativeSource -cne "src/$sourceName/$sourceName.csproj" -or
+        $relativeTest -cne "tests/$sourceName.L0Tests/$sourceName.L0Tests.csproj") { return $false }
+
+    foreach ($project in @($SourceProjectPath, $ProjectPath)) {
+        if (-not (Test-DependencyOnlyProjectDefinition -ProjectPath $project -RepoRoot $repoRoot)) { return $false }
+        $arguments = @('msbuild', $project, '-nologo', "-property:Configuration=$Configuration", '-getItem:Compile')
+        $evaluation = @(Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $arguments -WorkingDirectory (Split-Path -Parent $project) -Environment $SdkEnvironment -SuppressCommandEcho)
+        $items = ($evaluation -join [Environment]::NewLine | ConvertFrom-Json).Items
+        if (@($items.Compile).Count -gt 0) { return $false }
+    }
+    return $true
+}
+
+function Show-MutationSkip {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ProjectPath,
+        [Parameter(Mandatory)][string]$Reason
+    )
+
+    Write-Host "  Skipping mutation for $([System.IO.Path]::GetFileNameWithoutExtension($ProjectPath)): $Reason"
+}
+
+function New-DependencyOnlyMutationResult {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ProjectPath,
+        [Parameter(Mandatory)][string]$SourceProjectPath,
+        [Parameter(Mandatory)][string]$OutputPath
+    )
+
+    $reason = 'Dependency-only SDK source and test projects have no authored inputs or evaluated Compile items; build and pack validation applies.'
+    $reportsDirectory = Join-Path $OutputPath 'reports'
+    $null = New-Item -ItemType Directory -Path $reportsDirectory -Force
+    $result = [pscustomobject]@{
+        Project = $ProjectPath
+        SourceProject = $SourceProjectPath
+        Output = $OutputPath
+        ReportPath = $null
+        SkipReportPath = Join-Path $reportsDirectory 'mutation-skip.json'
+        Status = 'Skipped'
+        Reason = $reason
+        Score = $null
+        Success = $true
+    }
+    $result | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $result.SkipReportPath
+    Show-MutationSkip -ProjectPath $ProjectPath -Reason $reason
+    return $result
+}
+
 function Invoke-StrykerMutationTestPerProject {
     [CmdletBinding()]
     param(
@@ -493,6 +609,9 @@ function Invoke-StrykerMutationTestPerProject {
     $sdkEnvironment = Get-DotnetSdkEnvironment -WorkingDirectory $projectDirectory
     $pairOutputRoot = Join-Path (Join-Path $OutputPath $projectName) $sourceName
     $projectOutputPath = New-AutomationRunDirectory -Root $pairOutputRoot
+    if (Test-DependencyOnlySdkPair -ProjectPath $project -SourceProjectPath $source -Configuration $Configuration -SdkEnvironment $sdkEnvironment) {
+        return New-DependencyOnlyMutationResult -ProjectPath $project -SourceProjectPath $source -OutputPath $projectOutputPath
+    }
 
     Write-Host "  Running Stryker: $projectName -> $sourceName ($Configuration)" -ForegroundColor ([ConsoleColor]::Cyan)
     $arguments = @('stryker', '--project', [System.IO.Path]::GetFileName($source), '--configuration', $Configuration, '--config-file', $config, '--output', $projectOutputPath)
@@ -517,7 +636,7 @@ function Invoke-MutationSuite {
     )
 
     if ([System.IO.Path]::GetFileNameWithoutExtension($TestProject) -eq 'Architecture.L0Tests') {
-        Write-Host '  Skipping Architecture.L0Tests: validates assembly architecture and has no single behavioral mutation target.'
+        Show-MutationSkip -ProjectPath $TestProject -Reason 'Validates assembly architecture and has no single behavioral mutation target.'
         return
     }
     try {

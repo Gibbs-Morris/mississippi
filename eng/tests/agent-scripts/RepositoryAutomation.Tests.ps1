@@ -45,7 +45,7 @@ InModuleScope RepositoryAutomation {
             $fullPath = Join-Path $Root $Path
             $null = New-Item -ItemType Directory -Path (Split-Path -Parent $fullPath) -Force
             $items = ($References | ForEach-Object { '<ProjectReference Include="{0}" />' -f $_ }) -join ''
-            "<Project><ItemGroup>$items</ItemGroup></Project>" | Set-Content -LiteralPath $fullPath
+            "<Project Sdk=`"Microsoft.NET.Sdk`"><ItemGroup>$items</ItemGroup></Project>" | Set-Content -LiteralPath $fullPath
             return $fullPath
         }
 
@@ -146,6 +146,15 @@ InModuleScope RepositoryAutomation {
     }
 
     Describe 'Child process environment' {
+        It 'keeps process diagnostics out of its structured output' {
+            Mock Show-RepositoryDiagnostic {}
+            $output = @(Invoke-RepositoryProcess -FilePath (Get-Process -Id $PID).Path -Arguments @(
+                '-NoProfile', '-NonInteractive', '-Command', '[Console]::Error.WriteLine("diagnostic"); [Console]::WriteLine("result"); exit 0'
+            ) -SuppressCommandEcho)
+            $output | Should -Be @('result')
+            Should -Invoke Show-RepositoryDiagnostic -Times 1 -ParameterFilter { $Message.Trim() -eq 'diagnostic' }
+        }
+
         It 'displays command arguments without adding display text to process output' {
             Mock Write-Host {}
             @(Show-RepositoryCommand -FilePath 'dotnet' -Arguments @('test', 'two words')).Count | Should -Be 0
@@ -316,6 +325,106 @@ InModuleScope RepositoryAutomation {
             Mock Get-TestProjects { 'Architecture.L0Tests.csproj' }
             { Invoke-StrykerMutationTest $solution (Join-Path $repository 'runs') } | Should -Throw '*No eligible mutation projects*'
             Should -Invoke Invoke-StrykerMutationTestPerProject -Times 0
+        }
+    }
+
+    Describe 'Dependency-only SDK mutation treatment' {
+        BeforeEach {
+            $script:repository = New-TestRepository
+            $script:source = New-TestProject $repository 'src/Sdk.Client/Sdk.Client.csproj'
+            $script:testProject = New-TestProject $repository 'tests/Sdk.Client.L0Tests/Sdk.Client.L0Tests.csproj' @('../../src/Sdk.Client/Sdk.Client.csproj')
+            $script:outputRoot = Join-Path $repository 'results'
+            Mock Get-DotnetSdkEnvironment { @{ MSBUILD_EXE_PATH = 'sdk/MSBuild.dll'; MSBuildSDKsPath = 'sdk/Sdks' } }
+            Mock Invoke-RepositoryProcess {
+                if ($Arguments[0] -eq 'msbuild') { '{"Items":{"Compile":[]}}'; return }
+                Write-TestMutationReport $Arguments[[array]::IndexOf($Arguments, '--output') + 1]
+            }
+        }
+
+        It 'records a null-score skip for each validated dependency-only SDK pair' -ForEach @(
+            @{ Name = 'Sdk.Client' }, @{ Name = 'Sdk.Gateway' }, @{ Name = 'Sdk.Runtime' }
+        ) {
+            $sourceProject = New-TestProject $repository "src/$Name/$Name.csproj"
+            $test = New-TestProject $repository "tests/$Name.L0Tests/$Name.L0Tests.csproj" @("../../src/$Name/$Name.csproj")
+            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $test -OutputPath $outputRoot -Configuration Debug
+            $result.Status | Should -Be 'Skipped'
+            $result.Score | Should -BeNullOrEmpty
+            $result.ReportPath | Should -BeNullOrEmpty
+            $result.Success | Should -BeTrue
+            $result.Reason | Should -BeLike '*build and pack validation*'
+            $record = Get-Content $result.SkipReportPath -Raw | ConvertFrom-Json
+            $record.Status | Should -Be 'Skipped'
+            $record.Score | Should -BeNullOrEmpty
+            Should -Invoke Invoke-RepositoryProcess -Times 2 -Exactly -ParameterFilter { $Arguments[0] -eq 'msbuild' -and $Arguments -contains '-property:Configuration=Debug' }
+            Should -Invoke Invoke-RepositoryProcess -Times 0 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        }
+
+        It 'ignores generated bin and obj files when identifying authored inputs' {
+            foreach ($directory in @('bin', 'obj')) {
+                $generated = Join-Path (Split-Path -Parent $source) $directory
+                $null = New-Item -ItemType Directory -Path $generated -Force
+                '// SDK-generated output' | Set-Content (Join-Path $generated 'Generated.cs')
+            }
+            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputRoot
+            $result.Status | Should -Be 'Skipped'
+        }
+
+        It 'uses normal validation when authored code or tests are added' -ForEach @(
+            @{ Role = 'Source'; Extension = '.cs' }, @{ Role = 'Test'; Extension = '.cs' },
+            @{ Role = 'Source'; Extension = '.razor' }, @{ Role = 'Test'; Extension = '.xaml' }
+        ) {
+            $project = if ($Role -eq 'Source') { $source } else { $testProject }
+            '// Authored input' | Set-Content (Join-Path (Split-Path -Parent $project) "Authored$Extension")
+            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputRoot
+            $result.ReportPath | Should -Not -BeNullOrEmpty
+            $result.PSObject.Properties.Name | Should -Not -Contain 'SkipReportPath'
+            Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        }
+
+        It 'uses normal validation for explicit linked or shared project inputs' -ForEach @(
+            @{ Xml = '<ItemGroup><Compile Include="../../shared/Linked.cs" Link="Linked.cs" /></ItemGroup>' },
+            @{ Xml = '<Import Project="../../shared/Shared.projitems" />' },
+            @{ Xml = '<PropertyGroup><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>' }
+        ) {
+            "<Project Sdk=`"Microsoft.NET.Sdk`">$Xml</Project>" | Set-Content -LiteralPath $source
+            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputRoot
+            $result.ReportPath | Should -Not -BeNullOrEmpty
+            Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        }
+
+        It 'rejects shared inputs declared in ancestor build files' -ForEach @(
+            @{ File = 'Directory.Build.props'; Xml = '<Project><ItemGroup><Compile Include="shared/Linked.cs" /></ItemGroup></Project>' },
+            @{ File = 'Directory.Build.targets'; Xml = '<Project><Import Project="shared/Shared.targets" /></Project>' }
+        ) {
+            $Xml | Set-Content (Join-Path $repository $File)
+            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputRoot
+            $result.ReportPath | Should -Not -BeNullOrEmpty
+            Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        }
+
+        It 'uses evaluated Compile items to detect inputs outside the project folders' -ForEach @(
+            @{ Role = 'Source' }, @{ Role = 'Test' }
+        ) {
+            $script:evaluatedProject = if ($Role -eq 'Source') { $source } else { $testProject }
+            Mock Invoke-RepositoryProcess { '{"Items":{"Compile":[{"Identity":"../../shared/Linked.cs"}]}}' } -ParameterFilter {
+                $Arguments[0] -eq 'msbuild' -and $Arguments[1] -eq $evaluatedProject
+            }
+            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputRoot
+            $result.ReportPath | Should -Not -BeNullOrEmpty
+            Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        }
+
+        It 'does not hide compilation-evaluation failures' {
+            Mock Invoke-RepositoryProcess { throw 'Compile evaluation failed' } -ParameterFilter { $Arguments[0] -eq 'msbuild' }
+            { Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputRoot } | Should -Throw '*Compile evaluation failed*'
+            Should -Invoke Invoke-RepositoryProcess -Times 0 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        }
+
+        It 'does not apply SDK treatment to similarly named pairs outside the known locations' {
+            $otherSource = New-TestProject $repository 'src/Other/Sdk.Client.csproj'
+            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -SourceProjectPath $otherSource -OutputPath $outputRoot
+            $result.ReportPath | Should -Not -BeNullOrEmpty
+            Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter { $Arguments[0] -eq 'stryker' }
         }
     }
 
