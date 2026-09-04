@@ -56,6 +56,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
         Mock<IBrookWriterGrain>? writerMock = null,
         Mock<ISnapshotGrainFactory>? snapshotFactoryMock = null,
         Mock<IBrookEventConverter>? brookEventConverterMock = null,
+        Mock<ILogger<GenericAggregateGrain<TestSagaState>>>? loggerMock = null,
         Mock<ISagaReminderRegistry>? reminderRegistryMock = null,
         Mock<IRootEventEffect<TestSagaState>>? rootEventEffectMock = null,
         TimeProvider? timeProvider = null
@@ -70,6 +71,7 @@ public sealed class GenericAggregateGrainSagaReminderTests
             brookEventConverterMock: brookEventConverterMock,
             rootCommandHandlerMock: rootCommandHandlerMock,
             snapshotFactoryMock: snapshotFactoryMock,
+            loggerMock: loggerMock,
             reminderRegistryMock: reminderRegistryMock,
             rootEventEffectMock: rootEventEffectMock,
             timeProvider: timeProvider);
@@ -337,6 +339,40 @@ public sealed class GenericAggregateGrainSagaReminderTests
     }
 
     /// <summary>
+    ///     Leaves the reminder registry untouched when appending non-lifecycle events fails.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncDoesNotRollBackReminderWhenNonLifecycleAppendFails()
+    {
+        Mock<ISagaReminderRegistry> reminderRegistryMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        writerMock.Setup(w => w.AppendEventsAsync(
+                It.IsAny<ImmutableArray<BrookEvent>>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("append failed"));
+        GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
+            [new TestSagaInput("transfer-9")],
+            writerMock: writerMock,
+            reminderRegistryMock: reminderRegistryMock);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => grain.ExecuteAsync(
+            new TestSagaCommand(),
+            CancellationToken.None));
+        reminderRegistryMock.Verify(r => r.GetReminderAsync(It.IsAny<IGrainBase>(), It.IsAny<string>()), Times.Never);
+        reminderRegistryMock.Verify(
+            r => r.RegisterOrUpdateAsync(
+                It.IsAny<IGrainBase>(),
+                It.IsAny<string>(),
+                It.IsAny<TimeSpan>(),
+                It.IsAny<TimeSpan>()),
+            Times.Never);
+        reminderRegistryMock.Verify(
+            r => r.UnregisterAsync(It.IsAny<IGrainBase>(), It.IsAny<IGrainReminder>()),
+            Times.Never);
+    }
+
+    /// <summary>
     ///     Does not update the reminder inside yielded-effect persistence.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -402,6 +438,53 @@ public sealed class GenericAggregateGrainSagaReminderTests
     }
 
     /// <summary>
+    ///     Keeps a pre-existing saga reminder registered when the event append fails.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncKeepsPreExistingReminderWhenAppendFails()
+    {
+        Mock<IGrainReminder> grainReminderMock = new();
+        Mock<ISagaReminderRegistry> reminderRegistryMock = CreateReminderRegistryMock();
+        reminderRegistryMock.Setup(r => r.GetReminderAsync(It.IsAny<IGrainBase>(), SagaReminderName))
+            .ReturnsAsync(grainReminderMock.Object);
+        Mock<IBrookWriterGrain> writerMock = new();
+        writerMock.Setup(w => w.AppendEventsAsync(
+                It.IsAny<ImmutableArray<BrookEvent>>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("append failed"));
+        GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
+            [CreateStartedEvent()],
+            writerMock: writerMock,
+            reminderRegistryMock: reminderRegistryMock);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => grain.ExecuteAsync(
+            new TestSagaCommand(),
+            CancellationToken.None));
+        reminderRegistryMock.Verify(
+            r => r.UnregisterAsync(It.IsAny<IGrainBase>(), It.IsAny<IGrainReminder>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    ///     Registers the saga reminder when lifecycle events are mixed with other events.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncRegistersReminderWhenBatchMixesLifecycleAndOtherEvents()
+    {
+        Mock<ISagaReminderRegistry> reminderRegistryMock = CreateReminderRegistryMock();
+        GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
+            [new TestSagaInput("transfer-9"), CreateStartedEvent()],
+            reminderRegistryMock: reminderRegistryMock);
+        OperationResult result = await grain.ExecuteAsync(new TestSagaCommand(), CancellationToken.None);
+        Assert.True(result.Success);
+        reminderRegistryMock.Verify(
+            r => r.RegisterOrUpdateAsync(grain, SagaReminderName, It.IsAny<TimeSpan>(), It.IsAny<TimeSpan>()),
+            Times.Once);
+    }
+
+    /// <summary>
     ///     Registers the deterministic saga reminder before appending resumable lifecycle events.
     /// </summary>
     /// <param name="eventKind">The saga lifecycle event kind.</param>
@@ -436,6 +519,109 @@ public sealed class GenericAggregateGrainSagaReminderTests
         OperationResult result = await grain.ExecuteAsync(new TestSagaCommand(), CancellationToken.None);
         Assert.True(result.Success);
         Assert.Equal(["reminder", "append"], calls);
+    }
+
+    /// <summary>
+    ///     Surfaces the append failure even when rolling back the newly created reminder also fails.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncRethrowsAppendFailureWhenReminderRollbackFails()
+    {
+        Mock<IGrainReminder> grainReminderMock = new();
+        IGrainReminder? registeredReminder = null;
+        Mock<ILogger<GenericAggregateGrain<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        Mock<ISagaReminderRegistry> reminderRegistryMock = new();
+        reminderRegistryMock.Setup(r => r.GetReminderAsync(It.IsAny<IGrainBase>(), SagaReminderName))
+            .ReturnsAsync(() => registeredReminder);
+        reminderRegistryMock.Setup(r => r.RegisterOrUpdateAsync(
+                It.IsAny<IGrainBase>(),
+                SagaReminderName,
+                It.IsAny<TimeSpan>(),
+                It.IsAny<TimeSpan>()))
+            .Callback(() => registeredReminder = grainReminderMock.Object)
+            .Returns(Task.CompletedTask);
+        reminderRegistryMock.Setup(r => r.UnregisterAsync(It.IsAny<IGrainBase>(), grainReminderMock.Object))
+            .ThrowsAsync(new TimeoutException("reminder registry unavailable"));
+        Mock<IBrookWriterGrain> writerMock = new();
+        writerMock.Setup(w => w.AppendEventsAsync(
+                It.IsAny<ImmutableArray<BrookEvent>>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("append failed"));
+        GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
+            [CreateStartedEvent()],
+            writerMock: writerMock,
+            loggerMock: loggerMock,
+            reminderRegistryMock: reminderRegistryMock);
+        InvalidOperationException thrown = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            grain.ExecuteAsync(new TestSagaCommand(), CancellationToken.None));
+        Assert.Equal("append failed", thrown.Message);
+        reminderRegistryMock.Verify(
+            r => r.UnregisterAsync(It.IsAny<IGrainBase>(), grainReminderMock.Object),
+            Times.Once);
+        loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id => id.Id == 25),
+                It.IsAny<It.IsAnyType>(),
+                It.Is<Exception>(ex => ex is TimeoutException),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     Unregisters a reminder created for the current append when the append fails.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExecuteAsyncUnregistersNewlyRegisteredReminderWhenAppendFails()
+    {
+        Mock<IGrainReminder> grainReminderMock = new();
+        IGrainReminder? registeredReminder = null;
+        Mock<ILogger<GenericAggregateGrain<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Warning)).Returns(true);
+        Mock<ISagaReminderRegistry> reminderRegistryMock = new();
+        reminderRegistryMock.Setup(r => r.GetReminderAsync(It.IsAny<IGrainBase>(), SagaReminderName))
+            .ReturnsAsync(() => registeredReminder);
+        reminderRegistryMock.Setup(r => r.RegisterOrUpdateAsync(
+                It.IsAny<IGrainBase>(),
+                SagaReminderName,
+                It.IsAny<TimeSpan>(),
+                It.IsAny<TimeSpan>()))
+            .Callback(() => registeredReminder = grainReminderMock.Object)
+            .Returns(Task.CompletedTask);
+        reminderRegistryMock.Setup(r => r.UnregisterAsync(It.IsAny<IGrainBase>(), grainReminderMock.Object))
+            .Callback(() => registeredReminder = null)
+            .Returns(Task.CompletedTask);
+        Mock<IBrookWriterGrain> writerMock = new();
+        writerMock.Setup(w => w.AppendEventsAsync(
+                It.IsAny<ImmutableArray<BrookEvent>>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("append failed"));
+        GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
+            [CreateStartedEvent()],
+            writerMock: writerMock,
+            loggerMock: loggerMock,
+            reminderRegistryMock: reminderRegistryMock);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => grain.ExecuteAsync(
+            new TestSagaCommand(),
+            CancellationToken.None));
+        reminderRegistryMock.Verify(
+            r => r.RegisterOrUpdateAsync(grain, SagaReminderName, It.IsAny<TimeSpan>(), It.IsAny<TimeSpan>()),
+            Times.Once);
+        reminderRegistryMock.Verify(r => r.UnregisterAsync(grain, grainReminderMock.Object), Times.Once);
+        Assert.Null(registeredReminder);
+        loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.Is<EventId>(id => id.Id == 24),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -779,6 +965,64 @@ public sealed class GenericAggregateGrainSagaReminderTests
             reminderRegistryMock: reminderRegistryMock);
         await grain.ReceiveReminder(SagaReminderName, default);
         reminderRegistryMock.Verify(r => r.UnregisterAsync(grain, grainReminderMock.Object), Times.Once);
+        readerMock.Verify(
+            r => r.ReadEventsBatchAsync(
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+        writerMock.Verify(
+            w => w.AppendEventsAsync(
+                It.IsAny<ImmutableArray<BrookEvent>>(),
+                It.IsAny<BrookPosition?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    ///     Unregisters a stale reminder without recovery when the saga phase is NotStarted.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ReceiveReminderUnregistersWhenSagaPhaseIsNotStarted()
+    {
+        Mock<IBrookCursorGrain> cursorMock = new();
+        cursorMock.Setup(c => c.GetLatestPositionConfirmedAsync()).ReturnsAsync(new BrookPosition(8));
+        Mock<IGrainReminder> grainReminderMock = new();
+        Mock<ILogger<GenericAggregateGrain<TestSagaState>>> loggerMock = new();
+        loggerMock.Setup(l => l.IsEnabled(LogLevel.Information)).Returns(true);
+        Mock<ISagaReminderRegistry> reminderRegistryMock = new();
+        reminderRegistryMock.Setup(r => r.GetReminderAsync(It.IsAny<IGrainBase>(), SagaReminderName))
+            .ReturnsAsync(grainReminderMock.Object);
+        Mock<IBrookReaderGrain> readerMock = new();
+        Mock<IBrookWriterGrain> writerMock = new();
+        Mock<ISnapshotCacheGrain<TestSagaState>> snapshotCacheMock = new();
+        snapshotCacheMock.Setup(s => s.GetStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new TestSagaState
+                {
+                    Phase = SagaPhase.NotStarted,
+                });
+        Mock<ISnapshotGrainFactory> snapshotFactoryMock = new();
+        snapshotFactoryMock.Setup(f => f.GetSnapshotCacheGrain<TestSagaState>(It.IsAny<SnapshotKey>()))
+            .Returns(snapshotCacheMock.Object);
+        GenericAggregateGrain<TestSagaState> grain = await CreateActivatedSagaGrainAsync(
+            cursorMock: cursorMock,
+            readerMock: readerMock,
+            writerMock: writerMock,
+            snapshotFactoryMock: snapshotFactoryMock,
+            loggerMock: loggerMock,
+            reminderRegistryMock: reminderRegistryMock);
+        await grain.ReceiveReminder(SagaReminderName, default);
+        reminderRegistryMock.Verify(r => r.UnregisterAsync(grain, grainReminderMock.Object), Times.Once);
+        loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Information,
+                It.Is<EventId>(id => id.Id == 26),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
         readerMock.Verify(
             r => r.ReadEventsBatchAsync(
                 It.IsAny<BrookPosition?>(),
