@@ -58,9 +58,11 @@ public sealed class AqueductHubLifetimeManager<THub>
 {
     private readonly string hubName;
 
-    private volatile bool backplaneInitialized;
+    private readonly object initializationLock = new();
 
     private bool disposed;
+
+    private Task? initializationTask;
 
     private IDisposable? lifecycleSubscription;
 
@@ -150,7 +152,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     )
     {
         ArgumentNullException.ThrowIfNull(connection);
-        await EnsureStreamSetupAsync(HostApplicationLifetime.ApplicationStopping).ConfigureAwait(false);
+        await EnsureStreamSetupAsync().ConfigureAwait(false);
         ConnectionRegistry.TryAdd(connection.ConnectionId, connection);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.ConnectAsync(hubName, ServerId).ConfigureAwait(false);
@@ -182,7 +184,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         lifecycleSubscription = lifecycle.Subscribe(
             nameof(AqueductHubLifetimeManager<THub>),
             ServiceLifecycleStage.Active,
-            async ct => await EnsureStreamSetupAsync(ct).ConfigureAwait(false));
+            async ct => await EnsureStreamSetupAsync().WaitAsync(ct).ConfigureAwait(false));
     }
 
     /// <inheritdoc />
@@ -208,9 +210,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(methodName);
         cancellationToken.ThrowIfCancellationRequested();
-        await EnsureStreamSetupAsync(HostApplicationLifetime.ApplicationStopping)
-            .WaitAsync(cancellationToken)
-            .ConfigureAwait(false);
+        await EnsureStreamSetupAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         AllMessage message = new()
         {
@@ -230,9 +230,7 @@ public sealed class AqueductHubLifetimeManager<THub>
     {
         ArgumentException.ThrowIfNullOrEmpty(methodName);
         cancellationToken.ThrowIfCancellationRequested();
-        await EnsureStreamSetupAsync(HostApplicationLifetime.ApplicationStopping)
-            .WaitAsync(cancellationToken)
-            .ConfigureAwait(false);
+        await EnsureStreamSetupAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
         AllMessage message = new()
         {
@@ -374,15 +372,40 @@ public sealed class AqueductHubLifetimeManager<THub>
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    private async Task EnsureStreamSetupAsync(
-        CancellationToken cancellationToken = default
+    private Task EnsureStreamSetupAsync()
+    {
+        lock (initializationLock)
+        {
+            if (initializationTask is null || initializationTask.IsFaulted || initializationTask.IsCanceled)
+            {
+                initializationTask = InitializeBackplaneAsync(HostApplicationLifetime.ApplicationStopping);
+
+                // Observe a late failure even if every broadcast caller has stopped waiting.
+                _ = initializationTask.ContinueWith(
+                    task => Logger.BackplaneInitializationFailed(hubName, ServerId, task.Exception!),
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
+            }
+
+            return initializationTask;
+        }
+    }
+
+    private ISignalRClientGrain GetClientGrain(
+        string connectionId
+    ) =>
+        GrainFactory.GetClientGrain(hubName, connectionId);
+
+    private ISignalRGroupGrain GetGroupGrain(
+        string groupName
+    ) =>
+        GrainFactory.GetGroupGrain(hubName, groupName);
+
+    private async Task InitializeBackplaneAsync(
+        CancellationToken cancellationToken
     )
     {
-        if (backplaneInitialized)
-        {
-            return;
-        }
-
         Logger.InitializingBackplane(hubName, ServerId);
 
         // Initialize stream subscriptions via the manager
@@ -395,19 +418,8 @@ public sealed class AqueductHubLifetimeManager<THub>
 
         // Start heartbeat manager
         await HeartbeatManager.StartAsync(() => ConnectionRegistry.Count, cancellationToken).ConfigureAwait(false);
-        backplaneInitialized = true;
         Logger.BackplaneInitialized(hubName, ServerId);
     }
-
-    private ISignalRClientGrain GetClientGrain(
-        string connectionId
-    ) =>
-        GrainFactory.GetClientGrain(hubName, connectionId);
-
-    private ISignalRGroupGrain GetGroupGrain(
-        string groupName
-    ) =>
-        GrainFactory.GetGroupGrain(hubName, groupName);
 
     private async Task OnAllMessageAsync(
         AllMessage message

@@ -118,7 +118,6 @@ public sealed class AqueductHubLifetimeManagerTests
         bool cancelDuringHeartbeat
     )
     {
-        using CancellationTokenSource caller = new();
         using CancellationTokenSource stopping = new();
         IHostApplicationLifetime lifetime = Substitute.For<IHostApplicationLifetime>();
         lifetime.ApplicationStopping.Returns(stopping.Token);
@@ -137,19 +136,31 @@ public sealed class AqueductHubLifetimeManagerTests
             streamSubscriptionManager: streams,
             heartbeatManager: heartbeat,
             hostApplicationLifetime: lifetime);
-        Task canceledSend = excludeConnections
-            ? manager.SendAllExceptAsync("Canceled", [], ["excluded"], caller.Token)
-            : manager.SendAllAsync("Canceled", [], caller.Token);
-        await caller.CancelAsync();
         try
         {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                canceledSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                using CancellationTokenSource caller = new();
+                Task canceledSend = excludeConnections
+                    ? manager.SendAllExceptAsync("Canceled", [], ["excluded"], caller.Token)
+                    : manager.SendAllAsync("Canceled", [], caller.Token);
+                await caller.CancelAsync();
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                    canceledSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            }
+
             Assert.False(stopping.IsCancellationRequested);
             Task healthySend = manager.SendAllAsync("Healthy", []);
             Assert.False(healthySend.IsCompleted);
             setup.SetResult();
-            await healthySend;
+            await healthySend.WaitAsync(TimeSpan.FromSeconds(5));
+            await streams.Received(1)
+                .EnsureInitializedAsync(
+                    Arg.Any<string>(),
+                    Arg.Any<Func<ServerMessage, Task>>(),
+                    Arg.Any<Func<AllMessage, Task>>(),
+                    stopping.Token);
+            await heartbeat.Received(1).StartAsync(Arg.Any<Func<int>>(), stopping.Token);
             await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(m => m.MethodName == "Healthy"));
             await streams.DidNotReceive().PublishToAllAsync(Arg.Is<AllMessage>(m => m.MethodName == "Canceled"));
         }
@@ -183,6 +194,89 @@ public sealed class AqueductHubLifetimeManagerTests
             ? manager.SendAllExceptAsync("Message", [], ["excluded"], caller.Token)
             : manager.SendAllAsync("Message", [], caller.Token));
         await streams.DidNotReceiveWithAnyArgs().PublishToAllAsync(default!);
+    }
+
+    /// <summary>
+    ///     Shared initialization failures must be observed after every caller cancels and remain retryable.
+    /// </summary>
+    /// <param name="failDuringHeartbeat">Whether heartbeat registration is the operation that fails late.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BroadcastShouldObserveSharedStartupFailureAfterAllCallersCancel(
+        bool failDuringHeartbeat
+    )
+    {
+        using CancellationTokenSource firstCaller = new();
+        using CancellationTokenSource secondCaller = new();
+        using CancellationTokenSource stopping = new();
+        IHostApplicationLifetime lifetime = Substitute.For<IHostApplicationLifetime>();
+        lifetime.ApplicationStopping.Returns(stopping.Token);
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        TaskCompletionSource setup = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        streams.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                stopping.Token)
+            .Returns(failDuringHeartbeat ? Task.CompletedTask : setup.Task, Task.CompletedTask);
+        heartbeat.StartAsync(Arg.Any<Func<int>>(), stopping.Token)
+            .Returns(failDuringHeartbeat ? setup.Task : Task.CompletedTask, Task.CompletedTask);
+        TaskCompletionSource<Exception?> failureLogged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int failureCount = 0;
+        CallbackLogger<AqueductHubLifetimeManager<TestAqueductHub>> logger = new((
+            eventId,
+            exception
+        ) =>
+        {
+            if (eventId.Id == 12)
+            {
+                Interlocked.Increment(ref failureCount);
+                failureLogged.TrySetResult(exception);
+            }
+        });
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat,
+            hostApplicationLifetime: lifetime,
+            logger: logger);
+        try
+        {
+            Task firstSend = manager.SendAllAsync("Canceled", [], firstCaller.Token);
+            Task secondSend = manager.SendAllExceptAsync("Canceled", [], ["excluded"], secondCaller.Token);
+            await firstCaller.CancelAsync();
+            await secondCaller.CancelAsync();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                secondSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(stopping.IsCancellationRequested);
+            InvalidOperationException expected = new("Shared initialization failed");
+            setup.SetException(expected);
+            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            AggregateException aggregate = Assert.IsType<AggregateException>(loggedException);
+            Assert.Same(expected, Assert.Single(aggregate.InnerExceptions));
+            Assert.Equal(1, failureCount);
+            await manager.SendAllAsync("Retry", []).WaitAsync(TimeSpan.FromSeconds(5));
+            await manager.SendAllExceptAsync("Ready", [], ["excluded"]).WaitAsync(TimeSpan.FromSeconds(5));
+            await streams.Received(2)
+                .EnsureInitializedAsync(
+                    Arg.Any<string>(),
+                    Arg.Any<Func<ServerMessage, Task>>(),
+                    Arg.Any<Func<AllMessage, Task>>(),
+                    stopping.Token);
+            await heartbeat.Received(failDuringHeartbeat ? 2 : 1).StartAsync(Arg.Any<Func<int>>(), stopping.Token);
+            await streams.DidNotReceive()
+                .PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Canceled"));
+            await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Retry"));
+            await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Ready"));
+            Assert.Equal(1, failureCount);
+        }
+        finally
+        {
+            setup.TrySetResult();
+        }
     }
 
     /// <summary>
@@ -1273,6 +1367,40 @@ public sealed class AqueductHubLifetimeManagerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => manager.SendUsersAsync(null!, "method", []));
+    }
+
+    /// <summary>
+    ///     A canceled initialization task must not permanently prevent healthy callers from starting the backplane.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task SharedSetupShouldRetryCanceledInitialization()
+    {
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        streams.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromCanceled(new(true)), Task.CompletedTask);
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => manager.SendAllAsync("Canceled", []));
+        await manager.SendAllAsync("Retry", []);
+        await manager.SendAllAsync("Ready", []);
+        await streams.Received(2)
+            .EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>());
+        await heartbeat.Received(1).StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>());
+        await streams.DidNotReceive()
+            .PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Canceled"));
+        await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Retry"));
+        await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Ready"));
     }
 
     /// <summary>

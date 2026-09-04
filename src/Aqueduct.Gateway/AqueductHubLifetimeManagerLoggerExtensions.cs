@@ -22,6 +22,17 @@ internal static partial class AqueductHubLifetimeManagerLoggerExtensions
     );
 
     [LoggerMessage(
+        EventId = 12,
+        Level = LogLevel.Warning,
+        Message = "Orleans backplane initialization failed for hub '{HubName}' (serverId: {ServerId})")]
+    public static partial void BackplaneInitializationFailed(
+        this ILogger logger,
+        string hubName,
+        string serverId,
+        Exception exception
+    );
+
+    [LoggerMessage(
         EventId = 2,
         Level = LogLevel.Information,
         Message = "Orleans backplane initialized for hub '{HubName}' (serverId: {ServerId})")]
