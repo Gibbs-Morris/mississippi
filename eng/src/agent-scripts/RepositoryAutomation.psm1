@@ -49,7 +49,7 @@ function ConvertTo-ConsoleColor {
 }
 
 
-function Write-AutomationBanner {
+function Show-AutomationBanner {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Message,
@@ -84,7 +84,7 @@ function Invoke-AutomationStep {
 
     $resolvedBannerColor = ConvertTo-ConsoleColor -Value $BannerColor -Default ([ConsoleColor]::Yellow)
     $resolvedSuccessColor = ConvertTo-ConsoleColor -Value $SuccessColor -Default ([ConsoleColor]::Green)
-    Write-AutomationBanner -Message $bannerText -ForegroundColor $resolvedBannerColor -InsertBlankLine
+    Show-AutomationBanner -Message $bannerText -ForegroundColor $resolvedBannerColor -InsertBlankLine
     if ($Description) {
         Write-Host $Description
     }
@@ -103,6 +103,29 @@ function Invoke-AutomationStep {
     }
 }
 
+function Show-RepositoryCommand {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$FilePath,
+        [string[]]$Arguments
+    )
+
+    $escapedArgs = if ($Arguments) {
+        $Arguments | ForEach-Object {
+            if ($_ -and $_.Contains(' ')) { '"{0}"' -f $_ } else { $_ }
+        }
+    } else {
+        @()
+    }
+
+    $commandLine = ($escapedArgs -join ' ').Trim()
+    if ($commandLine) {
+        Write-Host "Executing: $FilePath $commandLine" -ForegroundColor ([ConsoleColor]::DarkGray)
+    } else {
+        Write-Host "Executing: $FilePath" -ForegroundColor ([ConsoleColor]::DarkGray)
+    }
+}
+
 function Invoke-RepositoryProcess {
     [CmdletBinding()]
     param(
@@ -114,22 +137,7 @@ function Invoke-RepositoryProcess {
         [switch]$SuppressCommandEcho
     )
 
-    $escapedArgs = if ($Arguments) {
-        $Arguments | ForEach-Object {
-            if ($_ -and $_.Contains(' ')) { '"{0}"' -f $_ } else { $_ }
-        }
-    } else {
-        @()
-    }
-
-    if (-not $SuppressCommandEcho) {
-        $commandLine = ($escapedArgs -join ' ').Trim()
-        if ($commandLine) {
-            Write-Host "Executing: $FilePath $commandLine" -ForegroundColor ([ConsoleColor]::DarkGray)
-        } else {
-            Write-Host "Executing: $FilePath" -ForegroundColor ([ConsoleColor]::DarkGray)
-        }
-    }
+    if (-not $SuppressCommandEcho) { Show-RepositoryCommand -FilePath $FilePath -Arguments $Arguments }
 
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $FilePath
@@ -215,17 +223,17 @@ function Invoke-SolutionBuild {
     )
 
     $resolved = Resolve-Path -LiteralPath $SolutionPath
-    $args = @('build', $resolved.Path, '--configuration', $Configuration)
-    if ($NoRestore) { $args += '--no-restore' }
-    if ($NoIncremental) { $args += '--no-incremental' }
-    if ($WarnAsError) { $args += '--warnaserror' }
-    if ($AdditionalArguments) { $args += $AdditionalArguments }
+    $processArguments = @('build', $resolved.Path, '--configuration', $Configuration)
+    if ($NoRestore) { $processArguments += '--no-restore' }
+    if ($NoIncremental) { $processArguments += '--no-incremental' }
+    if ($WarnAsError) { $processArguments += '--warnaserror' }
+    if ($AdditionalArguments) { $processArguments += $AdditionalArguments }
 
     if (-not $Quiet) {
         Write-Host "Building solution: $($resolved.Path)" -ForegroundColor ([ConsoleColor]::Cyan)
     }
 
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "Failed to build $($resolved.Path)."
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $processArguments -ErrorMessage "Failed to build $($resolved.Path)."
 }
 
 function New-AutomationRunDirectory {
@@ -264,22 +272,22 @@ function Invoke-SolutionTests {
     )
 
     $resolved = Resolve-Path -LiteralPath $SolutionPath
-    $args = @('test', $resolved.Path, '--configuration', $Configuration, '--no-restore')
+    $processArguments = @('test', $resolved.Path, '--configuration', $Configuration, '--no-restore')
 
     $resultsDirectory = $null
     if ($ResultsRoot) {
         $resultsDirectory = New-AutomationRunDirectory -Root $ResultsRoot
-        $args += @('--results-directory', $resultsDirectory)
+        $processArguments += @('--results-directory', $resultsDirectory)
     }
 
     if ($Logger) {
-        $args += '--logger'
-        $args += $Logger
+        $processArguments += '--logger'
+        $processArguments += $Logger
     }
 
     if ($CollectCoverage) {
-        $args += '--collect'
-        $args += 'XPlat Code Coverage'
+        $processArguments += '--collect'
+        $processArguments += 'XPlat Code Coverage'
     }
 
     # Build filter expression for test levels (e.g., L0Tests, L1Tests)
@@ -287,19 +295,19 @@ function Invoke-SolutionTests {
     if ($TestLevels -and $TestLevels.Count -gt 0) {
         $filterParts = $TestLevels | ForEach-Object { "FullyQualifiedName~.$($_)." }
         $filterExpression = $filterParts -join '|'
-        $args += '--filter'
-        $args += $filterExpression
+        $processArguments += '--filter'
+        $processArguments += $filterExpression
     }
 
     if ($AdditionalArguments) {
-        $args += $AdditionalArguments
+        $processArguments += $AdditionalArguments
     }
 
     if (-not $Quiet) {
         Write-Host "Executing tests: $($resolved.Path)" -ForegroundColor ([ConsoleColor]::Cyan)
     }
 
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "Failed to run tests for $($resolved.Path)."
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $processArguments -ErrorMessage "Failed to run tests for $($resolved.Path)."
 
     return [pscustomobject]@{
         SolutionPath     = $resolved.Path
@@ -321,8 +329,8 @@ function Invoke-SlnGeneration {
         $null = New-Item -ItemType Directory -Path $outputDirectory -Force
     }
 
-    $args = @('tool','run','slngen', $source.Path, '--solutionfile', $outputFullPath, '--launch','false')
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "Failed to generate solution '$outputFullPath' using SlnGen." -SuppressCommandEcho
+    $processArguments = @('tool','run','slngen', $source.Path, '--solutionfile', $outputFullPath, '--launch','false')
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $processArguments -ErrorMessage "Failed to generate solution '$outputFullPath' using SlnGen." -SuppressCommandEcho
     return $outputFullPath
 }
 
@@ -338,18 +346,18 @@ function Invoke-ReSharperCleanup {
 
     $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
     $resolvedSettings = Resolve-Path -LiteralPath $SettingsPath
-    $args = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)")
+    $processArguments = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)")
 
     if ($IncludePaths -and $IncludePaths.Count -gt 0) {
-        $args += "--include=$($IncludePaths -join ';')"
+        $processArguments += "--include=$($IncludePaths -join ';')"
     }
 
     if ($ExcludePaths -and $ExcludePaths.Count -gt 0) {
-        $args += "--exclude=$($ExcludePaths -join ';')"
+        $processArguments += "--exclude=$($ExcludePaths -join ';')"
     }
 
-    $args += $resolvedSolution.Path
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho
+    $processArguments += $resolvedSolution.Path
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $processArguments -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho
 }
 
 function Get-TestProjects {
@@ -404,17 +412,17 @@ function Get-MutationSourceProjects {
     # This suite intentionally covers the three separate Inlet contract assemblies.
     if ($projectName -eq 'Inlet.Abstractions.L0Tests') {
         foreach ($sourceName in @('Inlet.Client.Abstractions', 'Inlet.Gateway.Abstractions', 'Inlet.Runtime.Abstractions')) {
-            $matches = @($references | Where-Object { [System.IO.Path]::GetFileNameWithoutExtension($_) -eq $sourceName })
-            if ($matches.Count -ne 1) { throw "Expected one reference to $sourceName from $projectName." }
-            $matches[0]
+            $sourceMatches = @($references | Where-Object { [System.IO.Path]::GetFileNameWithoutExtension($_) -eq $sourceName })
+            if ($sourceMatches.Count -ne 1) { throw "Expected one reference to $sourceName from $projectName." }
+            $sourceMatches[0]
         }
         return
     }
 
     $sourceName = $projectName -replace '\.(L[0-4])?Tests$', ''
-    $matches = @($references | Where-Object { [System.IO.Path]::GetFileNameWithoutExtension($_) -eq $sourceName })
-    if ($matches.Count -eq 1) { return $matches[0] }
-    if ($matches.Count -eq 0 -and $references.Count -eq 1) { return $references[0] }
+    $sourceMatches = @($references | Where-Object { [System.IO.Path]::GetFileNameWithoutExtension($_) -eq $sourceName })
+    if ($sourceMatches.Count -eq 1) { return $sourceMatches[0] }
+    if ($sourceMatches.Count -eq 0 -and $references.Count -eq 1) { return $references[0] }
     throw "Cannot select one mutation source for $projectName. Add an explicit mapping for its source references: $($references -join ', ')."
 }
 
@@ -499,6 +507,92 @@ function Invoke-StrykerMutationTestPerProject {
     return [pscustomobject]@{ Project = $project; SourceProject = $source; Output = $projectOutputPath; ReportPath = $result.ReportPath; Score = $result.Score; Success = $true }
 }
 
+function Invoke-MutationSuite {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$TestProject,
+        [Parameter(Mandatory)][string]$OutputPath,
+        [string]$Configuration = 'Release',
+        [string]$ConfigPath
+    )
+
+    if ([System.IO.Path]::GetFileNameWithoutExtension($TestProject) -eq 'Architecture.L0Tests') {
+        Write-Host '  Skipping Architecture.L0Tests: validates assembly architecture and has no single behavioral mutation target.'
+        return
+    }
+    try {
+        $sources = @(Get-MutationSourceProjects -ProjectPath $TestProject)
+    }
+    catch {
+        Write-Warning $_.Exception.Message
+        return [pscustomobject]@{ Project = $TestProject; Success = $false; Error = $_.Exception.Message }
+    }
+    foreach ($source in $sources) {
+        try {
+            Invoke-StrykerMutationTestPerProject -ProjectPath $TestProject -SourceProjectPath $source -OutputPath $OutputPath -Configuration $Configuration -ConfigPath $ConfigPath
+        }
+        catch {
+            Write-Warning $_.Exception.Message
+            [pscustomobject]@{ Project = $TestProject; SourceProject = $source; Success = $false; Error = $_.Exception.Message }
+        }
+    }
+}
+
+function Add-MutationSourceFiles {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Target,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Report,
+        [Parameter(Mandatory)][int]$ReportIndex
+    )
+
+    foreach ($file in @($Report.files.GetEnumerator() | Sort-Object Key)) {
+        # The same source can be covered by different suites; keep every result with a unique ID.
+        foreach ($mutant in $file.Value.mutants) { $mutant.id = "$ReportIndex/$($mutant.id)" }
+        if (-not $Target.Contains($file.Key)) {
+            $Target[$file.Key] = $file.Value
+        }
+        else {
+            $Target[$file.Key].mutants = @($Target[$file.Key].mutants) + @($file.Value.mutants)
+        }
+    }
+}
+
+function Add-MutationTestFiles {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Target,
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Report
+    )
+
+    if (-not $Report.Contains('testFiles')) { return }
+    foreach ($file in @($Report.testFiles.GetEnumerator() | Sort-Object Key)) {
+        if (-not $Target.Contains($file.Key)) {
+            $Target[$file.Key] = $file.Value
+        }
+        else {
+            $Target[$file.Key].tests = @(@($Target[$file.Key].tests) + @($file.Value.tests) | Sort-Object id -Unique)
+        }
+    }
+}
+
+function Export-MutationRunReport {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$OutputPath)
+
+    # Preserve all source reports at the canonical path consumed by the survivor summarizer.
+    $mergedReport = [ordered]@{ schemaVersion = '1'; files = [ordered]@{}; testFiles = [ordered]@{} }
+    $reportIndex = 0
+    foreach ($reportPath in @(Get-ChildItem -LiteralPath $OutputPath -Recurse -File -Filter mutation-report.json | Sort-Object FullName)) {
+        $report = (Read-MutationReport -ReportPath $reportPath.FullName).Report
+        Add-MutationSourceFiles -Target $mergedReport.files -Report $report -ReportIndex ($reportIndex++)
+        Add-MutationTestFiles -Target $mergedReport.testFiles -Report $report
+    }
+    $reportsDirectory = Join-Path $OutputPath 'reports'
+    $null = New-Item -ItemType Directory -Path $reportsDirectory -Force
+    $mergedReport | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath (Join-Path $reportsDirectory 'mutation-report.json')
+}
+
 function Invoke-StrykerMutationTest {
     [CmdletBinding()]
     param(
@@ -514,72 +608,21 @@ function Invoke-StrykerMutationTest {
     # Workaround for stryker-mutator/stryker-net#2634
     # Run Stryker per-project instead of at solution level to avoid compilation issues
     # with source generators (like LoggerMessage)
-    Write-Host "Discovering test projects in solution..." -ForegroundColor ([ConsoleColor]::Cyan)
+    Write-Host 'Discovering test projects in solution...' -ForegroundColor ([ConsoleColor]::Cyan)
     $testProjects = @(Get-TestProjects -SolutionPath $resolvedSolution.Path -TestLevels @('L0Tests', 'L1Tests'))
     if ($testProjects.Count -eq 0) { throw "No L0/L1 test projects found in $($resolvedSolution.Path)." }
     Write-Host 'Mutation scope: solution L0/L1 tests. L2+ require separate infrastructure validation.'
     Write-Host "Found $($testProjects.Count) test projects" -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
 
-    $projectResults = @()
-    foreach ($testProject in $testProjects) {
-        if ([System.IO.Path]::GetFileNameWithoutExtension($testProject) -eq 'Architecture.L0Tests') {
-            Write-Host '  Skipping Architecture.L0Tests: validates assembly architecture and has no single behavioral mutation target.'
-            continue
+    $projectResults = @(
+        foreach ($testProject in $testProjects) {
+            Invoke-MutationSuite -TestProject $testProject -OutputPath $outputFullPath -Configuration $Configuration -ConfigPath $ConfigPath
+            Write-Host
         }
-        try {
-            $sources = @(Get-MutationSourceProjects -ProjectPath $testProject)
-        }
-        catch {
-            $projectResults += [pscustomobject]@{ Project = $testProject; Success = $false; Error = $_.Exception.Message }
-            Write-Warning $_.Exception.Message
-            continue
-        }
-        foreach ($source in $sources) {
-            try {
-                $projectResults += Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -SourceProjectPath $source -OutputPath $outputFullPath -Configuration $Configuration -ConfigPath $ConfigPath
-            }
-            catch {
-                Write-Warning $_.Exception.Message
-                $projectResults += [pscustomobject]@{ Project = $testProject; SourceProject = $source; Success = $false; Error = $_.Exception.Message }
-            }
-        }
-        Write-Host
-    }
-
+    )
     $projectResults | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath (Join-Path $outputFullPath 'project-results.json')
-    # Preserve all source reports at the canonical path consumed by the survivor summarizer.
-    $mergedReport = [ordered]@{ schemaVersion = '1'; files = [ordered]@{}; testFiles = [ordered]@{} }
-    $reportIndex = 0
-    foreach ($reportPath in @(Get-ChildItem -LiteralPath $outputFullPath -Recurse -File -Filter mutation-report.json | Sort-Object FullName)) {
-        $report = (Read-MutationReport -ReportPath $reportPath.FullName).Report
-        foreach ($file in @($report.files.GetEnumerator() | Sort-Object Key)) {
-            # The same source can be covered by different suites; keep every result with a unique ID.
-            foreach ($mutant in $file.Value.mutants) { $mutant.id = "$reportIndex/$($mutant.id)" }
-            if (-not $mergedReport.files.Contains($file.Key)) {
-                $mergedReport.files[$file.Key] = $file.Value
-            }
-            else {
-                $mergedReport.files[$file.Key].mutants = @($mergedReport.files[$file.Key].mutants) + @($file.Value.mutants)
-            }
-        }
-        if ($report.ContainsKey('testFiles')) {
-            foreach ($file in @($report.testFiles.GetEnumerator() | Sort-Object Key)) {
-                if (-not $mergedReport.testFiles.Contains($file.Key)) {
-                    $mergedReport.testFiles[$file.Key] = $file.Value
-                }
-                else {
-                    $mergedReport.testFiles[$file.Key].tests = @(
-                        @($mergedReport.testFiles[$file.Key].tests) + @($file.Value.tests) | Sort-Object id -Unique
-                    )
-                }
-            }
-        }
-        $reportIndex++
-    }
-    $reportsDirectory = Join-Path $outputFullPath 'reports'
-    $null = New-Item -ItemType Directory -Path $reportsDirectory -Force
-    $mergedReport | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath (Join-Path $reportsDirectory 'mutation-report.json')
+    Export-MutationRunReport -OutputPath $outputFullPath
     Write-Host "Mutation run results: $outputFullPath"
     if ($projectResults.Count -eq 0) { throw 'No eligible mutation projects were executed.' }
     $failedProjects = @($projectResults | Where-Object { -not $_.Success })
@@ -599,7 +642,7 @@ function Invoke-MississippiSolutionBuild {
 
     $solutionPath = Join-Path $RepoRoot 'mississippi.slnx'
 
-    Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION BUILD PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
+    Show-AutomationBanner -Message '=== MISSISSIPPI SOLUTION BUILD PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
     Write-Host "Building mississippi.slnx in $Configuration mode"
     Write-Host
 
@@ -629,7 +672,7 @@ function Invoke-SampleSolutionBuild {
 
     $solutionPath = Join-Path $RepoRoot 'samples.slnx'
 
-    Write-AutomationBanner -Message '=== SAMPLE SOLUTION BUILD PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
+    Show-AutomationBanner -Message '=== SAMPLE SOLUTION BUILD PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
     Write-Host "Building samples.slnx in $Configuration mode"
     Write-Host
 
@@ -660,7 +703,7 @@ function Invoke-FinalSolutionsBuild {
     $mississippi = Join-Path $RepoRoot 'mississippi.slnx'
     $samples = Join-Path $RepoRoot 'samples.slnx'
 
-    Write-AutomationBanner -Message '=== FINAL BUILD WITH WARNINGS AS ERRORS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
+    Show-AutomationBanner -Message '=== FINAL BUILD WITH WARNINGS AS ERRORS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
     Write-Host 'Zero-tolerance build: All warnings will be treated as compilation errors'
     Write-Host 'This is the final quality gate before code can be merged'
     Write-Host
@@ -705,7 +748,7 @@ function Invoke-MississippiSolutionUnitTests {
     $solutionPath = Join-Path $RepoRoot 'mississippi.slnx'
     $resultsRoot = Join-Path $RepoRoot '.scratchpad/coverage-test-results'
 
-    Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION UNIT TESTING PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
+    Show-AutomationBanner -Message '=== MISSISSIPPI SOLUTION UNIT TESTING PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
     Write-Host 'Running comprehensive unit and integration tests'
     Write-Host
 
@@ -766,7 +809,7 @@ function Invoke-SampleSolutionUnitTests {
     $solutionPath = Join-Path $RepoRoot 'samples.slnx'
     $resultsRoot = Join-Path $RepoRoot '.scratchpad/coverage-test-results'
 
-    Write-AutomationBanner -Message '=== SAMPLE SOLUTION UNIT TESTING PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
+    Show-AutomationBanner -Message '=== SAMPLE SOLUTION UNIT TESTING PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
     Write-Host 'Running sample application tests (minimal coverage for demonstration)'
     Write-Host
 
@@ -804,7 +847,7 @@ function Invoke-MississippiSolutionCleanup {
     $slnPath = Join-Path $RepoRoot 'mississippi.sln'
     $settingsPath = Join-Path $RepoRoot 'Directory.DotSettings'
 
-    Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION CODE CLEANUP PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
+    Show-AutomationBanner -Message '=== MISSISSIPPI SOLUTION CODE CLEANUP PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
     Write-Host "Running ReSharper CleanupCode with 'Built-in: Full Cleanup' profile"
     Write-Host
 
@@ -842,7 +885,7 @@ function Invoke-SampleSolutionCleanup {
     $slnPath = Join-Path $RepoRoot 'samples.sln'
     $settingsPath = Join-Path $RepoRoot 'Directory.DotSettings'
 
-    Write-AutomationBanner -Message '=== SAMPLE SOLUTION CODE CLEANUP PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
+    Show-AutomationBanner -Message '=== SAMPLE SOLUTION CODE CLEANUP PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
     Write-Host "Running ReSharper CleanupCode with 'Built-in: Full Cleanup' profile"
     Write-Host
 
@@ -879,7 +922,7 @@ function Invoke-MississippiSolutionMutationTests {
     $slnxPath = Join-Path $RepoRoot 'mississippi.slnx'
     $mutationRoot = Join-Path $RepoRoot '.scratchpad/mutation-test-results'
 
-    Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION MUTATION TESTING PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
+    Show-AutomationBanner -Message '=== MISSISSIPPI SOLUTION MUTATION TESTING PROCESS ===' -ForegroundColor ([ConsoleColor]::Yellow) -InsertBlankLine
     Write-Host 'Running Stryker.NET mutation testing to validate test quality'
     Write-Host 'Mutation testing ensures tests can detect code changes'
     Write-Host
@@ -920,7 +963,7 @@ function Invoke-SolutionsPipeline {
     $coverageScript = Join-Path $automationScriptsRoot 'summarize-coverage-gaps.ps1'
     $mutationSummaryScript = Join-Path $automationScriptsRoot 'summarize-mutation-survivors.ps1'
 
-    Write-AutomationBanner -Message '=== STARTING COMPLETE BUILD AND TEST PIPELINE ===' -ForegroundColor ([ConsoleColor]::Magenta) -InsertBlankLine
+    Show-AutomationBanner -Message '=== STARTING COMPLETE BUILD AND TEST PIPELINE ===' -ForegroundColor ([ConsoleColor]::Magenta) -InsertBlankLine
     Write-Host 'Pipeline will execute Mississippi solution followed by Sample solution'
     Write-Host 'Each step must complete successfully before proceeding to the next'
     if (-not $IncludeMutation) {
@@ -930,7 +973,7 @@ function Invoke-SolutionsPipeline {
 
     $step = 1
 
-    Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
+    Show-AutomationBanner -Message '=== MISSISSIPPI SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Mississippi Solution' -StepNumber ($step++) -Action { Invoke-MississippiSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { & $coverageScript -EmitTasks }
@@ -942,7 +985,7 @@ function Invoke-SolutionsPipeline {
         Invoke-AutomationStep -Name 'Cleanup Mississippi Code Style' -StepNumber ($step++) -Action { Invoke-MississippiSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
     }
 
-    Write-AutomationBanner -Message '=== SAMPLE SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
+    Show-AutomationBanner -Message '=== SAMPLE SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Sample Solution' -StepNumber ($step++) -Action { Invoke-SampleSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     Invoke-AutomationStep -Name 'Run Sample Unit Tests' -StepNumber ($step++) -Action { Invoke-SampleSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     if (-not $SkipCleanup) {
@@ -955,7 +998,7 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+Export-ModuleMember -Function Get-RepositoryRoot, Show-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
 
 
 

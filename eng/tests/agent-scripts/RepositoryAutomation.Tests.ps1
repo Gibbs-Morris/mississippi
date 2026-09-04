@@ -9,6 +9,9 @@ $modulePath = [System.IO.Path]::GetFullPath($modulePath)
 Import-Module -Name $modulePath -Force
 
 Describe 'RepositoryAutomation helpers' {
+    It 'exports the display helper with the Show verb' {
+        (Get-Command Show-AutomationBanner -Module RepositoryAutomation).Name | Should -Be 'Show-AutomationBanner'
+    }
     It 'resolves repository root from test path' {
         $root = Get-RepositoryRoot -StartPath $PSScriptRoot
         Test-Path -LiteralPath (Join-Path $root '.git') | Should -Be $true
@@ -143,6 +146,12 @@ InModuleScope RepositoryAutomation {
     }
 
     Describe 'Child process environment' {
+        It 'displays command arguments without adding display text to process output' {
+            Mock Write-Host {}
+            @(Show-RepositoryCommand -FilePath 'dotnet' -Arguments @('test', 'two words')).Count | Should -Be 0
+            Should -Invoke Write-Host -Times 1 -ParameterFilter { $Object -eq 'Executing: dotnet test "two words"' }
+        }
+
         It 'scopes SDK environment and working directory to the child and preserves LASTEXITCODE' -ForEach @(@{ ExitCode = 0 }, @{ ExitCode = 7 }) {
             $beforeMsbuild = $env:MSBUILD_EXE_PATH
             $beforeSdks = $env:MSBuildSDKsPath
