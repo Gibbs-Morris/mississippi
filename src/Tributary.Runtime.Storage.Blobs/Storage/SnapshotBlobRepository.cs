@@ -44,9 +44,14 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
 
     private static byte[] DecodeStoredBytes(
         string blobName,
-        string base64Payload
+        string? base64Payload
     )
     {
+        if (base64Payload is null)
+        {
+            throw new InvalidDataException($"Blob snapshot '{blobName}' contains null payload data.");
+        }
+
         try
         {
             return Convert.FromBase64String(base64Payload);
