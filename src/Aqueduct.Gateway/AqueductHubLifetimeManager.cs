@@ -141,7 +141,9 @@ public sealed class AqueductHubLifetimeManager<THub>
     )
     {
         ArgumentNullException.ThrowIfNull(connection);
-        await EnsureStreamSetupAsync().ConfigureAwait(false);
+
+        // Shared backplane initialization must outlive an individual connection.
+        await EnsureStreamSetupAsync(CancellationToken.None).ConfigureAwait(false);
         ConnectionRegistry.TryAdd(connection.ConnectionId, connection);
         ISignalRClientGrain clientGrain = GetClientGrain(connection.ConnectionId);
         await clientGrain.ConnectAsync(hubName, ServerId).ConfigureAwait(false);
