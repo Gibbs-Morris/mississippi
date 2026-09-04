@@ -103,6 +103,28 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     Canceled broadcasts must not start shared setup or publish.
+    /// </summary>
+    /// <param name="excludeConnections">Whether to use the exclusion overload.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BroadcastShouldRejectAlreadyCanceledCaller(
+        bool excludeConnections
+    )
+    {
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(streamSubscriptionManager: streams);
+        CancellationToken canceledToken = new(true);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => excludeConnections
+            ? manager.SendAllExceptAsync("Message", [], ["excluded"], canceledToken)
+            : manager.SendAllAsync("Message", [], canceledToken));
+        await streams.DidNotReceiveWithAnyArgs().EnsureInitializedAsync(default!, default!, default!);
+        await streams.DidNotReceiveWithAnyArgs().PublishToAllAsync(default!);
+    }
+
+    /// <summary>
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Dependencies")]
