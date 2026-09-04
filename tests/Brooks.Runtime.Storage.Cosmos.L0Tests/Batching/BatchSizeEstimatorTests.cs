@@ -364,10 +364,11 @@ public sealed class BatchSizeEstimatorTests
     public void EstimateEventSizeSmallEventIncludesStringMetadata()
     {
         BatchSizeEstimator estimator = new();
+        DateTimeOffset eventTime = DateTimeOffset.FromUnixTimeSeconds(200);
         BrookEvent baseline = new()
         {
             Data = CreatePayload(64, 0x21),
-            Time = DateTimeOffset.FromUnixTimeSeconds(200),
+            Time = eventTime,
         };
         long baselineSize = estimator.EstimateEventSize(baseline);
         BrookEvent rich = baseline with
@@ -387,7 +388,7 @@ public sealed class BatchSizeEstimatorTests
             EventType = rich.EventType,
             DataContentType = rich.DataContentType,
             Data = rich.Data.ToArray(),
-            Time = rich.Time.Value,
+            Time = eventTime,
         };
         string serialized = JsonConvert.SerializeObject(expectedDoc);
         long expected = (long)(Encoding.UTF8.GetByteCount(serialized) * 1.3);
