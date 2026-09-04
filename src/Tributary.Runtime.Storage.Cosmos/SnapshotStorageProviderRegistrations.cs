@@ -54,10 +54,7 @@ public static class SnapshotStorageProviderRegistrations
         // Uses CosmosClientServiceKey from options (defaults to SnapshotCosmosDefaults.CosmosClientServiceKey)
         services.AddKeyedSingleton<Container>(
             SnapshotCosmosDefaults.CosmosContainerServiceKey,
-            (
-                provider,
-                _
-            ) =>
+            (provider, _) =>
             {
                 SnapshotStorageOptions options = provider.GetRequiredService<IOptions<SnapshotStorageOptions>>().Value;
                 CosmosClient client = provider.GetRequiredKeyedService<CosmosClient>(options.CosmosClientServiceKey);
@@ -85,10 +82,7 @@ public static class SnapshotStorageProviderRegistrations
         // Register keyed CosmosClient for Snapshots storage
         services.AddKeyedSingleton<CosmosClient>(
             SnapshotCosmosDefaults.CosmosClientServiceKey,
-            (
-                _,
-                _
-            ) => new(cosmosConnectionString));
+            (_, _) => new(cosmosConnectionString));
         if (configureOptions != null)
         {
             services.Configure(configureOptions);

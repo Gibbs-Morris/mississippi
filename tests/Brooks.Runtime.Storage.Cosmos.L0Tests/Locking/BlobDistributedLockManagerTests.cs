@@ -110,11 +110,7 @@ public sealed class BlobDistributedLockManagerTests
                 It.IsAny<TimeSpan>(),
                 It.IsAny<RequestConditions?>(),
                 It.IsAny<CancellationToken>()))
-            .Callback((
-                TimeSpan d,
-                RequestConditions? conditions,
-                CancellationToken ct
-            ) => captured = d)
+            .Callback((TimeSpan d, RequestConditions? conditions, CancellationToken ct) => captured = d)
             .ReturnsAsync(
                 Response.FromValue(
                     BlobsModelFactory.BlobLease(new("\"etag\""), BaseTime, "lease-3"),

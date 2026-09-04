@@ -150,7 +150,7 @@ internal sealed class BrookSliceReaderGrain
             events.Add(ev);
         }
 
-        return [..events];
+        return [.. events];
     }
 
     private async Task PopulateCacheFromBrookAsync(

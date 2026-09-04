@@ -54,10 +54,7 @@ public sealed class EventBrookWriterRollbackTests
         IBatchSizeEstimator sizeEstimator = new BatchSizeEstimator();
         Mock<IRetryPolicy> retry = new();
         retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns<Func<Task<bool>>, CancellationToken>(async (
-                op,
-                _
-            ) => await op());
+            .Returns<Func<Task<bool>>, CancellationToken>(async (op, _) => await op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
@@ -124,10 +121,7 @@ public sealed class EventBrookWriterRollbackTests
         IBatchSizeEstimator sizeEstimator = new BatchSizeEstimator();
         Mock<IRetryPolicy> retry = new();
         retry.Setup(r => r.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns(async (
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => await op());
+            .Returns(async (Func<Task<bool>> op, CancellationToken _) => await op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>()))
             .Returns<BrookEvent>(e => new()
@@ -186,10 +180,7 @@ public sealed class EventBrookWriterRollbackTests
                 It.IsAny<long>(),
                 It.IsAny<CancellationToken>()))
             .Returns((
-                BrookKey keyArg,
-                IReadOnlyList<EventStorageModel> batch,
-                long startingPosition,
-                CancellationToken ct
+                BrookKey keyArg, IReadOnlyList<EventStorageModel> batch, long startingPosition, CancellationToken ct
             ) =>
             {
                 appendCalls++;

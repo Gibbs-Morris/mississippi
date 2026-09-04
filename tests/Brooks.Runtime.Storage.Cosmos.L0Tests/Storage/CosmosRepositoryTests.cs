@@ -173,12 +173,8 @@ public sealed class CosmosRepositoryTests
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
-            .Callback((
-                EventDocument d,
-                PartitionKey? pk,
-                ItemRequestOptions? options,
-                CancellationToken ct
-            ) => created.Add(d))
+            .Callback((EventDocument d, PartitionKey? pk, ItemRequestOptions? options, CancellationToken ct) =>
+                created.Add(d))
             .ReturnsAsync(Mock.Of<ItemResponse<EventDocument>>());
         CosmosRepository sut = CreateRepository(container.Object);
         BrookKey key = new("type", "id");
@@ -288,12 +284,8 @@ public sealed class CosmosRepositoryTests
                 It.IsAny<PartitionKey>(),
                 null,
                 It.IsAny<CancellationToken>()))
-            .Callback((
-                CursorDocument d,
-                PartitionKey? pk,
-                ItemRequestOptions? options,
-                CancellationToken ct
-            ) => captured = d)
+            .Callback((CursorDocument d, PartitionKey? pk, ItemRequestOptions? options, CancellationToken ct) =>
+                captured = d)
             .ReturnsAsync(Mock.Of<ItemResponse<CursorDocument>>());
         CosmosRepository sut = CreateRepository(container.Object);
         BrookKey key = new("type", "id");

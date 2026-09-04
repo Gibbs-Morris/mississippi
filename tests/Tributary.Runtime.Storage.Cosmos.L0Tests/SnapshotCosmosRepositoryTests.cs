@@ -177,11 +177,7 @@ public sealed class SnapshotCosmosRepositoryTests
                     new("snap-3", 3),
                 ]));
         ops.Setup(o => o.DeleteDocumentAsync(StreamKey.ToString(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((
-                _,
-                id,
-                _
-            ) => deletedIds.Add(id))
+            .Callback<string, string, CancellationToken>((_, id, _) => deletedIds.Add(id))
             .ReturnsAsync(true);
         SnapshotCosmosRepository repository = CreateRepository(ops);
         await repository.DeleteAllAsync(StreamKey, CancellationToken.None);
@@ -237,11 +233,7 @@ public sealed class SnapshotCosmosRepositoryTests
                     new("snap-5", 5),
                 ]));
         ops.Setup(o => o.DeleteDocumentAsync(StreamKey.ToString(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((
-                _,
-                id,
-                _
-            ) => deletedIds.Add(id))
+            .Callback<string, string, CancellationToken>((_, id, _) => deletedIds.Add(id))
             .ReturnsAsync(true);
         SnapshotCosmosRepository repository = CreateRepository(ops);
 
@@ -272,11 +264,7 @@ public sealed class SnapshotCosmosRepositoryTests
                     new("snap-5", 5),
                 ]));
         ops.Setup(o => o.DeleteDocumentAsync(StreamKey.ToString(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Callback<string, string, CancellationToken>((
-                _,
-                id,
-                _
-            ) => deletedIds.Add(id))
+            .Callback<string, string, CancellationToken>((_, id, _) => deletedIds.Add(id))
             .ReturnsAsync(true);
         SnapshotCosmosRepository repository = CreateRepository(ops);
 

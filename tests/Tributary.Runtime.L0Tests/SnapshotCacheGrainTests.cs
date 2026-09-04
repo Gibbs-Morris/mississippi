@@ -57,10 +57,7 @@ public sealed class SnapshotCacheGrainTests
             snapshotStateConverterMock.Setup(c => c.ToEnvelope(
                     It.IsAny<SnapshotCacheGrainTestState>(),
                     It.IsAny<string>()))
-                .Returns((
-                    SnapshotCacheGrainTestState _,
-                    string hash
-                ) => new()
+                .Returns((SnapshotCacheGrainTestState _, string hash) => new()
                 {
                     Data = [1, 2, 3, 4],
                     DataContentType = "application/json",
@@ -511,10 +508,7 @@ public sealed class SnapshotCacheGrainTests
             .Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         converterMock.Setup(c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()))
-            .Returns((
-                SnapshotCacheGrainTestState _,
-                string hash
-            ) => new()
+            .Returns((SnapshotCacheGrainTestState _, string hash) => new()
             {
                 Data = [1, 2, 3, 4],
                 DataContentType = "application/json",
@@ -578,10 +572,7 @@ public sealed class SnapshotCacheGrainTests
             .Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         converterMock.Setup(c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()))
-            .Returns((
-                SnapshotCacheGrainTestState _,
-                string hash
-            ) => new()
+            .Returns((SnapshotCacheGrainTestState _, string hash) => new()
             {
                 Data = [1, 2, 3, 4],
                 DataContentType = "application/json",

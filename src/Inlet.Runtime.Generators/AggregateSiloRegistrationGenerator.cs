@@ -702,36 +702,31 @@ public sealed class AggregateSiloRegistrationGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<AggregateRegistrationInfo>> aggregatesProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            if (!HasRegistrationDependencies(source.Compilation))
+        IncrementalValueProvider<List<AggregateRegistrationInfo>> aggregatesProvider =
+            compilationAndOptions.Select((source, _) =>
             {
-                return [];
-            }
+                if (!HasRegistrationDependencies(source.Compilation))
+                {
+                    return [];
+                }
 
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
-        });
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                return GetAggregatesFromCompilation(source.Compilation, targetRootNamespace);
+            });
 
         // Register source output
         context.RegisterSourceOutput(
             aggregatesProvider,
-            static (
-                spc,
-                aggregates
-            ) =>
+            static (spc, aggregates) =>
             {
                 foreach (AggregateRegistrationInfo aggregate in aggregates)
                 {

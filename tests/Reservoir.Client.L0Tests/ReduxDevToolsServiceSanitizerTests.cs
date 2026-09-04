@@ -158,10 +158,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((
-                method,
-                args
-            ) => capturedActionPayload = args[0]);
+            .Callback<string, object[]>((method, args) => capturedActionPayload = args[0]);
         service.Initialize();
 
         // Dispatch to establish connection
@@ -195,10 +192,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((
-                method,
-                args
-            ) => capturedActionPayload = args[0]);
+            .Callback<string, object[]>((method, args) => capturedActionPayload = args[0]);
         service.Initialize();
 
         // Act
@@ -226,10 +220,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((
-                method,
-                args
-            ) => sendCalled = true);
+            .Callback<string, object[]>((method, args) => sendCalled = true);
         service.Initialize();
 
         // Act
@@ -332,10 +323,7 @@ public sealed class ReduxDevToolsServiceSanitizerTests : IAsyncDisposable
         await using ReduxDevToolsService service = CreateService(store, options);
         SetupJsModuleForConnection();
         jsModuleMock.Setup(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()))
-            .Callback<string, object[]>((
-                method,
-                args
-            ) => capturedStatePayload = args[1]);
+            .Callback<string, object[]>((method, args) => capturedStatePayload = args[1]);
         service.Initialize();
 
         // Act

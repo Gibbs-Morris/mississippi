@@ -49,10 +49,7 @@ public class DelegateCommandHandlerTests
         {
             new TestEvent(),
         };
-        DelegateCommandHandler<TestCommand, TestState> handler = new((
-            cmd,
-            state
-        ) =>
+        DelegateCommandHandler<TestCommand, TestState> handler = new((cmd, state) =>
         {
             receivedCommand = cmd;
             receivedState = state;
@@ -75,10 +72,7 @@ public class DelegateCommandHandlerTests
     {
         TestState? receivedState = null;
         bool delegateCalled = false;
-        DelegateCommandHandler<TestCommand, TestState> handler = new((
-            _,
-            state
-        ) =>
+        DelegateCommandHandler<TestCommand, TestState> handler = new((_, state) =>
         {
             delegateCalled = true;
             receivedState = state;
@@ -95,10 +89,8 @@ public class DelegateCommandHandlerTests
     [Fact]
     public void HandleReturnsFailedResultFromDelegate()
     {
-        DelegateCommandHandler<TestCommand, TestState> handler = new((
-            _,
-            _
-        ) => OperationResult.Fail<IReadOnlyList<object>>("ERR_001", "Command failed"));
+        DelegateCommandHandler<TestCommand, TestState> handler = new((_, _) =>
+            OperationResult.Fail<IReadOnlyList<object>>("ERR_001", "Command failed"));
         OperationResult<IReadOnlyList<object>> result = handler.Handle(new("test"), null);
         Assert.False(result.Success);
         Assert.Equal("ERR_001", result.ErrorCode);

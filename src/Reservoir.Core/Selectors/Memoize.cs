@@ -95,10 +95,7 @@ public static class Memoize
     {
         ArgumentNullException.ThrowIfNull(selector);
         CacheEntry2<TState1, TState2, TResult>? cache = null;
-        return (
-            state1,
-            state2
-        ) =>
+        return (state1, state2) =>
         {
             // Volatile read ensures we see the latest cache entry
             CacheEntry2<TState1, TState2, TResult>? current = Volatile.Read(ref cache);
@@ -145,11 +142,7 @@ public static class Memoize
     {
         ArgumentNullException.ThrowIfNull(selector);
         CacheEntry3<TState1, TState2, TState3, TResult>? cache = null;
-        return (
-            state1,
-            state2,
-            state3
-        ) =>
+        return (state1, state2, state3) =>
         {
             // Volatile read ensures we see the latest cache entry
             CacheEntry3<TState1, TState2, TState3, TResult>? current = Volatile.Read(ref cache);

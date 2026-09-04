@@ -22,9 +22,9 @@ public sealed class SagaStepCompletedReducer<TSaga> : EventReducerBase<SagaStepC
         ArgumentNullException.ThrowIfNull(eventData);
         return SagaStateMutator.CreateUpdated(
             state,
-            (
-                map,
-                instance
-            ) => map.SetProperty(instance, nameof(ISagaState.LastCompletedStepIndex), eventData.StepIndex));
+            (map, instance) => map.SetProperty(
+                instance,
+                nameof(ISagaState.LastCompletedStepIndex),
+                eventData.StepIndex));
     }
 }

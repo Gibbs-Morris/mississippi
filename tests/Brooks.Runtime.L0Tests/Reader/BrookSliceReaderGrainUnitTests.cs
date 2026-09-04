@@ -100,10 +100,7 @@ public sealed class BrookSliceReaderGrainUnitTests
         CancellationToken capturedToken = default;
         (BrookSliceReaderGrain sut, Mock<IBrookStorageReader> storage, Mock<IGrainContext> _) = CreateGrain();
         storage.Setup(s => s.ReadEventsAsync(TestRangeKey, It.IsAny<CancellationToken>()))
-            .Returns((
-                BrookRangeKey _,
-                CancellationToken ct
-            ) =>
+            .Returns((BrookRangeKey _, CancellationToken ct) =>
             {
                 capturedToken = ct;
                 return EmptyAsyncEnumerableAsync();

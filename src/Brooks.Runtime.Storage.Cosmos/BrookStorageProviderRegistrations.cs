@@ -67,10 +67,7 @@ public static class BrookStorageProviderRegistrations
         // Uses CosmosClientServiceKey from options (defaults to BrookCosmosDefaults.CosmosClientServiceKey)
         services.AddKeyedSingleton<Container>(
             BrookCosmosDefaults.CosmosContainerServiceKey,
-            (
-                provider,
-                _
-            ) =>
+            (provider, _) =>
             {
                 BrookStorageOptions options = provider.GetRequiredService<IOptions<BrookStorageOptions>>().Value;
                 CosmosClient cosmosClient =
@@ -101,18 +98,12 @@ public static class BrookStorageProviderRegistrations
         // Register keyed CosmosClient for Brooks storage
         services.AddKeyedSingleton<CosmosClient>(
             BrookCosmosDefaults.CosmosClientServiceKey,
-            (
-                _,
-                _
-            ) => new(cosmosConnectionString));
+            (_, _) => new(cosmosConnectionString));
 
         // Register keyed BlobServiceClient for distributed locking
         services.AddKeyedSingleton(
             BrookCosmosDefaults.BlobLockingServiceKey,
-            (
-                _,
-                _
-            ) => new BlobServiceClient(blobStorageConnectionString));
+            (_, _) => new BlobServiceClient(blobStorageConnectionString));
 
         // Configure options if provided
         if (configureOptions != null)
@@ -156,18 +147,12 @@ public static class BrookStorageProviderRegistrations
         // Register keyed CosmosClient for Brooks storage
         services.AddKeyedSingleton<CosmosClient>(
             BrookCosmosDefaults.CosmosClientServiceKey,
-            (
-                _,
-                _
-            ) => new(cosmosConnectionString));
+            (_, _) => new(cosmosConnectionString));
 
         // Register keyed BlobServiceClient for distributed locking
         services.AddKeyedSingleton(
             BrookCosmosDefaults.BlobLockingServiceKey,
-            (
-                _,
-                _
-            ) => new BlobServiceClient(blobStorageConnectionString));
+            (_, _) => new BlobServiceClient(blobStorageConnectionString));
         services.Configure<BrookStorageOptions>(configuration);
         return services.AddCosmosBrookStorageProvider();
     }

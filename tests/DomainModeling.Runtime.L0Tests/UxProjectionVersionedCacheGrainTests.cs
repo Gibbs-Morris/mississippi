@@ -294,9 +294,7 @@ public sealed class UxProjectionVersionedCacheGrainTests
         TestProjection testProjection = new(0);
         Mock<ISnapshotCacheGrain<TestProjection>> snapshotCacheGrainMock = new();
         snapshotCacheGrainMock.Setup(g => g.GetStateAsync(It.IsAny<CancellationToken>()))
-            .Returns((
-                CancellationToken ct
-            ) =>
+            .Returns((CancellationToken ct) =>
             {
                 capturedToken = ct;
                 return new(testProjection);

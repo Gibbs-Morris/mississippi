@@ -466,10 +466,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
+        IncrementalValueProvider<List<AggregateInfo>> aggregatesProvider = compilationAndOptions.Select((source, _) =>
         {
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
@@ -487,10 +484,7 @@ public sealed class AggregateControllerGenerator : IIncrementalGenerator
         // Register source output
         context.RegisterSourceOutput(
             aggregatesProvider,
-            static (
-                spc,
-                aggregates
-            ) =>
+            static (spc, aggregates) =>
             {
                 foreach (AggregateInfo aggregate in aggregates)
                 {

@@ -28,22 +28,14 @@ public sealed class UxProjectionMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
         object measurementsSync = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == UxProjectionMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -81,22 +73,14 @@ public sealed class UxProjectionMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
         object measurementsSync = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == UxProjectionMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -136,22 +120,14 @@ public sealed class UxProjectionMetricsTests
         List<MetricMeasurement> doubleMeasurements = [];
         object longMeasurementsSync = new();
         object doubleMeasurementsSync = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == UxProjectionMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -164,12 +140,7 @@ public sealed class UxProjectionMetricsTests
                 longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
             }
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -219,22 +190,14 @@ public sealed class UxProjectionMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
         object measurementsSync = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == UxProjectionMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -247,12 +210,7 @@ public sealed class UxProjectionMetricsTests
                 measurements.Add(new(instrument.Name, measurement, 0, tagMap));
             }
         });
-        listener.SetMeasurementEventCallback<double>((
-            _,
-            _,
-            _,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((_, _, _, _) =>
         {
             // Ignore histogram measurements for this test
         });
@@ -286,22 +244,14 @@ public sealed class UxProjectionMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
         object measurementsSync = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == UxProjectionMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -339,22 +289,14 @@ public sealed class UxProjectionMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
         object measurementsSync = new();
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == UxProjectionMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)

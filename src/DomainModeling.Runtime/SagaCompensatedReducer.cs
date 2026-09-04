@@ -22,9 +22,6 @@ public sealed class SagaCompensatedReducer<TSaga> : EventReducerBase<SagaCompens
         ArgumentNullException.ThrowIfNull(eventData);
         return SagaStateMutator.CreateUpdated(
             state,
-            (
-                map,
-                instance
-            ) => map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Compensated));
+            (map, instance) => map.SetProperty(instance, nameof(ISagaState.Phase), SagaPhase.Compensated));
     }
 }

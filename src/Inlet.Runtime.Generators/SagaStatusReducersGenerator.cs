@@ -157,16 +157,11 @@ public sealed class SagaStatusReducersGenerator : IIncrementalGenerator
         IncrementalGeneratorInitializationContext context
     )
     {
-        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider = context.CompilationProvider.Select((
-            compilation,
-            _
-        ) => GetProjectionsFromCompilation(compilation));
+        IncrementalValueProvider<List<ProjectionInfo>> projectionsProvider =
+            context.CompilationProvider.Select((compilation, _) => GetProjectionsFromCompilation(compilation));
         context.RegisterSourceOutput(
             projectionsProvider,
-            static (
-                spc,
-                projections
-            ) =>
+            static (spc, projections) =>
             {
                 foreach (ProjectionInfo projection in projections)
                 {

@@ -52,10 +52,7 @@ public sealed class DelegateActionReducerTests
     public void ReduceInvokesDelegateWhenActionMatches()
     {
         // Arrange
-        DelegateActionReducer<IncrementAction, TestState> sut = new((
-            state,
-            _
-        ) => state with
+        DelegateActionReducer<IncrementAction, TestState> sut = new((state, _) => state with
         {
             Counter = state.Counter + 1,
         });
@@ -78,10 +75,7 @@ public sealed class DelegateActionReducerTests
     public void TryReduceReturnsFalseAndReturnsOriginalStateForNonMatchingActionType()
     {
         // Arrange
-        DelegateActionReducer<IncrementAction, TestState> sut = new((
-            state,
-            _
-        ) => state with
+        DelegateActionReducer<IncrementAction, TestState> sut = new((state, _) => state with
         {
             Counter = state.Counter + 1,
         });
@@ -105,10 +99,7 @@ public sealed class DelegateActionReducerTests
     public void TryReduceReturnsTrueAndProducesNewStateForMatchingActionType()
     {
         // Arrange
-        DelegateActionReducer<IncrementAction, TestState> sut = new((
-            state,
-            _
-        ) => state with
+        DelegateActionReducer<IncrementAction, TestState> sut = new((state, _) => state with
         {
             Counter = state.Counter + 1,
         });

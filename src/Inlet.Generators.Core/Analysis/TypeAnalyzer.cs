@@ -273,12 +273,7 @@ public static class TypeAnalyzer
     {
         string[] suffixes = { "Projection", "Aggregate", "State" };
         string result = suffixes.Where(suffix => typeName.EndsWith(suffix, StringComparison.Ordinal))
-            .Aggregate(
-                typeName,
-                (
-                    current,
-                    suffix
-                ) => current.Substring(0, current.Length - suffix.Length));
+            .Aggregate(typeName, (current, suffix) => current.Substring(0, current.Length - suffix.Length));
         return result == typeName ? typeName : result;
     }
 }

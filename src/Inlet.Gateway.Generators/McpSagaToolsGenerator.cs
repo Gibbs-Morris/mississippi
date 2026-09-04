@@ -651,10 +651,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<McpSagaInfo>> sagasProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
+        IncrementalValueProvider<List<McpSagaInfo>> sagasProvider = compilationAndOptions.Select((source, _) =>
         {
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
@@ -670,10 +667,7 @@ public sealed class McpSagaToolsGenerator : IIncrementalGenerator
         });
         context.RegisterSourceOutput(
             sagasProvider,
-            static (
-                spc,
-                sagas
-            ) =>
+            static (spc, sagas) =>
             {
                 foreach (McpSagaInfo saga in sagas)
                 {

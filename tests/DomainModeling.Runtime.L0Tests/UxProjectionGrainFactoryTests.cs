@@ -99,10 +99,7 @@ public sealed class UxProjectionGrainFactoryTests
         Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
         string? capturedKey = null;
         grainFactory.Setup(g => g.GetGrain<IUxProjectionCursorGrain>(It.IsAny<string>(), It.IsAny<string?>()))
-            .Callback<string, string?>((
-                key,
-                _
-            ) => capturedKey = key)
+            .Callback<string, string?>((key, _) => capturedKey = key)
             .Returns(cursorGrain.Object);
         Mock<ILogger<UxProjectionGrainFactory>> logger = new();
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
@@ -152,10 +149,7 @@ public sealed class UxProjectionGrainFactoryTests
         Mock<IGrainFactory> grainFactory = new(MockBehavior.Strict);
         string? capturedKey = null;
         grainFactory.Setup(g => g.GetGrain<IUxProjectionGrain<TestProjection>>(It.IsAny<string>(), It.IsAny<string?>()))
-            .Callback<string, string?>((
-                key,
-                _
-            ) => capturedKey = key)
+            .Callback<string, string?>((key, _) => capturedKey = key)
             .Returns(projectionGrain.Object);
         Mock<ILogger<UxProjectionGrainFactory>> logger = new();
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);
@@ -259,10 +253,7 @@ public sealed class UxProjectionGrainFactoryTests
             .Setup(g => g.GetGrain<IUxProjectionVersionedCacheGrain<TestProjection>>(
                 It.IsAny<string>(),
                 It.IsAny<string?>()))
-            .Callback<string, string?>((
-                key,
-                _
-            ) => capturedKey = key)
+            .Callback<string, string?>((key, _) => capturedKey = key)
             .Returns(versionedCacheGrain.Object);
         Mock<ILogger<UxProjectionGrainFactory>> logger = new();
         UxProjectionGrainFactory sut = new(grainFactory.Object, logger.Object);

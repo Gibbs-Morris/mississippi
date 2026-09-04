@@ -215,10 +215,7 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
 
         // Use the compilation provider to find projection DTOs
         IncrementalValueProvider<(List<ProjectionDtoInfo> ProjectionDtos, string TargetRootNamespace)>
-            projectionsProvider = compilationAndOptions.Select((
-                source,
-                _
-            ) =>
+            projectionsProvider = compilationAndOptions.Select((source, _) =>
             {
                 List<ProjectionDtoInfo> projectionDtos = GetProjectionDtosFromCompilation(source.Compilation);
                 source.Options.GlobalOptions.TryGetValue(
@@ -237,10 +234,7 @@ public sealed class ProjectionClientRegistrationGenerator : IIncrementalGenerato
         // Register source output
         context.RegisterSourceOutput(
             projectionsProvider,
-            static (
-                spc,
-                data
-            ) => GenerateRegistration(spc, data.ProjectionDtos, data.TargetRootNamespace));
+            static (spc, data) => GenerateRegistration(spc, data.ProjectionDtos, data.TargetRootNamespace));
     }
 
     /// <summary>

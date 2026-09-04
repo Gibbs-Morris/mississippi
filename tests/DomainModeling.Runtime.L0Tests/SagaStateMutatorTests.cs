@@ -24,10 +24,7 @@ public sealed class SagaStateMutatorTests
         };
         TestSagaState updated = SagaStateMutator.CreateUpdated(
             initial,
-            static (
-                map,
-                state
-            ) => map.SetProperty(state, nameof(TestSagaState.Name), "Beta"));
+            static (map, state) => map.SetProperty(state, nameof(TestSagaState.Name), "Beta"));
         Assert.Equal("Beta", updated.Name);
         Assert.Equal(SagaPhase.Running, updated.Phase);
         Assert.Equal("HASH", updated.StepHash);
@@ -41,10 +38,7 @@ public sealed class SagaStateMutatorTests
     {
         TestSagaState updated = SagaStateMutator.CreateUpdated<TestSagaState>(
             null,
-            static (
-                map,
-                state
-            ) => map.SetProperty(state, nameof(TestSagaState.Name), "Gamma"));
+            static (map, state) => map.SetProperty(state, nameof(TestSagaState.Name), "Gamma"));
         Assert.Equal("Gamma", updated.Name);
         Assert.Equal(SagaPhase.NotStarted, updated.Phase);
     }
@@ -57,10 +51,7 @@ public sealed class SagaStateMutatorTests
     {
         Assert.Throws<MissingMethodException>(() => SagaStateMutator.CreateUpdated<SagaStateWithoutParameterlessCtor>(
             null,
-            static (
-                map,
-                state
-            ) => map.SetProperty(state, nameof(SagaStateWithoutParameterlessCtor.Name), "Delta")));
+            static (map, state) => map.SetProperty(state, nameof(SagaStateWithoutParameterlessCtor.Name), "Delta")));
     }
 
     /// <summary>

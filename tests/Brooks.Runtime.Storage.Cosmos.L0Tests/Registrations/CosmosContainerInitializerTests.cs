@@ -125,7 +125,7 @@ public sealed class CosmosContainerInitializerTests
             .ReturnsAsync(Mock.Of<ContainerResponse>());
         ServiceCollection services = new();
         services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
-        services.AddKeyedSingleton<CosmosClient>(BrookCosmosDefaults.CosmosClientServiceKey, cosmos.Object);
+        services.AddKeyedSingleton(BrookCosmosDefaults.CosmosClientServiceKey, cosmos.Object);
         services.AddCosmosBrookStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();
         IHostedService hosted = provider.GetRequiredService<IHostedService>();
@@ -182,7 +182,7 @@ public sealed class CosmosContainerInitializerTests
         containerResp.SetupGet(r => r.Resource).Returns(new ContainerProperties("brooks", "/wrong"));
         existingContainer.Setup(c => c.ReadContainerAsync(null, default)).ReturnsAsync(containerResp.Object);
         ServiceCollection services = new();
-        services.AddSingleton<IOptions<BrookStorageOptions>>(Options.Create(opts));
+        services.AddSingleton(Options.Create(opts));
         services.AddKeyedSingleton<CosmosClient>(BrookCosmosDefaults.CosmosClientServiceKey, cosmos.Object);
         services.AddCosmosBrookStorageProvider();
         using ServiceProvider provider = services.BuildServiceProvider();

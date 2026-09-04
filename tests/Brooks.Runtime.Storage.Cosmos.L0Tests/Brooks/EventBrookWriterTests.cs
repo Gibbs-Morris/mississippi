@@ -93,10 +93,7 @@ public sealed class EventBrookWriterTests
         sizeEstimator.Setup(s => s.EstimateBatchSize(events)).Returns(10);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(events[0]))
             .Returns(
@@ -176,15 +173,9 @@ public sealed class EventBrookWriterTests
         sizeEstimator.Setup(s => s.CreateSizeLimitedBatches(allEvents, 2, It.IsAny<long>())).Returns(new[] { b1, b2 });
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(allEvents[0]))
             .Returns(
@@ -285,15 +276,9 @@ public sealed class EventBrookWriterTests
         Mock<IBatchSizeEstimator> sizeEstimator = new(MockBehavior.Strict);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
         Mock<ILogger<EventBrookWriter>> logger = new();
@@ -529,10 +514,7 @@ public sealed class EventBrookWriterTests
             .Returns(new[] { b1, b2, b3 });
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(allEvents[0]))
             .Returns(
@@ -665,10 +647,7 @@ public sealed class EventBrookWriterTests
         sizeEstimator.Setup(s => s.EstimateBatchSize(events)).Returns(100);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         mapper.Setup(m => m.Map(It.Is<BrookEvent>(e => e.Id == "e1")))
             .Returns(
@@ -773,10 +752,7 @@ public sealed class EventBrookWriterTests
         sizeEstimator.Setup(s => s.CreateSizeLimitedBatches(allEvents, 2, It.IsAny<long>())).Returns(batches);
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         retryPolicy.Setup(p => p.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> op,
-                CancellationToken _
-            ) => op());
+            .Returns((Func<Task<bool>> op, CancellationToken _) => op());
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         foreach (BrookEvent ev in allEvents)
         {

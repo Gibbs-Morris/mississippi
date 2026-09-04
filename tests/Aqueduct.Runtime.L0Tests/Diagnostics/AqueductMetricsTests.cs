@@ -28,22 +28,14 @@ public sealed class AqueductMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -71,22 +63,14 @@ public sealed class AqueductMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -115,22 +99,14 @@ public sealed class AqueductMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
         List<MetricMeasurement> doubleMeasurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -140,12 +116,7 @@ public sealed class AqueductMetricsTests
 
             longMeasurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<double>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -179,22 +150,14 @@ public sealed class AqueductMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            _,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
         {
             measurements.Add(new(instrument.Name, measurement, 0, 0, new Dictionary<string, object?>()));
         });
@@ -220,22 +183,14 @@ public sealed class AqueductMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -263,22 +218,14 @@ public sealed class AqueductMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -307,22 +254,14 @@ public sealed class AqueductMetricsTests
         using MeterListener listener = new();
         List<MetricMeasurement> longMeasurements = [];
         List<MetricMeasurement> intMeasurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -332,12 +271,7 @@ public sealed class AqueductMetricsTests
 
             longMeasurements.Add(new(instrument.Name, measurement, 0, 0, tagMap));
         });
-        listener.SetMeasurementEventCallback<int>((
-            instrument,
-            measurement,
-            tags,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<int>((instrument, measurement, tags, _) =>
         {
             Dictionary<string, object?> tagMap = new(StringComparer.Ordinal);
             foreach (KeyValuePair<string, object?> tag in tags)
@@ -370,22 +304,14 @@ public sealed class AqueductMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            _,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
         {
             measurements.Add(new(instrument.Name, measurement, 0, 0, new Dictionary<string, object?>()));
         });
@@ -404,22 +330,14 @@ public sealed class AqueductMetricsTests
     {
         using MeterListener listener = new();
         List<MetricMeasurement> measurements = [];
-        listener.InstrumentPublished = (
-            instrument,
-            listener
-        ) =>
+        listener.InstrumentPublished = (instrument, listener) =>
         {
             if (instrument.Meter.Name == AqueductMetrics.MeterName)
             {
                 listener.EnableMeasurementEvents(instrument);
             }
         };
-        listener.SetMeasurementEventCallback<long>((
-            instrument,
-            measurement,
-            _,
-            _
-        ) =>
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
         {
             measurements.Add(new(instrument.Name, measurement, 0, 0, new Dictionary<string, object?>()));
         });

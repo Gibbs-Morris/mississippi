@@ -195,11 +195,7 @@ public sealed class EventBrookReaderTests
         }
 
         repositoryMock.Setup(r => r.QueryEventsAsync(range, options.QueryBatchSize, It.IsAny<CancellationToken>()))
-            .Returns((
-                BrookRangeKey _,
-                int _,
-                CancellationToken t
-            ) => SequenceUntilCancelledAsync(e1, e2, t));
+            .Returns((BrookRangeKey _, int _, CancellationToken t) => SequenceUntilCancelledAsync(e1, e2, t));
         mapperMock.Setup(m => m.Map(e1))
             .Returns(
                 new BrookEvent

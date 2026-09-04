@@ -386,10 +386,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
+        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((source, _) =>
         {
             source.Options.GlobalOptions.TryGetValue(
                 TargetNamespaceResolver.RootNamespaceProperty,
@@ -407,10 +404,7 @@ public sealed class CommandServerDtoGenerator : IIncrementalGenerator
         // Register source output for individual commands (DTOs and mappers)
         context.RegisterSourceOutput(
             commandsProvider,
-            static (
-                spc,
-                commands
-            ) =>
+            static (spc, commands) =>
             {
                 foreach (CommandInfo command in commands)
                 {

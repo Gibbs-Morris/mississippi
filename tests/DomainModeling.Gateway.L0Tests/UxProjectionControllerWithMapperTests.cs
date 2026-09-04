@@ -374,10 +374,7 @@ public sealed class UxProjectionControllerWithMapperTests
         BrookPosition? capturedVersion = null;
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
-            .Callback<BrookPosition, CancellationToken>((
-                v,
-                _
-            ) => capturedVersion = v)
+            .Callback<BrookPosition, CancellationToken>((v, _) => capturedVersion = v)
             .ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);

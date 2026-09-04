@@ -193,16 +193,11 @@ public sealed class CommandClientMappersGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
-        IncrementalValueProvider<List<CommandInfo>> commandsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) => GetCommandsFromCompilation(source.Compilation, source.Options));
+        IncrementalValueProvider<List<CommandInfo>> commandsProvider =
+            compilationAndOptions.Select((source, _) => GetCommandsFromCompilation(source.Compilation, source.Options));
         context.RegisterSourceOutput(
             commandsProvider,
-            static (
-                spc,
-                commands
-            ) =>
+            static (spc, commands) =>
             {
                 foreach (CommandInfo command in commands)
                 {

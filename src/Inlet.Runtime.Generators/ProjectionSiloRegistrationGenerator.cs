@@ -324,36 +324,31 @@ public sealed class ProjectionSiloRegistrationGenerator : IIncrementalGenerator
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
 
         // Use the compilation provider to scan referenced assemblies
-        IncrementalValueProvider<List<ProjectionRegistrationInfo>> projectionsProvider = compilationAndOptions.Select((
-            source,
-            _
-        ) =>
-        {
-            if (!HasRegistrationDependencies(source.Compilation))
+        IncrementalValueProvider<List<ProjectionRegistrationInfo>> projectionsProvider =
+            compilationAndOptions.Select((source, _) =>
             {
-                return [];
-            }
+                if (!HasRegistrationDependencies(source.Compilation))
+                {
+                    return [];
+                }
 
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.RootNamespaceProperty,
-                out string? rootNamespace);
-            source.Options.GlobalOptions.TryGetValue(
-                TargetNamespaceResolver.AssemblyNameProperty,
-                out string? assemblyName);
-            string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
-                rootNamespace,
-                assemblyName,
-                source.Compilation);
-            return GetProjectionsFromCompilation(source.Compilation, targetRootNamespace);
-        });
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.RootNamespaceProperty,
+                    out string? rootNamespace);
+                source.Options.GlobalOptions.TryGetValue(
+                    TargetNamespaceResolver.AssemblyNameProperty,
+                    out string? assemblyName);
+                string targetRootNamespace = TargetNamespaceResolver.GetTargetRootNamespace(
+                    rootNamespace,
+                    assemblyName,
+                    source.Compilation);
+                return GetProjectionsFromCompilation(source.Compilation, targetRootNamespace);
+            });
 
         // Register source output
         context.RegisterSourceOutput(
             projectionsProvider,
-            static (
-                spc,
-                projections
-            ) =>
+            static (spc, projections) =>
             {
                 foreach (ProjectionRegistrationInfo projection in projections)
                 {
