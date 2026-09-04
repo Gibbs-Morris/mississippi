@@ -57,3 +57,5 @@ try {
     Write-Error "=== FAILURE: Cleanup operation failed: $_"
     exit 1
 }
+
+exit 0
