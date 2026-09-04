@@ -33,9 +33,15 @@ internal sealed class StreamSubscriptionManager
 
     private IAsyncStream<AllMessage>? allStream;
 
+    private Task<StreamSubscriptionHandle<AllMessage>>? allSubscriptionTask;
+
     private bool disposed;
 
     private volatile bool initialized;
+
+    private Task<StreamSubscriptionHandle<ServerMessage>>? serverSubscriptionTask;
+
+    private Task<bool>? subscriptionCleanupTask;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="StreamSubscriptionManager" /> class.
@@ -108,6 +114,24 @@ internal sealed class StreamSubscriptionManager
                 return;
             }
 
+            if (subscriptionCleanupTask is not null)
+            {
+                bool cleanedUp = await subscriptionCleanupTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                if (!cleanedUp)
+                {
+                    // Retain failed handles and retry cleanup before allowing any new subscription.
+                    subscriptionCleanupTask = CleanupSubscriptionsAsync();
+                    cleanedUp = await subscriptionCleanupTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    if (!cleanedUp)
+                    {
+                        throw new InvalidOperationException(
+                            "Previous Orleans stream subscriptions could not be cleaned up.");
+                    }
+                }
+
+                subscriptionCleanupTask = null;
+            }
+
             Logger.InitializingStreams(hubName, ServerId);
             string streamProviderName = Options.Value.StreamProviderName;
             IStreamProvider streamProvider = ClusterClient.GetStreamProvider(streamProviderName);
@@ -115,22 +139,38 @@ internal sealed class StreamSubscriptionManager
             // Subscribe to server-specific stream
             StreamId serverStreamId = StreamId.Create(Options.Value.ServerStreamNamespace, ServerId);
             IAsyncStream<ServerMessage> serverStream = streamProvider.GetStream<ServerMessage>(serverStreamId);
-            await serverStream.SubscribeAsync(async (
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                serverSubscriptionTask = serverStream.SubscribeAsync(async (
                     message,
                     token
-                ) => await onServerMessage(message).ConfigureAwait(false))
-                .ConfigureAwait(false);
+                ) => await onServerMessage(message).ConfigureAwait(false));
+                await serverSubscriptionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
 
-            // Subscribe to hub broadcast stream
-            StreamId allStreamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
-            allStream = streamProvider.GetStream<AllMessage>(allStreamId);
-            await allStream.SubscribeAsync(async (
+                // Subscribe to hub broadcast stream
+                StreamId allStreamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
+                IAsyncStream<AllMessage> broadcastStream = streamProvider.GetStream<AllMessage>(allStreamId);
+                allSubscriptionTask = broadcastStream.SubscribeAsync(async (
                     message,
                     token
-                ) => await onAllMessage(message).ConfigureAwait(false))
-                .ConfigureAwait(false);
-            initialized = true;
-            Logger.StreamsInitialized(hubName, ServerId);
+                ) => await onAllMessage(message).ConfigureAwait(false));
+                await allSubscriptionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+                allStream = broadcastStream;
+                initialized = true;
+                Logger.StreamsInitialized(hubName, ServerId);
+            }
+            catch (Exception exception)
+            {
+                Logger.StreamInitializationFailed(hubName, ServerId, exception);
+
+                // Orleans subscriptions cannot be canceled. Observe late handles and release them,
+                // including partial setup after a fault, while allowing the caller to stop waiting.
+                subscriptionCleanupTask = CleanupSubscriptionsAsync();
+                throw;
+            }
         }
         finally
         {
@@ -150,5 +190,61 @@ internal sealed class StreamSubscriptionManager
         }
 
         await allStream.OnNextAsync(message).ConfigureAwait(false);
+    }
+
+    private async Task<bool> CleanupSubscriptionAsync<T>(
+        Task<StreamSubscriptionHandle<T>>? subscriptionTask
+    )
+    {
+        if (subscriptionTask is null)
+        {
+            return true;
+        }
+
+        StreamSubscriptionHandle<T> subscription;
+        try
+        {
+            subscription = await subscriptionTask.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException exception)
+        {
+            Logger.SubscriptionCleanupCanceled(ServerId, exception);
+            return true;
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            // Subscription creation failed, so there is no handle to release.
+            Logger.SubscriptionCleanupFailed(ServerId, exception);
+            return true;
+        }
+
+        try
+        {
+            await subscription.UnsubscribeAsync().ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            Logger.SubscriptionCleanupFailed(ServerId, exception);
+            return false;
+        }
+    }
+
+    private async Task<bool> CleanupSubscriptionsAsync()
+    {
+        Task<bool> serverCleanup = CleanupSubscriptionAsync(serverSubscriptionTask);
+        Task<bool> allCleanup = CleanupSubscriptionAsync(allSubscriptionTask);
+        await Task.WhenAll(serverCleanup, allCleanup).ConfigureAwait(false);
+        if (await serverCleanup.ConfigureAwait(false))
+        {
+            serverSubscriptionTask = null;
+        }
+
+        if (await allCleanup.ConfigureAwait(false))
+        {
+            allSubscriptionTask = null;
+        }
+
+        return serverSubscriptionTask is null && allSubscriptionTask is null;
     }
 }

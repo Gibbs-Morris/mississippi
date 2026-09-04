@@ -1,14 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Aqueduct.Abstractions;
 using Mississippi.Aqueduct.Abstractions.Grains;
+using Mississippi.Aqueduct.Abstractions.Messages;
 using Mississippi.Testing.Utilities.SignalR;
 
 using NSubstitute;
@@ -28,6 +32,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender? messageSender = null,
         IHeartbeatManager? heartbeatManager = null,
         IStreamSubscriptionManager? streamSubscriptionManager = null,
+        IHostApplicationLifetime? hostApplicationLifetime = null,
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>>? logger = null
     ) =>
         new(
@@ -37,6 +42,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender ?? Substitute.For<ILocalMessageSender>(),
             heartbeatManager ?? Substitute.For<IHeartbeatManager>(),
             streamSubscriptionManager ?? Substitute.For<IStreamSubscriptionManager>(),
+            hostApplicationLifetime ?? Substitute.For<IHostApplicationLifetime>(),
             logger ?? NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance);
 
     private static IServerIdProvider CreateServerIdProvider(
@@ -97,6 +103,205 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     Caller cancellation must release a broadcast while shared startup continues for healthy callers.
+    /// </summary>
+    /// <param name="excludeConnections">Whether to use the exclusion overload.</param>
+    /// <param name="cancelDuringHeartbeat">Whether heartbeat registration is the pending startup operation.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task BroadcastShouldCancelOnlyItsOwnStartupWait(
+        bool excludeConnections,
+        bool cancelDuringHeartbeat
+    )
+    {
+        using CancellationTokenSource stopping = new();
+        IHostApplicationLifetime lifetime = Substitute.For<IHostApplicationLifetime>();
+        lifetime.ApplicationStopping.Returns(stopping.Token);
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        TaskCompletionSource setup = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        streams.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                stopping.Token)
+            .Returns(cancelDuringHeartbeat ? Task.CompletedTask : setup.Task);
+        heartbeat.StartAsync(Arg.Any<Func<int>>(), stopping.Token)
+            .Returns(cancelDuringHeartbeat ? setup.Task : Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat,
+            hostApplicationLifetime: lifetime);
+        try
+        {
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                using CancellationTokenSource caller = new();
+                Task canceledSend = excludeConnections
+                    ? manager.SendAllExceptAsync("Canceled", [], ["excluded"], caller.Token)
+                    : manager.SendAllAsync("Canceled", [], caller.Token);
+                await caller.CancelAsync();
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                    canceledSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            }
+
+            Assert.False(stopping.IsCancellationRequested);
+            Task healthySend = manager.SendAllAsync("Healthy", []);
+            Assert.False(healthySend.IsCompleted);
+            setup.SetResult();
+            await healthySend.WaitAsync(TimeSpan.FromSeconds(5));
+            await streams.Received(1)
+                .EnsureInitializedAsync(
+                    Arg.Any<string>(),
+                    Arg.Any<Func<ServerMessage, Task>>(),
+                    Arg.Any<Func<AllMessage, Task>>(),
+                    stopping.Token);
+            await heartbeat.Received(1).StartAsync(Arg.Any<Func<int>>(), stopping.Token);
+            await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(m => m.MethodName == "Healthy"));
+            await streams.DidNotReceive().PublishToAllAsync(Arg.Is<AllMessage>(m => m.MethodName == "Canceled"));
+        }
+        finally
+        {
+            setup.TrySetResult();
+        }
+    }
+
+    /// <summary>
+    ///     Cancellation racing successful setup must still prevent publishing.
+    /// </summary>
+    /// <param name="excludeConnections">Whether to use the exclusion overload.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BroadcastShouldCheckCancellationAfterSetup(
+        bool excludeConnections
+    )
+    {
+        using CancellationTokenSource caller = new();
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        heartbeat.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>())
+            .Returns(async _ => await caller.CancelAsync());
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => excludeConnections
+            ? manager.SendAllExceptAsync("Message", [], ["excluded"], caller.Token)
+            : manager.SendAllAsync("Message", [], caller.Token));
+        await streams.DidNotReceiveWithAnyArgs().PublishToAllAsync(default!);
+    }
+
+    /// <summary>
+    ///     Shared initialization failures must be observed after every caller cancels and remain retryable.
+    /// </summary>
+    /// <param name="failDuringHeartbeat">Whether heartbeat registration is the operation that fails late.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BroadcastShouldObserveSharedStartupFailureAfterAllCallersCancel(
+        bool failDuringHeartbeat
+    )
+    {
+        using CancellationTokenSource firstCaller = new();
+        using CancellationTokenSource secondCaller = new();
+        using CancellationTokenSource stopping = new();
+        IHostApplicationLifetime lifetime = Substitute.For<IHostApplicationLifetime>();
+        lifetime.ApplicationStopping.Returns(stopping.Token);
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        TaskCompletionSource setup = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        streams.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                stopping.Token)
+            .Returns(failDuringHeartbeat ? Task.CompletedTask : setup.Task, Task.CompletedTask);
+        heartbeat.StartAsync(Arg.Any<Func<int>>(), stopping.Token)
+            .Returns(failDuringHeartbeat ? setup.Task : Task.CompletedTask, Task.CompletedTask);
+        TaskCompletionSource<Exception?> failureLogged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int failureCount = 0;
+        CallbackLogger<AqueductHubLifetimeManager<TestAqueductHub>> logger = new((
+            eventId,
+            exception
+        ) =>
+        {
+            if (eventId.Id == 12)
+            {
+                Interlocked.Increment(ref failureCount);
+                failureLogged.TrySetResult(exception);
+            }
+        });
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat,
+            hostApplicationLifetime: lifetime,
+            logger: logger);
+        try
+        {
+            Task firstSend = manager.SendAllAsync("Canceled", [], firstCaller.Token);
+            Task secondSend = manager.SendAllExceptAsync("Canceled", [], ["excluded"], secondCaller.Token);
+            await firstCaller.CancelAsync();
+            await secondCaller.CancelAsync();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => firstSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                secondSend.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.False(stopping.IsCancellationRequested);
+            InvalidOperationException expected = new("Shared initialization failed");
+            setup.SetException(expected);
+            Exception? loggedException = await failureLogged.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            AggregateException aggregate = Assert.IsType<AggregateException>(loggedException);
+            Assert.Same(expected, Assert.Single(aggregate.InnerExceptions));
+            Assert.Equal(1, failureCount);
+            await manager.SendAllAsync("Retry", []).WaitAsync(TimeSpan.FromSeconds(5));
+            await manager.SendAllExceptAsync("Ready", [], ["excluded"]).WaitAsync(TimeSpan.FromSeconds(5));
+            await streams.Received(2)
+                .EnsureInitializedAsync(
+                    Arg.Any<string>(),
+                    Arg.Any<Func<ServerMessage, Task>>(),
+                    Arg.Any<Func<AllMessage, Task>>(),
+                    stopping.Token);
+            await heartbeat.Received(failDuringHeartbeat ? 2 : 1).StartAsync(Arg.Any<Func<int>>(), stopping.Token);
+            await streams.DidNotReceive()
+                .PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Canceled"));
+            await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Retry"));
+            await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Ready"));
+            Assert.Equal(1, failureCount);
+        }
+        finally
+        {
+            setup.TrySetResult();
+        }
+    }
+
+    /// <summary>
+    ///     Canceled broadcasts must not start shared setup or publish.
+    /// </summary>
+    /// <param name="excludeConnections">Whether to use the exclusion overload.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BroadcastShouldRejectAlreadyCanceledCaller(
+        bool excludeConnections
+    )
+    {
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(streamSubscriptionManager: streams);
+        CancellationToken canceledToken = new(true);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => excludeConnections
+            ? manager.SendAllExceptAsync("Message", [], ["excluded"], canceledToken)
+            : manager.SendAllAsync("Message", [], canceledToken));
+        await streams.DidNotReceiveWithAnyArgs().EnsureInitializedAsync(default!, default!, default!);
+        await streams.DidNotReceiveWithAnyArgs().PublishToAllAsync(default!);
+    }
+
+    /// <summary>
     ///     Constructor should succeed with valid dependencies.
     /// </summary>
     [Fact(DisplayName = "Constructor Succeeds With Valid Dependencies")]
@@ -109,6 +314,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -120,6 +326,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger);
 
         // Assert
@@ -142,6 +349,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -153,6 +361,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
     }
 
@@ -172,6 +381,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -183,6 +393,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
     }
 
@@ -202,6 +413,7 @@ public sealed class AqueductHubLifetimeManagerTests
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -213,7 +425,36 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             null!,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
+    }
+
+    /// <summary>
+    ///     Constructor should throw when hostApplicationLifetime is null.
+    /// </summary>
+    [Fact(DisplayName = "Constructor Throws When Host Application Lifetime Is Null")]
+    public void ConstructorShouldThrowWhenHostApplicationLifetimeIsNull()
+    {
+        // Arrange
+        IServerIdProvider serverIdProvider = CreateServerIdProvider();
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
+            NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
+            serverIdProvider,
+            grainFactory,
+            connectionRegistry,
+            messageSender,
+            heartbeatManager,
+            streamSubscriptionManager,
+            null!,
+            logger).Dispose());
     }
 
     /// <summary>
@@ -233,6 +474,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new AqueductHubLifetimeManager<TestAqueductHub>(
@@ -242,6 +484,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             null!));
     }
 
@@ -261,6 +504,7 @@ public sealed class AqueductHubLifetimeManagerTests
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -272,6 +516,7 @@ public sealed class AqueductHubLifetimeManagerTests
             null!,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
     }
 
@@ -291,6 +536,7 @@ public sealed class AqueductHubLifetimeManagerTests
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
         IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -302,6 +548,7 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             streamSubscriptionManager,
+            hostApplicationLifetime,
             logger));
     }
 
@@ -321,6 +568,7 @@ public sealed class AqueductHubLifetimeManagerTests
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
         IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
         ILogger<AqueductHubLifetimeManager<TestAqueductHub>> logger =
             NullLogger<AqueductHubLifetimeManager<TestAqueductHub>>.Instance;
 
@@ -332,7 +580,143 @@ public sealed class AqueductHubLifetimeManagerTests
             messageSender,
             heartbeatManager,
             null!,
+            hostApplicationLifetime,
             logger));
+    }
+
+    /// <summary>
+    ///     A coincident disconnect must not hide cancellation from another operation.
+    /// </summary>
+    /// <param name="delivery">The delivery path to exercise.</param>
+    /// <param name="abortConnection">Whether the connection also aborts during delivery.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData("direct", false)]
+    [InlineData("direct", true)]
+    [InlineData("broadcast", false)]
+    [InlineData("broadcast", true)]
+    [InlineData("targeted", false)]
+    [InlineData("targeted", true)]
+    public async Task DeliveryShouldPropagateUnrelatedCancellation(
+        string delivery,
+        bool abortConnection
+    )
+    {
+        using CancellationTokenSource connectionAbort = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "connection",
+            connectionAborted: connectionAbort.Token);
+        IConnectionRegistry registry = Substitute.For<IConnectionRegistry>();
+        registry.GetConnection("connection").Returns(connection);
+        registry.GetAll().Returns([connection]);
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        Func<ServerMessage, Task>? targeted = null;
+        Func<AllMessage, Task>? broadcast = null;
+        streams.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Do<Func<ServerMessage, Task>>(callback => targeted = callback),
+                Arg.Do<Func<AllMessage, Task>>(callback => broadcast = callback),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        ILocalMessageSender sender = Substitute.For<ILocalMessageSender>();
+        OperationCanceledException unrelated = new(new CancellationToken(true));
+        sender.SendAsync(connection, "Message", Arg.Any<IReadOnlyList<object?>>(), Arg.Any<CancellationToken>())
+            .Returns(async _ =>
+            {
+                if (abortConnection)
+                {
+                    await connectionAbort.CancelAsync();
+                }
+
+                throw unrelated;
+            });
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: registry,
+            streamSubscriptionManager: streams,
+            messageSender: sender);
+        await manager.OnConnectedAsync(connection);
+        Assert.NotNull(targeted);
+        Assert.NotNull(broadcast);
+        OperationCanceledException actual = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            delivery switch
+            {
+                "direct" => manager.SendConnectionAsync("connection", "Message", []),
+                "broadcast" => broadcast(
+                    new()
+                    {
+                        MethodName = "Message",
+                        Args = [],
+                    }),
+                var _ => targeted(
+                    new()
+                    {
+                        ConnectionId = "connection",
+                        MethodName = "Message",
+                        Args = [],
+                    }),
+            });
+        Assert.Same(unrelated, actual);
+    }
+
+    /// <summary>
+    ///     OnAllMessageAsync should continue when a connection aborts during delivery.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "OnAllMessageAsync Continues After Connection Aborts")]
+    public async Task OnAllMessageAsyncShouldContinueAfterConnectionAborts()
+    {
+        // Arrange
+        using CancellationTokenSource abortedConnectionSource = new();
+        HubConnectionContext abortedConnection = HubConnectionContextFactory.Create(
+            "aborted",
+            connectionAborted: abortedConnectionSource.Token);
+        HubConnectionContext healthyConnection = HubConnectionContextFactory.Create("healthy");
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        connectionRegistry.GetAll().Returns([abortedConnection, healthyConnection]);
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        object?[] args = [];
+        TaskCompletionSource abortedSendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        messageSender.SendAsync(
+                abortedConnection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                abortedConnection.ConnectionAborted)
+            .Returns(abortedSendCompletion.Task);
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        Func<AllMessage, Task>? onAllMessage = null;
+        streamSubscriptionManager.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Do<Func<AllMessage, Task>>(callback => onAllMessage = callback),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            heartbeatManager: heartbeatManager,
+            messageSender: messageSender,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.SendAllAsync("MethodName", args);
+        Func<AllMessage, Task> callback = onAllMessage ??
+                                          throw new InvalidOperationException("All-message callback was not captured.");
+        Task callbackTask = callback(
+            new()
+            {
+                MethodName = "MethodName",
+                Args = args,
+            });
+        await abortedConnectionSource.CancelAsync();
+        abortedSendCompletion.SetCanceled(abortedConnectionSource.Token);
+        await callbackTask;
+
+        // Assert
+        await messageSender.Received(1)
+            .SendAsync(abortedConnection, "MethodName", args, abortedConnection.ConnectionAborted);
+        await messageSender.Received(1)
+            .SendAsync(healthyConnection, "MethodName", args, healthyConnection.ConnectionAborted);
     }
 
     /// <summary>
@@ -350,6 +734,44 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     OnConnectedAsync should use the host application stopping token for stream setup.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "OnConnectedAsync Uses Host Application Stopping Token")]
+    public async Task OnConnectedAsyncShouldUseHostApplicationStoppingToken()
+    {
+        // Arrange
+        using CancellationTokenSource applicationStoppingSource = new();
+        CancellationToken applicationStopping = applicationStoppingSource.Token;
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
+        hostApplicationLifetime.ApplicationStopping.Returns(applicationStopping);
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        ISignalRClientGrain clientGrain = Substitute.For<ISignalRClientGrain>();
+        grainFactory.GetClientGrain("TestAqueductHub", "conn1").Returns(clientGrain);
+        HubConnectionContext connection = HubConnectionContextFactory.Create("conn1");
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            grainFactory: grainFactory,
+            heartbeatManager: heartbeatManager,
+            hostApplicationLifetime: hostApplicationLifetime,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.OnConnectedAsync(connection);
+
+        // Assert
+        await streamSubscriptionManager.Received(1)
+            .EnsureInitializedAsync(
+                "TestAqueductHub",
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                applicationStopping);
+        await heartbeatManager.Received(1).StartAsync(Arg.Any<Func<int>>(), applicationStopping);
+    }
+
+    /// <summary>
     ///     OnDisconnectedAsync should throw when connection is null.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
@@ -361,6 +783,111 @@ public sealed class AqueductHubLifetimeManagerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => manager.OnDisconnectedAsync(null!));
+    }
+
+    /// <summary>
+    ///     OnServerMessageAsync should ignore cancellation after a connection aborts.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "OnServerMessageAsync Ignores Connection Abort")]
+    public async Task OnServerMessageAsyncShouldIgnoreConnectionAbort()
+    {
+        // Arrange
+        using CancellationTokenSource abortedConnectionSource = new();
+        HubConnectionContext abortedConnection = HubConnectionContextFactory.Create(
+            "aborted",
+            connectionAborted: abortedConnectionSource.Token);
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        connectionRegistry.GetConnection("aborted").Returns(abortedConnection);
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        object?[] args = [];
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        messageSender.SendAsync(abortedConnection, "MethodName", args, abortedConnection.ConnectionAborted)
+            .Returns(sendCompletion.Task);
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        Func<ServerMessage, Task>? onServerMessage = null;
+        streamSubscriptionManager.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Do<Func<ServerMessage, Task>>(callback => onServerMessage = callback),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            heartbeatManager: heartbeatManager,
+            messageSender: messageSender,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.SendAllAsync("MethodName", args);
+        Func<ServerMessage, Task> callback = onServerMessage ??
+                                             throw new InvalidOperationException(
+                                                 "Server-message callback was not captured.");
+        Task callbackTask = callback(
+            new()
+            {
+                ConnectionId = "aborted",
+                MethodName = "MethodName",
+                Args = args,
+            });
+
+        // Complete the send as the connection aborts, so the cancellation filter handles the write cancellation.
+        await abortedConnectionSource.CancelAsync();
+        sendCompletion.SetCanceled(abortedConnectionSource.Token);
+        await callbackTask;
+
+        // Assert
+        await messageSender.Received(1)
+            .SendAsync(abortedConnection, "MethodName", args, abortedConnection.ConnectionAborted);
+    }
+
+    /// <summary>
+    ///     OnServerMessageAsync should propagate cancellation unrelated to the connection.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "OnServerMessageAsync Propagates Unrelated Cancellation")]
+    public async Task OnServerMessageAsyncShouldPropagateUnrelatedCancellation()
+    {
+        // Arrange
+        HubConnectionContext connection = HubConnectionContextFactory.Create("connection");
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        connectionRegistry.GetConnection("connection").Returns(connection);
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        object?[] args = [];
+        messageSender.SendAsync(connection, "MethodName", args, connection.ConnectionAborted)
+            .Returns(Task.FromCanceled(new(true)));
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        Func<ServerMessage, Task>? onServerMessage = null;
+        streamSubscriptionManager.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Do<Func<ServerMessage, Task>>(callback => onServerMessage = callback),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            heartbeatManager: heartbeatManager,
+            messageSender: messageSender,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.SendAllAsync("MethodName", args);
+        Func<ServerMessage, Task> callback = onServerMessage ??
+                                             throw new InvalidOperationException(
+                                                 "Server-message callback was not captured.");
+
+        // Assert
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => callback(
+            new()
+            {
+                ConnectionId = "connection",
+                MethodName = "MethodName",
+                Args = args,
+            }));
     }
 
     /// <summary>
@@ -412,6 +939,160 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     SendAllAsync and SendAllExceptAsync should use the host application stopping token for shared setup.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendAll Methods Use Host Application Stopping Token For Shared Setup")]
+    public async Task SendAllMethodsShouldUseHostApplicationStoppingTokenForSharedSetup()
+    {
+        // Arrange
+        using CancellationTokenSource applicationStoppingSource = new();
+        using CancellationTokenSource requestCancellationSource = new();
+        IHostApplicationLifetime hostApplicationLifetime = Substitute.For<IHostApplicationLifetime>();
+        hostApplicationLifetime.ApplicationStopping.Returns(applicationStoppingSource.Token);
+        IStreamSubscriptionManager streamSubscriptionManager = Substitute.For<IStreamSubscriptionManager>();
+        streamSubscriptionManager.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+        IHeartbeatManager heartbeatManager = Substitute.For<IHeartbeatManager>();
+        heartbeatManager.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            heartbeatManager: heartbeatManager,
+            hostApplicationLifetime: hostApplicationLifetime,
+            streamSubscriptionManager: streamSubscriptionManager);
+
+        // Act
+        await manager.SendAllAsync("MethodName", [], requestCancellationSource.Token);
+        await manager.SendAllExceptAsync("MethodName", [], ["excluded"], requestCancellationSource.Token);
+
+        // Assert
+        await streamSubscriptionManager.Received(1)
+            .EnsureInitializedAsync(
+                "TestAqueductHub",
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                applicationStoppingSource.Token);
+        await heartbeatManager.Received(1).StartAsync(Arg.Any<Func<int>>(), applicationStoppingSource.Token);
+    }
+
+    /// <summary>
+    ///     SendConnectionAsync should cancel a forwarded token when the connection aborts.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendConnectionAsync Cancels Forwarded Token When Connection Aborts")]
+    public async Task SendConnectionAsyncShouldCancelForwardedTokenWhenConnectionAborts()
+    {
+        // Arrange
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        using CancellationTokenSource callerCancellationSource = new();
+        using CancellationTokenSource connectionAbortSource = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn1",
+            connectionAborted: connectionAbortSource.Token);
+        connectionRegistry.GetConnection("conn1").Returns(connection);
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken forwardedCancellationToken = default;
+        messageSender.SendAsync(
+                connection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                Arg.Do<CancellationToken>(token => forwardedCancellationToken = token))
+            .Returns(sendCompletion.Task);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            messageSender: messageSender);
+        object?[] args = ["arg1", 42];
+
+        // Act
+        Task sendTask = manager.SendConnectionAsync("conn1", "MethodName", args, callerCancellationSource.Token);
+
+        // Assert
+        Assert.False(forwardedCancellationToken.IsCancellationRequested);
+        await connectionAbortSource.CancelAsync();
+        Assert.True(forwardedCancellationToken.IsCancellationRequested);
+        Assert.False(callerCancellationSource.IsCancellationRequested);
+        sendCompletion.SetCanceled(forwardedCancellationToken);
+        await sendTask;
+    }
+
+    /// <summary>
+    ///     SendConnectionAsync should ignore cancellation caused only by a connection abort.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendConnectionAsync Ignores Connection-Only Cancellation")]
+    public async Task SendConnectionAsyncShouldIgnoreConnectionOnlyCancellation()
+    {
+        // Arrange
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        using CancellationTokenSource connectionAbortSource = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn1",
+            connectionAborted: connectionAbortSource.Token);
+        connectionRegistry.GetConnection("conn1").Returns(connection);
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        messageSender.SendAsync(
+                connection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                connection.ConnectionAborted)
+            .Returns(sendCompletion.Task);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            messageSender: messageSender);
+
+        // Act
+        Task sendTask = manager.SendConnectionAsync("conn1", "MethodName", [], CancellationToken.None);
+        await connectionAbortSource.CancelAsync();
+        sendCompletion.SetCanceled(connectionAbortSource.Token);
+
+        // Assert
+        await sendTask;
+        await messageSender.Received(1)
+            .SendAsync(connection, "MethodName", Arg.Any<IReadOnlyList<object?>>(), connection.ConnectionAborted);
+    }
+
+    /// <summary>
+    ///     Caller cancellation must propagate even when the connection also aborts before a pending write completes.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task SendConnectionAsyncShouldPropagateCallerCancellationWhenConnectionAlsoAborts()
+    {
+        using CancellationTokenSource callerCancellation = new();
+        using CancellationTokenSource connectionAbort = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "connection",
+            connectionAborted: connectionAbort.Token);
+        IConnectionRegistry registry = Substitute.For<IConnectionRegistry>();
+        registry.GetConnection("connection").Returns(connection);
+        ILocalMessageSender sender = Substitute.For<ILocalMessageSender>();
+        TaskCompletionSource write = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken deliveryToken = default;
+        sender.SendAsync(
+                connection,
+                "Message",
+                Arg.Any<IReadOnlyList<object?>>(),
+                Arg.Do<CancellationToken>(token => deliveryToken = token))
+            .Returns(write.Task);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: registry,
+            messageSender: sender);
+        Task send = manager.SendConnectionAsync("connection", "Message", [], callerCancellation.Token);
+        Assert.True(deliveryToken.CanBeCanceled);
+        await connectionAbort.CancelAsync();
+        await callerCancellation.CancelAsync();
+        write.SetCanceled(deliveryToken);
+        OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            send.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Equal(deliveryToken, exception.CancellationToken);
+    }
+
+    /// <summary>
     ///     SendConnectionAsync should route via client grain if not local.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
@@ -446,18 +1127,35 @@ public sealed class AqueductHubLifetimeManagerTests
         // Arrange
         IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
         ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
-        HubConnectionContext connection = HubConnectionContextFactory.Create("conn1");
+        using CancellationTokenSource callerCancellationSource = new();
+        using CancellationTokenSource connectionAbortSource = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn1",
+            connectionAborted: connectionAbortSource.Token);
         connectionRegistry.GetConnection("conn1").Returns(connection);
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken forwardedCancellationToken = default;
+        messageSender.SendAsync(
+                connection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                Arg.Do<CancellationToken>(token => forwardedCancellationToken = token))
+            .Returns(sendCompletion.Task);
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
             connectionRegistry: connectionRegistry,
             messageSender: messageSender);
         object?[] args = ["arg1", 42];
 
         // Act
-        await manager.SendConnectionAsync("conn1", "MethodName", args);
+        Task sendTask = manager.SendConnectionAsync("conn1", "MethodName", args, callerCancellationSource.Token);
 
         // Assert
-        await messageSender.Received(1).SendAsync(connection, "MethodName", args);
+        Assert.False(forwardedCancellationToken.IsCancellationRequested);
+        await callerCancellationSource.CancelAsync();
+        Assert.True(forwardedCancellationToken.IsCancellationRequested);
+        Assert.False(connectionAbortSource.IsCancellationRequested);
+        sendCompletion.SetCanceled(forwardedCancellationToken);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sendTask.WaitAsync(CancellationToken.None));
     }
 
     /// <summary>
@@ -486,6 +1184,42 @@ public sealed class AqueductHubLifetimeManagerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => manager.SendConnectionAsync("conn1", string.Empty, []));
+    }
+
+    /// <summary>
+    ///     SendConnectionAsync should use the connection token when the caller token cannot cancel.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact(DisplayName = "SendConnectionAsync Uses Connection Token Without Caller Cancellation")]
+    public async Task SendConnectionAsyncShouldUseConnectionTokenWithoutCallerCancellation()
+    {
+        // Arrange
+        IConnectionRegistry connectionRegistry = Substitute.For<IConnectionRegistry>();
+        ILocalMessageSender messageSender = Substitute.For<ILocalMessageSender>();
+        using CancellationTokenSource connectionAbortSource = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "conn1",
+            connectionAborted: connectionAbortSource.Token);
+        connectionRegistry.GetConnection("conn1").Returns(connection);
+        TaskCompletionSource sendCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken forwardedCancellationToken = default;
+        messageSender.SendAsync(
+                connection,
+                "MethodName",
+                Arg.Any<IReadOnlyList<object?>>(),
+                Arg.Do<CancellationToken>(token => forwardedCancellationToken = token))
+            .Returns(sendCompletion.Task);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: connectionRegistry,
+            messageSender: messageSender);
+
+        // Act
+        Task sendTask = manager.SendConnectionAsync("conn1", "MethodName", [], CancellationToken.None);
+
+        // Assert
+        Assert.Equal(connection.ConnectionAborted, forwardedCancellationToken);
+        sendCompletion.SetResult();
+        await sendTask;
     }
 
     /// <summary>
@@ -633,5 +1367,70 @@ public sealed class AqueductHubLifetimeManagerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => manager.SendUsersAsync(null!, "method", []));
+    }
+
+    /// <summary>
+    ///     A canceled initialization task must not permanently prevent healthy callers from starting the backplane.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task SharedSetupShouldRetryCanceledInitialization()
+    {
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        streams.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromCanceled(new(true)), Task.CompletedTask);
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => manager.SendAllAsync("Canceled", []));
+        await manager.SendAllAsync("Retry", []);
+        await manager.SendAllAsync("Ready", []);
+        await streams.Received(2)
+            .EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>());
+        await heartbeat.Received(1).StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>());
+        await streams.DidNotReceive()
+            .PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Canceled"));
+        await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Retry"));
+        await streams.Received(1).PublishToAllAsync(Arg.Is<AllMessage>(message => message.MethodName == "Ready"));
+    }
+
+    /// <summary>
+    ///     Successful stream setup must not hide a failed heartbeat registration on retry.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task SharedSetupShouldRetryFailedHeartbeat()
+    {
+        IStreamSubscriptionManager streams = Substitute.For<IStreamSubscriptionManager>();
+        streams.EnsureInitializedAsync(
+                Arg.Any<string>(),
+                Arg.Any<Func<ServerMessage, Task>>(),
+                Arg.Any<Func<AllMessage, Task>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                streams.IsInitialized.Returns(true);
+                return Task.CompletedTask;
+            });
+        IHeartbeatManager heartbeat = Substitute.For<IHeartbeatManager>();
+        heartbeat.StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("Registration failed")), Task.CompletedTask);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            streamSubscriptionManager: streams,
+            heartbeatManager: heartbeat);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.SendAllAsync("First", []));
+        await manager.SendAllAsync("Retry", []);
+        await manager.SendAllAsync("Ready", []);
+        await heartbeat.Received(2).StartAsync(Arg.Any<Func<int>>(), Arg.Any<CancellationToken>());
+        await streams.Received(2).PublishToAllAsync(Arg.Any<AllMessage>());
     }
 }
