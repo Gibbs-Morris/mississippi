@@ -198,9 +198,9 @@ internal sealed class StreamSubscriptionManager
                 await subscriptionTask.WaitAsync(CancellationToken.None).ConfigureAwait(false);
             await subscription.UnsubscribeAsync().ConfigureAwait(false);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
         {
-            Logger.SubscriptionCleanupCanceled(ServerId);
+            Logger.SubscriptionCleanupCanceled(ServerId, exception);
         }
         catch (OrleansException exception)
         {

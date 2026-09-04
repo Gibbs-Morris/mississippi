@@ -36,7 +36,8 @@ internal static partial class StreamSubscriptionManagerLoggerExtensions
         Message = "Orleans stream subscription was canceled before a handle was created (serverId: {ServerId})")]
     public static partial void SubscriptionCleanupCanceled(
         this ILogger logger,
-        string serverId
+        string serverId,
+        Exception exception
     );
 
     [LoggerMessage(
