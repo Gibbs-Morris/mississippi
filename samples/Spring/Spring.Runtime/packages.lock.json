@@ -711,7 +711,7 @@
       "Mississippi.Tributary.Runtime.Storage.Blobs": {
         "type": "Project",
         "dependencies": {
-          "Azure.Storage.Blobs": "[12.28.0, )",
+          "Azure.Storage.Blobs": "[12.29.2, )",
           "Mississippi.Common.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Abstractions": "[1.0.0, )",
           "Mississippi.Tributary.Runtime.Storage.Abstractions": "[1.0.0, )"
