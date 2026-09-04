@@ -41,7 +41,7 @@ public sealed class GeneratedApiAuthorizationAnalysisTests
             [CSharpSyntaxTree.ParseText(source)],
             [
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                MetadataReference.CreateFromFile(Path.Combine(runtimeDirectory, "System.Runtime.dll")),
+                MetadataReference.CreateFromFile(Path.Join(runtimeDirectory, "System.Runtime.dll")),
             ],
             new(OutputKind.DynamicallyLinkedLibrary));
         Assert.Empty(compilation.GetDiagnostics());
