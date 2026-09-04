@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -196,7 +197,7 @@ public sealed class StreamSubscriptionManagerTests
         TaskCompletionSource<StreamSubscriptionHandle<ServerMessage>> firstSubscriptionCompletion =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
         ServiceCollection services = new();
-        services.AddKeyedSingleton<IStreamProvider>(options.Value.StreamProviderName, streamProvider);
+        services.AddKeyedSingleton(options.Value.StreamProviderName, streamProvider);
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
         clusterClient.ServiceProvider.Returns(serviceProvider);
         streamProvider.GetStream<ServerMessage>(Arg.Any<StreamId>()).Returns(serverStream);
@@ -321,7 +322,7 @@ public sealed class StreamSubscriptionManagerTests
             Substitute.For<StreamSubscriptionHandle<ServerMessage>>();
         StreamSubscriptionHandle<AllMessage> allSubscription = Substitute.For<StreamSubscriptionHandle<AllMessage>>();
         ServiceCollection services = new();
-        services.AddKeyedSingleton<IStreamProvider>(options.Value.StreamProviderName, streamProvider);
+        services.AddKeyedSingleton(options.Value.StreamProviderName, streamProvider);
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
         clusterClient.ServiceProvider.Returns(serviceProvider);
         streamProvider.GetStream<ServerMessage>(Arg.Any<StreamId>()).Returns(serverStream);
@@ -339,6 +340,194 @@ public sealed class StreamSubscriptionManagerTests
         StreamId expectedAllStreamId = StreamId.Create(options.Value.AllClientsStreamNamespace, "TestHub");
         _ = streamProvider.Received(1).GetStream<ServerMessage>(expectedServerStreamId);
         _ = streamProvider.Received(1).GetStream<AllMessage>(expectedAllStreamId);
+    }
+
+    /// <summary>
+    ///     Cancellation while cleanup is pending must leave the retained handles available to a later retry.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task InitializationShouldAllowCancelingCleanupWait()
+    {
+        using StreamSubscriptionFixture fixture = new();
+        using CancellationTokenSource first = new();
+        using CancellationTokenSource second = new();
+        TaskCompletionSource<StreamSubscriptionHandle<ServerMessage>> subscription = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.ServerStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
+            .Returns(subscription.Task, Task.FromResult(fixture.ServerHandle));
+        Task initialization = fixture.InitializeAsync(first.Token);
+        await first.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            initialization.WaitAsync(TimeSpan.FromSeconds(5)));
+        Task retry = fixture.InitializeAsync(second.Token);
+        await second.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => retry.WaitAsync(TimeSpan.FromSeconds(5)));
+        subscription.SetResult(fixture.ServerHandle);
+        await fixture.InitializeAsync();
+        await fixture.ServerHandle.Received(1).UnsubscribeAsync();
+        Assert.True(fixture.Manager.IsInitialized);
+    }
+
+    /// <summary>
+    ///     Persistent cleanup failure must prevent duplicate subscriptions while allowing later recovery.
+    /// </summary>
+    /// <param name="failBroadcastCleanup">Whether the failed handle belongs to the broadcast stream.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InitializationShouldBlockResubscriptionUntilCleanupSucceeds(
+        bool failBroadcastCleanup
+    )
+    {
+        using StreamSubscriptionFixture fixture = new();
+        using CancellationTokenSource cancellation = new();
+        TaskCompletionSource<StreamSubscriptionHandle<AllMessage>> subscription = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.AllStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>())
+            .Returns(subscription.Task, Task.FromResult(fixture.AllHandle));
+        if (failBroadcastCleanup)
+        {
+            fixture.AllHandle.UnsubscribeAsync()
+                .Returns(Task.FromException(new InvalidOperationException("Cleanup failed")));
+        }
+        else
+        {
+            fixture.ServerHandle.UnsubscribeAsync()
+                .Returns(Task.FromException(new InvalidOperationException("Cleanup failed")));
+        }
+
+        Task initialization = fixture.InitializeAsync(cancellation.Token);
+        await cancellation.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            initialization.WaitAsync(TimeSpan.FromSeconds(5)));
+        subscription.SetResult(fixture.AllHandle);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.InitializeAsync());
+        Assert.False(fixture.Manager.IsInitialized);
+        _ = fixture.ServerStream.Received(1).SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>());
+        _ = fixture.AllStream.Received(1).SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>());
+        fixture.ServerHandle.UnsubscribeAsync().Returns(Task.CompletedTask);
+        fixture.AllHandle.UnsubscribeAsync().Returns(Task.CompletedTask);
+        await fixture.InitializeAsync();
+        Assert.True(fixture.Manager.IsInitialized);
+    }
+
+    /// <summary>
+    ///     Retry must wait for late broadcast subscription cleanup before creating any new subscriptions.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task InitializationShouldCleanBothSubscriptionsAfterBroadcastCancellation()
+    {
+        using StreamSubscriptionFixture fixture = new();
+        using CancellationTokenSource cancellation = new();
+        TaskCompletionSource<StreamSubscriptionHandle<AllMessage>> subscription = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource unsubscribe = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.AllStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>())
+            .Returns(subscription.Task, Task.FromResult(fixture.AllHandle));
+        fixture.AllHandle.UnsubscribeAsync().Returns(unsubscribe.Task);
+        Task initialization = fixture.InitializeAsync(cancellation.Token);
+        await cancellation.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            initialization.WaitAsync(TimeSpan.FromSeconds(5)));
+        Task retry = fixture.InitializeAsync();
+        Assert.False(retry.IsCompleted);
+        subscription.SetResult(fixture.AllHandle);
+        Assert.False(retry.IsCompleted);
+        _ = fixture.ServerStream.Received(1).SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>());
+        unsubscribe.SetResult();
+        await retry;
+        await fixture.ServerHandle.Received(1).UnsubscribeAsync();
+        await fixture.AllHandle.Received(1).UnsubscribeAsync();
+        Assert.True(fixture.Manager.IsInitialized);
+    }
+
+    /// <summary>
+    ///     Broadcast setup faults must clean up an already active server subscription before retry.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task InitializationShouldCleanServerSubscriptionAfterBroadcastFailure()
+    {
+        using StreamSubscriptionFixture fixture = new();
+        fixture.AllStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>())
+            .Returns(
+                Task.FromException<StreamSubscriptionHandle<AllMessage>>(
+                    new InvalidOperationException("Broadcast failed")),
+                Task.FromResult(fixture.AllHandle));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.InitializeAsync());
+        await fixture.InitializeAsync();
+        await fixture.ServerHandle.Received(1).UnsubscribeAsync();
+        Assert.True(fixture.Manager.IsInitialized);
+    }
+
+    /// <summary>
+    ///     Faulted or canceled subscription creation must be observed, logged, and permit a clean retry.
+    /// </summary>
+    /// <param name="subscriptionCanceled">Whether the underlying subscription itself was canceled.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InitializationShouldRecoverFromLateSubscriptionFailure(
+        bool subscriptionCanceled
+    )
+    {
+        using StreamSubscriptionFixture fixture = new();
+        using CancellationTokenSource cancellation = new();
+        TaskCompletionSource<StreamSubscriptionHandle<ServerMessage>> subscription = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.ServerStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
+            .Returns(subscription.Task, Task.FromResult(fixture.ServerHandle));
+        Task initialization = fixture.InitializeAsync(cancellation.Token);
+        await cancellation.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            initialization.WaitAsync(TimeSpan.FromSeconds(5)));
+        if (subscriptionCanceled)
+        {
+            subscription.SetCanceled(cancellation.Token);
+        }
+        else
+        {
+            subscription.SetException(new InvalidOperationException("Subscription failed"));
+        }
+
+        await fixture.InitializeAsync();
+        Assert.True(fixture.Manager.IsInitialized);
+        int cleanupEventId = subscriptionCanceled ? 4 : 3;
+        Assert.Contains(
+            fixture.Logger.ReceivedCalls(),
+            call => call.GetArguments().OfType<EventId>().Any(eventId => eventId.Id == cleanupEventId) &&
+                    call.GetArguments().OfType<Exception>().Any());
+        await fixture.ServerHandle.DidNotReceive().UnsubscribeAsync();
+    }
+
+    /// <summary>
+    ///     A failed unsubscribe must retain its handle for retry instead of losing it or poisoning initialization.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task InitializationShouldRetryFailedUnsubscribeBeforeResubscribing()
+    {
+        using StreamSubscriptionFixture fixture = new();
+        using CancellationTokenSource cancellation = new();
+        TaskCompletionSource<StreamSubscriptionHandle<AllMessage>> subscription = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        fixture.AllStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>())
+            .Returns(subscription.Task, Task.FromResult(fixture.AllHandle));
+        fixture.ServerHandle.UnsubscribeAsync()
+            .Returns(Task.FromException(new InvalidOperationException("Cleanup unavailable")), Task.CompletedTask);
+        Task initialization = fixture.InitializeAsync(cancellation.Token);
+        await cancellation.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            initialization.WaitAsync(TimeSpan.FromSeconds(5)));
+        subscription.SetResult(fixture.AllHandle);
+        await fixture.InitializeAsync();
+        await fixture.ServerHandle.Received(2).UnsubscribeAsync();
+        await fixture.AllHandle.Received(1).UnsubscribeAsync();
+        Assert.True(fixture.Manager.IsInitialized);
     }
 
     /// <summary>

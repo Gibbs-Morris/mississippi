@@ -33,11 +33,15 @@ internal sealed class StreamSubscriptionManager
 
     private IAsyncStream<AllMessage>? allStream;
 
+    private Task<StreamSubscriptionHandle<AllMessage>>? allSubscriptionTask;
+
     private bool disposed;
 
     private volatile bool initialized;
 
-    private Task? subscriptionCleanupTask;
+    private Task<StreamSubscriptionHandle<ServerMessage>>? serverSubscriptionTask;
+
+    private Task<bool>? subscriptionCleanupTask;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="StreamSubscriptionManager" /> class.
@@ -73,12 +77,6 @@ internal sealed class StreamSubscriptionManager
     private ILogger<StreamSubscriptionManager> Logger { get; }
 
     private IOptions<AqueductOptions> Options { get; }
-
-    private static Task CombineCleanupTasksAsync(
-        Task? existingCleanupTask,
-        Task cleanupTask
-    ) =>
-        existingCleanupTask is null ? cleanupTask : Task.WhenAll(existingCleanupTask, cleanupTask);
 
     /// <inheritdoc />
     public void Dispose()
@@ -116,9 +114,21 @@ internal sealed class StreamSubscriptionManager
                 return;
             }
 
-            if (subscriptionCleanupTask is Task cleanupTask)
+            if (subscriptionCleanupTask is not null)
             {
-                await cleanupTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                bool cleanedUp = await subscriptionCleanupTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                if (!cleanedUp)
+                {
+                    // Retain failed handles and retry cleanup before allowing any new subscription.
+                    subscriptionCleanupTask = CleanupSubscriptionsAsync();
+                    cleanedUp = await subscriptionCleanupTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    if (!cleanedUp)
+                    {
+                        throw new InvalidOperationException(
+                            "Previous Orleans stream subscriptions could not be cleaned up.");
+                    }
+                }
+
                 subscriptionCleanupTask = null;
             }
 
@@ -129,42 +139,36 @@ internal sealed class StreamSubscriptionManager
             // Subscribe to server-specific stream
             StreamId serverStreamId = StreamId.Create(Options.Value.ServerStreamNamespace, ServerId);
             IAsyncStream<ServerMessage> serverStream = streamProvider.GetStream<ServerMessage>(serverStreamId);
-            StreamSubscriptionHandle<ServerMessage>? serverSubscription = null;
             try
             {
-                serverSubscription = await SubscribeAsync(
-                        serverStream,
-                        async (
-                            message,
-                            token
-                        ) => await onServerMessage(message).ConfigureAwait(false),
-                        cancellationToken)
-                    .ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
+                serverSubscriptionTask = serverStream.SubscribeAsync(async (
+                    message,
+                    token
+                ) => await onServerMessage(message).ConfigureAwait(false));
+                await serverSubscriptionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // Subscribe to hub broadcast stream
                 StreamId allStreamId = StreamId.Create(Options.Value.AllClientsStreamNamespace, hubName);
                 IAsyncStream<AllMessage> broadcastStream = streamProvider.GetStream<AllMessage>(allStreamId);
-                await SubscribeAsync(
-                        broadcastStream,
-                        async (
-                            message,
-                            token
-                        ) => await onAllMessage(message).ConfigureAwait(false),
-                        cancellationToken)
-                    .ConfigureAwait(false);
+                allSubscriptionTask = broadcastStream.SubscribeAsync(async (
+                    message,
+                    token
+                ) => await onAllMessage(message).ConfigureAwait(false));
+                await allSubscriptionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
                 allStream = broadcastStream;
                 initialized = true;
                 Logger.StreamsInitialized(hubName, ServerId);
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            catch (Exception exception)
             {
-                if (serverSubscription is not null)
-                {
-                    subscriptionCleanupTask = CombineCleanupTasksAsync(
-                        subscriptionCleanupTask,
-                        CleanupSubscriptionAsync(Task.FromResult(serverSubscription)));
-                }
+                Logger.StreamInitializationFailed(hubName, ServerId, exception);
 
+                // Orleans subscriptions cannot be canceled. Observe late handles and release them,
+                // including partial setup after a fault, while allowing the caller to stop waiting.
+                subscriptionCleanupTask = CleanupSubscriptionsAsync();
                 throw;
             }
         }
@@ -188,43 +192,59 @@ internal sealed class StreamSubscriptionManager
         await allStream.OnNextAsync(message).ConfigureAwait(false);
     }
 
-    private async Task CleanupSubscriptionAsync<T>(
-        Task<StreamSubscriptionHandle<T>> subscriptionTask
+    private async Task<bool> CleanupSubscriptionAsync<T>(
+        Task<StreamSubscriptionHandle<T>>? subscriptionTask
     )
     {
+        if (subscriptionTask is null)
+        {
+            return true;
+        }
+
+        StreamSubscriptionHandle<T> subscription;
         try
         {
-            StreamSubscriptionHandle<T> subscription =
-                await subscriptionTask.WaitAsync(CancellationToken.None).ConfigureAwait(false);
-            await subscription.UnsubscribeAsync().ConfigureAwait(false);
+            subscription = await subscriptionTask.WaitAsync(CancellationToken.None).ConfigureAwait(false);
         }
         catch (OperationCanceledException exception)
         {
             Logger.SubscriptionCleanupCanceled(ServerId, exception);
+            return true;
         }
-        catch (OrleansException exception)
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            // Subscription creation failed, so there is no handle to release.
+            Logger.SubscriptionCleanupFailed(ServerId, exception);
+            return true;
+        }
+
+        try
+        {
+            await subscription.UnsubscribeAsync().ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
         {
             Logger.SubscriptionCleanupFailed(ServerId, exception);
+            return false;
         }
     }
 
-    private async Task<StreamSubscriptionHandle<T>> SubscribeAsync<T>(
-        IAsyncStream<T> stream,
-        Func<T, StreamSequenceToken?, Task> callback,
-        CancellationToken cancellationToken
-    )
+    private async Task<bool> CleanupSubscriptionsAsync()
     {
-        Task<StreamSubscriptionHandle<T>> subscriptionTask = stream.SubscribeAsync(callback);
-        try
+        Task<bool> serverCleanup = CleanupSubscriptionAsync(serverSubscriptionTask);
+        Task<bool> allCleanup = CleanupSubscriptionAsync(allSubscriptionTask);
+        await Task.WhenAll(serverCleanup, allCleanup).ConfigureAwait(false);
+        if (await serverCleanup.ConfigureAwait(false))
         {
-            return await subscriptionTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+            serverSubscriptionTask = null;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+
+        if (await allCleanup.ConfigureAwait(false))
         {
-            subscriptionCleanupTask = CombineCleanupTasksAsync(
-                subscriptionCleanupTask,
-                CleanupSubscriptionAsync(subscriptionTask));
-            throw;
+            allSubscriptionTask = null;
         }
+
+        return serverSubscriptionTask is null && allSubscriptionTask is null;
     }
 }

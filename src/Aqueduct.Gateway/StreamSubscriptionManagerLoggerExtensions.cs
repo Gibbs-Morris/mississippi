@@ -21,6 +21,17 @@ internal static partial class StreamSubscriptionManagerLoggerExtensions
     );
 
     [LoggerMessage(
+        EventId = 5,
+        Level = LogLevel.Debug,
+        Message = "Orleans stream initialization stopped for hub '{HubName}' (serverId: {ServerId})")]
+    public static partial void StreamInitializationFailed(
+        this ILogger logger,
+        string hubName,
+        string serverId,
+        Exception exception
+    );
+
+    [LoggerMessage(
         EventId = 2,
         Level = LogLevel.Information,
         Message = "Orleans streams initialized for hub '{HubName}' (serverId: {ServerId})")]
@@ -43,7 +54,7 @@ internal static partial class StreamSubscriptionManagerLoggerExtensions
     [LoggerMessage(
         EventId = 3,
         Level = LogLevel.Warning,
-        Message = "Failed to clean up canceled Orleans stream subscription (serverId: {ServerId})")]
+        Message = "Failed to create or clean up Orleans stream subscription (serverId: {ServerId})")]
     public static partial void SubscriptionCleanupFailed(
         this ILogger logger,
         string serverId,
