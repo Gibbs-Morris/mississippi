@@ -359,6 +359,10 @@ function Invoke-StrykerMutationTestPerProject {
     foreach ($testProject in $TestProjects) {
         $arguments += @('--test-project', $testProject)
     }
+    if ($TestProjects -match '\.L[2-4]Tests\.csproj$') {
+        # Integration fixtures use shared localhost ports across test processes.
+        $arguments += @('--concurrency', '1')
+    }
     # Stryker's multiple-test-project mode runs from the source project directory.
     Push-Location -LiteralPath (Split-Path -Parent $resolvedProject)
     try {
@@ -396,7 +400,7 @@ function Invoke-StrykerMutationTest {
     # Run Stryker per-project instead of at solution level to avoid compilation issues
     # with source generators (like LoggerMessage)
     Write-Host "Discovering test projects in solution..." -ForegroundColor ([ConsoleColor]::Cyan)
-    $testProjects = @(Get-TestProjects -SolutionPath $resolvedSolution.Path | Where-Object { $_ -match '\.L[01]Tests\.csproj$' })
+    $testProjects = @(Get-TestProjects -SolutionPath $resolvedSolution.Path)
     Write-Host "Found $($testProjects.Count) test projects" -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
 
@@ -426,7 +430,7 @@ function Invoke-StrykerMutationTest {
         }
     }
     if ($projectsUnderTest.Count -eq 0) {
-        throw "No source projects with L0/L1 tests were found in '$SolutionPath'."
+        throw "No source projects with tests were found in '$SolutionPath'."
     }
 
     $projectResults = @()
