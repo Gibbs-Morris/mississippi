@@ -157,7 +157,7 @@ All command-line scripts in this folder are thin shims over the shared PowerShel
 | Function | Responsibility |
 | --- | --- |
 | `Get-RepositoryRoot` | Resolve the repo root by walking upward from any start path (used by all scripts and tests). |
-| `Write-AutomationBanner`, `Invoke-AutomationStep` | Standardise coloured logging, step numbering, and error handling across every script. |
+| `Show-AutomationBanner`, `Invoke-AutomationStep` | Standardise coloured logging, step numbering, and error handling across every script. |
 | `Invoke-DotnetToolRestore`, `Invoke-SolutionRestore`, `Invoke-SolutionBuild`, `Invoke-SolutionTests` | Shared wrappers around `dotnet` CLI commands with consistent arguments, messaging, and metadata. |
 | `Invoke-SlnGeneration`, `Invoke-ReSharperCleanup`, `Invoke-StrykerMutationTest` | Encapsulate SLNGen, ReSharper CleanupCode, and Stryker.NET flows. |
 | `Invoke-MississippiSolution*`, `Invoke-SampleSolution*`, `Invoke-FinalSolutionsBuild`, `Invoke-SolutionsPipeline` | Canonical entry points that the `.ps1` shims expose on the command line. |
