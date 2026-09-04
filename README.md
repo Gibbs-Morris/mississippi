@@ -54,7 +54,7 @@ Mississippi is a sophisticated .NET framework designed to streamline distributed
 
 ### Prerequisites
 
-- .NET 10.0 SDK or later
+- The .NET SDK selected by [global.json](global.json)
 - PowerShell 7.0 or later (for build scripts)
 - Aspire CLI for direct AppHost workflows (`dotnet tool install -g Aspire.Cli`). The AppHosts use the CLI bundle; `dotnet run` can fall back to the SDK-paired CLI through DNX when `aspire` is not on `PATH`.
 - JetBrains Rider or other compatible IDE
@@ -86,14 +86,14 @@ To build the project from source:
 git clone https://github.com/Gibbs-Morris/mississippi.git
 cd mississippi
 
-# Run the full pipeline (build → test → mutation → cleanup)
+# Run the local pipeline (build → L0/L1 tests → summaries → cleanup → final build)
 pwsh ./go.ps1
 ```
 
 Common script entry points:
 
 - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 [-Configuration Debug|Release]` – build the Mississippi solution.
-- `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run unit/integration tests with coverage for Mississippi projects.
+- `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run L0/L1 tests with coverage for Mississippi projects.
 - `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
 - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
 
@@ -153,20 +153,19 @@ The PowerShell entry points (`build-*.ps1`, `unit-test-*.ps1`, `clean-up-*.ps1`,
 
 ## CI / Local pipeline options
 
-The repository provides a top-level helper `go.ps1` which forwards to `orchestrate-solutions.ps1`. A new option `-SkipCleanup` is available to run the full build, tests and mutation testing pipeline while skipping the repository cleanup steps (ReSharper/StyleCop automated cleanup). This is useful for CI runs or local checks when you want to avoid formatting/cleanup changes but still validate build and test quality.
+The top-level `go.ps1` forwards to `orchestrate-solutions.ps1`. By default it builds both solutions, runs their L0/L1 tests, summarizes Mississippi coverage, applies ReSharper cleanup, and performs a final build with warnings as errors. Mutation testing is opt-in with `-IncludeMutation`; `-SkipCleanup` skips formatting changes during an intermediate validation run.
 
 Usage examples:
 
 ```powershell
-# Run full pipeline locally including cleanup (default)
+# Run the local pipeline including cleanup (default)
 pwsh ./go.ps1 -Configuration Release
 
-# Run full pipeline but skip cleanup (useful for CI or when you don't want the cleanup step to run)
+# Include Mississippi mutation tests and the mutation summary
+pwsh ./go.ps1 -Configuration Release -IncludeMutation
+
+# Build and test without applying cleanup
 pwsh ./go.ps1 -Configuration Release -SkipCleanup
 ```
 
-Notes:
-
-- `-SkipCleanup` is a switch forwarded from `go.ps1` to `orchestrate-solutions.ps1` and then to `Invoke-SolutionsPipeline` in the shared module.
-
-- CI workflows can call `./go.ps1 -SkipCleanup` to run build, tests and mutation testing without running the cleanup step.
+L2 integration tests, PowerShell tests, documentation tests, publishing, and service-backed CI checks run separately. See the [script guide and CI mapping](eng/src/agent-scripts/README.md#github-actions-mapping) for their entry points. Run `pwsh ./clean-up.ps1` before final handoff even when an intermediate run uses `-SkipCleanup`.

@@ -42,7 +42,7 @@ if ($pesterMajor -ge 5) {
         $result = Invoke-Pester -Path $testPath -PassThru
     }
     else {
-        Invoke-Pester -Path $testPath | Out-Null
+        $result = Invoke-Pester -Path $testPath -PassThru
     }
 }
 else {
@@ -51,10 +51,13 @@ else {
         $result = Invoke-Pester -Script $scriptDefinition -PassThru
     }
     else {
-        Invoke-Pester -Script $scriptDefinition | Out-Null
+        $result = Invoke-Pester -Script $scriptDefinition -PassThru
     }
 }
 
 if ($PassThru) {
     return $result
 }
+
+if ($null -eq $result -or $result.TotalCount -lt 1 -or $result.Result -ne 'Passed') { exit 1 }
+exit 0

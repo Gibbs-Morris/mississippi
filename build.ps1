@@ -90,3 +90,5 @@ catch {
     Write-Error "=== BUILD FAILED === $_"
     exit 1
 }
+
+exit 0

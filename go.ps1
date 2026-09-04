@@ -5,12 +5,15 @@
     Runs the orchestrate-solutions.ps1 script for the repository.
 #>
 
-# Accept optional parameters forwarded from callers
+[CmdletBinding()]
 param(
     [switch]$SkipCleanup,
     [switch]$IncludeMutation,
     [string]$Configuration = 'Release'
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
 # Determine the repository root directory (this script resides there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -32,3 +35,5 @@ try {
     Write-Error "=== FAILURE: Main pipeline orchestration failed: $_"
     exit 1
 }
+
+exit 0

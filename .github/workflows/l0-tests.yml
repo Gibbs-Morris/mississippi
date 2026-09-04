@@ -72,7 +72,7 @@ jobs:
       - name: Run L0 Tests
         run: |
           mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L0Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L0Tests." --logger "trx;LogFilePrefix=test_results" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
 
       - name: Upload Test Results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

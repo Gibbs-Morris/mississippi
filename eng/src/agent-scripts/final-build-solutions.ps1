@@ -21,3 +21,5 @@ catch {
     Write-Error 'Build failed due to warnings or errors. All issues must be resolved before merge.'
     exit 1
 }
+
+exit 0

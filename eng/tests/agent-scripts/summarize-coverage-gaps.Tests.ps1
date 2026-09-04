@@ -46,7 +46,8 @@ Describe 'summarize-coverage-gaps.ps1' {
         $reportPath = Join-Path $testRepo 'coverage.cobertura.xml'
         Set-Content -LiteralPath $reportPath -Value $coverageXml
 
-        & $scriptPath -CoverageReportPath $reportPath -Threshold 75 -EmitTasks -RepoRoot $testRepo | Out-Null
+        & pwsh -NoProfile -File $scriptPath -CoverageReportPath $reportPath -Threshold 75 -EmitTasks -RepoRoot $testRepo | Out-Null
+        $LASTEXITCODE | Should -Be 0
 
         $pendingDir = Join-Path $testRepo '.scratchpad/tasks/pending'
         Test-Path -LiteralPath $pendingDir | Should -Be $true
