@@ -20,3 +20,5 @@ catch {
     Write-Error "=== MISSISSIPPI SOLUTION BUILD FAILED ===: $($_.Exception.Message)"
     exit 1
 }
+
+exit 0

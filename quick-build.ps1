@@ -5,6 +5,14 @@
     Performs a fast, strict build of both solutions by invoking eng\\src\\agent-scripts\\final-build-solutions.ps1.
 #>
 
+[CmdletBinding()]
+param(
+    [string]$Configuration = 'Release'
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
 # Determine the script directory (repo root)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
@@ -18,7 +26,7 @@ Write-Host ""
 
 try {
     # Execute the final-build script and wait for completion
-    & $finalBuildScript @args
+    & $finalBuildScript -Configuration $Configuration
     if ($LASTEXITCODE -ne 0) {
         throw "final-build-solutions.ps1 failed with exit code $LASTEXITCODE"
     }
@@ -29,3 +37,4 @@ try {
     exit 1
 }
 
+exit 0

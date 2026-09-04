@@ -15,3 +15,5 @@ catch {
     Write-Error "=== SAMPLE SOLUTION CLEANUP FAILED ===: $($_.Exception.Message)"
     exit 1
 }
+
+exit 0

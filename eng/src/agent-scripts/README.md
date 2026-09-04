@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-- Install the .NET SDK referenced in `global.json` (currently `9.0.301`).
+- Install the .NET SDK referenced in [`global.json`](../../../global.json).
 - Use PowerShell 7+; every script starts with `#!/usr/bin/env pwsh`.
 - Run `dotnet tool restore` from the repo root to provision the required local tools.
 
@@ -20,7 +20,7 @@
 6. `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` to confirm a clean Release build.
 7. Repeat until the feature is complete, then mirror the steps on the Samples solution when relevant (no mutation testing there).
 
-> ℹ️  `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1` stitches the full CI-equivalent pipeline together—including the coverage and mutation summarizers that refresh `.scratchpad/tasks`—handy before pushing or in automation.
+`pwsh ./go.ps1` builds both solutions, runs L0/L1 tests, summarizes Mississippi coverage, applies cleanup, and performs a final build with warnings as errors. Add `-IncludeMutation` to run Mississippi mutation tests and refresh survivor tasks. Separate CI jobs cover additional checks listed below.
 
 ---
 
@@ -29,17 +29,34 @@
 | Script | Purpose | Typical call |
 | --- | --- | --- |
 | **build-mississippi-solution.ps1** | Restore dependencies and compile `mississippi.slnx` (default `Release`). | `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 -Configuration Debug` |
-| **unit-test-mississippi-solution.ps1** | Run all unit & integration tests for the Mississippi solution, emitting results under `.scratchpad/coverage-test-results`. | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` |
+| **unit-test-mississippi-solution.ps1** | Run Mississippi L0/L1 tests with coverage, emitting results under `.scratchpad/coverage-test-results`. | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` |
 | **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute Stryker.NET to measure mutation score. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` |
-| **test-project-quality.ps1** | Run `dotnet test` (with coverage) for a single project and optionally Stryker; prints a machine-readable summary. | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests` |
+| **test-project-quality.ps1** | Run `dotnet test` (with coverage) for a single project and optionally Stryker; prints a machine-readable summary. | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests` |
 | **clean-up-mississippi-solution.ps1** | Produce a temporary `.sln` and run ReSharper CleanupCode using repository settings. | `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` |
 | **build-sample-solution.ps1** | Build `samples.slnx`. | `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1` |
-| **unit-test-sample-solution.ps1** | Execute sample solution tests (no mutation testing). | `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1` |
+| **unit-test-sample-solution.ps1** | Run sample L0/L1 tests (no mutation testing). | `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1` |
+| **integration-test-sample-solution.ps1** | Run sample L2/L3/L4 tests; requires their infrastructure and browser dependencies. | `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1` |
 | **clean-up-sample-solution.ps1** | Run ReSharper cleanup over the sample projects. | `pwsh ./eng/src/agent-scripts/clean-up-sample-solution.ps1` |
 | **summarize-coverage-gaps.ps1** | Merge Cobertura coverage reports and emit `.scratchpad/tasks` entries for low-coverage files. | `pwsh ./eng/src/agent-scripts/summarize-coverage-gaps.ps1 -EmitTasks` |
 | **summarize-mutation-survivors.ps1** | Parse the latest Stryker run (or rerun it) and sync survivor tasks into `.scratchpad/tasks`. | `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -GenerateTasks` |
 | **final-build-solutions.ps1** | Build both solutions with `--warnaserror` as the final zero-warning gate. | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` |
-| **orchestrate-solutions.ps1** | Run the full Mississippi + Samples pipeline (build → test → mutate → summarize → cleanup → final build) and keep `.scratchpad/tasks` refreshed. | `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1` |
+| **orchestrate-solutions.ps1** | Build, run L0/L1 tests, summarize coverage, clean up, and rebuild both solutions; mutation and its summary require `-IncludeMutation`. | `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1 -IncludeMutation` |
+
+### GitHub Actions mapping
+
+These local commands cover the corresponding build and test steps. They do not reproduce GitHub permissions, artifact uploads, deployment, or every independent CI gate.
+
+| Workflow | Local entry point | Scope and differences |
+| --- | --- | --- |
+| [full-build.yml](../../../.github/workflows/full-build.yml) | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` | Both solutions in Release with warnings as errors; CI also supplies the GitVersion version. |
+| [l0-tests.yml](../../../.github/workflows/l0-tests.yml), [l1-tests.yml](../../../.github/workflows/l1-tests.yml) | `pwsh ./go.ps1` | Local unit-test scripts combine L0/L1; CI runs each level separately for each solution. |
+| [l2-tests.yml](../../../.github/workflows/l2-tests.yml) | `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1 -TestLevels L2Tests` | CI targets L2 in both solutions and allows failures; the local integration wrapper targets samples and fails on test errors. |
+| [stryker.yml](../../../.github/workflows/stryker.yml) | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` | Mississippi mutation tests; opt into this step in `go.ps1` with `-IncludeMutation`. |
+| [cleanup.yml](../../../.github/workflows/cleanup.yml) | `pwsh ./clean-up.ps1` | Applies cleanup to both solutions; CI additionally fails if cleanup changes tracked files. |
+| [powershell-tests.yml](../../../.github/workflows/powershell-tests.yml) | `pwsh ./eng/tests/orchestrate-powershell-tests.ps1` | Pester and script integration tests; requires Pester 5+. CI runs on Windows and Ubuntu. |
+| [docusaurus.yml](../../../.github/workflows/docusaurus.yml) | `pwsh ./docs/Docusaurus/test-docusaurus.ps1` | Installs locked npm dependencies, builds the site, installs Chromium, and runs Playwright tests; requires Node.js 20+. |
+
+For documentation development, `pwsh ./run-docs.ps1` starts the development server, `-Mode Build` builds the site, and `-Mode Serve` previews an existing build. These modes do not run the browser test suite. Other workflows cover Markdown, project metadata and references, locked Aspire restore, SonarCloud, and package publication independently of `go.ps1`.
 
 ### Scratchpad task helpers
 
@@ -68,8 +85,8 @@ Windows / PowerShell:
 ```pwsh
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 -Configuration Debug
 pwsh ./eng/src/agent-scripts/final-build-solutions.ps1            # Release by default
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation   # fast test+coverage
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests                  # include mutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests -SkipMutation   # fast test+coverage
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests                  # include mutation
 pwsh ./eng/tests/orchestrate-powershell-tests.ps1                 # run all PowerShell test suites
 ```
 
@@ -100,7 +117,7 @@ These folders are git-ignored but persist across runs for inspection or archivin
 - Cache `.config/dotnet-tools.json` across CI runs to speed up tool restoration.
 - `final-build-solutions.ps1` enforces the zero-warning policy via `--warnaserror`.
 - Output folders listed above are stable and safe for automation.
-- The orchestrator mirrors the GitHub Actions pipeline—use it locally before opening a PR.
+- Use the orchestrator for local build and L0/L1 validation, then run additional checks from the CI mapping as needed.
 
 ---
 
@@ -110,13 +127,13 @@ Purpose: quickly evaluate a single test project's health by running `dotnet test
 
 ```pwsh
 # Fast: tests + coverage only
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SkipMutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests -SkipMutation
 
 # Full: tests + coverage + mutation
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests
 
 # If inference fails or multiple <ProjectReference>s exist, specify the source project explicitly
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests -SourceProject ./src/Core.Abstractions/Core.Abstractions.csproj
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests -SourceProject ./src/Common.Abstractions/Common.Abstractions.csproj
 ```
 
 ### Parameters
