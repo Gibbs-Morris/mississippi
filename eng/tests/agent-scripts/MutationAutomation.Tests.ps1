@@ -78,7 +78,7 @@ Describe 'Mutation automation' {
         $tests = @(Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj')
         Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
             Split-Path -Leaf (Get-Location).Path | Should -Be 'Widget'
-            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{}'
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
         } -ParameterFilter { $Arguments[0] -eq 'stryker' }
         Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $tests -OutputPath $output -Configuration Debug | Out-Null
         (Get-Location).Path | Should -Be $originalLocation
@@ -96,7 +96,7 @@ Describe 'Mutation automation' {
             (Join-Path $repo 'tests/Widget.L2Tests/Widget.L2Tests.csproj')
         )
         Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
-            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{}'
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
         } -ParameterFilter { $Arguments[0] -eq 'stryker' }
         Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $tests -OutputPath $output | Out-Null
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
@@ -116,6 +116,29 @@ Describe 'Mutation automation' {
     It 'rejects a successful native exit without a report' {
         Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {} -ParameterFilter { $Arguments[0] -eq 'stryker' }
         { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } | Should -Throw '*without a mutation-report.json*'
+    }
+
+    It 'rejects a successful native exit with <Case>' -ForEach @(
+        @{ Case = 'invalid JSON'; Json = '{' },
+        @{ Case = 'missing files'; Json = '{}' },
+        @{ Case = 'an invalid files collection'; Json = '{"files":[]}' },
+        @{ Case = 'missing mutants'; Json = '{"files":{"Widget.cs":{}}}' },
+        @{ Case = 'a null mutant'; Json = '{"files":{"Widget.cs":{"mutants":[null]}}}' },
+        @{ Case = 'a missing status'; Json = '{"files":{"Widget.cs":{"mutants":[{}]}}}' },
+        @{ Case = 'pending mutants'; Json = '{"files":{"Widget.cs":{"mutants":[{"status":"Pending"}]}}}' },
+        @{ Case = 'an unknown status'; Json = '{"files":{"Widget.cs":{"mutants":[{"status":"Unexpected"}]}}}' }
+    ) {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') $Json
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } | Should -Throw
+    }
+
+    It 'accepts complete reports, including files with no mutants' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{"Empty.cs":{"mutants":[]},"Widget.cs":{"mutants":[{"status":"Killed"},{"status":"Survived"},{"status":"NoCoverage"},{"status":"CompileError"},{"status":"RuntimeError"},{"status":"Timeout"},{"status":"Ignored"}]}}}'
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output | Should -Be (Join-Path $output 'Widget')
     }
 
     It 'reports a failed quality gate when tests pass but focused mutation fails' {
