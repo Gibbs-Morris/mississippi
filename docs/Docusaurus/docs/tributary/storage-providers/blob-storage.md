@@ -33,10 +33,15 @@ Configuration is provided through `SnapshotBlobStorageOptions`:
 | `ContainerName` | `SnapshotBlobDefaults.ContainerName` | Blob container used for snapshots |
 | `EnableCompression` | `false` | Enables gzip compression for stored payload bytes |
 | `MaximumSnapshotPayloadSizeBytes` | `SnapshotBlobDefaults.DefaultMaximumSnapshotPayloadSizeBytes` | Maximum uncompressed snapshot payload size accepted on read or write |
+| `MaximumSnapshotDocumentSizeBytes` | `SnapshotBlobDefaults.DefaultMaximumSnapshotDocumentSizeBytes` | Maximum complete JSON Blob size accepted on read or write, including metadata and Base64 payload |
 
-The default maximum uncompressed payload size is 128 MiB. Increase it only when a domain has deliberately large snapshots; the guard is checked before gzip decompression so malformed or unexpected Blob content cannot expand without a configured bound.
+The default maximum uncompressed payload size is 128 MiB. The default maximum JSON document size is 192 MiB. Both limits must be positive and no greater than `Array.MaxLength`, because this provider materializes snapshots in memory. Increase them together when a domain requires larger snapshots, allowing for Base64 and JSON overhead.
+
+Downloads reject an oversized declared content length and stop reading when the actual JSON body exceeds the document limit. Reads validate declared payload sizes before Base64 decoding and bound gzip expansion. These are per-document limits; concurrent operations and intermediate buffers can consume additional memory.
 
 For production Azure deployments, prefer registering your own keyed `BlobServiceClient` with managed identity or another credential flow and then calling `AddBlobSnapshotStorageProvider()`. The connection-string overload is useful for local development, tests, and simple hosts.
+
+The connection-string overload creates the client under `SnapshotBlobDefaults.BlobServiceClientServiceKey`. Combining that overload with a different `BlobServiceClientServiceKey` fails options validation. To use a custom key, register the client yourself and use an overload without a connection string.
 
 ## Container Initialization
 
@@ -57,7 +62,7 @@ Notes:
 
 ## JSON Document Schema
 
-The Blob body is JSON with these fields:
+The Blob body is JSON with these required fields. Missing fields and null values are rejected as invalid snapshot data:
 
 | Field | Meaning |
 |-------|---------|
@@ -101,6 +106,14 @@ Reads fail closed when stored data does not match the requested snapshot or the 
 
 When a read succeeds, the returned `SnapshotEnvelope` preserves `ReducerHash`.
 
+Malformed documents raise `InvalidDataException`. A missing Blob returns `null`; other Azure failures and cancellation propagate to the caller. Invalid documents are not treated as cache misses. Gzip size-limit errors preserve the configured-limit diagnostic.
+
+## Persistence and Retention
+
+Writes replace the Blob at the requested snapshot key, matching the existing snapshot provider's upsert behavior. The provider does not add a cross-Blob transaction or a conditional-write concurrency guarantee.
+
+Deletion can target one version or all recognized snapshot Blobs under a stream prefix. Pruning always retains the highest stored version and any versions matching the supplied retention moduli. Stream deletion and pruning list and delete Blobs individually; callers should coordinate maintenance with writers when they require a stable retained set.
+
 ## Diagnostics
 
 The provider emits metrics through the `Mississippi.Storage.Blob.Snapshots` meter.
@@ -110,6 +123,8 @@ The provider emits metrics through the `Mississippi.Storage.Blob.Snapshots` mete
 `samples/Spring/Spring.Runtime/Program.cs` forwards the Aspire `blobs` resource to `SnapshotBlobDefaults.BlobServiceClientServiceKey` and registers `AddBlobSnapshotStorageProvider(options => options.EnableCompression = true);`.
 
 Brooks event storage remains on Cosmos DB.
+
+Switching provider registration does not migrate existing Cosmos snapshots or enable fallback reads from Cosmos. When no Blob snapshot exists, the existing Tributary runtime reconstructs state from retained base snapshots and events, then requests background persistence. Existing Cosmos snapshot documents remain in their original store.
 
 ## Next Steps
 
