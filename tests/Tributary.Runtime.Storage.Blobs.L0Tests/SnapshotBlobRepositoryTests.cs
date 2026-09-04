@@ -12,12 +12,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Blobs;
 using Mississippi.Tributary.Runtime.Storage.Blobs.Storage;
 
 using Moq;
 
 
-namespace Mississippi.Tributary.Runtime.Storage.Blobs.L0Tests;
+namespace MississippiTests.Tributary.Runtime.Storage.Blobs.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotBlobRepository" />.
@@ -66,7 +67,10 @@ public sealed class SnapshotBlobRepositoryTests
     {
         SnapshotBlobStorageOptions options = new();
         configure?.Invoke(options);
-        return new(operations.Object, Options.Create(options), NullLogger<SnapshotBlobRepository>.Instance);
+        return new(
+            operations.Object,
+            new SnapshotBlobCodec(Options.Create(options)),
+            NullLogger<SnapshotBlobRepository>.Instance);
     }
 
     private static void SetupDownload(
@@ -238,28 +242,6 @@ public sealed class SnapshotBlobRepositoryTests
     }
 
     /// <summary>
-    ///     Verifies null persisted payload data is reported as invalid snapshot data.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Fact]
-    public async Task ReadAsyncShouldThrowInvalidDataWhenPayloadIsNull()
-    {
-        SnapshotBlobDocument document = CreateDocument([1, 2, 3]);
-        JsonObject json = JsonNode.Parse(SnapshotBlobDocumentSerializer.Serialize(document).ToString())!.AsObject();
-        json["data"] = null;
-        Mock<ISnapshotBlobOperations> operations = new();
-        operations.Setup(o => o.DownloadAsync(
-                SnapshotBlobPath.BuildSnapshotBlobName(SnapshotKey),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BinaryData(json.ToJsonString()));
-        SnapshotBlobRepository repository = CreateRepository(operations);
-        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() => repository.ReadAsync(
-            SnapshotKey,
-            CancellationToken.None));
-        Assert.Contains("payload", exception.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Verifies null persisted compression metadata follows the invalid-data read path.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -278,7 +260,29 @@ public sealed class SnapshotBlobRepositoryTests
         InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() => repository.ReadAsync(
             SnapshotKey,
             CancellationToken.None));
-        Assert.Contains("compression", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("invalid", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies null persisted payload data is reported as invalid snapshot data.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task ReadAsyncShouldThrowInvalidDataWhenPayloadIsNull()
+    {
+        SnapshotBlobDocument document = CreateDocument([1, 2, 3]);
+        JsonObject json = JsonNode.Parse(SnapshotBlobDocumentSerializer.Serialize(document).ToString())!.AsObject();
+        json["data"] = null;
+        Mock<ISnapshotBlobOperations> operations = new();
+        operations.Setup(o => o.DownloadAsync(
+                SnapshotBlobPath.BuildSnapshotBlobName(SnapshotKey),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new BinaryData(json.ToJsonString()));
+        SnapshotBlobRepository repository = CreateRepository(operations);
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() => repository.ReadAsync(
+            SnapshotKey,
+            CancellationToken.None));
+        Assert.Contains("invalid", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

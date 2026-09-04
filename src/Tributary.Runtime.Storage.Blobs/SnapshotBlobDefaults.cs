@@ -21,6 +21,11 @@ public static class SnapshotBlobDefaults
     public const string ContainerName = "snapshots";
 
     /// <summary>
+    ///     The default maximum serialized JSON document size in bytes.
+    /// </summary>
+    public const long DefaultMaximumSnapshotDocumentSizeBytes = 192L * 1024L * 1024L;
+
+    /// <summary>
     ///     The default maximum uncompressed snapshot payload size in bytes.
     /// </summary>
     public const long DefaultMaximumSnapshotPayloadSizeBytes = 128L * 1024L * 1024L;

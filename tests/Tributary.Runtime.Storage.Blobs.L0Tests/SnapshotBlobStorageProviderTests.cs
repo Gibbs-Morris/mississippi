@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using Mississippi.Tributary.Abstractions;
+using Mississippi.Tributary.Runtime.Storage.Blobs;
 
 using Moq;
 
 
-namespace Mississippi.Tributary.Runtime.Storage.Blobs.L0Tests;
+namespace MississippiTests.Tributary.Runtime.Storage.Blobs.L0Tests;
 
 /// <summary>
 ///     Tests for <see cref="SnapshotBlobStorageProvider" />.

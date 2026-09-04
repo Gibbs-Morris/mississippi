@@ -21,6 +21,12 @@ public sealed class SnapshotBlobStorageOptions
     public bool EnableCompression { get; set; }
 
     /// <summary>
+    ///     Gets or sets the maximum serialized JSON document size in bytes, including metadata and Base64 payload.
+    /// </summary>
+    public long MaximumSnapshotDocumentSizeBytes { get; set; } =
+        SnapshotBlobDefaults.DefaultMaximumSnapshotDocumentSizeBytes;
+
+    /// <summary>
     ///     Gets or sets the maximum allowed uncompressed snapshot payload size in bytes.
     /// </summary>
     public long MaximumSnapshotPayloadSizeBytes { get; set; } =

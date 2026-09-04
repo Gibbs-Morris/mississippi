@@ -1,16 +1,98 @@
 using System;
+using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 using Mississippi.Tributary.Runtime.Storage.Blobs.Storage;
 
 
-namespace Mississippi.Tributary.Runtime.Storage.Blobs.L0Tests;
+namespace MississippiTests.Tributary.Runtime.Storage.Blobs.L0Tests;
 
 /// <summary>
 ///     Tests for Blob snapshot JSON document serialization.
 /// </summary>
 public sealed class SnapshotBlobDocumentTests
 {
+    private static JsonObject CreateDocumentJson() =>
+        JsonNode.Parse(SnapshotBlobDocumentSerializer.Serialize(new()).ToString())!.AsObject();
+
+    /// <summary>
+    ///     Verifies malformed JSON and the JSON null value follow the invalid-data boundary.
+    /// </summary>
+    /// <param name="json">The invalid document JSON.</param>
+    [Theory]
+    [InlineData("{")]
+    [InlineData("null")]
+    public void DeserializeShouldRejectInvalidDocument(
+        string json
+    ) =>
+        Assert.Throws<InvalidDataException>(() => SnapshotBlobDocumentSerializer.Deserialize(new(json)));
+
+    /// <summary>
+    ///     Verifies every persisted field must be present, even when its default value would otherwise be valid.
+    /// </summary>
+    /// <param name="propertyName">The required property omitted from the stored JSON.</param>
+    [Theory]
+    [InlineData("brookName")]
+    [InlineData("compression")]
+    [InlineData("data")]
+    [InlineData("dataContentType")]
+    [InlineData("dataSizeBytes")]
+    [InlineData("entityId")]
+    [InlineData("reducersHash")]
+    [InlineData("schemaVersion")]
+    [InlineData("snapshotStorageName")]
+    [InlineData("storedSizeBytes")]
+    [InlineData("version")]
+    public void DeserializeShouldRejectMissingRequiredProperty(
+        string propertyName
+    )
+    {
+        JsonObject json = CreateDocumentJson();
+        Assert.True(json.Remove(propertyName));
+        InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+            SnapshotBlobDocumentSerializer.Deserialize(new(json.ToJsonString())));
+        Assert.IsType<JsonException>(exception.InnerException);
+    }
+
+    /// <summary>
+    ///     Verifies persisted null strings cannot escape the serialization boundary.
+    /// </summary>
+    /// <param name="propertyName">The required string property replaced by null.</param>
+    [Theory]
+    [InlineData("brookName")]
+    [InlineData("compression")]
+    [InlineData("data")]
+    [InlineData("dataContentType")]
+    [InlineData("entityId")]
+    [InlineData("reducersHash")]
+    [InlineData("snapshotStorageName")]
+    public void DeserializeShouldRejectNullStringProperty(
+        string propertyName
+    )
+    {
+        JsonObject json = CreateDocumentJson();
+        json[propertyName] = null;
+        InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+            SnapshotBlobDocumentSerializer.Deserialize(new(json.ToJsonString())));
+        JsonException jsonException = Assert.IsType<JsonException>(exception.InnerException);
+        Assert.Equal($"$.{propertyName}", jsonException.Path);
+    }
+
+    /// <summary>
+    ///     Verifies null caller input is rejected before deserialization.
+    /// </summary>
+    [Fact]
+    public void DeserializeShouldThrowWhenDocumentIsNull() =>
+        Assert.Throws<ArgumentNullException>(() => SnapshotBlobDocumentSerializer.Deserialize(null!));
+
+    /// <summary>
+    ///     Verifies null caller input is rejected before serialization.
+    /// </summary>
+    [Fact]
+    public void SerializeShouldThrowWhenDocumentIsNull() =>
+        Assert.Throws<ArgumentNullException>(() => SnapshotBlobDocumentSerializer.Serialize(null!));
+
     /// <summary>
     ///     Verifies schema v1 serializes the required document properties with the expected names.
     /// </summary>

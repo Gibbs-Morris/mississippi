@@ -68,9 +68,16 @@ internal sealed class SnapshotBlobStorageOptionsValidator : IValidateOptions<Sna
             failures.Add("ContainerName must be a valid Azure Blob container name.");
         }
 
-        if (options.MaximumSnapshotPayloadSizeBytes <= 0)
+        if ((options.MaximumSnapshotPayloadSizeBytes <= 0) ||
+            (options.MaximumSnapshotPayloadSizeBytes > Array.MaxLength))
         {
-            failures.Add("MaximumSnapshotPayloadSizeBytes must be greater than zero.");
+            failures.Add($"MaximumSnapshotPayloadSizeBytes must be between 1 and {Array.MaxLength} bytes.");
+        }
+
+        if ((options.MaximumSnapshotDocumentSizeBytes <= 0) ||
+            (options.MaximumSnapshotDocumentSizeBytes > Array.MaxLength))
+        {
+            failures.Add($"MaximumSnapshotDocumentSizeBytes must be between 1 and {Array.MaxLength} bytes.");
         }
 
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);

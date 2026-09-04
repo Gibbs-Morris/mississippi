@@ -12,6 +12,7 @@ internal static class SnapshotBlobDocumentSerializer
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
+        RespectNullableAnnotations = true,
         WriteIndented = false,
     };
 

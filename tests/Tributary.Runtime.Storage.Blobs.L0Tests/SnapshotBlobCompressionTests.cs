@@ -5,7 +5,7 @@ using System.Text;
 using Mississippi.Tributary.Runtime.Storage.Blobs.Storage;
 
 
-namespace Mississippi.Tributary.Runtime.Storage.Blobs.L0Tests;
+namespace MississippiTests.Tributary.Runtime.Storage.Blobs.L0Tests;
 
 /// <summary>
 ///     Tests for Blob snapshot compression helpers.
@@ -26,18 +26,6 @@ public sealed class SnapshotBlobCompressionTests
     }
 
     /// <summary>
-    ///     Verifies decompression fails closed for unsupported compression metadata.
-    /// </summary>
-    [Fact]
-    public void DecompressShouldThrowWhenCompressionValueIsUnsupported()
-    {
-        InvalidDataException exception = Assert.Throws<InvalidDataException>(() => SnapshotBlobCompression.Decompress(
-            "lz4",
-            [1, 2, 3, 4]));
-        Assert.Contains("Unsupported", exception.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
     ///     Verifies null compression metadata is treated as invalid persisted data.
     /// </summary>
     [Fact]
@@ -47,6 +35,18 @@ public sealed class SnapshotBlobCompressionTests
             null,
             [1, 2, 3]));
         Assert.Contains("compression metadata", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Verifies decompression fails closed for unsupported compression metadata.
+    /// </summary>
+    [Fact]
+    public void DecompressShouldThrowWhenCompressionValueIsUnsupported()
+    {
+        InvalidDataException exception = Assert.Throws<InvalidDataException>(() => SnapshotBlobCompression.Decompress(
+            "lz4",
+            [1, 2, 3, 4]));
+        Assert.Contains("Unsupported", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -32,6 +32,7 @@ public static class SnapshotBlobStorageProviderRegistrations
         services.TryAddEnumerable(
             ServiceDescriptor
                 .Singleton<IValidateOptions<SnapshotBlobStorageOptions>, SnapshotBlobStorageOptionsValidator>());
+        services.AddSingleton<ISnapshotBlobCodec, SnapshotBlobCodec>();
         services.AddSingleton<ISnapshotBlobOperations, SnapshotBlobOperations>();
         services.AddSingleton<ISnapshotBlobRepository, SnapshotBlobRepository>();
         services.RegisterSnapshotStorageProvider<SnapshotBlobStorageProvider>();
@@ -61,6 +62,10 @@ public static class SnapshotBlobStorageProviderRegistrations
     /// <param name="services">The service collection to update.</param>
     /// <param name="blobConnectionString">The Azure Blob Storage connection string.</param>
     /// <param name="configureOptions">Optional options configuration.</param>
+    /// <remarks>
+    ///     The created client uses <see cref="SnapshotBlobDefaults.BlobServiceClientServiceKey" />. Use an externally
+    ///     registered client overload when configuring a different client service key.
+    /// </remarks>
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddBlobSnapshotStorageProvider(
         this IServiceCollection services,
@@ -68,12 +73,7 @@ public static class SnapshotBlobStorageProviderRegistrations
         Action<SnapshotBlobStorageOptions>? configureOptions = null
     )
     {
-        services.AddKeyedSingleton<BlobServiceClient>(
-            SnapshotBlobDefaults.BlobServiceClientServiceKey,
-            (
-                _,
-                _
-            ) => new(blobConnectionString));
+        services.AddSnapshotBlobServiceClient(blobConnectionString);
         if (configureOptions is not null)
         {
             services.Configure(configureOptions);
@@ -118,6 +118,10 @@ public static class SnapshotBlobStorageProviderRegistrations
     /// <param name="services">The service collection to update.</param>
     /// <param name="blobConnectionString">The Azure Blob Storage connection string.</param>
     /// <param name="configuration">The configuration section containing Blob snapshot storage settings.</param>
+    /// <remarks>
+    ///     The created client uses <see cref="SnapshotBlobDefaults.BlobServiceClientServiceKey" />. Use an externally
+    ///     registered client overload when configuring a different client service key.
+    /// </remarks>
     /// <returns>The updated service collection.</returns>
     public static IServiceCollection AddBlobSnapshotStorageProvider(
         this IServiceCollection services,
@@ -125,13 +129,29 @@ public static class SnapshotBlobStorageProviderRegistrations
         IConfiguration configuration
     )
     {
+        services.AddSnapshotBlobServiceClient(blobConnectionString);
+        services.Configure<SnapshotBlobStorageOptions>(configuration);
+        return services.AddBlobSnapshotStorageProvider();
+    }
+
+    private static void AddSnapshotBlobServiceClient(
+        this IServiceCollection services,
+        string blobConnectionString
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(blobConnectionString);
         services.AddKeyedSingleton<BlobServiceClient>(
             SnapshotBlobDefaults.BlobServiceClientServiceKey,
             (
                 _,
                 _
             ) => new(blobConnectionString));
-        services.Configure<SnapshotBlobStorageOptions>(configuration);
-        return services.AddBlobSnapshotStorageProvider();
+        services.AddOptions<SnapshotBlobStorageOptions>()
+            .Validate(
+                options => string.Equals(
+                    options.BlobServiceClientServiceKey,
+                    SnapshotBlobDefaults.BlobServiceClientServiceKey,
+                    StringComparison.Ordinal),
+                $"BlobServiceClientServiceKey must be '{SnapshotBlobDefaults.BlobServiceClientServiceKey}' when a connection string is supplied. Register an external keyed BlobServiceClient and use an overload without a connection string to select a different key.");
     }
 }

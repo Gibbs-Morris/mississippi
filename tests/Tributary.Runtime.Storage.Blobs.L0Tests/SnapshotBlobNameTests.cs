@@ -6,7 +6,7 @@ using Mississippi.Tributary.Abstractions;
 using Mississippi.Tributary.Runtime.Storage.Blobs.Storage;
 
 
-namespace Mississippi.Tributary.Runtime.Storage.Blobs.L0Tests;
+namespace MississippiTests.Tributary.Runtime.Storage.Blobs.L0Tests;
 
 /// <summary>
 ///     Tests for Blob snapshot naming and stream prefixes.
