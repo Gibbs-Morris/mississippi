@@ -43,6 +43,7 @@ internal sealed class LocalMessageSender : ILocalMessageSender
     {
         ArgumentNullException.ThrowIfNull(connection);
         ArgumentException.ThrowIfNullOrEmpty(methodName);
+        ArgumentNullException.ThrowIfNull(args);
         Logger.SendingLocalMessage(connection.ConnectionId, methodName);
         object?[] argsArray = args as object?[] ?? args.ToArray();
         InvocationMessage invocation = new(methodName, argsArray);

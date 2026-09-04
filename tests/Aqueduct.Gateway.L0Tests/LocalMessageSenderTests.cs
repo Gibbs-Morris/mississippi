@@ -60,11 +60,27 @@ public sealed class LocalMessageSenderTests
         CancellationToken canceledToken = new(true);
 
         // Act & Assert
-        await Assert.ThrowsAsync<TaskCanceledException>(() => sender.SendAsync(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sender.SendAsync(
             connection,
             "TestMethod",
             [],
             canceledToken));
+    }
+
+    /// <summary>
+    ///     Null arguments should fail at the sender boundary with a useful parameter name.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task SendAsyncShouldRejectNullArguments()
+    {
+        LocalMessageSender sender = new(Substitute.For<ILogger<LocalMessageSender>>());
+        ArgumentNullException exception = await Assert.ThrowsAsync<ArgumentNullException>(() => sender.SendAsync(
+            HubConnectionContextFactory.Create("connection"),
+            "Message",
+            null!,
+            CancellationToken.None));
+        Assert.Equal("args", exception.ParamName);
     }
 
     /// <summary>

@@ -36,7 +36,5 @@ internal sealed class CancellableHubConnectionContext : HubConnectionContext
         HubMessage message,
         CancellationToken cancellationToken = default
     ) =>
-        cancellationToken.IsCancellationRequested
-            ? ValueTask.FromCanceled(cancellationToken)
-            : ValueTask.CompletedTask;
+        cancellationToken.IsCancellationRequested ? ValueTask.FromCanceled(cancellationToken) : ValueTask.CompletedTask;
 }
