@@ -39,12 +39,12 @@ Describe 'Mutation automation' {
         @(Get-TestProjects -SolutionPath $legacy).Count | Should -Be 3
     }
 
-    It 'groups the L0 and L1 tests for each source project exactly once' {
+    It 'groups every declared test level for each source project exactly once' {
         Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { 'completed' }
         Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -Configuration Debug | Should -Be $output
         Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
-            $ProjectPath -like '*Widget.csproj' -and $TestProjects.Count -eq 2 -and
-            -not ($TestProjects -match 'L2Tests') -and $Configuration -eq 'Debug'
+            $ProjectPath -like '*Widget.csproj' -and $TestProjects.Count -eq 3 -and
+            ($TestProjects -match 'L2Tests') -and $Configuration -eq 'Debug'
         }
     }
 
@@ -85,7 +85,24 @@ Describe 'Mutation automation' {
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
             $Arguments -contains '--test-project' -and $Arguments -contains '--config-file' -and
             $Arguments -contains 'Debug' -and $Arguments -contains 'Widget.csproj' -and
-            $Arguments -contains (Join-Path $repo 'MSBuild.dll')
+            $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
+            $Arguments -notcontains '--concurrency'
+        }
+    }
+
+    It 'uses one mutation worker when integration tests share local infrastructure' {
+        $tests = @(
+            (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj'),
+            (Join-Path $repo 'tests/Widget.L2Tests/Widget.L2Tests.csproj')
+        )
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{}'
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $tests -OutputPath $output | Out-Null
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $Arguments[0] -eq 'stryker' -and $Arguments -contains '--concurrency' -and
+            $Arguments[[Array]::IndexOf($Arguments, '--concurrency') + 1] -eq '1' -and
+            $Arguments -contains $tests[0] -and $Arguments -contains $tests[1]
         }
     }
 
