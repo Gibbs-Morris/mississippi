@@ -212,8 +212,13 @@ public sealed class AggregateScenario<TAggregate>
     {
         whenCommand.Should().NotBeNull("When() must be called before ThenEmits()");
         TEvent? evt = emittedEvents.OfType<TEvent>().FirstOrDefault();
-        evt.Should().NotBeNull($"Expected event of type {typeof(TEvent).Name} to be emitted");
-        assertion?.Invoke(evt!);
+        if (evt is null)
+        {
+            evt.Should().NotBeNull($"Expected event of type {typeof(TEvent).Name} to be emitted");
+            return this;
+        }
+
+        assertion?.Invoke(evt);
         return this;
     }
 

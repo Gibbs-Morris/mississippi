@@ -303,7 +303,7 @@ public sealed class CosmosRepositoryTests
 
         // Assert
         Assert.NotNull(captured);
-        Assert.Equal("cursor-pending", captured!.Id);
+        Assert.Equal("cursor-pending", captured.Id);
         Assert.Equal("cursor-pending", captured.Type);
         Assert.Equal(10, captured.Position);
         Assert.Equal(5, captured.OriginalPosition);

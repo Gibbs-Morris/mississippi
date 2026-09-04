@@ -64,10 +64,11 @@ public static class EffectTestExtensions
         where TAggregate : class
     {
         ArgumentNullException.ThrowIfNull(commands);
-        (Type AggregateType, string EntityId, object Command)? match = commands.FirstOrDefault(c =>
+        (Type AggregateType, string EntityId, object Command) match = commands.FirstOrDefault(c =>
             (c.AggregateType == typeof(TAggregate)) && ((entityId == null) || (c.EntityId == entityId)));
-        match.Should().NotBeNull($"because a command should have been dispatched to {typeof(TAggregate).Name}");
-        return match!.Value;
+        match.AggregateType.Should()
+            .NotBeNull($"because a command should have been dispatched to {typeof(TAggregate).Name}");
+        return match;
     }
 
     /// <summary>

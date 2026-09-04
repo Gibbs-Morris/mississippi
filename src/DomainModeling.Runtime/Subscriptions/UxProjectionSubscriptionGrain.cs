@@ -14,6 +14,7 @@ using Mississippi.DomainModeling.Abstractions.Subscriptions;
 
 using Orleans;
 using Orleans.Runtime;
+using Orleans.Streams;
 
 
 namespace Mississippi.DomainModeling.Runtime.Subscriptions;
@@ -75,9 +76,11 @@ internal sealed class UxProjectionSubscriptionGrain
     {
         string connectionId = this.GetPrimaryKeyString();
         Logger.ClearingAllSubscriptions(connectionId, subscriptions.Count);
-        foreach (ActiveSubscription subscription in subscriptions.Values.Where(s => s.StreamHandle is not null))
+        foreach (StreamSubscriptionHandle<BrookCursorMovedEvent> streamHandle in subscriptions.Values
+                     .Select(subscription => subscription.StreamHandle)
+                     .OfType<StreamSubscriptionHandle<BrookCursorMovedEvent>>())
         {
-            await subscription.StreamHandle!.UnsubscribeAsync();
+            await streamHandle.UnsubscribeAsync();
         }
 
         subscriptions.Clear();

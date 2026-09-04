@@ -27,9 +27,9 @@ public sealed class NotificationPulseTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.True(attr!.CaptureUnmatchedValues);
+        Assert.True(attr.CaptureUnmatchedValues);
     }
 
     /// <summary>
@@ -43,9 +43,9 @@ public sealed class NotificationPulseTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
-        Assert.Equal(typeof(RenderFragment), prop!.PropertyType);
+        Assert.Equal(typeof(RenderFragment), prop.PropertyType);
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public sealed class NotificationPulseTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        Assert.Equal(typeof(EventCallback), prop!.PropertyType);
+        Assert.Equal(typeof(EventCallback), prop.PropertyType);
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public sealed class NotificationPulseTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        Assert.True(prop!.PropertyType.IsGenericType);
+        Assert.True(prop.PropertyType.IsGenericType);
         Assert.Equal(typeof(EventCallback<MouseEventArgs>), prop.PropertyType);
     }
 
@@ -88,7 +88,7 @@ public sealed class NotificationPulseTests : BunitContext
 
         // Assert
         Assert.NotNull(prop);
-        ParameterAttribute? attr = prop!.GetCustomAttribute<ParameterAttribute>();
+        ParameterAttribute? attr = prop.GetCustomAttribute<ParameterAttribute>();
         Assert.NotNull(attr);
     }
 

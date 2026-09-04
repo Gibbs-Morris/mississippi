@@ -281,7 +281,7 @@ public sealed class AggregateServiceBaseTests
         Assert.True(service.OnAfterExecuteCalled);
         Assert.Equal("entity-1", service.AfterEntityId);
         Assert.NotNull(service.AfterResult);
-        ActionResult<OperationResult> afterResult = service.AfterResult!;
+        ActionResult<OperationResult> afterResult = service.AfterResult;
         Assert.True(afterResult.Value.Success);
     }
 

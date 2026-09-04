@@ -1,5 +1,7 @@
 using System.Linq;
 
+using FluentAssertions.Execution;
+
 using Mississippi.DomainModeling.Abstractions;
 
 using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
@@ -7,6 +9,8 @@ using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
 using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
 using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Handlers;
 using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Reducers;
+
+using Xunit.Sdk;
 
 
 namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.BankAccount;
@@ -243,6 +247,104 @@ public sealed class BankAccountAggregateTests
 
         // Assert - state should not have changed
         scenario.State.Should().BeEquivalentTo(stateBefore);
+    }
+
+    /// <summary>
+    ///     An emitted event should be passed to the assertion exactly once while preserving fluent chaining.
+    /// </summary>
+    [Fact]
+    public void ThenEmitsInvokesAssertionOnceWithEmittedEvent()
+    {
+        // Arrange
+        AggregateScenario<BankAccountAggregate> scenario = CreateHarness()
+            .CreateScenario()
+            .When(new OpenAccount("Alice", 500m));
+        AccountOpened? receivedEvent = null;
+        int assertionInvocationCount = 0;
+
+        // Act
+        AggregateScenario<BankAccountAggregate> returnedScenario = scenario.ThenEmits<AccountOpened>(evt =>
+        {
+            receivedEvent = evt;
+            assertionInvocationCount++;
+        });
+
+        // Assert
+        assertionInvocationCount.Should().Be(1);
+        receivedEvent.Should().BeSameAs(scenario.EmittedEvents.Single());
+        receivedEvent.Should()
+            .BeEquivalentTo(
+                new AccountOpened
+                {
+                    HolderName = "Alice",
+                    InitialDeposit = 500m,
+                });
+        returnedScenario.Should().BeSameAs(scenario);
+    }
+
+    /// <summary>
+    ///     Missing events should record a scoped assertion failure without invoking the event assertion.
+    /// </summary>
+    [Fact]
+    public void ThenEmitsMissingEventDoesNotInvokeAssertionWithinScope()
+    {
+        // Arrange
+        AggregateScenario<BankAccountAggregate> scenario = CreateHarness()
+            .CreateScenario()
+            .When(new OpenAccount("Alice", 500m));
+        bool wasAssertionInvoked = false;
+        AggregateScenario<BankAccountAggregate> returnedScenario;
+        string[] failures;
+
+        // Act
+        using (AssertionScope scope = new())
+        {
+            returnedScenario = scenario.ThenEmits<FundsDeposited>(_ => wasAssertionInvoked = true);
+            failures = scope.Discard();
+        }
+
+        // Assert
+        wasAssertionInvoked.Should().BeFalse();
+        returnedScenario.Should().BeSameAs(scenario);
+        failures.Should().ContainSingle().Which.Should().Contain("Expected event of type FundsDeposited to be emitted");
+    }
+
+    /// <summary>
+    ///     Missing events should throw an assertion failure when no assertion scope is active.
+    /// </summary>
+    [Fact]
+    public void ThenEmitsMissingEventThrowsAssertionFailureWithoutScope()
+    {
+        // Arrange
+        AggregateScenario<BankAccountAggregate> scenario = CreateHarness()
+            .CreateScenario()
+            .When(new OpenAccount("Alice", 500m));
+        bool wasAssertionInvoked = false;
+
+        // Act
+        Action act = () => scenario.ThenEmits<FundsDeposited>(_ => wasAssertionInvoked = true);
+
+        // Assert
+        act.Should().Throw<XunitException>().WithMessage("*Expected event of type FundsDeposited to be emitted*");
+        wasAssertionInvoked.Should().BeFalse();
+    }
+
+    /// <summary>
+    ///     An emitted event should support fluent chaining without an optional assertion.
+    /// </summary>
+    [Fact]
+    public void ThenEmitsWithoutAssertionReturnsScenario()
+    {
+        // Arrange
+        AggregateScenario<BankAccountAggregate> scenario = CreateHarness()
+            .CreateScenario()
+            .When(new OpenAccount("Alice", 500m));
+
+        // Act
+        AggregateScenario<BankAccountAggregate> returnedScenario = scenario.ThenEmits<AccountOpened>();
+
+        // Assert
+        returnedScenario.Should().BeSameAs(scenario);
     }
 
     /// <summary>
