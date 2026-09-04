@@ -83,7 +83,7 @@ Describe 'Mutation automation' {
         Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $tests -OutputPath $output -Configuration Debug | Out-Null
         (Get-Location).Path | Should -Be $originalLocation
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
-            $Arguments -contains '--test-project' -and $Arguments -contains '--config-file' -and
+            $Arguments -contains '--test-project' -and $Arguments -contains '--config-file' -and $Arguments -contains '--disable-bail' -and
             $Arguments -contains 'Debug' -and $Arguments -contains 'Widget.csproj' -and
             $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
             $Arguments -notcontains '--concurrency'

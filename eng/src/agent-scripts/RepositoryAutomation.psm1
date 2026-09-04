@@ -355,7 +355,8 @@ function Invoke-StrykerMutationTestPerProject {
     }
 
     Write-Host "  Running Stryker for project: $projectName" -ForegroundColor ([ConsoleColor]::Cyan)
-    $arguments = @('stryker', '--project', [System.IO.Path]::GetFileName($resolvedProject), '--config-file', $configPath, '--configuration', $Configuration, '--output', $projectOutputPath)
+    # Avoid VSTest's early-cancellation race, which can leave mutants Pending after exit 0.
+    $arguments = @('stryker', '--project', [System.IO.Path]::GetFileName($resolvedProject), '--config-file', $configPath, '--configuration', $Configuration, '--output', $projectOutputPath, '--disable-bail')
     foreach ($testProject in $TestProjects) {
         $arguments += @('--test-project', $testProject)
     }
