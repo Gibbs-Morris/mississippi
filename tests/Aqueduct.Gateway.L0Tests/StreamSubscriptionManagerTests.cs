@@ -505,6 +505,64 @@ public sealed class StreamSubscriptionManagerTests
     }
 
     /// <summary>
+    ///     Cancellation racing subscription completion must clean the handle without advancing canceled startup.
+    /// </summary>
+    /// <param name="cancelBroadcast">Whether cancellation coincides with broadcast rather than server subscription.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InitializationShouldRejectCancellationWhenSubscriptionCompletes(
+        bool cancelBroadcast
+    )
+    {
+        using StreamSubscriptionFixture fixture = new();
+        using CancellationTokenSource cancellation = new();
+        if (cancelBroadcast)
+        {
+            fixture.AllStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>())
+                .Returns(async _ =>
+                {
+                    await cancellation.CancelAsync();
+                    return fixture.AllHandle;
+                });
+        }
+        else
+        {
+            fixture.ServerStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
+                .Returns(async _ =>
+                {
+                    await cancellation.CancelAsync();
+                    return fixture.ServerHandle;
+                });
+        }
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fixture.InitializeAsync(cancellation.Token));
+        Assert.False(fixture.Manager.IsInitialized);
+        if (!cancelBroadcast)
+        {
+            _ = fixture.AllStream.DidNotReceive().SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>());
+        }
+
+        fixture.ServerStream.SubscribeAsync(Arg.Any<IAsyncObserver<ServerMessage>>())
+            .Returns(Task.FromResult(fixture.ServerHandle));
+        fixture.AllStream.SubscribeAsync(Arg.Any<IAsyncObserver<AllMessage>>())
+            .Returns(Task.FromResult(fixture.AllHandle));
+        await fixture.InitializeAsync();
+        await fixture.ServerHandle.Received(1).UnsubscribeAsync();
+        if (cancelBroadcast)
+        {
+            await fixture.AllHandle.Received(1).UnsubscribeAsync();
+        }
+        else
+        {
+            await fixture.AllHandle.DidNotReceive().UnsubscribeAsync();
+        }
+
+        Assert.True(fixture.Manager.IsInitialized);
+    }
+
+    /// <summary>
     ///     A failed unsubscribe must retain its handle for retry instead of losing it or poisoning initialization.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>

@@ -963,6 +963,42 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
+    ///     Caller cancellation must propagate even when the connection also aborts before a pending write completes.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task SendConnectionAsyncShouldPropagateCallerCancellationWhenConnectionAlsoAborts()
+    {
+        using CancellationTokenSource callerCancellation = new();
+        using CancellationTokenSource connectionAbort = new();
+        HubConnectionContext connection = HubConnectionContextFactory.Create(
+            "connection",
+            connectionAborted: connectionAbort.Token);
+        IConnectionRegistry registry = Substitute.For<IConnectionRegistry>();
+        registry.GetConnection("connection").Returns(connection);
+        ILocalMessageSender sender = Substitute.For<ILocalMessageSender>();
+        TaskCompletionSource write = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken deliveryToken = default;
+        sender.SendAsync(
+                connection,
+                "Message",
+                Arg.Any<IReadOnlyList<object?>>(),
+                Arg.Do<CancellationToken>(token => deliveryToken = token))
+            .Returns(write.Task);
+        using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(
+            connectionRegistry: registry,
+            messageSender: sender);
+        Task send = manager.SendConnectionAsync("connection", "Message", [], callerCancellation.Token);
+        Assert.True(deliveryToken.CanBeCanceled);
+        await connectionAbort.CancelAsync();
+        await callerCancellation.CancelAsync();
+        write.SetCanceled(deliveryToken);
+        OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            send.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.Equal(deliveryToken, exception.CancellationToken);
+    }
+
+    /// <summary>
     ///     SendConnectionAsync should route via client grain if not local.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
