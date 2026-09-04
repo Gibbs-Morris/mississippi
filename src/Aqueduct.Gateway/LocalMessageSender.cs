@@ -44,6 +44,6 @@ internal sealed class LocalMessageSender : ILocalMessageSender
         Logger.SendingLocalMessage(connection.ConnectionId, methodName);
         object?[] argsArray = args as object?[] ?? args.ToArray();
         InvocationMessage invocation = new(methodName, argsArray);
-        await connection.WriteAsync(invocation).ConfigureAwait(false);
+        await connection.WriteAsync(invocation, connection.ConnectionAborted).ConfigureAwait(false);
     }
 }
