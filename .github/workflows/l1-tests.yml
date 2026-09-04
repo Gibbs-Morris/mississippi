@@ -53,7 +53,7 @@ jobs:
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
         with:
-          versionSpec: "6.0.5"
+          versionSpec: "6.8.2"
 
       - name: Determine Version
         id: gitversion
@@ -72,7 +72,7 @@ jobs:
       - name: Run L1 Tests
         run: |
           mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L1Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L1Tests." --logger "trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
 
       - name: Upload Test Results
         if: always()

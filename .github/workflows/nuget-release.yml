@@ -49,7 +49,7 @@ jobs:
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
         with:
-          versionSpec: "6.5.1"
+          versionSpec: "6.8.2"
 
       - name: Determine Version
         id: gitversion

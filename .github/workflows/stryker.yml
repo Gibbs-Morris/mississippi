@@ -11,8 +11,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SLNX_PATH: ${{ github.workspace }}/mississippi.slnx
-  SLN_PATH: ${{ github.workspace }}/mississippi.sln
   CONFIGURATION: Release
 
 jobs:
@@ -52,7 +50,7 @@ jobs:
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v3.2.1
         with:
-          versionSpec: "6.0.5"
+          versionSpec: "6.8.2"
 
       - name: Determine Version
         id: gitversion
@@ -60,29 +58,13 @@ jobs:
         with:
           useConfigFile: true
 
-      - name: Generate legacy .sln from .slnx
-        run: |
-          dotnet tool restore
-          dotnet tool run slngen "${SLNX_PATH}" --solutionfile "${SLN_PATH}" --launch false
-          ls -al "${SLN_PATH}"
-
-      - name: Restore dotnet tools (incl. Stryker)
-        run: dotnet tool restore
-
-      - name: Restore packages
-        run: dotnet restore "${SLN_PATH}"
-
-      - name: Build (Release)
-        run: |
-          dotnet build "${SLN_PATH}" --configuration "${CONFIGURATION}" --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-
       - name: Run Stryker
         run: |
-          pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
+          pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1 -Configuration "$CONFIGURATION"
 
-      - name: Upload HTML Results
+      - name: Upload Mutation Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ github.event.repository.name }}-v${{ steps.gitversion.outputs.SemVer }}
-          path: ${{ github.workspace }}/.scratchpad/mutation-test-results/**/**/*.html
+          path: ${{ github.workspace }}/.scratchpad/mutation-test-results/**/reports/*

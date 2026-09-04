@@ -11,7 +11,7 @@ permissions:
 
 env:
   CONFIGURATION: Release
-  REFERENCE_TRIMMER_VERSION: 3.4.5
+  REFERENCE_TRIMMER_VERSION: 3.5.9
 
 jobs:
   project-reference-hygiene:
