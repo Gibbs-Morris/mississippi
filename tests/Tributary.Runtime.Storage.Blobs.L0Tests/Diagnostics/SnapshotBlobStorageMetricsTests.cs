@@ -1,32 +1,27 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
 using Mississippi.Tributary.Runtime.Storage.Blobs.Diagnostics;
 
 
-namespace Mississippi.Tributary.Runtime.Storage.Blobs.L0Tests.Diagnostics;
+namespace MississippiTests.Tributary.Runtime.Storage.Blobs.L0Tests.Diagnostics;
 
 /// <summary>
 ///     Tests for Blob snapshot storage metrics.
 /// </summary>
 public sealed class SnapshotBlobStorageMetricsTests
 {
-    private sealed record MetricMeasurement(
-        string InstrumentName,
-        long LongValue,
-        double DoubleValue,
-        IReadOnlyDictionary<string, object?> Tags
-    );
-
     /// <summary>
     ///     Verifies delete metrics use the Blob snapshot meter name and expected tags.
     /// </summary>
     [Fact]
     public void RecordDeleteEmitsMetric()
     {
+        const string expectedSnapshotType = nameof(RecordDeleteEmitsMetric);
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (
             instrument,
             meterListener
@@ -50,16 +45,22 @@ public sealed class SnapshotBlobStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            if (!tagMap.TryGetValue("snapshot.type", out object? measuredSnapshotType) ||
+                !string.Equals(measuredSnapshotType as string, expectedSnapshotType, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
-        SnapshotBlobStorageMetrics.RecordDelete("TestSnapshot");
+        SnapshotBlobStorageMetrics.RecordDelete(expectedSnapshotType);
         Assert.Contains(
-            measurements,
+            measurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.delete.count") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapshotType) &&
-                           (snapshotType as string == "TestSnapshot"));
+                           (snapshotType as string == expectedSnapshotType));
     }
 
     /// <summary>
@@ -73,8 +74,9 @@ public sealed class SnapshotBlobStorageMetricsTests
         int prunedCount
     )
     {
+        const string expectedSnapshotType = nameof(RecordPruneDoesNotEmitWhenCountIsZeroOrNegative);
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (
             instrument,
             meterListener
@@ -98,15 +100,21 @@ public sealed class SnapshotBlobStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            if (!tagMap.TryGetValue("snapshot.type", out object? measuredSnapshotType) ||
+                !string.Equals(measuredSnapshotType as string, expectedSnapshotType, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
-        SnapshotBlobStorageMetrics.RecordPrune("PruneSnapshot", prunedCount);
+        SnapshotBlobStorageMetrics.RecordPrune(expectedSnapshotType, prunedCount);
         Assert.DoesNotContain(
-            measurements,
+            measurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.prune.count") &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapshotType) &&
-                           (snapshotType as string == "PruneSnapshot"));
+                           (snapshotType as string == expectedSnapshotType));
     }
 
     /// <summary>
@@ -115,8 +123,9 @@ public sealed class SnapshotBlobStorageMetricsTests
     [Fact]
     public void RecordPruneEmitsMetricWhenCountIsPositive()
     {
+        const string expectedSnapshotType = nameof(RecordPruneEmitsMetricWhenCountIsPositive);
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (
             instrument,
             meterListener
@@ -140,16 +149,22 @@ public sealed class SnapshotBlobStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            if (!tagMap.TryGetValue("snapshot.type", out object? measuredSnapshotType) ||
+                !string.Equals(measuredSnapshotType as string, expectedSnapshotType, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
-        SnapshotBlobStorageMetrics.RecordPrune("PruneSnapshot", 3);
+        SnapshotBlobStorageMetrics.RecordPrune(expectedSnapshotType, 3);
         Assert.Contains(
-            measurements,
+            measurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.prune.count") &&
                            (measurement.LongValue == 3) &&
                            measurement.Tags.TryGetValue("snapshot.type", out object? snapshotType) &&
-                           (snapshotType as string == "PruneSnapshot"));
+                           (snapshotType as string == expectedSnapshotType));
     }
 
     /// <summary>
@@ -158,9 +173,10 @@ public sealed class SnapshotBlobStorageMetricsTests
     [Fact]
     public void RecordReadEmitsMetricsWhenFound()
     {
+        const string expectedSnapshotType = nameof(RecordReadEmitsMetricsWhenFound);
         using MeterListener listener = new();
-        List<MetricMeasurement> longMeasurements = [];
-        List<MetricMeasurement> doubleMeasurements = [];
+        ConcurrentQueue<MetricMeasurement> longMeasurements = new();
+        ConcurrentQueue<MetricMeasurement> doubleMeasurements = new();
         listener.InstrumentPublished = (
             instrument,
             meterListener
@@ -184,7 +200,13 @@ public sealed class SnapshotBlobStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            if (!tagMap.TryGetValue("snapshot.type", out object? measuredSnapshotType) ||
+                !string.Equals(measuredSnapshotType as string, expectedSnapshotType, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            longMeasurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.SetMeasurementEventCallback<double>((
             instrument,
@@ -199,18 +221,24 @@ public sealed class SnapshotBlobStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            doubleMeasurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            if (!tagMap.TryGetValue("snapshot.type", out object? measuredSnapshotType) ||
+                !string.Equals(measuredSnapshotType as string, expectedSnapshotType, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            doubleMeasurements.Enqueue(new(instrument.Name, 0, measurement, tagMap));
         });
         listener.Start();
-        SnapshotBlobStorageMetrics.RecordRead("TestSnapshot", 50.0, true);
+        SnapshotBlobStorageMetrics.RecordRead(expectedSnapshotType, 50.0, true);
         Assert.Contains(
-            longMeasurements,
+            longMeasurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.read.count") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("result", out object? result) &&
                            (result as string == "found"));
         Assert.Contains(
-            doubleMeasurements,
+            doubleMeasurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.read.duration") &&
                            (Math.Abs(measurement.DoubleValue - 50.0) < 0.01));
     }
@@ -221,8 +249,9 @@ public sealed class SnapshotBlobStorageMetricsTests
     [Fact]
     public void RecordReadEmitsMetricsWhenNotFound()
     {
+        const string expectedSnapshotType = nameof(RecordReadEmitsMetricsWhenNotFound);
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = new();
         listener.InstrumentPublished = (
             instrument,
             meterListener
@@ -246,12 +275,18 @@ public sealed class SnapshotBlobStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            if (!tagMap.TryGetValue("snapshot.type", out object? measuredSnapshotType) ||
+                !string.Equals(measuredSnapshotType as string, expectedSnapshotType, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
-        SnapshotBlobStorageMetrics.RecordRead("TestSnapshot", 25.0, false);
+        SnapshotBlobStorageMetrics.RecordRead(expectedSnapshotType, 25.0, false);
         Assert.Contains(
-            measurements,
+            measurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.read.count") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("result", out object? result) &&
@@ -264,9 +299,10 @@ public sealed class SnapshotBlobStorageMetricsTests
     [Fact]
     public void RecordWriteEmitsMetricsWithSize()
     {
+        const string expectedSnapshotType = nameof(RecordWriteEmitsMetricsWithSize);
         using MeterListener listener = new();
-        List<MetricMeasurement> longMeasurements = [];
-        List<MetricMeasurement> doubleMeasurements = [];
+        ConcurrentQueue<MetricMeasurement> longMeasurements = new();
+        ConcurrentQueue<MetricMeasurement> doubleMeasurements = new();
         listener.InstrumentPublished = (
             instrument,
             meterListener
@@ -290,7 +326,13 @@ public sealed class SnapshotBlobStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            if (!tagMap.TryGetValue("snapshot.type", out object? measuredSnapshotType) ||
+                !string.Equals(measuredSnapshotType as string, expectedSnapshotType, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            longMeasurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.SetMeasurementEventCallback<double>((
             instrument,
@@ -305,22 +347,28 @@ public sealed class SnapshotBlobStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            doubleMeasurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            if (!tagMap.TryGetValue("snapshot.type", out object? measuredSnapshotType) ||
+                !string.Equals(measuredSnapshotType as string, expectedSnapshotType, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            doubleMeasurements.Enqueue(new(instrument.Name, 0, measurement, tagMap));
         });
         listener.Start();
-        SnapshotBlobStorageMetrics.RecordWrite("TestSnapshot", 100.0, true, 4096L);
+        SnapshotBlobStorageMetrics.RecordWrite(expectedSnapshotType, 100.0, true, 4096L);
         Assert.Contains(
-            longMeasurements,
+            longMeasurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.write.count") &&
                            (measurement.LongValue == 1) &&
                            measurement.Tags.TryGetValue("result", out object? result) &&
                            (result as string == "success"));
         Assert.Contains(
-            doubleMeasurements,
+            doubleMeasurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.write.duration") &&
                            (Math.Abs(measurement.DoubleValue - 100.0) < 0.01));
         Assert.Contains(
-            longMeasurements,
+            longMeasurements.ToArray(),
             measurement => (measurement.InstrumentName == "blob.snapshot.size") && (measurement.LongValue == 4096L));
     }
 }
