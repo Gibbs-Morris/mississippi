@@ -323,30 +323,79 @@ function Get-TestProjects {
         [Parameter(Mandatory)][string]$SolutionPath
     )
 
-    $solutionDir = Split-Path -Parent $SolutionPath
-    $testProjects = Get-ChildItem -Path $solutionDir -Recurse -Filter "*Tests.csproj" | 
-        Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' } |
-        Select-Object -ExpandProperty FullName
-
-    return $testProjects
+    # Generated legacy solutions share their membership with the canonical .slnx.
+    $canonicalPath = [System.IO.Path]::ChangeExtension($SolutionPath, '.slnx')
+    [xml]$solution = Get-Content -LiteralPath $canonicalPath -Raw
+    $solutionDir = Split-Path -Parent (Resolve-Path -LiteralPath $canonicalPath).Path
+    foreach ($project in $solution.SelectNodes('//Project')) {
+        $relativePath = $project.GetAttribute('Path') -replace '\\', '/'
+        if ($relativePath -like '*Tests.csproj') {
+            (Resolve-Path -LiteralPath (Join-Path $solutionDir $relativePath)).Path
+        }
+    }
 }
 
 function Invoke-StrykerMutationTestPerProject {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$ProjectPath,
-        [Parameter(Mandatory)][string]$OutputPath
+        [Parameter(Mandatory)][string]$OutputPath,
+        [Parameter(Mandatory)][string[]]$TestProjects,
+        [string]$Configuration = 'Release'
     )
 
-    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ProjectPath)
-    $projectOutputPath = Join-Path $OutputPath $projectName
+    $resolvedProject = (Resolve-Path -LiteralPath $ProjectPath).Path
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedProject)
+    $projectOutputPath = [System.IO.Path]::GetFullPath((Join-Path $OutputPath $projectName))
+    $repoRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedProject)
+    $configPath = Join-Path $repoRoot 'stryker-config.json'
     
     if (-not (Test-Path -LiteralPath $projectOutputPath)) {
         $null = New-Item -ItemType Directory -Path $projectOutputPath -Force
     }
 
     Write-Host "  Running Stryker for project: $projectName" -ForegroundColor ([ConsoleColor]::Cyan)
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('stryker','--project',$projectName,'--output',$projectOutputPath) -ErrorMessage "Stryker mutation testing failed for project $projectName." -SuppressCommandEcho
+    # Avoid VSTest's early-cancellation race, which can leave mutants Pending after exit 0.
+    $arguments = @('stryker', '--project', [System.IO.Path]::GetFileName($resolvedProject), '--config-file', $configPath, '--configuration', $Configuration, '--output', $projectOutputPath, '--disable-bail')
+    foreach ($testProject in $TestProjects) {
+        $arguments += @('--test-project', $testProject)
+    }
+    if ($TestProjects -match '\.L[2-4]Tests\.csproj$') {
+        # Integration fixtures use shared localhost ports across test processes.
+        $arguments += @('--concurrency', '1')
+    }
+    # Stryker's multiple-test-project mode runs from the source project directory.
+    Push-Location -LiteralPath (Split-Path -Parent $resolvedProject)
+    try {
+        # Use the SDK selected by global.json instead of an older Visual Studio MSBuild.
+        $msBuildDirectory = Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('msbuild', $resolvedProject, '-getProperty:MSBuildBinPath', '-nologo') -SuppressCommandEcho
+        $arguments += @('--msbuild-path', (Join-Path $msBuildDirectory 'MSBuild.dll'))
+        Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $arguments -ErrorMessage "Stryker mutation testing failed for project $projectName." -SuppressCommandEcho | Out-Host
+        $reports = @(Get-ChildItem -LiteralPath $projectOutputPath -Recurse -Filter 'mutation-report.json' -File)
+        if ($reports.Count -eq 0) {
+            throw "Stryker completed without a mutation-report.json for project $projectName."
+        }
+        $completedStatuses = @('Killed', 'Survived', 'NoCoverage', 'CompileError', 'RuntimeError', 'Timeout', 'Ignored')
+        foreach ($reportFile in $reports) {
+            $report = Get-Content -LiteralPath $reportFile.FullName -Raw | ConvertFrom-Json -AsHashtable
+            if ($report -isnot [System.Collections.IDictionary] -or $report['files'] -isnot [System.Collections.IDictionary]) {
+                throw "Stryker report has no valid files collection: $($reportFile.FullName)"
+            }
+            foreach ($fileResult in $report['files'].Values) {
+                if ($fileResult -isnot [System.Collections.IDictionary] -or $fileResult['mutants'] -isnot [array]) {
+                    throw "Stryker report has no valid mutants collection: $($reportFile.FullName)"
+                }
+                foreach ($mutant in $fileResult['mutants']) {
+                    if ($mutant -isnot [System.Collections.IDictionary] -or $mutant['status'] -isnot [string] -or $mutant['status'] -cnotin $completedStatuses) {
+                        throw "Stryker report contains an incomplete or invalid mutant result: $($reportFile.FullName)"
+                    }
+                }
+            }
+        }
+    }
+    finally {
+        Pop-Location
+    }
     
     return $projectOutputPath
 }
@@ -355,7 +404,8 @@ function Invoke-StrykerMutationTest {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$SolutionPath,
-        [Parameter(Mandatory)][string]$OutputPath
+        [Parameter(Mandatory)][string]$OutputPath,
+        [string]$Configuration = 'Release'
     )
 
     $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
@@ -368,31 +418,61 @@ function Invoke-StrykerMutationTest {
     # Run Stryker per-project instead of at solution level to avoid compilation issues
     # with source generators (like LoggerMessage)
     Write-Host "Discovering test projects in solution..." -ForegroundColor ([ConsoleColor]::Cyan)
-    $testProjects = Get-TestProjects -SolutionPath $resolvedSolution.Path
+    $testProjects = @(Get-TestProjects -SolutionPath $resolvedSolution.Path)
     Write-Host "Found $($testProjects.Count) test projects" -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
 
-    $projectResults = @()
+    $sourceRoot = Join-Path (Split-Path -Parent $resolvedSolution.Path) 'src'
+    $projectsUnderTest = @{}
     foreach ($testProject in $testProjects) {
+        [xml]$testDefinition = Get-Content -LiteralPath $testProject -Raw
+        foreach ($reference in $testDefinition.SelectNodes('//ProjectReference')) {
+            $referencePath = $reference.GetAttribute('Include') -replace '\\', '/'
+            $sourceProject = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $testProject) $referencePath)).Path
+            $relativeSource = [System.IO.Path]::GetRelativePath($sourceRoot, $sourceProject)
+            if ($relativeSource -eq '..' -or $relativeSource -match '^\.\.[\\/]' -or [System.IO.Path]::IsPathRooted($relativeSource)) {
+                continue
+            }
+            if (-not $projectsUnderTest.ContainsKey($sourceProject)) {
+                $projectsUnderTest[$sourceProject] = @()
+            }
+            $projectsUnderTest[$sourceProject] += $testProject
+        }
+    }
+    foreach ($sourceProject in @($projectsUnderTest.Keys)) {
+        $authoredSource = @(Get-ChildItem -LiteralPath (Split-Path -Parent $sourceProject) -Recurse -File -Filter '*.cs' |
+            Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' } | Select-Object -First 1)
+        if ($authoredSource.Count -eq 0) {
+            Write-Host "Skipping mutation target $([System.IO.Path]::GetFileNameWithoutExtension($sourceProject)): no authored C# source files." -ForegroundColor ([ConsoleColor]::Yellow)
+            $projectsUnderTest.Remove($sourceProject)
+        }
+    }
+    if ($projectsUnderTest.Count -eq 0) {
+        throw "No source projects with tests were found in '$SolutionPath'."
+    }
+
+    $projectResults = @()
+    foreach ($sourceProject in ($projectsUnderTest.Keys | Sort-Object)) {
         try {
-            $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $testProject -OutputPath $outputFullPath
-            $projectResults += @{ Project = $testProject; Output = $projectOutput; Success = $true }
-            Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($testProject))" -ForegroundColor ([ConsoleColor]::Green)
+            $projectOutput = Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @($projectsUnderTest[$sourceProject] | Sort-Object -Unique) -OutputPath $outputFullPath -Configuration $Configuration
+            $projectResults += @{ Project = $sourceProject; Output = $projectOutput; Success = $true }
+            Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($sourceProject))" -ForegroundColor ([ConsoleColor]::Green)
         }
         catch {
-            Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($testProject)) - $($_.Exception.Message)"
-            $projectResults += @{ Project = $testProject; Output = $null; Success = $false; Error = $_.Exception.Message }
+            Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($sourceProject)) - $($_.Exception.Message)"
+            $projectResults += @{ Project = $sourceProject; Output = $null; Success = $false; Error = $_.Exception.Message }
         }
         Write-Host
     }
 
     # Check if any projects failed
-    $failedProjects = $projectResults | Where-Object { -not $_.Success }
+    $failedProjects = @($projectResults | Where-Object { -not $_.Success })
     if ($failedProjects.Count -gt 0) {
         Write-Host "WARNING: $($failedProjects.Count) project(s) failed mutation testing" -ForegroundColor ([ConsoleColor]::Yellow)
         foreach ($failed in $failedProjects) {
             Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($failed.Project)): $($failed.Error)" -ForegroundColor ([ConsoleColor]::Yellow)
         }
+        throw "Stryker mutation testing failed for $($failedProjects.Count) project(s). Reports: $outputFullPath"
     }
 
     return $outputFullPath
@@ -682,7 +762,8 @@ function Invoke-SampleSolutionCleanup {
 function Invoke-MississippiSolutionMutationTests {
     [CmdletBinding()]
     param(
-        [string]$RepoRoot = (Get-RepositoryRoot)
+        [string]$RepoRoot = (Get-RepositoryRoot),
+        [string]$Configuration = 'Release'
     )
 
     $slnxPath = Join-Path $RepoRoot 'mississippi.slnx'
@@ -705,6 +786,7 @@ function Invoke-MississippiSolutionMutationTests {
 
     Write-Host '[3/4] Restoring NuGet packages for generated solution...' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-SolutionRestore -SolutionPath $generatedSln -Description 'mississippi.sln' -Quiet
+    Invoke-SolutionBuild -SolutionPath $generatedSln -Configuration $Configuration -NoRestore -NoIncremental -WarnAsError -Quiet
     Write-Host 'SUCCESS: NuGet packages restored for mutation testing' -ForegroundColor ([ConsoleColor]::Green)
 
     Write-Host '[4/4] Executing Stryker.NET mutation testing...' -ForegroundColor ([ConsoleColor]::Cyan)
@@ -714,7 +796,7 @@ function Invoke-MississippiSolutionMutationTests {
 
     $timestamp = Get-Date -Format 'yyyy-MM-dd.HH-mm-ss'
     $outputDirectory = Join-Path $mutationRoot $timestamp
-    Invoke-StrykerMutationTest -SolutionPath $generatedSln -OutputPath $outputDirectory | Out-Null
+    Invoke-StrykerMutationTest -SolutionPath $generatedSln -OutputPath $outputDirectory -Configuration $Configuration | Out-Null
 
     Write-Host 'SUCCESS: Mutation testing completed with acceptable scores' -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
@@ -750,7 +832,7 @@ function Invoke-SolutionsPipeline {
     Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
     if ($IncludeMutation) {
-        Invoke-AutomationStep -Name 'Run Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionMutationTests -RepoRoot $RepoRoot } -SilentSuccess
+        Invoke-AutomationStep -Name 'Run Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionMutationTests -RepoRoot $RepoRoot -Configuration $Configuration } -SilentSuccess
         Invoke-AutomationStep -Name 'Summarize Mutation Survivors' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-GenerateTasks', '-SkipMutationRun') | Out-Host }
     }
     if (-not $SkipCleanup) {
