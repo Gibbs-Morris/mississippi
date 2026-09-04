@@ -374,6 +374,23 @@ function Invoke-StrykerMutationTestPerProject {
         if ($reports.Count -eq 0) {
             throw "Stryker completed without a mutation-report.json for project $projectName."
         }
+        $completedStatuses = @('Killed', 'Survived', 'NoCoverage', 'CompileError', 'RuntimeError', 'Timeout', 'Ignored')
+        foreach ($reportFile in $reports) {
+            $report = Get-Content -LiteralPath $reportFile.FullName -Raw | ConvertFrom-Json -AsHashtable
+            if ($report -isnot [System.Collections.IDictionary] -or $report['files'] -isnot [System.Collections.IDictionary]) {
+                throw "Stryker report has no valid files collection: $($reportFile.FullName)"
+            }
+            foreach ($fileResult in $report['files'].Values) {
+                if ($fileResult -isnot [System.Collections.IDictionary] -or $fileResult['mutants'] -isnot [array]) {
+                    throw "Stryker report has no valid mutants collection: $($reportFile.FullName)"
+                }
+                foreach ($mutant in $fileResult['mutants']) {
+                    if ($mutant -isnot [System.Collections.IDictionary] -or $mutant['status'] -isnot [string] -or $mutant['status'] -cnotin $completedStatuses) {
+                        throw "Stryker report contains an incomplete or invalid mutant result: $($reportFile.FullName)"
+                    }
+                }
+            }
+        }
     }
     finally {
         Pop-Location
