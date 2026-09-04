@@ -45,21 +45,24 @@ public sealed class ApiDocumentationIntegrationTests
     }
 
     /// <summary>
-    ///     Verifies that Scalar serves an HTML reference for the generated OpenAPI document.
+    ///     Verifies that Scalar loads the generated OpenAPI document in the browser.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact]
-    public async Task ScalarReferenceShouldServeTheApiDocument()
+    public async Task ScalarReferenceShouldLoadTheApiDocument()
     {
-        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
-        HttpClient client = Fixture.CreateHttpClient();
-        using HttpResponseMessage response = await client.GetAsync(
-            new Uri("/scalar/v1", UriKind.Relative),
-            timeout.Token);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
-        string content = await response.Content.ReadAsStringAsync(timeout.Token);
-        Assert.Contains("Spring Bank API", content, StringComparison.Ordinal);
-        Assert.Contains("/openapi/v1.json", content, StringComparison.Ordinal);
+        IPage page = await Fixture.CreatePageAsync();
+        try
+        {
+            IResponse response = await page.RunAndWaitForResponseAsync(
+                () => page.GotoAsync(new Uri(Fixture.GatewayBaseUri, "/scalar/v1").AbsoluteUri),
+                candidate => new Uri(candidate.Url).AbsolutePath == "/openapi/v1.json");
+            Assert.Equal(200, response.Status);
+            Assert.Equal("Spring Bank API", await page.TitleAsync());
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
     }
 }
