@@ -111,6 +111,7 @@ internal sealed class HeartbeatManager : IHeartbeatManager
             await directoryGrain.RegisterServerAsync(ServerId, cancellationToken)
                 .WaitAsync(cancellationToken)
                 .ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
             Logger.HeartbeatStarted(ServerId);
 
             // Start heartbeat timer

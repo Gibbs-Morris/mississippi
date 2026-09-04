@@ -58,6 +58,8 @@ public sealed class AqueductHubLifetimeManager<THub>
 {
     private readonly string hubName;
 
+    private volatile bool backplaneInitialized;
+
     private bool disposed;
 
     private IDisposable? lifecycleSubscription;
@@ -256,30 +258,19 @@ public sealed class AqueductHubLifetimeManager<THub>
         HubConnectionContext? connection = ConnectionRegistry.GetConnection(connectionId);
         if (connection != null)
         {
+            using CancellationTokenSource? linkedCancellationTokenSource = cancellationToken.CanBeCanceled
+                ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, connection.ConnectionAborted)
+                : null;
+            CancellationToken deliveryToken = linkedCancellationTokenSource?.Token ?? connection.ConnectionAborted;
             try
             {
-                object?[] messageArgs = args ?? [];
-                if (!cancellationToken.CanBeCanceled)
-                {
-                    await MessageSender.SendAsync(
-                            connection,
-                            methodName,
-                            messageArgs,
-                            connection.ConnectionAborted)
-                        .ConfigureAwait(false);
-                    return;
-                }
-
-                using CancellationTokenSource linkedCancellationTokenSource =
-                    CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, connection.ConnectionAborted);
-                await MessageSender.SendAsync(connection, methodName, messageArgs, linkedCancellationTokenSource.Token)
-                    .ConfigureAwait(false);
+                await MessageSender.SendAsync(connection, methodName, args ?? [], deliveryToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException exception) when (
-                connection.ConnectionAborted.IsCancellationRequested &&
-                !cancellationToken.IsCancellationRequested)
+            catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested &&
+                                                               !cancellationToken.IsCancellationRequested &&
+                                                               (exception.CancellationToken == deliveryToken))
             {
-                // A connection can abort after the pre-check and before the write completes.
+                // A connection can abort after the registry lookup and before the write completes.
                 Logger.MessageDeliveryCanceled(connection.ConnectionId, "direct send", exception);
             }
 
@@ -387,7 +378,7 @@ public sealed class AqueductHubLifetimeManager<THub>
         CancellationToken cancellationToken = default
     )
     {
-        if (StreamSubscriptionManager.IsInitialized)
+        if (backplaneInitialized)
         {
             return;
         }
@@ -404,6 +395,7 @@ public sealed class AqueductHubLifetimeManager<THub>
 
         // Start heartbeat manager
         await HeartbeatManager.StartAsync(() => ConnectionRegistry.Count, cancellationToken).ConfigureAwait(false);
+        backplaneInitialized = true;
         Logger.BackplaneInitialized(hubName, ServerId);
     }
 
@@ -440,7 +432,9 @@ public sealed class AqueductHubLifetimeManager<THub>
                             connection.ConnectionAborted)
                         .ConfigureAwait(false);
                 }
-                catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested)
+                catch (OperationCanceledException exception) when
+                    (connection.ConnectionAborted.IsCancellationRequested &&
+                     (exception.CancellationToken == connection.ConnectionAborted))
                 {
                     // A connection can abort after the pre-check and before the write completes.
                     Logger.MessageDeliveryCanceled(connection.ConnectionId, "broadcast", exception);
@@ -465,7 +459,9 @@ public sealed class AqueductHubLifetimeManager<THub>
                         connection.ConnectionAborted)
                     .ConfigureAwait(false);
             }
-            catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested)
+            catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested &&
+                                                               (exception.CancellationToken ==
+                                                                connection.ConnectionAborted))
             {
                 // A connection can abort after the registry lookup and before the write completes.
                 Logger.MessageDeliveryCanceled(connection.ConnectionId, "targeted send", exception);

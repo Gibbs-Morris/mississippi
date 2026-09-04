@@ -270,16 +270,47 @@ public sealed class HeartbeatManagerTests
         IOptions<AqueductOptions> options = Options.Create(new AqueductOptions());
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
         using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
-        CancellationToken cancellationToken = CancellationToken.None;
-        CancellationToken canceledRegistrationToken = new(true);
-        directoryGrain.RegisterServerAsync(manager.ServerId, cancellationToken)
-            .Returns(Task.FromCanceled(canceledRegistrationToken));
+        using CancellationTokenSource cancellation = new();
+        TaskCompletionSource registration = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        directoryGrain.RegisterServerAsync(manager.ServerId, cancellation.Token).Returns(registration.Task);
 
         // Act
-        await Assert.ThrowsAsync<TaskCanceledException>(() => manager.StartAsync(() => 5, cancellationToken));
+        Task startup = manager.StartAsync(() => 5, cancellation.Token);
+        await cancellation.CancelAsync();
+        try
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => startup.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+        finally
+        {
+            registration.SetResult();
+        }
 
         // Assert
-        _ = directoryGrain.Received(1).RegisterServerAsync(manager.ServerId, cancellationToken);
+        _ = directoryGrain.Received(1).RegisterServerAsync(manager.ServerId, cancellation.Token);
+        await directoryGrain.DidNotReceiveWithAnyArgs().HeartbeatAsync(default!, default);
+    }
+
+    /// <summary>
+    ///     A registration completing as shutdown begins must not mark heartbeat startup as successful.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task StartAsyncShouldObserveCancellationAfterRegistration()
+    {
+        using CancellationTokenSource cancellation = new();
+        IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
+        ISignalRServerDirectoryGrain directory = Substitute.For<ISignalRServerDirectoryGrain>();
+        grainFactory.GetServerDirectoryGrain().Returns(directory);
+        directory.RegisterServerAsync(Arg.Any<string>(), cancellation.Token)
+            .Returns(async _ => await cancellation.CancelAsync());
+        using HeartbeatManager manager = new(
+            CreateServerIdProvider(),
+            grainFactory,
+            Options.Create(new AqueductOptions()),
+            Substitute.For<ILogger<HeartbeatManager>>());
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => manager.StartAsync(() => 0, cancellation.Token));
+        await directory.DidNotReceiveWithAnyArgs().HeartbeatAsync(default!, default);
     }
 
     /// <summary>
