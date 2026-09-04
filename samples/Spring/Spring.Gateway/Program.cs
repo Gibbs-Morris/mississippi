@@ -65,7 +65,11 @@ builder.Services.AddOpenTelemetry()
 builder.AddKeyedAzureTableServiceClient("clustering");
 
 // Configure Orleans client - Aspire injects clustering config via environment variables
-builder.UseOrleansClient(clientBuilder => { clientBuilder.AddActivityPropagation(); });
+builder.UseOrleansClient(clientBuilder =>
+{
+    clientBuilder.UseConnectionRetryFilter<SpringGatewayOrleansClientConnectionRetryFilter>();
+    clientBuilder.AddActivityPropagation();
+});
 
 // Add controllers for aggregate API endpoints
 builder.Services.AddControllers();
