@@ -104,6 +104,12 @@ public sealed class SnapshotBlobRepositoryTests
     public async Task DeleteAllAsyncShouldDeleteOnlyMatchingSnapshotBlobsForStream()
     {
         string prefix = SnapshotBlobPath.BuildStreamPrefix(StreamKey);
+        SnapshotStreamKey foreignStream = new(
+            StreamKey.BrookName,
+            StreamKey.SnapshotStorageName,
+            "other-account",
+            StreamKey.ReducersHash);
+        string foreignBlob = SnapshotBlobPath.BuildSnapshotBlobName(new(foreignStream, 3));
         List<string> deleted = [];
         Mock<ISnapshotBlobOperations> operations = new();
         operations.Setup(o => o.ListBlobNamesAsync(prefix, It.IsAny<CancellationToken>()))
@@ -112,6 +118,7 @@ public sealed class SnapshotBlobRepositoryTests
                 [
                     SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 1)),
                     $"{prefix}notes.txt",
+                    foreignBlob,
                     SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 2)),
                 ]));
         operations.Setup(o => o.DeleteIfExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -128,6 +135,7 @@ public sealed class SnapshotBlobRepositoryTests
                 SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 2)),
             ],
             deleted);
+        operations.Verify(value => value.DeleteIfExistsAsync(foreignBlob, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
@@ -150,6 +158,40 @@ public sealed class SnapshotBlobRepositoryTests
     }
 
     /// <summary>
+    ///     Verifies pruning without useful checkpoints retains the latest snapshot even when zero moduli are supplied.
+    /// </summary>
+    /// <param name="includeZeroModulus">Whether the retention set contains a zero modulus.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PruneAsyncShouldRetainLatestWithoutCheckpointModuli(
+        bool includeZeroModulus
+    )
+    {
+        string prefix = SnapshotBlobPath.BuildStreamPrefix(StreamKey);
+        string latestBlob = SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 5));
+        string firstOldBlob = SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 2));
+        string secondOldBlob = SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 1));
+        int[] retainModuli = includeZeroModulus ? [0] : [];
+        List<string> deleted = [];
+        Mock<ISnapshotBlobOperations> operations = new(MockBehavior.Strict);
+        operations.Setup(value => value.ListBlobNamesAsync(prefix, CancellationToken.None))
+            .Returns(ToAsyncEnumerableAsync([firstOldBlob, latestBlob, secondOldBlob]));
+        operations.Setup(value => value.DeleteIfExistsAsync(It.IsAny<string>(), CancellationToken.None))
+            .Callback<string, CancellationToken>((
+                blobName,
+                _
+            ) => deleted.Add(blobName))
+            .ReturnsAsync(true);
+        SnapshotBlobRepository repository = CreateRepository(operations);
+        int deletedCount = await repository.PruneAsync(StreamKey, retainModuli, CancellationToken.None);
+        Assert.Equal(2, deletedCount);
+        Assert.Equal([firstOldBlob, secondOldBlob], deleted);
+        operations.Verify(value => value.DeleteIfExistsAsync(latestBlob, CancellationToken.None), Times.Never);
+    }
+
+    /// <summary>
     ///     Verifies prune always retains the highest version and versions matching retention moduli.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -157,6 +199,12 @@ public sealed class SnapshotBlobRepositoryTests
     public async Task PruneAsyncShouldRetainMaxVersionAndMatchingModuli()
     {
         string prefix = SnapshotBlobPath.BuildStreamPrefix(StreamKey);
+        SnapshotStreamKey foreignStream = new(
+            StreamKey.BrookName,
+            StreamKey.SnapshotStorageName,
+            "other-account",
+            StreamKey.ReducersHash);
+        string foreignBlob = SnapshotBlobPath.BuildSnapshotBlobName(new(foreignStream, 100));
         List<string> deleted = [];
         Mock<ISnapshotBlobOperations> operations = new();
         operations.Setup(o => o.ListBlobNamesAsync(prefix, It.IsAny<CancellationToken>()))
@@ -169,6 +217,7 @@ public sealed class SnapshotBlobRepositoryTests
                     SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 4)),
                     SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 5)),
                     $"{prefix}not-a-version.json",
+                    foreignBlob,
                 ]));
         operations.Setup(o => o.DeleteIfExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback<string, CancellationToken>((
@@ -185,6 +234,28 @@ public sealed class SnapshotBlobRepositoryTests
                 SnapshotBlobPath.BuildSnapshotBlobName(new(StreamKey, 3)),
             ],
             deleted);
+        operations.Verify(value => value.DeleteIfExistsAsync(foreignBlob, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    ///     Verifies pruning an empty stream returns zero without attempting any deletions.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task PruneAsyncShouldReturnZeroForEmptyStream()
+    {
+        string prefix = SnapshotBlobPath.BuildStreamPrefix(StreamKey);
+        using CancellationTokenSource cancellation = new();
+        Mock<ISnapshotBlobOperations> operations = new(MockBehavior.Strict);
+        operations.Setup(value => value.ListBlobNamesAsync(prefix, cancellation.Token))
+            .Returns(ToAsyncEnumerableAsync([]));
+        SnapshotBlobRepository repository = CreateRepository(operations);
+        int deletedCount = await repository.PruneAsync(StreamKey, [2], cancellation.Token);
+        Assert.Equal(0, deletedCount);
+        operations.Verify(value => value.ListBlobNamesAsync(prefix, cancellation.Token), Times.Once);
+        operations.Verify(
+            value => value.DeleteIfExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     /// <summary>

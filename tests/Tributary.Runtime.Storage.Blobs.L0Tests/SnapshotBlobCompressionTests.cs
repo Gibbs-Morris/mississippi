@@ -26,6 +26,31 @@ public sealed class SnapshotBlobCompressionTests
     }
 
     /// <summary>
+    ///     Verifies an uncompressed payload at the exact size limit preserves every byte.
+    /// </summary>
+    [Fact]
+    public void DecompressShouldAcceptUncompressedPayloadAtLimit()
+    {
+        byte[] payload = [1, 2, 3, 4];
+        byte[] result = SnapshotBlobCompression.Decompress(SnapshotBlobCompression.None, payload, payload.Length);
+        Assert.Equal(payload, result);
+    }
+
+    /// <summary>
+    ///     Verifies the payload limit also rejects oversized data when compression is disabled.
+    /// </summary>
+    [Fact]
+    public void DecompressShouldRejectUncompressedPayloadAboveLimit()
+    {
+        byte[] payload = [1, 2, 3, 4];
+        InvalidDataException exception = Assert.Throws<InvalidDataException>(() => SnapshotBlobCompression.Decompress(
+            SnapshotBlobCompression.None,
+            payload,
+            3));
+        Assert.Contains("exceeds the configured maximum '3'", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     Verifies null compression metadata is treated as invalid persisted data.
     /// </summary>
     [Fact]
