@@ -49,7 +49,7 @@ public sealed class SnapshotBlobCompressionTests
             result.Compression,
             result.StoredBytes,
             1));
-        Assert.NotNull(exception);
+        Assert.Contains("exceeds the configured maximum '1'", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

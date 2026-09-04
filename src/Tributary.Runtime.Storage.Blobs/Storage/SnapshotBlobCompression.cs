@@ -80,36 +80,29 @@ internal static class SnapshotBlobCompression
             throw new InvalidDataException($"Unsupported snapshot compression value '{compression}'.");
         }
 
-        try
+        using MemoryStream input = new(storedBytes, false);
+        using GZipStream gzipStream = new(input, CompressionMode.Decompress);
+        using MemoryStream output = new();
+        byte[] buffer = new byte[BufferSize];
+        long totalBytesRead = 0;
+        while (true)
         {
-            using MemoryStream input = new(storedBytes, false);
-            using GZipStream gzipStream = new(input, CompressionMode.Decompress);
-            using MemoryStream output = new();
-            byte[] buffer = new byte[BufferSize];
-            long totalBytesRead = 0;
-            while (true)
+            int bytesRead = gzipStream.Read(buffer, 0, buffer.Length);
+            if (bytesRead == 0)
             {
-                int bytesRead = gzipStream.Read(buffer, 0, buffer.Length);
-                if (bytesRead == 0)
-                {
-                    break;
-                }
-
-                totalBytesRead += bytesRead;
-                if (totalBytesRead > maximumPayloadSizeBytes)
-                {
-                    throw new InvalidDataException(
-                        $"Decompressed snapshot payload size exceeds the configured maximum '{maximumPayloadSizeBytes}'.");
-                }
-
-                output.Write(buffer, 0, bytesRead);
+                break;
             }
 
-            return output.ToArray();
+            totalBytesRead += bytesRead;
+            if (totalBytesRead > maximumPayloadSizeBytes)
+            {
+                throw new InvalidDataException(
+                    $"Decompressed snapshot payload size exceeds the configured maximum '{maximumPayloadSizeBytes}'.");
+            }
+
+            output.Write(buffer, 0, bytesRead);
         }
-        catch (InvalidDataException exception)
-        {
-            throw new InvalidDataException("Stored gzip snapshot payload is invalid.", exception);
-        }
+
+        return output.ToArray();
     }
 }
