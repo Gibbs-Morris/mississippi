@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 [CmdletBinding()]
 param(
     [switch]$SkipMutationRun,
@@ -14,6 +16,7 @@ param(
     [string]$Project
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $modulePath = Join-Path $PSScriptRoot 'RepositoryAutomation.psm1'
@@ -116,20 +119,18 @@ function New-SurvivorKey
     return '{0}|{1}|{2}|{3}|{4}|{5}|{6}' -f $fileKey, $mutatorKey, $StartLine, $EndLine, $replacementKey, $StartColumn, $EndColumn
 }
 
-function Get-LatestMutationReportPath
+function Get-LatestMutationReportPaths
 {
     param([string]$MutationOutputPath)
 
-    if (-not (Test-Path -Path $MutationOutputPath -PathType Container)) { return $null }
+    if (-not (Test-Path -Path $MutationOutputPath -PathType Container)) { return @() }
 
-    $candidateDirs = Get-ChildItem -Path $MutationOutputPath -Directory -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
-    foreach ($dir in $candidateDirs)
-    {
-        $reportPath = Join-Path $dir.FullName 'reports/mutation-report.json'
-        if (Test-Path -Path $reportPath -PathType Leaf) { return $reportPath }
-    }
-
-    return $null
+    $latestRun = Get-ChildItem -LiteralPath $MutationOutputPath -Directory |
+        Sort-Object Name -Descending | Select-Object -First 1
+    if ($null -eq $latestRun) { return @() }
+    # Each source project has its own nested Stryker report in this run.
+    return @(Get-ChildItem -LiteralPath $latestRun.FullName -Recurse -File -Filter 'mutation-report.json' |
+        Sort-Object FullName | Select-Object -ExpandProperty FullName)
 }
 
 function Get-MutationReportSurvivors
@@ -140,15 +141,19 @@ function Get-MutationReportSurvivors
     )
 
     $content = Get-Content -Path $ReportPath -Raw -ErrorAction Stop
-    if ([string]::IsNullOrWhiteSpace($content)) { return @() }
+    if ([string]::IsNullOrWhiteSpace($content)) { throw "Mutation report '$ReportPath' is empty." }
 
     $report = $content | ConvertFrom-Json
-    if ($null -eq $report -or $null -eq $report.files) { return @() }
+    if ($null -eq $report -or -not ($report.PSObject.Properties.Name -contains 'files')) { throw "Mutation report '$ReportPath' has no files collection." }
 
     $results = New-Object System.Collections.Generic.List[object]
     foreach ($fileProp in $report.files.PSObject.Properties)
     {
         $fullPath = $fileProp.Name
+        if (-not [System.IO.Path]::IsPathRooted($fullPath)) {
+            $projectRoot = if ($report.PSObject.Properties.Name -contains 'projectRoot') { $report.projectRoot } else { $RepoRoot }
+            $fullPath = [System.IO.Path]::GetFullPath((Join-Path $projectRoot $fullPath))
+        }
         $fileData = $fileProp.Value
         if ($null -eq $fileData -or $null -eq $fileData.mutants) { continue }
 
@@ -332,106 +337,29 @@ else
 
 $mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'
 if (-not (Test-Path -LiteralPath $mutationOutputDirectory)) { New-Item -ItemType Directory -Path $mutationOutputDirectory | Out-Null }
-$latestSurvivorsPath = Join-Path $mutationOutputDirectory 'latest-survivors.json'
-if (-not (Test-Path -Path $latestSurvivorsPath -PathType Leaf))
-{
-    Write-Warning "No latest-survivors.json file found at '$latestSurvivorsPath'. Writing empty summaries."
-    $survivorItems = @()
+# Reports from the latest run are authoritative; cached survivors may be stale.
+$mutationReportPaths = @(Get-LatestMutationReportPaths -MutationOutputPath $mutationOutputDirectory)
+if ($mutationReportPaths.Count -eq 0) {
+    throw "No mutation-report.json files were found in the latest run under '$mutationOutputDirectory'."
 }
-else
-{
-    $rawContent = Get-Content -Path $latestSurvivorsPath -Raw
-    if ([string]::IsNullOrWhiteSpace($rawContent))
-    {
-        $survivorItems = @()
-    }
-    else
-    {
-        $parsed = $rawContent | ConvertFrom-Json
-        if ($null -eq $parsed)
-        {
-            $survivorItems = @()
-        }
-        elseif ($parsed -is [System.Array])
-        {
-            $survivorItems = $parsed
-        }
-        else
-        {
-            $survivorItems = @($parsed)
-        }
-    }
-}
-
-$mutationReportPath = Get-LatestMutationReportPath -MutationOutputPath $mutationOutputDirectory
 $reportSurvivors = @()
-if ($mutationReportPath)
+foreach ($mutationReportPath in $mutationReportPaths)
 {
-    try
-    {
-        $reportSurvivors = Get-MutationReportSurvivors -ReportPath $mutationReportPath -RepoRoot $repoRoot
-        Write-Host "Loaded mutation report survivors from '$mutationReportPath'." -ForegroundColor Cyan
-    }
-    catch
-    {
-        Write-Warning "Failed to parse mutation-report.json at '$mutationReportPath': $($_.Exception.Message)"
-        $reportSurvivors = @()
-    }
-}
-else
-{
-    Write-Host 'No mutation-report.json found; skipping detailed survivor extraction.' -ForegroundColor Yellow
+    $reportSurvivors += @(Get-MutationReportSurvivors -ReportPath $mutationReportPath -RepoRoot $repoRoot)
+    Write-Host "Loaded mutation report survivors from '$mutationReportPath'." -ForegroundColor Cyan
 }
 
 $reportSurvivors = @($reportSurvivors | Where-Object { $_ })
 
-$reportMap = @{}
-foreach ($reportEntry in $reportSurvivors)
-{
-    $key = New-SurvivorKey -File $reportEntry.File -Mutator $reportEntry.Mutator -StartLine $reportEntry.StartLine -EndLine $reportEntry.EndLine -Replacement $reportEntry.Replacement -StartColumn $reportEntry.StartColumn -EndColumn $reportEntry.EndColumn
-    $reportMap[$key] = $reportEntry
-}
-
 $normalizedList = New-Object System.Collections.Generic.List[object]
 $existingKeys = New-Object System.Collections.Generic.HashSet[string]
-
-foreach ($item in $survivorItems)
-{
-    $filePath = $item.File
-    $className = if ([string]::IsNullOrWhiteSpace($filePath)) { '' } else { [System.IO.Path]::GetFileNameWithoutExtension($filePath) }
-    $startColumn = if ($item.PSObject.Properties.Name -contains 'StartColumn') { [int]$item.StartColumn } else { 0 }
-    $endColumn = if ($item.PSObject.Properties.Name -contains 'EndColumn') { [int]$item.EndColumn } else { 0 }
-    $key = New-SurvivorKey -File $filePath -Mutator $item.Mutator -StartLine $item.StartLine -EndLine $item.EndLine -Replacement $item.Replacement -StartColumn $startColumn -EndColumn $endColumn
-    [void]$existingKeys.Add($key)
-    $reportData = if ($reportMap.ContainsKey($key)) { $reportMap[$key] } else { $null }
-
-    $normalizedList.Add([pscustomobject]@{
-            File         = $filePath
-        RelativeFile = if ([string]::IsNullOrWhiteSpace($filePath)) { '' } else { Get-RelativePath -BasePath $repoRoot -TargetPath $filePath }
-            ClassName    = $className
-            Mutator      = $item.Mutator
-            Description  = $item.Description
-            Replacement  = $item.Replacement
-            StartLine    = $item.StartLine
-            EndLine      = $item.EndLine
-            StartColumn  = $startColumn
-            EndColumn    = $endColumn
-            Symbol       = $item.Symbol
-            Tests        = $item.Tests
-            Status       = if ($item.PSObject.Properties.Name -contains 'Status') { $item.Status } elseif ($reportData) { $reportData.Status } else { 'Unknown' }
-            StatusReason = if ($item.PSObject.Properties.Name -contains 'StatusReason') { $item.StatusReason } elseif ($reportData) { $reportData.StatusReason } else { $null }
-            CoveredBy    = if ($reportData) { $reportData.CoveredBy } else { $null }
-            KilledBy     = if ($reportData) { $reportData.KilledBy } else { $null }
-            ReportId     = if ($reportData) { $reportData.ReportId } else { $null }
-        }) | Out-Null
-}
 
 if ($reportSurvivors.Count -gt 0)
 {
     foreach ($reportEntry in $reportSurvivors)
     {
         $key = New-SurvivorKey -File $reportEntry.File -Mutator $reportEntry.Mutator -StartLine $reportEntry.StartLine -EndLine $reportEntry.EndLine -Replacement $reportEntry.Replacement -StartColumn $reportEntry.StartColumn -EndColumn $reportEntry.EndColumn
-        if (-not $existingKeys.Contains($key))
+        if ($existingKeys.Add($key))
         {
             $className = if ([string]::IsNullOrWhiteSpace($reportEntry.File)) { '' } else { [System.IO.Path]::GetFileNameWithoutExtension($reportEntry.File) }
             $normalizedList.Add([pscustomobject]@{
@@ -455,11 +383,6 @@ if ($reportSurvivors.Count -gt 0)
                 }) | Out-Null
         }
     }
-}
-
-if (($normalizedList.Count -eq 0) -and ($reportSurvivors.Count -gt 0))
-{
-    Write-Warning 'latest-survivors.json was empty, but mutation-report.json contained survivors; using report data only.'
 }
 
 $normalized = $normalizedList.ToArray()
@@ -544,7 +467,7 @@ $enriched = [pscustomobject]@{
     }
     focusOrder    = $focusSelection
     survivors     = $normalized
-    report        = if ($mutationReportPath -and ($reportSurvivors.Count -gt 0)) { [pscustomobject]@{ path = $mutationReportPath; survivors = $reportSurvivors } } else { $null }
+    report        = [pscustomobject]@{ paths = $mutationReportPaths; survivors = $reportSurvivors }
 }
 
 $enrichedJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-enriched.json'
@@ -557,7 +480,7 @@ $null = New-Item -Path (Split-Path -Parent $summaryJsonPath) -ItemType Directory
 $null = New-Item -Path (Split-Path -Parent $summaryMarkdownPath) -ItemType Directory -Force
 
 # Maintain backward compatibility: original summary file still emits basic array
-$normalized | ConvertTo-Json -Depth 4 | Set-Content -Path $summaryJsonPath -Encoding UTF8
+ConvertTo-Json -InputObject @($normalized) -Depth 4 | Set-Content -Path $summaryJsonPath -Encoding UTF8
 
 $reportJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-report.json'
 if ($reportSurvivors.Count -gt 0)
@@ -837,6 +760,6 @@ if ($reportSurvivors.Count -gt 0)
 Write-Host "- Markdown: $summaryMarkdownPath" -ForegroundColor Gray
 Write-Host "Total survivors: $totalCount" -ForegroundColor Cyan
 
-return 0
+exit 0
 
 

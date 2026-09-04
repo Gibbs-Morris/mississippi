@@ -218,13 +218,8 @@ try {
 
     # Prepare Stryker
     if (-not $SkipMutation) {
-        Write-Host "[5/7] Ensuring mississippi.sln exists for Stryker..." -ForegroundColor Cyan
-        $slnx = Join-Path (Get-Location) "mississippi.slnx"
-        $sln = Join-Path (Get-Location) "mississippi.sln"
-        if (-not (Test-Path -LiteralPath $sln)) {
-            dotnet tool run slngen "$slnx" --solutionfile "$sln" --launch false
-            if ($LASTEXITCODE -ne 0) { throw "Failed to generate solution file via SlnGen" }
-        }
+        Write-Host "[5/7] Loading repository mutation helpers..." -ForegroundColor Cyan
+        Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
 
         Write-Host "[6/7] Resolving source project for mutation..." -ForegroundColor Cyan
         $sourceProjectPath = $SourceProject
@@ -233,11 +228,14 @@ try {
 
         Write-Host "[7/7] Running Stryker mutation testing..." -ForegroundColor Cyan
         $strykerStart = Get-Date
-        $sourceProjectFileName = [IO.Path]::GetFileName($sourceProjectPath)
-    $mutationOutput = Join-Path $mutationRoot (Get-Date -Format 'yyyy-MM-dd.HH-mm-ss')
-    if (-not (Test-Path -LiteralPath $mutationOutput)) { New-Item -ItemType Directory -Path $mutationOutput | Out-Null }
-    dotnet stryker --solution "$sln" --test-project "$testProjectPath" --project "$sourceProjectFileName" --output "$mutationOutput"
-        if ($LASTEXITCODE -ne 0) { $mutationFailed = $true }
+        $mutationOutput = Join-Path $mutationRoot (Get-Date -Format 'yyyy-MM-dd.HH-mm-ss')
+        try {
+            Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProjectPath -TestProjects @($testProjectPath) -OutputPath $mutationOutput -Configuration $Configuration | Out-Host
+        }
+        catch {
+            $mutationFailed = $true
+            Write-Warning "Mutation testing failed: $($_.Exception.Message)"
+        }
 
         # Find latest mutation report
         $mutationJson = Get-ChildItem -Path $mutationRoot -Recurse -Filter mutation-report.json -ErrorAction SilentlyContinue |
@@ -255,7 +253,7 @@ try {
         # Output concise summary for LLMs
         Write-Host ""; Write-Host "=== QUALITY SUMMARY ($testProjectName) ===" -ForegroundColor Yellow
         if ($trxSummary) {
-            $resultFlag = if ($testFailed) { "FAIL" } else { "PASS" }
+            $resultFlag = if ($testFailed -or $mutationFailed) { "FAIL" } else { "PASS" }
             Write-Host ("RESULT: {0}" -f $resultFlag)
             Write-Host ("TEST_TOTAL: {0}" -f $trxSummary.Total)
             Write-Host ("TEST_PASSED: {0}" -f $trxSummary.Passed)
