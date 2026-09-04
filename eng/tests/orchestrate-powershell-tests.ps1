@@ -18,6 +18,7 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $testsRoot = Join-Path $repoRoot 'eng/tests/agent-scripts'
 
 $testRunners = @(
+    @{ Name = 'run-repository-automation-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-scratchpad-task-tests.ps1';   Type = 'Pester' },
     @{ Name = 'run-summarize-coverage-gaps-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-task-automation-tests.ps1';   Type = 'Pester' },
@@ -25,7 +26,7 @@ $testRunners = @(
 )
 
 # Ensure Pester v5+ is available when any Pester runners are present
-$needsPester = $testRunners | Where-Object { $_.Type -eq 'Pester' }
+$needsPester = @($testRunners | Where-Object { $_.Type -eq 'Pester' })
 if ($needsPester.Count -gt 0) {
     try {
         Import-Module Pester -MinimumVersion 5.0.0 -Force -ErrorAction Stop | Out-Null
@@ -51,7 +52,8 @@ $failureCount = 0
 foreach ($runner in $testRunners) {
     $path = Join-Path $testsRoot $runner.Name
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        Write-Host "Skipping missing test runner: $($runner.Name)" -ForegroundColor DarkGray
+        $failureCount++
+        $results += [pscustomobject]@{ Name = $runner.Name; Type = $runner.Type; Status = 'Failed'; Failed = 1; Error = 'Test runner is missing.' }
         continue
     }
 
@@ -74,12 +76,16 @@ foreach ($runner in $testRunners) {
                 }
             }
 
+            if ($null -eq $result -or ($result.PSObject.Properties.Name -contains 'Result' -and $result.Result -ne 'Passed')) {
+                $failedCount = [Math]::Max(1, $failedCount)
+            }
             $status = if ($failedCount -gt 0) { 'Failed' } else { 'Passed' }
             if ($failedCount -gt 0) { $failureCount++ }
             $results += [pscustomobject]@{ Name = $runner.Name; Type = 'Pester'; Status = $status; Failed = $failedCount }
         }
         else {
             & $path
+            if ($LASTEXITCODE -ne 0) { throw "Test runner failed with exit code $LASTEXITCODE." }
             $results += [pscustomobject]@{ Name = $runner.Name; Type = 'Script'; Status = 'Passed'; Failed = 0 }
         }
     }

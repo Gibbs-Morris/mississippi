@@ -14,8 +14,8 @@
     "disable-mix-mutants": false,
     "thresholds": {
       "high": 80,
-      "low": 60,
-      "break": 50
+      "low": 80,
+      "break": 80
     },
     "verbosity": "info",
     "reporters": [
@@ -40,7 +40,7 @@
     "ignore-mutations": ["String"],
     "ignore-methods": [],
     "report-file-name": "mutation-report",
-    "break-on-initial-test-failure": false
+    "break-on-initial-test-failure": true
   }
 }
 
