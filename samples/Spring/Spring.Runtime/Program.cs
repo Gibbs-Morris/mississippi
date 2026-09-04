@@ -91,20 +91,12 @@ builder.AddKeyedAzureBlobServiceClient("blobs");
 // Forward the Aspire-registered blob client to the Brooks key used by BlobDistributedLockManager
 builder.Services.AddKeyedSingleton(
     BrookCosmosDefaults.BlobLockingServiceKey,
-    (
-        sp,
-        _
-    ) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
 // Forward the Aspire-registered Cosmos client to a shared Mississippi keyed service key
 // Both Brooks and Snapshots use the same Cosmos account but different containers
 const string sharedCosmosKey = "spring-cosmos";
-builder.Services.AddKeyedSingleton(
-    sharedCosmosKey,
-    (
-        sp,
-        _
-    ) => sp.GetRequiredService<CosmosClient>());
+builder.Services.AddKeyedSingleton(sharedCosmosKey, (sp, _) => sp.GetRequiredService<CosmosClient>());
 
 // Add Inlet Silo services for projection subscription management
 builder.Services.AddInletSilo();
@@ -151,9 +143,7 @@ WebApplication app = builder.Build();
 // Health check endpoint for Aspire orchestration
 app.MapGet(
     "/health",
-    (
-        ISiloStatusOracle siloStatus
-    ) =>
+    (ISiloStatusOracle siloStatus) =>
     {
         SiloStatus status = siloStatus.CurrentStatus;
         return status == SiloStatus.Active

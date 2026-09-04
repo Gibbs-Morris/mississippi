@@ -25,39 +25,27 @@
                                           IsExecutingOrLoading="@IsExecutingOrLoadingFor(AccountAId)"
                                           IsAccountOpen="@IsAccountOpenFor(AccountAId)"
                                           HolderName="@panelA.HolderName"
-                                          HolderNameChanged="@((
-                                                                 string value
-                                                             ) => panelA.HolderName = value)"
+                                          HolderNameChanged="@(value => panelA.HolderName = value)"
                                           InitialDeposit="@panelA.InitialDeposit"
-                                          InitialDepositChanged="@((
-                                                                     decimal value
-                                                                 ) => panelA.InitialDeposit = value)"
+                                          InitialDepositChanged="@(value => panelA.InitialDeposit = value)"
                                           OnOpenAccount="@OpenAccountA"
                                           DepositAmount="@panelA.DepositAmount"
-                                          DepositAmountChanged="@((
-                                                                    decimal value
-                                                                ) => panelA.DepositAmount = value)"
+                                          DepositAmountChanged="@(value => panelA.DepositAmount = value)"
                                           OnDeposit="@DepositA"
                                           OnDepositSingle100="@DepositSingle100A"
                                           OnDepositBurst20="@DepositBurst20A"
                                           OnDepositBurst200="@DepositBurst200A"
                                           WithdrawAmount="@panelA.WithdrawAmount"
-                                          WithdrawAmountChanged="@((
-                                                                     decimal value
-                                                                 ) => panelA.WithdrawAmount = value)"
+                                          WithdrawAmountChanged="@(value => panelA.WithdrawAmount = value)"
                                           OnWithdraw="@WithdrawA"
                                           OnWithdrawSingle100="@WithdrawSingle100A"
                                           OnWithdrawBurst20="@WithdrawBurst20A"
                                           OnWithdrawBurst200="@WithdrawBurst200A"
                                           TransferDestinationAccountId="@panelA.TransferDestinationAccountId"
-                                          TransferDestinationAccountIdChanged="@((
-                                                                                   string value
-                                                                               ) => panelA.TransferDestinationAccountId = value)"
+                                          TransferDestinationAccountIdChanged="@(value => panelA.TransferDestinationAccountId = value)"
                                           IsTransferDestinationReadOnly="true"
                                           TransferAmount="@panelA.TransferAmount"
-                                          TransferAmountChanged="@((
-                                                                     decimal value
-                                                                 ) => panelA.TransferAmount = value)"
+                                          TransferAmountChanged="@(value => panelA.TransferAmount = value)"
                                           OnStartTransfer="@StartTransferA"
                                           TransferSagaId="@panelA.TransferSagaId"
                                           TransferStatusProjection="@TransferStatusProjectionA"
@@ -73,39 +61,27 @@
                                           IsExecutingOrLoading="@IsExecutingOrLoadingFor(AccountBId)"
                                           IsAccountOpen="@IsAccountOpenFor(AccountBId)"
                                           HolderName="@panelB.HolderName"
-                                          HolderNameChanged="@((
-                                                                 string value
-                                                             ) => panelB.HolderName = value)"
+                                          HolderNameChanged="@(value => panelB.HolderName = value)"
                                           InitialDeposit="@panelB.InitialDeposit"
-                                          InitialDepositChanged="@((
-                                                                     decimal value
-                                                                 ) => panelB.InitialDeposit = value)"
+                                          InitialDepositChanged="@(value => panelB.InitialDeposit = value)"
                                           OnOpenAccount="@OpenAccountB"
                                           DepositAmount="@panelB.DepositAmount"
-                                          DepositAmountChanged="@((
-                                                                    decimal value
-                                                                ) => panelB.DepositAmount = value)"
+                                          DepositAmountChanged="@(value => panelB.DepositAmount = value)"
                                           OnDeposit="@DepositB"
                                           OnDepositSingle100="@DepositSingle100B"
                                           OnDepositBurst20="@DepositBurst20B"
                                           OnDepositBurst200="@DepositBurst200B"
                                           WithdrawAmount="@panelB.WithdrawAmount"
-                                          WithdrawAmountChanged="@((
-                                                                     decimal value
-                                                                 ) => panelB.WithdrawAmount = value)"
+                                          WithdrawAmountChanged="@(value => panelB.WithdrawAmount = value)"
                                           OnWithdraw="@WithdrawB"
                                           OnWithdrawSingle100="@WithdrawSingle100B"
                                           OnWithdrawBurst20="@WithdrawBurst20B"
                                           OnWithdrawBurst200="@WithdrawBurst200B"
                                           TransferDestinationAccountId="@panelB.TransferDestinationAccountId"
-                                          TransferDestinationAccountIdChanged="@((
-                                                                                   string value
-                                                                               ) => panelB.TransferDestinationAccountId = value)"
+                                          TransferDestinationAccountIdChanged="@(value => panelB.TransferDestinationAccountId = value)"
                                           IsTransferDestinationReadOnly="true"
                                           TransferAmount="@panelB.TransferAmount"
-                                          TransferAmountChanged="@((
-                                                                     decimal value
-                                                                 ) => panelB.TransferAmount = value)"
+                                          TransferAmountChanged="@(value => panelB.TransferAmount = value)"
                                           OnStartTransfer="@StartTransferB"
                                           TransferSagaId="@panelB.TransferSagaId"
                                           TransferStatusProjection="@TransferStatusProjectionB"

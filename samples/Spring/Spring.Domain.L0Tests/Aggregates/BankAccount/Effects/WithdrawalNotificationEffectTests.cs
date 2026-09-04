@@ -174,10 +174,7 @@ public sealed class WithdrawalNotificationEffectTests
                 It.IsAny<decimal>(),
                 It.IsAny<CancellationToken>()))
             .Callback<string, decimal, decimal, CancellationToken>((
-                accountId,
-                _,
-                _,
-                _
+                accountId, _, _, _
             ) => capturedAccountId = accountId)
             .Returns(Task.CompletedTask);
         FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate> harness =
@@ -217,12 +214,8 @@ public sealed class WithdrawalNotificationEffectTests
                 It.IsAny<decimal>(),
                 It.IsAny<decimal>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<string, decimal, decimal, CancellationToken>((
-                _,
-                _,
-                balance,
-                _
-            ) => capturedRemainingBalance = balance)
+            .Callback<string, decimal, decimal, CancellationToken>((_, _, balance, _) =>
+                capturedRemainingBalance = balance)
             .Returns(Task.CompletedTask);
         FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate> harness =
             FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate>.Create()
@@ -261,12 +254,7 @@ public sealed class WithdrawalNotificationEffectTests
                 It.IsAny<decimal>(),
                 It.IsAny<decimal>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<string, decimal, decimal, CancellationToken>((
-                _,
-                _,
-                _,
-                token
-            ) => capturedToken = token)
+            .Callback<string, decimal, decimal, CancellationToken>((_, _, _, token) => capturedToken = token)
             .Returns(Task.CompletedTask);
         FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate> harness =
             FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate>.Create()

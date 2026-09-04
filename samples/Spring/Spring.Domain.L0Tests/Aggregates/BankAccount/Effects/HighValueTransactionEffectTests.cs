@@ -43,11 +43,7 @@ public sealed class HighValueTransactionEffectTests
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-123")
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = 15_000m,
@@ -80,11 +76,7 @@ public sealed class HighValueTransactionEffectTests
         EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate> harness =
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-123");
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = HighValueTransactionEffect.AmlThreshold,
@@ -115,11 +107,7 @@ public sealed class HighValueTransactionEffectTests
         EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate> harness =
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-123");
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = 5_000m,
@@ -154,11 +142,7 @@ public sealed class HighValueTransactionEffectTests
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-789")
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = justAboveThreshold,
@@ -192,11 +176,8 @@ public sealed class HighValueTransactionEffectTests
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-timestamp")
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger, fakeTimeProvider));
+        HighValueTransactionEffect effect =
+            harness.Build((factory, _, logger) => new(factory, logger, fakeTimeProvider));
         FundsDeposited eventData = new()
         {
             Amount = 100_000m,
@@ -228,11 +209,7 @@ public sealed class HighValueTransactionEffectTests
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey("acc-456")
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = 50_000m,
@@ -271,11 +248,7 @@ public sealed class HighValueTransactionEffectTests
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>(
                     "global",
                     OperationResult.Fail("QUEUE_FULL", "Investigation queue is full"));
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = 20_000m,

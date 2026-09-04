@@ -40,11 +40,7 @@ public static class HighValueTransactionEffectFixture
             EffectTestHarness<HighValueTransactionEffect, FundsDeposited, BankAccountAggregate>.Create()
                 .WithGrainKey(accountId)
                 .WithAggregateGrainResponse<TransactionInvestigationQueueAggregate>("global", OperationResult.Ok());
-        HighValueTransactionEffect effect = harness.Build((
-            factory,
-            _,
-            logger
-        ) => new(factory, logger));
+        HighValueTransactionEffect effect = harness.Build((factory, _, logger) => new(factory, logger));
         FundsDeposited eventData = new()
         {
             Amount = depositAmount,
