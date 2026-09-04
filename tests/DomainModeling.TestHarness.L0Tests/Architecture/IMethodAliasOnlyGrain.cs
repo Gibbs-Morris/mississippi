@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Orleans;
 
 
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.DomainModeling.TestHarness.L0Tests.Architecture;
 
 /// <summary>
 ///     Fixture used to prove that method-level aliases do not create type-level mismatches.

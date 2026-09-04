@@ -3,7 +3,7 @@ using System;
 using Orleans;
 
 
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.DomainModeling.TestHarness.L0Tests.Architecture;
 
 /// <summary>
 ///     Generic fixture used to validate generic alias handling.

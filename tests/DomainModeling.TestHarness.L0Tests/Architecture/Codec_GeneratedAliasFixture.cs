@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.DomainModeling.TestHarness.L0Tests.Architecture;
 
 /// <summary>
 ///     Fixture that should be filtered as generated based on its name.

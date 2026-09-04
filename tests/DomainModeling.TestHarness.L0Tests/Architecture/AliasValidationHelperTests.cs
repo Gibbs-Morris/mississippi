@@ -4,7 +4,7 @@ using System.Linq;
 using Mississippi.DomainModeling.TestHarness.Architecture;
 
 
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.DomainModeling.TestHarness.L0Tests.Architecture;
 
 /// <summary>
 ///     Tests the shared alias validation helper behavior.

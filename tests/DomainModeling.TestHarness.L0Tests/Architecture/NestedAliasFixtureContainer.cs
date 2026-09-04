@@ -1,7 +1,7 @@
 using Orleans;
 
 
-namespace Mississippi.Architecture.L0Tests;
+namespace Mississippi.DomainModeling.TestHarness.L0Tests.Architecture;
 
 /// <summary>
 ///     Container fixture used to validate nested type alias handling.

@@ -112,6 +112,9 @@
     <Project Path="tests\Tributary.Runtime.Storage.Abstractions.L0Tests\Tributary.Runtime.Storage.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Tributary.Runtime.L0Tests\Tributary.Runtime.L0Tests.csproj" />
   </Folder>
+  <Folder Name="/Tests/EventSourcing/Testing/">
+    <Project Path="tests\DomainModeling.TestHarness.L0Tests\DomainModeling.TestHarness.L0Tests.csproj" />
+  </Folder>
   <Folder Name="/Tests/Refraction/">
     <Project Path="tests\Refraction.Abstractions.L0Tests\Refraction.Abstractions.L0Tests.csproj" />
     <Project Path="tests\Refraction.Client.L0Tests\Refraction.Client.L0Tests.csproj" />
