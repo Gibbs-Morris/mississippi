@@ -36,15 +36,9 @@ public sealed class BrookPendingRecoveryTests
         RetryPolicy.Setup(value => value.ExecuteAsync(
                 It.IsAny<Func<Task<CursorStorageModel?>>>(),
                 It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<CursorStorageModel?>> operation,
-                CancellationToken _
-            ) => operation());
+            .Returns((Func<Task<CursorStorageModel?>> operation, CancellationToken _) => operation());
         RetryPolicy.Setup(value => value.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
-            .Returns((
-                Func<Task<bool>> operation,
-                CancellationToken _
-            ) => operation());
+            .Returns((Func<Task<bool>> operation, CancellationToken _) => operation());
     }
 
     private static BrookKey BrookId => new("test", "pending-recovery");
@@ -141,7 +135,7 @@ public sealed class BrookPendingRecoveryTests
     }
 
     /// <summary>
-    ///     Uses complete range evidence to commit a large pending operation or remove all its partial writes.
+    ///     Commits complete large ranges and retains incomplete ranges for later recovery.
     /// </summary>
     /// <param name="isComplete">Whether every intended event exists.</param>
     /// <returns>A task representing the test operation.</returns>
@@ -169,14 +163,24 @@ public sealed class BrookPendingRecoveryTests
             .Returns(Task.CompletedTask);
         Repository.Setup(value => value.DeletePendingCursorAsync(BrookId, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        BrookPosition result = await CreateService().GetOrRecoverCursorPositionAsync(BrookId, WriterLock.Object);
-        Assert.Equal(isComplete ? 10 : -1, result.Value);
+        if (isComplete)
+        {
+            BrookPosition result = await CreateService().GetOrRecoverCursorPositionAsync(BrookId, WriterLock.Object);
+            Assert.Equal(10, result.Value);
+        }
+        else
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                CreateService().GetOrRecoverCursorPositionAsync(BrookId, WriterLock.Object));
+        }
+
         Repository.Verify(
             value => value.CommitCursorPositionAsync(BrookId, 10, It.IsAny<CancellationToken>()),
             isComplete ? Times.Once : Times.Never);
         Repository.Verify(
             value => value.DeleteEventAsync(BrookId, It.IsAny<long>(), It.IsAny<CancellationToken>()),
-            Times.Exactly(isComplete ? 0 : 11));
+            Times.Never);
+        Repository.Verify(value => value.DeletePendingCursorAsync(BrookId, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>

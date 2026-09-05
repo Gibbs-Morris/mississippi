@@ -181,42 +181,8 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
             return new(targetPosition);
         }
 
-        await RollbackOrphanedOperationAsync(brookId, originalPosition, targetPosition, writerLock, cancellationToken);
-        return new(originalPosition);
-    }
-
-    private async Task RollbackOrphanedOperationAsync(
-        BrookKey brookId,
-        long originalPosition,
-        long targetPosition,
-        IDistributedLock writerLock,
-        CancellationToken cancellationToken
-    )
-    {
-        Logger.RollingBack(brookId, originalPosition, targetPosition);
-        long eventsDeleted = 0;
-        for (long pos = originalPosition + 1; pos <= targetPosition; pos++)
-        {
-            await writerLock.RenewAsync(cancellationToken);
-            Logger.DeletingOrphanedEvent(brookId, pos);
-            await RetryPolicy.ExecuteAsync(
-                async () =>
-                {
-                    await Repository.DeleteEventAsync(brookId, pos, cancellationToken);
-                    return true;
-                },
-                cancellationToken);
-            eventsDeleted++;
-        }
-
-        await writerLock.RenewAsync(cancellationToken);
-        await RetryPolicy.ExecuteAsync(
-            async () =>
-            {
-                await Repository.DeletePendingCursorAsync(brookId, cancellationToken);
-                return true;
-            },
-            cancellationToken);
-        Logger.RollbackCompleted(brookId, eventsDeleted);
+        // A missing event does not fence a create request still in flight after the old lease expired.
+        throw new InvalidOperationException(
+            $"Pending append for brook {brookId} is incomplete; its outcome remains unresolved and recovery metadata is retained.");
     }
 }
