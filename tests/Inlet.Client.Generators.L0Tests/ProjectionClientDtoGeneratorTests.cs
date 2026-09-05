@@ -224,9 +224,14 @@ public class ProjectionClientDtoGeneratorTests
                                         """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, projectionSource);
-
-        // Should generate main DTO and nested DTO
-        Assert.True(runResult.GeneratedTrees.Length >= 1);
+        string? nestedDtoSource = runResult.GeneratedTrees.FirstOrDefault(t =>
+                t.FilePath.Contains("TransactionRecordDto.g.cs", StringComparison.Ordinal))
+            ?.GetText()
+            .ToString();
+        Assert.NotNull(nestedDtoSource);
+        Assert.Contains("public sealed record TransactionRecordDto", nestedDtoSource, StringComparison.Ordinal);
+        Assert.Contains("Amount", nestedDtoSource, StringComparison.Ordinal);
+        Assert.Contains("Description", nestedDtoSource, StringComparison.Ordinal);
     }
 
     /// <summary>

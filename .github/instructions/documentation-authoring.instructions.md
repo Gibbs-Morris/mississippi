@@ -6,7 +6,7 @@ applyTo: 'docs/Docusaurus/docs/**/*.{md,mdx}'
 
 Governing thought: Mississippi documentation exists to help engineers make correct decisions and complete real work without invented behavior, blurred guarantees, or navigation debt.
 
-> Drift check: The public authoring model lives under `docs/Docusaurus/docs/contributing/`; update the Docusaurus guidance and matching Cursor rules with this file.
+> Drift check: The public authoring model lives under `docs/Docusaurus/docs/contributing/`; keep this instruction aligned with that Docusaurus guidance.
 
 ## Rules (RFC 2119)
 

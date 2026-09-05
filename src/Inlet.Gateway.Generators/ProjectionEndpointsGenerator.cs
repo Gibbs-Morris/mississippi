@@ -145,8 +145,8 @@ public sealed class ProjectionEndpointsGenerator : IIncrementalGenerator
         // Use GroupBy to avoid duplicate generation for the same DTO type name
         List<PropertyModel> nestedTypeProperties = projection.Model.Properties
             .Where(prop => prop.ElementTypeSymbol is INamedTypeSymbol &&
-                           prop.ElementDtoTypeName is not null &&
-                           !generatedNestedTypes.Contains(prop.ElementDtoTypeName!))
+                           prop.ElementDtoTypeName is string elementDtoTypeName &&
+                           !generatedNestedTypes.Contains(elementDtoTypeName))
             .GroupBy(prop => prop.ElementDtoTypeName)
             .Select(g => g.First())
             .ToList();

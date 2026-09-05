@@ -43,9 +43,9 @@ public sealed class BrooksRuntimeRegistrationsTests
         ServiceDescriptor? grainFactory = services.FirstOrDefault(d => d.ServiceType == typeof(IBrookGrainFactory));
         ServiceDescriptor? streamIdFactory = services.FirstOrDefault(d => d.ServiceType == typeof(IStreamIdFactory));
         Assert.NotNull(grainFactory);
-        Assert.Equal(ServiceLifetime.Singleton, grainFactory!.Lifetime);
+        Assert.Equal(ServiceLifetime.Singleton, grainFactory.Lifetime);
         Assert.NotNull(streamIdFactory);
-        Assert.Equal(ServiceLifetime.Singleton, streamIdFactory!.Lifetime);
+        Assert.Equal(ServiceLifetime.Singleton, streamIdFactory.Lifetime);
 
         // Build provider and resolve options to ensure the AddOptions registrations were applied.
         using ServiceProvider provider = services.BuildServiceProvider();

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Reflection;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
@@ -12,6 +14,7 @@ using Mississippi.DomainModeling.Runtime.Subscriptions;
 using Moq;
 
 using Orleans.Runtime;
+using Orleans.Streams;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests.Subscriptions;
@@ -68,6 +71,63 @@ public sealed class UxProjectionSubscriptionGrainTests
         // Assert
         ImmutableList<UxProjectionSubscriptionRequest> subscriptions = await grain.GetSubscriptionsAsync();
         Assert.Empty(subscriptions);
+    }
+
+    /// <summary>
+    ///     ClearAllAsync should unsubscribe each available stream handle once and clear subscriptions without handles.
+    /// </summary>
+    /// <returns>A <see cref="Task" /> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task ClearAllAsyncUnsubscribesAvailableHandlesOnlyOnce()
+    {
+        // Arrange
+        UxProjectionSubscriptionGrain grain = CreateGrain(ConnectionId);
+        UxProjectionSubscriptionRequest request = new()
+        {
+            ProjectionType = "UserProfile",
+            BrookType = "UserEvents",
+            EntityId = "user-123",
+            ClientSubscriptionId = "client-sub-1",
+        };
+        string firstSubscriptionId = await grain.SubscribeAsync(request);
+        await grain.SubscribeAsync(
+            request with
+            {
+                ClientSubscriptionId = "client-sub-2",
+            });
+        string lastSubscriptionId = await grain.SubscribeAsync(
+            request with
+            {
+                ClientSubscriptionId = "client-sub-3",
+            });
+        Mock<StreamSubscriptionHandle<BrookCursorMovedEvent>> firstHandle = new();
+        Mock<StreamSubscriptionHandle<BrookCursorMovedEvent>> lastHandle = new();
+        firstHandle.Setup(handle => handle.UnsubscribeAsync()).Returns(Task.CompletedTask);
+        lastHandle.Setup(handle => handle.UnsubscribeAsync()).Returns(Task.CompletedTask);
+
+        // Stream rehydration is not implemented yet, so seed handles in the existing subscriptions.
+        FieldInfo? subscriptionsField = typeof(UxProjectionSubscriptionGrain).GetField(
+            "subscriptions",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(subscriptionsField);
+        Dictionary<string, ActiveSubscription> activeSubscriptions =
+            Assert.IsType<Dictionary<string, ActiveSubscription>>(subscriptionsField.GetValue(grain));
+        activeSubscriptions[firstSubscriptionId].StreamHandle = firstHandle.Object;
+        activeSubscriptions[lastSubscriptionId].StreamHandle = lastHandle.Object;
+
+        // Act
+        await grain.ClearAllAsync();
+
+        // Assert
+        firstHandle.Verify(handle => handle.UnsubscribeAsync(), Times.Once);
+        lastHandle.Verify(handle => handle.UnsubscribeAsync(), Times.Once);
+        Assert.Empty(await grain.GetSubscriptionsAsync());
+
+        // Clearing again should not unsubscribe the removed handles a second time.
+        await grain.ClearAllAsync();
+        firstHandle.Verify(handle => handle.UnsubscribeAsync(), Times.Once);
+        lastHandle.Verify(handle => handle.UnsubscribeAsync(), Times.Once);
+        Assert.Empty(await grain.GetSubscriptionsAsync());
     }
 
     /// <summary>

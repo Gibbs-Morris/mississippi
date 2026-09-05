@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using Mississippi.Brooks.Abstractions;
 using Mississippi.Brooks.Abstractions.Streaming;
 using Mississippi.Brooks.Runtime.Cursor;
 using Mississippi.Brooks.Runtime.Storage.Abstractions;
 
 using Moq;
 
+using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 
 
@@ -79,5 +81,34 @@ public sealed class BrookCursorGrainUnitTests
 
         // Assert: no exception indicates deactivation path executed without error
         Assert.True(true);
+    }
+
+    /// <summary>
+    ///     Ensures a tokenless delivery does not clear the sequence watermark.
+    /// </summary>
+    /// <returns>
+    ///     A task that represents the asynchronous test operation.
+    /// </returns>
+    [Fact]
+    public async Task OnNextAsyncRetainsSequenceWatermarkAcrossNullToken()
+    {
+        // Arrange
+        Mock<IBrookStorageReader> storage = new();
+        Mock<IGrainContext> context = new();
+        Mock<ILogger<BrookCursorGrain>> logger = new();
+        IOptions<BrookProviderOptions> options = Options.Create(new BrookProviderOptions());
+        Mock<IStreamIdFactory> streamIdFactory = new();
+        BrookCursorGrain sut = new(storage.Object, context.Object, logger.Object, options, streamIdFactory.Object);
+        EventSequenceToken sequenceToken = new(10);
+        EventSequenceToken olderSequenceToken = new(5);
+
+        // Act
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(10)), sequenceToken);
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(11)));
+        await sut.OnNextAsync(new("TEST.BROOK:entity-1", new(12)), olderSequenceToken);
+        BrookPosition position = await sut.GetLatestPositionAsync();
+
+        // Assert
+        Assert.Equal(10, position.Value);
     }
 }

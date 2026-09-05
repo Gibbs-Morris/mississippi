@@ -203,7 +203,6 @@ config-agentic:
       - any-glob-to-any-file:
           - ".github/instructions/**"
           - ".github/agents/**"
-          - ".cursor/**"
           - "AGENTS.md"
 
 # Root build configuration (high-impact, review carefully)

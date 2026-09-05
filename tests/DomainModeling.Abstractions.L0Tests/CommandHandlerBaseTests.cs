@@ -56,7 +56,7 @@ public sealed class CommandHandlerBaseTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Single(result.Value!);
+        Assert.Single(result.Value);
         Assert.Equal("Handled: test-value", result.Value[0]);
     }
 
@@ -88,7 +88,7 @@ public sealed class CommandHandlerBaseTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Single(result.Value!);
+        Assert.Single(result.Value);
         Assert.Equal("Handled: no-state", result.Value[0]);
     }
 
@@ -125,7 +125,7 @@ public sealed class CommandHandlerBaseTests
         // Assert
         Assert.True(handled);
         Assert.True(result.Success);
-        Assert.Equal("Handled: matching", result.Value![0]);
+        Assert.Equal("Handled: matching", result.Value[0]);
     }
 
     /// <summary>

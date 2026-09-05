@@ -195,7 +195,7 @@ public static class GeneratedApiAuthorizationAnalysis
         bool hasEmptyToken = tokens.Any(token => string.IsNullOrWhiteSpace(token));
         string normalized = string.Join(
             ",",
-            tokens.Where(token => !string.IsNullOrWhiteSpace(token)).Select(token => token!.Trim()));
+            tokens.Where(token => !string.IsNullOrWhiteSpace(token)).Select(token => token.Trim()));
         if (hasEmptyToken)
         {
             diagnostics.Add(Diagnostic.Create(MalformedListMetadata, GetLocation(attribute), fieldName));

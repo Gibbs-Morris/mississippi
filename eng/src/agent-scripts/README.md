@@ -40,7 +40,6 @@
 | **summarize-mutation-survivors.ps1** | Parse the latest Stryker run (or rerun it) and sync survivor tasks into `.scratchpad/tasks`. | `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -GenerateTasks` |
 | **final-build-solutions.ps1** | Build both solutions with `--warnaserror` as the final zero-warning gate. | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` |
 | **orchestrate-solutions.ps1** | Run the full Mississippi + Samples pipeline (build → test → mutate → summarize → cleanup → final build) and keep `.scratchpad/tasks` refreshed. | `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1` |
-| **sync-instructions-to-mdc.ps1** | Mirror `.github/instructions/*.instructions.md` into `.cursor/rules/*.mdc` with sync metadata. | `pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1` |
 
 ### Scratchpad task helpers
 
@@ -104,16 +103,6 @@ These folders are git-ignored but persist across runs for inspection or archivin
 - The orchestrator mirrors the GitHub Actions pipeline—use it locally before opening a PR.
 
 ---
-
-## Syncing instruction files to Cursor rules (`.mdc`)
-
-When changing `.github/instructions/*.instructions.md`, run the helper to keep Cursor rules in sync:
-
-```pwsh
-pwsh ./eng/src/agent-scripts/sync-instructions-to-mdc.ps1
-```
-
-If the script is unavailable, follow the manual workflow in the Instruction ↔ Cursor MDC Sync Policy and replicate the sync metadata by hand.
 
 ## `test-project-quality.ps1`
 

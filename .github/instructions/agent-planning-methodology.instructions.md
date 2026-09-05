@@ -89,4 +89,3 @@ At finalization, all non-root-required artifacts move to `audit/` with `audit-` 
 
 - Instruction authoring template: `.github/instructions/authoring.instructions.md`
 - RFC keywords: `.github/instructions/rfc2119.instructions.md`
-- Sync policy: `.github/instructions/instruction-mdc-sync.instructions.md`

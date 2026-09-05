@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 
+using FluentAssertions.Execution;
+
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
@@ -9,6 +11,8 @@ using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Effects;
 using MississippiSamples.Spring.Domain.Aggregates.BankAccount.Events;
 using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue;
 using MississippiSamples.Spring.Domain.Aggregates.TransactionInvestigationQueue.Commands;
+
+using Xunit.Sdk;
 
 
 namespace MississippiSamples.Spring.Domain.L0Tests.Aggregates.BankAccount.Effects;
@@ -97,6 +101,7 @@ public sealed class HighValueTransactionEffectTests
 
         // Assert
         harness.DispatchedCommands.ShouldHaveNoDispatches();
+        Assert.Throws<XunitException>(() => harness.ToResult().ShouldHaveDispatchedTo<BankAccountAggregate>());
     }
 
     /// <summary>
@@ -131,6 +136,9 @@ public sealed class HighValueTransactionEffectTests
 
         // Assert
         harness.DispatchedCommands.ShouldHaveNoDispatches();
+        using AssertionScope scope = new();
+        harness.DispatchedCommands.ShouldHaveDispatchedTo<BankAccountAggregate>();
+        Assert.Single(scope.Discard());
     }
 
     /// <summary>
@@ -243,6 +251,10 @@ public sealed class HighValueTransactionEffectTests
         (Type AggregateType, string EntityId, object Command) dispatch =
             harness.DispatchedCommands.ShouldHaveDispatchedTo<TransactionInvestigationQueueAggregate>("global");
         dispatch.EntityId.Should().Be("global");
+        dispatch.Command.Should().BeSameAs(harness.DispatchedCommands[0].Command);
+        Action wrongEntity = () => harness.DispatchedCommands
+            .ShouldHaveDispatchedTo<TransactionInvestigationQueueAggregate>("other");
+        wrongEntity.Should().Throw<XunitException>();
     }
 
     /// <summary>
