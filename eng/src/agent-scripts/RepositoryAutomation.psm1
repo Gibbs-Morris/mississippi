@@ -567,9 +567,15 @@ function Invoke-StrykerMutationTestPerProject {
         $arguments += @('--concurrency', '1')
     }
 
+    $processError = $null
     Push-Location -LiteralPath $sourceProjectDirectory
     try {
-        Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $arguments -WorkingDirectory $sourceProjectDirectory -ErrorMessage "Stryker mutation testing failed for project $sourceProjectName. Reports: $projectOutputPath." -SuppressCommandEcho | Out-Host
+        try {
+            Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $arguments -WorkingDirectory $sourceProjectDirectory -ErrorMessage "Stryker mutation testing failed for project $sourceProjectName. Reports: $projectOutputPath." -SuppressCommandEcho | Out-Host
+        }
+        catch {
+            $processError = $_
+        }
     }
     finally {
         Pop-Location
@@ -577,6 +583,9 @@ function Invoke-StrykerMutationTestPerProject {
 
     $reports = @(Get-ChildItem -LiteralPath $projectOutputPath -Recurse -File -Filter 'mutation-report.json')
     if ($reports.Count -ne 1) {
+        if ($null -ne $processError) {
+            throw $processError
+        }
         throw "Expected one mutation report for project $sourceProjectName; found $($reports.Count). Reports: $projectOutputPath"
     }
 
@@ -584,6 +593,14 @@ function Invoke-StrykerMutationTestPerProject {
     Write-Host "  Mutation report: $($report.ReportPath)"
     if ($null -eq $report.Score) {
         Write-Host '  No applicable mutants were generated for this source project.'
+    }
+
+    if ($null -ne $processError) {
+        $message = "Stryker mutation testing failed for project $sourceProjectName. Reports: $($report.ReportPath). $($processError.Exception.Message)"
+        $failure = [System.Management.Automation.RuntimeException]::new($message)
+        $failure.Data['ReportPath'] = $report.ReportPath
+        $failure.Data['Output'] = $projectOutputPath
+        throw $failure
     }
 
     return [pscustomobject]@{
@@ -772,9 +789,14 @@ function Invoke-StrykerMutationTest {
         }
         catch {
             Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($source)) - $($_.Exception.Message)"
+            $reportPath = if ($null -ne $_.Exception.Data) { [string]$_.Exception.Data['ReportPath'] } else { $null }
+            $outputPath = if ($null -ne $_.Exception.Data) { [string]$_.Exception.Data['Output'] } else { $null }
             $projectResults.Add([pscustomobject]@{
                     Project       = $source
                     SourceProject = $source
+                    Output        = $outputPath
+                    ReportPath    = $reportPath
+                    Status        = 'Failed'
                     Success       = $false
                     Error         = $_.Exception.Message
                 })
@@ -785,11 +807,11 @@ function Invoke-StrykerMutationTest {
     $projectResultsPath = Join-Path $outputFullPath 'project-results.json'
     $projectResults | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $projectResultsPath
 
-    $successfulReports = @($projectResults | Where-Object {
-            $_.Success -and $_.PSObject.Properties.Name -contains 'ReportPath' -and $_.ReportPath
-        } | Select-Object -ExpandProperty ReportPath)
-    if ($successfulReports.Count -gt 0) {
-        $aggregatePath = Export-MutationRunReport -OutputPath $outputFullPath -ReportPaths $successfulReports
+    $reportPaths = @($projectResults | Where-Object {
+            $_.PSObject.Properties.Name -contains 'ReportPath' -and $_.ReportPath
+        } | Select-Object -ExpandProperty ReportPath | Sort-Object -Unique)
+    if ($reportPaths.Count -gt 0) {
+        $aggregatePath = Export-MutationRunReport -OutputPath $outputFullPath -ReportPaths $reportPaths
         Write-Host "Aggregated mutation report: $aggregatePath" -ForegroundColor ([ConsoleColor]::Green)
     }
 
