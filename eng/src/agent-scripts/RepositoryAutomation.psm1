@@ -742,10 +742,6 @@ function Invoke-StrykerMutationTest {
         Write-Host "Aggregated mutation report: $aggregatePath" -ForegroundColor ([ConsoleColor]::Green)
     }
 
-    if ($executedProjects -eq 0) {
-        throw "No mutation targets with authored source were found in '$($resolvedSolution.Path)'."
-    }
-
     $failedProjects = @($projectResults | Where-Object { -not $_.Success })
     if ($failedProjects.Count -gt 0) {
         Write-Host "WARNING: $($failedProjects.Count) mutation mapping/run(s) failed" -ForegroundColor ([ConsoleColor]::Yellow)
@@ -753,6 +749,10 @@ function Invoke-StrykerMutationTest {
             Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($failed.Project)): $($failed.Error)" -ForegroundColor ([ConsoleColor]::Yellow)
         }
         throw "Stryker mutation testing failed for $($failedProjects.Count) project(s). Reports: $outputFullPath"
+    }
+
+    if ($executedProjects -eq 0) {
+        throw "No mutation targets with authored source were found in '$($resolvedSolution.Path)'."
     }
 
     return $outputFullPath
