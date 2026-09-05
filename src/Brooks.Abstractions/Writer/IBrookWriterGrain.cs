@@ -27,10 +27,25 @@ public interface IBrookWriterGrain : IGrainWithStringKey
     /// <param name="expectedCursorPosition">Optional expected cursor position for optimistic concurrency.</param>
     /// <param name="cancellationToken">Token to observe cancellation requests.</param>
     /// <returns>The new brook cursor position after appending events.</returns>
+    /// <exception cref="BrookCursorPublicationException">
+    ///     The events were committed, but cursor publication failed. Retry publication without appending again.
+    /// </exception>
     [Alias("AppendEventsAsync")]
     Task<BrookPosition> AppendEventsAsync(
         ImmutableArray<BrookEvent> events,
         BrookPosition? expectedCursorPosition = null,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    ///     Publishes a confirmed committed cursor position without appending events.
+    /// </summary>
+    /// <param name="position">The position confirmed by append or authoritative storage recovery.</param>
+    /// <param name="cancellationToken">Token to observe before publishing the cursor update.</param>
+    /// <returns>A task representing publication of the cursor update.</returns>
+    [Alias("PublishCursorAsync")]
+    Task PublishCursorAsync(
+        BrookPosition position,
         CancellationToken cancellationToken = default
     );
 }

@@ -76,6 +76,24 @@ internal static partial class BrookWriterGrainLoggerExtensions
     );
 
     /// <summary>
+    ///     Logs a cursor publication failure after an append has committed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="exception">The publication failure.</param>
+    /// <param name="brookKey">The brook key.</param>
+    /// <param name="position">The committed cursor position.</param>
+    [LoggerMessage(
+        EventId = 7,
+        Level = LogLevel.Error,
+        Message = "Events committed to brook '{BrookKey}' at position {Position}, but cursor publication failed")]
+    public static partial void CursorPublicationFailed(
+        this ILogger logger,
+        Exception exception,
+        BrookKey brookKey,
+        long position
+    );
+
+    /// <summary>
     ///     Logs when events have been successfully appended to the brook.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
