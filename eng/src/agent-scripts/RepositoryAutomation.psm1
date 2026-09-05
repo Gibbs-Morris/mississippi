@@ -470,19 +470,6 @@ function Test-MutationSourceProject {
     ).Count -gt 0
 }
 
-function Test-MutationMutant {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][object]$Mutant,
-        [Parameter(Mandatory)][string[]]$ValidStatuses
-    )
-
-    if ($Mutant -isnot [System.Collections.IDictionary]) { return $false }
-    if (-not $Mutant.Contains('status')) { return $false }
-    if ([string]::IsNullOrWhiteSpace([string]$Mutant.status)) { return $false }
-    return $Mutant.status -in $ValidStatuses
-}
-
 function Read-MutationReport {
     [CmdletBinding()]
     param(
@@ -512,7 +499,10 @@ function Read-MutationReport {
         }
 
         foreach ($mutant in @($file.Value.mutants)) {
-            if (-not (Test-MutationMutant -Mutant $mutant -ValidStatuses $validStatuses)) {
+            if ($mutant -isnot [System.Collections.IDictionary] -or
+                -not $mutant.Contains('status') -or
+                [string]::IsNullOrWhiteSpace([string]$mutant.status) -or
+                $mutant.status -notin $validStatuses) {
                 throw "Stryker report contains an incomplete or invalid mutant: $ReportPath"
             }
         }
@@ -538,95 +528,6 @@ function Read-MutationReport {
     }
 }
 
-function Get-StrykerMutationArguments {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$SourceProject,
-        [Parameter(Mandatory)][string[]]$TestProjects,
-        [Parameter(Mandatory)][string]$ConfigPath,
-        [Parameter(Mandatory)][string]$OutputPath,
-        [Parameter(Mandatory)][string]$Configuration
-    )
-
-    $arguments = @(
-        'stryker',
-        '--project', [System.IO.Path]::GetFileName($SourceProject),
-        '--config-file', $ConfigPath,
-        '--configuration', $Configuration,
-        '--output', $OutputPath,
-        '--msbuild-path', (Get-DotnetMsBuildPath -ProjectPath $SourceProject),
-        '--disable-bail'
-    )
-    foreach ($testProject in ($TestProjects | Sort-Object -Unique)) {
-        $arguments += @('--test-project', $testProject)
-    }
-    if ($TestProjects -match '\.L[2-4]Tests\.csproj$') {
-        # Integration fixtures can share localhost ports across test processes.
-        $arguments += @('--concurrency', '1')
-    }
-
-    return $arguments
-}
-
-function Invoke-StrykerProcess {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$WorkingDirectory,
-        [Parameter(Mandatory)][string[]]$Arguments,
-        [Parameter(Mandatory)][string]$SourceProjectName,
-        [Parameter(Mandatory)][string]$OutputPath
-    )
-
-    $processError = $null
-    Push-Location -LiteralPath $WorkingDirectory
-    try {
-        try {
-            Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $Arguments -WorkingDirectory $WorkingDirectory -ErrorMessage "Stryker mutation testing failed for project $SourceProjectName. Reports: $OutputPath." -SuppressCommandEcho | Out-Host
-        }
-        catch {
-            $processError = $_
-        }
-    }
-    finally {
-        Pop-Location
-    }
-
-    return $processError
-}
-
-function Get-StrykerMutationReport {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$OutputPath,
-        [Parameter(Mandatory)][string]$SourceProjectName,
-        [object]$ProcessError
-    )
-
-    $reports = @(Get-ChildItem -LiteralPath $OutputPath -Recurse -File -Filter 'mutation-report.json')
-    if ($reports.Count -ne 1) {
-        if ($null -ne $ProcessError) {
-            throw $ProcessError
-        }
-        throw "Expected one mutation report for project $SourceProjectName; found $($reports.Count). Reports: $OutputPath"
-    }
-
-    $report = Read-MutationReport -ReportPath $reports[0].FullName
-    Write-Host "  Mutation report: $($report.ReportPath)"
-    if ($null -eq $report.Score) {
-        Write-Host '  No applicable mutants were generated for this source project.'
-    }
-
-    if ($null -ne $ProcessError) {
-        $message = "Stryker mutation testing failed for project $SourceProjectName. Reports: $($report.ReportPath). $($ProcessError.Exception.Message)"
-        $failure = [System.Management.Automation.RuntimeException]::new($message)
-        $failure.Data['ReportPath'] = $report.ReportPath
-        $failure.Data['Output'] = $OutputPath
-        throw $failure
-    }
-
-    return $report
-}
-
 function Invoke-StrykerMutationTestPerProject {
     [CmdletBinding()]
     param(
@@ -649,9 +550,58 @@ function Invoke-StrykerMutationTestPerProject {
     $projectOutputPath = New-AutomationRunDirectory -Root (Join-Path $outputRoot $sourceProjectName)
 
     Write-Host "  Running Stryker for project: $sourceProjectName" -ForegroundColor ([ConsoleColor]::Cyan)
-    $arguments = Get-StrykerMutationArguments -SourceProject $sourceProject -TestProjects $TestProjects -ConfigPath $config -OutputPath $projectOutputPath -Configuration $Configuration
-    $processError = Invoke-StrykerProcess -WorkingDirectory $sourceProjectDirectory -Arguments $arguments -SourceProjectName $sourceProjectName -OutputPath $projectOutputPath
-    $report = Get-StrykerMutationReport -OutputPath $projectOutputPath -SourceProjectName $sourceProjectName -ProcessError $processError
+    $arguments = @(
+        'stryker',
+        '--project', [System.IO.Path]::GetFileName($sourceProject),
+        '--config-file', $config,
+        '--configuration', $Configuration,
+        '--output', $projectOutputPath,
+        '--msbuild-path', (Get-DotnetMsBuildPath -ProjectPath $sourceProject),
+        '--disable-bail'
+    )
+    foreach ($testProject in ($TestProjects | Sort-Object -Unique)) {
+        $arguments += @('--test-project', $testProject)
+    }
+    if ($TestProjects -match '\.L[2-4]Tests\.csproj$') {
+        # Integration fixtures can share localhost ports across test processes.
+        $arguments += @('--concurrency', '1')
+    }
+
+    $processError = $null
+    Push-Location -LiteralPath $sourceProjectDirectory
+    try {
+        try {
+            Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $arguments -WorkingDirectory $sourceProjectDirectory -ErrorMessage "Stryker mutation testing failed for project $sourceProjectName. Reports: $projectOutputPath." -SuppressCommandEcho | Out-Host
+        }
+        catch {
+            $processError = $_
+        }
+    }
+    finally {
+        Pop-Location
+    }
+
+    $reports = @(Get-ChildItem -LiteralPath $projectOutputPath -Recurse -File -Filter 'mutation-report.json')
+    if ($reports.Count -ne 1) {
+        if ($null -ne $processError) {
+            throw $processError
+        }
+        throw "Expected one mutation report for project $sourceProjectName; found $($reports.Count). Reports: $projectOutputPath"
+    }
+
+    $report = Read-MutationReport -ReportPath $reports[0].FullName
+    Write-Host "  Mutation report: $($report.ReportPath)"
+    if ($null -eq $report.Score) {
+        Write-Host '  No applicable mutants were generated for this source project.'
+    }
+
+    if ($null -ne $processError) {
+        $message = "Stryker mutation testing failed for project $sourceProjectName. Reports: $($report.ReportPath). $($processError.Exception.Message)"
+        $failure = [System.Management.Automation.RuntimeException]::new($message)
+        $failure.Data['ReportPath'] = $report.ReportPath
+        $failure.Data['Output'] = $projectOutputPath
+        throw $failure
+    }
 
     return [pscustomobject]@{
         Project       = $sourceProject
@@ -660,65 +610,6 @@ function Invoke-StrykerMutationTestPerProject {
         ReportPath    = $report.ReportPath
         Score         = $report.Score
         Success       = $true
-    }
-}
-
-function Merge-MutationReportProperties {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][System.Collections.IDictionary]$MergedReport,
-        [Parameter(Mandatory)][System.Collections.IDictionary]$Report
-    )
-
-    foreach ($property in $Report.Keys) {
-        if ($property -notin @('files', 'testFiles') -and -not $MergedReport.Contains($property)) {
-            $MergedReport[$property] = $Report[$property]
-        }
-    }
-}
-
-function Merge-MutationReportFiles {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][System.Collections.IDictionary]$MergedFiles,
-        [Parameter(Mandatory)][System.Collections.IDictionary]$ReportFiles,
-        [Parameter(Mandatory)][int]$ReportIndex
-    )
-
-    foreach ($file in @($ReportFiles.GetEnumerator() | Sort-Object Key)) {
-        $mutants = @($file.Value.mutants)
-        foreach ($mutant in $mutants) {
-            if ($mutant -is [System.Collections.IDictionary] -and $mutant.Contains('id')) {
-                $mutant.id = "$ReportIndex/$($mutant.id)"
-            }
-        }
-
-        if (-not $MergedFiles.Contains($file.Key)) {
-            $MergedFiles[$file.Key] = $file.Value
-        }
-        else {
-            $MergedFiles[$file.Key].mutants = @($MergedFiles[$file.Key].mutants) + $mutants
-        }
-    }
-}
-
-function Merge-MutationTestFiles {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][System.Collections.IDictionary]$MergedTestFiles,
-        [Parameter(Mandatory)][System.Collections.IDictionary]$ReportTestFiles
-    )
-
-    foreach ($file in @($ReportTestFiles.GetEnumerator() | Sort-Object Key)) {
-        if (-not $MergedTestFiles.Contains($file.Key)) {
-            $MergedTestFiles[$file.Key] = $file.Value
-        }
-        elseif ($file.Value.Contains('tests')) {
-            $MergedTestFiles[$file.Key].tests = @(
-                @($MergedTestFiles[$file.Key].tests) + @($file.Value.tests) |
-                    Sort-Object id -Unique
-            )
-        }
     }
 }
 
@@ -739,11 +630,40 @@ function Export-MutationRunReport {
 
     foreach ($reportPath in ($ReportPaths | Sort-Object -Unique)) {
         $report = (Read-MutationReport -ReportPath $reportPath).Report
-        Merge-MutationReportProperties -MergedReport $mergedReport -Report $report
-        Merge-MutationReportFiles -MergedFiles $mergedReport.files -ReportFiles $report.files -ReportIndex $reportIndex
+        foreach ($property in $report.Keys) {
+            if ($property -notin @('files', 'testFiles') -and -not $mergedReport.Contains($property)) {
+                $mergedReport[$property] = $report[$property]
+            }
+        }
+
+        foreach ($file in @($report.files.GetEnumerator() | Sort-Object Key)) {
+            $mutants = @($file.Value.mutants)
+            foreach ($mutant in $mutants) {
+                if ($mutant -is [System.Collections.IDictionary] -and $mutant.Contains('id')) {
+                    $mutant.id = "$reportIndex/$($mutant.id)"
+                }
+            }
+
+            if (-not $mergedReport.files.Contains($file.Key)) {
+                $mergedReport.files[$file.Key] = $file.Value
+            }
+            else {
+                $mergedReport.files[$file.Key].mutants = @($mergedReport.files[$file.Key].mutants) + $mutants
+            }
+        }
 
         if ($report.Contains('testFiles')) {
-            Merge-MutationTestFiles -MergedTestFiles $mergedReport.testFiles -ReportTestFiles $report.testFiles
+            foreach ($file in @($report.testFiles.GetEnumerator() | Sort-Object Key)) {
+                if (-not $mergedReport.testFiles.Contains($file.Key)) {
+                    $mergedReport.testFiles[$file.Key] = $file.Value
+                }
+                elseif ($file.Value.Contains('tests')) {
+                    $mergedReport.testFiles[$file.Key].tests = @(
+                        @($mergedReport.testFiles[$file.Key].tests) + @($file.Value.tests) |
+                            Sort-Object id -Unique
+                    )
+                }
+            }
         }
         $reportIndex++
     }
