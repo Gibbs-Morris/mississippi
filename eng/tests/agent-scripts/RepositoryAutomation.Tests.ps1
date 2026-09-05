@@ -77,7 +77,7 @@ InModuleScope RepositoryAutomation {
             '// source' | Set-Content -LiteralPath (Join-Path (Split-Path -Parent $sourceProject) 'Example.cs')
             $script:testProject = New-TestProject -Root $testRepository -RelativePath 'tests/Example.L0Tests/Example.L0Tests.csproj' -References @('../../src/Example/Example.csproj')
             $script:solutionPath = Join-Path $testRepository 'mississippi.slnx'
-            '<Solution><Project Path="tests/Example.L0Tests/Example.L0Tests.csproj" /></Solution>' |
+            '<Solution><Project Path="src/Example/Example.csproj" /><Project Path="tests/Example.L0Tests/Example.L0Tests.csproj" /></Solution>' |
                 Set-Content -LiteralPath $solutionPath
         }
 
@@ -146,6 +146,28 @@ InModuleScope RepositoryAutomation {
 
             { Invoke-StrykerMutationTest -SolutionPath $solutionPath -OutputPath (Join-Path $testRepository 'results') } |
                 Should -Throw '*Stryker mutation testing failed*'
+        }
+
+        It 'reports authored solution sources that have no mutation test project' {
+            $orphanProject = New-TestProject -Root $testRepository -RelativePath 'src/Orphan/Orphan.csproj'
+            '// source' | Set-Content -LiteralPath (Join-Path (Split-Path -Parent $orphanProject) 'Orphan.cs')
+            '<Solution><Project Path="src/Example/Example.csproj" /><Project Path="src/Orphan/Orphan.csproj" /><Project Path="tests/Example.L0Tests/Example.L0Tests.csproj" /></Solution>' |
+                Set-Content -LiteralPath $solutionPath
+            Mock Invoke-StrykerMutationTestPerProject {
+                $reportPath = Write-TestMutationReport -OutputPath (Join-Path $OutputPath 'Example')
+                [pscustomobject]@{
+                    Project    = $ProjectPath
+                    ReportPath = $reportPath
+                    Success    = $true
+                }
+            }
+
+            { Invoke-StrykerMutationTest -SolutionPath $solutionPath -OutputPath (Join-Path $testRepository 'results') } |
+                Should -Throw '*Stryker mutation testing failed*'
+
+            $results = Get-Content -LiteralPath (Join-Path $testRepository 'results/project-results.json') -Raw | ConvertFrom-Json
+            @($results | Where-Object { $_.Project -eq $orphanProject }).Status | Should -Be 'MissingTests'
+            Should -Invoke Invoke-StrykerMutationTestPerProject -Times 1 -Exactly
         }
 
         It 'writes the aggregate report consumed by the survivor summarizer' {
