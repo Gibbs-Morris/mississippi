@@ -1,5 +1,4 @@
 ---
-id: concepts-design-goals-and-trade-offs
 title: Design Goals and Trade-Offs
 sidebar_label: Design Goals and Trade-Offs
 sidebar_position: 6
@@ -10,7 +9,9 @@ description: Explain what Mississippi optimizes for, how source generation and t
 
 ## Overview
 
-Mississippi is intentionally opinionated because it is optimizing for leverage, consistency, and change safety rather than for unlimited architectural freedom.
+Mississippi is intentionally opinionated. It uses conventions, source
+generators, shared runtime components, and test harnesses to reduce repeated
+integration work rather than maximize architectural freedom.
 
 The framework is designed to reduce the non-domain work that usually makes event-sourced, Orleans-based systems feel expensive to build and maintain. Conventions, source generators, shared runtime building blocks, and focused test harnesses work together so teams spend more time on business behavior and less time on wiring, duplicated DTOs, endpoint scaffolding, and repetitive test setup.
 
@@ -25,7 +26,10 @@ Teams building this style of system often repeat the same non-domain work:
 
 Testing is a large part of that cost. In a typical Orleans application, validating domain behavior often means spinning up a `TestCluster`, mocking grain infrastructure, or mixing business-rule assertions with transport and hosting setup. Mississippi tries to separate those concerns so domain correctness can be exercised closer to the business model instead of requiring full runtime setup for every test.
 
-That matters technically, but it also matters commercially. When teams spend less time recreating transport, registration, and test scaffolding, they can spend more time on product rules, workflow correctness, and delivery speed.
+This separation lets domain tests focus on product rules while transport and
+hosting behavior are verified at the appropriate integration level. The
+repository does not currently quantify the resulting productivity or change
+cost.
 
 ## Core Idea
 
@@ -50,7 +54,7 @@ flowchart TB
     G[Design goals] --> D[Explicit domain types]
     D --> GEN[Generated and shared infrastructure]
     GEN --> T[Test harnesses and delivery surfaces]
-    T --> O[Lower ceremony and safer change]
+    T --> O[Less repeated integration code]
 ```
 
 The repository evidence shows Mississippi pursuing that goal through three main mechanisms.
@@ -73,14 +77,17 @@ Mississippi is optimized for a specific style of engineering work.
 - **Fast domain-level testing**. Aggregate, reducer, effect, and store harnesses let teams test core logic in memory using the same concepts the production runtime uses.
 - **Lower ceremony for complex systems**. Generation and shared runtime building blocks reduce the amount of repetitive code teams would otherwise write by hand.
 
-## Why That Matters To Teams And Businesses
+## Engineering Implications
 
-These goals are not just coding preferences. They change the economics of building and evolving a stateful platform.
+These mechanisms affect where implementation and maintenance work occurs.
 
-- Teams can spend more time on workflow and rules, and less time on mirrored transport code.
-- The architecture stays more coherent as more aggregates, projections, and clients are added.
-- Testing stays closer to the business model, which makes change safer and regressions easier to catch.
-- The framework is better suited to systems where correctness, traceability, and live visibility matter more than raw architectural looseness.
+- Generated surfaces reduce the number of mirrored transport types maintained
+  by hand.
+- Shared conventions keep aggregates, projections, and generated clients in a
+  recognizable structure.
+- Focused harnesses test domain behavior separately from distributed hosting.
+- The model introduces additional concepts and operational responsibilities in
+  exchange for that structure.
 
 ## Guarantees
 
@@ -102,6 +109,21 @@ These goals are not just coding preferences. They change the economics of buildi
 - Domain tests become simpler when handlers, reducers, effects, and feature-state transitions stay narrow. That same narrowness means business rules are often spread across several small types instead of one large service.
 - The framework is strongest when teams accept the full shape of the model. Teams looking for a thin abstraction over conventional CRUD or ad hoc service layers may find Mississippi too structured.
 
+## When A Simpler Model Is A Better Fit
+
+A conventional application model is usually the better starting point when:
+
+- the application mainly creates, reads, updates, and deletes independent data
+- historical decisions and replay are not product or operational requirements
+- workflows complete in one request without durable coordination
+- a single current-state view is sufficient
+- eventual consistency between writes and projections is unacceptable
+- the team does not want to operate Orleans and event-sourced persistence
+
+Mississippi should earn its additional model through the problem being solved.
+Source generation reduces repeated wiring, but it does not remove the runtime
+and design complexity of distributed, event-sourced systems.
+
 ## Why This Model Fits AI-Assisted Engineering
 
 This section is a reasoned interpretation of the repository shape, not a runtime guarantee.
@@ -112,15 +134,16 @@ Mississippi is well positioned for AI-assisted development because it narrows ho
 - gateway and client scaffolding are generated from attributes instead of manually mirrored
 - tests can focus on business rules with lightweight harnesses instead of full-host setup
 
-That does not make the framework "AI-native" in a magical sense. It means the framework chooses explicit patterns that are easier for both humans and tools to extend consistently. In business terms, that makes AI assistance more likely to increase delivery speed without creating as much structural drift in the surrounding platform.
+That does not make the framework automatically correct or establish an
+AI-productivity advantage. The narrower structure may reduce the number of
+integration patterns a coding agent must invent, but that outcome has not been
+benchmarked.
 
 ## Related Tasks and Reference
 
-- Use [Architectural Model](./architectural-model.md) for the full subsystem picture.
-- Use [Write Model](./write-model.md) and [Read Models and Client Sync](./read-models-and-client-sync.md) for runtime behavior.
-- Use [Why Mississippi](../why-mississippi/index.md) when the question is primarily about executive value or platform strategy.
-- Use [Mississippi vs CRUD](../why-mississippi/mississippi-vs-crud.md) when the comparison is with a more conventional application model.
-- Use [Samples](../samples/index.md) when you want to see the generated and handwritten pieces together in one application.
+- Use [Architectural Model](architectural-model.md) for the full subsystem picture.
+- Use [Write Model](write-model.md) and [Read Models and Client Sync](read-models-and-client-sync.md) for runtime behavior.
+- Use [Samples](../tutorials/spring/index.md) when you want to see the generated and handwritten pieces together in one application.
 
 ## Summary
 
@@ -128,7 +151,7 @@ Mississippi trades some architectural freedom for delivery leverage. Its design 
 
 ## Next Steps
 
-- [Architectural Model](./architectural-model.md)
-- [Write Model](./write-model.md)
-- [Read Models and Client Sync](./read-models-and-client-sync.md)
-- [Samples](../samples/index.md)
+- [Architectural Model](architectural-model.md)
+- [Write Model](write-model.md)
+- [Read Models and Client Sync](read-models-and-client-sync.md)
+- [Samples](../tutorials/spring/index.md)

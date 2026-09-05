@@ -1,5 +1,4 @@
 ---
-id: documentation-migration
 title: Migration Pages
 description: Guide Mississippi users from one exact version range to another with explicit compatibility, validation, and rollback details.
 sidebar_label: Migration
@@ -88,6 +87,6 @@ This guide explains how to move from Mississippi 0.8 to 0.9 safely.
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [Release Notes](./documentation-release-notes.md)
-- [Reference Pages](./documentation-reference.md)
+- [Documentation Guide](documentation-guide.md)
+- [Release Notes](documentation-release-notes.md)
+- [Reference Pages](documentation-reference.md)

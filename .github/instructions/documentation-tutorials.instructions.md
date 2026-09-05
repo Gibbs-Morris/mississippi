@@ -1,5 +1,5 @@
 ---
-applyTo: 'docs/Docusaurus/docs/**/*tutorial*.{md,mdx}'
+applyTo: 'docs/Docusaurus/docs/tutorials/**/*.{md,mdx}'
 ---
 
 # Tutorial Documentation
@@ -10,7 +10,7 @@ Governing thought: Tutorials teach Mississippi through one linear, verified path
 
 ## Rules (RFC 2119)
 
-- This file **MUST** be applied only when the page is classified as `tutorials`. Why: Tutorials have a different contract from how-to guides and reference pages.
+- This file **MUST** govern content pages classified as `tutorials`; authored category `index.md` pages **MAY** use the navigation-artifact contract instead. Why: Tutorials have a different contract from how-to guides and reference pages, while a category entry has a distinct orientation job.
 - Tutorials **MUST** use one linear path from start to finish. Why: Guided learning should not force the reader to choose branches constantly.
 - Tutorials **MUST** include strict step ordering, exact code or commands, expected results, verification checkpoints, a recap, and next steps. Why: The writer is responsible for keeping the reader on track.
 - Tutorials **MUST** use complete, verified code and **MUST NOT** require the reader to infer hidden setup or missing files. Why: Guessing breaks learning flow.

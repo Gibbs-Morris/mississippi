@@ -1,5 +1,5 @@
 ---
-applyTo: 'docs/Docusaurus/docs/**/*migration*.{md,mdx},docs/Docusaurus/docs/**/*upgrade*.{md,mdx}'
+applyTo: 'docs/Docusaurus/docs/migration/**/*.{md,mdx}'
 ---
 
 # Migration Documentation

@@ -5,9 +5,9 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Mississippi Documentation',
-  tagline: 'Documentation for the Mississippi framework',
-  favicon: 'img/favicon.ico',
+  title: 'Mississippi',
+  tagline: 'Give every business decision an owner and every change a memory.',
+  favicon: 'img/logo.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -48,20 +48,20 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Enable versioning
-          versions: {
-            current: {
-              label: 'Next',
-              path: 'next',
-            },
-          },
         },
         blog: false, // Disable blog
+        theme: {
+          customCss: './src/css/custom.css',
+        },
       } satisfies Preset.Options,
     ],
   ],
 
   themeConfig: {
+    colorMode: {
+      respectPrefersColorScheme: true,
+    },
+    image: 'img/mississippi-social-card.png',
     navbar: {
       title: 'Mississippi',
       logo: {
@@ -70,14 +70,15 @@ const config: Config = {
       },
       items: [
         {
+          to: '/#how-it-works',
+          label: 'How It Works',
+          position: 'left',
+        },
+        {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'Docs',
-        },
-        {
-          type: 'docsVersionDropdown',
-          position: 'right',
         },
         {
           // NOSONAR: GitHub repository URL is intentionally hardcoded for navigation
@@ -85,23 +86,50 @@ const config: Config = {
           label: 'GitHub',
           position: 'right',
         },
+        {
+          to: '/docs/concepts/architectural-model',
+          label: 'Evaluate the architecture',
+          position: 'right',
+          className: 'navbar__evaluate',
+        },
       ],
     },
     footer: {
       style: 'dark',
       links: [
         {
-          title: 'More',
+          title: 'Explore',
+          items: [
+            {
+              label: 'How It Works',
+              to: '/#how-it-works',
+            },
+            {
+              label: 'Technical Documentation',
+              to: '/docs/',
+            },
+            {
+              label: 'Architectural Model',
+              to: '/docs/concepts/architectural-model',
+            },
+          ],
+        },
+        {
+          title: 'Project',
           items: [
             {
               label: 'GitHub',
               // NOSONAR: GitHub repository URL is intentionally hardcoded for footer link
               href: 'https://github.com/Gibbs-Morris/mississippi',
             },
+            {
+              label: 'Apache 2.0 License',
+              href: 'https://github.com/Gibbs-Morris/mississippi/blob/main/LICENSE',
+            },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Mississippi Project. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Mississippi contributors. Built in the open.`,
     },
     prism: {
       theme: prismThemes.github,

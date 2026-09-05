@@ -1,5 +1,4 @@
 ---
-id: documentation-concepts
 title: Concept Pages
 description: Explain how Mississippi works, what it guarantees, and what trade-offs or limits the reader must understand.
 sidebar_label: Concepts
@@ -93,6 +92,6 @@ Brook event ordering defines which event sequences Mississippi preserves and whe
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [How-To Guides](./documentation-how-to.md)
-- [Reference Pages](./documentation-reference.md)
+- [Documentation Guide](documentation-guide.md)
+- [How-To Guides](documentation-how-to.md)
+- [Reference Pages](documentation-reference.md)

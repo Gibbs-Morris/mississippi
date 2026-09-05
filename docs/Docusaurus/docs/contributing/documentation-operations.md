@@ -1,5 +1,4 @@
 ---
-id: documentation-operations
 title: Operations Pages
 description: Help engineers run Mississippi safely in production with explicit guidance on validation, failure modes, telemetry, and rollback.
 sidebar_label: Operations
@@ -87,6 +86,6 @@ This page explains how to roll out Mississippi updates safely in production.
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [Migration Pages](./documentation-migration.md)
-- [Troubleshooting Pages](./documentation-troubleshooting.md)
+- [Documentation Guide](documentation-guide.md)
+- [Migration Pages](documentation-migration.md)
+- [Troubleshooting Pages](documentation-troubleshooting.md)

@@ -17,9 +17,9 @@ export default defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
+    /* Base URL to use in actions like `await page.goto('./')`. */
     // NOSONAR: localhost testing requires http, not https
-    baseURL: 'http://localhost:3000/mississippi',
+    baseURL: 'http://localhost:3000/mississippi/',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },

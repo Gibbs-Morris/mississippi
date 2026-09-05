@@ -1,5 +1,4 @@
 ---
-id: documentation-reference
 title: Reference Pages
 description: Document exact Mississippi contracts, options, defaults, constraints, and compatibility notes without tutorial narrative.
 sidebar_label: Reference
@@ -91,6 +90,6 @@ This page documents the exact configuration contract for brook storage providers
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [Concept Pages](./documentation-concepts.md)
-- [How-To Guides](./documentation-how-to.md)
+- [Documentation Guide](documentation-guide.md)
+- [Concept Pages](documentation-concepts.md)
+- [How-To Guides](documentation-how-to.md)

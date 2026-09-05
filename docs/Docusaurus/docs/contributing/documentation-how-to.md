@@ -1,5 +1,4 @@
 ---
-id: documentation-how-to
 title: How-To Guides
 description: Help a competent Mississippi user complete one real task with exact steps, verification, and task-specific safety notes.
 sidebar_label: How-To
@@ -89,6 +88,6 @@ Configure a Cosmos-backed storage provider for Mississippi and verify that the r
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [Reference Pages](./documentation-reference.md)
-- [Operations Pages](./documentation-operations.md)
+- [Documentation Guide](documentation-guide.md)
+- [Reference Pages](documentation-reference.md)
+- [Operations Pages](documentation-operations.md)

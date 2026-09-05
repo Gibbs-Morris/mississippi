@@ -1,5 +1,5 @@
 ---
-applyTo: 'docs/Docusaurus/docs/**/*troubleshoot*.{md,mdx}'
+applyTo: 'docs/Docusaurus/docs/troubleshooting/**/*.{md,mdx}'
 ---
 
 # Troubleshooting Documentation

@@ -1,5 +1,4 @@
 ---
-id: documentation-section-entry-pages
 title: Section Entry Pages
 sidebar_label: Section Entry Pages
 sidebar_position: 11
@@ -67,8 +66,8 @@ Use `## Current Coverage` to tell the reader what is available now.
 
 Good examples:
 
-- "Use the archived Reservoir material for detailed reference and testing guidance while the new section is expanded."
-- "This section currently gives the architectural boundary and package entry points; deeper operational and reference pages are still to be added."
+- "Use this package map when you need to identify which Mississippi subsystem owns a concern."
+- "This section explains the architectural model and links each runtime flow to its deeper concept page."
 
 Bad examples:
 
@@ -94,7 +93,7 @@ Choose the smallest set that helps a reader understand the adoption surface:
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [Concept Pages](./documentation-concepts.md)
-- [Reference Pages](./documentation-reference.md)
-- [Tutorial Pages](./documentation-tutorials.md)
+- [Documentation Guide](documentation-guide.md)
+- [Concept Pages](documentation-concepts.md)
+- [Reference Pages](documentation-reference.md)
+- [Tutorial Pages](documentation-tutorials.md)

@@ -1,5 +1,4 @@
 ---
-id: documentation-troubleshooting
 title: Troubleshooting Pages
 description: Diagnose Mississippi failures from symptoms and evidence, then guide the reader through confirmation, resolution, and prevention.
 sidebar_label: Troubleshooting
@@ -87,6 +86,6 @@ Use this guide when Mississippi fails to load persisted state after a version ch
 
 ## Next Steps
 
-- [Documentation Guide](./documentation-guide.md)
-- [Concept Pages](./documentation-concepts.md)
-- [Migration Pages](./documentation-migration.md)
+- [Documentation Guide](documentation-guide.md)
+- [Concept Pages](documentation-concepts.md)
+- [Migration Pages](documentation-migration.md)

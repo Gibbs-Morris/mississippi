@@ -1,70 +1,167 @@
-import { test, expect } from '@playwright/test';
+import {expect, test} from '@playwright/test';
 
-test.describe('Docusaurus Site', () => {
-  test('homepage loads successfully', async ({ page }) => {
-    await page.goto('/');
-    
-    // Check that the page title is correct
-    await expect(page).toHaveTitle(/Mississippi Documentation/);
-    
-    // Check that the main heading is visible
-    await expect(page.locator('h1')).toContainText('Mississippi Documentation');
+test.describe('Mississippi site', () => {
+  test('landing page presents the product and maturity clearly', async ({page}) => {
+    await page.goto('./');
+
+    await expect(page).toHaveTitle(/Mississippi/);
+    await expect(page.getByRole('main')).toHaveCount(1);
+    await expect(page.locator('h1')).toHaveCount(1);
+    await expect(page.locator('h1')).toContainText(
+      'Software should remember why it changed.',
+    );
+    await expect(page.getByText('Early alpha', {exact: false}).first()).toBeVisible();
+    await expect(
+      page.getByText('not recommended for production use', {exact: false}).first(),
+    ).toBeVisible();
   });
 
-  test('navigation to docs works', async ({ page }) => {
-    await page.goto('/');
-    
-    // Click the "View Documentation" button
-    await page.click('text=View Documentation');
-    
-    // Verify we're on a docs page (URL changes)
-    await expect(page).toHaveURL(/\/docs\//);
+  test('primary evaluation action opens the architectural model', async ({page}) => {
+    await page.goto('./');
+
+    const primaryAction = page.getByRole('link', {name: 'Evaluate the architecture'}).first();
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await page.keyboard.press('Tab');
+      if (await primaryAction.evaluate((element) => element === document.activeElement)) {
+        break;
+      }
+    }
+    await expect(primaryAction).toBeFocused();
+    await expect(primaryAction).toHaveCSS('outline-color', 'rgb(255, 253, 247)');
+    await expect(primaryAction).toHaveCSS(
+      'box-shadow',
+      'rgb(7, 20, 24) 0px 0px 0px 4px',
+    );
+    await primaryAction.click();
+
+    await expect(page).toHaveURL(/\/docs\/concepts\/architectural-model\/?$/);
+    await expect(page.getByRole('heading', {level: 1})).toHaveText(
+      'Architectural Model',
+    );
   });
 
-  test('docs page loads with expected content', async ({ page }) => {
-    await page.goto('/');
-    
-    // Navigate via the View Documentation button
-    await page.click('text=View Documentation');
-    
-    // Wait for navigation and check for docs-specific content
-    await page.waitForURL(/\/docs\//);
-    
-    // Check that the Mississippi Documentation heading appears
-    await expect(page.locator('h1')).toContainText('Mississippi Documentation');
+  test('navigation exposes the product path, docs, and source', async ({page}) => {
+    await page.goto('./');
+
+    const navbar = page.getByRole('navigation').first();
+    await expect(navbar.getByRole('link', {name: 'How It Works'})).toHaveAttribute(
+      'href',
+      /#how-it-works$/,
+    );
+    await expect(navbar.getByRole('link', {name: 'Docs'})).toBeVisible();
+    await expect(
+      navbar.getByRole('link', {name: 'GitHub'}),
+    ).toHaveAttribute('href', 'https://github.com/Gibbs-Morris/mississippi');
+    const colorModeToggle = navbar.getByRole('button', {
+      name: /Switch between dark and light mode/,
+    });
+    await expect(colorModeToggle).toHaveCSS('color', 'rgb(242, 233, 216)');
+    await colorModeToggle.hover();
+    await expect(colorModeToggle).toHaveCSS(
+      'background-color',
+      'rgba(63, 224, 182, 0.14)',
+    );
+    await expect(colorModeToggle).toHaveCSS('color', 'rgb(255, 253, 247)');
   });
 
-  test('GitHub link is present in navbar', async ({ page }) => {
-    await page.goto('/');
-    
-    // Check that GitHub link exists in navbar specifically
-    const navbar = page.locator('.navbar, nav');
-    const githubLink = navbar.locator('a[href*="github.com/Gibbs-Morris/mississippi"]');
-    await expect(githubLink).toBeVisible();
+  test('dark mobile navigation remains readable', async ({page}) => {
+    await page.setViewportSize({width: 390, height: 844});
+    await page.emulateMedia({colorScheme: 'dark'});
+    await page.addInitScript(() => window.localStorage.setItem('theme', 'dark'));
+    await page.goto('./');
+
+    await page.getByRole('button', {name: 'Toggle navigation bar'}).click();
+
+    const navbar = page.locator('nav.navbar');
+    await expect(navbar).toHaveClass(/navbar-sidebar--show/);
+    const sidebar = navbar.locator('.navbar-sidebar');
+    await expect(sidebar.locator('.navbar-sidebar__items')).toHaveCSS(
+      'background-color',
+      'rgb(9, 24, 28)',
+    );
+    await expect(sidebar.locator('.menu__link:not(.menu__link--active)').first()).toHaveCSS(
+      'color',
+      'rgb(233, 226, 214)',
+    );
+    await expect(sidebar.locator('.menu__link--active').first()).toHaveCSS(
+      'color',
+      'rgb(63, 224, 182)',
+    );
   });
 
-  test('footer contains correct information', async ({ page }) => {
-    await page.goto('/');
-    
-    // Check footer content
-    await expect(page.locator('footer')).toContainText('Mississippi Project');
-    await expect(page.locator('footer')).toContainText('Built with Docusaurus');
+  test('social preview metadata uses Mississippi branding', async ({page}) => {
+    await page.goto('./');
+
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      'content',
+      /mississippi-social-card\.png$/,
+    );
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      /opinionated .NET application model/,
+    );
   });
 
-  test('docs navigation elements exist', async ({ page }) => {
-    await page.goto('/');
-    await page.click('text=View Documentation');
-    await page.waitForURL(/\/docs\//);
-    
-    // Just check that we can find some navigation element (sidebar or nav menu)
-    // Don't be too specific about class names as they may vary
-    const hasNav = await page.locator('nav, aside, [class*="sidebar"]').count();
-    expect(hasNav).toBeGreaterThan(0);
+  test('footer provides project and documentation destinations', async ({page}) => {
+    await page.goto('./');
+
+    const footer = page.getByRole('contentinfo');
+    await expect(footer).toContainText('Technical Documentation');
+    await expect(footer).toContainText('Built in the open');
   });
 
-  test('site can be built successfully', async () => {
-    // This test verifies that the build completes without errors
-    // The actual build is done before tests run, this just confirms it
-    expect(true).toBe(true);
+  test('landing page does not overflow a mobile viewport', async ({page}) => {
+    await page.setViewportSize({width: 390, height: 844});
+    await page.goto('./');
+
+    const dimensions = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(
+      dimensions.clientWidth + 1,
+    );
+    await expect(page.getByRole('heading', {level: 1})).toBeVisible();
+  });
+
+  test('landing page does not overflow a desktop viewport', async ({page}) => {
+    await page.goto('./');
+
+    const dimensions = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+
+    expect(dimensions.scrollWidth).toBeLessThanOrEqual(
+      dimensions.clientWidth + 1,
+    );
+  });
+
+  test('two-column content collapses at narrow tablet widths', async ({page}) => {
+    await page.setViewportSize({width: 600, height: 900});
+    await page.goto('./');
+
+    const seamLayout = page.locator('#seam-heading').locator('..');
+    await expect(seamLayout).toHaveCSS(
+      'grid-template-columns',
+      /^\d+(?:\.\d+)?px$/,
+    );
+  });
+
+  test('technical documentation uses intent-first navigation', async ({page}) => {
+    await page.goto('docs/');
+
+    await expect(page.getByRole('heading', {level: 1})).toHaveText(
+      'Mississippi Documentation',
+    );
+    const sidebar = page.locator('.theme-doc-sidebar-menu');
+    await expect(sidebar.getByRole('link', {name: 'Getting Started'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'Tutorials'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'How-To Guides'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'Concepts'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'Reference'})).toBeVisible();
+    await expect(sidebar.getByRole('link', {name: 'Subsystems'})).toHaveCount(0);
+    await expect(page.getByRole('link', {name: 'Next', exact: true})).toHaveCount(0);
   });
 });

@@ -1,5 +1,4 @@
 ---
-id: concepts-write-model
 title: Write Model
 sidebar_label: Write Model
 sidebar_position: 3
@@ -88,9 +87,9 @@ Because command handlers return events instead of mutating state directly, the c
 
 ## Related Tasks and Reference
 
-- Use [Read Models and Client Sync](./read-models-and-client-sync.md) for the projection side of the same events.
-- Use [Sagas and Orchestration](./sagas-and-orchestration.md) when one business operation spans several aggregates or steps.
-- Use [Domain Modeling](../domain-modeling/index.md) for the package boundary around aggregates, effects, and test harnesses.
+- Use [Read Models and Client Sync](read-models-and-client-sync.md) for the projection side of the same events.
+- Use [Sagas and Orchestration](sagas-and-orchestration.md) when one business operation spans several aggregates or steps.
+- Use [Domain Modeling](../reference/package-map.md) for the package boundary around aggregates, effects, and test harnesses.
 
 ## Summary
 
@@ -98,7 +97,7 @@ Mississippi's write model keeps domain decisions in handlers and state reconstru
 
 ## Next Steps
 
-- [Read Models and Client Sync](./read-models-and-client-sync.md)
-- [Sagas and Orchestration](./sagas-and-orchestration.md)
-- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md)
-- [Domain Modeling](../domain-modeling/index.md)
+- [Read Models and Client Sync](read-models-and-client-sync.md)
+- [Sagas and Orchestration](sagas-and-orchestration.md)
+- [Design Goals and Trade-Offs](design-goals-and-trade-offs.md)
+- [Domain Modeling](../reference/package-map.md)

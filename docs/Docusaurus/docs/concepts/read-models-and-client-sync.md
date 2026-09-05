@@ -1,5 +1,4 @@
 ---
-id: concepts-read-models-and-client-sync
 title: Read Models and Client Sync
 sidebar_label: Read Models and Client Sync
 sidebar_position: 4
@@ -82,9 +81,9 @@ The main pieces in the generated HTTP and Blazor SignalR path are:
 
 ## Related Tasks and Reference
 
-- Use [Write Model](./write-model.md) for the event-producing side of this flow.
-- Use [Sagas and Orchestration](./sagas-and-orchestration.md) when the projection reflects a multi-step workflow rather than a single aggregate.
-- Use [Inlet](../inlet/index.md) and [Reservoir](../reservoir/index.md) for subsystem-specific detail.
+- Use [Write Model](write-model.md) for the event-producing side of this flow.
+- Use [Sagas and Orchestration](sagas-and-orchestration.md) when the projection reflects a multi-step workflow rather than a single aggregate.
+- Use [Inlet](../reference/package-map.md) and [Reservoir](../reference/package-map.md) for subsystem-specific detail.
 
 ## Summary
 
@@ -92,7 +91,7 @@ Mississippi read models move from event streams to versioned projection access, 
 
 ## Next Steps
 
-- [Sagas and Orchestration](./sagas-and-orchestration.md)
-- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md)
-- [Inlet](../inlet/index.md)
-- [Reservoir](../reservoir/index.md)
+- [Sagas and Orchestration](sagas-and-orchestration.md)
+- [Design Goals and Trade-Offs](design-goals-and-trade-offs.md)
+- [Inlet](../reference/package-map.md)
+- [Reservoir](../reference/package-map.md)

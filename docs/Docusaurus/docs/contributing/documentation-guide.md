@@ -1,5 +1,4 @@
 ---
-id: documentation-guide
 title: Documentation Guide
 sidebar_label: Documentation Guide
 sidebar_position: 1
@@ -10,9 +9,25 @@ description: Author the right kind of Mississippi documentation page with verifi
 
 ## Overview
 
-Write documentation for engineers building on Mississippi, not marketing copy for a product launch.
+Write technical documentation for engineers building on Mississippi, not marketing copy for a product launch.
 
 These rules apply to public docs under `docs/Docusaurus/docs/` and define the writing contract the rest of the docs set should follow.
+
+## Boundary With Marketing
+
+Mississippi uses one Docusaurus deployment for two different communication jobs.
+
+- Marketing pages under `docs/Docusaurus/src/pages/` may use a bold,
+  opinionated startup voice, metaphor, and clearly framed ambition.
+- Technical pages under `docs/Docusaurus/docs/` define current behavior,
+  constraints, configuration, and failure semantics from evidence.
+- A marketing promise can link to technical proof, but it cannot be copied into
+  technical documentation and treated as a guarantee.
+- Technical documentation may explain why a capability matters when it ties the
+  benefit to a verified mechanism and does not imply measured impact.
+
+Security, compatibility, performance, production readiness, and quantified
+results always require evidence, regardless of which surface mentions them.
 
 ## Mission
 
@@ -30,7 +45,8 @@ These rules apply to public docs under `docs/Docusaurus/docs/` and define the wr
 
 ## Choose The Page Type First
 
-Every documentation page must answer one primary question and use one page type only.
+Every content page must answer one primary question and use one page type only.
+Category entry pages are navigation artifacts governed separately below.
 
 | Page Type | Use It For | Do Not Turn It Into |
 |-----------|------------|---------------------|
@@ -43,6 +59,7 @@ Every documentation page must answer one primary question and use one page type 
 | `troubleshooting` | Symptom-driven diagnosis and resolution | A subsystem overview |
 | `migration` | Version-to-version change guidance | Release notes |
 | `release-notes` | Concise versioned changes and required action | A migration guide |
+| `decision-record` | A durable architecture decision, context, and consequences | A generic concept or status page |
 
 ## Decide Which Page Type You Need
 
@@ -50,21 +67,34 @@ Use this decision matrix before writing.
 
 | If the reader needs to... | Use this page type | Start here |
 |---------------------------|--------------------|------------|
-| Get to a first working result quickly | `getting-started` | [Getting-Started Pages](./documentation-getting-started.md) |
-| Learn by building something end to end | `tutorials` | [Tutorial Pages](./documentation-tutorials.md) |
-| Complete a specific task reliably | `how-to` | [How-To Guides](./documentation-how-to.md) |
-| Understand how Mississippi works and what it guarantees | `concepts` | [Concept Pages](./documentation-concepts.md) |
-| Look up exact contracts or configuration | `reference` | [Reference Pages](./documentation-reference.md) |
-| Run Mississippi safely in production | `operations` | [Operations Pages](./documentation-operations.md) |
-| Diagnose a specific failure from evidence | `troubleshooting` | [Troubleshooting Pages](./documentation-troubleshooting.md) |
-| Upgrade between versions safely | `migration` | [Migration Pages](./documentation-migration.md) |
-| See what changed in a release | `release-notes` | [Release Notes](./documentation-release-notes.md) |
+| Get to a first working result quickly | `getting-started` | [Getting-Started Pages](documentation-getting-started.md) |
+| Learn by building something end to end | `tutorials` | [Tutorial Pages](documentation-tutorials.md) |
+| Complete a specific task reliably | `how-to` | [How-To Guides](documentation-how-to.md) |
+| Understand how Mississippi works and what it guarantees | `concepts` | [Concept Pages](documentation-concepts.md) |
+| Look up exact contracts or configuration | `reference` | [Reference Pages](documentation-reference.md) |
+| Run Mississippi safely in production | `operations` | [Operations Pages](documentation-operations.md) |
+| Diagnose a specific failure from evidence | `troubleshooting` | [Troubleshooting Pages](documentation-troubleshooting.md) |
+| Upgrade between versions safely | `migration` | [Migration Pages](documentation-migration.md) |
+| See what changed in a release | `release-notes` | [Release Notes](documentation-release-notes.md) |
+| Record an architecture decision and its consequences | `decision-record` | [Architecture Decisions](../adr/index.md) |
 
 ## File And Navigation Rules
 
-- Keep the Docusaurus filesystem aligned with the intended sidebar structure where practical.
-- Every new public folder should include `_category_.yml`.
-- Use meaningful stable filenames instead of numbered filenames.
+- Use `getting-started/` for first-success paths.
+- Use `tutorials/` for guided learning against verified examples.
+- Use `how-to/` for focused tasks, `concepts/` for mental models and trade-offs,
+  and `reference/` for exact lookup material and package ownership.
+- Use `adr/` for decision records and `contributing/` for the authoring contract.
+- Do not create a parallel top-level tree for subsystem or package names.
+- Add reserved `operations/`, `troubleshooting/`, `migration/`, or
+  `release-notes/` areas only when at least one specific evidenced page exists.
+- Create a nested folder only when it contains multiple durable pages with one
+  shared reader purpose.
+- Every public category must include `_category_.yml`. Use a generated index when
+  labels and descriptions provide enough orientation; author an index only when
+  it adds durable guidance.
+- Do not add pages or folders merely to complete a taxonomy matrix.
+- Use meaningful stable filenames instead of numbered filenames except for ADRs.
 - Use `sidebar_position` for sibling ordering.
 - Keep page scope narrow so one page answers one primary question.
 
@@ -74,9 +104,7 @@ Every public page must include these fields:
 
 ```yaml
 ---
-id: <kebab-case-doc-id>
 title: <Title Case Page Title>
-sidebar_label: <Short Sidebar Label>
 sidebar_position: <number>
 description: <One-sentence summary>
 ---
@@ -85,11 +113,16 @@ description: <One-sentence summary>
 Add these only when they materially improve navigation or routing:
 
 ```yaml
+id: stable-doc-id
+slug: /deliberate-public-route
+sidebar_label: Short Sidebar Label
 pagination_label: Short previous/next text
-slug: /stable/public/url
 tags: [controlled, taxonomy]
 draft: true
 ```
+
+Let the filesystem define `id` and `slug` by default. Add either field only for
+a stable compatibility requirement or a deliberately shorter category route.
 
 ## Required Page Structure
 
@@ -97,7 +130,7 @@ Every doc must follow this structure in order:
 
 1. frontmatter
 2. H1 title
-3. `## Overview`
+3. the opening section required by its page type
 4. core content sections for the page type
 5. closing section(s)
 
@@ -107,18 +140,23 @@ Every doc must follow this structure in order:
 - Otherwise, the page must end its core content with `## Summary` followed by `## Next Steps`.
 - Use the exact heading casing shown here. Do not substitute `Recap`, `Related content`, or lowercase variants of `Next Steps`.
 - Optional appendix sections such as `## References` or `## Source Code` may follow those closing sections.
+- Numbered files under `adr/` follow the repository decision-record format and
+  are exempt from the generic Summary and Next Steps requirement.
 
-## Section Entry Page Rules
+## Category Entry Page Rules
 
-Section entry pages are landing pages for a documentation area.
+Category entry pages are optional navigation artifacts, not a canonical content
+page type.
 
 - They **must** orient the reader before listing ownership or links.
 - They **must not** read like placeholders, migration notes, or internal status updates.
 - They **should** explain what the area is for, what belongs there, when to start there, and how it fits the rest of Mississippi.
 - They **should** name representative package entry points when the area can be adopted independently.
 - They **should** use `## Current Coverage` instead of apology language when describing what is available today.
+- They **should not** exist when Docusaurus-generated navigation provides all the
+  context the reader needs.
 
-Use [Section Entry Pages](./documentation-section-entry-pages.md) for the detailed landing-page standard.
+Use [Section Entry Pages](documentation-section-entry-pages.md) for the detailed landing-page standard.
 
 ## Markdown And Docusaurus Rules
 
@@ -183,38 +221,46 @@ A documentation change is not done until all of the following are true:
 - the page links to adjacent content
 - the page does not overclaim what the framework guarantees
 
-## Migration Stance
+## Information Architecture
 
-Mississippi is in a hybrid transition.
+The public product-documentation tree has one primary axis: getting started,
+tutorials, how-to guides, concepts, and reference.
 
-- New or substantially rewritten docs should follow this model immediately.
-- Existing feature docs may keep their current physical locations until they are touched.
-- Page type is the required content contract even when folder layout still reflects older feature-oriented structure.
+- Reader intent determines physical placement and page structure.
+- Subsystem and package ownership belongs in reference material and contextual
+  links, not in a competing navigation tree.
+- Decisions and contribution guidance remain separate governance collections.
+- Historical material remains outside the published docs root.
+- A nested directory represents genuine content depth, not a single page wrapped
+  in taxonomy.
 
 ## Tone And Language
 
 - Define the reader before writing.
 - Use active voice and present tense.
 - Use one idea per sentence.
-- Avoid marketing language and vague qualifiers.
+- Avoid promotional promises and vague qualifiers; explain practical value by
+  connecting it to a verified mechanism.
 - Use RFC 2119 terms only in rules sections.
 
 ## Summary
 
 - choose the page type before writing
 - keep every technical claim tied to repository evidence
+- keep startup promises on marketing surfaces and exact behavior in technical
+  documentation
 - follow the required structure and closing-section rules
 - validate links, examples, and build output before treating a docs change as complete
 
 ## Next Steps
 
-- [Section Entry Pages](./documentation-section-entry-pages.md)
-- [Concept Pages](./documentation-concepts.md)
-- [Getting-Started Pages](./documentation-getting-started.md)
-- [Tutorial Pages](./documentation-tutorials.md)
-- [How-To Guides](./documentation-how-to.md)
-- [Reference Pages](./documentation-reference.md)
-- [Operations Pages](./documentation-operations.md)
-- [Troubleshooting Pages](./documentation-troubleshooting.md)
-- [Migration Pages](./documentation-migration.md)
-- [Release Notes](./documentation-release-notes.md)
+- [Section Entry Pages](documentation-section-entry-pages.md)
+- [Concept Pages](documentation-concepts.md)
+- [Getting-Started Pages](documentation-getting-started.md)
+- [Tutorial Pages](documentation-tutorials.md)
+- [How-To Guides](documentation-how-to.md)
+- [Reference Pages](documentation-reference.md)
+- [Operations Pages](documentation-operations.md)
+- [Troubleshooting Pages](documentation-troubleshooting.md)
+- [Migration Pages](documentation-migration.md)
+- [Release Notes](documentation-release-notes.md)

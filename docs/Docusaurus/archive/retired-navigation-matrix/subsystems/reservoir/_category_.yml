@@ -1,0 +1,7 @@
+label: Client State
+position: 7
+collapsed: true
+collapsible: true
+link:
+  type: doc
+  id: reservoir-overview

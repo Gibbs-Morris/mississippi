@@ -1,5 +1,4 @@
 ---
-id: concepts-architectural-model
 title: Architectural Model
 sidebar_label: Architectural Model
 sidebar_position: 2
@@ -95,10 +94,10 @@ In public package terms, the major responsibilities break down like this.
 
 ## Related Tasks and Reference
 
-- Use [Write Model](./write-model.md) when the question is about commands, events, reducers, and effects inside aggregates.
-- Use [Read Models and Client Sync](./read-models-and-client-sync.md) when the question is about projections, generated GET endpoints, SignalR notifications, and client refresh behavior.
-- Use [Sagas and Orchestration](./sagas-and-orchestration.md) when the question is about ordered steps and compensation.
-- Use [Domain Modeling](../domain-modeling/index.md) or [Inlet](../inlet/index.md) when you need subsystem-specific detail.
+- Use [Write Model](write-model.md) when the question is about commands, events, reducers, and effects inside aggregates.
+- Use [Read Models and Client Sync](read-models-and-client-sync.md) when the question is about projections, generated GET endpoints, SignalR notifications, and client refresh behavior.
+- Use [Sagas and Orchestration](sagas-and-orchestration.md) when the question is about ordered steps and compensation.
+- Use [Domain Modeling](../reference/package-map.md) or [Inlet](../reference/package-map.md) when you need subsystem-specific detail.
 
 ## Summary
 
@@ -106,7 +105,7 @@ Mississippi eliminates the seam work between event sourcing, Orleans, and client
 
 ## Next Steps
 
-- [Write Model](./write-model.md)
-- [Read Models and Client Sync](./read-models-and-client-sync.md)
-- [Sagas and Orchestration](./sagas-and-orchestration.md)
-- [Design Goals and Trade-Offs](./design-goals-and-trade-offs.md)
+- [Write Model](write-model.md)
+- [Read Models and Client Sync](read-models-and-client-sync.md)
+- [Sagas and Orchestration](sagas-and-orchestration.md)
+- [Design Goals and Trade-Offs](design-goals-and-trade-offs.md)
