@@ -28,42 +28,6 @@ namespace Mississippi.Brooks.Runtime.L0Tests.Writer;
 public sealed class BrookWriterGrainUnitTests
 {
     /// <summary>
-    ///     Preserves critical failures instead of converting them into recoverable publication errors.
-    /// </summary>
-    /// <param name="exceptionType">The critical failure type.</param>
-    /// <returns>A task representing the test operation.</returns>
-    [Theory]
-    [InlineData(typeof(OutOfMemoryException))]
-    [InlineData(typeof(StackOverflowException))]
-    [InlineData(typeof(ThreadInterruptedException))]
-    public async Task AppendEventsAsyncPropagatesCriticalPublicationFailure(Type exceptionType)
-    {
-        Exception failure = Assert.IsType<Exception>(Activator.CreateInstance(exceptionType), exactMatch: false);
-        BrookKey key = new("test", "critical-publication");
-        Mock<IBrookStorageWriter> storage = new(MockBehavior.Strict);
-        Mock<IGrainContext> context = new(MockBehavior.Strict);
-        Mock<IStreamProvider> streams = new(MockBehavior.Strict);
-        Mock<IAsyncStream<BrookCursorMovedEvent>> stream = new(MockBehavior.Strict);
-        BrookProviderOptions options = new();
-        ServiceCollection services = new();
-        services.AddKeyedSingleton<IStreamProvider>(options.OrleansStreamProviderName, streams.Object);
-        using ServiceProvider provider = services.BuildServiceProvider();
-        context.SetupGet(value => value.GrainId).Returns(GrainId.Create("brook-writer", key.ToString()));
-        context.SetupGet(value => value.ActivationServices).Returns(provider);
-        streams.Setup(value => value.GetStream<BrookCursorMovedEvent>(It.IsAny<StreamId>())).Returns(stream.Object);
-        stream.Setup(value => value.OnNextAsync(It.IsAny<BrookCursorMovedEvent>(), null)).ThrowsAsync(failure);
-        storage.Setup(value => value.AppendEventsAsync(key, It.IsAny<IReadOnlyList<BrookEvent>>(), null, CancellationToken.None))
-            .ReturnsAsync(new BrookPosition(0));
-        BrookWriterGrain writer = new(storage.Object, NullLogger<BrookWriterGrain>.Instance, context.Object, Options.Create(options));
-        ImmutableArray<BrookEvent> events = [new() { Id = "committed-event" }];
-
-        Exception thrown = await Assert.ThrowsAsync(exceptionType, () => writer.AppendEventsAsync(events));
-
-        Assert.Same(failure, thrown);
-        storage.VerifyAll();
-    }
-
-    /// <summary>
     ///     Leaves a storage failure unclassified because its append outcome may be unknown.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
@@ -96,6 +60,56 @@ public sealed class BrookWriterGrainUnitTests
         TimeoutException exception = await Assert.ThrowsAsync<TimeoutException>(() => writer.AppendEventsAsync(events));
         Assert.Same(storageFailure, exception);
         context.VerifyGet(value => value.ActivationServices, Times.Never);
+    }
+
+    /// <summary>
+    ///     Preserves critical failures instead of converting them into recoverable publication errors.
+    /// </summary>
+    /// <param name="exceptionType">The critical failure type.</param>
+    /// <returns>A task representing the test operation.</returns>
+    [Theory]
+    [InlineData(typeof(OutOfMemoryException))]
+    [InlineData(typeof(StackOverflowException))]
+    [InlineData(typeof(ThreadInterruptedException))]
+    public async Task AppendEventsAsyncPropagatesCriticalPublicationFailure(
+        Type exceptionType
+    )
+    {
+        Exception failure = Assert.IsType<Exception>(Activator.CreateInstance(exceptionType), false);
+        BrookKey key = new("test", "critical-publication");
+        Mock<IBrookStorageWriter> storage = new(MockBehavior.Strict);
+        Mock<IGrainContext> context = new(MockBehavior.Strict);
+        Mock<IStreamProvider> streams = new(MockBehavior.Strict);
+        Mock<IAsyncStream<BrookCursorMovedEvent>> stream = new(MockBehavior.Strict);
+        BrookProviderOptions options = new();
+        ServiceCollection services = new();
+        services.AddKeyedSingleton<IStreamProvider>(options.OrleansStreamProviderName, streams.Object);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        context.SetupGet(value => value.GrainId).Returns(GrainId.Create("brook-writer", key.ToString()));
+        context.SetupGet(value => value.ActivationServices).Returns(provider);
+        streams.Setup(value => value.GetStream<BrookCursorMovedEvent>(It.IsAny<StreamId>())).Returns(stream.Object);
+        stream.Setup(value => value.OnNextAsync(It.IsAny<BrookCursorMovedEvent>(), null)).ThrowsAsync(failure);
+        storage.Setup(value => value.AppendEventsAsync(
+                key,
+                It.IsAny<IReadOnlyList<BrookEvent>>(),
+                null,
+                CancellationToken.None))
+            .ReturnsAsync(new BrookPosition(0));
+        BrookWriterGrain writer = new(
+            storage.Object,
+            NullLogger<BrookWriterGrain>.Instance,
+            context.Object,
+            Options.Create(options));
+        ImmutableArray<BrookEvent> events =
+        [
+            new()
+            {
+                Id = "committed-event",
+            },
+        ];
+        Exception thrown = await Assert.ThrowsAsync(exceptionType, () => writer.AppendEventsAsync(events));
+        Assert.Same(failure, thrown);
+        storage.VerifyAll();
     }
 
     /// <summary>
