@@ -605,7 +605,7 @@ function Invoke-StrykerProcess {
     return $processError
 }
 
-function Invoke-StrykerMutationReport {
+function Show-StrykerMutationReport {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$OutputPath,
@@ -662,7 +662,7 @@ function Invoke-StrykerMutationTestPerProject {
     Write-Host "  Running Stryker for project: $sourceProjectName" -ForegroundColor ([ConsoleColor]::Cyan)
     $arguments = Get-StrykerMutationArguments -SourceProject $sourceProject -TestProjects $TestProjects -ConfigPath $config -OutputPath $projectOutputPath -Configuration $Configuration
     $processError = Invoke-StrykerProcess -WorkingDirectory $sourceProjectDirectory -Arguments $arguments -SourceProjectName $sourceProjectName -OutputPath $projectOutputPath
-    $report = Invoke-StrykerMutationReport -OutputPath $projectOutputPath -SourceProjectName $sourceProjectName -ProcessError $processError
+    $report = Show-StrykerMutationReport -OutputPath $projectOutputPath -SourceProjectName $sourceProjectName -ProcessError $processError
 
     return [pscustomobject]@{
         Project       = $sourceProject
