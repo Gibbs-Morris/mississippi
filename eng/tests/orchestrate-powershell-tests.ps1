@@ -18,6 +18,7 @@ $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 $testsRoot = Join-Path $repoRoot 'eng/tests/agent-scripts'
 
 $testRunners = @(
+    @{ Name = 'run-repository-automation-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-scratchpad-task-tests.ps1';   Type = 'Pester' },
     @{ Name = 'run-summarize-coverage-gaps-tests.ps1'; Type = 'Pester' },
     @{ Name = 'run-task-automation-tests.ps1';   Type = 'Pester' },
