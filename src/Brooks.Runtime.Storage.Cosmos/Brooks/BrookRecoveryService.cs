@@ -95,6 +95,7 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         CursorStorageModel? pendingCursor = await RetryPolicy.ExecuteAsync(
             async () => await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken),
             cancellationToken);
+        BrookPosition position = cursorDocument?.Position ?? new BrookPosition(-1);
         if (pendingCursor != null)
         {
             long committedPosition = cursorDocument?.Position.Value ?? -1;
@@ -116,14 +117,14 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
             }
             else
             {
-                await RecoverFromOrphanedOperationAsync(brookId, pendingCursor, writerLock, cancellationToken);
-                cursorDocument = await RetryPolicy.ExecuteAsync(
-                    async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
+                position = await RecoverFromOrphanedOperationAsync(
+                    brookId,
+                    pendingCursor,
+                    writerLock,
                     cancellationToken);
             }
         }
 
-        BrookPosition position = cursorDocument?.Position ?? new BrookPosition(-1);
         Logger.CursorPositionReturned(brookId, position.Value);
         return position;
     }
@@ -158,7 +159,7 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         return true;
     }
 
-    private async Task RecoverFromOrphanedOperationAsync(
+    private async Task<BrookPosition> RecoverFromOrphanedOperationAsync(
         BrookKey brookId,
         CursorStorageModel pendingCursor,
         IDistributedLock writerLock,
@@ -177,16 +178,11 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
             await writerLock.RenewAsync(cancellationToken);
             Logger.RecoveryCommitting(brookId, targetPosition);
             await Repository.CommitCursorPositionAsync(brookId, targetPosition, cancellationToken);
+            return new(targetPosition);
         }
-        else
-        {
-            await RollbackOrphanedOperationAsync(
-                brookId,
-                originalPosition,
-                targetPosition,
-                writerLock,
-                cancellationToken);
-        }
+
+        await RollbackOrphanedOperationAsync(brookId, originalPosition, targetPosition, writerLock, cancellationToken);
+        return new(originalPosition);
     }
 
     private async Task RollbackOrphanedOperationAsync(
