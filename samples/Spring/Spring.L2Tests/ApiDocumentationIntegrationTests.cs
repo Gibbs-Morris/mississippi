@@ -44,7 +44,7 @@ public sealed class ApiDocumentationIntegrationTests
         paths.TryGetProperty("/api/aggregates/bank-account/{entityId}/open", out JsonElement openEndpoint)
             .Should()
             .BeTrue();
-        openEndpoint.TryGetProperty("post", out var _).Should().BeTrue();
+        openEndpoint.TryGetProperty("post", out JsonElement _).Should().BeTrue();
     }
 
     /// <summary>
@@ -59,9 +59,11 @@ public sealed class ApiDocumentationIntegrationTests
         {
             IResponse response = await page.RunAndWaitForResponseAsync(
                 () => page.GotoAsync(new Uri(Fixture.GatewayBaseUri, "/scalar/v1").AbsoluteUri),
-                candidate => new Uri(candidate.Url).AbsolutePath == "/openapi/v1.json");
-            Assert.Equal(200, response.Status);
-            Assert.Equal("Spring Bank API", await page.TitleAsync());
+                candidate => Uri.TryCreate(candidate.Url, UriKind.Absolute, out Uri? responseUri) &&
+                             (responseUri.AbsolutePath == "/openapi/v1.json"));
+            response.Status.Should().Be(200);
+            string title = await page.TitleAsync();
+            title.Should().Be("Spring Bank API");
         }
         finally
         {
