@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 
@@ -26,7 +27,7 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordDeleteEmitsMetric()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -50,7 +51,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
         SnapshotStorageMetrics.RecordDelete("TestSnapshot");
@@ -76,7 +77,7 @@ public sealed class SnapshotStorageMetricsTests
         // Use unique snapshot type to isolate from other tests running in parallel
         const string snapshotType = "PruneTestSnapshot";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -100,7 +101,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
         SnapshotStorageMetrics.RecordPrune(snapshotType, prunedCount);
@@ -120,7 +121,7 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordPruneEmitsMetricWithCount()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -144,7 +145,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.Start();
         SnapshotStorageMetrics.RecordPrune("TestSnapshot", 5);
@@ -163,8 +164,8 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordReadEmitsMetricsWhenFound()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> longMeasurements = [];
-        List<MetricMeasurement> doubleMeasurements = [];
+        ConcurrentQueue<MetricMeasurement> longMeasurements = [];
+        ConcurrentQueue<MetricMeasurement> doubleMeasurements = [];
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -188,7 +189,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            longMeasurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.SetMeasurementEventCallback<double>((
             instrument,
@@ -203,7 +204,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            doubleMeasurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            doubleMeasurements.Enqueue(new(instrument.Name, 0, measurement, tagMap));
         });
         listener.Start();
         SnapshotStorageMetrics.RecordRead("TestSnapshot", 50.0, true);
@@ -228,7 +229,7 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordReadEmitsNotFoundResult()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -252,7 +253,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.SetMeasurementEventCallback<double>((
             _,
@@ -281,7 +282,7 @@ public sealed class SnapshotStorageMetricsTests
         // Use unique snapshot type to isolate from other tests running in parallel
         const string snapshotType = "WriteNoSizeSnapshot";
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -305,7 +306,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.SetMeasurementEventCallback<double>((
             _,
@@ -334,7 +335,7 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordWriteEmitsFailureResult()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> measurements = [];
+        ConcurrentQueue<MetricMeasurement> measurements = [];
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -358,7 +359,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            measurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            measurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.SetMeasurementEventCallback<double>((
             _,
@@ -385,8 +386,8 @@ public sealed class SnapshotStorageMetricsTests
     public void RecordWriteEmitsMetricsWithSize()
     {
         using MeterListener listener = new();
-        List<MetricMeasurement> longMeasurements = [];
-        List<MetricMeasurement> doubleMeasurements = [];
+        ConcurrentQueue<MetricMeasurement> longMeasurements = [];
+        ConcurrentQueue<MetricMeasurement> doubleMeasurements = [];
         listener.InstrumentPublished = (
             instrument,
             listener
@@ -410,7 +411,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            longMeasurements.Add(new(instrument.Name, measurement, 0, tagMap));
+            longMeasurements.Enqueue(new(instrument.Name, measurement, 0, tagMap));
         });
         listener.SetMeasurementEventCallback<double>((
             instrument,
@@ -425,7 +426,7 @@ public sealed class SnapshotStorageMetricsTests
                 tagMap[tag.Key] = tag.Value;
             }
 
-            doubleMeasurements.Add(new(instrument.Name, 0, measurement, tagMap));
+            doubleMeasurements.Enqueue(new(instrument.Name, 0, measurement, tagMap));
         });
         listener.Start();
         SnapshotStorageMetrics.RecordWrite("TestSnapshot", 100.0, true, 4096L);
