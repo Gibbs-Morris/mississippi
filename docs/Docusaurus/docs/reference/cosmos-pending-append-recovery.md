@@ -1,6 +1,6 @@
 ---
 title: Cosmos Pending Append Recovery
-description: Describe how Cosmos brook recovery reconciles visible pending writes under the writer lease.
+description: Cosmos brook recovery reconciles visible pending writes under the writer lease.
 sidebar_position: 3
 ---
 
