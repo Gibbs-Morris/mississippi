@@ -25,16 +25,7 @@ All C# contributors emitting logs (services, grains, libraries).
 
 ## At-a-Glance Quick-Start
 
-- Create `public static partial class {Component}LoggerExtensions` with `[LoggerMessage]` methods.
-- Inject `ILogger<T>` as `private ILogger<T> Logger { get; }`; call `Logger.{Extension}(...);`.
-- Log: entry/exit, exceptions, CRUD, external calls, batches, long/expensive ops, Orleans lifecycle/methods, business rule failures, event sourcing operations.
-- Add correlation IDs; never log secrets; keep messages short and structured.
-
-## Core Principles
-
-- LoggerExtensions + source generators are the only logging entry point.
-- Logs capture intent, identifiers, and timing without leaking sensitive data.
-- Orleans/event sourcing require lifecycle + operation logs for diagnostics.
+For adding or converting logging calls, use [Add .NET source-generated logging](../../.agents/skills/add-dotnet-source-generated-logging/SKILL.md). The rules above remain mandatory whether or not the skill is selected; the skill supplies the implementation and verification procedure.
 
 ## References
 
