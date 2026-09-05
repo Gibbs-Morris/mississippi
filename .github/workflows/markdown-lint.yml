@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -32,13 +32,12 @@ jobs:
         run: echo "::notice::Starting Markdown lint via Super-Linter"
 
       - name: Run Super-Linter (Markdown)
-        uses: super-linter/super-linter@v6
+        uses: super-linter/super-linter@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_MARKDOWN: true
-          VALIDATE_MARKDOWN_PRETTIER: false
 
       - name: Markdown lint passed
         if: success()
