@@ -98,7 +98,7 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         if (pendingCursor != null)
         {
             long committedPosition = cursorDocument?.Position.Value ?? -1;
-            long originalPosition = pendingCursor.OriginalPosition?.Value ?? -1;
+            long originalPosition = pendingCursor.OriginalPosition.GetValueOrDefault(new(-1)).Value;
             long targetPosition = pendingCursor.Position.Value;
             Logger.PendingCursorDetected(brookId, originalPosition, targetPosition);
             if ((targetPosition <= originalPosition) ||
@@ -165,7 +165,7 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         CancellationToken cancellationToken
     )
     {
-        long originalPosition = pendingCursor.OriginalPosition?.Value ?? -1;
+        long originalPosition = pendingCursor.OriginalPosition.GetValueOrDefault(new(-1)).Value;
         long targetPosition = pendingCursor.Position.Value;
         bool allEventsExist = await CheckAllEventsExistAsync(
             brookId,
