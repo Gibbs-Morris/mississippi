@@ -71,15 +71,15 @@ jobs:
             ${{ runner.os }}-sonar-scanner
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v3.2.1
+        uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
         with:
           versionSpec: "6.0.5"
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@v3.2.1
+        uses: gittools/actions/gitversion/execute@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
         with:
-          useConfigFile: true
+          configFilePath: "GitVersion.yml"
 
       - name: Setup Java for Sonar Scanner
         uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
