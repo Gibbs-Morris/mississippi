@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,7 +57,9 @@ public sealed class LocalMessageSenderTests
         using CancellationTokenSource connectionAborted = new();
         TaskCompletionSource writeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         RecordingHubConnectionContext connection = new("conn-1", writeCompletion.Task, connectionAborted.Token);
-        LocalMessageSender sender = new(Substitute.For<ILogger<LocalMessageSender>>());
+        ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
+        logger.IsEnabled(LogLevel.Trace).Returns(true);
+        LocalMessageSender sender = new(logger);
 
         // Act
         Task sendTask = sender.SendAsync(connection, "TestMethod", []);
@@ -69,6 +72,19 @@ public sealed class LocalMessageSenderTests
         Assert.True(sendTask.IsCompletedSuccessfully);
         Assert.True(connection.LastWriteCancellationToken.IsCancellationRequested);
         Assert.False(writeCompletion.Task.IsCompleted);
+        object?[][] logCalls = logger.ReceivedCalls()
+            .Where(call => call.GetMethodInfo().Name == nameof(ILogger.Log))
+            .Select(call => call.GetArguments())
+            .ToArray();
+        Assert.Equal(2, logCalls.Length);
+        Assert.All(logCalls, call => Assert.Equal(LogLevel.Trace, call[0]));
+        Assert.Equal(new EventId(1), logCalls[0][1]);
+        Assert.Equal(new EventId(2), logCalls[1][1]);
+        Assert.IsType<OperationCanceledException>(logCalls[1][3], false);
+        KeyValuePair<string, object?>[] state =
+            Assert.IsType<IEnumerable<KeyValuePair<string, object?>>>(logCalls[1][2], false).ToArray();
+        Assert.Equal("conn-1", state.Single(item => item.Key == "ConnectionId").Value);
+        Assert.Equal("TestMethod", state.Single(item => item.Key == "MethodName").Value);
     }
 
     /// <summary>
