@@ -327,11 +327,10 @@ function Invoke-ReSharperCleanup {
     Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho
 }
 
-function Get-TestProjects {
+function Get-SolutionProjectPaths {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$SolutionPath,
-        [string[]]$TestLevels
+        [Parameter(Mandatory)][string]$SolutionPath
     )
 
     $solution = (Resolve-Path -LiteralPath $SolutionPath).Path
@@ -349,16 +348,28 @@ function Get-TestProjects {
         default { throw "Unsupported solution format: $solution" }
     }
 
-    $testProjects = foreach ($path in $projectPaths) {
+    foreach ($path in $projectPaths) {
         $normalizedPath = $path.Replace('\', '/').Replace('/', [System.IO.Path]::DirectorySeparatorChar)
-        $name = [System.IO.Path]::GetFileNameWithoutExtension($normalizedPath)
+        (Resolve-Path -LiteralPath (Join-Path $solutionDir $normalizedPath)).Path
+    }
+}
+
+function Get-TestProjects {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SolutionPath,
+        [string[]]$TestLevels
+    )
+
+    $testProjects = foreach ($projectPath in Get-SolutionProjectPaths -SolutionPath $SolutionPath) {
+        $name = [System.IO.Path]::GetFileNameWithoutExtension($projectPath)
         if (-not $name.EndsWith('Tests')) { continue }
         if ($TestLevels) {
             $matchingLevels = @($TestLevels | Where-Object { $name.EndsWith(".$_") })
             if ($matchingLevels.Count -eq 0) { continue }
         }
 
-        (Resolve-Path -LiteralPath (Join-Path $solutionDir $normalizedPath)).Path
+        $projectPath
     }
 
     return @($testProjects | Sort-Object -Unique)
@@ -710,6 +721,43 @@ function Invoke-StrykerMutationTest {
         }
     }
 
+    $repositoryRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolution.Path)
+    $sourceRoot = Join-Path $repositoryRoot 'src'
+    $solutionSourceProjects = @(
+        Get-SolutionProjectPaths -SolutionPath $resolvedSolution.Path |
+            Where-Object {
+                $relativePath = [System.IO.Path]::GetRelativePath($sourceRoot, $_).Replace('\', '/')
+                $_.EndsWith('.csproj') -and $relativePath -ne '..' -and
+                    -not $relativePath.StartsWith('../') -and
+                    -not [System.IO.Path]::IsPathRooted($relativePath)
+            } | Sort-Object -Unique
+    )
+    foreach ($source in $solutionSourceProjects) {
+        if (-not (Test-MutationSourceProject -ProjectPath $source)) {
+            Write-Host "  Skipping mutation target $([System.IO.Path]::GetFileNameWithoutExtension($source)): no authored C# source files." -ForegroundColor ([ConsoleColor]::Yellow)
+            $projectResults.Add([pscustomobject]@{
+                    Project       = $source
+                    SourceProject = $source
+                    Status        = 'Skipped'
+                    Success       = $true
+                    Error         = 'No authored C# source files.'
+                })
+            continue
+        }
+
+        if (-not $projectsUnderTest.ContainsKey($source)) {
+            $message = "No test project in '$($resolvedSolution.Path)' maps to source project '$source'."
+            Write-Warning $message
+            $projectResults.Add([pscustomobject]@{
+                    Project       = $source
+                    SourceProject = $source
+                    Status        = 'MissingTests'
+                    Success       = $false
+                    Error         = $message
+                })
+        }
+    }
+
     foreach ($failure in $discoveryFailures) {
         $projectResults.Add($failure)
     }
@@ -733,6 +781,9 @@ function Invoke-StrykerMutationTest {
         }
         Write-Host
     }
+
+    $projectResultsPath = Join-Path $outputFullPath 'project-results.json'
+    $projectResults | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $projectResultsPath
 
     $successfulReports = @($projectResults | Where-Object {
             $_.Success -and $_.PSObject.Properties.Name -contains 'ReportPath' -and $_.ReportPath
