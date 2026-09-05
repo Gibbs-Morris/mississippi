@@ -155,6 +155,30 @@ InModuleScope RepositoryAutomation {
                 Should -Throw '*Expected one mutation report*'
         }
 
+        It 'rejects malformed mutation report JSON' {
+            $reportPath = Join-Path $testRepository 'malformed-report.json'
+            '{not valid json' | Set-Content -LiteralPath $reportPath
+
+            { Read-MutationReport -ReportPath $reportPath } |
+                Should -Throw '*Unable to parse Stryker report*'
+        }
+
+        It 'rejects mutation reports without a valid files collection' {
+            $reportPath = Join-Path $testRepository 'missing-files-report.json'
+            '{"files":"not a collection"}' | Set-Content -LiteralPath $reportPath
+
+            { Read-MutationReport -ReportPath $reportPath } |
+                Should -Throw '*no valid files collection*'
+        }
+
+        It 'rejects mutation reports with incomplete mutant statuses' {
+            $reportPath = Join-Path $testRepository 'incomplete-mutant-report.json'
+            '{"files":{"Example.cs":{"mutants":[{"id":"0"}]}}}' | Set-Content -LiteralPath $reportPath
+
+            { Read-MutationReport -ReportPath $reportPath } |
+                Should -Throw '*incomplete or invalid mutant*'
+        }
+
         It 'aggregates successful source reports and fails the suite when one source fails' {
             Mock Invoke-StrykerMutationTestPerProject { throw 'native Stryker failure' }
 
