@@ -29,19 +29,14 @@ public static class BrooksRuntimeRegistrations
     /// <returns>The modified silo builder for chaining.</returns>
     /// <remarks>
     ///     <para>
-    ///         This method does NOT configure streams or storage - the host application
-    ///         is responsible for that. Use <paramref name="configureOptions" /> to tell
-    ///         Brooks which stream provider to use:
+    ///         This method does not configure Orleans streams or storage. The host application
+    ///         is responsible for registering that infrastructure separately.
     ///     </para>
-    ///     <code>
-    ///     // Host configures infrastructure
-    ///     siloBuilder.AddMemoryStreams("MyStreams");
-    ///     siloBuilder.AddMemoryGrainStorage("PubSubStore");
-    ///
-    ///     // Tell Brooks which stream provider to use
-    ///     siloBuilder.AddEventSourcing(options =&gt;
-    ///         options.OrleansStreamProviderName = "MyStreams");
-    ///     </code>
+    ///     <para>
+    ///         Use <paramref name="configureOptions" /> to align
+    ///         <c>BrookProviderOptions.OrleansStreamProviderName</c> with the stream provider name
+    ///         configured by the host. If no callback is supplied, the default option value remains in effect.
+    ///     </para>
     /// </remarks>
     public static ISiloBuilder AddEventSourcing(
         this ISiloBuilder builder,

@@ -16,15 +16,10 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 /// <typeparam name="TProjection">The projection type being tested.</typeparam>
 /// <remarks>
 ///     <para>
-///         Use this class to build readable test scenarios that establish state via events (Given),
-///         apply a new event (When), and verify the resulting projection (Then).
+///         Create a scenario via <c>CreateScenario()</c> on <see cref="ReducerTestHarness{TProjection}" />,
+///         use <c>Given</c> to replay historical events into the starting state, use <c>When</c> for the
+///         event under test, and finish with the <c>Then*</c> members to assert the resulting projection.
 ///     </para>
-///     <code>
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p =&gt; p.Balance.Should().Be(150m));
-///     </code>
 /// </remarks>
 public sealed class ProjectionScenario<TProjection>
     where TProjection : new()
