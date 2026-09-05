@@ -32,7 +32,7 @@ jobs:
         run: echo "::notice::Starting Markdown lint via Super-Linter"
 
       - name: Run Super-Linter (Markdown)
-        uses: super-linter/super-linter@v6
+        uses: super-linter/super-linter@4ce20838b8ab83717e78138c5b3a1407148e0918 # v8.7.0
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
