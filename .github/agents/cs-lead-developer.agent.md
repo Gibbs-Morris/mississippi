@@ -48,17 +48,7 @@ private readonly IMyService _myService;
 
 ### Logging
 
-```csharp
-// YES: LoggerExtensions with [LoggerMessage]
-internal static partial class LoggerExtensions
-{
-    [LoggerMessage(Level = LogLevel.Information, Message = "Processing {ItemId}")]
-    internal static partial void LogProcessing(this ILogger logger, string itemId);
-}
-
-// NO: Direct ILogger calls
-logger.LogInformation("Processing {ItemId}", itemId);
-```
+For adding or converting logging calls, use [Add .NET source-generated logging](../../.agents/skills/add-dotnet-source-generated-logging/SKILL.md). Follow the repository's [mandatory logging rules](../instructions/logging-rules.instructions.md); the skill does not change this agent's scope or workflow.
 
 ### Abstractions
 
