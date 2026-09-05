@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading;
@@ -86,13 +87,17 @@ internal sealed class BrookWriterGrain
         sw.Stop();
         BrookMetrics.RecordWrite(key, events.Length, sw.Elapsed.TotalMilliseconds);
         Logger.EventsAppended(key, events.Length, newPosition.Value, sw.ElapsedMilliseconds);
-        Logger.PublishingCursorMoved(key, newPosition.Value);
-        IAsyncStream<BrookCursorMovedEvent> stream = this
-            .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
-            .GetStream<BrookCursorMovedEvent>(
-                StreamId.Create(BrooksRuntimeOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
-        await stream.OnNextAsync(new(this.GetPrimaryKeyString(), newPosition));
-        Logger.CursorMovedEventPublished(key, newPosition.Value);
+        try
+        {
+            await PublishCursorAsync(newPosition, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException
+                                              or ThreadInterruptedException))
+        {
+            Logger.CursorPublicationFailed(exception, key, newPosition.Value);
+            throw new BrookCursorPublicationException(newPosition, exception);
+        }
+
         return newPosition;
     }
 
@@ -108,5 +113,23 @@ internal sealed class BrookWriterGrain
         BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.Activated(key);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task PublishCursorAsync(
+        BrookPosition position,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(position.Value);
+        cancellationToken.ThrowIfCancellationRequested();
+        BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
+        Logger.PublishingCursorMoved(key, position.Value);
+        IAsyncStream<BrookCursorMovedEvent> stream = this
+            .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
+            .GetStream<BrookCursorMovedEvent>(
+                StreamId.Create(BrooksRuntimeOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
+        await stream.OnNextAsync(new(this.GetPrimaryKeyString(), position));
+        Logger.CursorMovedEventPublished(key, position.Value);
     }
 }
