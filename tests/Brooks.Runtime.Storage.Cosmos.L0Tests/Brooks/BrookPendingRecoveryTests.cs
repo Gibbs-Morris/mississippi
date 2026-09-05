@@ -204,12 +204,19 @@ public sealed class BrookPendingRecoveryTests
     }
 
     /// <summary>
-    ///     Waits for the writer's lease before inspecting or recovering storage.
+    ///     Rechecks pending evidence after acquiring the writer lease and before recovering storage.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact]
-    public async Task RecoveryWaitsForWriterBeforeReadingStorage()
+    public async Task PendingRecoveryRechecksEvidenceAfterWaitingForWriter()
     {
+        Repository.SetupSequence(value => value.GetPendingCursorDocumentAsync(BrookId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                new CursorStorageModel
+                {
+                    Position = new(0),
+                })
+            .ReturnsAsync((CursorStorageModel?)null);
         TaskCompletionSource<IDistributedLock> lease = new(TaskCreationOptions.RunContinuationsAsynchronously);
         LockManager.Setup(value => value.AcquireLockAsync(
                 BrookId.ToString(),
@@ -218,10 +225,16 @@ public sealed class BrookPendingRecoveryTests
             .Returns(lease.Task);
         WriterLock.Setup(value => value.DisposeAsync()).Returns(default(ValueTask));
         Task<BrookPosition> recovery = CreateService().GetOrRecoverCursorPositionAsync(BrookId);
+        Repository.Verify(
+            value => value.GetPendingCursorDocumentAsync(BrookId, It.IsAny<CancellationToken>()),
+            Times.Once);
         Repository.VerifyNoOtherCalls();
         lease.SetResult(WriterLock.Object);
         BrookPosition result = await recovery;
         Assert.True(result.NotSet);
+        Repository.Verify(
+            value => value.GetPendingCursorDocumentAsync(BrookId, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
         WriterLock.Verify(value => value.DisposeAsync(), Times.Once);
     }
 

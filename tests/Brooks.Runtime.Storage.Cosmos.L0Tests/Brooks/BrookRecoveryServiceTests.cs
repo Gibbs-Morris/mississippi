@@ -94,7 +94,49 @@ public sealed class BrookRecoveryServiceTests
                 }),
             NullLogger<BrookRecoveryService>.Instance);
         await Assert.ThrowsAsync<RequestFailedException>(() => service.GetOrRecoverCursorPositionAsync(brookId));
+        repo.Verify(r => r.GetPendingCursorDocumentAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
         repo.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    ///     Reads missing and existing streams without allocating a lease when no pending append is visible.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
+    /// <param name="position">The committed cursor position, or the unset sentinel.</param>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(4)]
+    public async Task GetOrRecoverCursorPositionAsyncReadsWithoutLeaseWhenNoPendingAsync(
+        long position
+    )
+    {
+        Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
+        Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
+        repo.Setup(r => r.GetCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                position < 0
+                    ? null
+                    : new CursorStorageModel
+                    {
+                        Position = new(position),
+                    });
+        repo.Setup(r => r.GetPendingCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CursorStorageModel?)null);
+        BrookRecoveryService service = new(
+            repo.Object,
+            new TestRetryPolicy(),
+            lockMgr.Object,
+            Options.Create(new BrookStorageOptions()),
+            NullLogger<BrookRecoveryService>.Instance);
+        BrookPosition result = await service.GetOrRecoverCursorPositionAsync(new("t", "i"));
+        Assert.Equal(position, result.Value);
+        lockMgr.VerifyNoOtherCalls();
+        repo.Verify(
+            r => r.GetCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
+            Times.AtLeastOnce);
+        repo.Verify(
+            r => r.GetPendingCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -213,45 +255,6 @@ public sealed class BrookRecoveryServiceTests
     }
 
     /// <summary>
-    ///     Returns -1 when no cursor and no pending cursor data is available.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
-    [Fact]
-    public async Task GetOrRecoverCursorPositionAsyncReturnsMinusOneWhenNoCursorAsync()
-    {
-        Mock<ICosmosRepository> repo = new(MockBehavior.Strict);
-        Mock<IDistributedLockManager> lockMgr = new(MockBehavior.Strict);
-
-        // No cursor document and no pending cursor entry
-        Mock<IDistributedLock> writerLock = new(MockBehavior.Strict);
-        writerLock.Setup(value => value.RenewAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        writerLock.Setup(value => value.DisposeAsync()).Returns(default(ValueTask));
-        lockMgr.Setup(value => value.AcquireLockAsync(
-                new BrookKey("t", "i").ToString(),
-                It.IsAny<TimeSpan>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(writerLock.Object);
-        repo.Setup(r => r.GetCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CursorStorageModel?)null);
-        repo.Setup(r => r.GetPendingCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CursorStorageModel?)null);
-        BrookRecoveryService service = new(
-            repo.Object,
-            new TestRetryPolicy(),
-            lockMgr.Object,
-            Options.Create(new BrookStorageOptions()),
-            NullLogger<BrookRecoveryService>.Instance);
-        BrookPosition result = await service.GetOrRecoverCursorPositionAsync(new("t", "i"));
-        Assert.Equal(-1, result.Value);
-        repo.Verify(
-            r => r.GetCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
-            Times.AtLeastOnce);
-        repo.Verify(
-            r => r.GetPendingCursorDocumentAsync(It.IsAny<BrookKey>(), It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    /// <summary>
     ///     Propagates lock unavailability without reading or modifying unconfirmed storage.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation which completes when the assertion has run.</returns>
@@ -285,6 +288,7 @@ public sealed class BrookRecoveryServiceTests
             NullLogger<BrookRecoveryService>.Instance);
         await Assert.ThrowsAsync<RequestFailedException>(async () =>
             await service.GetOrRecoverCursorPositionAsync(brookId));
+        repo.Verify(r => r.GetPendingCursorDocumentAsync(brookId, It.IsAny<CancellationToken>()), Times.Once);
         repo.VerifyNoOtherCalls();
     }
 }

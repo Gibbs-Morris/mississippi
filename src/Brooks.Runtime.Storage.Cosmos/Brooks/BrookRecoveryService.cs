@@ -63,9 +63,23 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
         CancellationToken cancellationToken = default
     )
     {
-        Logger.AcquiringRecoveryLock(brookId, Options.LeaseDurationSeconds);
+        Logger.GettingOrRecoveringCursor(brookId);
         try
         {
+            CursorStorageModel? pendingCursor = await RetryPolicy.ExecuteAsync(
+                async () => await Repository.GetPendingCursorDocumentAsync(brookId, cancellationToken),
+                cancellationToken);
+            if (pendingCursor is null)
+            {
+                CursorStorageModel? cursorDocument = await RetryPolicy.ExecuteAsync(
+                    async () => await Repository.GetCursorDocumentAsync(brookId, cancellationToken),
+                    cancellationToken);
+                BrookPosition position = cursorDocument?.Position ?? new BrookPosition(-1);
+                Logger.CursorPositionReturned(brookId, position.Value);
+                return position;
+            }
+
+            Logger.AcquiringRecoveryLock(brookId, Options.LeaseDurationSeconds);
             await using IDistributedLock writerLock = await LockManager.AcquireLockAsync(
                 brookId.ToString(),
                 TimeSpan.FromSeconds(Options.LeaseDurationSeconds),
