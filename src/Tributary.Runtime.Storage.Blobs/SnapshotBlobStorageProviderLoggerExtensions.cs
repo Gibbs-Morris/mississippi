@@ -13,14 +13,14 @@ namespace Mississippi.Tributary.Runtime.Storage.Blobs;
 internal static partial class SnapshotBlobStorageProviderLoggerExtensions
 {
     /// <summary>
-    ///     Logs when all snapshots for a stream were deleted.
+    ///     Logs when deletion of all snapshots for a stream completes.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="streamKey">The stream key.</param>
     [LoggerMessage(
         EventId = 2,
         Level = LogLevel.Information,
-        Message = "Deleted all Blob snapshots for stream '{StreamKey}'.")]
+        Message = "Completed deletion of Blob snapshots for stream '{StreamKey}'.")]
     public static partial void AllSnapshotsDeleted(
         this ILogger logger,
         SnapshotStreamKey streamKey
@@ -83,7 +83,10 @@ internal static partial class SnapshotBlobStorageProviderLoggerExtensions
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="snapshotKey">The snapshot key.</param>
-    [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "Deleted Blob snapshot '{SnapshotKey}'.")]
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Debug,
+        Message = "Completed deletion of Blob snapshot '{SnapshotKey}'.")]
     public static partial void SnapshotDeleted(
         this ILogger logger,
         SnapshotKey snapshotKey

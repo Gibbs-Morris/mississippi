@@ -55,8 +55,10 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
                 continue;
             }
 
-            await Operations.DeleteIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false);
-            Logger.SnapshotDeleted(blobName);
+            if (await Operations.DeleteIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false))
+            {
+                Logger.SnapshotDeleted(blobName);
+            }
         }
     }
 
@@ -67,8 +69,10 @@ internal sealed class SnapshotBlobRepository : ISnapshotBlobRepository
     )
     {
         string blobName = SnapshotBlobPath.BuildSnapshotBlobName(snapshotKey);
-        await Operations.DeleteIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false);
-        Logger.SnapshotDeleted(blobName);
+        if (await Operations.DeleteIfExistsAsync(blobName, cancellationToken).ConfigureAwait(false))
+        {
+            Logger.SnapshotDeleted(blobName);
+        }
     }
 
     /// <inheritdoc />

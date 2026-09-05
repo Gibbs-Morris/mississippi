@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -155,6 +156,55 @@ public sealed class SnapshotBlobRepositoryTests
                 SnapshotBlobPath.BuildSnapshotBlobName(SnapshotKey),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies deletion diagnostics report only blobs that were actually removed.
+    /// </summary>
+    /// <param name="isDeleteAll">Whether to delete the entire stream.</param>
+    /// <param name="isExisting">Whether the Blob exists when deletion is attempted.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task DeletionShouldLogOnlyActualRemovals(
+        bool isDeleteAll,
+        bool isExisting
+    )
+    {
+        string blobName = SnapshotBlobPath.BuildSnapshotBlobName(SnapshotKey);
+        Mock<ISnapshotBlobOperations> operations = new();
+        operations.Setup(value => value.ListBlobNamesAsync(
+                SnapshotBlobPath.BuildStreamPrefix(StreamKey),
+                It.IsAny<CancellationToken>()))
+            .Returns(ToAsyncEnumerableAsync([blobName]));
+        operations.Setup(value => value.DeleteIfExistsAsync(blobName, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(isExisting);
+        Mock<ILogger<SnapshotBlobRepository>> logger = new();
+        logger.Setup(value => value.IsEnabled(LogLevel.Debug)).Returns(true);
+        SnapshotBlobRepository repository = new(operations.Object, Mock.Of<ISnapshotBlobCodec>(), logger.Object);
+        if (isDeleteAll)
+        {
+            await repository.DeleteAllAsync(StreamKey);
+        }
+        else
+        {
+            await repository.DeleteAsync(SnapshotKey);
+        }
+
+        logger.Verify(
+            value => value.Log(
+                LogLevel.Debug,
+                It.Is<EventId>(eventId => eventId.Id == 2),
+                It.Is<It.IsAnyType>((
+                    state,
+                    _
+                ) => state.ToString()!.Contains(blobName, StringComparison.Ordinal)),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            isExisting ? Times.Once() : Times.Never());
     }
 
     /// <summary>
