@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
@@ -44,13 +45,6 @@ internal sealed class LocalMessageSender : ILocalMessageSender
         Logger.SendingLocalMessage(connection.ConnectionId, methodName);
         object?[] argsArray = args as object?[] ?? args.ToArray();
         InvocationMessage invocation = new(methodName, argsArray);
-        try
-        {
-            await connection.WriteAsync(invocation, connection.ConnectionAborted).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException exception) when (connection.ConnectionAborted.IsCancellationRequested)
-        {
-            Logger.LocalMessageCanceled(connection.ConnectionId, methodName, exception);
-        }
+        await connection.WriteAsync(invocation, CancellationToken.None).ConfigureAwait(false);
     }
 }

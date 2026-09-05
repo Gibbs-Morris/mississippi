@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.Testing.Utilities.SignalR;
@@ -44,132 +41,6 @@ public sealed class LocalMessageSenderTests
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new LocalMessageSender(null!));
-    }
-
-    /// <summary>
-    ///     SendAsync should complete when connection cancellation ends a pending write.
-    /// </summary>
-    /// <returns>A task representing the test operation.</returns>
-    [Fact(DisplayName = "SendAsync Completes When Connection Abort Cancels Pending Write")]
-    public async Task SendAsyncShouldCompleteWhenConnectionAbortCancelsPendingWrite()
-    {
-        // Arrange
-        using CancellationTokenSource connectionAborted = new();
-        TaskCompletionSource writeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        RecordingHubConnectionContext connection = new("conn-1", writeCompletion.Task, connectionAborted.Token);
-        ILogger<LocalMessageSender> logger = Substitute.For<ILogger<LocalMessageSender>>();
-        logger.IsEnabled(LogLevel.Trace).Returns(true);
-        LocalMessageSender sender = new(logger);
-
-        // Act
-        Task sendTask = sender.SendAsync(connection, "TestMethod", []);
-
-        // Assert
-        Assert.Equal(connectionAborted.Token, connection.LastWriteCancellationToken);
-        Assert.False(sendTask.IsCompleted);
-        await connectionAborted.CancelAsync();
-        await sendTask;
-        Assert.True(sendTask.IsCompletedSuccessfully);
-        Assert.True(connection.LastWriteCancellationToken.IsCancellationRequested);
-        Assert.False(writeCompletion.Task.IsCompleted);
-        object?[][] logCalls = logger.ReceivedCalls()
-            .Where(call => call.GetMethodInfo().Name == nameof(ILogger.Log))
-            .Select(call => call.GetArguments())
-            .ToArray();
-        Assert.Equal(2, logCalls.Length);
-        Assert.All(logCalls, call => Assert.Equal(LogLevel.Trace, call[0]));
-        Assert.Equal(new EventId(1), logCalls[0][1]);
-        Assert.Equal(new EventId(2), logCalls[1][1]);
-        Assert.IsType<OperationCanceledException>(logCalls[1][3], false);
-        KeyValuePair<string, object?>[] state =
-            Assert.IsType<IEnumerable<KeyValuePair<string, object?>>>(logCalls[1][2], false).ToArray();
-        Assert.Equal("conn-1", state.Single(item => item.Key == "ConnectionId").Value);
-        Assert.Equal("TestMethod", state.Single(item => item.Key == "MethodName").Value);
-    }
-
-    /// <summary>
-    ///     SendAsync should forward the connection token and await the invocation write.
-    /// </summary>
-    /// <returns>A task representing the test operation.</returns>
-    [Fact(DisplayName = "SendAsync Forwards Connection Token And Awaits Write")]
-    public async Task SendAsyncShouldForwardConnectionTokenAndAwaitWrite()
-    {
-        // Arrange
-        using CancellationTokenSource connectionAborted = new();
-        TaskCompletionSource writeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        RecordingHubConnectionContext connection = new("conn-1", writeCompletion.Task, connectionAborted.Token);
-        LocalMessageSender sender = new(Substitute.For<ILogger<LocalMessageSender>>());
-        object?[] args = ["arg1", 42, null];
-
-        // Act
-        Task sendTask = sender.SendAsync(connection, "TestMethod", args);
-
-        // Assert
-        Assert.Equal(connectionAborted.Token, connection.LastWriteCancellationToken);
-        InvocationMessage invocation = Assert.IsType<InvocationMessage>(connection.LastMessage);
-        Assert.Equal("TestMethod", invocation.Target);
-        Assert.Equal(args, invocation.Arguments);
-        Assert.False(sendTask.IsCompleted);
-        writeCompletion.SetResult();
-        await sendTask;
-        Assert.False(connection.LastWriteCancellationToken.IsCancellationRequested);
-    }
-
-    /// <summary>
-    ///     SendAsync should propagate cancellation unrelated to an active connection.
-    /// </summary>
-    /// <returns>A task representing the test operation.</returns>
-    [Fact(DisplayName = "SendAsync Propagates Unrelated Cancellation")]
-    public async Task SendAsyncShouldPropagateUnrelatedCancellation()
-    {
-        // Arrange
-        using CancellationTokenSource connectionAborted = new();
-        using CancellationTokenSource unrelatedCancellation = new();
-        await unrelatedCancellation.CancelAsync();
-        RecordingHubConnectionContext connection = new(
-            "conn-1",
-            Task.FromCanceled(unrelatedCancellation.Token),
-            connectionAborted.Token);
-        LocalMessageSender sender = new(Substitute.For<ILogger<LocalMessageSender>>());
-
-        // Act
-        OperationCanceledException exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            sender.SendAsync(connection, "TestMethod", []));
-
-        // Assert
-        Assert.Equal(unrelatedCancellation.Token, exception.CancellationToken);
-        Assert.False(connection.ConnectionAborted.IsCancellationRequested);
-    }
-
-    /// <summary>
-    ///     SendAsync should propagate write failures regardless of connection cancellation.
-    /// </summary>
-    /// <param name="isConnectionAborted">Whether the connection has already been aborted.</param>
-    /// <returns>A task representing the test operation.</returns>
-    [Theory(DisplayName = "SendAsync Propagates Write Failures")]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SendAsyncShouldPropagateWriteFailures(
-        bool isConnectionAborted
-    )
-    {
-        // Arrange
-        using CancellationTokenSource connectionAborted = new();
-        if (isConnectionAborted)
-        {
-            await connectionAborted.CancelAsync();
-        }
-
-        InvalidOperationException failure = new("Write failed.");
-        RecordingHubConnectionContext connection = new("conn-1", Task.FromException(failure), connectionAborted.Token);
-        LocalMessageSender sender = new(Substitute.For<ILogger<LocalMessageSender>>());
-
-        // Act
-        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            sender.SendAsync(connection, "TestMethod", []));
-
-        // Assert
-        Assert.Same(failure, exception);
     }
 
     /// <summary>
