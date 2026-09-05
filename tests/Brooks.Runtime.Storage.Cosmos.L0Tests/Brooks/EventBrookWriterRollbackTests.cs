@@ -61,7 +61,10 @@ public sealed class EventBrookWriterRollbackTests
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new();
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                key,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(
@@ -140,7 +143,10 @@ public sealed class EventBrookWriterRollbackTests
                 Time = e.Time ?? MapperFallbackTime,
             });
         Mock<IBrookRecoveryService> recovery = new();
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                key,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new BrookPosition(0));
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(

@@ -174,7 +174,10 @@ internal sealed class EventBrookWriter : IEventBrookWriter
     )
     {
         // Get current cursor position while holding the lock to ensure consistency
-        BrookPosition currentCursor = await RecoveryService.GetOrRecoverCursorPositionAsync(brookId, cancellationToken);
+        BrookPosition currentCursor = await RecoveryService.GetOrRecoverCursorPositionAsync(
+            brookId,
+            distributedLock,
+            cancellationToken);
 
         // Perform optimistic concurrency check inside the lock
         if (expectedVersion.HasValue && (expectedVersion.Value != currentCursor))

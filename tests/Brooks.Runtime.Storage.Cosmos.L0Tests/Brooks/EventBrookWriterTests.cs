@@ -105,7 +105,10 @@ public sealed class EventBrookWriterTests
                     EventId = "e1",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                brook,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(cursor);
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(
@@ -211,7 +214,10 @@ public sealed class EventBrookWriterTests
                     EventId = "e4",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                brook,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(cursor));
         long final = cursor.Value + allEvents.Length;
         repository.Setup(r => r.CreatePendingCursorAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
@@ -379,7 +385,10 @@ public sealed class EventBrookWriterTests
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                brook,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(cursor));
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(
@@ -456,7 +465,10 @@ public sealed class EventBrookWriterTests
         Mock<IRetryPolicy> retryPolicy = new(MockBehavior.Strict);
         Mock<IMapper<BrookEvent, EventStorageModel>> mapper = new(MockBehavior.Strict);
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                brook,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new BrookPosition(5)));
         Mock<ILogger<EventBrookWriter>> logger = new();
         EventBrookWriter sut = new(
@@ -571,7 +583,10 @@ public sealed class EventBrookWriterTests
                     EventId = "e6",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                brook,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(cursor));
         long final = cursor.Value + allEvents.Length;
         repository.Setup(r => r.CreatePendingCursorAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
@@ -689,7 +704,10 @@ public sealed class EventBrookWriterTests
                     EventId = "e3",
                 });
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                brook,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(cursor));
         long final = cursor.Value + events.Length;
         repository.Setup(r => r.CreatePendingCursorAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
@@ -789,7 +807,10 @@ public sealed class EventBrookWriterTests
         }
 
         Mock<IBrookRecoveryService> recovery = new(MockBehavior.Strict);
-        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(brook, It.IsAny<CancellationToken>()))
+        recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(
+                brook,
+                It.IsAny<IDistributedLock>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(cursor));
         long final = cursor.Value + allEvents.Count;
         repository.Setup(r => r.CreatePendingCursorAsync(brook, cursor, final, It.IsAny<CancellationToken>()))
