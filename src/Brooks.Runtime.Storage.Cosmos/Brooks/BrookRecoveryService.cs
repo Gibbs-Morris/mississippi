@@ -127,7 +127,14 @@ internal sealed class BrookRecoveryService : IBrookRecoveryService
             if (committedPosition >= targetPosition)
             {
                 // A lost commit acknowledgement must never cause committed events to be deleted.
-                await Repository.DeletePendingCursorAsync(brookId, cancellationToken);
+                await RetryPolicy.ExecuteAsync(
+                    async () =>
+                    {
+                        await writerLock.RenewAsync(cancellationToken);
+                        await Repository.DeletePendingCursorAsync(brookId, cancellationToken);
+                        return true;
+                    },
+                    cancellationToken);
             }
             else
             {

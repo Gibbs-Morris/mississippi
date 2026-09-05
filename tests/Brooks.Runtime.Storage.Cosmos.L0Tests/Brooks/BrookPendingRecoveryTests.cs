@@ -72,11 +72,11 @@ public sealed class BrookPendingRecoveryTests
                 });
 
     /// <summary>
-    ///     Preserves committed events after a commit acknowledgement or pending cleanup was lost.
+    ///     Preserves committed events while the configured policy retries a transient pending cleanup failure.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact]
-    public async Task CommittedPendingBatchOnlyRemovesPendingMetadata()
+    public async Task CommittedPendingBatchRetriesMetadataCleanupWithoutDeletingEvents()
     {
         Repository.Setup(value => value.GetCursorDocumentAsync(BrookId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(
@@ -85,11 +85,20 @@ public sealed class BrookPendingRecoveryTests
                     Position = new(4),
                 });
         SetPending(1, 4);
-        Repository.Setup(value => value.DeletePendingCursorAsync(BrookId, It.IsAny<CancellationToken>()))
+        Repository.SetupSequence(value => value.DeletePendingCursorAsync(BrookId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TimeoutException("Transient pending cleanup failure."))
             .Returns(Task.CompletedTask);
+        RetryPolicy.Setup(value => value.ExecuteAsync(It.IsAny<Func<Task<bool>>>(), It.IsAny<CancellationToken>()))
+            .Returns(async (Func<Task<bool>> operation, CancellationToken _) =>
+            {
+                await Assert.ThrowsAsync<TimeoutException>(operation);
+                return await operation();
+            });
         BrookPosition result = await CreateService().GetOrRecoverCursorPositionAsync(BrookId, WriterLock.Object);
         Assert.Equal(4, result.Value);
-        Repository.Verify(value => value.DeletePendingCursorAsync(BrookId, It.IsAny<CancellationToken>()), Times.Once);
+        Repository.Verify(
+            value => value.DeletePendingCursorAsync(BrookId, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
         Repository.Verify(
             value => value.DeleteEventAsync(BrookId, It.IsAny<long>(), It.IsAny<CancellationToken>()),
             Times.Never);
