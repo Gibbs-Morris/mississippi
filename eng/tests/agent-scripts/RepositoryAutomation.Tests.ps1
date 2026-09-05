@@ -126,6 +126,27 @@ InModuleScope RepositoryAutomation {
             }
         }
 
+        It 'retains report metadata when Stryker fails after writing a report' {
+            Mock Get-DotnetMsBuildPath { Join-Path $testRepository 'MSBuild.dll' }
+            Mock Invoke-RepositoryProcess {
+                $outputIndex = [array]::IndexOf($Arguments, '--output')
+                Write-TestMutationReport -OutputPath $Arguments[$outputIndex + 1] -SourcePath (Join-Path (Split-Path -Parent $sourceProject) 'Example.cs') | Out-Null
+                throw 'mutation score is below the configured threshold'
+            } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+
+            $caught = $null
+            try {
+                Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @($testProject) -OutputPath (Join-Path $testRepository 'results')
+            }
+            catch {
+                $caught = $_
+            }
+
+            $caught | Should -Not -BeNullOrEmpty
+            $caught.Exception.Message | Should -Match 'mutation score is below the configured threshold'
+            $caught.Exception.Data['ReportPath'] | Should -Exist
+        }
+
         It 'fails when Stryker exits successfully without producing a report' {
             Mock Get-DotnetMsBuildPath { Join-Path $testRepository 'MSBuild.dll' }
             Mock Invoke-RepositoryProcess {} -ParameterFilter { $Arguments[0] -eq 'stryker' }
@@ -196,6 +217,25 @@ InModuleScope RepositoryAutomation {
             { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @($testProject) -OutputPath (Join-Path $testRepository 'results') } |
                 Should -Throw '*native Stryker failure*'
             (Get-Location).Path | Should -Be $originalLocation
+        }
+
+        It 'includes a valid report when Stryker fails after writing it' {
+            Mock Invoke-StrykerMutationTestPerProject {
+                $reportPath = Write-TestMutationReport -OutputPath (Join-Path $OutputPath 'Example')
+                $failure = [System.Management.Automation.RuntimeException]::new('mutation score is below the configured threshold')
+                $failure.Data['ReportPath'] = $reportPath
+                throw $failure
+            }
+
+            { Invoke-StrykerMutationTest -SolutionPath $solutionPath -OutputPath (Join-Path $testRepository 'results') } |
+                Should -Throw '*Stryker mutation testing failed*'
+
+            $aggregatePath = Join-Path $testRepository 'results/reports/mutation-report.json'
+            $aggregatePath | Should -Exist
+            $report = Get-Content -LiteralPath $aggregatePath -Raw | ConvertFrom-Json
+            @($report.files.PSObject.Properties).Count | Should -Be 1
+            $results = Get-Content -LiteralPath (Join-Path $testRepository 'results/project-results.json') -Raw | ConvertFrom-Json
+            @($results | Where-Object SourceProject -eq $sourceProject).ReportPath | Should -Not -BeNullOrEmpty
         }
     }
 }
