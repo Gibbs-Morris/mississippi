@@ -33,7 +33,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Dotnet
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
@@ -149,7 +149,7 @@ jobs:
 
       - name: Upload RT0002 logs
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: rt0002-logs-${{ matrix.artifact_suffix }}
           path: ${{ runner.temp }}/rt0002-*.log

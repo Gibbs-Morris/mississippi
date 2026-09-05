@@ -6,7 +6,7 @@ This is a minimal Docusaurus site for Mississippi framework documentation.
 
 ### Prerequisites
 
-- Node.js 20.0 or higher
+- Node.js 24.0 or higher
 - npm
 
 ### Installation
