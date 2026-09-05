@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-- Install the .NET SDK referenced in `global.json` (currently `9.0.301`).
+- Install the .NET SDK referenced in `global.json` (currently `10.0.400`).
 - Use PowerShell 7+; every script starts with `#!/usr/bin/env pwsh`.
 - Run `dotnet tool restore` from the repo root to provision the required local tools.
 
@@ -30,7 +30,7 @@
 | --- | --- | --- |
 | **build-mississippi-solution.ps1** | Restore dependencies and compile `mississippi.slnx` (default `Release`). | `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 -Configuration Debug` |
 | **unit-test-mississippi-solution.ps1** | Run all unit & integration tests for the Mississippi solution, emitting results under `.scratchpad/coverage-test-results`. | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` |
-| **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute Stryker.NET to measure mutation score. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` |
+| **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute solution-scoped, per-source-project Stryker.NET runs. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` |
 | **test-project-quality.ps1** | Run `dotnet test` (with coverage) for a single project and optionally Stryker; prints a machine-readable summary. | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Core.Abstractions.Tests` |
 | **clean-up-mississippi-solution.ps1** | Produce a temporary `.sln` and run ReSharper CleanupCode using repository settings. | `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` |
 | **build-sample-solution.ps1** | Build `samples.slnx`. | `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1` |
@@ -40,6 +40,14 @@
 | **summarize-mutation-survivors.ps1** | Parse the latest Stryker run (or rerun it) and sync survivor tasks into `.scratchpad/tasks`. | `pwsh ./eng/src/agent-scripts/summarize-mutation-survivors.ps1 -SkipMutationRun -GenerateTasks` |
 | **final-build-solutions.ps1** | Build both solutions with `--warnaserror` as the final zero-warning gate. | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` |
 | **orchestrate-solutions.ps1** | Run the full Mississippi + Samples pipeline (build → test → mutate → summarize → cleanup → final build) and keep `.scratchpad/tasks` refreshed. | `pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1` |
+
+### Mutation execution details
+
+`mutation-test-mississippi-solution.ps1` uses the generated legacy solution only for project membership and compatibility. It reads the declared test projects from that solution, maps each test suite to its source project, and starts Stryker from the source-project directory with the source project filename, explicit test-project paths, and the MSBuild executable selected by `global.json`.
+
+This avoids three local failure modes: sample tests being discovered by recursive filesystem scanning, Stryker treating a test-project name as the source `--project` argument, and Stryker failing to analyze .NET 10 projects when it selects a different MSBuild installation. Stryker also runs with `--disable-bail` to avoid the VSTest closed-stream cancellation race observed with the pinned tool version.
+
+Each source run writes reports below `.scratchpad/mutation-test-results/<timestamp>/<source-project>/<run>/reports/`. The wrapper writes the aggregate report to `.scratchpad/mutation-test-results/<timestamp>/reports/mutation-report.json`, which is the input expected by `summarize-mutation-survivors.ps1`. Missing, malformed, or incomplete reports, failed source runs, and scores below Stryker's configured break threshold return a non-zero exit code.
 
 ### Scratchpad task helpers
 
@@ -55,6 +63,7 @@ The supporting Pester harness lives in `eng/tests/agent-scripts/`:
 
 | Script | Purpose |
 | --- | --- |
+| **run-repository-automation-tests.ps1** | Runs the Pester coverage for the shared automation and mutation workflow. |
 | **run-scratchpad-task-tests.ps1** | Runs the Pester suite that covers the scratchpad helpers. |
 | **verify-scratchpad-task-scripts.ps1** | End-to-end flow that creates → claims → completes/defers tasks using a temporary scratchpad. |
 | (orchestrator) `../orchestrate-powershell-tests.ps1` | Runs all PowerShell test suites (Pester and script e2e) and exits non-zero on failure. |
