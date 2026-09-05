@@ -518,15 +518,12 @@ function Read-MutationReport {
         }
     }
 
-    $mutants = @(
-        foreach ($file in $report.files.Values) {
-            foreach ($mutant in $file.mutants) {
-                $mutant
-            }
-        }
-    )
-    $detected = @($mutants | Where-Object { $_.status -in @('Killed', 'Timeout') }).Count
-    $undetected = @($mutants | Where-Object { $_.status -in @('Survived', 'NoCoverage', 'CompileError', 'RuntimeError') }).Count
+    $detected = @($report.files.Values | ForEach-Object { $_.mutants } | ForEach-Object {
+            $_
+        } | Where-Object { $_.status -in @('Killed', 'Timeout') }).Count
+    $undetected = @($report.files.Values | ForEach-Object { $_.mutants } | ForEach-Object {
+            $_
+        } | Where-Object { $_.status -in @('Survived', 'NoCoverage', 'CompileError', 'RuntimeError') }).Count
     $score = if ($detected + $undetected -gt 0) {
         100.0 * $detected / ($detected + $undetected)
     }
@@ -597,7 +594,7 @@ function Invoke-StrykerProcess {
     return $processError
 }
 
-function Read-StrykerMutationRunReport {
+function Get-StrykerMutationReport {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$OutputPath,
@@ -654,7 +651,7 @@ function Invoke-StrykerMutationTestPerProject {
     Write-Host "  Running Stryker for project: $sourceProjectName" -ForegroundColor ([ConsoleColor]::Cyan)
     $arguments = Get-StrykerMutationArguments -SourceProject $sourceProject -TestProjects $TestProjects -ConfigPath $config -OutputPath $projectOutputPath -Configuration $Configuration
     $processError = Invoke-StrykerProcess -WorkingDirectory $sourceProjectDirectory -Arguments $arguments -SourceProjectName $sourceProjectName -OutputPath $projectOutputPath
-    $report = Read-StrykerMutationRunReport -OutputPath $projectOutputPath -SourceProjectName $sourceProjectName -ProcessError $processError
+    $report = Get-StrykerMutationReport -OutputPath $projectOutputPath -SourceProjectName $sourceProjectName -ProcessError $processError
 
     return [pscustomobject]@{
         Project       = $sourceProject
@@ -717,7 +714,10 @@ function Merge-MutationTestFiles {
             $MergedTestFiles[$file.Key] = $file.Value
         }
         elseif ($file.Value.Contains('tests')) {
-            $MergedTestFiles[$file.Key].tests = @(@($MergedTestFiles[$file.Key].tests) + @($file.Value.tests) | Sort-Object id -Unique)
+            $MergedTestFiles[$file.Key].tests = @(
+                @($MergedTestFiles[$file.Key].tests) + @($file.Value.tests) |
+                    Sort-Object id -Unique
+            )
         }
     }
 }
@@ -755,15 +755,36 @@ function Export-MutationRunReport {
     return $aggregatePath
 }
 
-function Get-MutationProjectMap {
+function Invoke-StrykerMutationTest {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string[]]$TestProjects
+        [Parameter(Mandatory)][string]$SolutionPath,
+        [Parameter(Mandatory)][string]$OutputPath,
+        [string]$Configuration = 'Release',
+        [string]$ConfigPath
     )
 
+    $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
+    $outputFullPath = [System.IO.Path]::GetFullPath($OutputPath)
+    if (-not (Test-Path -LiteralPath $outputFullPath)) {
+        $null = New-Item -ItemType Directory -Path $outputFullPath -Force
+    }
+
+    # Workaround for stryker-mutator/stryker-net#2634
+    # Run Stryker per-project instead of at solution level to avoid compilation issues
+    # with source generators (like LoggerMessage)
+    Write-Host "Discovering test projects in solution..." -ForegroundColor ([ConsoleColor]::Cyan)
+    $testProjects = @(Get-TestProjects -SolutionPath $resolvedSolution.Path)
+    if ($testProjects.Count -eq 0) {
+        throw "No test projects found in '$($resolvedSolution.Path)'."
+    }
+    Write-Host "Found $($testProjects.Count) test projects" -ForegroundColor ([ConsoleColor]::Green)
+    Write-Host
+
     $projectsUnderTest = @{}
+    $projectResults = [System.Collections.Generic.List[object]]::new()
     $discoveryFailures = [System.Collections.Generic.List[object]]::new()
-    foreach ($testProject in $TestProjects) {
+    foreach ($testProject in $testProjects) {
         if ([System.IO.Path]::GetFileNameWithoutExtension($testProject) -eq 'Architecture.L0Tests') {
             Write-Host '  Skipping Architecture.L0Tests: it has no single behavioral mutation target.' -ForegroundColor ([ConsoleColor]::Yellow)
             continue
@@ -797,45 +818,21 @@ function Get-MutationProjectMap {
         }
     }
 
-    return [pscustomobject]@{
-        Projects = $projectsUnderTest
-        Failures = $discoveryFailures
-    }
-}
-
-function Get-SolutionSourceProjects {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$SolutionPath
-    )
-
-    $solution = (Resolve-Path -LiteralPath $SolutionPath).Path
-    $repositoryRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $solution)
+    $repositoryRoot = Get-RepositoryRoot -StartPath (Split-Path -Parent $resolvedSolution.Path)
     $sourceRoot = Join-Path $repositoryRoot 'src'
-    $sourceProjects = foreach ($project in Get-SolutionProjectPaths -SolutionPath $solution) {
-        $relativePath = [System.IO.Path]::GetRelativePath($sourceRoot, $project).Replace('\', '/')
-        if ($project.EndsWith('.csproj') -and $relativePath -ne '..' -and
-            -not $relativePath.StartsWith('../') -and
-            -not [System.IO.Path]::IsPathRooted($relativePath)) {
-            $project
-        }
-    }
-
-    return @($sourceProjects | Sort-Object -Unique)
-}
-
-function Add-SolutionSourceResults {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$SolutionPath,
-        [Parameter(Mandatory)][System.Collections.IDictionary]$ProjectsUnderTest,
-        [Parameter(Mandatory)][object]$ProjectResults
+    $solutionSourceProjects = @(
+        Get-SolutionProjectPaths -SolutionPath $resolvedSolution.Path |
+            Where-Object {
+                $relativePath = [System.IO.Path]::GetRelativePath($sourceRoot, $_).Replace('\', '/')
+                $_.EndsWith('.csproj') -and $relativePath -ne '..' -and
+                    -not $relativePath.StartsWith('../') -and
+                    -not [System.IO.Path]::IsPathRooted($relativePath)
+            } | Sort-Object -Unique
     )
-
-    foreach ($source in Get-SolutionSourceProjects -SolutionPath $SolutionPath) {
+    foreach ($source in $solutionSourceProjects) {
         if (-not (Test-MutationSourceProject -ProjectPath $source)) {
             Write-Host "  Skipping mutation target $([System.IO.Path]::GetFileNameWithoutExtension($source)): no authored C# source files." -ForegroundColor ([ConsoleColor]::Yellow)
-            $ProjectResults.Add([pscustomobject]@{
+            $projectResults.Add([pscustomobject]@{
                     Project       = $source
                     SourceProject = $source
                     Status        = 'Skipped'
@@ -845,10 +842,10 @@ function Add-SolutionSourceResults {
             continue
         }
 
-        if (-not $ProjectsUnderTest.ContainsKey($source)) {
-            $message = "No test project in '$SolutionPath' maps to source project '$source'."
+        if (-not $projectsUnderTest.ContainsKey($source)) {
+            $message = "No test project in '$($resolvedSolution.Path)' maps to source project '$source'."
             Write-Warning $message
-            $ProjectResults.Add([pscustomobject]@{
+            $projectResults.Add([pscustomobject]@{
                     Project       = $source
                     SourceProject = $source
                     Status        = 'MissingTests'
@@ -857,135 +854,54 @@ function Add-SolutionSourceResults {
                 })
         }
     }
-}
 
-function New-MutationFailureResult {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$ProjectPath,
-        [Parameter(Mandatory)][object]$ErrorRecord
-    )
-
-    $reportPath = $null
-    $outputPath = $null
-    if ($null -ne $ErrorRecord.Exception.Data) {
-        $reportPath = [string]$ErrorRecord.Exception.Data['ReportPath']
-        $outputPath = [string]$ErrorRecord.Exception.Data['Output']
+    foreach ($failure in $discoveryFailures) {
+        $projectResults.Add($failure)
     }
-
-    return [pscustomobject]@{
-        Project       = $ProjectPath
-        SourceProject = $ProjectPath
-        Output        = $outputPath
-        ReportPath    = $reportPath
-        Status        = 'Failed'
-        Success       = $false
-        Error         = $ErrorRecord.Exception.Message
-    }
-}
-
-function Invoke-MutationTargets {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][System.Collections.IDictionary]$ProjectsUnderTest,
-        [Parameter(Mandatory)][string]$OutputPath,
-        [Parameter(Mandatory)][object]$ProjectResults,
-        [string]$Configuration = 'Release',
-        [string]$ConfigPath
-    )
 
     $executedProjects = 0
-    foreach ($source in ($ProjectsUnderTest.Keys | Sort-Object)) {
+    foreach ($source in ($projectsUnderTest.Keys | Sort-Object)) {
         $executedProjects++
         try {
-            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $source -TestProjects @($ProjectsUnderTest[$source] | Sort-Object -Unique) -OutputPath $OutputPath -Configuration $Configuration -ConfigPath $ConfigPath
-            $ProjectResults.Add($result)
+            $result = Invoke-StrykerMutationTestPerProject -ProjectPath $source -TestProjects @($projectsUnderTest[$source] | Sort-Object -Unique) -OutputPath $outputFullPath -Configuration $Configuration -ConfigPath $ConfigPath
+            $projectResults.Add($result)
             Write-Host "  ✓ Completed: $([System.IO.Path]::GetFileNameWithoutExtension($source))" -ForegroundColor ([ConsoleColor]::Green)
         }
         catch {
             Write-Warning "  ✗ Failed: $([System.IO.Path]::GetFileNameWithoutExtension($source)) - $($_.Exception.Message)"
-            $ProjectResults.Add((New-MutationFailureResult -ProjectPath $source -ErrorRecord $_))
+            $reportPath = if ($null -ne $_.Exception.Data) { [string]$_.Exception.Data['ReportPath'] } else { $null }
+            $outputPath = if ($null -ne $_.Exception.Data) { [string]$_.Exception.Data['Output'] } else { $null }
+            $projectResults.Add([pscustomobject]@{
+                    Project       = $source
+                    SourceProject = $source
+                    Output        = $outputPath
+                    ReportPath    = $reportPath
+                    Status        = 'Failed'
+                    Success       = $false
+                    Error         = $_.Exception.Message
+                })
         }
         Write-Host
     }
 
-    return $executedProjects
-}
+    $projectResultsPath = Join-Path $outputFullPath 'project-results.json'
+    $projectResults | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $projectResultsPath
 
-function Complete-MutationRun {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$OutputPath,
-        [Parameter(Mandatory)][object]$ProjectResults
-    )
-
-    $projectResultsPath = Join-Path $OutputPath 'project-results.json'
-    $ProjectResults | ConvertTo-Json -Depth 10 -AsArray | Set-Content -LiteralPath $projectResultsPath
-
-    $reportPaths = @(
-        foreach ($result in $ProjectResults) {
-            if ($result.PSObject.Properties.Name -contains 'ReportPath' -and $result.ReportPath) {
-                $result.ReportPath
-            }
-        }
-    )
-    $reportPaths = @($reportPaths | Sort-Object -Unique)
+    $reportPaths = @($projectResults | Where-Object {
+            $_.PSObject.Properties.Name -contains 'ReportPath' -and $_.ReportPath
+        } | Select-Object -ExpandProperty ReportPath | Sort-Object -Unique)
     if ($reportPaths.Count -gt 0) {
-        $aggregatePath = Export-MutationRunReport -OutputPath $OutputPath -ReportPaths $reportPaths
+        $aggregatePath = Export-MutationRunReport -OutputPath $outputFullPath -ReportPaths $reportPaths
         Write-Host "Aggregated mutation report: $aggregatePath" -ForegroundColor ([ConsoleColor]::Green)
     }
 
-    $failedProjects = @($ProjectResults | Where-Object { -not $_.Success })
+    $failedProjects = @($projectResults | Where-Object { -not $_.Success })
     if ($failedProjects.Count -gt 0) {
         Write-Host "WARNING: $($failedProjects.Count) mutation mapping/run(s) failed" -ForegroundColor ([ConsoleColor]::Yellow)
         foreach ($failed in $failedProjects) {
             Write-Host "  - $([System.IO.Path]::GetFileNameWithoutExtension($failed.Project)): $($failed.Error)" -ForegroundColor ([ConsoleColor]::Yellow)
         }
-    }
-
-    return [pscustomobject]@{
-        FailedProjects = $failedProjects
-    }
-}
-
-function Invoke-StrykerMutationTest {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)][string]$SolutionPath,
-        [Parameter(Mandatory)][string]$OutputPath,
-        [string]$Configuration = 'Release',
-        [string]$ConfigPath
-    )
-
-    $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
-    $outputFullPath = [System.IO.Path]::GetFullPath($OutputPath)
-    if (-not (Test-Path -LiteralPath $outputFullPath)) {
-        $null = New-Item -ItemType Directory -Path $outputFullPath -Force
-    }
-
-    # Workaround for stryker-mutator/stryker-net#2634
-    # Run Stryker per-project instead of at solution level to avoid compilation issues
-    # with source generators (like LoggerMessage)
-    Write-Host "Discovering test projects in solution..." -ForegroundColor ([ConsoleColor]::Cyan)
-    $testProjects = @(Get-TestProjects -SolutionPath $resolvedSolution.Path)
-    if ($testProjects.Count -eq 0) {
-        throw "No test projects found in '$($resolvedSolution.Path)'."
-    }
-    Write-Host "Found $($testProjects.Count) test projects" -ForegroundColor ([ConsoleColor]::Green)
-    Write-Host
-
-    $projectResults = [System.Collections.Generic.List[object]]::new()
-    $projectMap = Get-MutationProjectMap -TestProjects $testProjects
-    $projectsUnderTest = $projectMap.Projects
-    Add-SolutionSourceResults -SolutionPath $resolvedSolution.Path -ProjectsUnderTest $projectsUnderTest -ProjectResults $projectResults
-    foreach ($failure in $projectMap.Failures) {
-        $projectResults.Add($failure)
-    }
-
-    $executedProjects = Invoke-MutationTargets -ProjectsUnderTest $projectsUnderTest -OutputPath $outputFullPath -ProjectResults $projectResults -Configuration $Configuration -ConfigPath $ConfigPath
-    $completion = Complete-MutationRun -OutputPath $outputFullPath -ProjectResults $projectResults
-    if ($completion.FailedProjects.Count -gt 0) {
-        throw "Stryker mutation testing failed for $($completion.FailedProjects.Count) project(s). Reports: $outputFullPath"
+        throw "Stryker mutation testing failed for $($failedProjects.Count) project(s). Reports: $outputFullPath"
     }
 
     if ($executedProjects -eq 0) {
