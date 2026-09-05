@@ -78,15 +78,14 @@ public sealed class SnapshotBlobStorageOptionsTests
     {
         SnapshotBlobStorageOptionsValidator validator = new();
         long[] limits = [1, Array.MaxLength];
-        foreach (long limit in limits)
+        foreach (ValidateOptionsResult result in limits.Select(limit => validator.Validate(
+                     Options.DefaultName,
+                     new()
+                     {
+                         MaximumSnapshotPayloadSizeBytes = limit,
+                         MaximumSnapshotDocumentSizeBytes = limit,
+                     })))
         {
-            ValidateOptionsResult result = validator.Validate(
-                Options.DefaultName,
-                new()
-                {
-                    MaximumSnapshotPayloadSizeBytes = limit,
-                    MaximumSnapshotDocumentSizeBytes = limit,
-                });
             Assert.True(result.Succeeded);
         }
     }
