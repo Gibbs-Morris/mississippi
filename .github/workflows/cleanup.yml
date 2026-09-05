@@ -134,6 +134,8 @@ jobs:
             '--LogLevel=TRACE'
           )
 
+          # Gate only PR-changed files, even when formatting settings change, to avoid
+          # unrelated cleanup churn. Manual runs provide full-solution cleanup checks.
           if ($env:GITHUB_EVENT_NAME -eq 'pull_request') {
             $eventPayload = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
             $baseSha = $eventPayload.pull_request.base.sha
