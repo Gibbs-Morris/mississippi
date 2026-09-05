@@ -141,6 +141,13 @@ InModuleScope RepositoryAutomation {
                 Should -Throw '*failed*'
         }
 
+        It 'reports mapping failures before the no-target fallback' {
+            Mock Get-MutationSourceProjects { throw 'source mapping failure' }
+
+            { Invoke-StrykerMutationTest -SolutionPath $solutionPath -OutputPath (Join-Path $testRepository 'results') } |
+                Should -Throw '*Stryker mutation testing failed*'
+        }
+
         It 'writes the aggregate report consumed by the survivor summarizer' {
             Mock Invoke-StrykerMutationTestPerProject {
                 $reportPath = Write-TestMutationReport -OutputPath (Join-Path $OutputPath 'Example')
