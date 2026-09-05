@@ -42,7 +42,7 @@ jobs:
           node-version: '24'
 
       - name: Cache npm packages
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
@@ -55,14 +55,14 @@ jobs:
           npm install -g markdownlint-cli@0.45.0
 
       - name: Cache GitVersion tools
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.gitversion
           key: ${{ runner.os }}-gitversion
           restore-keys: ${{ runner.os }}-gitversion
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
