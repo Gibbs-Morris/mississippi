@@ -116,17 +116,78 @@ jobs:
       - name: Run ReSharper Cleanup Code
         shell: pwsh
         run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
           $slnxPath = Join-Path "${{ github.workspace }}" "${{ matrix.solution }}"
           $slnPath = $slnxPath -replace '\.slnx$', '.sln'
+          echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
+          $slnFileName = Split-Path -Path $slnPath -Leaf
+          echo "SLN_FILE_NAME=$slnFileName" >> $env:GITHUB_ENV
+
+          $cleanupArguments = @(
+            'tool', 'run', 'jb', 'cleanupcode',
+            '--profile=Built-in: Full Cleanup',
+            "--settings=${{ env.DOTSETTINGS_PATH }}",
+            "--caches-home=${{ runner.temp }}/.jb-caches",
+            '--no-updates',
+            $slnPath,
+            '--LogLevel=TRACE'
+          )
+
+          if ($env:GITHUB_EVENT_NAME -eq 'pull_request') {
+            $eventPayload = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+            $baseSha = $eventPayload.pull_request.base.sha
+            $headSha = $eventPayload.pull_request.head.sha
+            if ([string]::IsNullOrWhiteSpace($baseSha) -or [string]::IsNullOrWhiteSpace($headSha)) {
+              throw 'Pull request base and head SHAs are required for targeted cleanup.'
+            }
+
+            # Compare the PR head, not the synthetic merge commit checked out by Actions.
+            $gitStartInfo = [System.Diagnostics.ProcessStartInfo]::new('git')
+            $gitStartInfo.WorkingDirectory = $env:GITHUB_WORKSPACE
+            $gitStartInfo.UseShellExecute = $false
+            $gitStartInfo.RedirectStandardOutput = $true
+            $gitStartInfo.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+            foreach ($argument in @('diff', '--name-only', '--diff-filter=ACMRT', '--find-renames', '-z', "${baseSha}...${headSha}", '--')) {
+              $gitStartInfo.ArgumentList.Add($argument)
+            }
+
+            $gitProcess = [System.Diagnostics.Process]::Start($gitStartInfo)
+            try {
+              $changedPathsOutput = $gitProcess.StandardOutput.ReadToEnd()
+              $gitProcess.WaitForExit()
+              if ($gitProcess.ExitCode -ne 0) {
+                throw "Failed to determine pull request files (git exit code $($gitProcess.ExitCode))."
+              }
+            }
+            finally {
+              $gitProcess.Dispose()
+            }
+
+            $includePaths = @(
+              foreach ($path in $changedPathsOutput.Split([char]0, [System.StringSplitOptions]::RemoveEmptyEntries)) {
+                if ($path -match '[*?;\\]') {
+                  throw "Pull request path cannot be represented as an exact CleanupCode include: $path"
+                }
+
+                if (Test-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE $path) -PathType Leaf) {
+                  $path
+                }
+              }
+            )
+
+            if ($includePaths.Count -eq 0) {
+              Write-Host 'No existing changed files in this pull request. Skipping ReSharper cleanup.'
+              exit 0
+            }
+
+            $cleanupArguments += "--include=$($includePaths -join ';')"
+            Write-Host "Restricting cleanup to $($includePaths.Count) changed pull request file(s)."
+          }
+
           Write-Host "Running ReSharper Cleanup Code on $slnPath ..."
           $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-          dotnet tool run jb cleanupcode `
-            --profile="Built-in: Full Cleanup" `
-            --settings="${{ env.DOTSETTINGS_PATH }}" `
-            --caches-home="${{ runner.temp }}/.jb-caches" `
-            --no-updates `
-            "$slnPath" `
-            --LogLevel=TRACE
+          dotnet @cleanupArguments
           $stopwatch.Stop()
           $elapsed = $stopwatch.Elapsed
           Write-Host ""
@@ -138,10 +199,13 @@ jobs:
           Write-Host "Minutes:  $([math]::Round($elapsed.TotalMinutes, 2))"
           Write-Host "========================================" -ForegroundColor Cyan
           Write-Host ""
+          # CleanupCode returns 3 when no files match, including documentation-only PRs.
+          if ($env:GITHUB_EVENT_NAME -eq 'pull_request' -and $LASTEXITCODE -eq 3) {
+            Write-Host 'No changed files matched this solution for cleanup.'
+            exit 0
+          }
+
           Write-Host "Cleanup completed."
-          echo "SLN_PATH=$slnPath" >> $env:GITHUB_ENV
-          $slnFileName = Split-Path -Path $slnPath -Leaf
-          echo "SLN_FILE_NAME=$slnFileName" >> $env:GITHUB_ENV
 
       - name: Check for Uncommitted Changes
         shell: pwsh
