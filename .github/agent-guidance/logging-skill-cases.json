@@ -1,0 +1,52 @@
+[
+  {
+    "id": "explicit",
+    "fixture": "candidate",
+    "prompt": "Use $add-dotnet-source-generated-logging (Copilot: /add-dotnet-source-generated-logging). Return the C# helper and replacement call for logger.LogError(new EventId(41, \"DispatchFailed\"), exception, \"Dispatch {JobId} failed after {AttemptCount} attempts\", jobId, attemptCount). jobId is string; attemptCount is int; exception is Exception. Helper name DispatchFailed; parameters ILogger logger, int attemptCount, string jobId, Exception exception in that order. Preserve observable logging semantics. Target supports LoggerMessage."
+  },
+  {
+    "id": "implicit",
+    "fixture": "candidate",
+    "prompt": "Convert this C# Microsoft.Extensions.Logging call to a source-generated partial helper named DispatchFailed; provide the helper and replacement call. logger.LogError(new EventId(41, \"DispatchFailed\"), exception, \"Dispatch {JobId} failed after {AttemptCount} attempts\", jobId, attemptCount). jobId is string; attemptCount is int; exception is Exception. Preserve observable logging semantics. Target supports LoggerMessage."
+  },
+  {
+    "id": "paraphrase",
+    "fixture": "candidate",
+    "prompt": "I want the compiler to generate the typed diagnostic method for this C# call instead of parsing its template at runtime. Provide the declaration and replacement invocation without changing what operators observe: logger.LogError(new EventId(41, \"DispatchFailed\"), exception, \"Dispatch {JobId} failed after {AttemptCount} attempts\", jobId, attemptCount). jobId is string, attemptCount int, exception Exception. The project already supports LoggerMessage."
+  },
+  {
+    "id": "unrelated",
+    "fixture": "candidate",
+    "prompt": "What does the C# null-coalescing operator do? Give one short example."
+  },
+  {
+    "id": "incidental",
+    "fixture": "candidate",
+    "prompt": "A C# record named LogEntry has an int Count property. Show how a with expression makes a copy with Count = 3; this is a record-syntax question only."
+  },
+  {
+    "id": "missing-scope",
+    "fixture": "candidate",
+    "prompt": "Add source-generated logging. I have not provided a component, file, or operation. What do you need next?"
+  },
+  {
+    "id": "missing-tools",
+    "fixture": "candidate",
+    "prompt": "Use the source-generated logging skill to advise on converting a C# logger call. The target's SDK and generator version are unknown, no build/test tools are available, and the existing direct call uses EventId(0, null). How would you handle this without assuming semantic equivalence or verified compilation?"
+  },
+  {
+    "id": "portable",
+    "fixture": "portable",
+    "prompt": "Using the repository conventions, propose code for a new diagnostic event in a Cedar worker with private readonly ILogger<Worker> _logger. Level comes from the LogLevel level parameter. Message is \"Dispatch {JobId}: {Detail}\", numeric event ID 7 and name DispatchDetail. jobId is string. ExpensiveDetail() is an expensive pure logging-only calculation and must not execute when the level is disabled. The project supports LoggerMessage. Show the helper and call-site code."
+  },
+  {
+    "id": "legacy",
+    "fixture": "legacy",
+    "prompt": "Convert this C# Microsoft.Extensions.Logging call to a source-generated partial helper named DispatchFailed; provide the helper and replacement call. logger.LogError(new EventId(41, \"DispatchFailed\"), exception, \"Dispatch {JobId} failed after {AttemptCount} attempts\", jobId, attemptCount). jobId is string; attemptCount is int; exception is Exception. Preserve observable logging semantics. Target supports LoggerMessage."
+  },
+  {
+    "id": "instance",
+    "fixture": "instance",
+    "prompt": "Use the source-generated logging skill. This repository uses instance LoggerMessage partial methods in its partial Worker class, which already has private readonly ILogger<Worker> _logger. Do not change that pattern. Propose a private partial void DispatchFailed(int attemptCount, string jobId, Exception exception) or explain any constraints. Required event: Error, EventId 41, EventName DispatchFailed. The exact message template is \"Dispatch {JobId} failed after {AttemptCount} attempts\" (no trailing period). Preserve the original structured field enumeration JobId then AttemptCount then {OriginalFormat}; no builds are available."
+  }
+]
