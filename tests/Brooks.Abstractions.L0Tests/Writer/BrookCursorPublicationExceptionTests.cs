@@ -17,8 +17,13 @@ public sealed class BrookCursorPublicationExceptionTests
     /// <summary>
     ///     Keeps the committed position and underlying publication error across serialization.
     /// </summary>
-    [Fact]
-    public void SerializationPreservesCommittedPositionAndFailure()
+    /// <param name="isBaseException">Whether the transport contract is the base exception type.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SerializationPreservesCommittedPositionAndFailure(
+        bool isBaseException
+    )
     {
         ServiceCollection services = new();
         services.AddSerializer(builder => builder.AddAssembly(typeof(BrookCursorPublicationException).Assembly));
@@ -27,9 +32,13 @@ public sealed class BrookCursorPublicationExceptionTests
         BrookCursorPublicationException original = new(
             new BrookPosition(42),
             new InvalidOperationException("Stream unavailable."));
-        byte[] payload = serializer.SerializeToArray(original);
-        BrookCursorPublicationException? restored = serializer.Deserialize<BrookCursorPublicationException>(payload);
-        Assert.NotNull(restored);
+        byte[] payload = isBaseException
+            ? serializer.SerializeToArray<Exception>(original)
+            : serializer.SerializeToArray(original);
+        Exception? deserialized = isBaseException
+            ? serializer.Deserialize<Exception>(payload)
+            : serializer.Deserialize<BrookCursorPublicationException>(payload);
+        BrookCursorPublicationException restored = Assert.IsType<BrookCursorPublicationException>(deserialized);
         Assert.Equal(42, restored.Position.Value);
         Assert.Equal(original.Message, restored.Message);
         InvalidOperationException cause = Assert.IsType<InvalidOperationException>(restored.InnerException);

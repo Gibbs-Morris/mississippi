@@ -91,7 +91,8 @@ internal sealed class BrookWriterGrain
         {
             await PublishCursorAsync(newPosition, cancellationToken);
         }
-        catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException or ThreadInterruptedException))
+        catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException
+                                              or ThreadInterruptedException))
         {
             Logger.CursorPublicationFailed(exception, key, newPosition.Value);
             throw new BrookCursorPublicationException(newPosition, exception);
