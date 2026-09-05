@@ -483,6 +483,27 @@ function Test-MutationMutant {
     return $Mutant.status -in $ValidStatuses
 }
 
+function Test-MutationReportFiles {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Files,
+        [Parameter(Mandatory)][string]$ReportPath,
+        [Parameter(Mandatory)][string[]]$ValidStatuses
+    )
+
+    foreach ($file in $Files.GetEnumerator()) {
+        if ($file.Value -isnot [System.Collections.IDictionary] -or -not $file.Value.Contains('mutants') -or $file.Value.mutants -isnot [System.Collections.IEnumerable] -or $file.Value.mutants -is [string]) {
+            throw "Stryker report has no valid mutants collection: $ReportPath"
+        }
+
+        foreach ($mutant in @($file.Value.mutants)) {
+            if (-not (Test-MutationMutant -Mutant $mutant -ValidStatuses $ValidStatuses)) {
+                throw "Stryker report contains an incomplete or invalid mutant: $ReportPath"
+            }
+        }
+    }
+}
+
 function Read-MutationReport {
     [CmdletBinding()]
     param(
@@ -503,20 +524,7 @@ function Read-MutationReport {
     }
 
     $validStatuses = @('Killed', 'Survived', 'NoCoverage', 'CompileError', 'RuntimeError', 'Timeout', 'Ignored')
-    foreach ($file in $report.files.GetEnumerator()) {
-        if ($file.Value -isnot [System.Collections.IDictionary] -or
-            -not $file.Value.Contains('mutants') -or
-            $file.Value.mutants -isnot [System.Collections.IEnumerable] -or
-            $file.Value.mutants -is [string]) {
-            throw "Stryker report has no valid mutants collection: $ReportPath"
-        }
-
-        foreach ($mutant in @($file.Value.mutants)) {
-            if (-not (Test-MutationMutant -Mutant $mutant -ValidStatuses $validStatuses)) {
-                throw "Stryker report contains an incomplete or invalid mutant: $ReportPath"
-            }
-        }
-    }
+    Test-MutationReportFiles -Files $report.files -ReportPath $ReportPath -ValidStatuses $validStatuses
 
     $mutants = @(
         foreach ($file in $report.files.Values) {
@@ -597,7 +605,7 @@ function Invoke-StrykerProcess {
     return $processError
 }
 
-function Read-StrykerMutationRunReport {
+function Invoke-StrykerMutationReport {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$OutputPath,
@@ -654,7 +662,7 @@ function Invoke-StrykerMutationTestPerProject {
     Write-Host "  Running Stryker for project: $sourceProjectName" -ForegroundColor ([ConsoleColor]::Cyan)
     $arguments = Get-StrykerMutationArguments -SourceProject $sourceProject -TestProjects $TestProjects -ConfigPath $config -OutputPath $projectOutputPath -Configuration $Configuration
     $processError = Invoke-StrykerProcess -WorkingDirectory $sourceProjectDirectory -Arguments $arguments -SourceProjectName $sourceProjectName -OutputPath $projectOutputPath
-    $report = Read-StrykerMutationRunReport -OutputPath $projectOutputPath -SourceProjectName $sourceProjectName -ProcessError $processError
+    $report = Invoke-StrykerMutationReport -OutputPath $projectOutputPath -SourceProjectName $sourceProjectName -ProcessError $processError
 
     return [pscustomobject]@{
         Project       = $sourceProject
