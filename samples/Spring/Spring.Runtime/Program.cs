@@ -12,7 +12,7 @@ using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
 using Mississippi.Inlet.Runtime;
 using Mississippi.Tributary.Runtime;
-using Mississippi.Tributary.Runtime.Storage.Cosmos;
+using Mississippi.Tributary.Runtime.Storage.Blobs;
 
 using MississippiSamples.Spring.Domain.Projections.BankAccountBalance;
 using MississippiSamples.Spring.Domain.Services;
@@ -59,8 +59,8 @@ builder.Services.AddOpenTelemetry()
         .AddMeter("Mississippi.Brooks.Runtime")
         .AddMeter("Mississippi.DomainModeling.Runtime")
         .AddMeter("Mississippi.Tributary.Runtime")
+        .AddMeter("Mississippi.Storage.Blob.Snapshots")
         .AddMeter("Mississippi.Storage.Cosmos")
-        .AddMeter("Mississippi.Storage.Snapshots")
         .AddMeter("Mississippi.Storage.Locking")
 
         // Orleans meters
@@ -75,7 +75,7 @@ builder.AddKeyedAzureTableServiceClient("clustering");
 builder.AddKeyedAzureTableServiceClient("reminders");
 builder.AddKeyedAzureBlobServiceClient("grainstate");
 
-// Add Aspire-managed Cosmos client for event sourcing storage (Brooks + Snapshots)
+// Add Aspire-managed Cosmos client for Brooks event storage
 // Gateway mode required for Aspire Cosmos emulator compatibility
 builder.AddAzureCosmosClient(
     "cosmos",
@@ -85,7 +85,7 @@ builder.AddAzureCosmosClient(
         options.LimitToEndpoint = true;
     });
 
-// Add Blob client for distributed locking (Brooks)
+// Add Blob client for distributed locking (Brooks) and snapshot storage (Tributary)
 builder.AddKeyedAzureBlobServiceClient("blobs");
 
 // Forward the Aspire-registered blob client to the Brooks key used by BlobDistributedLockManager
@@ -96,8 +96,15 @@ builder.Services.AddKeyedSingleton(
         _
     ) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
-// Forward the Aspire-registered Cosmos client to a shared Mississippi keyed service key
-// Both Brooks and Snapshots use the same Cosmos account but different containers
+// Forward the Aspire-registered blob client to the Tributary snapshot Blob provider key
+builder.Services.AddKeyedSingleton(
+    SnapshotBlobDefaults.BlobServiceClientServiceKey,
+    (
+        sp,
+        _
+    ) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+
+// Forward the Aspire-registered Cosmos client to a shared Mississippi keyed service key for Brooks event storage
 const string sharedCosmosKey = "spring-cosmos";
 builder.Services.AddKeyedSingleton(
     sharedCosmosKey,
@@ -125,14 +132,8 @@ builder.Services.AddCosmosBrookStorageProvider(options =>
     options.MaxEventsPerBatch = 50;
 });
 
-// Configure Cosmos storage for Snapshots
-builder.Services.AddCosmosSnapshotStorageProvider(options =>
-{
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "snapshots";
-    options.QueryBatchSize = 100;
-});
+// Configure Blob storage for Snapshots
+builder.Services.AddBlobSnapshotStorageProvider(options => { options.EnableCompression = true; });
 
 // Configure Orleans silo - Aspire injects clustering config via environment variables
 builder.UseOrleans(siloBuilder =>

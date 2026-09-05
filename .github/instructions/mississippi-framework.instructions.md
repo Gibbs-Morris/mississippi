@@ -147,8 +147,9 @@ Governing thought: Build applications using the Mississippi framework with sourc
 
 - Cosmos DB **SHOULD** be used as the default storage provider for brooks (events) and snapshots; it lends itself well to event sourcing's append-only writes and Aspire integration. Why: Provides scalable, globally distributed storage with excellent developer experience.
 - Custom storage providers **MAY** be implemented when Cosmos is not suitable; the framework's storage abstractions allow pluggable backends. Why: Preserves flexibility for different deployment scenarios.
+- Applications **MAY** use `AddBlobSnapshotStorageProvider()` with a keyed `BlobServiceClient` for Tributary snapshots while keeping Brooks events on Cosmos. Why: Snapshot persistence and event persistence are independent storage choices; Blob snapshots support optional gzip compression and configurable payload/document size limits.
 - New projects **SHOULD** use Aspire to set up local development with emulators. Why: Enables consistent local development experience.
-- The Spring sample demonstrates this setup using Cosmos for event sourcing and Azure Storage for Orleans clustering/grain state. Why: Provides reference implementation for storage configuration.
+- The Spring sample demonstrates Cosmos for Brooks events, compressed Blob snapshots for Tributary, and Azure Storage for Orleans clustering/grain state. Why: Provides reference implementation for storage configuration.
 - Storage client registrations **MUST** use keyed services following the patterns in `Spring.Runtime/Program.cs`. Why: Enables multiple storage accounts for different purposes.
 
 ### Framework Attributes Reference

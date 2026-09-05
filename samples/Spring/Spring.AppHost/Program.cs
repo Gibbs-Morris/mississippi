@@ -27,7 +27,7 @@ IResourceBuilder<AzureTableStorageResource> reminderTable = storage.AddTables("r
 // Add Azure Blob Storage for Orleans grain state
 IResourceBuilder<AzureBlobStorageResource> grainState = storage.AddBlobs("grainstate");
 
-// Add Cosmos DB using PREVIEW emulator for event sourcing storage (Brooks + Snapshots)
+// Add Cosmos DB using PREVIEW emulator for Brooks event-stream storage
 IResourceBuilder<AzureCosmosDBResource> cosmos = builder.AddAzureCosmosDB("cosmos")
     .RunAsPreviewEmulator(emulator =>
     {
@@ -47,7 +47,7 @@ OrleansService orleans = builder.AddOrleans("default")
     .WithMemoryStreaming("StreamProvider");
 
 // Add MississippiSamples.Spring.Runtime - business runtime host (runs in an Orleans silo)
-// WithReference cosmos/blobs for event sourcing storage (Brooks + Snapshots)
+// WithReference cosmos for Brooks event storage and blobs for locking plus Blob snapshots
 // WithHealthCheck ensures the runtime host is fully ready before dependents start
 IResourceBuilder<ProjectResource> springRuntime = builder.AddProject<Spring_Runtime>("spring-runtime")
     .WithReference(orleans)
