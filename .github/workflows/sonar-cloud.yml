@@ -23,6 +23,10 @@ env:
 jobs:
   Build:
     name: "Build"
+    # In a stack, the top PR contains the complete change set. Run the expensive
+    # Sonar analysis there; lower layers receive a skipped-successful check and
+    # avoid competing for the workflow's cancel-in-progress slot.
+    if: github.event_name != 'pull_request' || github.event.pull_request.stack == null || github.event.pull_request.stack.position == github.event.pull_request.stack.size
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
