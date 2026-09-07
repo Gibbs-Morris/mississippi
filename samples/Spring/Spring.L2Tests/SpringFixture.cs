@@ -94,7 +94,7 @@ public sealed class SpringFixture
                     await page.Context.Tracing.StopAsync(
                         new()
                         {
-                            Path = Path.Combine(directory, "banking.zip"),
+                            Path = Path.Join(directory, "banking.zip"),
                         });
                 }
             }
