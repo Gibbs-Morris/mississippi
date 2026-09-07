@@ -866,8 +866,8 @@ function Invoke-SpringValidation {
         $summary.durationSeconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
         $summaryPath = Join-Path $runDirectory 'summary.json'
         $summary | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $summaryPath -Encoding utf8
-        Write-Host "RESULT: $($summary.status) | PHASE: $($summary.phase) | PASSED: $($summary.passed)"
-        Write-Host "SUMMARY: $summaryPath"
+        Write-Output "RESULT: $($summary.status) | PHASE: $($summary.phase) | PASSED: $($summary.passed)"
+        Write-Output "SUMMARY: $summaryPath"
     }
 }
 

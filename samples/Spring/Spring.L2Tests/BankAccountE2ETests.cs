@@ -102,7 +102,6 @@ public sealed class BankAccountE2ETests
 
             // Demo accounts are pre-opened with £500 each
             OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
-
             bool hasStyles = await page.Locator("link[rel='stylesheet']")
                 .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
             hasStyles.Should().BeTrue("the generated CSS isolation bundle must load successfully");
