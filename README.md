@@ -106,6 +106,53 @@ The repository includes sample applications demonstrating the framework:
 
 ## Testing
 
+### Validate Spring after a change
+
+Use the same entry point locally and in the **Spring banking smoke** CI check:
+
+```powershell
+pwsh ./test-spring.ps1 -Doctor # Check SDK selection and Docker access
+pwsh ./test-spring.ps1         # Build, launch Aspire, test banking through Chromium, stop
+pwsh ./test-spring.ps1 -Suite Full # All Spring API, auth, and browser tests
+```
+
+Prerequisites are PowerShell 7+, the SDK selected by `global.json`, and an accessible Docker daemon running Linux containers.
+First use needs network access to NuGet, the Playwright browser CDN, and Microsoft container images.
+On Linux hosts that need Chromium OS libraries, use `-InstallBrowserDependencies`; Playwright's installer may require sudo.
+`-Doctor` checks SDK and Docker access only; it does not certify browser libraries, image downloads, or application startup.
+
+The command restores locked packages, installs the Aspire CLI version from `Directory.Packages.props` into this checkout,
+and builds only the Spring test project and its dependencies with warnings as errors.
+It installs matching Chromium binaries into `artifacts/tools/playwright`, checks that the stylesheet loads, and runs the banking journey:
+initialize accounts, observe £500, deposit £50, withdraw £25, and observe £525 via SignalR without refreshing.
+`-Configuration Debug` is available; Release is the default. Every run builds incrementally so stale binaries cannot silently pass.
+
+Aspire's testing host allocates test endpoints and owns the application/container lifetime.
+Startup has a three-minute cancellation budget, individual test hangs are limited to five minutes, and the test session is limited to fifteen minutes.
+Use separate worktrees for simultaneous runs because builds share `bin` and `obj` within one checkout.
+The smoke test complements fast unit tests and the existing cleanup, coverage, mutation, and full build gates.
+
+Each run prints `RESULT` and an absolute `SUMMARY` path under a unique `artifacts/spring/` directory.
+`summary.json` records status, phase, suite, SDK/Aspire versions, passed count, duration, and artifact location.
+Exit code 0 with `PASS` requires a completed test run with at least one test and every selected test passing; missing, skipped, and empty results fail.
+Doctor success uses `READY` and never claims tests passed.
+Diagnostics include TRX, restore/build/test logs, resource log backlogs, and a banking screenshot and Playwright trace when the browser journey starts.
+Open `banking.zip` locally with the generated Playwright script's `show-trace` command.
+Artifacts are ignored by Git; CI retains them for seven days. Logs and traces can contain local application data, so review them before sharing.
+
+For interactive exploration, use `pwsh ./run-spring.ps1 -LocalAuth On` and stop with Ctrl+C.
+The [Aspire CLI](https://aspire.dev/reference/cli/commands/aspire-run/) also supports detached runs;
+always pass the Spring AppHost project explicitly in this multi-AppHost repository and stop that same project afterward.
+The [Aspire agent setup](https://aspire.dev/get-started/configure-mcp/) can configure runtime logs/traces through MCP in an individual agent environment.
+Keep this repository's `AGENTS.md` and its engineering instructions when adding Aspire's optional agent configuration.
+
+The implementation follows [Aspire test lifecycle guidance](https://aspire.dev/testing/manage-app-host/),
+[bounded CI testing](https://aspire.dev/testing/testing-in-ci/), and [Playwright traces](https://playwright.dev/dotnet/docs/trace-viewer-intro).
+A test-owned AppHost gives local and CI runs the same assertions and cleanup; interactive MCP is a debugging aid, not the pass/fail gate.
+The new CI check fails normally; repository administrators can add **Spring banking smoke** to required branch checks after merging.
+
+### Framework quality gates
+
 The framework includes comprehensive testing:
 
 ```powershell

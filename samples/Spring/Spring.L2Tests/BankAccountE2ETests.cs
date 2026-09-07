@@ -84,6 +84,7 @@ public sealed class BankAccountE2ETests
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
     [Fact]
+    [Trait("Category", "Smoke")]
     public async Task CompleteBankAccountFlowShouldUpdateProjectionViaSignalR()
     {
         // Arrange
@@ -91,8 +92,20 @@ public sealed class BankAccountE2ETests
         IPage page = await fixture.CreatePageAsync();
         try
         {
+            await page.Context.Tracing.StartAsync(
+                new()
+                {
+                    Screenshots = true,
+                    Snapshots = true,
+                    Sources = true,
+                });
+
             // Demo accounts are pre-opened with £500 each
             OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
+
+            bool hasStyles = await page.Locator("link[rel='stylesheet']")
+                .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
+            hasStyles.Should().BeTrue("the generated CSS isolation bundle must load successfully");
 
             // Wait for projection to show the balance via SignalR
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
@@ -127,7 +140,7 @@ public sealed class BankAccountE2ETests
         }
         finally
         {
-            await page.CloseAsync();
+            await SpringFixture.SaveBrowserArtifactsAsync(page);
         }
     }
 

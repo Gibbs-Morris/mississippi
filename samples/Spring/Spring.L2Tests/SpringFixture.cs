@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 
@@ -26,19 +29,16 @@ public sealed class SpringFixture
       IDisposable
 {
     /// <summary>
-    ///     Environment variable that enables Spring auth-proof mode during L2 test runs.
-    /// </summary>
-    private const string AuthProofModeEnvironmentVariable = "Spring__AuthProofMode";
-
-    /// <summary>
     ///     Default timeout for Playwright operations (in milliseconds).
     ///     Set to 1 minute which is generous for page operations while still failing fast.
     /// </summary>
     private const float PlaywrightTimeoutMs = 60_000;
 
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(3);
 
     private DistributedApplication? app;
+
+    private IDistributedApplicationTestingBuilder? appBuilder;
 
     private IBrowser? browser;
 
@@ -47,8 +47,6 @@ public sealed class SpringFixture
     private HttpClient? gatewayHttpClient;
 
     private IPlaywright? playwright;
-
-    private string? previousAuthProofModeValue;
 
     /// <summary>
     ///     Gets the base URI for the Spring gateway application.
@@ -64,6 +62,48 @@ public sealed class SpringFixture
     ///     Gets a value indicating whether the fixture initialized successfully.
     /// </summary>
     public bool IsInitialized { get; private set; }
+
+    /// <summary>
+    ///     Saves the banking smoke trace and screenshot when an artifact directory is configured.
+    /// </summary>
+    /// <param name="page">The page with an active Playwright trace.</param>
+    /// <returns>A task representing artifact capture and browser context cleanup.</returns>
+    public static async Task SaveBrowserArtifactsAsync(
+        IPage page
+    )
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        string? directory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+                try
+                {
+                    await page.ScreenshotAsync(
+                        new()
+                        {
+                            Path = Path.Combine(directory, "banking.png"),
+                            FullPage = true,
+                            Timeout = 10_000,
+                        });
+                }
+                finally
+                {
+                    await page.Context.Tracing.StopAsync(
+                        new()
+                        {
+                            Path = Path.Combine(directory, "banking.zip"),
+                        });
+                }
+            }
+        }
+        finally
+        {
+            await page.Context.CloseAsync();
+        }
+    }
 
     /// <summary>
     ///     Returns the fixture-owned <see cref="HttpClient" /> configured to communicate with the Spring gateway.
@@ -114,8 +154,7 @@ public sealed class SpringFixture
 #pragma warning restore VSTHRD002
         gatewayHttpClient?.Dispose();
         playwright?.Dispose();
-        app?.Dispose();
-        Environment.SetEnvironmentVariable(AuthProofModeEnvironmentVariable, previousAuthProofModeValue);
+        appBuilder?.Dispose();
     }
 
     /// <inheritdoc />
@@ -127,19 +166,29 @@ public sealed class SpringFixture
         }
 
         disposed = true;
-        if (browser is not null)
+        try
         {
-            await browser.DisposeAsync();
+            await SaveResourceLogsAsync();
         }
-
-        gatewayHttpClient?.Dispose();
-        playwright?.Dispose();
-        if (app is not null)
+        finally
         {
-            await app.DisposeAsync();
+            try
+            {
+                if (browser is not null)
+                {
+                    await browser.DisposeAsync();
+                }
+            }
+            finally
+            {
+                gatewayHttpClient?.Dispose();
+                playwright?.Dispose();
+                if (appBuilder is not null)
+                {
+                    await appBuilder.DisposeAsync();
+                }
+            }
         }
-
-        Environment.SetEnvironmentVariable(AuthProofModeEnvironmentVariable, previousAuthProofModeValue);
     }
 
     /// <inheritdoc />
@@ -148,12 +197,15 @@ public sealed class SpringFixture
     {
         try
         {
-            previousAuthProofModeValue = Environment.GetEnvironmentVariable(AuthProofModeEnvironmentVariable);
-            Environment.SetEnvironmentVariable(AuthProofModeEnvironmentVariable, "true");
-
-            // Start the Spring AppHost with Azurite emulator
+            // One cancellation budget covers creation, startup, and resource readiness.
+            using CancellationTokenSource cts = new(DefaultTimeout);
             IDistributedApplicationTestingBuilder builder =
-                await DistributedApplicationTestingBuilder.CreateAsync<Spring_AppHost>();
+                await DistributedApplicationTestingBuilder.CreateAsync<Spring_AppHost>(
+                    ["Spring:AuthProofMode=true"],
+                    cts.Token);
+
+            // The builder owns the app; keep it alive until collection teardown.
+            appBuilder = builder;
             builder.Services.AddLogging(logging =>
             {
                 logging.SetMinimumLevel(LogLevel.Debug);
@@ -162,12 +214,9 @@ public sealed class SpringFixture
             });
 
             // Build and start the application (following official docs pattern)
-            DistributedApplication builtApp = await builder.BuildAsync().WaitAsync(DefaultTimeout);
+            DistributedApplication builtApp = await builder.BuildAsync(cts.Token);
             app = builtApp;
-            await app.StartAsync().WaitAsync(DefaultTimeout);
-
-            // Wait for container resources to be healthy (following official docs pattern)
-            using CancellationTokenSource cts = new(DefaultTimeout);
+            await app.StartAsync(cts.Token);
 
             // Wait for Azure Storage emulator (Azurite)
             await app.ResourceNotifications.WaitForResourceHealthyAsync("storage", cts.Token)
@@ -193,16 +242,39 @@ public sealed class SpringFixture
                 });
             IsInitialized = true;
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex)
         {
             InitializationError = ex;
             IsInitialized = false;
+            await DisposeAsync();
 
             // Re-throw to fail the test fixture, but keep the error captured for diagnostics
             throw;
         }
     }
 #pragma warning restore IDISP001
+
+    private async Task SaveResourceLogsAsync()
+    {
+        string? directory = Environment.GetEnvironmentVariable("SPRING_TEST_ARTIFACTS");
+        if (app is null || appBuilder is null || string.IsNullOrWhiteSpace(directory))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        ResourceLoggerService logs = app.Services.GetRequiredService<ResourceLoggerService>();
+        foreach (IResource resource in appBuilder.Resources.Where(resource =>
+                     resource.Name is "storage" or "cosmos" or "spring-runtime" or "spring-gateway"))
+        {
+            await foreach (IReadOnlyList<LogLine> batch in logs.GetAllAsync(resource))
+            {
+                await File.AppendAllLinesAsync(
+                    Path.Combine(directory, $"{resource.Name}.log"),
+                    batch.Select(line => line.Content));
+            }
+        }
+    }
 }
 #pragma warning restore IDISP002
 #pragma warning restore IDISP003

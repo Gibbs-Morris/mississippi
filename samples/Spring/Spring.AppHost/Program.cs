@@ -64,6 +64,7 @@ IResourceBuilder<ProjectResource> springGateway = builder.AddProject<Spring_Gate
     .WithReference(orleans.AsClient())
     .WaitFor(storage)
     .WaitFor(springRuntime)
+    .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints();
 if (springAuthProofModeEnabled)
 {

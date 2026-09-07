@@ -51,9 +51,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
-      - name: Install Aspire workload
+      - name: Install matching Aspire CLI
+        shell: pwsh
         run: |
-          dotnet workload install aspire
+          [xml]$packages = Get-Content Directory.Packages.props -Raw
+          $version = ($packages.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'Aspire.Hosting.AppHost').Version
+          dotnet tool install --global Aspire.Cli --version $version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

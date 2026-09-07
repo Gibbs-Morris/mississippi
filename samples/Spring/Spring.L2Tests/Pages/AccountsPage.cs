@@ -62,7 +62,7 @@ public sealed class AccountsPage
             accountsUri.ToString(),
             new()
             {
-                WaitUntil = WaitUntilState.NetworkIdle,
+                WaitUntil = WaitUntilState.DOMContentLoaded,
             });
     }
 

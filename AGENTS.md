@@ -25,6 +25,18 @@ All agents working in this repository.
 - Consult `docs/key-principles/` for foundational thinking and reasoning frameworks.
 - Prioritize correctness first, cleanup next, and performance improvements last.
 
+## Verify a Change Through Spring
+
+1. Run the relevant fast tests with `test-project-quality.ps1 -SkipMutation` while implementing.
+2. Run `pwsh ./test-spring.ps1 -Doctor` to check the selected SDK and Docker Linux daemon access.
+3. Run `pwsh ./test-spring.ps1` to build Spring and exercise the banking browser journey against a fresh Aspire test host.
+4. Read the emitted `SUMMARY` JSON path; `PASS` requires executed, passing tests. `READY` only reports prerequisite checks.
+5. Inspect `spring.trx`, `test.log`, resource logs, `banking.png`, and `banking.zip` in that run's artifact directory if validation fails.
+6. Run `pwsh ./test-spring.ps1 -Suite Full` for changes affecting Spring APIs, authentication, or multiple UI flows, then the existing repository quality gates.
+
+Use separate worktrees for simultaneous builds. The test fixture owns its app and containers; avoid process-name cleanup or Docker prune commands.
+For prerequisites, diagnostics, and interactive Aspire workflows, see [Spring validation](README.md#validate-spring-after-a-change).
+
 ## Key Principles Knowledge Base
 
 `docs/key-principles/` contains reference documents that define the team's core thinking, reasoning processes, and quality standards. Agents SHOULD apply these concepts whenever they are relevant to the work at hand.
