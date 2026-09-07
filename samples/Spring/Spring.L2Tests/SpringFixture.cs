@@ -84,7 +84,7 @@ public sealed class SpringFixture
                     await page.ScreenshotAsync(
                         new()
                         {
-                            Path = Path.Combine(directory, "banking.png"),
+                            Path = Path.Join(directory, "banking.png"),
                             FullPage = true,
                             Timeout = 10_000,
                         });
