@@ -270,7 +270,7 @@ public sealed class SpringFixture
             await foreach (IReadOnlyList<LogLine> batch in logs.GetAllAsync(resource))
             {
                 await File.AppendAllLinesAsync(
-                    Path.Combine(directory, $"{resource.Name}.log"),
+                    Path.Join(directory, $"{resource.Name}.log"),
                     batch.Select(line => line.Content));
             }
         }
