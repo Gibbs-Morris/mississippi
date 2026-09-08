@@ -47,7 +47,7 @@ The bundled skill validator passed. All 15 policy bullets and the complete
 Rules section match the parent exactly. Prefix/suffix comparisons verify that
 the affected agents retain their non-drafting workflows and authority boundaries.
 All three consumer links resolve to the skill, the template is unchanged, the
-skill contains no repository bindings, and the eight evaluation cases parse.
+skill contains no repository bindings, and the ten evaluation cases parse.
 Markdown lint passed for the skill, policy, both changed agents, and this record.
 
 Codex CLI 0.153.4 `skills/list` found the enabled repository skill once with no
@@ -57,7 +57,7 @@ discovery, not reliable implicit selection or behavior on every supported host.
 
 The drafting procedure is used for this layer's own PR description against its
 immediate parent. The committed
-[evaluation cases](pr-description-skill-cases.json) cover explicit, implicit,
+[evaluation cases](pr-description-skill-cases.json) cover explicit, partial-output, implicit,
 paraphrased, breaking-change, incomplete, unrelated, governed, and uncommitted
 inputs. They are a reusable rubric, not a record of fresh model trials. Full
 cross-agent behavioral conformance and app/IDE smoke tests remain unverified;
@@ -68,6 +68,9 @@ requirement for base/head metadata. The skill now accepts sufficient supplied
 change evidence for a draft without demanding repository access or commit IDs,
 while retaining actual-base checks for live PR/branch comparisons and avoiding
 claims of independent inspection when files were not accessible.
+
+Review also clarified the output boundary: title-only and body-only requests
+receive only the requested artifact. Dedicated cases record both situations.
 
 The globally applied instruction shrinks from 1,002 to 605 whitespace-delimited
 words, a reduction of 397 words and 59 lines. The two agent procedures remove

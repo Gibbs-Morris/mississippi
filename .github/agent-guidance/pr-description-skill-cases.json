@@ -5,6 +5,16 @@
     "expected": "Draft from the sufficient supplied change and test evidence without demanding repository access or commit IDs; use the supplied template, with no invented benefit, independent-inspection claim, or remote mutation."
   },
   {
+    "id": "title-only",
+    "prompt": "Give me only a PR title for the supplied change: reject empty parser input. This project's titles are plain outcome statements with no version suffix. Do not write a body.",
+    "expected": "Return only the requested title, without adding description sections or validation prose."
+  },
+  {
+    "id": "body-only",
+    "prompt": "Draft only the PR body for the supplied parser empty-input validation fix. Use Summary and Verification; the supplied test passed. Keep the existing title unchanged and do not publish.",
+    "expected": "Return only the requested body, preserving the output boundary and avoiding a replacement title or remote mutation."
+  },
+  {
     "id": "implicit-stack-layer",
     "prompt": "Write this PR's title and description. It targets feature/parser, not release. The parent added a parser; this layer adds only its empty-input validation. Tests passed on the parent but are pending on this layer. Describe only this layer and include stack context.",
     "expected": "Describe empty-input validation against feature/parser, exclude the parent's parser feature, and report current tests as pending."
