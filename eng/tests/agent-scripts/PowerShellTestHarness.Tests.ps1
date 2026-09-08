@@ -81,16 +81,28 @@ Describe 'PowerShell test orchestration' {
 }
 
 Describe 'Standalone Pester runners' {
-    It 'fails discovery errors in <Runner>' -ForEach @(
-        @{ Runner = 'run-scratchpad-task-tests.ps1'; TestFile = 'scratchpad-task-scripts.Tests.ps1' },
-        @{ Runner = 'run-summarize-coverage-gaps-tests.ps1'; TestFile = 'summarize-coverage-gaps.Tests.ps1' },
-        @{ Runner = 'run-task-automation-tests.ps1'; TestFile = 'TaskAutomation.Tests.ps1' }
+    It 'returns <ExitCode> for <Case> through <Runner>' -ForEach @(
+        foreach ($suite in @(
+            @{ Runner = 'run-scratchpad-task-tests.ps1'; TestFile = 'scratchpad-task-scripts.Tests.ps1' },
+            @{ Runner = 'run-summarize-coverage-gaps-tests.ps1'; TestFile = 'summarize-coverage-gaps.Tests.ps1' },
+            @{ Runner = 'run-task-automation-tests.ps1'; TestFile = 'TaskAutomation.Tests.ps1' }
+        )) {
+            foreach ($scenario in @(
+                @{ Case = 'passing'; Body = "Describe 'Suite' { It 'passes' { 1 | Should -Be 1 } }"; ExitCode = 0 },
+                @{ Case = 'discovery failure'; Body = "throw 'discovery failure'"; ExitCode = 1 },
+                @{ Case = 'empty discovery'; Body = ''; ExitCode = 1 },
+                @{ Case = 'failed test'; Body = "Describe 'Suite' { It 'fails' { 1 | Should -Be 2 } }"; ExitCode = 1 }
+            )) {
+                @{ Runner = $suite.Runner; TestFile = $suite.TestFile; Case = $scenario.Case; Body = $scenario.Body; ExitCode = $scenario.ExitCode }
+            }
+        }
     ) {
-        $fixture = Join-Path $TestDrive $Runner
+        $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $fixture | Out-Null
         Copy-Item (Join-Path $PSScriptRoot $Runner) $fixture
-        Set-Content (Join-Path $fixture $TestFile) "throw 'discovery failure'"
+        Copy-Item (Join-Path $PSScriptRoot 'run-pester-suite.ps1') $fixture
+        Set-Content (Join-Path $fixture $TestFile) $Body
         & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $fixture $Runner) | Out-Null
-        $LASTEXITCODE | Should -Be 1
+        $LASTEXITCODE | Should -Be $ExitCode
     }
 }
