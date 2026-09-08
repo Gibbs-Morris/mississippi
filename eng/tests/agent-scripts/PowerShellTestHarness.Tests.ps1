@@ -24,6 +24,13 @@ Describe 'PowerShell test orchestration' {
         $targetRunner = Join-Path $fixtureRunners $pesterRunners[0]
     }
 
+    AfterAll {
+        $fixtureModule = Join-Path $fixtureModules 'RepositoryAutomation.psm1'
+        Get-Module RepositoryAutomation -All |
+            Where-Object Path -EQ $fixtureModule |
+            Remove-Module -Force
+    }
+
     BeforeEach {
         foreach ($runner in $pesterRunners) {
             Set-Content (Join-Path $fixtureRunners $runner) 'param([switch]$PassThru); [pscustomobject]@{ Result = "Passed"; TotalCount = 1; FailedCount = 0 }'
