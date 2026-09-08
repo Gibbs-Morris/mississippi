@@ -74,9 +74,12 @@ At Phase 9 entry or resume after a failed startup boundary:
 Use the [write-pull-request-description skill](../../.agents/skills/write-pull-request-description/SKILL.md)
 with the [PR authoring policy](../instructions/pr-description.instructions.md)
 and [repository template](../PULL_REQUEST_TEMPLATE.md) to draft or refresh the
-PR title and body. Publication remains within the active bounded delegation.
+PR title.
 
 ### 3. PR Description
+
+Use `write-pull-request-description` with the same policy and template for the
+PR body. Publication remains within the active bounded delegation.
 
 The PR description must also contain the `Reviewer Audit Summary` defined by `.github/clean-squad/WORKFLOW.md`, sourced from current policy-authoritative audit inputs only. Do not rely on `.thinking/` paths as reviewer-visible evidence; keep `.thinking/` references internal, inline any reviewer-needed detail directly in the PR body, and use reviewer-visible comments only when separately delegated or authorized.
 
