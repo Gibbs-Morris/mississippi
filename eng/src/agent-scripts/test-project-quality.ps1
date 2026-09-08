@@ -179,6 +179,7 @@ Write-Host ""
 
 $testFailed = $false
 $mutationFailed = $false
+Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
 
 try {
     if (Test-Path ".config/dotnet-tools.json") {
@@ -195,15 +196,15 @@ try {
     $scratchpadRoot = Join-Path (Get-Location) ".scratchpad"
     $resultsRoot = Join-Path $scratchpadRoot "coverage-test-results"
     if (-not (Test-Path -LiteralPath $resultsRoot)) { New-Item -ItemType Directory -Path $resultsRoot | Out-Null }
-    $resultsDir = Join-Path -Path $resultsRoot -ChildPath $testProjectName
-    if (-not (Test-Path -LiteralPath $resultsDir)) { New-Item -ItemType Directory -Path $resultsDir | Out-Null }
+    $resultsDir = New-AutomationRunDirectory -Root (Join-Path $resultsRoot $testProjectName)
 
     $mutationRoot = Join-Path $scratchpadRoot "mutation-test-results"
     if (-not (Test-Path -LiteralPath $mutationRoot)) { New-Item -ItemType Directory -Path $mutationRoot | Out-Null }
 
     Write-Host "[3/7] Running dotnet test with coverage..." -ForegroundColor Cyan
-    $noBuildFlag = if ($NoBuild) { "--no-build" } else { "" }
-    dotnet test "$testProjectPath" --configuration $Configuration $noBuildFlag --logger "trx;LogFileName=test_results.trx" --results-directory "$resultsDir" --collect "XPlat Code Coverage" --verbosity minimal
+    $testArguments = @('test', $testProjectPath, '--configuration', $Configuration, '--logger', 'trx;LogFileName=test_results.trx', '--results-directory', $resultsDir, '--collect', 'XPlat Code Coverage', '--verbosity', 'minimal')
+    if ($NoBuild) { $testArguments += '--no-build' }
+    dotnet @testArguments
     if ($LASTEXITCODE -ne 0) { $testFailed = $true }
 
     # Parse test TRX and coverage
@@ -215,11 +216,13 @@ try {
     $cobertura = Get-ChildItem -Path $resultsDir -Recurse -Filter coverage.cobertura.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     $coveragePercent = $null
     if ($cobertura) { $coveragePercent = Parse-CoberturaCoveragePercent -CoberturaPath $cobertura.FullName }
+    if ($null -eq $trxSummary -or $trxSummary.Executed -lt 1 -or $trxSummary.Failed -gt 0 -or $trxSummary.Outcome -ne 'Completed') { $testFailed = $true }
+    if ($null -eq $coveragePercent) { $testFailed = $true }
+    if ($testFailed) { throw 'Tests and a current coverage report must pass before mutation testing.' }
 
     # Prepare Stryker
     if (-not $SkipMutation) {
         Write-Host "[5/7] Loading repository mutation helpers..." -ForegroundColor Cyan
-        Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
 
         Write-Host "[6/7] Resolving source project for mutation..." -ForegroundColor Cyan
         $sourceProjectPath = $SourceProject
@@ -227,28 +230,33 @@ try {
         Write-Host "Source project inferred: $sourceProjectPath" -ForegroundColor Green
 
         Write-Host "[7/7] Running Stryker mutation testing..." -ForegroundColor Cyan
-        $strykerStart = Get-Date
-        $mutationOutput = Join-Path $mutationRoot (Get-Date -Format 'yyyy-MM-dd.HH-mm-ss')
+        $mutationOutput = New-AutomationRunDirectory -Root $mutationRoot
+        $projectResult = @{ Project = $sourceProjectPath; Output = $null; ReportPath = $null; Status = 'Pending'; Success = $false }
+        $manifestPath = Join-Path $mutationOutput 'project-results.json'
+        ConvertTo-Json -InputObject @($projectResult) -Depth 6 | Set-Content -LiteralPath $manifestPath
         try {
-            Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProjectPath -TestProjects @($testProjectPath) -OutputPath $mutationOutput -Configuration $Configuration | Out-Host
+            $projectResult.Output = Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProjectPath -TestProjects @($testProjectPath) -OutputPath $mutationOutput -Configuration $Configuration
+            $projectResult.ReportPath = Get-MutationReportPath -OutputPath $projectResult.Output
+            $projectResult.Status = 'Completed'
+            $projectResult.Success = $true
         }
         catch {
             $mutationFailed = $true
+            $projectResult.Output = $_.Exception.Data['OutputPath']
+            $projectResult.ReportPath = $_.Exception.Data['ReportPath']
+            $projectResult.Status = 'Failed'
             Write-Warning "Mutation testing failed: $($_.Exception.Message)"
         }
+        ConvertTo-Json -InputObject @($projectResult) -Depth 6 | Set-Content -LiteralPath $manifestPath
 
-        # Find latest mutation report
-        $mutationJson = Get-ChildItem -Path $mutationRoot -Recurse -Filter mutation-report.json -ErrorAction SilentlyContinue |
-            Where-Object { $_.LastWriteTime -ge $strykerStart } |
-            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        # Only this invocation's output can supply its mutation evidence.
+        $mutationJson = if ($projectResult.ReportPath) { Get-Item -LiteralPath $projectResult.ReportPath } else { $null }
 
-        $mutationMd = Get-ChildItem -Path $mutationRoot -Recurse -Filter mutation-report.md -ErrorAction SilentlyContinue |
-            Where-Object { $_.LastWriteTime -ge $strykerStart } |
-            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        $mutationMd = if ($mutationJson) { Get-Item -LiteralPath ([System.IO.Path]::ChangeExtension($mutationJson.FullName, '.md')) -ErrorAction SilentlyContinue } else { $null }
 
         $mutationScore = $null
         if ($mutationJson) { $mutationScore = Find-MutationScoreFromJson -JsonPath $mutationJson.FullName }
-        if (-not $mutationScore -and $mutationMd) { $mutationScore = Find-MutationScoreFromMarkdown -MarkdownPath $mutationMd.FullName }
+        if ($null -eq $mutationScore -and $mutationMd) { $mutationScore = Find-MutationScoreFromMarkdown -MarkdownPath $mutationMd.FullName }
 
         # Output concise summary for LLMs
         Write-Host ""; Write-Host "=== QUALITY SUMMARY ($testProjectName) ===" -ForegroundColor Yellow

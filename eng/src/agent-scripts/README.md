@@ -24,6 +24,8 @@
 
 Cleanup uses a fresh cache under `.scratchpad/cleanup-caches/` for each invocation, avoiding reuse of a previous source-generator analysis model. The cache path is logged and retained for troubleshooting.
 
+Mutation runs use the selected solution's declared source and test projects. Each target gets a fresh output directory, and `project-results.json` records every target before execution so interrupted or unmapped work stays visible. Native failures, missing or incomplete reports, and unmapped authored projects fail the run. Valid reports from failed score gates remain available for survivor analysis; the summarizer rejects missing target evidence instead of borrowing an older report. Focused quality runs use the same report contract.
+
 ---
 
 ## Script catalogue

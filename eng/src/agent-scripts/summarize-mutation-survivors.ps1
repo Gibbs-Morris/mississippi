@@ -128,9 +128,25 @@ function Get-LatestMutationReportPaths
     $latestRun = Get-ChildItem -LiteralPath $MutationOutputPath -Directory |
         Sort-Object Name -Descending | Select-Object -First 1
     if ($null -eq $latestRun) { return @() }
-    # Each source project has its own nested Stryker report in this run.
-    return @(Get-ChildItem -LiteralPath $latestRun.FullName -Recurse -File -Filter 'mutation-report.json' |
-        Sort-Object FullName | Select-Object -ExpandProperty FullName)
+    $manifestPath = Join-Path $latestRun.FullName 'project-results.json'
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "Mutation run manifest missing: $manifestPath" }
+    $projects = @(Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable)
+    if ($projects.Count -eq 0) { throw "Mutation run manifest is empty: $manifestPath" }
+    $paths = @()
+    foreach ($project in $projects) {
+        if ($project.Status -eq 'Skipped') { continue }
+        if ($project.Status -notin @('Completed', 'Failed') -or -not $project.ReportPath) {
+            throw "Mutation run is incomplete for '$($project.Project)': $manifestPath"
+        }
+        $path = (Resolve-Path -LiteralPath $project.ReportPath).Path
+        $relative = [System.IO.Path]::GetRelativePath($latestRun.FullName, $path)
+        if ([System.IO.Path]::IsPathRooted($relative) -or $relative -match '^\.\.([\\/]|$)') {
+            throw "Mutation report is outside the selected run: $path"
+        }
+        $paths += $path
+    }
+    if (@($paths | Sort-Object -Unique).Count -ne $paths.Count) { throw "Duplicate mutation reports in $manifestPath" }
+    return $paths
 }
 
 function Get-MutationReportSurvivors
@@ -140,18 +156,14 @@ function Get-MutationReportSurvivors
         [Parameter(Mandatory)][string]$RepoRoot
     )
 
-    $content = Get-Content -Path $ReportPath -Raw -ErrorAction Stop
-    if ([string]::IsNullOrWhiteSpace($content)) { throw "Mutation report '$ReportPath' is empty." }
-
-    $report = $content | ConvertFrom-Json
-    if ($null -eq $report -or -not ($report.PSObject.Properties.Name -contains 'files')) { throw "Mutation report '$ReportPath' has no files collection." }
+    $report = Read-MutationReport -ReportPath $ReportPath
 
     $results = New-Object System.Collections.Generic.List[object]
-    foreach ($fileProp in $report.files.PSObject.Properties)
+    foreach ($fileProp in $report.files.GetEnumerator())
     {
-        $fullPath = $fileProp.Name
+        $fullPath = $fileProp.Key
         if (-not [System.IO.Path]::IsPathRooted($fullPath)) {
-            $projectRoot = if ($report.PSObject.Properties.Name -contains 'projectRoot') { $report.projectRoot } else { $RepoRoot }
+            $projectRoot = if ($report.ContainsKey('projectRoot')) { $report.projectRoot } else { $RepoRoot }
             $fullPath = [System.IO.Path]::GetFullPath((Join-Path $projectRoot $fullPath))
         }
         $fileData = $fileProp.Value
@@ -159,15 +171,15 @@ function Get-MutationReportSurvivors
 
     foreach ($mutant in $fileData.mutants)
     {
-        $mutantProps = $mutant.PSObject.Properties.Name
+        $mutantProps = $mutant.Keys
         $status = if ($mutantProps -contains 'status') { [string]$mutant.status } else { $null }
         if ($status -ne 'Survived') { continue }
 
         $location = if ($mutantProps -contains 'location') { $mutant.location } else { $null }
-        $startLine = if ($location -and $location.start -and ($location.start.PSObject.Properties.Name -contains 'line')) { [int]$location.start.line } else { 0 }
-        $endLine = if ($location -and $location.end -and ($location.end.PSObject.Properties.Name -contains 'line')) { [int]$location.end.line } else { $startLine }
-        $startColumn = if ($location -and $location.start -and ($location.start.PSObject.Properties.Name -contains 'column')) { [int]$location.start.column } else { 0 }
-        $endColumn = if ($location -and $location.end -and ($location.end.PSObject.Properties.Name -contains 'column')) { [int]$location.end.column } else { 0 }
+        $startLine = if ($location -and $location.start -and $location.start.ContainsKey('line')) { [int]$location.start.line } else { 0 }
+        $endLine = if ($location -and $location.end -and $location.end.ContainsKey('line')) { [int]$location.end.line } else { $startLine }
+        $startColumn = if ($location -and $location.start -and $location.start.ContainsKey('column')) { [int]$location.start.column } else { 0 }
+        $endColumn = if ($location -and $location.end -and $location.end.ContainsKey('column')) { [int]$location.end.column } else { 0 }
 
         $mutatorName = if ($mutantProps -contains 'mutatorName') { [string]$mutant.mutatorName } elseif ($mutantProps -contains 'mutator') { [string]$mutant.mutator } else { $null }
         $replacement = if ($mutantProps -contains 'replacement') { [string]$mutant.replacement } else { $null }
