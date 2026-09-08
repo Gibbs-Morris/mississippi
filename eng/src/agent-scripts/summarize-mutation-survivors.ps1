@@ -129,6 +129,7 @@ function Get-MutationRun
     $runs = if ($SelectedRun) { @(Get-Item -LiteralPath $SelectedRun) }
         else { @(Get-ChildItem -LiteralPath $MutationOutputPath -Directory | Sort-Object Name -Descending) }
     foreach ($run in $runs) {
+        if (-not $run.PSIsContainer) { throw "Mutation run path must be a directory: $($run.FullName)" }
         $manifestPath = Join-Path $run.FullName 'project-results.json'
         if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "Mutation run manifest missing: $manifestPath" }
         $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable

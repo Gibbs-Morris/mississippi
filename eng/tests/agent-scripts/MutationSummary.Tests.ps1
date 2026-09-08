@@ -132,6 +132,12 @@ exit 7
         $LASTEXITCODE | Should -Not -Be 0
     }
 
+    It 'rejects a file supplied as the run directory with a clear error' {
+        $message = & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun -RunPath $manifestPath 2>&1 | Out-String
+        $LASTEXITCODE | Should -Not -Be 0
+        $message | Should -Match 'Mutation run path must be a directory'
+    }
+
     It 'rejects a report from outside the selected run' {
         $manifest[0].ReportPath = Join-Path $oldDirectory 'mutation-report.json'
         ConvertTo-Json -InputObject @{ Scope = 'Solution'; Projects = $manifest } -Depth 6 | Set-Content $manifestPath
