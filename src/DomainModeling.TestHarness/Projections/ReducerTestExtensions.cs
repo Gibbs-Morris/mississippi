@@ -103,7 +103,9 @@ public static class ReducerTestExtensions
     /// <param name="reducer">The reducer to test.</param>
     /// <param name="initialState">The initial projection state (null uses default).</param>
     /// <param name="eventData">The event to apply, or null to test the reducer's argument validation.</param>
-    /// <param name="expectedMessage">Optional: expected exception message substring.</param>
+    /// <param name="expectedMessage">
+    ///     Optional case-insensitive substring pattern: <c>*</c> matches any characters and <c>?</c> matches one.
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown if reducer is null.</exception>
     public static void ShouldThrow<TException, TEvent, TProjection>(
         this IEventReducer<TEvent, TProjection> reducer,
