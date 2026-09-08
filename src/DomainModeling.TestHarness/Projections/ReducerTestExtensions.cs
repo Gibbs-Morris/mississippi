@@ -102,9 +102,9 @@ public static class ReducerTestExtensions
     /// <typeparam name="TProjection">The projection type.</typeparam>
     /// <param name="reducer">The reducer to test.</param>
     /// <param name="initialState">The initial projection state (null uses default).</param>
-    /// <param name="eventData">The event to apply.</param>
+    /// <param name="eventData">The event to apply, or null to test the reducer's argument validation.</param>
     /// <param name="expectedMessage">Optional: expected exception message substring.</param>
-    /// <exception cref="ArgumentNullException">Thrown if reducer or eventData is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if reducer is null.</exception>
     public static void ShouldThrow<TException, TEvent, TProjection>(
         this IEventReducer<TEvent, TProjection> reducer,
         TProjection? initialState,
