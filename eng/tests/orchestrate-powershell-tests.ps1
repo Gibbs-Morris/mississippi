@@ -71,7 +71,7 @@ foreach ($runner in $testRunners) {
             $results += [pscustomobject]@{ Name = $runner.Name; Type = 'Pester'; Status = $status; Failed = $failedCount }
         }
         else {
-            $powerShellPath = (Get-Process -Id $PID).Path
+            $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
             & $powerShellPath -NoProfile -File $path | Out-Host
             if ($LASTEXITCODE -ne 0) {
                 throw "Test runner exited with code ${LASTEXITCODE}: $($runner.Name)"
