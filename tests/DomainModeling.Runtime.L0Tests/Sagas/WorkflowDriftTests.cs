@@ -217,51 +217,6 @@ public sealed class WorkflowDriftTests
     }
 
     /// <summary>
-    ///     Verifies unchanged metadata continues in the direction selected by the persisted boundary.
-    /// </summary>
-    /// <param name="boundary">The persisted boundary being replayed.</param>
-    /// <returns>A task representing the test.</returns>
-    [Theory]
-    [InlineData("Started")]
-    [InlineData("Completed")]
-    [InlineData("Compensating")]
-    [InlineData("Compensated")]
-    public async Task MatchingWorkflowContinuesFromPersistedBoundary(
-        string boundary
-    )
-    {
-        FakeTimeProvider timeProvider = new();
-        SagaStartedEvent started = CreateStartedEvent(timeProvider);
-        TestSagaState state = new SagaStartedReducer<TestSagaState>().Reduce(new(), started);
-        ServiceCollection services = new();
-        services.AddTransient<SagaSuccessStep>();
-        services.AddTransient<SagaCompensationSuccessStep>();
-        using ServiceProvider provider = services.BuildServiceProvider();
-        SagaOrchestrationEffect<TestSagaState> effect = new(
-            new SagaStepInfoProvider<TestSagaState>(CreateSteps()),
-            provider,
-            timeProvider);
-        List<object> events = await effect.HandleAsync(
-                CreateBoundary(boundary, started),
-                state,
-                "transfer",
-                10,
-                CancellationToken.None)
-            .ToListAsync();
-        if (boundary is "Compensating" or "Compensated")
-        {
-            SagaStepCompensated compensated = Assert.IsType<SagaStepCompensated>(Assert.Single(events));
-            Assert.Equal(boundary == "Compensating" ? 1 : 0, compensated.StepIndex);
-        }
-        else
-        {
-            SagaStepCompleted completed = Assert.IsType<SagaStepCompleted>(events[^1]);
-            Assert.Equal(boundary == "Started" ? 0 : 1, completed.StepIndex);
-            Assert.Equal(boundary == "Started" ? 2 : 1, events.Count);
-        }
-    }
-
-    /// <summary>
     ///     Verifies missing persisted workflow identity is not permission to execute registered steps.
     /// </summary>
     /// <param name="stepHash">The invalid persisted workflow hash.</param>
@@ -322,6 +277,66 @@ public sealed class WorkflowDriftTests
             effect.HandleAsync(new(), null!, "transfer", 0, CancellationToken.None));
         Assert.Equal("eventData", eventError.ParamName);
         Assert.Equal("currentState", stateError.ParamName);
+    }
+
+    /// <summary>
+    ///     Verifies execution uses the validated metadata even when re-reading its provider would change the shared list.
+    /// </summary>
+    /// <param name="boundary">The persisted boundary being replayed.</param>
+    /// <returns>A task representing the test.</returns>
+    [Theory]
+    [InlineData("Started")]
+    [InlineData("Completed")]
+    [InlineData("Compensating")]
+    [InlineData("Compensated")]
+    public async Task ValidatedWorkflowUsesSingleMetadataSnapshot(
+        string boundary
+    )
+    {
+        FakeTimeProvider timeProvider = new();
+        SagaStartedEvent started = CreateStartedEvent(timeProvider);
+        TestSagaState state = new SagaStartedReducer<TestSagaState>().Reduce(new(), started);
+        List<SagaStepInfo> steps = CreateSteps().ToList();
+        int reads = 0;
+        Mock<ISagaStepInfoProvider<TestSagaState>> metadata = new();
+        metadata.SetupGet(p => p.Steps)
+            .Returns(() =>
+            {
+                if (reads++ > 0)
+                {
+                    steps[0] = new(0, "ChangedDebit", typeof(SagaFailStep), false);
+                    steps[1] = new(1, "ChangedCredit", typeof(SagaFailStep), false);
+                }
+
+                return steps;
+            });
+        ServiceCollection services = new();
+        services.AddTransient<SagaSuccessStep>();
+        services.AddTransient<SagaCompensationSuccessStep>();
+        services.AddTransient<SagaFailStep>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        SagaOrchestrationEffect<TestSagaState> effect = new(metadata.Object, provider, timeProvider);
+        List<object> events = await effect.HandleAsync(
+                CreateBoundary(boundary, started),
+                state,
+                "transfer",
+                10,
+                CancellationToken.None)
+            .ToListAsync();
+        if (boundary is "Compensating" or "Compensated")
+        {
+            SagaStepCompensated compensated = Assert.IsType<SagaStepCompensated>(Assert.Single(events));
+            Assert.Equal(boundary == "Compensating" ? 1 : 0, compensated.StepIndex);
+            Assert.Equal(boundary == "Compensating" ? "Credit" : "Debit", compensated.StepName);
+        }
+        else
+        {
+            SagaStepCompleted completed = Assert.IsType<SagaStepCompleted>(events[^1]);
+            Assert.Equal(boundary == "Started" ? 0 : 1, completed.StepIndex);
+            Assert.Equal(boundary == "Started" ? 2 : 1, events.Count);
+        }
+
+        metadata.VerifyGet(p => p.Steps, Times.Once);
     }
 
     /// <summary>

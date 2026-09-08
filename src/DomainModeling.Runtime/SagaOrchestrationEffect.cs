@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -62,6 +63,22 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         exception is OutOfMemoryException or StackOverflowException or ThreadInterruptedException ||
         (exception is OperationCanceledException && cancellationToken.IsCancellationRequested);
 
+    private static bool TryGetStep(
+        ImmutableArray<SagaStepInfo> steps,
+        int stepIndex,
+        out SagaStepInfo stepInfo
+    )
+    {
+        if ((stepIndex < 0) || (stepIndex >= steps.Length))
+        {
+            stepInfo = default!;
+            return false;
+        }
+
+        stepInfo = steps[stepIndex];
+        return true;
+    }
+
     /// <inheritdoc />
     public bool CanHandle(
         object eventData
@@ -87,6 +104,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
     private async IAsyncEnumerable<object> ExecuteCompensationAsync(
         TSaga state,
+        ImmutableArray<SagaStepInfo> steps,
         int stepIndex,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
@@ -100,7 +118,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             yield break;
         }
 
-        if (!TryGetStep(stepIndex, out SagaStepInfo? stepInfo))
+        if (!TryGetStep(steps, stepIndex, out SagaStepInfo? stepInfo))
         {
             yield return new SagaFailed
             {
@@ -155,12 +173,13 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
     private async IAsyncEnumerable<object> ExecuteNextOrCompleteAsync(
         TSaga state,
+        ImmutableArray<SagaStepInfo> steps,
         int completedStepIndex,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
         int nextStepIndex = completedStepIndex + 1;
-        if (!TryGetStep(nextStepIndex, out SagaStepInfo _))
+        if (!TryGetStep(steps, nextStepIndex, out SagaStepInfo _))
         {
             yield return new SagaCompleted
             {
@@ -169,7 +188,7 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             yield break;
         }
 
-        await foreach (object evt in ExecuteStepAsync(state, nextStepIndex, cancellationToken))
+        await foreach (object evt in ExecuteStepAsync(state, steps, nextStepIndex, cancellationToken))
         {
             yield return evt;
         }
@@ -177,12 +196,13 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
     private async IAsyncEnumerable<object> ExecutePreviousCompensationAsync(
         TSaga state,
+        ImmutableArray<SagaStepInfo> steps,
         int compensatedStepIndex,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
         int nextIndex = compensatedStepIndex - 1;
-        await foreach (object evt in ExecuteCompensationAsync(state, nextIndex, cancellationToken))
+        await foreach (object evt in ExecuteCompensationAsync(state, steps, nextIndex, cancellationToken))
         {
             yield return evt;
         }
@@ -190,11 +210,12 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
     private async IAsyncEnumerable<object> ExecuteStepAsync(
         TSaga state,
+        ImmutableArray<SagaStepInfo> steps,
         int stepIndex,
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
-        if (!TryGetStep(stepIndex, out SagaStepInfo? stepInfo))
+        if (!TryGetStep(steps, stepIndex, out SagaStepInfo? stepInfo))
         {
             yield return new SagaFailed
             {
@@ -255,8 +276,12 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
-        if (SagaLifecycleEventClassifier.IsReplayBoundaryEvent(eventData) &&
-            !HasMatchingWorkflow(currentState, brookKey, cancellationToken))
+        if (!SagaLifecycleEventClassifier.IsReplayBoundaryEvent(eventData))
+        {
+            yield break;
+        }
+
+        if (!TryGetMatchingWorkflow(currentState, brookKey, cancellationToken, out ImmutableArray<SagaStepInfo> steps))
         {
             yield return new SagaFailed
             {
@@ -270,18 +295,20 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
 
         IAsyncEnumerable<object> events = eventData switch
         {
-            SagaStartedEvent => ExecuteStepAsync(currentState, 0, cancellationToken),
+            SagaStartedEvent => ExecuteStepAsync(currentState, steps, 0, cancellationToken),
             SagaStepCompleted completed => ExecuteNextOrCompleteAsync(
                 currentState,
+                steps,
                 completed.StepIndex,
                 cancellationToken),
-            SagaStepFailed => AsyncEnumerable.Empty<object>(),
             SagaCompensating compensating => ExecuteCompensationAsync(
                 currentState,
+                steps,
                 compensating.FromStepIndex,
                 cancellationToken),
             SagaStepCompensated compensated => ExecutePreviousCompensationAsync(
                 currentState,
+                steps,
                 compensated.StepIndex,
                 cancellationToken),
             var _ => AsyncEnumerable.Empty<object>(),
@@ -290,32 +317,6 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         {
             yield return resultEvent;
         }
-    }
-
-    private bool HasMatchingWorkflow(
-        TSaga currentState,
-        string brookKey,
-        CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            if (string.Equals(
-                    currentState.StepHash,
-                    SagaStepHash.Compute(StepInfoProvider.Steps),
-                    StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-        catch (Exception exception) when (!ShouldPropagateException(exception, cancellationToken))
-        {
-            Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey, exception);
-            return false;
-        }
-
-        Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey);
-        return false;
     }
 
     private ISagaStep<TSaga> ResolveStep(
@@ -332,19 +333,29 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             $"Step type '{stepInfo.StepType.FullName}' does not implement ISagaStep<{typeof(TSaga).Name}>.");
     }
 
-    private bool TryGetStep(
-        int stepIndex,
-        out SagaStepInfo stepInfo
+    private bool TryGetMatchingWorkflow(
+        TSaga currentState,
+        string brookKey,
+        CancellationToken cancellationToken,
+        out ImmutableArray<SagaStepInfo> steps
     )
     {
-        IReadOnlyList<SagaStepInfo> steps = StepInfoProvider.Steps;
-        if ((stepIndex < 0) || (stepIndex >= steps.Count))
+        steps = default;
+        try
         {
-            stepInfo = default!;
+            steps = StepInfoProvider.Steps.ToImmutableArray();
+            if (string.Equals(currentState.StepHash, SagaStepHash.Compute(steps), StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+        catch (Exception exception) when (!ShouldPropagateException(exception, cancellationToken))
+        {
+            Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey, exception);
             return false;
         }
 
-        stepInfo = steps[stepIndex];
-        return true;
+        Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey);
+        return false;
     }
 }
