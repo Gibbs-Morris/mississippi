@@ -58,6 +58,8 @@ When drafting or updating a PR title or description, use the
 with the rules above and the [repository PR template](../PULL_REQUEST_TEMPLATE.md).
 The skill owns the drafting and evidence-reconciliation procedure; this file
 retains the repository's mandatory title, content, and validation requirements.
+The rules above apply even when the skill is not selected or available. If the
+host cannot discover skills automatically, read the linked skill file directly.
 
 ## References
 
