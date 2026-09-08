@@ -78,6 +78,38 @@ Describe 'Mutation summary report aggregation' {
         $LASTEXITCODE | Should -Be 0
     }
 
+    It 'generates summaries and tasks before propagating a failed score gate' {
+        $mutationScript = Join-Path $scriptDirectory 'fake-mutation.ps1'
+        @'
+param([string]$Configuration)
+$root = Join-Path $PSScriptRoot '../../../.scratchpad/mutation-test-results'
+$source = Join-Path $root '2026-09-04.12-00-00'
+$run = Join-Path $root '2026-09-06.12-00-00'
+Copy-Item -LiteralPath $source -Destination $run -Recurse
+$path = Join-Path $run 'project-results.json'
+$manifest = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+foreach ($project in $manifest.Projects) {
+    $project.ReportPath = $project.ReportPath.Replace('2026-09-04.12-00-00', '2026-09-06.12-00-00')
+    $project.Status = 'Failed'
+}
+$manifest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $path
+if ($Configuration -ne 'Debug') { exit 9 }
+exit 7
+'@ | Set-Content $mutationScript
+        & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -MutationScriptPath $mutationScript -Configuration Debug -GenerateTasks | Out-Null
+        $LASTEXITCODE | Should -Be 7
+        (Get-Content (Join-Path $reportRoot 'mutation-survivors-enriched.json') -Raw | ConvertFrom-Json).totalSurvivors | Should -Be 2
+        @(Get-ChildItem (Join-Path $repo '.scratchpad/tasks/pending') -Filter '*.json').Count | Should -Be 2
+    }
+
+    It 'does not summarize historical reports when mutation preparation fails' {
+        $mutationScript = Join-Path $scriptDirectory 'fake-mutation.ps1'
+        Set-Content $mutationScript 'param([string]$Configuration); exit 7'
+        & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -MutationScriptPath $mutationScript 2>&1 | Out-Null
+        $LASTEXITCODE | Should -Not -Be 0
+        Test-Path (Join-Path $reportRoot 'mutation-survivors-enriched.json') | Should -BeFalse
+    }
+
     It 'ignores a newer focused run for repository summaries' {
         $focused = Join-Path $reportRoot '2026-09-06.12-00-00'
         New-Item -ItemType Directory -Path $focused | Out-Null

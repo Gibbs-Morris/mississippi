@@ -208,6 +208,20 @@ Describe 'Mutation automation' {
         Test-Path -LiteralPath $failure.Exception.Data['ReportPath'] | Should -BeTrue
     }
 
+    It 'runs the failure-preserving summary flow from the full pipeline' {
+        Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests {} -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            if ($Arguments -like '*summarize-mutation-survivors.ps1') { throw 'mutation score gate failed after summary' }
+        } -ModuleName RepositoryAutomation
+        { Invoke-SolutionsPipeline -RepoRoot $repo -IncludeMutation -Configuration Debug } |
+            Should -Throw '*mutation score gate failed after summary*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $Arguments -like '*summarize-mutation-survivors.ps1' -and $Arguments -contains 'Debug' -and
+            $Arguments -contains '-GenerateTasks' -and $Arguments -notcontains '-SkipMutationRun'
+        }
+    }
+
     It 'records an authored project with no test mapping as a failed target' {
         Set-Content (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj') '<Project />'
         Set-Content (Join-Path $repo 'tests/Widget.L1Tests/Widget.L1Tests.csproj') '<Project />'

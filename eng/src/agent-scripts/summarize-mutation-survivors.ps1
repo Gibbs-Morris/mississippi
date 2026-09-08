@@ -5,6 +5,8 @@ param(
     [switch]$SkipMutationRun,
     [string]$MutationScriptPath,
     [string]$RunPath,
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration = 'Release',
     [int]$Top,
     [int]$ContextLines = 3,
     [ValidateSet('Simple','Weighted')]
@@ -346,26 +348,32 @@ else
     }
 }
 
+$mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'
+if (-not (Test-Path -LiteralPath $mutationOutputDirectory)) { New-Item -ItemType Directory -Path $mutationOutputDirectory | Out-Null }
+$previousRuns = @(Get-ChildItem -LiteralPath $mutationOutputDirectory -Directory | Select-Object -ExpandProperty FullName)
+$mutationExitCode = 0
 if (-not $SkipMutationRun)
 {
     if ($RunPath) { throw '-RunPath requires -SkipMutationRun.' }
     Write-Host "Running mutation tests via '$MutationScriptPath'..." -ForegroundColor Cyan
-    & pwsh -NoLogo -NoProfile -File $MutationScriptPath
-    if ($LASTEXITCODE -ne 0)
+    & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoLogo -NoProfile -File $MutationScriptPath -Configuration $Configuration
+    $mutationExitCode = $LASTEXITCODE
+    if ($mutationExitCode -ne 0)
     {
-        throw "Mutation test script exited with code $LASTEXITCODE."
+        Write-Warning "Mutation test script exited with code $mutationExitCode; checking this run's evidence before propagating failure."
     }
-    Write-Host "Mutation tests completed." -ForegroundColor Green
+    else { Write-Host "Mutation tests completed." -ForegroundColor Green }
 }
 else
 {
     Write-Host "SkipMutationRun specified; using existing Stryker output." -ForegroundColor Yellow
 }
 
-$mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'
-if (-not (Test-Path -LiteralPath $mutationOutputDirectory)) { New-Item -ItemType Directory -Path $mutationOutputDirectory | Out-Null }
 # Reports from the latest run are authoritative; cached survivors may be stale.
 $selectedRun = Get-MutationRun -MutationOutputPath $mutationOutputDirectory -SelectedRun $RunPath
+if (-not $SkipMutationRun -and $selectedRun.Path -in $previousRuns) {
+    throw 'Mutation execution did not create a new solution run; refusing to summarize historical evidence.'
+}
 if ($selectedRun.Manifest.Scope -eq 'Project') {
     if ($GenerateTasks -or $EmitTestSkeletons) { throw 'Focused summaries cannot replace repository tasks or generate test skeletons.' }
     $mutationOutputDirectory = $selectedRun.Path
@@ -793,6 +801,6 @@ if ($reportSurvivors.Count -gt 0)
 Write-Host "- Markdown: $summaryMarkdownPath" -ForegroundColor Gray
 Write-Host "Total survivors: $totalCount" -ForegroundColor Cyan
 
-exit 0
+exit $mutationExitCode
 
 
