@@ -26,7 +26,7 @@ Write-Host ""
 
 try {
     # Execute the final-build script and wait for completion
-    & $finalBuildScript -Configuration $Configuration
+    & pwsh -NoProfile -File $finalBuildScript -Configuration $Configuration
     if ($LASTEXITCODE -ne 0) {
         throw "final-build-solutions.ps1 failed with exit code $LASTEXITCODE"
     }
