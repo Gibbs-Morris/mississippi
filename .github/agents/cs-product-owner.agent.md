@@ -380,8 +380,9 @@ Scope this governed run to one logical PR and record ordered follow-ons under [P
 3. Invoke **cs Technical Writer** to create/update Docusaurus documentation:
 
    ```text
-   Prompt: "Read all files in .thinking/<task>/ and run
-   git diff --name-status --find-renames main...HEAD to identify changes.
+   Prompt: "Read all files in .thinking/<task>/.
+   Use the actual PR base branch and checked base SHA recorded in final-plan.md;
+   run git diff --name-status --find-renames <actual-pr-base>...HEAD to identify this layer's changes.
    Build an evidence map of new public APIs, changed behaviors, and affected
    doc pages. Create or update Docusaurus documentation under
    docs/Docusaurus/docs/. Write drafts to
