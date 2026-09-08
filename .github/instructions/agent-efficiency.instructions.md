@@ -25,7 +25,7 @@ Governing thought: Spend tokens on evidence and actions that advance the user's 
 - Agents **SHOULD** use event-driven waits or bounded polling of a specific operation, preserving mandated review intervals. Why: Waiting can be necessary without repeatedly loading unchanged output.
 - Agents **SHOULD** continue authorized work using a materially different, evidence-backed approach after reassessment. Why: Stopping a failed tactic does not abandon the goal.
 - Agents **MUST** explain the blocker when no safe, useful next action remains. Why: The user needs the evidence that prevents further progress.
-- Agents **MUST** request the smallest missing input or decision needed to proceed when no safe, useful next action remains. Why: Repeating a blocked approach cannot supply credentials, authority, or a user-owned decision.
+- Agents **MUST** request only the missing input or decision needed to proceed when a blocker requires something the user can provide. Why: External conditions outside the user's control do not justify inventing a user decision.
 
 ## Scope and Audience
 
@@ -44,7 +44,8 @@ All repository agents, including long-running and persistent-goal workflows. Req
 |----------|-------------|
 | Two runs return the same error with unchanged inputs | Inspect the cause and change the hypothesis or method before another run. |
 | A test observation times out but its session is still running | Keep the session identifier and wait for that run; do not launch a duplicate. |
-| Access is denied and no authorized alternative exists | State the inaccessible scope and request the missing access; do not interpret denial as an empty result. |
+| Access is denied and the user can grant the needed access | State the inaccessible scope and request that access; do not interpret denial as an empty result. |
+| A service outage blocks work and the user cannot restore it | Report the condition and what needs to recover; follow the host's waiting or blockage rules. |
 
 ## Core Principles
 
