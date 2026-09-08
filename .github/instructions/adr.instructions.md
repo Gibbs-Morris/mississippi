@@ -45,6 +45,7 @@ Retain these local bindings from the former template when filling the body:
 | Field | Local binding |
 | --- | --- |
 | Frontmatter title and H1 | `ADR-NNNN: <Decision title>` |
+| `sidebar_position` | Numeric value of `NNNN`, matching the ADR identifier |
 | Date | `YYYY-MM-DD` |
 | Initial status | `proposed`; change to `accepted` after approval |
 
