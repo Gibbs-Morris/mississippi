@@ -2,49 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "Aspire.Hosting.Testing": {
-        "type": "Direct",
-        "requested": "[13.5.3, )",
-        "resolved": "13.5.3",
-        "contentHash": "4SlBVfvCHXTSqV16zN/8EstUf+aXhMXfeofvFQGjBmiE6G4M1mWGC2Y9F4pCHDLMqF0VirQoFRHrSKMqjD6X2w==",
-        "dependencies": {
-          "AspNetCore.HealthChecks.Uris": "9.0.0",
-          "Aspire.Hosting": "13.5.3",
-          "Aspire.Hosting.AppHost": "13.5.3",
-          "Google.Protobuf": "3.34.1",
-          "Grpc.AspNetCore": "2.80.0",
-          "Grpc.Net.ClientFactory": "2.80.0",
-          "Grpc.Tools": "2.80.0",
-          "Humanizer.Core": "3.0.10",
-          "JsonPatch.Net": "5.0.2",
-          "KubernetesClient": "19.0.2",
-          "Microsoft.Extensions.Configuration.Abstractions": "10.0.11",
-          "Microsoft.Extensions.Configuration.Binder": "10.0.11",
-          "Microsoft.Extensions.Configuration.EnvironmentVariables": "10.0.11",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.11",
-          "Microsoft.Extensions.DependencyInjection.AutoActivation": "10.8.0",
-          "Microsoft.Extensions.Diagnostics.HealthChecks": "10.0.11",
-          "Microsoft.Extensions.FileSystemGlobbing": "10.0.11",
-          "Microsoft.Extensions.Hosting": "10.0.11",
-          "Microsoft.Extensions.Hosting.Abstractions": "10.0.11",
-          "Microsoft.Extensions.Http": "10.0.11",
-          "Microsoft.Extensions.Http.Resilience": "10.8.0",
-          "Microsoft.Extensions.Logging": "10.0.11",
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.11",
-          "Microsoft.Extensions.Options": "10.0.11",
-          "Microsoft.Extensions.Primitives": "10.0.11",
-          "ModelContextProtocol": "1.3.0",
-          "Newtonsoft.Json": "13.0.4",
-          "OpenTelemetry.Exporter.OpenTelemetryProtocol": "1.15.3",
-          "OpenTelemetry.Extensions.Hosting": "1.15.3",
-          "Polly.Core": "8.6.6",
-          "Polly.Extensions": "8.6.6",
-          "Semver": "3.0.0",
-          "StreamJsonRpc": "2.25.29",
-          "System.IO.Hashing": "10.0.8",
-          "YamlDotNet": "16.3.0"
-        }
-      },
       "coverlet.collector": {
         "type": "Direct",
         "requested": "[10.0.1, )",
@@ -77,16 +34,6 @@
         "dependencies": {
           "Microsoft.CodeCoverage": "18.9.0",
           "Microsoft.TestPlatform.TestHost": "18.9.0"
-        }
-      },
-      "Microsoft.Playwright": {
-        "type": "Direct",
-        "requested": "[1.62.0, )",
-        "resolved": "1.62.0",
-        "contentHash": "cos6dmHPcMpS6bXw2WEgoXb8KXwMhs3c5L0P/cUf2rdUpjVA3g3u+KiSpVp2VCzsXymRpy2tFHqm+Wnz7s5VhQ==",
-        "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
-          "System.ComponentModel.Annotations": "5.0.0"
         }
       },
       "Microsoft.VisualStudio.Threading.Analyzers": {
@@ -1172,11 +1119,6 @@
           "System.Memory.Data": "10.0.3"
         }
       },
-      "System.ComponentModel.Annotations": {
-        "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "dMkqfy2el8A8/I76n2Hi1oBFEbG1SfxD2l5nhwXV3XjlnOmwxJlQbYpJH4W51odnU9sARCSAgv7S3CyAFMkpYg=="
-      },
       "System.Composition": {
         "type": "Transitive",
         "resolved": "9.0.0",
@@ -1360,6 +1302,14 @@
           "Aspire.Hosting.Orleans": "[13.5.3, )"
         }
       },
+      "Mississippi.Spring.TestHarness": {
+        "type": "Project",
+        "dependencies": {
+          "Aspire.Hosting.Testing": "[13.5.3, )",
+          "Mississippi.Spring.AppHost": "[1.0.0, )",
+          "xunit": "[2.9.3, )"
+        }
+      },
       "Aspire.Hosting.AppHost": {
         "type": "CentralTransitive",
         "requested": "[13.5.3, )",
@@ -1536,6 +1486,49 @@
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "1.15.3",
           "OpenTelemetry.Extensions.Hosting": "1.15.3",
           "Polly.Core": "8.6.6",
+          "Semver": "3.0.0",
+          "StreamJsonRpc": "2.25.29",
+          "System.IO.Hashing": "10.0.8",
+          "YamlDotNet": "16.3.0"
+        }
+      },
+      "Aspire.Hosting.Testing": {
+        "type": "CentralTransitive",
+        "requested": "[13.5.3, )",
+        "resolved": "13.5.3",
+        "contentHash": "4SlBVfvCHXTSqV16zN/8EstUf+aXhMXfeofvFQGjBmiE6G4M1mWGC2Y9F4pCHDLMqF0VirQoFRHrSKMqjD6X2w==",
+        "dependencies": {
+          "AspNetCore.HealthChecks.Uris": "9.0.0",
+          "Aspire.Hosting": "13.5.3",
+          "Aspire.Hosting.AppHost": "13.5.3",
+          "Google.Protobuf": "3.34.1",
+          "Grpc.AspNetCore": "2.80.0",
+          "Grpc.Net.ClientFactory": "2.80.0",
+          "Grpc.Tools": "2.80.0",
+          "Humanizer.Core": "3.0.10",
+          "JsonPatch.Net": "5.0.2",
+          "KubernetesClient": "19.0.2",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.11",
+          "Microsoft.Extensions.Configuration.Binder": "10.0.11",
+          "Microsoft.Extensions.Configuration.EnvironmentVariables": "10.0.11",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.11",
+          "Microsoft.Extensions.DependencyInjection.AutoActivation": "10.8.0",
+          "Microsoft.Extensions.Diagnostics.HealthChecks": "10.0.11",
+          "Microsoft.Extensions.FileSystemGlobbing": "10.0.11",
+          "Microsoft.Extensions.Hosting": "10.0.11",
+          "Microsoft.Extensions.Hosting.Abstractions": "10.0.11",
+          "Microsoft.Extensions.Http": "10.0.11",
+          "Microsoft.Extensions.Http.Resilience": "10.8.0",
+          "Microsoft.Extensions.Logging": "10.0.11",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.11",
+          "Microsoft.Extensions.Options": "10.0.11",
+          "Microsoft.Extensions.Primitives": "10.0.11",
+          "ModelContextProtocol": "1.3.0",
+          "Newtonsoft.Json": "13.0.4",
+          "OpenTelemetry.Exporter.OpenTelemetryProtocol": "1.15.3",
+          "OpenTelemetry.Extensions.Hosting": "1.15.3",
+          "Polly.Core": "8.6.6",
+          "Polly.Extensions": "8.6.6",
           "Semver": "3.0.0",
           "StreamJsonRpc": "2.25.29",
           "System.IO.Hashing": "10.0.8",

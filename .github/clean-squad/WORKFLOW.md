@@ -273,7 +273,7 @@ governed work begins:
       test-strategy-review.md       # QA Lead review
       exploratory-findings.md       # Exploratory testing
       coverage-report.md            # Coverage analysis
-      mutation-report.md            # Mutation testing results
+      mutation-report.md            # Mutation status, available results, and gaps
     08-documentation/
       scope-assessment.md           # Branch diff analysis for doc needs
       page-plan.md                  # Planned pages with types and paths
@@ -1015,6 +1015,10 @@ The Product Owner is an orchestrator, not an implementation agent.
 **Owner**: cs Product Owner
 **Sub-agents**: cs Plan Synthesizer, approved review personas from the Agent Roster
 
+Scope each governed run to one logical PR under [PR size and stacked delivery](../instructions/pr-size-and-stacking.instructions.md). For larger objectives, record ordered follow-on PRs, bases, size estimates, tests/docs, and landing intent in the plan. Complete this run through Phase 9 and its advancement gate before implementing a dependent run. Ready layers can remain unmerged in a native stack managed with `gh stack` and the linked skill; each run retains its own audit trail and existing human gates.
+
+Record the actual PR base branch and checked base SHA in `final-plan.md`: the immediate parent for a stack layer, otherwise `main`. Pass that base to every review and documentation delegate and use it for all downstream diffs. Refresh the recorded base and affected evidence after a rebase or retarget.
+
 ### Process
 
 1. Product Owner combines architecture, requirements, and Three Amigos output
@@ -1054,7 +1058,7 @@ Each review cycle invokes these personas (subset varies by task complexity):
 
 ### Process
 
-1. Product Owner creates a feature branch from `main`.
+1. Product Owner creates the planned branch from current `main`, or uses the `gh-stack` skill to create a layer on its verified, advancement-ready parent.
 2. For each increment:
    a. Product Owner invokes **cs Lead Developer** with the next slice of work
       from the plan.
@@ -1124,7 +1128,7 @@ elements were in semantic-review scope.
 
 ### Process
 
-1. Product Owner uses `git diff main...HEAD` to identify all changed files.
+1. Product Owner uses `git diff <actual-pr-base>...HEAD` to identify this layer's changed files, using the base recorded in the plan.
 2. Product Owner invokes review personas in sequence:
 
    | Priority | Agent | Style |
@@ -1160,9 +1164,15 @@ reviewers. Domain experts review files within their expertise.
 1. Product Owner invokes **cs QA Lead** to review test strategy and coverage.
 2. Product Owner invokes **cs QA Exploratory** to apply exploratory testing
    perspective.
-3. Product Owner invokes **cs Test Engineer** for mutation testing (Mississippi
-   projects only).
-4. Any gaps identified are fed back to implementation.
+3. Product Owner invokes **cs Test Engineer** to report available mutation
+   evidence and significant gaps, or an explicit not-run status, in
+   `07-qa/mutation-report.md`. Run or improve mutation tests only when
+   proportionate or explicitly requested under the
+   [mutation-testing policy](../instructions/mutation-testing.instructions.md).
+4. Gaps affecting required quality gates are fed back to
+   implementation. Costly mutation gaps are recorded for dedicated follow-up;
+   there is no mandatory repository mutation-score threshold or ordinary
+   mutation completion gate.
 
 ## Phase 8: Documentation
 
@@ -1178,7 +1188,7 @@ deliverable, not an afterthought.
 ### Process
 
 1. Product Owner assesses documentation scope:
-   - Run `git diff --name-status --find-renames main...HEAD` to identify all
+   - Run `git diff --name-status --find-renames <actual-pr-base>...HEAD` to identify this layer's
      changed source files.
    - Identify new public APIs, changed behavior, new concepts, and affected
      existing doc pages.
@@ -1187,7 +1197,7 @@ deliverable, not an afterthought.
      and proceed to Phase 9.
 
 2. Product Owner invokes **cs Technical Writer** to create/update documentation:
-   - The writer reads all `.thinking/<task>/` artifacts and the branch diff.
+   - The writer receives the actual PR base and checked SHA, then reads all `.thinking/<task>/` artifacts and this layer's diff against that base.
    - The writer builds an evidence map, classifies page types, and drafts pages.
    - Draft pages are written to `.thinking/<task>/08-documentation/drafts/`.
    - Verified pages are published to `docs/Docusaurus/docs/`.

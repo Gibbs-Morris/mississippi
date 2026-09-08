@@ -1,0 +1,288 @@
+#!/usr/bin/env pwsh
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+BeforeAll {
+    Import-Module (Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1') -Force
+}
+
+Describe 'Mutation automation' {
+    BeforeEach {
+        $repo = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        foreach ($directory in @('.git', 'src/Widget', 'tests/Widget.L0Tests', 'tests/Widget.L1Tests', 'tests/Widget.L2Tests', 'samples/Other.L0Tests')) {
+            New-Item -ItemType Directory -Path (Join-Path $repo $directory) -Force | Out-Null
+        }
+        $sourceProject = Join-Path $repo 'src/Widget/Widget.csproj'
+        Set-Content $sourceProject '<Project />'
+        Set-Content (Join-Path $repo 'src/Widget/IWidget.cs') 'internal interface IWidget {}'
+        foreach ($level in @('L0', 'L1', 'L2')) {
+            Set-Content (Join-Path $repo "tests/Widget.${level}Tests/Widget.${level}Tests.csproj") '<Project><ItemGroup><ProjectReference Include="..\..\src\Widget\Widget.csproj" /></ItemGroup></Project>'
+        }
+        Set-Content (Join-Path $repo 'samples/Other.L0Tests/Other.L0Tests.csproj') '<Project />'
+        $solution = Join-Path $repo 'mississippi.slnx'
+        Set-Content $solution '<Solution><Project Path="src/Widget/Widget.csproj" /><Folder Name="/Tests/"><Project Path="tests\Widget.L0Tests\Widget.L0Tests.csproj" /><Project Path="tests/Widget.L1Tests/Widget.L1Tests.csproj" /><Project Path="tests/Widget.L2Tests/Widget.L2Tests.csproj" /></Folder></Solution>'
+        Set-Content (Join-Path $repo 'stryker-config.json') '{"stryker-config":{}}'
+        Set-Content (Join-Path $repo 'MSBuild.dll') ''
+        $output = Join-Path $repo 'mutation-results'
+        $completedOutput = Join-Path $repo 'completed'
+        New-Item -ItemType Directory -Path $completedOutput | Out-Null
+        Set-Content (Join-Path $completedOutput 'mutation-report.json') '{"files":{}}'
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation { $repo } -ParameterFilter { $Arguments[0] -eq 'msbuild' }
+    }
+
+    It 'discovers only test projects declared in the canonical solution' {
+        $projects = @(Get-TestProjects -SolutionPath $solution)
+        $projects.Count | Should -Be 3
+        $projects | Should -Not -Contain (Join-Path $repo 'samples/Other.L0Tests/Other.L0Tests.csproj')
+    }
+
+    It 'uses canonical membership when given a generated legacy solution' {
+        $legacy = Join-Path $repo 'mississippi.sln'
+        Set-Content $legacy ''
+        @(Get-TestProjects -SolutionPath $legacy).Count | Should -Be 3
+    }
+
+    It 'groups every declared test level from Windows-style project references exactly once' {
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -Configuration Debug | Should -Be $output
+        Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $ProjectPath -like '*Widget.csproj' -and $TestProjects.Count -eq 3 -and
+            ($TestProjects -match 'L2Tests') -and $Configuration -eq 'Debug'
+        }
+    }
+
+    It 'fails when a mutation process fails even if it is the only target' {
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { throw 'Stryker exited 1' }
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*mutation testing failed*'
+    }
+
+    It 'skips package-only projects even when build output contains generated C#' {
+        $packageDirectory = Join-Path $repo 'src/Package'
+        foreach ($directory in @('bin', 'obj')) {
+            $generatedDirectory = Join-Path $packageDirectory $directory
+            New-Item -ItemType Directory -Path $generatedDirectory -Force | Out-Null
+            Set-Content (Join-Path $generatedDirectory 'Generated.cs') 'internal class Generated {}'
+        }
+        Set-Content (Join-Path $packageDirectory 'Package.csproj') '<Project />'
+        (Get-Content $solution -Raw).Replace('</Solution>', '<Project Path="src/Package/Package.csproj" /></Solution>') | Set-Content $solution
+        Set-Content (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj') '<Project><ItemGroup><ProjectReference Include="../../src/Widget/Widget.csproj" /><ProjectReference Include="../../src/Package/Package.csproj" /></ItemGroup></Project>'
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation {
+            $manifest = @((Get-Content (Join-Path $OutputPath 'project-results.json') -Raw | ConvertFrom-Json).Projects)
+            ($manifest | Where-Object Project -Like '*Package.csproj').Status | Should -Be 'Skipped'
+            $completedOutput
+        }
+        Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output | Should -Be $output
+        Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1
+        Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 0 -ParameterFilter { $ProjectPath -like '*Package.csproj' }
+    }
+
+    It 'rejects a solution without mutation targets' {
+        Set-Content $solution '<Solution />'
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*No*'
+    }
+
+    It 'invokes Stryker from the source directory with repository configuration and restores the caller location' {
+        $originalLocation = (Get-Location).Path
+        $tests = @(Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj')
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Split-Path -Leaf (Get-Location).Path | Should -Be 'Widget'
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $tests -OutputPath $output -Configuration Debug | Out-Null
+        (Get-Location).Path | Should -Be $originalLocation
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $Arguments -contains '--test-project' -and $Arguments -contains '--config-file' -and $Arguments -contains '--disable-bail' -and
+            $Arguments -contains 'Debug' -and $Arguments -contains 'Widget.csproj' -and
+            $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
+            $Arguments -notcontains '--concurrency'
+        }
+    }
+
+    It 'rejects unexpected MSBuild property output before invoking Stryker' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation { @($repo, 'unexpected output') } -ParameterFilter { $Arguments[0] -eq 'msbuild' }
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } |
+            Should -Throw '*Expected one MSBuildBinPath*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 0 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+    }
+
+    It 'rejects a missing selected SDK assembly before invoking Stryker' {
+        Remove-Item -LiteralPath (Join-Path $repo 'MSBuild.dll')
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } |
+            Should -Throw '*MSBuild.dll was not found*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 0 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+    }
+
+    It 'uses one mutation worker when integration tests share local infrastructure' {
+        $tests = @(
+            (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj'),
+            (Join-Path $repo 'tests/Widget.L2Tests/Widget.L2Tests.csproj')
+        )
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects $tests -OutputPath $output | Out-Null
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $Arguments[0] -eq 'stryker' -and $Arguments -contains '--concurrency' -and
+            $Arguments[[Array]::IndexOf($Arguments, '--concurrency') + 1] -eq '1' -and
+            $Arguments -contains $tests[0] -and $Arguments -contains $tests[1]
+        }
+    }
+
+    It 'restores the caller location after a Stryker failure' {
+        $originalLocation = (Get-Location).Path
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation { throw 'native process failed' } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } | Should -Throw '*native process failed*'
+        (Get-Location).Path | Should -Be $originalLocation
+    }
+
+    It 'preserves native error data and output paths when no report is produced' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            $nativeFailure = [InvalidOperationException]::new('native process failed')
+            $nativeFailure.Data['ExitCode'] = 17
+            throw $nativeFailure
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        $failure = $null
+        try { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output }
+        catch { $failure = $_ }
+        $failure.Exception.Message | Should -Be 'native process failed'
+        $failure.Exception.Data['ExitCode'] | Should -Be 17
+        Test-Path -LiteralPath $failure.Exception.Data['OutputPath'] -PathType Container | Should -BeTrue
+        $failure.Exception.Data['ReportError'] | Should -Match 'found 0'
+        $failure.Exception.Data['ReportPath'] | Should -BeNullOrEmpty
+    }
+
+    It 'rejects a successful native exit without a report' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {} -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } | Should -Throw '*Expected one mutation-report.json*'
+    }
+
+    It 'rejects a successful native exit with <Case>' -ForEach @(
+        @{ Case = 'invalid JSON'; Json = '{' },
+        @{ Case = 'missing files'; Json = '{}' },
+        @{ Case = 'an invalid files collection'; Json = '{"files":[]}' },
+        @{ Case = 'missing mutants'; Json = '{"files":{"Widget.cs":{}}}' },
+        @{ Case = 'a null mutant'; Json = '{"files":{"Widget.cs":{"mutants":[null]}}}' },
+        @{ Case = 'a missing status'; Json = '{"files":{"Widget.cs":{"mutants":[{}]}}}' },
+        @{ Case = 'pending mutants'; Json = '{"files":{"Widget.cs":{"mutants":[{"status":"Pending"}]}}}' },
+        @{ Case = 'an unknown status'; Json = '{"files":{"Widget.cs":{"mutants":[{"status":"Unexpected"}]}}}' }
+    ) {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') $Json
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } | Should -Throw
+    }
+
+    It 'accepts complete reports, including files with no mutants' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{"Empty.cs":{"mutants":[]},"Widget.cs":{"mutants":[{"status":"Killed"},{"status":"Survived"},{"status":"NoCoverage"},{"status":"CompileError"},{"status":"RuntimeError"},{"status":"Timeout"},{"status":"Ignored"}]}}}'
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        $run = Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output
+        Split-Path -Parent $run | Should -Be (Join-Path $output 'Widget')
+        Test-Path (Join-Path $run 'mutation-report.json') | Should -BeTrue
+    }
+
+    It 'reports a failed quality gate when tests pass but focused mutation fails' {
+        $qualityScript = Join-Path $PSScriptRoot '../../src/agent-scripts/test-project-quality.ps1'
+        $testProject = Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj'
+        Mock Import-Module {}
+        Mock dotnet {
+            $results = $args[[Array]::IndexOf($args, '--results-directory') + 1]
+            Set-Content (Join-Path $results 'test_results.trx') '<TestRun><ResultSummary outcome="Completed"><Counters total="1" executed="1" passed="1" failed="0" notExecuted="0" /></ResultSummary></TestRun>'
+            Set-Content (Join-Path $results 'coverage.cobertura.xml') '<coverage line-rate="1" />'
+            & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -Command 'exit 0'
+        }
+        Mock Invoke-StrykerMutationTestPerProject { throw 'mutation failed' }
+        Push-Location $repo
+        try {
+            $summary = & $qualityScript -TestProject $testProject -SourceProject $sourceProject -Configuration Debug -NoBuild 6>&1 3>$null
+            $LASTEXITCODE | Should -Be 1
+            ($summary | Out-String) | Should -Match 'RESULT: FAIL'
+        }
+        finally { Pop-Location }
+        Should -Invoke Invoke-StrykerMutationTestPerProject -Exactly 1 -ParameterFilter {
+            $ProjectPath -eq $sourceProject -and $TestProjects.Count -eq 1 -and
+            $TestProjects[0] -eq $testProject -and $Configuration -eq 'Debug'
+        }
+    }
+
+    It 'prints a failed non-mutation summary when coverage is missing' {
+        $qualityScript = Join-Path $PSScriptRoot '../../src/agent-scripts/test-project-quality.ps1'
+        Mock Import-Module {}
+        Mock dotnet {
+            $results = $args[[Array]::IndexOf($args, '--results-directory') + 1]
+            Set-Content (Join-Path $results 'test_results.trx') '<TestRun><ResultSummary outcome="Completed"><Counters total="1" executed="1" passed="1" failed="0" notExecuted="0" /></ResultSummary></TestRun>'
+            & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -Command 'exit 0'
+        }
+        Mock Invoke-StrykerMutationTestPerProject {}
+        Push-Location $repo
+        try {
+            $summary = & $qualityScript -TestProject (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj') -SkipMutation -NoBuild 6>&1
+            $LASTEXITCODE | Should -Be 1
+            ($summary | Out-String) | Should -Match 'RESULT: FAIL'
+            ($summary | Out-String) | Should -Match 'TEST_PASSED: 1'
+            ($summary | Out-String) | Should -Match 'COVERAGE: N/A'
+        }
+        finally { Pop-Location }
+        Should -Invoke Invoke-StrykerMutationTestPerProject -Exactly 0
+    }
+
+    It 'does not reuse an earlier report for a later invocation' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        $first = Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {} -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } |
+            Should -Throw '*found 0*'
+        Test-Path (Join-Path $first 'mutation-report.json') | Should -BeTrue
+    }
+
+    It 'rejects multiple reports from one invocation' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
+            New-Item -ItemType Directory -Path (Join-Path $Arguments[8] 'extra') | Out-Null
+            Set-Content (Join-Path $Arguments[8] 'extra/mutation-report.json') '{"files":{}}'
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } |
+            Should -Throw '*found 2*'
+    }
+
+    It 'retains validated report evidence when the native score gate fails' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{"Widget.cs":{"mutants":[{"status":"Survived"}]}}}'
+            throw 'score below threshold'
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        $failure = $null
+        try { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output }
+        catch { $failure = $_ }
+        $failure.Exception.Message | Should -Match 'score below threshold'
+        Test-Path -LiteralPath $failure.Exception.Data['ReportPath'] | Should -BeTrue
+    }
+
+    It 'runs the failure-preserving summary flow from the full pipeline' {
+        Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
+        Mock Invoke-MississippiSolutionUnitTests {} -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            if ($Arguments -like '*summarize-mutation-survivors.ps1') { throw 'mutation score gate failed after summary' }
+        } -ModuleName RepositoryAutomation
+        { Invoke-SolutionsPipeline -RepoRoot $repo -IncludeMutation -Configuration Debug } |
+            Should -Throw '*mutation score gate failed after summary*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+            $Arguments -like '*summarize-mutation-survivors.ps1' -and $Arguments -contains 'Debug' -and
+            $Arguments -contains '-GenerateTasks' -and $Arguments -notcontains '-SkipMutationRun'
+        }
+    }
+
+    It 'records an authored project with no test mapping as a failed target' {
+        Set-Content (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj') '<Project />'
+        Set-Content (Join-Path $repo 'tests/Widget.L1Tests/Widget.L1Tests.csproj') '<Project />'
+        Set-Content (Join-Path $repo 'tests/Widget.L2Tests/Widget.L2Tests.csproj') '<Project />'
+        Mock Invoke-StrykerMutationTestPerProject {} -ModuleName RepositoryAutomation
+        { Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output } | Should -Throw '*mutation testing failed*'
+        $manifest = @((Get-Content (Join-Path $output 'project-results.json') -Raw | ConvertFrom-Json).Projects)
+        $manifest[0].Status | Should -Be 'Failed'
+        $manifest[0].Error | Should -Match 'no declared test mapping'
+        Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 0
+    }
+}

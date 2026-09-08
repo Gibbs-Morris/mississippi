@@ -7,9 +7,9 @@ using System.Threading;
 namespace MississippiSamples.Spring.L2Tests;
 
 /// <summary>
-///     Verifies that the gateway serves its generated API document and reference UI.
+///     Verifies the generated OpenAPI document through the gateway HTTP contract.
 /// </summary>
-[Collection(SpringTestCollection.Name)]
+[Collection(SpringApiCollectionDefinition.Name)]
 public sealed class ApiDocumentationIntegrationTests
 {
     /// <summary>
@@ -17,11 +17,11 @@ public sealed class ApiDocumentationIntegrationTests
     /// </summary>
     /// <param name="fixture">The shared Spring fixture.</param>
     public ApiDocumentationIntegrationTests(
-        SpringFixture fixture
+        SpringApplicationFixture fixture
     ) =>
         Fixture = fixture;
 
-    private SpringFixture Fixture { get; }
+    private SpringApplicationFixture Fixture { get; }
 
     /// <summary>
     ///     Verifies that OpenAPI generation includes the configured metadata and API paths.
@@ -31,7 +31,7 @@ public sealed class ApiDocumentationIntegrationTests
     public async Task OpenApiDocumentShouldContainGeneratedEndpoints()
     {
         using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
-        HttpClient client = Fixture.CreateHttpClient();
+        HttpClient client = Fixture.GatewayClient;
         using HttpResponseMessage response = await client.GetAsync(
             new Uri("/openapi/v1.json", UriKind.Relative),
             timeout.Token);
@@ -45,29 +45,5 @@ public sealed class ApiDocumentationIntegrationTests
             .Should()
             .BeTrue();
         openEndpoint.TryGetProperty("post", out JsonElement _).Should().BeTrue();
-    }
-
-    /// <summary>
-    ///     Verifies that Scalar loads the generated OpenAPI document in the browser.
-    /// </summary>
-    /// <returns>A task representing the test operation.</returns>
-    [Fact]
-    public async Task ScalarReferenceShouldLoadTheApiDocument()
-    {
-        IPage page = await Fixture.CreatePageAsync();
-        try
-        {
-            IResponse response = await page.RunAndWaitForResponseAsync(
-                () => page.GotoAsync(new Uri(Fixture.GatewayBaseUri, "/scalar/v1").AbsoluteUri),
-                candidate => Uri.TryCreate(candidate.Url, UriKind.Absolute, out Uri? responseUri) &&
-                             (responseUri.AbsolutePath == "/openapi/v1.json"));
-            response.Status.Should().Be(200);
-            string title = await page.TitleAsync();
-            title.Should().Be("Spring Bank API");
-        }
-        finally
-        {
-            await page.CloseAsync();
-        }
     }
 }

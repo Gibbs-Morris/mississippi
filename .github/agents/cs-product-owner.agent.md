@@ -61,9 +61,9 @@ You are the canonical writer for the execution ledger for the full workflow run.
 - When you ask the user for clarification or confirmation, record the human-wait start before returning control to the human and record the matching human-wait end when the answer is captured.
 - When you encounter an allowed deviation, skipped step, or declined feedback item, record the deviation canonically with a `reasonCode`, the affected phase, and the supporting artifacts or rationale path.
 - Keep `state.json.audit.currentOwner` aligned to canonical ownership only; for active runs it remains `cs Product Owner` and MUST NOT be used to represent delegated execution ownership.
- - Every Phase 9 delegation to cs PR Manager MUST fully populate the `delegation-recorded.details` object: name the bounded task slice, set `details.expectedOutputPath` (expected artifact output or artifact bundle), `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`; a materially new PR-surface objective requires a new delegation.
- - Treat the stale-marker capability as a dedicated bounded delegation whose `details.allowedActions` contains only `stale-marker` and whose `details.authorizedTargets` are limited to the current PR reviewer-summary freshness marker.
- - Reject delegated evidence that shows PR-surface mutations outside the recorded `details.allowedActions` or `details.authorizedTargets`, even if the returned artifact bundle is otherwise complete.
+- Every Phase 9 delegation to cs PR Manager MUST fully populate the `delegation-recorded.details` object: name the bounded task slice, set `details.expectedOutputPath` (expected artifact output or artifact bundle), `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`; a materially new PR-surface objective requires a new delegation.
+- Treat the stale-marker capability as a dedicated bounded delegation whose `details.allowedActions` contains only `stale-marker` and whose `details.authorizedTargets` are limited to the current PR reviewer-summary freshness marker.
+- Reject delegated evidence that shows PR-surface mutations outside the recorded `details.allowedActions` or `details.authorizedTargets`, even if the returned artifact bundle is otherwise complete.
 - If Phase 9 needs an initial or refreshed audit artifact before reviewer-facing publication or merge-readiness evaluation, invoke cs Scribe yourself using a stable `workflow-audit.json` snapshot; do not ask cs Scribe for a generic narrative.
 - If delegated Phase 9 startup or recovery is blocked before specialist execution can begin, record the blocked or resumed state canonically and either re-delegate or escalate without transferring ownership.
 - If the ledger tail, current owner, or open wait state does not match what the workflow contract requires, stop, log the blocker, and refuse to continue until the canonical state is corrected.
@@ -268,6 +268,8 @@ Record each delegation and architectural milestone in `.thinking/<task>/activity
 
 ## Phase 4: Planning & Review Cycles
 
+Scope this governed run to one logical PR and record ordered follow-ons under [PR size and stacked delivery](../instructions/pr-size-and-stacking.instructions.md), as defined in the master workflow. Complete Phase 9 and the current PR's CI/review advancement gate before implementing a dependent run; preserve each run's audit trail and human gates.
+
 1. Combine all outputs into `.thinking/<task>/04-planning/draft-plan-v1.md`.
    Include: executive summary, current state, target state, design decisions,
    work breakdown, testing strategy, acceptance criteria.
@@ -297,11 +299,7 @@ Record each delegation and architectural milestone in `.thinking/<task>/activity
 
 ## Phase 5: Implementation
 
-1. Create a feature branch:
-
-   ```text
-   git checkout -b feature/<task-slug> main
-   ```
+1. Create the planned branch from current `main`, or use `gh stack` and the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md) to add a layer on its verified, advancement-ready parent. Keep all increments below within this one logical PR.
 
 2. For each increment:
    a. Invoke **cs Lead Developer** with the next slice from the plan.
@@ -316,7 +314,7 @@ Record each delegation and architectural milestone in `.thinking/<task>/activity
    i. Move to the next increment.
    j. Update `.thinking/<task>/activity-log.md` before delegation, after validation, and after commit.
 
-3. After all increments: run full build, full tests, mutation tests (if Mississippi).
+3. After all increments: run full build and full conventional tests. Consider mutation testing only when proportionate or explicitly requested under the [mutation-testing policy](../instructions/mutation-testing.instructions.md).
 
 ### Phase 5 Audit Requirements
 
@@ -328,7 +326,7 @@ Record each delegation and architectural milestone in `.thinking/<task>/activity
 
 ## Phase 6: Code Review
 
-1. Run `git diff --name-status --find-renames main...HEAD` to get all changed files.
+1. Run `git diff --name-status --find-renames <actual-pr-base>...HEAD` to inspect this layer's changed files; use its immediate parent for a stack and `main` for a standalone PR.
 
 2. Invoke review personas in sequence:
    - **cs Reviewer Pedantic**: every line, every name, every detail.
@@ -360,8 +358,8 @@ Record each delegation and architectural milestone in `.thinking/<task>/activity
 
 1. Invoke **cs QA Lead** to review test strategy and coverage.
 2. Invoke **cs QA Exploratory** for exploratory testing perspective.
-3. Invoke **cs Test Engineer** for mutation testing validation.
-4. Address any gaps.
+3. Invoke **cs Test Engineer** to report available mutation evidence and significant gaps, or an explicit not-run status. Run or improve mutation tests only when proportionate or explicitly requested.
+4. Address gaps affecting required quality gates. Record costly mutation gaps for dedicated follow-up; there is no mandatory repository mutation-score threshold or ordinary completion gate.
 5. Update `.thinking/<task>/activity-log.md` with QA results and remaining risks.
 
 ### Phase 7 Audit Requirements
@@ -382,8 +380,9 @@ Record each delegation and architectural milestone in `.thinking/<task>/activity
 3. Invoke **cs Technical Writer** to create/update Docusaurus documentation:
 
    ```text
-   Prompt: "Read all files in .thinking/<task>/ and run
-   git diff --name-status --find-renames main...HEAD to identify changes.
+   Prompt: "Read all files in .thinking/<task>/.
+   Use the actual PR base branch and checked base SHA recorded in final-plan.md;
+   run git diff --name-status --find-renames <actual-pr-base>...HEAD to identify this layer's changes.
    Build an evidence map of new public APIs, changed behaviors, and affected
    doc pages. Create or update Docusaurus documentation under
    docs/Docusaurus/docs/. Write drafts to
@@ -513,7 +512,7 @@ You may only declare a task complete when ALL of the following are true:
 - [ ] All plan items implemented
 - [ ] All tests passing
 - [ ] Build clean (zero warnings)
-- [ ] Mutation tests passing (Mississippi projects)
+- [ ] Mutation execution status, available results, and significant gaps reported; costly remediation deferred unless explicitly requested
 - [ ] Code reviewed by all relevant personas
 - [ ] QA validated
 - [ ] Documentation complete (Docusaurus docs cover all new/changed public APIs and behaviors, or skip reason recorded)

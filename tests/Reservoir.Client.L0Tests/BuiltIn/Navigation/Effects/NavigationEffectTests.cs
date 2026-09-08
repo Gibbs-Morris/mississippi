@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-using FluentAssertions;
-
 using Mississippi.Reservoir.Abstractions.Actions;
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions;
 using Mississippi.Reservoir.Client.BuiltIn.Navigation.Effects;
@@ -69,7 +67,7 @@ public sealed class NavigationEffectTests
         bool result = effect.CanHandle(action);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     /// <summary>
@@ -87,7 +85,7 @@ public sealed class NavigationEffectTests
         bool result = effect.CanHandle(action);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     /// <summary>
@@ -105,7 +103,7 @@ public sealed class NavigationEffectTests
         bool result = effect.CanHandle(action);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     /// <summary>
@@ -123,7 +121,7 @@ public sealed class NavigationEffectTests
         bool result = effect.CanHandle(action);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     /// <summary>
@@ -146,7 +144,7 @@ public sealed class NavigationEffectTests
         bool result = effect.CanHandle(action);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     /// <summary>
@@ -159,7 +157,7 @@ public sealed class NavigationEffectTests
         Action act = () => _ = new NavigationEffect(null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>().WithParameterName("navigationManager");
+        Assert.Equal("navigationManager", Assert.ThrowsAny<ArgumentNullException>(act).ParamName);
     }
 
     /// <summary>
@@ -179,7 +177,7 @@ public sealed class NavigationEffectTests
         List<IAction> emittedActions = await CollectEmittedActionsAsync(effect, action, state);
 
         // Assert
-        emittedActions.Should().BeEmpty();
+        Assert.Empty(emittedActions);
     }
 
     /// <summary>
@@ -199,10 +197,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(new TestableNavigationManager.NavigationRecord("https://example.com/target", false, false));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("https://example.com/target", false, false),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -222,7 +220,10 @@ public sealed class NavigationEffectTests
         Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*External navigation*");
+        Assert.Contains(
+            "External navigation",
+            (await Assert.ThrowsAnyAsync<InvalidOperationException>(act)).Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -242,10 +243,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(new TestableNavigationManager.NavigationRecord("https://example.com/target", true, false));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("https://example.com/target", true, false),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -265,7 +266,10 @@ public sealed class NavigationEffectTests
         Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*External navigation*");
+        Assert.Contains(
+            "External navigation",
+            (await Assert.ThrowsAnyAsync<InvalidOperationException>(act)).Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -285,7 +289,10 @@ public sealed class NavigationEffectTests
         Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*External navigation*");
+        Assert.Contains(
+            "External navigation",
+            (await Assert.ThrowsAnyAsync<InvalidOperationException>(act)).Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -305,10 +312,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(new TestableNavigationManager.NavigationRecord("investigations", false, false));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("investigations", false, false),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -328,11 +335,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(
-                new TestableNavigationManager.NavigationRecord("/investigations?filter=high#top", false, false));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("/investigations?filter=high#top", false, false),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -352,10 +358,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(new TestableNavigationManager.NavigationRecord("/investigations", false, false));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("/investigations", false, false),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -375,11 +381,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(
-                new TestableNavigationManager.NavigationRecord("https://example.com/replaced", false, true));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("https://example.com/replaced", false, true),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -399,7 +404,10 @@ public sealed class NavigationEffectTests
         Func<Task> act = () => ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*External navigation*");
+        Assert.Contains(
+            "External navigation",
+            (await Assert.ThrowsAnyAsync<InvalidOperationException>(act)).Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -419,11 +427,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(
-                new TestableNavigationManager.NavigationRecord("https://example.com/page#section1", false, false));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("https://example.com/page#section1", false, false),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -443,11 +450,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(
-                new TestableNavigationManager.NavigationRecord("https://example.com/page#new-section", false, false));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("https://example.com/page#new-section", false, false),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -467,11 +473,10 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should()
-            .ContainSingle()
-            .Which.Should()
-            .BeEquivalentTo(
-                new TestableNavigationManager.NavigationRecord("https://example.com/page#section1", false, true));
+        Assert.Equivalent(
+            new TestableNavigationManager.NavigationRecord("https://example.com/page#section1", false, true),
+            Assert.Single(nav.Navigations),
+            true);
     }
 
     /// <summary>
@@ -496,9 +501,9 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should().ContainSingle();
-        nav.Navigations[0].Uri.Should().Contain("key=value");
-        nav.Navigations[0].ReplaceHistoryEntry.Should().BeFalse();
+        Assert.Single(nav.Navigations);
+        Assert.Contains("key=value", nav.Navigations[0].Uri, StringComparison.Ordinal);
+        Assert.False(nav.Navigations[0].ReplaceHistoryEntry);
     }
 
     /// <summary>
@@ -522,8 +527,8 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        nav.Navigations.Should().ContainSingle();
-        nav.Navigations[0].Uri.Should().Contain("key=value");
-        nav.Navigations[0].ReplaceHistoryEntry.Should().BeTrue();
+        Assert.Single(nav.Navigations);
+        Assert.Contains("key=value", nav.Navigations[0].Uri, StringComparison.Ordinal);
+        Assert.True(nav.Navigations[0].ReplaceHistoryEntry);
     }
 }

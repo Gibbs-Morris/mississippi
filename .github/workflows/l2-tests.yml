@@ -51,14 +51,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
-      - name: Install Aspire workload
+      - name: Ensure matching Aspire CLI
+        shell: pwsh
         run: |
-          dotnet workload install aspire
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24'
+          [xml]$packages = Get-Content Directory.Packages.props -Raw
+          $version = ($packages.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'Aspire.Hosting.AppHost').Version
+          dotnet tool update --global Aspire.Cli --version $version --allow-downgrade
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
@@ -83,21 +82,11 @@ jobs:
         run: |
           dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
-      - name: Install Playwright Browsers
-        run: |
-          # Find the first playwright.ps1 in any L2Tests project bin folder
-          PLAYWRIGHT_SCRIPT=$(find . -path "*L2Tests/bin/*" -name "playwright.ps1" -print -quit 2>/dev/null)
-          if [ -n "$PLAYWRIGHT_SCRIPT" ]; then
-            echo "Found Playwright script: $PLAYWRIGHT_SCRIPT"
-            pwsh "$PLAYWRIGHT_SCRIPT" install --with-deps
-          else
-            echo "No playwright.ps1 found - Playwright tests may not have browser dependencies"
-          fi
-
       - name: Run L2 Tests
+        shell: pwsh
         run: |
-          mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L2Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-SolutionTests -SolutionPath '${{ matrix.solution }}' -Configuration $env:CONFIGURATION -TestLevels L2Tests -AdditionalArguments '--no-build' -ResultsRoot (Join-Path $env:GITHUB_WORKSPACE '.scratchpad/coverage-test-results') | Out-Host
 
       - name: Upload Test Results
         if: always()

@@ -1,7 +1,5 @@
 using System;
 
-using FluentAssertions;
-
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Actions;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.Reducers;
 using Mississippi.Reservoir.Client.BuiltIn.Lifecycle.State;
@@ -35,9 +33,9 @@ public sealed class LifecycleReducersTests
         LifecycleState afterReady = LifecycleReducers.OnAppReady(afterInit, new(readyTime));
 
         // Assert
-        afterReady.Phase.Should().Be(LifecyclePhase.Ready);
-        afterReady.InitializedAt.Should().Be(initTime);
-        afterReady.ReadyAt.Should().Be(readyTime);
+        Assert.Equal(LifecyclePhase.Ready, afterReady.Phase);
+        Assert.Equal(initTime, afterReady.InitializedAt);
+        Assert.Equal(readyTime, afterReady.ReadyAt);
     }
 
     /// <summary>
@@ -47,7 +45,7 @@ public sealed class LifecycleReducersTests
     public void InitialStateShouldHaveCorrectFeatureKey()
     {
         // Assert
-        LifecycleState.FeatureKey.Should().Be("reservoir:lifecycle");
+        Assert.Equal("reservoir:lifecycle", LifecycleState.FeatureKey);
     }
 
     /// <summary>
@@ -57,9 +55,10 @@ public sealed class LifecycleReducersTests
     public void LifecyclePhaseShouldHaveExpectedValues()
     {
         // Assert
-        Enum.GetValues<LifecyclePhase>()
-            .Should()
-            .BeEquivalentTo([LifecyclePhase.NotStarted, LifecyclePhase.Initializing, LifecyclePhase.Ready]);
+        Assert.Equivalent(
+            new[] { LifecyclePhase.NotStarted, LifecyclePhase.Initializing, LifecyclePhase.Ready },
+            Enum.GetValues<LifecyclePhase>(),
+            true);
     }
 
     /// <summary>
@@ -82,7 +81,7 @@ public sealed class LifecycleReducersTests
         LifecycleState result = LifecycleReducers.OnAppInit(initialState, action);
 
         // Assert
-        result.ReadyAt.Should().BeNull();
+        Assert.Null(result.ReadyAt);
     }
 
     /// <summary>
@@ -105,7 +104,7 @@ public sealed class LifecycleReducersTests
         LifecycleState result = LifecycleReducers.OnAppInit(initialState, action);
 
         // Assert
-        result.InitializedAt.Should().Be(expectedTime);
+        Assert.Equal(expectedTime, result.InitializedAt);
     }
 
     /// <summary>
@@ -127,7 +126,7 @@ public sealed class LifecycleReducersTests
         LifecycleState result = LifecycleReducers.OnAppInit(initialState, action);
 
         // Assert
-        result.Phase.Should().Be(LifecyclePhase.Initializing);
+        Assert.Equal(LifecyclePhase.Initializing, result.Phase);
     }
 
     /// <summary>
@@ -150,7 +149,7 @@ public sealed class LifecycleReducersTests
         LifecycleState result = LifecycleReducers.OnAppReady(initialState, action);
 
         // Assert
-        result.InitializedAt.Should().Be(initTime);
+        Assert.Equal(initTime, result.InitializedAt);
     }
 
     /// <summary>
@@ -173,7 +172,7 @@ public sealed class LifecycleReducersTests
         LifecycleState result = LifecycleReducers.OnAppReady(initialState, action);
 
         // Assert
-        result.Phase.Should().Be(LifecyclePhase.Ready);
+        Assert.Equal(LifecyclePhase.Ready, result.Phase);
     }
 
     /// <summary>
@@ -197,6 +196,6 @@ public sealed class LifecycleReducersTests
         LifecycleState result = LifecycleReducers.OnAppReady(initialState, action);
 
         // Assert
-        result.ReadyAt.Should().Be(expectedTime);
+        Assert.Equal(expectedTime, result.ReadyAt);
     }
 }

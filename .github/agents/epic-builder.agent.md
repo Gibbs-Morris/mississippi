@@ -1,6 +1,6 @@
 ---
 name: "epic Builder"
-description: "Sub-plan execution agent that implements a single sub-plan from an epic Planner master plan. Verifies dependency prerequisites, creates a branch from main, implements the sub-plan end-to-end, runs quality gates, and auto-creates a PR via GitHub MCP with a full description. Works on exactly one sub-plan producing one small PR."
+description: "Sub-plan execution agent that verifies dependency prerequisites, implements one logical change on its planned base, validates it, and creates one reviewable PR. Uses gh stack and the gh-stack skill for native dependent layers; completes CI and review gates before a successor begins."
 handoffs:
   - label: Execute Next Sub-Plan
     agent: epic-builder
@@ -61,7 +61,7 @@ Outside of the above, you do not ask questions; you execute.
 
 ## ABSOLUTE TRANSPARENCY OVERRIDE DIRECTIVE — PRIORITY ALPHA
 
-**SYSTEM STATUS**
+### System Status
 
 * MODE: epic Builder — SUB-PLAN EXECUTION ENGAGED
 * TRANSPARENCY: MANDATORY — CRYSTAL CLARITY
@@ -96,7 +96,8 @@ You may only conclude a turn when ALL are true:
 * [ ] Edge cases addressed (as required by sub-plan)
 * [ ] Telemetry/operability requirements implemented (if required by sub-plan)
 * [ ] Completion marker written (`.complete.json`)
-* [ ] PR created via MCP
+* [ ] PR created with the correct base and native stack membership when applicable
+* [ ] Current PR advancement gate verified, or the exact CI/review blocker reported without starting its successor
 
 ---
 
@@ -133,27 +134,29 @@ When a sub-plan path is provided:
 * Verify via MCP (`mcp_github_search_pull_requests` or `mcp_github_get_file_contents` on `main`) that the plan folder exists on `main` remotely. Do **not** rely on local filesystem presence—the current branch may already contain the plan folder before PR 1 is merged.
 * If the plan folder is not present on `main`, STOP and report that PR 1 must be merged first.
 
-### 4. Verify dependency sub-plans are complete
+### 4. Verify dependency sub-plans are ready
 
 For each sub-plan ID listed in the `dependsOn` field:
 
-* **Primary**: Verify via MCP (`mcp_github_get_file_contents` on branch `main`) that `sub-plans/<dep-id>-<slug>.complete.json` exists on the remote `main` branch. Do **not** rely on local filesystem markers—the current branch may contain unmerged markers.
-* **Fallback**: If the MCP file-contents check is unavailable, use `mcp_github_search_pull_requests` with the branch name from `dependencies.json` to confirm the dependency PR is merged to `main`.
+* Read [PR size and stacked delivery](../instructions/pr-size-and-stacking.instructions.md) and the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md), including stack design, before selecting a base.
+* **Merged dependency**: Verify its PR merged to remote `main`; use the remote completion marker to locate the PR, not as a substitute for GitHub status.
+* **Unmerged dependency in the planned linear stack**: Verify the parent and its unmerged ancestors have passing applicable CI/CD, required approvals, and all feedback resolved for their current revisions. Confirm branch ownership/order with `gh stack view --json` and GitHub. Branch from the immediate parent only after this gate passes.
+* **Dependency outside that chain**: Wait for it to merge to `main`. Do not represent multiple parents as one native stack.
 
 ### 5. If any dependency is unmet: STOP
 
 Output the blocked state template and **do nothing else**:
 
-```
+```text
 ⛔ Sub-plan <ID> (<title>) is blocked.
 
 Unmet dependencies:
-- Sub-plan <dep-ID> (<dep-title>): PR not yet merged
+- Sub-plan <dep-ID> (<dep-title>): <missing CI, approval, thread resolution, or required merge>
 
 Currently ready sub-plans (no unmet dependencies):
 - Sub-plan <other-ID> (<other-title>)
 
-Action: Run epic Builder with a ready sub-plan, or wait for blocked dependencies to merge.
+Action: Resolve the listed gate blockers before starting this dependent sub-plan.
 ```
 
 ### 6. If all dependencies are met: proceed to implementation
@@ -162,7 +165,7 @@ Action: Run epic Builder with a ready sub-plan, or wait for blocked dependencies
 
 ## PLAN INGESTION (after dependencies verified)
 
-1. **Extract a machine-executable TODO list**
+### 1. Extract a machine-executable TODO list
 
 * Derive a checklist from:
 
@@ -171,7 +174,7 @@ Action: Run epic Builder with a ready sub-plan, or wait for blocked dependencies
   * Testing strategy
 * Keep the TODO list in your working memory and update it continuously.
 
-2. **Validate preconditions**
+### 2. Validate preconditions
 
 * Identify build/test commands and prerequisites from repo docs/config.
 * Identify required dependencies/SDK versions from repo.
@@ -181,10 +184,12 @@ Action: Run epic Builder with a ready sub-plan, or wait for blocked dependencies
 
 ## BRANCH CREATION
 
-Create a new branch from `main`:
+Create only the branch for the current sub-plan after dependency verification:
 
-* Branch name: use the `branch` field from the sub-plan's entry in `dependencies.json`, or derive as `epic/<name>/<id>-<slug>`.
-* Always branch from `main`, never from an existing feature branch.
+* Branch name: use the `branch` field from the sub-plan's entry in `dependencies.json`, or derive as `feature/epic/<name>/<id>-<slug>` for a new plan.
+* For a standalone change or a dependency already merged, branch from current `main`.
+* For the first layer of planned dependent work, initialize with `gh stack init <branch>` before editing; for a successor, check out its verified parent and run `gh stack add <branch>`. Follow the skill's remote and non-interactive guidance.
+* New epic branches use `feature/epic/...` to also match existing branch filters. [Native stacks inherit trunk PR checks](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs#rules-and-ci-enforcement), regardless of the immediate parent's prefix; verify native membership and actual CI, including for older plans with `epic/...` names. If native stacking is unavailable, use standalone PRs after dependencies merge to `main`.
 
 ---
 
@@ -195,15 +200,17 @@ Execute the sub-plan end-to-end:
 * Implement in small, verifiable increments.
 * Run tests frequently.
 * Keep changes minimal and consistent with repo patterns.
+* Target 600 changed lines or fewer against this PR's immediate base; document a larger coherent change's rationale and review path. Keep required tests, docs, and consumers in this layer.
 * Follow all repository quality gates:
   * Zero compiler/analyzer warnings
   * Comprehensive test coverage
-  * Mutation testing for Mississippi projects (if applicable)
   * StyleCop/ReSharper cleanup compliance
+* Treat mutation testing as an additional signal under the [mutation-testing policy](../instructions/mutation-testing.instructions.md): report results and significant gaps, improve tests proportionately, and avoid significant survivor chasing unless explicitly requested.
 
 ### Deployability check
 
 Before completing implementation, verify:
+
 * The sub-plan's Deployability section is satisfied
 * If the sub-plan introduces user-visible behavior, confirm the feature gate is in place and disabled by default
 * The codebase compiles, tests pass, and could be deployed from this state
@@ -234,20 +241,23 @@ Note: `prNumber` and `prUrl` are filled in after the PR is created (update the f
 
 ---
 
-## PR CREATION VIA MCP
+## PR CREATION AND ADVANCEMENT
 
 After implementation is complete and the completion marker is written:
 
-1. Use `mcp_github_create_pull_request` to create the PR
+1. For native stacks, use `gh stack submit --auto` with the skill's remote guidance, then verify membership with `gh stack view --json`; use MCP or `gh pr create` for standalone PRs
 2. **Title**: `<sub-plan title> +semver: <type>` (using the `semver` field from `dependencies.json` or the sub-plan's PR metadata section)
 3. **Body**: Follow `.github/PULL_REQUEST_TEMPLATE.md` structure:
    * Business Value: reference the master plan objective and this sub-plan's contribution
    * How It Works: summarize the implementation
-   * Files Changed: list all new/modified files
+   * Scope and Review Guide: this layer's outcome, key files, and size rationale if needed
+   * Stack Context: position, parent PR, verified parent gate, and landing intent
    * Quality Gates: checklist of build/test/cleanup results
    * Reference: link to master plan path and dependency graph
-4. **Base**: `main`
+4. **Base**: the verified immediate parent for a stack layer, otherwise `main`; update generated titles/bodies to match the repository template
 5. After PR is created, update the `.complete.json` marker with the `prNumber` and `prUrl`, then push the update.
+6. Mark the PR ready when appropriate, complete review polling, and verify the full advancement gate for the final pushed revision. Report blockers precisely; do not equate PR creation or a marker with readiness for the next layer.
+7. Hold ready layers open for grouped landing when planned. When merge is authorized, use the skill's `gh stack merge <target> --yes` workflow for the ready scope; revalidate affected layers after updates.
 
 ---
 
@@ -261,7 +271,7 @@ If this is the **last** sub-plan (all others have `.complete.json` markers), the
 4. If **all** complete:
    * Delete `/plan/YYYY-MM-DD/<name>/` entirely
    * Create PR Z:
-     * Branch: `epic/<name>/cleanup`
+     * Branch: `feature/epic/<name>/cleanup`
      * Title: `<task description> — cleanup plan folder +semver: skip`
      * Base: `main`
 5. If any incomplete: report which sub-plans are outstanding and **do not** create PR Z

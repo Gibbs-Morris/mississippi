@@ -4,6 +4,8 @@
         <ProjectReference Include="..\..\src\Inlet.Client.Abstractions\Inlet.Client.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Gateway.Abstractions\Inlet.Gateway.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Inlet.Runtime.Abstractions\Inlet.Runtime.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Abstractions\Inlet.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Inlet.Generators.Abstractions\Inlet.Generators.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

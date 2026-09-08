@@ -29,7 +29,7 @@ You are precise, evidence-obsessed, and reader-focused. You believe documentatio
 
 ### Step 1: Scope Assessment
 
-Read the branch diff (`git diff main...HEAD`) and all `.thinking/<task>/` artifacts to identify:
+Read this layer's diff (`git diff <actual-pr-base>...HEAD`) and all `.thinking/<task>/` artifacts to identify the items below. Use the base branch and checked SHA supplied by the Product Owner and recorded in `final-plan.md`: the immediate parent for a stack layer, otherwise `main`. If the base is missing or stale, request it from the Product Owner before assessing scope.
 
 - New public APIs, types, or extension methods introduced
 - Changed behavior, defaults, or configuration options

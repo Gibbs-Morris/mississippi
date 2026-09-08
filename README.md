@@ -86,14 +86,14 @@ To build the project from source:
 git clone https://github.com/Gibbs-Morris/mississippi.git
 cd mississippi
 
-# Run the full pipeline (build → test → mutation → cleanup)
+# Run the local pipeline (build → L0/L1 tests → summaries → cleanup → final build)
 pwsh ./go.ps1
 ```
 
 Common script entry points:
 
 - `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 [-Configuration Debug|Release]` – build the Mississippi solution.
-- `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run unit/integration tests with coverage for Mississippi projects.
+- `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1 [-Configuration Debug|Release]` – run L0/L1 tests with coverage for Mississippi projects.
 - `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` – execute Stryker.NET mutation testing.
 - `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` – apply the repository’s ReSharper cleanup and analyzer inspections.
 
@@ -106,17 +106,74 @@ The repository includes sample applications demonstrating the framework:
 
 ## Testing
 
+### Validate Spring after a change
+
+Use the same entry point locally and in the **L3 Spring E2E (Smoke)** CI check:
+
+```powershell
+pwsh ./test-spring.ps1 -Doctor # Check SDK selection and Docker access
+pwsh ./test-spring.ps1         # L3 Smoke: build, launch Aspire, browser-test banking, stop
+pwsh ./test-spring.ps1 -TestLevel L2 -Suite Full # API and authorization tests; no browser
+pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full # All browser journeys, including smoke
+```
+
+Prerequisites are PowerShell 7+, the SDK selected by `global.json`, and an accessible Docker daemon running Linux containers.
+First use needs network access to NuGet, the Playwright browser CDN, and Microsoft container images.
+On Linux hosts that need Chromium OS libraries, use `-InstallBrowserDependencies`; Playwright's installer may require sudo.
+`-Doctor` checks SDK and Docker access only; it does not certify browser libraries, image downloads, or application startup.
+
+The command restores locked packages, installs the Aspire CLI version from `Directory.Packages.props` into this checkout,
+and builds only the selected Spring test project and its dependencies with warnings as errors.
+L3 installs matching Chromium binaries into `artifacts/tools/playwright`; L2 has no browser dependency.
+The L3 smoke suite checks that the stylesheet loads and runs the banking journey:
+initialize accounts, observe £500, deposit £50, withdraw £25, and observe £525 via SignalR without refreshing.
+`-Configuration Debug` is available; Release is the default. Every run builds incrementally so stale binaries cannot silently pass.
+
+Test level and suite are separate choices. `Spring.L2Tests` holds functional API/infrastructure tests;
+`Spring.L3Tests` holds browser journeys, with the smoke subset under `Smoke/` and tagged `Category=Smoke`.
+`Full` means all tests at the selected level; run both Full commands above to verify both levels.
+The L3 Tests workflow runs Smoke on PRs and merge queues, and offers Smoke or Full when dispatched manually.
+See [where tests live and when they run](samples/Spring/TESTING.md) before adding another test.
+
+Aspire's testing host allocates test endpoints and owns the application/container lifetime.
+Startup has a three-minute cancellation budget, individual test hangs are limited to five minutes, and the test session is limited to fifteen minutes.
+Use separate worktrees for simultaneous runs because builds share `bin` and `obj` within one checkout.
+The smoke test complements fast unit tests and the existing cleanup, coverage, and full build gates. Mutation testing is an additional quality signal under the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md).
+
+Each run prints `RESULT` and an absolute `SUMMARY` path under a unique `artifacts/spring/` directory.
+`summary.json` records status, phase, test level, suite, project, SDK/Aspire versions, passed count, duration, and artifact location.
+Exit code 0 with `PASS` requires a completed test run with at least one test and every selected test passing; missing, skipped, and empty results fail.
+Doctor success uses `READY` and never claims tests passed.
+Diagnostics include TRX, restore/build/test logs, resource log backlogs, and a banking screenshot and Playwright trace when the browser journey starts.
+Open `banking.zip` locally with the generated Playwright script's `show-trace` command.
+Artifacts are ignored by Git; CI retains them for seven days. Logs and traces can contain local application data, so review them before sharing.
+
+For interactive exploration, use `pwsh ./run-spring.ps1 -LocalAuth On` and stop with Ctrl+C.
+The [Aspire CLI](https://aspire.dev/reference/cli/commands/aspire-run/) also supports detached runs;
+always pass the Spring AppHost project explicitly in this multi-AppHost repository and stop that same project afterward.
+The [Aspire agent setup](https://aspire.dev/get-started/configure-mcp/) can configure runtime logs/traces through MCP in an individual agent environment.
+Keep this repository's `AGENTS.md` and its engineering instructions when adding Aspire's optional agent configuration.
+
+The implementation follows [Aspire test lifecycle guidance](https://aspire.dev/testing/manage-app-host/),
+[bounded CI testing](https://aspire.dev/testing/testing-in-ci/), and [Playwright traces](https://playwright.dev/dotnet/docs/trace-viewer-intro).
+A test-owned AppHost gives local and CI runs the same assertions and cleanup; interactive MCP is a debugging aid, not the pass/fail gate.
+The L3 smoke CI check fails normally; repository administrators can add **L3 Spring E2E (Smoke)** to required branch checks after merging.
+
+### Framework quality gates
+
 The framework includes comprehensive testing:
 
 ```powershell
 # Run unit tests with code coverage
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 
-# Run mutation testing (Stryker)
+# Optional mutation testing (Stryker)
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
 
 Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory, and mutation runs write reports under `.scratchpad/mutation-test-results`.
+
+Mutation testing is being adopted gradually. There is no mandatory repository mutation-score threshold, and mutation results are not an ordinary completion criterion. Prioritize correct delivery and meaningful unit-test coverage, add straightforward assertion improvements, and report significant gaps for dedicated follow-up. Avoid significant time or token expenditure chasing survivors unless explicitly requested. See the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md).
 
 For a fast loop on a single test project, use the helper script:
 
@@ -140,12 +197,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contributing
 
-Contributions to the Mississippi Framework are welcome. Please follow standard GitHub flow:
+Contributions to the Mississippi Framework are welcome. Follow the [PR size and stacked delivery policy](.github/instructions/pr-size-and-stacking.instructions.md): one logical change per PR, targeting 600 changed lines or fewer, with justified exceptions when a larger change is easier to review intact.
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+Use a feature branch (or a fork for standalone contributions). Plan dependent work as native GitHub stacked PRs using `gh stack` and the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md); native stacks require branches in the same repository. Complete each PR's applicable CI/CD, required approvals, and feedback resolution before starting the next layer. Ready layers can remain open and merge together as a stack.
 
 ### Build automation
 
@@ -153,20 +207,19 @@ The PowerShell entry points (`build-*.ps1`, `unit-test-*.ps1`, `clean-up-*.ps1`,
 
 ## CI / Local pipeline options
 
-The repository provides a top-level helper `go.ps1` which forwards to `orchestrate-solutions.ps1`. A new option `-SkipCleanup` is available to run the full build, tests and mutation testing pipeline while skipping the repository cleanup steps (ReSharper/StyleCop automated cleanup). This is useful for CI runs or local checks when you want to avoid formatting/cleanup changes but still validate build and test quality.
+The top-level `go.ps1` forwards to `orchestrate-solutions.ps1`. By default it builds both solutions, runs their L0/L1 tests, summarizes Mississippi coverage, applies ReSharper cleanup, and performs a final build with warnings as errors. Mutation testing is opt-in with `-IncludeMutation`; `-SkipCleanup` skips formatting changes during an intermediate validation run.
 
 Usage examples:
 
 ```powershell
-# Run full pipeline locally including cleanup (default)
+# Run the local pipeline including cleanup (default)
 pwsh ./go.ps1 -Configuration Release
 
-# Run full pipeline but skip cleanup (useful for CI or when you don't want the cleanup step to run)
+# Include Mississippi mutation tests and the mutation summary
+pwsh ./go.ps1 -Configuration Release -IncludeMutation
+
+# Build and test without applying cleanup
 pwsh ./go.ps1 -Configuration Release -SkipCleanup
 ```
 
-Notes:
-
-- `-SkipCleanup` is a switch forwarded from `go.ps1` to `orchestrate-solutions.ps1` and then to `Invoke-SolutionsPipeline` in the shared module.
-
-- CI workflows can call `./go.ps1 -SkipCleanup` to run build, tests and mutation testing without running the cleanup step.
+L2 integration tests, PowerShell tests, documentation tests, publishing, and service-backed CI checks run separately. See the [script guide and CI mapping](eng/src/agent-scripts/README.md#github-actions-mapping) for their entry points. Run `pwsh ./clean-up.ps1` before final handoff even when an intermediate run uses `-SkipCleanup`.

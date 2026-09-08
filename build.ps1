@@ -48,13 +48,14 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
 
 # Determine repository root (this script resides there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Underlying scripts
-$buildMississippi = Join-Path $repoRoot 'eng\src\agent-scripts\build-mississippi-solution.ps1'
-$buildSamples     = Join-Path $repoRoot 'eng\src\agent-scripts\build-sample-solution.ps1'
+$buildMississippi = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-mississippi-solution.ps1'
+$buildSamples     = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-sample-solution.ps1'
 
 function Invoke-BuildStep {
     param(
@@ -77,11 +78,11 @@ try {
     }
 
     if (-not $SkipMississippi) {
-        Invoke-BuildStep -Title 'STEP 1: Build Mississippi Solution' -Action { & $buildMississippi -Configuration $Configuration }
+        Invoke-BuildStep -Title 'STEP 1: Build Mississippi Solution' -Action { & $powerShellPath -NoProfile -File $buildMississippi -Configuration $Configuration }
     }
 
     if (-not $SkipSamples) {
-        Invoke-BuildStep -Title 'STEP 2: Build Samples Solution' -Action { & $buildSamples -Configuration $Configuration }
+        Invoke-BuildStep -Title 'STEP 2: Build Samples Solution' -Action { & $powerShellPath -NoProfile -File $buildSamples -Configuration $Configuration }
     }
 
     Write-Host '=== ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY ===' -ForegroundColor Green
@@ -90,3 +91,5 @@ catch {
     Write-Error "=== BUILD FAILED === $_"
     exit 1
 }
+
+exit 0
