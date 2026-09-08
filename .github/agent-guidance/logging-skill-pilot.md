@@ -114,3 +114,33 @@ Codex, Copilot, and Agent Skills pages linked above. New skills discover local
 project conventions rather than prescribing this repository's names or paths.
 The current logging skill and all eight retained policy rules remain unchanged
 by this authoring-root correction.
+
+The second review correction explicitly matches the call-site enabled check to
+the attribute's fixed level or to the dynamic argument passed to the generated
+method, using the same logger. The new `portable-fixed-level` case also keeps
+required business work outside the logging guard. The discovery description is
+unchanged; the September 5 advisory trials were not rerun for this wording fix.
+
+Current targeted verification:
+
+- Codex CLI 0.153.4 `skills/list` returned this enabled repository skill once,
+  at `.agents/skills`, with no discovery errors. No model turn was started.
+- Copilot CLI 1.0.83-5 `skill list --json` returned the enabled project skill
+  from the same directory. Discovery is distinct from behavioral evaluation.
+- A separate package-free .NET 10 fixture built in Release with SDK 10.0.400,
+  `-warnaserror`, zero warnings/errors, and passed 28 checks covering fixed and
+  dynamic levels, enabled/disabled preparation, required business work, event
+  identity, template, formatted output, ordered typed fields, and exception.
+  This is a focused local experiment for the corrected guard guidance, not a
+  new application test or a claim that the advisory case was run by both hosts.
+- The skill validator, JSON parsing, unchanged eight-rule comparison, consumer
+  link resolution, authoring metadata, and portability checks passed again.
+  Configured Markdown lint passed. Direct lint of the excluded skill-builder
+  agent has eight baseline findings and no new findings; the other changed
+  agents have none. No lint settings were changed.
+
+The runtime fixture initially produced analyzer findings; the corrected fixture
+computes detail into a local variable inside each guard, allocates its expected
+field-name array once, and uses a specific assertion exception. No analyzer was
+disabled. The historical skill hash above identifies only the September 5
+evaluation; the revised skill has changed.
