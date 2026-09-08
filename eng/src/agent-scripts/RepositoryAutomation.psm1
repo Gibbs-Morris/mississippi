@@ -783,6 +783,23 @@ function Get-SpringTestResult {
     return [int]$counters.passed
 }
 
+function Install-SpringBrowser {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Project,
+        [string]$Configuration = 'Release',
+        [switch]$InstallBrowserDependencies
+    )
+
+    $targetDirectory = (Invoke-RepositoryProcess -FilePath dotnet -SuppressCommandEcho `
+        -Arguments @('msbuild', $Project, "-property:Configuration=$Configuration", '-getProperty:TargetDir') | Out-String).Trim()
+    $playwrightScript = Join-Path $targetDirectory 'playwright.ps1'
+    if (-not (Test-Path -LiteralPath $playwrightScript -PathType Leaf)) { throw "Playwright installer missing: $playwrightScript" }
+    $browserArguments = @('-NoProfile', '-File', $playwrightScript, 'install', 'chromium')
+    if ($InstallBrowserDependencies) { $browserArguments += '--with-deps' }
+    Invoke-RepositoryProcess -FilePath pwsh -Arguments $browserArguments
+}
+
 function Invoke-SpringValidation {
     [CmdletBinding()]
     param(
@@ -840,15 +857,9 @@ function Invoke-SpringValidation {
         Invoke-SolutionBuild -SolutionPath $project -Configuration $Configuration -WarnAsError -NoRestore |
             Tee-Object -FilePath (Join-Path $runDirectory 'build.log') | Out-Host
         if ($TestLevel -eq 'L3') {
-            $targetDirectory = (Invoke-RepositoryProcess -FilePath dotnet -SuppressCommandEcho `
-                -Arguments @('msbuild', $project, "-property:Configuration=$Configuration", '-getProperty:TargetDir') | Out-String).Trim()
-            $playwrightScript = Join-Path $targetDirectory 'playwright.ps1'
-            if (-not (Test-Path -LiteralPath $playwrightScript -PathType Leaf)) { throw "Playwright installer missing: $playwrightScript" }
             $summary.phase = 'browser'
             $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $RepoRoot 'artifacts/tools/playwright'
-            $browserArguments = @('-NoProfile', '-File', $playwrightScript, 'install', 'chromium')
-            if ($InstallBrowserDependencies) { $browserArguments += '--with-deps' }
-            Invoke-RepositoryProcess -FilePath pwsh -Arguments $browserArguments
+            Install-SpringBrowser -Project $project -Configuration $Configuration -InstallBrowserDependencies:$InstallBrowserDependencies
         }
         $env:SPRING_TEST_ARTIFACTS = $runDirectory
         $summary.phase = 'test'
