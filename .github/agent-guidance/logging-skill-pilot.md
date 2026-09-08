@@ -93,3 +93,24 @@ The two existing guidance files remove 21 lines and add two routing lines (476 f
 Two independent reviewers inspected the diff: one for preservation and consumer coverage, one for skill necessity and portability. They verified retained policy, the corrected skill, and the bounded advisory outcomes; neither role grants universal equivalence or broader migration approval. Relevant content changes require rechecking their findings.
 
 Revert this single skill PR to restore the previous quick-start and agent example and remove the skill/routes together. Validate that both original guidance files and their references are restored; do not revert unrelated migrations.
+
+## September 8 continuation
+
+The migration resumed on September 8, 2026, under the user's instruction to
+deliver one complete skill per PR using stacks. PR #585 remains the first layer;
+later dependent skills wait for its current CI and review advancement gate.
+The September 5 evaluation record above is historical evidence, not a new run.
+
+The first review correction aligns the skill builder's write scope, discovery,
+examples, and metadata with `.agents/skills`. The Rules Manager placement guide
+and agent-extensibility reference use the same root. Other supported Copilot
+roots remain visible for overlap checks, with no duplicate skill introduced.
+The authoring agent retains its skills-only role and restrictions on writes
+outside that root. Its portable template no longer specifies this product as
+the skill owner.
+
+The shared root and progressive loading were rechecked against the official
+Codex, Copilot, and Agent Skills pages linked above. New skills discover local
+project conventions rather than prescribing this repository's names or paths.
+The current logging skill and all eight retained policy rules remain unchanged
+by this authoring-root correction.
