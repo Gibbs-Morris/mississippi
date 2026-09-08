@@ -12,8 +12,7 @@ public sealed class GeneratorAttributeTests
     ///     Command endpoints default to HTTP POST.
     /// </summary>
     [Fact]
-    public void CommandDefaultsToPost() =>
-        Assert.Equal("POST", new GenerateCommandAttribute().HttpMethod);
+    public void CommandDefaultsToPost() => Assert.Equal("POST", new GenerateCommandAttribute().HttpMethod);
 
     /// <summary>
     ///     Command metadata defaults describe a potentially destructive operation.
@@ -34,7 +33,9 @@ public sealed class GeneratorAttributeTests
     [Fact]
     public void ConstructorMetadataRetainsValues()
     {
-        Assert.Equal("Account identifier", new GenerateMcpParameterDescriptionAttribute("Account identifier").Description);
+        Assert.Equal(
+            "Account identifier",
+            new GenerateMcpParameterDescriptionAttribute("Account identifier").Description);
         Assert.Equal("accountId", new GeneratorPropertyNameAttribute("accountId").Name);
         Assert.Equal("Awaiting generator", new PendingSourceGeneratorAttribute("Awaiting generator").Reason);
         Assert.Null(new PendingSourceGeneratorAttribute().Reason);
@@ -71,8 +72,7 @@ public sealed class GeneratorAttributeTests
     ///     Required markers default to required.
     /// </summary>
     [Fact]
-    public void RequiredMarkerDefaultsToRequired() =>
-        Assert.True(new GeneratorRequiredAttribute().IsRequired);
+    public void RequiredMarkerDefaultsToRequired() => Assert.True(new GeneratorRequiredAttribute().IsRequired);
 
     /// <summary>
     ///     Explicit required markers retain both supported values.

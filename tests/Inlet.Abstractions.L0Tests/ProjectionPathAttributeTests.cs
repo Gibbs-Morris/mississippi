@@ -70,5 +70,7 @@ public sealed class ProjectionPathAttributeTests
         long version,
         string expected
     ) =>
-        Assert.Equal(expected, new ProjectionPathAttribute("bank/accounts").GetVersionedEntityPath("account-1", version));
+        Assert.Equal(
+            expected,
+            new ProjectionPathAttribute("bank/accounts").GetVersionedEntityPath("account-1", version));
 }
