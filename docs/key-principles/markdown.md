@@ -315,7 +315,7 @@ In this repository, Markdown is used for:
 | Instruction files | `.github/instructions/*.instructions.md` | Agent rules with YAML frontmatter |
 | Agent definitions | `.github/agents/*.agent.md` | Custom agent personas with YAML frontmatter |
 | Prompt files | `.github/prompts/*.prompt.md` | Reusable prompt templates |
-| Skill definitions | `.github/skills/*/SKILL.md` | Agent skill packages |
+| Skill definitions | `.agents/skills/*/SKILL.md` | Shared Codex and Copilot skill packages |
 | Documentation | `docs/Docusaurus/docs/**/*.md` | Docusaurus documentation site |
 | Project root | `README.md`, `AGENTS.md`, `todo.md` | Repository-level documentation |
 | PR descriptions | GitHub PRs | Pull request body content |
