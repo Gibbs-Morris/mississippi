@@ -121,7 +121,7 @@ public sealed class StartSagaCommandHandlerTests
         Assert.Equal(command.SagaId, started.SagaId);
         Assert.Equal(command.CorrelationId, started.CorrelationId);
         Assert.Equal(now, started.StartedAt);
-        Assert.Equal("53E7A18AC2310B6234333808ADF69EB7DE6D7E1192A304811478B4DF41C2CD7F", started.StepHash);
+        Assert.Equal("7DE21E6C320F5F9137F8B13B91B6ACEF2204ADF5A5AAF54E469956A82E898B60", started.StepHash);
         Assert.Equal(command.SagaId, inputProvided.SagaId);
         Assert.Equal(command.Input, inputProvided.Input);
     }

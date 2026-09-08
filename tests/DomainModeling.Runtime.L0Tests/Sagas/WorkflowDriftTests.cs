@@ -107,13 +107,21 @@ public sealed class WorkflowDriftTests
 
     private static Type CreateStepType(
         string assemblyName,
-        int version
+        int version,
+        string culture = "",
+        bool isSigned = false
     )
     {
         AssemblyName name = new(assemblyName)
         {
             Version = new(version, 0),
+            CultureName = culture,
         };
+        if (isSigned)
+        {
+            name.SetPublicKey(typeof(object).Assembly.GetName().GetPublicKey());
+        }
+
         AssemblyBuilder assembly = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndCollect);
         return assembly.DefineDynamicModule(assemblyName).DefineType("Workflow.Step").CreateType();
     }
@@ -355,6 +363,41 @@ public sealed class WorkflowDriftTests
     }
 
     /// <summary>
+    ///     Verifies assembly culture and public key token changes alter direct and nested type identities.
+    /// </summary>
+    /// <param name="culture">The replacement assembly culture.</param>
+    /// <param name="isSigned">Whether the replacement declares a public key.</param>
+    /// <param name="isNested">Whether the changed type appears inside an array of generic types.</param>
+    [Theory]
+    [InlineData("fr", false, false)]
+    [InlineData("", true, false)]
+    [InlineData("fr", false, true)]
+    [InlineData("", true, true)]
+    public void WorkflowHashIncludesAssemblyCultureAndSigningIdentity(
+        string culture,
+        bool isSigned,
+        bool isNested
+    )
+    {
+        Type original = CreateStepType("StableName", 1);
+        Type replacement = CreateStepType("StableName", 1, culture, isSigned);
+        if (isSigned)
+        {
+            Assert.NotEmpty(replacement.Assembly.GetName().GetPublicKeyToken()!);
+        }
+
+        if (isNested)
+        {
+            original = typeof(List<>).MakeGenericType(original).MakeArrayType();
+            replacement = typeof(List<>).MakeGenericType(replacement).MakeArrayType();
+        }
+
+        Assert.NotEqual(
+            SagaStepHash.Compute([new(0, "Step", original, true)]),
+            SagaStepHash.Compute([new(0, "Step", replacement, true)]));
+    }
+
+    /// <summary>
     ///     Verifies the shared hash supports types without a full name through Orleans type formatting.
     /// </summary>
     [Fact]
@@ -363,7 +406,7 @@ public sealed class WorkflowDriftTests
         Type typeParameter = typeof(List<>).GetGenericArguments()[0];
         Assert.Null(typeParameter.FullName);
         Assert.Equal(
-            "ED0618B6485232FA73644E714144718AD2EAB28DE39C12162FC6FB77559F99CF",
+            "294874ED27849FE211A5B6AAC5A63EECB4E6682AA79EF605FDAD24EA6BE7D863",
             SagaStepHash.Compute([new(0, "Open", typeParameter, false)]));
         Assert.Equal("steps", Assert.Throws<ArgumentNullException>(() => SagaStepHash.Compute(null!)).ParamName);
     }

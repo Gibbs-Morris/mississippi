@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -35,15 +36,35 @@ internal static class SagaStepHash
                 builder.Append('|');
             }
 
-            // Keep the defining assembly explicit even when Orleans formats a compound alias.
             string stepTypeName = RuntimeTypeNameFormatter.Format(step.StepType);
-            string assemblyName = step.StepType.Assembly.GetName().Name!;
             builder.Append(
                 CultureInfo.InvariantCulture,
-                $"{step.StepIndex}:{step.StepName.Length}:{step.StepName}:{stepTypeName.Length}:{stepTypeName}:{assemblyName.Length}:{assemblyName}:{step.HasCompensation}");
+                $"{step.StepIndex}:{step.StepName.Length}:{step.StepName}:{stepTypeName.Length}:{stepTypeName}:");
+            AppendAssemblyIdentity(builder, step.StepType);
+            builder.Append(':').Append(step.HasCompensation);
         }
 
         byte[] bytes = SHA256.HashData(new UTF8Encoding(false, true).GetBytes(builder.ToString()));
         return Convert.ToHexString(bytes);
+    }
+
+    private static void AppendAssemblyIdentity(
+        StringBuilder builder,
+        Type type
+    )
+    {
+        AssemblyName assemblyName = type.Assembly.GetName();
+        assemblyName.Version = null;
+        string identity = assemblyName.FullName;
+        builder.Append(CultureInfo.InvariantCulture, $"{identity.Length}:{identity}");
+        foreach (Type argument in type.GenericTypeArguments)
+        {
+            AppendAssemblyIdentity(builder, argument);
+        }
+
+        if (type.GetElementType() is { } element)
+        {
+            AppendAssemblyIdentity(builder, element);
+        }
     }
 }
