@@ -51,12 +51,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
 
-      - name: Install matching Aspire CLI
+      - name: Ensure matching Aspire CLI
         shell: pwsh
         run: |
           [xml]$packages = Get-Content Directory.Packages.props -Raw
           $version = ($packages.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'Aspire.Hosting.AppHost').Version
-          dotnet tool install --global Aspire.Cli --version $version
+          dotnet tool update --global Aspire.Cli --version $version --allow-downgrade
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Setup Node.js
