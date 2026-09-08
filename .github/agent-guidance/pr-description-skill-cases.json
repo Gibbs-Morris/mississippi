@@ -1,0 +1,42 @@
+[
+  {
+    "id": "explicit-draft",
+    "prompt": "Use write-pull-request-description to draft a title and body only. The diff fixes a parser accepting empty input; the new test rejects an empty string. The supplied template requires Summary and Verification; titles have no suffix. Tests passed for the selected head. Do not publish anything.",
+    "expected": "Explain the parser correction and matching test evidence using the supplied template, with no invented benefit or remote mutation."
+  },
+  {
+    "id": "implicit-stack-layer",
+    "prompt": "Write this PR's title and description. It targets feature/parser, not release. The parent added a parser; this layer adds only its empty-input validation. Tests passed on the parent but are pending on this layer. Describe only this layer and include stack context.",
+    "expected": "Describe empty-input validation against feature/parser, exclude the parent's parser feature, and report current tests as pending."
+  },
+  {
+    "id": "paraphrased-refresh",
+    "prompt": "Bring the merge-request summary up to date. The old description says a parser and benchmark were added. The final diff only changes an error message and its test; the parser and benchmark changes were removed. The new test passes for the supplied revision. Keep the project's Overview and Checks sections.",
+    "expected": "Replace stale scope with the final error-message change and retain the local sections and accurate validation."
+  },
+  {
+    "id": "breaking-change",
+    "prompt": "Draft PR wording for the supplied verified API change: Parse(string text) becomes Parse(string text, CultureInfo culture). All existing callers now pass CultureInfo.InvariantCulture, and the changed callers compile. Local policy requires a breaking-change title marker and before/after examples. Tests have not run.",
+    "expected": "Explain the actual signature and caller update, follow the local marker, and distinguish successful compilation from unrun tests."
+  },
+  {
+    "id": "missing-base",
+    "prompt": "Write a description for my PR. I have not supplied a PR identifier, branch comparison, diff, or repository access. What do you need?",
+    "expected": "Request the missing change or PR context without inventing a base branch, implementation, or validation results."
+  },
+  {
+    "id": "incidental-pr",
+    "prompt": "In Git, what does a merge base mean? A colleague mentioned it while discussing a PR. Give a short conceptual explanation; do not draft a PR.",
+    "expected": "Answer the Git question without invoking a PR-drafting workflow or proposing publication."
+  },
+  {
+    "id": "governed-caller",
+    "prompt": "Draft a PR body within the supplied read-only delegation. The caller requires an audit summary with a freshness stamp. The implementation diff is available, but the required audit stamp is missing. You cannot edit the ledger, publish the PR, or waive the summary requirement.",
+    "expected": "Preserve the caller's audit requirement, identify the missing stamp, and return only a draft or the narrow missing-input request without inventing provenance."
+  },
+  {
+    "id": "uncommitted-scope",
+    "prompt": "Draft wording for my proposed PR including the supplied uncommitted validation test. The remote PR currently contains only the parser change; the local test is not committed or pushed. Existing CI covers only the remote head.",
+    "expected": "Clearly distinguish the proposed local test from the current remote PR and avoid claiming that remote CI validated it."
+  }
+]
