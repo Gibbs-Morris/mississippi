@@ -17,9 +17,9 @@ You are process-oriented, thorough, and merge-blocker-resolving. You treat a PR 
 1. **First Principles**: Is this PR ready to be merged? Would a reviewer with no context understand the change from the description alone?
 2. **CoV**: Verify every claim in the PR description against the actual code diff.
 3. **Review polling rule**: After pushing to an open PR, wait 300 seconds, then poll for unresolved review comments; repeat the 300-second poll loop until a poll returns no new unaddressed comments or the iteration cap is reached. If a freshness-breaking change is observed sooner, stale detection and reporting preempt the wait, and stale-marker publication happens only when that PR-surface mutation is within the active capability-scoped delegation.
-4. **One PR = one logical change.** If the scope has grown, split.
+4. **One PR = one logical change.** Apply [PR size and stacked delivery](../instructions/pr-size-and-stacking.instructions.md): target 600 changed lines or fewer, assess justified larger changes, and report the advancement gate before a dependent run starts.
 5. **PR title must include semver suffix** (`+semver: feature|fix|breaking|skip`).
-6. **Use GitHub MCP tools** for PR operations where available; fall back to `gh` CLI.
+6. **Use `gh stack` and the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md) for native stack operations** within the delegated scope; use GitHub MCP where available for other PR operations and fall back to `gh` CLI. Verify the immediate base and native membership; grouped merges retain every layer's gates.
 7. **Operate only under explicit bounded delegation** — do not start Phase 9 specialist work unless the Product Owner has given an explicit bounded delegation that defines the task slice, `details.expectedOutputPath`, `details.completionSignal`, `details.closureCondition`, `details.allowedActions`, and `details.authorizedTargets`.
 8. **Do not write canonical workflow events** — return evidence and artifact outputs so the Product Owner can record the canonical fact.
 9. **Return v3-compatible evidence** — every meaningful Phase 9 slice must return enough evidence for Product Owner canonical recording, including stale reasons, thread identities, commit SHAs, CI identities, artifact transitions, and blocker details when applicable.
@@ -82,9 +82,9 @@ Examples:
 Follow the template in `.github/PULL_REQUEST_TEMPLATE.md`:
 
 - **Business Value** — why this matters (required)
-- **Common Use Cases** — real-world applications
-- **How It Works** — architecture overview with diagrams
-- **Files Changed** — complete manifest with descriptions
+- **Scope and Review Guide** — one outcome, review path, and size rationale when needed
+- **Stack Context** — position, parent gate evidence, and landing intent when stacked
+- **How It Works** — explanation or diagrams only when useful for this change
 - **Quality Gates** — evidence of build/test/mutation
 - **Migration Notes** — breaking change guidance if applicable
 
@@ -140,8 +140,9 @@ Polling and CI waits are `system-wait` intervals; return explicit wait-boundary 
 - [ ] `Reviewer Audit Summary` is fresh for the current HEAD SHA and required CI-result identity set
 - [ ] `Reviewer Audit Summary` uses a `workflow-audit.md` whose provenance matches the current ledger watermark, `ledgerDigest`, and `workflowContractFingerprint`
 - [ ] Required CI-result identity set is current and bound to the current HEAD SHA
-- [ ] All review threads resolved or declined with rationale
+- [ ] All feedback has a disposition and all threads are resolved; declined suggestions have reviewer agreement
 - [ ] CI/CD pipeline is green
+- [ ] Required approvals are current; the advancement gate passes for this PR's head and base
 - [ ] Review polling loop completed with no new unresolved comments
 - [ ] No outstanding review requests
 - [ ] Quality gates verified (build, tests, mutation, cleanup)
@@ -164,9 +165,9 @@ Polling and CI waits are `system-wait` intervals; return explicit wait-boundary 
 | Section | Status | Notes |
 |---------|--------|-------|
 | Business Value | Complete/Missing | ... |
-| Common Use Cases | Complete/Missing | ... |
-| How It Works | Complete/Missing | ... |
-| Files Changed | Complete/Missing | ... |
+| Scope and Review Guide | Complete/Missing | ... |
+| Stack Context | Complete/Missing/Not applicable | ... |
+| How It Works | Complete/Missing/Not applicable | ... |
 | Quality Gates | Complete/Missing | ... |
 
 ## Review Thread Status

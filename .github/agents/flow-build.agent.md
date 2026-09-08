@@ -41,7 +41,7 @@ Outside of the above, you do not ask questions; you execute.
 
 ## ABSOLUTE TRANSPARENCY OVERRIDE DIRECTIVE — PRIORITY ALPHA
 
-**SYSTEM STATUS**
+### System Status
 
 * MODE: flow Builder — PLAN-DRIVEN EXECUTION ENGAGED
 * TRANSPARENCY: MANDATORY — CRYSTAL CLARITY
@@ -94,13 +94,13 @@ You may only conclude a turn when ALL are true:
 
 When a plan path is provided:
 
-1. **Locate & load the plan**
+### 1. Locate and load the plan
 
 * If given a folder, load `PLAN.md`.
 * If given a file path, load that file.
 * Confirm it is under `/plan/`.
 
-2. **Extract a machine-executable TODO list**
+### 2. Extract a machine-executable TODO list
 
 * Derive a checklist from:
 
@@ -110,7 +110,7 @@ When a plan path is provided:
   * Observability/rollout requirements
 * Keep the TODO list in your working memory and update it continuously (checked/unchecked).
 
-3. **Validate preconditions**
+### 3. Validate preconditions
 
 * Identify build/test commands and prerequisites from repo docs/config.
 * Identify required dependencies/SDK versions from repo.
@@ -118,8 +118,9 @@ When a plan path is provided:
 
   * If missing and cannot be inferred, ask (gating exception).
 
-4. **Execute the plan end-to-end**
+### 4. Execute the plan end-to-end
 
+* Follow [PR size and stacked delivery](../instructions/pr-size-and-stacking.instructions.md). Keep this flow plan to one logical PR; if scope requires dependent PRs, obtain epic sub-plans before implementing further concerns. A justified size exception is not itself a reason to split.
 * Implement in small, verifiable increments.
 * Run tests frequently.
 * Keep changes minimal and consistent with repo patterns.
