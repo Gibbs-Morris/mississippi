@@ -65,14 +65,36 @@ internal static partial class BrookWriterGrainLoggerExtensions
     /// <param name="logger">The logger instance.</param>
     /// <param name="brookKey">The brook key.</param>
     /// <param name="newPosition">The new cursor position.</param>
+    /// <param name="elapsedMs">The publication duration in milliseconds.</param>
     [LoggerMessage(
         EventId = 6,
         Level = LogLevel.Information,
-        Message = "Cursor moved event published for brook '{BrookKey}' to position {NewPosition}")]
+        Message = "Cursor moved event published for brook '{BrookKey}' to position {NewPosition} ({ElapsedMs}ms)")]
     public static partial void CursorMovedEventPublished(
         this ILogger logger,
         BrookKey brookKey,
-        long newPosition
+        long newPosition,
+        long elapsedMs
+    );
+
+    /// <summary>
+    ///     Logs the duration and failure of a cursor publication attempt.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="exception">The publication failure.</param>
+    /// <param name="brookKey">The brook key.</param>
+    /// <param name="position">The requested cursor position.</param>
+    /// <param name="elapsedMs">The publication duration in milliseconds.</param>
+    [LoggerMessage(
+        8,
+        LogLevel.Error,
+        "Cursor publication failed for brook '{BrookKey}' at position {Position} ({ElapsedMs}ms)")]
+    public static partial void CursorPublicationAttemptFailed(
+        this ILogger logger,
+        Exception exception,
+        BrookKey brookKey,
+        long position,
+        long elapsedMs
     );
 
     /// <summary>

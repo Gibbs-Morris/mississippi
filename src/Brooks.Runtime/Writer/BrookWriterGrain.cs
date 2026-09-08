@@ -125,11 +125,25 @@ internal sealed class BrookWriterGrain
         cancellationToken.ThrowIfCancellationRequested();
         BrookKey key = BrookKey.FromString(this.GetPrimaryKeyString());
         Logger.PublishingCursorMoved(key, position.Value);
-        IAsyncStream<BrookCursorMovedEvent> stream = this
-            .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
-            .GetStream<BrookCursorMovedEvent>(
-                StreamId.Create(BrooksRuntimeOrleansStreamNames.CursorUpdateStreamName, this.GetPrimaryKeyString()));
-        await stream.OnNextAsync(new(this.GetPrimaryKeyString(), position));
-        Logger.CursorMovedEventPublished(key, position.Value);
+        Stopwatch publication = Stopwatch.StartNew();
+        try
+        {
+            IAsyncStream<BrookCursorMovedEvent> stream = this
+                .GetStreamProvider(StreamProviderOptions.Value.OrleansStreamProviderName)
+                .GetStream<BrookCursorMovedEvent>(
+                    StreamId.Create(
+                        BrooksRuntimeOrleansStreamNames.CursorUpdateStreamName,
+                        this.GetPrimaryKeyString()));
+            await stream.OnNextAsync(new(this.GetPrimaryKeyString(), position));
+            publication.Stop();
+            Logger.CursorMovedEventPublished(key, position.Value, publication.ElapsedMilliseconds);
+        }
+        catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException
+                                              or ThreadInterruptedException))
+        {
+            publication.Stop();
+            Logger.CursorPublicationAttemptFailed(exception, key, position.Value, publication.ElapsedMilliseconds);
+            throw;
+        }
     }
 }
