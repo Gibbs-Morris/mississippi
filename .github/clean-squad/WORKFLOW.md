@@ -1003,7 +1003,7 @@ The Product Owner is an orchestrator, not an implementation agent.
 ### ADR Protocol
 
 - Every significant decision **MUST** be recorded as an ADR.
-- ADRs **MUST** use the MADR 4.0.0 template defined in `.github/instructions/adr.instructions.md`.
+- ADRs **MUST** use the MADR 4.0.0 template specified by `.github/instructions/adr.instructions.md`.
 - ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the filename pattern `NNNN-title-with-dashes.md`.
 - When a feature branch adds ADRs, the branch owner **MUST** treat those numbers as provisional and perform a final renumbering pass against the latest `main` during merge preparation, updating filenames, `ADR-NNNN` titles, `sidebar_position`, and relative ADR links for ADRs introduced by that branch.
 - ADRs are immutable — superseded decisions get a new ADR referencing the old.

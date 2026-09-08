@@ -247,7 +247,8 @@ and either c4-component.md or c4-component-omitted.md."
 ```text
 Prompt: "Read .thinking/<task>/03-architecture/solution-design.md.
 Identify all significant architectural decisions. For each, create an
-ADR using the MADR 4.0.0 template defined in
+ADR using the author-architecture-decision skill and its MADR 4.0.0 body
+template. Apply all local metadata and lifecycle requirements in
 .github/instructions/adr.instructions.md.
 Publish each ADR to docs/Docusaurus/docs/adr/NNNN-title-with-dashes.md and
 use the next sequential NNNN as both the filename prefix and
