@@ -17,6 +17,7 @@ Describe 'RepositoryAutomation helpers' {
         $runDirectory = New-AutomationRunDirectory -Root $testRoot -Prefix 'test'
         Test-Path -LiteralPath $runDirectory | Should -Be $true
         ($runDirectory -like (Join-Path $testRoot 'test-*')) | Should -Be $true
+        (New-AutomationRunDirectory -Root $testRoot -Prefix 'test') | Should -Not -Be $runDirectory
     }
 
     It 'invokes automation steps and returns the result' {
@@ -58,6 +59,28 @@ Describe 'Repository automation quality gates' {
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Times 1 -Exactly -ParameterFilter {
             $Arguments -contains '-p:RepositoryTestResults=true' -and
             $Arguments -contains 'FullyQualifiedName~.L0Tests.'
+        }
+    }
+
+    It 'validates executed tests across the selected solution: <Executed>' -ForEach @(
+        @{ Executed = 0 },
+        @{ Executed = 2 }
+    ) {
+        $solution = Join-Path $TestDrive 'test.slnx'
+        Set-Content $solution '<Solution />'
+        $reports = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $reports | Out-Null
+        Set-Content (Join-Path $reports 'empty.trx') '<TestRun><ResultSummary><Counters executed="0" /></ResultSummary></TestRun>'
+        Set-Content (Join-Path $reports 'selected.trx') "<TestRun><ResultSummary><Counters executed='$Executed' /></ResultSummary></TestRun>"
+        Mock New-AutomationRunDirectory { $Root } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+        if ($Executed -eq 0) {
+            { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot $reports -TestLevels L4Tests } |
+                Should -Throw '*No tests executed*'
+        }
+        else {
+            (Invoke-SolutionTests -SolutionPath $solution -ResultsRoot $reports -TestLevels L0Tests).ResultsDirectory |
+                Should -Be $reports
         }
     }
 

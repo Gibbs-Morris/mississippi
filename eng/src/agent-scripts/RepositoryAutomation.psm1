@@ -206,7 +206,8 @@ function New-AutomationRunDirectory {
     }
 
     $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
-    $folderName = if ($Prefix) { "$Prefix-$stamp" } else { $stamp }
+    $runId = [guid]::NewGuid().ToString('N')
+    $folderName = if ($Prefix) { "$Prefix-$stamp-$runId" } else { "$stamp-$runId" }
     $runDirectory = Join-Path $Root $folderName
     if (-not (Test-Path -LiteralPath $runDirectory)) {
         $null = New-Item -ItemType Directory -Path $runDirectory -Force
@@ -268,6 +269,17 @@ function Invoke-SolutionTests {
     }
 
     Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "Failed to run tests for $($resolved.Path)." | Out-Host
+
+    if ($resultsDirectory -and -not $Logger) {
+        $executed = 0
+        foreach ($report in Get-ChildItem -LiteralPath $resultsDirectory -Recurse -Filter '*.trx' -File) {
+            [xml]$trx = Get-Content -LiteralPath $report.FullName -Raw
+            $executed += [int]$trx.TestRun.ResultSummary.Counters.executed
+        }
+        if ($executed -lt 1) {
+            throw "No tests executed for '$($resolved.Path)' with levels '$($TestLevels -join ',')'. Reports: $resultsDirectory"
+        }
+    }
 
     return [pscustomobject]@{
         SolutionPath     = $resolved.Path
