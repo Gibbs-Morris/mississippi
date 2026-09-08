@@ -24,7 +24,8 @@ Governing thought: Spend tokens on evidence and actions that advance the user's 
 - Agents **MUST** verify the state of an existing asynchronous operation before restarting it after an observation timeout. Why: A timeout or silent log does not prove that work stopped.
 - Agents **SHOULD** use event-driven waits or bounded polling of a specific operation, preserving mandated review intervals. Why: Waiting can be necessary without repeatedly loading unchanged output.
 - Agents **SHOULD** continue authorized work using a materially different, evidence-backed approach after reassessment. Why: Stopping a failed tactic does not abandon the goal.
-- Agents **MUST** explain the blocker and ask for the smallest missing input or decision when no safe, useful next action remains. Why: Repeating a blocked approach cannot supply credentials, authority, or a user-owned decision.
+- Agents **MUST** explain the blocker when no safe, useful next action remains. Why: The user needs the evidence that prevents further progress.
+- Agents **MUST** request the smallest missing input or decision needed to proceed when no safe, useful next action remains. Why: Repeating a blocked approach cannot supply credentials, authority, or a user-owned decision.
 
 ## Scope and Audience
 
