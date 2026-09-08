@@ -22,8 +22,6 @@ namespace MississippiSamples.Spring.TestHarness;
 ///         Both methods share the same cleanup logic and are guarded against double-disposal.
 ///     </para>
 /// </remarks>
-#pragma warning disable IDISP002 // Dispose member - disposed in DisposeAsync
-#pragma warning disable IDISP003 // Dispose previous before re-assigning - fields are null initially
 public sealed class SpringApplicationFixture
     : IAsyncLifetime,
       IDisposable
@@ -37,6 +35,8 @@ public sealed class SpringApplicationFixture
     private bool disposed;
 
     private HttpClient? gatewayHttpClient;
+
+    private bool isInitializationStarted;
 
     /// <summary>
     ///     Gets the base URI for the Spring gateway application.
@@ -112,27 +112,25 @@ public sealed class SpringApplicationFixture
     }
 
     /// <inheritdoc />
-#pragma warning disable IDISP001 // Dispose created - appHost implements builder pattern
     public async Task InitializeAsync()
     {
         ObjectDisposedException.ThrowIf(disposed, this);
-        if (appBuilder is not null)
+        if (isInitializationStarted)
         {
-            throw new InvalidOperationException("Application already initialized.");
+            throw new InvalidOperationException("Application initialization has already started.");
         }
 
+        isInitializationStarted = true;
         try
         {
             // One cancellation budget covers creation, startup, and resource readiness.
             using CancellationTokenSource cts = new(DefaultTimeout);
-            IDistributedApplicationTestingBuilder builder =
-                await DistributedApplicationTestingBuilder.CreateAsync<Spring_AppHost>(
-                    ["Spring:AuthProofMode=true"],
-                    cts.Token);
+            appBuilder ??= await DistributedApplicationTestingBuilder.CreateAsync<Spring_AppHost>(
+                ["Spring:AuthProofMode=true"],
+                cts.Token);
 
             // The builder owns the app; keep it alive until collection teardown.
-            appBuilder = builder;
-            builder.Services.AddLogging(logging =>
+            appBuilder.Services.AddLogging(logging =>
             {
                 logging.SetMinimumLevel(LogLevel.Debug);
                 logging.AddFilter("Orleans", LogLevel.Warning);
@@ -140,8 +138,7 @@ public sealed class SpringApplicationFixture
             });
 
             // Build and start the application (following official docs pattern)
-            DistributedApplication builtApp = await builder.BuildAsync(cts.Token);
-            app = builtApp;
+            app ??= await appBuilder.BuildAsync(cts.Token);
             await app.StartAsync(cts.Token);
 
             // Wait for Azure Storage emulator (Azurite)
@@ -177,7 +174,6 @@ public sealed class SpringApplicationFixture
             throw;
         }
     }
-#pragma warning restore IDISP001
 
     private async Task SaveResourceLogsAsync()
     {
@@ -201,5 +197,3 @@ public sealed class SpringApplicationFixture
         }
     }
 }
-#pragma warning restore IDISP002
-#pragma warning restore IDISP003
