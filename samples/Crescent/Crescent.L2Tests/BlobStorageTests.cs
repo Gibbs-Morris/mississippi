@@ -202,7 +202,8 @@ public sealed class BlobStorageTests
         AzureBlobContentInfo response = await blobClient.UploadAsync(stream, true);
 
         // Assert
-        Assert.True(response.Value is not null, "the upload should return content info");
+        Assert.NotNull(response);
+        Assert.NotNull(response.Value);
 #pragma warning disable IDISP004 // Don't ignore created IDisposable - GetRawResponse returns wrapper that doesn't need disposal
         Assert.Equal(201, response.GetRawResponse().Status);
 #pragma warning restore IDISP004
