@@ -31,6 +31,35 @@ Describe 'Spring validation runner' {
     }
 }
 
+Describe 'Spring test project boundaries' {
+    BeforeAll {
+        $springRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../samples/Spring'))
+    }
+
+    It 'keeps Playwright out of L2 and the shared application harness dependency graphs' {
+        foreach ($name in @('Spring.L2Tests', 'Spring.TestHarness')) {
+            $lock = Get-Content (Join-Path $springRoot "$name/packages.lock.json") -Raw | ConvertFrom-Json
+            foreach ($framework in $lock.dependencies.PSObject.Properties) {
+                @($framework.Value.PSObject.Properties.Name) | Should -Not -Contain 'Microsoft.Playwright'
+            }
+        }
+    }
+
+    It 'shares application setup without making either test project reference another test project' {
+        foreach ($level in @('L2', 'L3')) {
+            [xml]$project = Get-Content (Join-Path $springRoot "Spring.${level}Tests/Spring.${level}Tests.csproj") -Raw
+            $references = @($project.SelectNodes('//ProjectReference') | ForEach-Object { $_.Include.Replace('\', '/') })
+            $references | Should -Contain '../Spring.TestHarness/Spring.TestHarness.csproj'
+            @($references | Where-Object { $_ -match '/Spring\.L[0-4]Tests/' }).Count | Should -Be 0
+        }
+    }
+
+    It 'explicitly keeps the xUnit fixture harness out of test discovery' {
+        [xml]$project = Get-Content (Join-Path $springRoot 'Spring.TestHarness/Spring.TestHarness.csproj') -Raw
+        $project.SelectSingleNode('//IsTestProject').InnerText | Should -Be 'false'
+    }
+}
+
 Describe 'Spring validation' {
     InModuleScope RepositoryAutomation {
         BeforeEach {
@@ -50,6 +79,14 @@ Describe 'Spring validation' {
             $result = Get-Content (Get-ChildItem $repo -Recurse -Filter summary.json).FullName -Raw | ConvertFrom-Json
             $result.status | Should -Be READY
             $result.passed | Should -Be 0
+        }
+
+        It 'normalizes case-insensitive choices for case-sensitive project paths' {
+            Invoke-SpringValidation -RepoRoot $repo -TestLevel l3 -Suite smoke -Doctor
+            $result = Get-Content (Get-ChildItem $repo -Recurse -Filter summary.json).FullName -Raw | ConvertFrom-Json
+            $result.testLevel | Should -BeExactly 'L3'
+            $result.suite | Should -BeExactly 'Smoke'
+            $result.project.EndsWith('Spring.L3Tests.csproj', [StringComparison]::Ordinal) | Should -BeTrue
         }
 
         It 'fails on inaccessible Docker and preserves the failed phase and environment' {
@@ -95,13 +132,13 @@ Describe 'Spring validation' {
             @(Get-ChildItem $repo -Recurse -Filter summary.json).Count | Should -Be 2
         }
 
-        It 'builds and runs the <Suite> suite with isolated tooling and strict results' -TestCases @(
-            @{ Suite = 'Smoke' }; @{ Suite = 'Full' }
+        It 'builds and runs <TestLevel> <Suite> with isolated tooling and strict results' -TestCases @(
+            @{ TestLevel = 'L3'; Suite = 'Smoke' }; @{ TestLevel = 'L3'; Suite = 'Full' }; @{ TestLevel = 'L2'; Suite = 'Full' }
         ) {
-            param($Suite)
-            $target = Join-Path $repo 'samples/Spring/Spring.L2Tests/bin'
+            param($TestLevel, $Suite)
+            $target = Join-Path $repo "samples/Spring/Spring.${TestLevel}Tests/bin"
             $null = New-Item -ItemType Directory -Path $target -Force
-            '' | Set-Content (Join-Path $target 'playwright.ps1')
+            if ($TestLevel -eq 'L3') { '' | Set-Content (Join-Path $target 'playwright.ps1') }
             Mock Invoke-SolutionBuild {}
             Mock Invoke-RepositoryProcess {
                 if ($FilePath -eq 'docker') { return 'linux' }
@@ -114,13 +151,20 @@ Describe 'Spring validation' {
                 }
             }
             $originalBrowsers = $env:PLAYWRIGHT_BROWSERS_PATH
-            Invoke-SpringValidation -RepoRoot $repo -Suite $Suite -InstallBrowserDependencies
+            Invoke-SpringValidation -RepoRoot $repo -TestLevel $TestLevel -Suite $Suite -InstallBrowserDependencies
             $result = Get-Content (Get-ChildItem $repo -Recurse -Filter summary.json).FullName -Raw | ConvertFrom-Json
             $result.status | Should -Be PASS
             $result.passed | Should -Be 1
-            Should -Invoke Invoke-SolutionBuild -Times 1 -Exactly -ParameterFilter { $WarnAsError -and $NoRestore }
+            $result.testLevel | Should -Be $TestLevel
+            $result.suite | Should -Be $Suite
+            $result.project | Should -Be (Join-Path $repo "samples/Spring/Spring.${TestLevel}Tests/Spring.${TestLevel}Tests.csproj")
+            Should -Invoke Invoke-SolutionBuild -Times 1 -Exactly -ParameterFilter {
+                $WarnAsError -and $NoRestore -and $SolutionPath.EndsWith("Spring.${TestLevel}Tests.csproj")
+            }
             Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter { $Arguments -contains '--locked-mode' }
-            Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter { $Arguments -contains '--with-deps' -and $Arguments -contains 'chromium' }
+            $browserCalls = if ($TestLevel -eq 'L3') { 1 } else { 0 }
+            Should -Invoke Invoke-RepositoryProcess -Times $browserCalls -Exactly -ParameterFilter { $Arguments -contains '--with-deps' -and $Arguments -contains 'chromium' }
+            Should -Invoke Invoke-RepositoryProcess -Times $browserCalls -Exactly -ParameterFilter { $Arguments[0] -eq 'msbuild' }
             Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter {
                 $Arguments[0] -eq 'test' -and $Arguments -contains '--no-build' -and
                 $Arguments -contains 'RunConfiguration.TreatNoTestsAsError=true'
@@ -128,6 +172,11 @@ Describe 'Spring validation' {
             $filterCalls = if ($Suite -eq 'Smoke') { 1 } else { 0 }
             Should -Invoke Invoke-RepositoryProcess -Times $filterCalls -Exactly -ParameterFilter { $Arguments -contains 'Category=Smoke' }
             $env:PLAYWRIGHT_BROWSERS_PATH | Should -BeExactly $originalBrowsers
+        }
+
+        It 'rejects a nonexistent L2 smoke suite before running tools' {
+            { Invoke-SpringValidation -RepoRoot $repo -TestLevel L2 -Suite Smoke } | Should -Throw '*smoke journeys are L3*'
+            Should -Invoke Invoke-RepositoryProcess -Times 0
         }
 
         It 'rejects zero, skipped, failed, or aborted test runs: <Outcome>/<Total>/<Passed>/<Executed>' -TestCases @(

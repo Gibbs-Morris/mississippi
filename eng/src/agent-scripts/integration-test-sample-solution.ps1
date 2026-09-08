@@ -2,18 +2,18 @@
 
 <#
 .SYNOPSIS
-    Runs L2+ integration and end-to-end tests for the Samples solution.
+    Runs L2 functional API and infrastructure tests for the Samples solution.
 
 .DESCRIPTION
-    This script executes higher-level tests (L2, L3, L4) that require deployed services,
-    Playwright browser automation, or other infrastructure. These tests are excluded
+    This script executes L2 tests that require deployed services or other infrastructure.
+    Other levels can be selected explicitly with TestLevels. These tests are excluded
     from the standard unit-test-sample-solution.ps1 to keep PR gates fast.
 
 .PARAMETER Configuration
     Build configuration (default: Release).
 
 .PARAMETER TestLevels
-    Array of test levels to run (default: L2Tests, L3Tests, L4Tests).
+    Array of test levels to run (default: L2Tests).
 
 .EXAMPLE
     pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1
@@ -25,7 +25,7 @@
 [CmdletBinding()]
 param(
     [string]$Configuration = 'Release',
-    [string[]]$TestLevels = @('L2Tests', 'L3Tests', 'L4Tests')
+    [string[]]$TestLevels = @('L2Tests')
 )
 
 Set-StrictMode -Version Latest

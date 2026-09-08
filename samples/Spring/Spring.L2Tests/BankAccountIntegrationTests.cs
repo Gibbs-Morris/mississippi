@@ -10,10 +10,10 @@ using Mississippi.DomainModeling.Abstractions;
 namespace MississippiSamples.Spring.L2Tests;
 
 /// <summary>
-///     End-to-end integration tests for the BankAccount aggregate and projection.
+///     Functional API integration tests for the BankAccount aggregate and projection.
 ///     Tests the full flow from API commands through event sourcing to projection query.
 /// </summary>
-[Collection(SpringTestCollection.Name)]
+[Collection(SpringApiCollectionDefinition.Name)]
 public sealed class BankAccountIntegrationTests
 {
     private const int CompletedSagaPhase = (int)SagaPhase.Completed;
@@ -28,14 +28,14 @@ public sealed class BankAccountIntegrationTests
     /// </summary>
     private static readonly TimeSpan PollingInterval = TimeSpan.FromMilliseconds(500);
 
-    private readonly SpringFixture fixture;
+    private readonly SpringApplicationFixture fixture;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BankAccountIntegrationTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Spring fixture.</param>
     public BankAccountIntegrationTests(
-        SpringFixture fixture
+        SpringApplicationFixture fixture
     ) =>
         this.fixture = fixture;
 
@@ -194,7 +194,7 @@ public sealed class BankAccountIntegrationTests
     {
         // Arrange
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "John Doe";
         const decimal initialDeposit = 100.00m;
@@ -267,7 +267,7 @@ public sealed class BankAccountIntegrationTests
     public async Task MoneyTransferSagaShouldCompleteAndUpdateBothAccounts()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string sourceAccountId = $"transfer-source-{Guid.NewGuid():N}";
         string destinationAccountId = $"transfer-destination-{Guid.NewGuid():N}";
         Guid sagaId = Guid.NewGuid();
@@ -342,7 +342,7 @@ public sealed class BankAccountIntegrationTests
     {
         // Arrange
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string bankAccountId = $"test-account-{Guid.NewGuid():N}";
         const string holderName = "Jane Smith";
         const decimal initialDeposit = 500.00m;

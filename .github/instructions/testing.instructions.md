@@ -16,6 +16,9 @@ Governing thought: Default to fast, deterministic L0 tests with high coverage an
 - L2 tests **SHOULD** be used only when real infrastructure is required (HTTP APIs, SignalR, Cosmos/Blob storage, etc.). Why: Keeps lower levels pure and deterministic.
 - Each implementation solution **SHOULD** include separate L0Tests, L1Tests, and L2Tests projects. Why: Keeps scopes clear and enables targeted pipelines.
 - Each L2 test project **SHOULD** have a companion Aspire AppHost project that provisions required dependencies and emulators. Why: Makes integration tests repeatable and self-contained.
+- Browser-driven application journeys **MUST** live in an `L3Tests` project, separate from L2 API and infrastructure tests. Why: Contributors can locate end-to-end behavior by test level without inspecting implementation dependencies.
+- Smoke selection **MUST** use a suite label such as `[Trait("Category", "Smoke")]` within the appropriate test level. Why: Smoke describes a small critical-path subset, not a separate test level.
+- Shared Aspire test setup **SHOULD** live in a `TestHarness` project without browser dependencies. Why: L2 tests can run without Playwright, and L3 tests can reuse the same deployment setup.
 - Tests **MUST** be deterministic/isolated (no sleeps, no shared mutable state, no real network in L0); time **MUST** use `FakeTimeProvider` from `Microsoft.Extensions.TimeProvider.Testing` when production code injects `TimeProvider`; random seeds **SHOULD** be fixed or injected. Why: Prevents flakiness and enables reproducible assertions.
 - Coverage targets: changed code **MUST** aim for 100% with **MUST NOT** regress coverage on touched files; solution-wide **MUST** stay >=80% and **SHOULD** target 95-100% where feasible. Why: Protects behavior and gates.
 - Mississippi projects **MUST** run mutation testing and maintain or raise the score; mutation runs **MUST** be allowed to finish (~30 minutes) and mutation scripts **MUST** be preceded by `dotnet tool restore` and a clean build. Why: Mutation score enforces assertion quality.
@@ -41,11 +44,13 @@ Applies to all test authors across Mississippi and Samples solutions, including 
 
 ## Test Level Filtering
 
-Unit test scripts default to running L0 and L1 tests only; L2+ tests (integration, E2E, Playwright) are excluded from PR gates to keep feedback fast.
+Unit test scripts default to running L0 and L1 tests only. Higher levels have separate workflows so their cost and scope remain visible.
 
 - **Default behavior**: `unit-test-mississippi-solution.ps1` and `unit-test-sample-solution.ps1` run L0Tests and L1Tests.
 - **Override**: Pass `-TestLevels @('L0Tests','L1Tests','L2Tests')` to include additional levels.
-- **Integration tests**: Use `integration-test-sample-solution.ps1` for L2+, or pass custom levels.
+- **Integration tests**: Use `integration-test-sample-solution.ps1` for L2, or pass custom levels explicitly.
+- **Spring L3 smoke**: `pwsh ./test-spring.ps1` runs the browser smoke subset in PR and merge-queue checks.
+- **Spring L3 full**: `pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full` runs all browser journeys locally; the L3 Tests workflow offers the same suite on demand.
 
 Filter uses `FullyQualifiedName` matching on project naming convention (e.g., `*.L0Tests`, `*.L2Tests`).
 
@@ -63,8 +68,8 @@ Filter uses `FullyQualifiedName` matching on project naming convention (e.g., `*
 | ----- | ----- | ------------ | ----------- |
 | L0 | Pure unit, no IO | In-memory only | Always (PR/local) |
 | L1 | Light infra | Temp FS, in-proc DB/mocks | Often (PR/local) |
-| L2 | Functional vs test deployment | Aspire AppHost + emulators/services | Scheduled/on-demand |
-| L3 | End-to-end/prod-like UI/API | Full stack, Playwright | Release/controlled |
+| L2 | Feature API/infrastructure contracts vs test deployment | Aspire AppHost + emulators/services | Separate L2 workflow/local |
+| L3 | End-to-end user journeys through the real client or composed public API | Full stack; Playwright for browser journeys | Small smoke subset on PR/merge queue; full suite on demand |
 | L4 | Synthetic prod checks | Live endpoints (read-only) | Post-deploy/monitoring |
 
 ## Workflows
@@ -91,3 +96,4 @@ Filter uses `FullyQualifiedName` matching on project naming convention (e.g., `*
 
 - Shared guardrails: `.github/instructions/shared-policies.instructions.md`
 - Build rules: `.github/instructions/build-rules.instructions.md`
+- Spring placement and scheduling: `samples/Spring/TESTING.md`

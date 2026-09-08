@@ -1,13 +1,13 @@
-using MississippiSamples.Spring.L2Tests.Pages;
+using MississippiSamples.Spring.L3Tests.Pages;
 
 
-namespace MississippiSamples.Spring.L2Tests;
+namespace MississippiSamples.Spring.L3Tests;
 
 /// <summary>
 ///     End-to-end tests for the Bank Account Demo using Playwright.
 ///     Tests the full flow from Blazor UI through SignalR/Inlet projections and Orleans grains.
 /// </summary>
-[Collection(SpringTestCollection.Name)]
+[Collection(SpringBrowserCollectionDefinition.Name)]
 public sealed class BankAccountE2ETests
 {
     /// <summary>
@@ -16,39 +16,16 @@ public sealed class BankAccountE2ETests
     /// </summary>
     private const float ProjectionTimeout = 120_000;
 
-    private readonly SpringFixture fixture;
+    private readonly SpringBrowserFixture fixture;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="BankAccountE2ETests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Spring fixture.</param>
     public BankAccountE2ETests(
-        SpringFixture fixture
+        SpringBrowserFixture fixture
     ) =>
         this.fixture = fixture;
-
-    /// <summary>
-    ///     Sets up demo accounts and navigates to the operations page.
-    /// </summary>
-    /// <param name="page">The Playwright page instance.</param>
-    /// <returns>The operations page object ready for interactions.</returns>
-    private async Task<OperationsPage> SetupDemoAccountsAndNavigateToOperationsAsync(
-        IPage page
-    )
-    {
-        // Navigate to accounts page and initialize demo accounts
-        AccountsPage accountsPage = new(page);
-        await accountsPage.NavigateAsync(fixture.GatewayBaseUri);
-        await accountsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
-        await accountsPage.ClickInitializeDemoAccountsAsync();
-        await accountsPage.WaitForDemoAccountsInitializedAsync(ProjectionTimeout);
-        await accountsPage.ClickGoToOperationsAsync();
-
-        // Return operations page for further interactions
-        OperationsPage operationsPage = new(page);
-        await operationsPage.WaitForConnectionStatusAsync("Connected", ProjectionTimeout);
-        return operationsPage;
-    }
 
     /// <summary>
     ///     Verifies the accounts page loads and displays the correct title.
@@ -79,71 +56,6 @@ public sealed class BankAccountE2ETests
     }
 
     /// <summary>
-    ///     Verifies the complete bank account flow via UI: open, deposit, withdraw,
-    ///     and confirms the balance updates in real-time via SignalR projection.
-    /// </summary>
-    /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public async Task CompleteBankAccountFlowShouldUpdateProjectionViaSignalR()
-    {
-        // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        IPage page = await fixture.CreatePageAsync();
-        try
-        {
-            await page.Context.Tracing.StartAsync(
-                new()
-                {
-                    Screenshots = true,
-                    Snapshots = true,
-                    Sources = true,
-                });
-
-            // Demo accounts are pre-opened with £500 each
-            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
-            bool hasStyles = await page.Locator("link[rel='stylesheet']")
-                .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
-            hasStyles.Should().BeTrue("the generated CSS isolation bundle must load successfully");
-
-            // Wait for projection to show the balance via SignalR
-            await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
-
-            // Assert - Verify initial state (demo accounts start with £500)
-            string? balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("500.00", "demo account should start with £500");
-            string? holderText = await operationsPage.GetHolderNameTextAsync();
-            holderText.Should().NotBeNullOrEmpty("holder name should be displayed");
-            string? statusText = await operationsPage.GetStatusTextAsync();
-            statusText.Should().Contain("Open", "account status should be Open");
-
-            // Act - Deposit funds
-            const decimal depositAmount = 50.00m;
-            await operationsPage.EnterDepositAmountAsync(depositAmount);
-            await operationsPage.ClickDepositAsync();
-            await operationsPage.WaitForCommandSuccessAsync(ProjectionTimeout);
-            await operationsPage.WaitForBalanceValueAsync("550.00", ProjectionTimeout);
-            balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("550.00", "balance should be £550 after deposit");
-
-            // Act - Withdraw funds
-            const decimal withdrawAmount = 25.00m;
-            await operationsPage.EnterWithdrawAmountAsync(withdrawAmount);
-            await operationsPage.ClickWithdrawAsync();
-            await operationsPage.WaitForCommandSuccessAsync(ProjectionTimeout);
-            await operationsPage.WaitForBalanceValueAsync("525.00", ProjectionTimeout);
-
-            // Assert - Final balance
-            balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("525.00", "final balance should reflect all transactions");
-        }
-        finally
-        {
-            await SpringFixture.SaveBrowserArtifactsAsync(page);
-        }
-    }
-
-    /// <summary>
     ///     Verifies the deposit button works and updates the balance.
     /// </summary>
     /// <returns>A <see cref="Task" /> representing the asynchronous test operation.</returns>
@@ -156,7 +68,7 @@ public sealed class BankAccountE2ETests
         try
         {
             // Demo accounts are pre-opened with £500 each
-            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
+            OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(fixture, page, ProjectionTimeout);
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
 
             // Act - Deposit
@@ -200,7 +112,7 @@ public sealed class BankAccountE2ETests
         try
         {
             // Demo accounts are pre-opened with £500 each
-            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
+            OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(fixture, page, ProjectionTimeout);
 
             // Wait for projection update via SignalR
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
@@ -232,7 +144,7 @@ public sealed class BankAccountE2ETests
         try
         {
             // Demo accounts are pre-opened with £500 each
-            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
+            OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(fixture, page, ProjectionTimeout);
 
             // Assert
             string? accountHeader = await operationsPage.GetAccountHeaderAsync();
@@ -258,7 +170,7 @@ public sealed class BankAccountE2ETests
         try
         {
             // Demo accounts are pre-opened with £500 each
-            OperationsPage operationsPage = await SetupDemoAccountsAndNavigateToOperationsAsync(page);
+            OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(fixture, page, ProjectionTimeout);
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
 
             // Act - Withdraw

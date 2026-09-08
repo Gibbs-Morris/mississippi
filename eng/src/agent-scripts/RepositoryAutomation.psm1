@@ -787,21 +787,29 @@ function Invoke-SpringValidation {
     [CmdletBinding()]
     param(
         [string]$RepoRoot = (Get-RepositoryRoot),
+        [ValidateSet('L2', 'L3')][string]$TestLevel = 'L3',
         [ValidateSet('Smoke', 'Full')][string]$Suite = 'Smoke',
         [ValidateSet('Debug', 'Release')][string]$Configuration = 'Release',
         [switch]$Doctor,
         [switch]$InstallBrowserDependencies
     )
 
+    $TestLevel = $TestLevel.ToUpperInvariant()
+    $Suite = if ($Suite -eq 'Smoke') { 'Smoke' } else { 'Full' }
     $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
-    $runDirectory = New-AutomationRunDirectory -Root (Join-Path $RepoRoot 'artifacts/spring') -Prefix ([guid]::NewGuid().ToString('N'))
-    $summary = [ordered]@{ schemaVersion = 1; status = 'FAIL'; phase = 'prerequisites'; suite = $Suite; passed = 0; artifacts = $runDirectory }
+    $runDirectory = New-AutomationRunDirectory -Root (Join-Path $RepoRoot 'artifacts/spring') -Prefix "$TestLevel-$Suite-$([guid]::NewGuid().ToString('N'))"
+    $project = Join-Path $RepoRoot "samples/Spring/Spring.${TestLevel}Tests/Spring.${TestLevel}Tests.csproj"
+    $summary = [ordered]@{ schemaVersion = 1; status = 'FAIL'; phase = 'selection'; testLevel = $TestLevel; suite = $Suite; project = $project; passed = 0; artifacts = $runDirectory }
     $timer = [System.Diagnostics.Stopwatch]::StartNew()
     $previousPath = $env:PATH
     $previousArtifacts = $env:SPRING_TEST_ARTIFACTS
     $previousBrowsers = $env:PLAYWRIGHT_BROWSERS_PATH
     Push-Location $RepoRoot
     try {
+        if ($TestLevel -eq 'L2' -and $Suite -eq 'Smoke' -and -not $Doctor) {
+            throw 'Spring smoke journeys are L3. Use -TestLevel L2 -Suite Full for API/infrastructure tests.'
+        }
+        $summary.phase = 'prerequisites'
         $summary.sdk = (Invoke-RepositoryProcess -FilePath dotnet -Arguments @('--version') `
             -ErrorMessage 'Install the SDK selected by global.json.' | Out-String).Trim()
         $dockerOs = (Invoke-RepositoryProcess -FilePath docker -Arguments @('info', '--format', '{{.OSType}}') `
@@ -825,22 +833,23 @@ function Invoke-SpringValidation {
         $env:PATH = $toolPath + [System.IO.Path]::PathSeparator + $previousPath
         $installedVersion = (Invoke-RepositoryProcess -FilePath $aspire -Arguments @('--version') | Out-String).Trim()
         if ($installedVersion.Split('+')[0] -ne $aspireVersion) { throw "Expected Aspire CLI $aspireVersion; found $installedVersion." }
-        $project = Join-Path $RepoRoot 'samples/Spring/Spring.L2Tests/Spring.L2Tests.csproj'
         $summary.phase = 'restore'
         Invoke-RepositoryProcess -FilePath dotnet -Arguments @('restore', $project, '--locked-mode') |
             Tee-Object -FilePath (Join-Path $runDirectory 'restore.log') | Out-Host
         $summary.phase = 'build'
         Invoke-SolutionBuild -SolutionPath $project -Configuration $Configuration -WarnAsError -NoRestore |
             Tee-Object -FilePath (Join-Path $runDirectory 'build.log') | Out-Host
-        $targetDirectory = (Invoke-RepositoryProcess -FilePath dotnet -SuppressCommandEcho `
-            -Arguments @('msbuild', $project, "-property:Configuration=$Configuration", '-getProperty:TargetDir') | Out-String).Trim()
-        $playwrightScript = Join-Path $targetDirectory 'playwright.ps1'
-        if (-not (Test-Path -LiteralPath $playwrightScript -PathType Leaf)) { throw "Playwright installer missing: $playwrightScript" }
-        $summary.phase = 'browser'
-        $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $RepoRoot 'artifacts/tools/playwright'
-        $browserArguments = @('-NoProfile', '-File', $playwrightScript, 'install', 'chromium')
-        if ($InstallBrowserDependencies) { $browserArguments += '--with-deps' }
-        Invoke-RepositoryProcess -FilePath pwsh -Arguments $browserArguments
+        if ($TestLevel -eq 'L3') {
+            $targetDirectory = (Invoke-RepositoryProcess -FilePath dotnet -SuppressCommandEcho `
+                -Arguments @('msbuild', $project, "-property:Configuration=$Configuration", '-getProperty:TargetDir') | Out-String).Trim()
+            $playwrightScript = Join-Path $targetDirectory 'playwright.ps1'
+            if (-not (Test-Path -LiteralPath $playwrightScript -PathType Leaf)) { throw "Playwright installer missing: $playwrightScript" }
+            $summary.phase = 'browser'
+            $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $RepoRoot 'artifacts/tools/playwright'
+            $browserArguments = @('-NoProfile', '-File', $playwrightScript, 'install', 'chromium')
+            if ($InstallBrowserDependencies) { $browserArguments += '--with-deps' }
+            Invoke-RepositoryProcess -FilePath pwsh -Arguments $browserArguments
+        }
         $env:SPRING_TEST_ARTIFACTS = $runDirectory
         $summary.phase = 'test'
         $testArguments = @('test', $project, '--configuration', $Configuration, '--no-build', '--no-restore',
@@ -866,7 +875,7 @@ function Invoke-SpringValidation {
         $summary.durationSeconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
         $summaryPath = Join-Path $runDirectory 'summary.json'
         $summary | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $summaryPath -Encoding utf8
-        Write-Output "RESULT: $($summary.status) | PHASE: $($summary.phase) | PASSED: $($summary.passed)"
+        Write-Output "RESULT: $($summary.status) | LEVEL: $TestLevel | SUITE: $Suite | PHASE: $($summary.phase) | PASSED: $($summary.passed)"
         Write-Output "SUMMARY: $summaryPath"
     }
 }

@@ -108,12 +108,13 @@ The repository includes sample applications demonstrating the framework:
 
 ### Validate Spring after a change
 
-Use the same entry point locally and in the **Spring banking smoke** CI check:
+Use the same entry point locally and in the **L3 Spring E2E (Smoke)** CI check:
 
 ```powershell
 pwsh ./test-spring.ps1 -Doctor # Check SDK selection and Docker access
-pwsh ./test-spring.ps1         # Build, launch Aspire, test banking through Chromium, stop
-pwsh ./test-spring.ps1 -Suite Full # All Spring API, auth, and browser tests
+pwsh ./test-spring.ps1         # L3 Smoke: build, launch Aspire, browser-test banking, stop
+pwsh ./test-spring.ps1 -TestLevel L2 -Suite Full # API and authorization tests; no browser
+pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full # All browser journeys, including smoke
 ```
 
 Prerequisites are PowerShell 7+, the SDK selected by `global.json`, and an accessible Docker daemon running Linux containers.
@@ -122,10 +123,17 @@ On Linux hosts that need Chromium OS libraries, use `-InstallBrowserDependencies
 `-Doctor` checks SDK and Docker access only; it does not certify browser libraries, image downloads, or application startup.
 
 The command restores locked packages, installs the Aspire CLI version from `Directory.Packages.props` into this checkout,
-and builds only the Spring test project and its dependencies with warnings as errors.
-It installs matching Chromium binaries into `artifacts/tools/playwright`, checks that the stylesheet loads, and runs the banking journey:
+and builds only the selected Spring test project and its dependencies with warnings as errors.
+L3 installs matching Chromium binaries into `artifacts/tools/playwright`; L2 has no browser dependency.
+The L3 smoke suite checks that the stylesheet loads and runs the banking journey:
 initialize accounts, observe £500, deposit £50, withdraw £25, and observe £525 via SignalR without refreshing.
 `-Configuration Debug` is available; Release is the default. Every run builds incrementally so stale binaries cannot silently pass.
+
+Test level and suite are separate choices. `Spring.L2Tests` holds functional API/infrastructure tests;
+`Spring.L3Tests` holds browser journeys, with the smoke subset under `Smoke/` and tagged `Category=Smoke`.
+`Full` means all tests at the selected level; run both Full commands above to verify both levels.
+The L3 Tests workflow runs Smoke on PRs and merge queues, and offers Smoke or Full when dispatched manually.
+See [where tests live and when they run](samples/Spring/TESTING.md) before adding another test.
 
 Aspire's testing host allocates test endpoints and owns the application/container lifetime.
 Startup has a three-minute cancellation budget, individual test hangs are limited to five minutes, and the test session is limited to fifteen minutes.
@@ -133,7 +141,7 @@ Use separate worktrees for simultaneous runs because builds share `bin` and `obj
 The smoke test complements fast unit tests and the existing cleanup, coverage, mutation, and full build gates.
 
 Each run prints `RESULT` and an absolute `SUMMARY` path under a unique `artifacts/spring/` directory.
-`summary.json` records status, phase, suite, SDK/Aspire versions, passed count, duration, and artifact location.
+`summary.json` records status, phase, test level, suite, project, SDK/Aspire versions, passed count, duration, and artifact location.
 Exit code 0 with `PASS` requires a completed test run with at least one test and every selected test passing; missing, skipped, and empty results fail.
 Doctor success uses `READY` and never claims tests passed.
 Diagnostics include TRX, restore/build/test logs, resource log backlogs, and a banking screenshot and Playwright trace when the browser journey starts.
@@ -149,7 +157,7 @@ Keep this repository's `AGENTS.md` and its engineering instructions when adding 
 The implementation follows [Aspire test lifecycle guidance](https://aspire.dev/testing/manage-app-host/),
 [bounded CI testing](https://aspire.dev/testing/testing-in-ci/), and [Playwright traces](https://playwright.dev/dotnet/docs/trace-viewer-intro).
 A test-owned AppHost gives local and CI runs the same assertions and cleanup; interactive MCP is a debugging aid, not the pass/fail gate.
-The new CI check fails normally; repository administrators can add **Spring banking smoke** to required branch checks after merging.
+The L3 smoke CI check fails normally; repository administrators can add **L3 Spring E2E (Smoke)** to required branch checks after merging.
 
 ### Framework quality gates
 

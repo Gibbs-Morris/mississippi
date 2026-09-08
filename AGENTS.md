@@ -29,13 +29,14 @@ All agents working in this repository.
 
 1. Run the relevant fast tests with `test-project-quality.ps1 -SkipMutation` while implementing.
 2. Run `pwsh ./test-spring.ps1 -Doctor` to check the selected SDK and Docker Linux daemon access.
-3. Run `pwsh ./test-spring.ps1` to build Spring and exercise the banking browser journey against a fresh Aspire test host.
+3. Run `pwsh ./test-spring.ps1` for the L3 smoke suite in `samples/Spring/Spring.L3Tests/Smoke` against a fresh Aspire test host.
 4. Read the emitted `SUMMARY` JSON path; `PASS` requires executed, passing tests. `READY` only reports prerequisite checks.
 5. Inspect `spring.trx`, `test.log`, resource logs, `banking.png`, and `banking.zip` in that run's artifact directory if validation fails.
-6. Run `pwsh ./test-spring.ps1 -Suite Full` for changes affecting Spring APIs, authentication, or multiple UI flows, then the existing repository quality gates.
+6. Run `pwsh ./test-spring.ps1 -TestLevel L2 -Suite Full` for API and authorization contracts, and `pwsh ./test-spring.ps1 -TestLevel L3 -Suite Full` for all browser journeys, then the existing repository quality gates.
 
 Use separate worktrees for simultaneous builds. The test fixture owns its app and containers; avoid process-name cleanup or Docker prune commands.
 For prerequisites, diagnostics, and interactive Aspire workflows, see [Spring validation](README.md#validate-spring-after-a-change).
+For test placement and CI scheduling, see [Spring test levels and suites](samples/Spring/TESTING.md). Smoke is a suite within a level; browser journeys belong in L3.
 
 ## Key Principles Knowledge Base
 

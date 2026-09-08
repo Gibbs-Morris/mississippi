@@ -59,11 +59,6 @@ jobs:
           dotnet tool update --global Aspire.Cli --version $version --allow-downgrade
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@51d325634925d7d9ce0a7efc2c586c0bc2b9eee6 # v3.2.1
         with:
@@ -86,17 +81,6 @@ jobs:
       - name: Build dotnet projects
         run: |
           dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
-
-      - name: Install Playwright Browsers
-        run: |
-          # Find the first playwright.ps1 in any L2Tests project bin folder
-          PLAYWRIGHT_SCRIPT=$(find . -path "*L2Tests/bin/*" -name "playwright.ps1" -print -quit 2>/dev/null)
-          if [ -n "$PLAYWRIGHT_SCRIPT" ]; then
-            echo "Found Playwright script: $PLAYWRIGHT_SCRIPT"
-            pwsh "$PLAYWRIGHT_SCRIPT" install --with-deps
-          else
-            echo "No playwright.ps1 found - Playwright tests may not have browser dependencies"
-          fi
 
       - name: Run L2 Tests
         run: |
