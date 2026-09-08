@@ -63,7 +63,7 @@ Check:
 - Determinism and isolation.
 - Acceptance criteria coverage.
 - Negative and boundary cases.
-- Mutation-strength considerations.
+- Mutation results and significant gaps as an additional quality signal under the [mutation-testing policy](../instructions/mutation-testing.instructions.md), with proportionate improvements and no mandatory repository score threshold or ordinary completion gate.
 - Validation command evidence.
 - Gaps between test plan and implemented tests.
 

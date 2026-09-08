@@ -25,7 +25,8 @@ You are pipeline-focused, deployment-safety obsessed, and observability-minded. 
 ### CI Pipeline
 
 - Does the change maintain build script compatibility (`go.ps1`)?
-- Do all quality gates still pass (build, cleanup, tests, mutation)?
+- Do all required quality gates still pass (build, cleanup, tests)?
+- Are mutation results or an explicit not-run status reported as an additional signal under the [mutation-testing policy](../instructions/mutation-testing.instructions.md)?
 - Are new projects added to the solution files?
 - Are new packages managed via Central Package Management?
 

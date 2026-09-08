@@ -64,7 +64,8 @@ At Phase 9 entry or resume after a failed startup boundary:
 
 - [ ] Feature branch exists with all commits
 - [ ] Build passes with zero warnings (`go.ps1`)
-- [ ] All tests pass (unit + mutation for Mississippi)
+- [ ] All required conventional tests pass
+- [ ] Mutation execution status, available results, and significant gaps reported under the [mutation-testing policy](../instructions/mutation-testing.instructions.md); no mandatory score threshold
 - [ ] Code cleanup is clean
 - [ ] All review feedback from internal review is addressed
 
@@ -85,7 +86,7 @@ Follow the template in `.github/PULL_REQUEST_TEMPLATE.md`:
 - **Scope and Review Guide** — one outcome, review path, and size rationale when needed
 - **Stack Context** — position, parent gate evidence, and landing intent when stacked
 - **How It Works** — explanation or diagrams only when useful for this change
-- **Quality Gates** — evidence of build/test/mutation
+- **Quality Gates** — build/test evidence, plus mutation results or an explicit not-run status as an additional signal
 - **Migration Notes** — breaking change guidance if applicable
 
 The PR description must also contain the `Reviewer Audit Summary` defined by `.github/clean-squad/WORKFLOW.md`, sourced from current policy-authoritative audit inputs only. Do not rely on `.thinking/` paths as reviewer-visible evidence; keep `.thinking/` references internal, inline any reviewer-needed detail directly in the PR body, and use reviewer-visible comments only when separately delegated or authorized.
@@ -145,7 +146,7 @@ Polling and CI waits are `system-wait` intervals; return explicit wait-boundary 
 - [ ] Required approvals are current; the advancement gate passes for this PR's head and base
 - [ ] Review polling loop completed with no new unresolved comments
 - [ ] No outstanding review requests
-- [ ] Quality gates verified (build, tests, mutation, cleanup)
+- [ ] Quality gates verified (build, conventional tests, cleanup); mutation status and significant gaps reported separately
 - [ ] No stale, missing, or mismatched reviewer-facing audit output blocks merge readiness
 
 ## Output Format

@@ -18,6 +18,7 @@ Governing thought: Spend tokens on evidence and actions that advance the user's 
 - Agents **SHOULD** reuse still-current evidence. Why: Repeated context loading adds cost without resolving new uncertainty.
 - Agents **SHOULD** batch independent reads when supported. Why: Combining independent reads can reduce tool overhead.
 - Agents **SHOULD** stop optional research or validation once the relevant uncertainty is resolved. Why: Further checks need a new change, failure, missing fact, or unresolved concern to justify their cost.
+- Agents **MUST** apply [mutation-testing proportionality](mutation-testing.instructions.md) instead of spending significant time or tokens chasing survivors unless explicitly asked. Why: Mutation testing is an additional quality signal, not an ordinary completion criterion.
 - Agents **MUST** reassess before a third substantially equivalent attempt when two consecutive attempts produce the same failure or no useful new evidence. Why: This is an early checkpoint before existing retry caps, not permission to spend every allowed attempt.
 - Agents **MUST** justify a retry after reassessment with a changed hypothesis, input, or method, a verified change in external conditions, or a bounded plan for safely retrying an unobservable operation. Why: Safety alone does not justify unlimited repetition.
 - Agents **SHOULD** keep a brief checkpoint at a stall or handoff: unmet requirement, attempts and evidence, current operation identifiers, and next decision. Why: Resuming work should not restart exhausted investigations.

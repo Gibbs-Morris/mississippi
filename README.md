@@ -138,7 +138,7 @@ See [where tests live and when they run](samples/Spring/TESTING.md) before addin
 Aspire's testing host allocates test endpoints and owns the application/container lifetime.
 Startup has a three-minute cancellation budget, individual test hangs are limited to five minutes, and the test session is limited to fifteen minutes.
 Use separate worktrees for simultaneous runs because builds share `bin` and `obj` within one checkout.
-The smoke test complements fast unit tests and the existing cleanup, coverage, mutation, and full build gates.
+The smoke test complements fast unit tests and the existing cleanup, coverage, and full build gates. Mutation testing is an additional quality signal under the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md).
 
 Each run prints `RESULT` and an absolute `SUMMARY` path under a unique `artifacts/spring/` directory.
 `summary.json` records status, phase, test level, suite, project, SDK/Aspire versions, passed count, duration, and artifact location.
@@ -167,11 +167,13 @@ The framework includes comprehensive testing:
 # Run unit tests with code coverage
 pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1
 
-# Run mutation testing (Stryker)
+# Optional mutation testing (Stryker)
 pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1
 ```
 
 Test results and coverage reports are generated in the `.scratchpad/coverage-test-results` directory, and mutation runs write reports under `.scratchpad/mutation-test-results`.
+
+Mutation testing is being adopted gradually. There is no mandatory repository mutation-score threshold, and mutation results are not an ordinary completion criterion. Prioritize correct delivery and meaningful unit-test coverage, add straightforward assertion improvements, and report significant gaps for dedicated follow-up. Avoid significant time or token expenditure chasing survivors unless explicitly requested. See the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md).
 
 For a fast loop on a single test project, use the helper script:
 

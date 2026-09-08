@@ -273,7 +273,7 @@ governed work begins:
       test-strategy-review.md       # QA Lead review
       exploratory-findings.md       # Exploratory testing
       coverage-report.md            # Coverage analysis
-      mutation-report.md            # Mutation testing results
+      mutation-report.md            # Mutation status, available results, and gaps
     08-documentation/
       scope-assessment.md           # Branch diff analysis for doc needs
       page-plan.md                  # Planned pages with types and paths
@@ -1164,9 +1164,15 @@ reviewers. Domain experts review files within their expertise.
 1. Product Owner invokes **cs QA Lead** to review test strategy and coverage.
 2. Product Owner invokes **cs QA Exploratory** to apply exploratory testing
    perspective.
-3. Product Owner invokes **cs Test Engineer** for mutation testing (Mississippi
-   projects only).
-4. Any gaps identified are fed back to implementation.
+3. Product Owner invokes **cs Test Engineer** to report available mutation
+   evidence and significant gaps, or an explicit not-run status, in
+   `07-qa/mutation-report.md`. Run or improve mutation tests only when
+   proportionate or explicitly requested under the
+   [mutation-testing policy](../instructions/mutation-testing.instructions.md).
+4. Gaps affecting required quality gates are fed back to
+   implementation. Costly mutation gaps are recorded for dedicated follow-up;
+   there is no mandatory repository mutation-score threshold or ordinary
+   mutation completion gate.
 
 ## Phase 8: Documentation
 
