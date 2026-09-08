@@ -441,8 +441,13 @@ function Invoke-StrykerMutationTestPerProject {
     Push-Location -LiteralPath (Split-Path -Parent $resolvedProject)
     try {
         # Use the SDK selected by global.json instead of an older Visual Studio MSBuild.
-        $msBuildDirectory = Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('msbuild', $resolvedProject, '-getProperty:MSBuildBinPath', '-nologo') -SuppressCommandEcho
-        $arguments += @('--msbuild-path', (Join-Path $msBuildDirectory 'MSBuild.dll'))
+        $msBuildDirectories = @(Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('msbuild', $resolvedProject, '-getProperty:MSBuildBinPath', '-nologo') -SuppressCommandEcho)
+        if ($msBuildDirectories.Count -ne 1 -or [string]::IsNullOrWhiteSpace($msBuildDirectories[0])) {
+            throw 'Expected one MSBuildBinPath value from the selected SDK.'
+        }
+        $msBuildPath = Join-Path $msBuildDirectories[0] 'MSBuild.dll'
+        if (-not (Test-Path -LiteralPath $msBuildPath -PathType Leaf)) { throw "Selected SDK MSBuild.dll was not found: $msBuildPath" }
+        $arguments += @('--msbuild-path', $msBuildPath)
         $processError = $null
         try {
             Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $arguments -ErrorMessage "Stryker mutation testing failed for project $projectName. Reports: $projectOutputPath" -SuppressCommandEcho | Out-Host

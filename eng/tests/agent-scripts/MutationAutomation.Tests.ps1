@@ -23,6 +23,7 @@ Describe 'Mutation automation' {
         $solution = Join-Path $repo 'mississippi.slnx'
         Set-Content $solution '<Solution><Project Path="src/Widget/Widget.csproj" /><Folder Name="/Tests/"><Project Path="tests\Widget.L0Tests\Widget.L0Tests.csproj" /><Project Path="tests/Widget.L1Tests/Widget.L1Tests.csproj" /><Project Path="tests/Widget.L2Tests/Widget.L2Tests.csproj" /></Folder></Solution>'
         Set-Content (Join-Path $repo 'stryker-config.json') '{"stryker-config":{}}'
+        Set-Content (Join-Path $repo 'MSBuild.dll') ''
         $output = Join-Path $repo 'mutation-results'
         $completedOutput = Join-Path $repo 'completed'
         New-Item -ItemType Directory -Path $completedOutput | Out-Null
@@ -96,6 +97,20 @@ Describe 'Mutation automation' {
             $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
             $Arguments -notcontains '--concurrency'
         }
+    }
+
+    It 'rejects unexpected MSBuild property output before invoking Stryker' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation { @($repo, 'unexpected output') } -ParameterFilter { $Arguments[0] -eq 'msbuild' }
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } |
+            Should -Throw '*Expected one MSBuildBinPath*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 0 -ParameterFilter { $Arguments[0] -eq 'stryker' }
+    }
+
+    It 'rejects a missing selected SDK assembly before invoking Stryker' {
+        Remove-Item -LiteralPath (Join-Path $repo 'MSBuild.dll')
+        { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } |
+            Should -Throw '*MSBuild.dll was not found*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 0 -ParameterFilter { $Arguments[0] -eq 'stryker' }
     }
 
     It 'uses one mutation worker when integration tests share local infrastructure' {
