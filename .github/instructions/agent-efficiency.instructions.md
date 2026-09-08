@@ -21,7 +21,8 @@ Governing thought: Spend tokens on evidence and actions that advance the user's 
 - Agents **MUST** reassess before a third substantially equivalent attempt when two consecutive attempts produce the same failure or no useful new evidence. Why: This is an early checkpoint before existing retry caps, not permission to spend every allowed attempt.
 - Agents **MUST** identify a changed hypothesis, input, method, or verified external condition before retrying after reassessment. Why: Rewording a command or plan does not make the same failed approach informative.
 - Agents **SHOULD** keep a brief checkpoint at a stall or handoff: unmet requirement, attempts and evidence, current operation identifiers, and next decision. Why: Resuming work should not restart exhausted investigations.
-- Agents **MUST** verify the state of an existing asynchronous operation before restarting it after an observation timeout. Why: A timeout or silent log does not prove that work stopped.
+- Agents **MUST** check the existing operation's status or handle before considering a restart after an observation timeout. Why: A timeout or silent log does not prove that work stopped.
+- Agents **MAY** retry an operation whose state cannot be observed only when evidence establishes that duplicate execution is safe. Why: An idempotent retry can recover a lost handle, but missing status alone does not establish failure.
 - Agents **SHOULD** use event-driven waits or bounded polling of a specific operation. Why: Waiting can be necessary without repeatedly loading unchanged output.
 - Agents **MUST** honor the applicable workflow's required waiting intervals. Why: Choosing an efficient waiting strategy does not waive mandatory review time.
 - Agents **SHOULD** continue authorized work using a materially different, evidence-backed approach after reassessment. Why: Stopping a failed tactic does not abandon the goal.
