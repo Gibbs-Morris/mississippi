@@ -81,6 +81,9 @@ PR title.
 Use `write-pull-request-description` with the same policy and template for the
 PR body. Publication remains within the active bounded delegation.
 
+Report mutation execution status, available results, and significant gaps as an
+additional quality signal under the [mutation-testing policy](../instructions/mutation-testing.instructions.md).
+
 The PR description must also contain the `Reviewer Audit Summary` defined by `.github/clean-squad/WORKFLOW.md`, sourced from current policy-authoritative audit inputs only. Do not rely on `.thinking/` paths as reviewer-visible evidence; keep `.thinking/` references internal, inline any reviewer-needed detail directly in the PR body, and use reviewer-visible comments only when separately delegated or authorized.
 
 #### Audit Refresh Loop

@@ -6,11 +6,19 @@ It contributes to [#549](https://github.com/Gibbs-Morris/mississippi/issues/549)
 and [#532](https://github.com/Gibbs-Morris/mississippi/issues/532), using the
 user's current one-complete-PR-per-skill delivery instruction.
 
-Parent: [PR #585](https://github.com/Gibbs-Morris/mississippi/pull/585), head
+Initial parent: [PR #585](https://github.com/Gibbs-Morris/mississippi/pull/585), head
 `a03316d401e46b0ce1579ce4424213bd1e7c8dc3`, checked September 8, 2026. Its 30
 applicable GitHub checks passed, reviews completed, all inline threads were
 resolved, and GitHub reported `CLEAN` before this layer started. Pages deployment
 was intentionally skipped because its workflow deploys only pushes to main.
+
+The stack was subsequently rebased onto the mutation-policy update in main
+`cc31f1a9c061f9ea83ef0c9eadbabc5b397cf9c6`. The rebased parent is
+`db59069cef5025946e6c60d250e5f44a818cd5d2`. The conflict in the PR Manager's
+removed heading list was resolved by retaining the shared drafting route and
+explicitly preserving the new mutation-status reporting requirement. The
+current GitHub gate is rechecked after rebasing; the initial results above are
+not proof for rebased revisions.
 
 ## Why this is a skill
 
@@ -75,7 +83,7 @@ receive only the requested artifact. Dedicated cases record both situations.
 
 The globally applied instruction shrinks from 1,002 to 631 whitespace-delimited
 words, a reduction of 371 words and 57 lines. The two agent procedures remove
-another 89 words and 14 lines; those agents are loaded only when selected.
+another 82 words and 11 lines; those agents are loaded only when selected.
 Skill discovery metadata adds its own startup cost. These are text-corpus
 measurements, not measured token counts or latency improvements. No application,
 test-project, package, or workflow configuration changes are included.
