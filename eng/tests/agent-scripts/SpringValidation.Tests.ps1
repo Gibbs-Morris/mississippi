@@ -6,6 +6,31 @@ BeforeDiscovery {
     Import-Module (Join-Path $PSScriptRoot '../../src/agent-scripts/RepositoryAutomation.psm1') -Force
 }
 
+Describe 'Spring validation runner' {
+    BeforeAll {
+        $runner = Join-Path $PSScriptRoot 'run-spring-validation-tests.ps1'
+    }
+
+    BeforeEach {
+        Mock Import-Module {}
+    }
+
+    It 'rejects empty discovery in pass-through mode' {
+        Mock Invoke-Pester { [pscustomobject]@{ PassedCount = 0; FailedCount = 0 } }
+        { & $runner -PassThru } | Should -Throw '*did not execute*'
+    }
+
+    It 'returns passing results to the orchestrator' {
+        Mock Invoke-Pester { [pscustomobject]@{ PassedCount = 1; FailedCount = 0 } }
+        (& $runner -PassThru).PassedCount | Should -Be 1
+    }
+
+    It 'preserves failures for the orchestrator to reject' {
+        Mock Invoke-Pester { [pscustomobject]@{ PassedCount = 1; FailedCount = 1 } }
+        (& $runner -PassThru).FailedCount | Should -Be 1
+    }
+}
+
 Describe 'Spring validation' {
     InModuleScope RepositoryAutomation {
         BeforeEach {
