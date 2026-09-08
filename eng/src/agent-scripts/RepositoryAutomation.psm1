@@ -59,6 +59,7 @@ function Write-AutomationBanner {
     }
 
     $color = ConvertTo-ConsoleColor -Value $ForegroundColor -Default ([ConsoleColor]::Cyan)
+    Write-Host $Message -ForegroundColor $color
 }
 
 function Invoke-AutomationStep {
@@ -148,7 +149,7 @@ function Invoke-DotnetToolRestore {
         return
     }
 
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('tool','restore') -ErrorMessage 'Failed to restore dotnet tools.'
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('tool','restore') -ErrorMessage 'Failed to restore dotnet tools.' | Out-Host
 }
 
 function Invoke-SolutionRestore {
@@ -164,7 +165,7 @@ function Invoke-SolutionRestore {
         Write-Host "Restoring ${Description}: $($resolved.Path)" -ForegroundColor ([ConsoleColor]::Cyan)
     }
 
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('restore', $resolved.Path) -ErrorMessage "Failed to restore packages for $($resolved.Path)."
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('restore', $resolved.Path) -ErrorMessage "Failed to restore packages for $($resolved.Path)." | Out-Host
 }
 
 function Invoke-SolutionBuild {
@@ -205,7 +206,8 @@ function New-AutomationRunDirectory {
     }
 
     $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
-    $folderName = if ($Prefix) { "$Prefix-$stamp" } else { $stamp }
+    $runId = [guid]::NewGuid().ToString('N')
+    $folderName = if ($Prefix) { "$Prefix-$stamp-$runId" } else { "$stamp-$runId" }
     $runDirectory = Join-Path $Root $folderName
     if (-not (Test-Path -LiteralPath $runDirectory)) {
         $null = New-Item -ItemType Directory -Path $runDirectory -Force
@@ -214,13 +216,38 @@ function New-AutomationRunDirectory {
     return $runDirectory
 }
 
+function Get-PowerShellExecutable {
+    [CmdletBinding()]
+    param()
+
+    return Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+}
+
+function Get-TestExecutionCount {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ResultsDirectory
+    )
+
+    $reports = @(Get-ChildItem -LiteralPath $ResultsDirectory -Recurse -Filter '*.trx' -File -ErrorAction Stop)
+    if ($reports.Count -eq 0) {
+        throw "No TRX reports were produced in '$ResultsDirectory'. Check the test logger configuration."
+    }
+    $executed = 0
+    foreach ($report in $reports) {
+        [xml]$trx = Get-Content -LiteralPath $report.FullName -Raw
+        $executed += [int]$trx.TestRun.ResultSummary.Counters.executed
+    }
+    return $executed
+}
+
 function Invoke-SolutionTests {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$SolutionPath,
         [string]$Configuration = 'Release',
         [string]$ResultsRoot,
-        [string]$Logger = 'trx;LogFileName=test_results.trx',
+        [string]$Logger,
         [switch]$CollectCoverage,
         [string[]]$TestLevels,
         [string[]]$AdditionalArguments,
@@ -228,22 +255,25 @@ function Invoke-SolutionTests {
     )
 
     $resolved = Resolve-Path -LiteralPath $SolutionPath
-    $args = @('test', $resolved.Path, '--configuration', $Configuration, '--no-restore')
+    $testArguments = @('test', $resolved.Path, '--configuration', $Configuration, '--no-restore')
 
     $resultsDirectory = $null
     if ($ResultsRoot) {
         $resultsDirectory = New-AutomationRunDirectory -Root $ResultsRoot
-        $args += @('--results-directory', $resultsDirectory)
+        $testArguments += @('--results-directory', $resultsDirectory)
     }
 
     if ($Logger) {
-        $args += '--logger'
-        $args += $Logger
+        $testArguments += '--logger'
+        $testArguments += $Logger
+    }
+    else {
+        $testArguments += '-p:RepositoryTestResults=true'
     }
 
     if ($CollectCoverage) {
-        $args += '--collect'
-        $args += 'XPlat Code Coverage'
+        $testArguments += '--collect'
+        $testArguments += 'XPlat Code Coverage'
     }
 
     # Build filter expression for test levels (e.g., L0Tests, L1Tests)
@@ -251,19 +281,25 @@ function Invoke-SolutionTests {
     if ($TestLevels -and $TestLevels.Count -gt 0) {
         $filterParts = $TestLevels | ForEach-Object { "FullyQualifiedName~.$($_)." }
         $filterExpression = $filterParts -join '|'
-        $args += '--filter'
-        $args += $filterExpression
+        $testArguments += '--filter'
+        $testArguments += $filterExpression
     }
 
     if ($AdditionalArguments) {
-        $args += $AdditionalArguments
+        $testArguments += $AdditionalArguments
     }
 
     if (-not $Quiet) {
         Write-Host "Executing tests: $($resolved.Path)" -ForegroundColor ([ConsoleColor]::Cyan)
     }
 
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "Failed to run tests for $($resolved.Path)."
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $testArguments -ErrorMessage "Failed to run tests for $($resolved.Path)." | Out-Host
+
+    if ($resultsDirectory) {
+        if ((Get-TestExecutionCount -ResultsDirectory $resultsDirectory) -lt 1) {
+            throw "No tests executed for '$($resolved.Path)' with levels '$($TestLevels -join ',')'. Reports: $resultsDirectory"
+        }
+    }
 
     return [pscustomobject]@{
         SolutionPath     = $resolved.Path
@@ -286,7 +322,7 @@ function Invoke-SlnGeneration {
     }
 
     $args = @('tool','run','slngen', $source.Path, '--solutionfile', $outputFullPath, '--launch','false')
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "Failed to generate solution '$outputFullPath' using SlnGen." -SuppressCommandEcho
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "Failed to generate solution '$outputFullPath' using SlnGen." -SuppressCommandEcho | Out-Host
     return $outputFullPath
 }
 
@@ -302,18 +338,21 @@ function Invoke-ReSharperCleanup {
 
     $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
     $resolvedSettings = Resolve-Path -LiteralPath $SettingsPath
-    $args = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)")
+    $cacheRoot = Join-Path (Split-Path -Parent $resolvedSolution.Path) '.scratchpad/cleanup-caches'
+    $cacheDirectory = New-AutomationRunDirectory -Root $cacheRoot
+    Write-Host "Cleanup cache: $cacheDirectory" -ForegroundColor DarkGray
+    $cleanupArguments = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)", "--caches-home=$cacheDirectory")
 
     if ($IncludePaths -and $IncludePaths.Count -gt 0) {
-        $args += "--include=$($IncludePaths -join ';')"
+        $cleanupArguments += "--include=$($IncludePaths -join ';')"
     }
 
     if ($ExcludePaths -and $ExcludePaths.Count -gt 0) {
-        $args += "--exclude=$($ExcludePaths -join ';')"
+        $cleanupArguments += "--exclude=$($ExcludePaths -join ';')"
     }
 
-    $args += $resolvedSolution.Path
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho
+    $cleanupArguments += $resolvedSolution.Path
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $cleanupArguments -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho | Out-Host
 }
 
 function Get-TestProjects {
@@ -419,8 +458,8 @@ function Invoke-MississippiSolutionBuild {
     Write-Host 'SUCCESS: NuGet packages restored successfully' -ForegroundColor ([ConsoleColor]::Green)
 
     Write-Host "[3/3] Compiling mississippi.slnx (Configuration: $Configuration)..." -ForegroundColor ([ConsoleColor]::Cyan)
-    Write-Host 'Build flags: --no-restore --no-incremental'
-    Invoke-SolutionBuild -SolutionPath $solutionPath -Configuration $Configuration -NoRestore -NoIncremental -Quiet
+    Write-Host 'Build flags: --no-restore --no-incremental --warnaserror'
+    Invoke-SolutionBuild -SolutionPath $solutionPath -Configuration $Configuration -NoRestore -NoIncremental -WarnAsError -Quiet | Out-Host
     Write-Host 'SUCCESS: Mississippi solution compiled successfully' -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== MISSISSIPPI SOLUTION BUILD COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
@@ -449,8 +488,8 @@ function Invoke-SampleSolutionBuild {
     Write-Host 'SUCCESS: NuGet packages restored successfully' -ForegroundColor ([ConsoleColor]::Green)
 
     Write-Host "[3/3] Compiling samples.slnx (Configuration: $Configuration)..." -ForegroundColor ([ConsoleColor]::Cyan)
-    Write-Host 'Build flags: --no-restore --no-incremental'
-    Invoke-SolutionBuild -SolutionPath $solutionPath -Configuration $Configuration -NoRestore -NoIncremental -Quiet
+    Write-Host 'Build flags: --no-restore --no-incremental --warnaserror'
+    Invoke-SolutionBuild -SolutionPath $solutionPath -Configuration $Configuration -NoRestore -NoIncremental -WarnAsError -Quiet | Out-Host
     Write-Host 'SUCCESS: Sample solution compiled successfully' -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== SAMPLE SOLUTION BUILD COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
@@ -487,13 +526,13 @@ function Invoke-FinalSolutionsBuild {
     Write-Host "[4/5] Building mississippi.slnx with ZERO TOLERANCE for warnings..." -ForegroundColor ([ConsoleColor]::Cyan)
     Write-Host "Configuration: $Configuration"
     Write-Host 'Build flags: --no-restore --no-incremental --warnaserror'
-    Invoke-SolutionBuild -SolutionPath $mississippi -Configuration $Configuration -NoRestore -NoIncremental -WarnAsError -Quiet
+    Invoke-SolutionBuild -SolutionPath $mississippi -Configuration $Configuration -NoRestore -NoIncremental -WarnAsError -Quiet | Out-Host
     Write-Host 'SUCCESS: Mississippi solution built with zero warnings' -ForegroundColor ([ConsoleColor]::Green)
 
     Write-Host "[5/5] Building samples.slnx with ZERO TOLERANCE for warnings..." -ForegroundColor ([ConsoleColor]::Cyan)
     Write-Host "Configuration: $Configuration"
     Write-Host 'Build flags: --no-restore --no-incremental --warnaserror'
-    Invoke-SolutionBuild -SolutionPath $samples -Configuration $Configuration -NoRestore -NoIncremental -WarnAsError -Quiet
+    Invoke-SolutionBuild -SolutionPath $samples -Configuration $Configuration -NoRestore -NoIncremental -WarnAsError -Quiet | Out-Host
     Write-Host 'SUCCESS: Sample solution built with zero warnings' -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== FINAL BUILD COMPLETED SUCCESSFULLY ===' -ForegroundColor ([ConsoleColor]::Green)
@@ -531,7 +570,7 @@ function Invoke-MississippiSolutionUnitTests {
     $testResult = (Invoke-SolutionTests -SolutionPath $solutionPath -Configuration $Configuration -ResultsRoot $resultsRoot -CollectCoverage -TestLevels $TestLevels -Quiet | Select-Object -Last 1)
     $runDirectory = $testResult.ResultsDirectory
     Write-Host "Results directory: $runDirectory"
-    Write-Host 'Logger: TRX format (test_results.trx)'
+    Write-Host 'Logger: TRX format (unique test_results prefix per project/framework)'
 
     $coverageFiles = Get-ChildItem -Path $runDirectory -Recurse -Filter 'coverage.cobertura.xml' -ErrorAction SilentlyContinue
     if (-not $coverageFiles -or $coverageFiles.Count -eq 0) {
@@ -544,7 +583,7 @@ function Invoke-MississippiSolutionUnitTests {
         Remove-Item -LiteralPath $mergedOutputDir -Recurse -Force
     }
 
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('tool','run','reportgenerator', "-reports:$reportsArg", "-targetdir:$mergedOutputDir", '-reporttypes:Cobertura') -ErrorMessage 'ReportGenerator failed while merging coverage reports.' -SuppressCommandEcho
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments @('tool','run','reportgenerator', "-reports:$reportsArg", "-targetdir:$mergedOutputDir", '-reporttypes:Cobertura') -ErrorMessage 'ReportGenerator failed while merging coverage reports.' -SuppressCommandEcho | Out-Host
 
     $mergedCobertura = Join-Path $mergedOutputDir 'Cobertura.xml'
     if (-not (Test-Path -LiteralPath $mergedCobertura)) {
@@ -558,7 +597,7 @@ function Invoke-MississippiSolutionUnitTests {
     Write-Host "Aggregated coverage report: $finalCoveragePath" -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== MISSISSIPPI SOLUTION UNIT TESTING COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
-    $resultsFile = Join-Path $runDirectory 'test_results.trx'
+    $resultsFile = Join-Path $runDirectory 'test_results*.trx'
     Write-Host "All tests passed | Results saved to: $resultsFile"
     Write-Host 'Coverage report ready for summarize-coverage-gaps.ps1' -ForegroundColor ([ConsoleColor]::Green)
 }
@@ -592,13 +631,13 @@ function Invoke-SampleSolutionUnitTests {
     Write-Host 'Test flags: --no-restore'
     $testResult = (Invoke-SolutionTests -SolutionPath $solutionPath -Configuration $Configuration -ResultsRoot $resultsRoot -TestLevels $TestLevels -Quiet | Select-Object -Last 1)
     Write-Host "Results directory: $($testResult.ResultsDirectory)"
-    Write-Host 'Logger: TRX format (test_results.trx)'
+    Write-Host 'Logger: TRX format (unique test_results prefix per project/framework)'
     Write-Host 'NOTE: Sample tests are for demonstration purposes only'
 
     Write-Host 'SUCCESS: All sample tests passed' -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== SAMPLE SOLUTION UNIT TESTING COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
-    $resultsFile = Join-Path $testResult.ResultsDirectory 'test_results.trx'
+    $resultsFile = Join-Path $testResult.ResultsDirectory 'test_results*.trx'
     Write-Host "Sample tests passed | Results saved to: $resultsFile"
 }
 
@@ -747,10 +786,10 @@ function Invoke-SolutionsPipeline {
     Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Mississippi Solution' -StepNumber ($step++) -Action { Invoke-MississippiSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { & $coverageScript -EmitTasks }
+    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
     if ($IncludeMutation) {
         Invoke-AutomationStep -Name 'Run Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionMutationTests -RepoRoot $RepoRoot } -SilentSuccess
-        Invoke-AutomationStep -Name 'Summarize Mutation Survivors' -StepNumber ($step++) -Action { & $mutationSummaryScript -GenerateTasks -SkipMutationRun }
+        Invoke-AutomationStep -Name 'Summarize Mutation Survivors' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-GenerateTasks', '-SkipMutationRun') | Out-Host }
     }
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Mississippi Code Style' -StepNumber ($step++) -Action { Invoke-MississippiSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
@@ -797,7 +836,7 @@ function Install-SpringBrowser {
     if (-not (Test-Path -LiteralPath $playwrightScript -PathType Leaf)) { throw "Playwright installer missing: $playwrightScript" }
     $browserArguments = @('-NoProfile', '-File', $playwrightScript, 'install', 'chromium')
     if ($InstallBrowserDependencies) { $browserArguments += '--with-deps' }
-    Invoke-RepositoryProcess -FilePath pwsh -Arguments $browserArguments
+    Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments $browserArguments
 }
 
 function Invoke-SpringValidation {

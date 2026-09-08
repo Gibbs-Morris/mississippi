@@ -83,9 +83,10 @@ jobs:
           dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
       - name: Run L2 Tests
+        shell: pwsh
         run: |
-          mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L2Tests." --logger "trx;LogFileName=test_results.trx" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-SolutionTests -SolutionPath '${{ matrix.solution }}' -Configuration $env:CONFIGURATION -TestLevels L2Tests -AdditionalArguments '--no-build' -ResultsRoot (Join-Path $env:GITHUB_WORKSPACE '.scratchpad/coverage-test-results') | Out-Host
 
       - name: Upload Test Results
         if: always()

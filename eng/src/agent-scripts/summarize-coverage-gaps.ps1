@@ -13,6 +13,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
 
 function Get-RelativePath {
     param(
