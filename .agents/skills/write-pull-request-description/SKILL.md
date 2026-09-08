@@ -71,8 +71,10 @@ not require a body; a body-only request does not require a replacement title.
 
 When updating an existing PR, reconcile the requested content with the final diff.
 Remove abandoned approaches, stale examples, superseded claims, and outdated
-check results. Preserve still-valid required content and unrelated authored
-material; do not replace the body wholesale without checking what it contains.
+check results. Preserve still-valid required content and authored text that
+remains relevant to the selected change. Remove stale or out-of-scope claims
+about implementation regardless of who wrote them; inspect the existing body
+before replacing it.
 
 Before returning or publishing the draft, compare its claims, identifiers,
 examples, links, scope, and validation statements with the evidence. If the
