@@ -186,9 +186,10 @@ Action: Resolve the listed gate blockers before starting this dependent sub-plan
 
 Create only the branch for the current sub-plan after dependency verification:
 
-* Branch name: use the `branch` field from the sub-plan's entry in `dependencies.json`, or derive as `epic/<name>/<id>-<slug>`.
+* Branch name: use the `branch` field from the sub-plan's entry in `dependencies.json`, or derive as `feature/epic/<name>/<id>-<slug>` for a new plan.
 * For a standalone change or a dependency already merged, branch from current `main`.
 * For the first layer of planned dependent work, initialize with `gh stack init <branch>` before editing; for a successor, check out its verified parent and run `gh stack add <branch>`. Follow the skill's remote and non-interactive guidance.
+* New epic branches use `feature/epic/...` to also match existing branch filters. [Native stacks inherit trunk PR checks](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs#rules-and-ci-enforcement), regardless of the immediate parent's prefix; verify native membership and actual CI, including for older plans with `epic/...` names. If native stacking is unavailable, use standalone PRs after dependencies merge to `main`.
 
 ---
 
@@ -270,7 +271,7 @@ If this is the **last** sub-plan (all others have `.complete.json` markers), the
 4. If **all** complete:
    * Delete `/plan/YYYY-MM-DD/<name>/` entirely
    * Create PR Z:
-     * Branch: `epic/<name>/cleanup`
+     * Branch: `feature/epic/<name>/cleanup`
      * Title: `<task description> — cleanup plan folder +semver: skip`
      * Base: `main`
 5. If any incomplete: report which sub-plans are outstanding and **do not** create PR Z

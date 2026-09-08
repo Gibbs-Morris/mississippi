@@ -179,7 +179,7 @@ Each sub-plan file (`sub-plans/<id>-<slug>.md`) must follow this template:
 ...
 
 ## PR metadata
-- Branch: `epic/<name>/<id>-<slug>`
+- Branch: `feature/epic/<name>/<id>-<slug>`
 - Title: `<description> +semver: <type>`
 - Base: [Immediate predecessor branch for a stack layer, otherwise `main`]
 - Landing intent: [Ready prefix independently, or hold reviewed layers for grouped merge]
@@ -233,7 +233,7 @@ Create `dependencies.json` at the plan folder root with this schema:
       "file": "sub-plans/01-<slug>.md",
       "dependsOn": [],
       "parallelGroup": null,
-      "branch": "epic/<name>/01-<slug>",
+      "branch": "feature/epic/<name>/01-<slug>",
       "semver": "skip|fix|feature|breaking"
     }
   ]
@@ -246,6 +246,7 @@ Validate:
 - All `dependsOn` references point to existing sub-plan IDs
 - `parallelGroup` is consistent within groups (all same-number sub-plans share the group ID)
 - Each native stack is a single chain; document its ordered branches and bases in the sub-plans. Dependencies outside that chain merge to `main` before execution.
+- Use `feature/epic/<name>/...` for new epic branches so parent names also match the repository's existing `feature/**` workflow filters. Verify native stack membership and actual checks; a matching prefix alone does not establish readiness.
 
 ---
 
@@ -293,7 +294,7 @@ If no, skip this step.
 After all sub-plans, reviews, dependency graph, and instruction updates are complete:
 
 1. Ensure all files are saved
-2. Create branch: `epic/<name>/plan`
+2. Create branch: `feature/epic/<name>/plan`
 3. Commit: plan folder + sub-plans + `dependencies.json` + instruction updates
 4. Auto-create PR via MCP with:
    - Title: `<task description> — master plan + sub-plans +semver: skip`
@@ -362,7 +363,7 @@ When all sub-plans are complete:
 2. For each sub-plan, check for a corresponding `.complete.json` marker in `sub-plans/`
 3. Cross-verify via MCP (`mcp_github_search_pull_requests`) that each PR is actually merged
 4. If all complete: delete `/plan/YYYY-MM-DD/<name>/` entirely and create PR Z
-   - Branch: `epic/<name>/cleanup`
+   - Branch: `feature/epic/<name>/cleanup`
    - Title: `<task description> — cleanup plan folder +semver: skip`
    - Base: `main`
 5. If any incomplete: report which sub-plans are outstanding (missing markers or unmerged PRs) and do not proceed
