@@ -216,6 +216,13 @@ function New-AutomationRunDirectory {
     return $runDirectory
 }
 
+function Get-PowerShellExecutable {
+    [CmdletBinding()]
+    param()
+
+    return Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+}
+
 function Get-TestExecutionCount {
     [CmdletBinding()]
     param(
@@ -779,10 +786,10 @@ function Invoke-SolutionsPipeline {
     Write-AutomationBanner -Message '=== MISSISSIPPI SOLUTION PIPELINE ===' -ForegroundColor ([ConsoleColor]::Cyan)
     Invoke-AutomationStep -Name 'Build Mississippi Solution' -StepNumber ($step++) -Action { Invoke-MississippiSolutionBuild -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
     Invoke-AutomationStep -Name 'Run Mississippi Unit Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionUnitTests -Configuration $Configuration -RepoRoot $RepoRoot } -SilentSuccess
-    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
+    Invoke-AutomationStep -Name 'Summarize Coverage Gaps' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $coverageScript, '-EmitTasks') | Out-Host }
     if ($IncludeMutation) {
         Invoke-AutomationStep -Name 'Run Mississippi Mutation Tests' -StepNumber ($step++) -Action { Invoke-MississippiSolutionMutationTests -RepoRoot $RepoRoot } -SilentSuccess
-        Invoke-AutomationStep -Name 'Summarize Mutation Survivors' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath 'pwsh' -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-GenerateTasks', '-SkipMutationRun') | Out-Host }
+        Invoke-AutomationStep -Name 'Summarize Mutation Survivors' -StepNumber ($step++) -Action { Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments @('-NoProfile', '-File', $mutationSummaryScript, '-GenerateTasks', '-SkipMutationRun') | Out-Host }
     }
     if (-not $SkipCleanup) {
         Invoke-AutomationStep -Name 'Cleanup Mississippi Code Style' -StepNumber ($step++) -Action { Invoke-MississippiSolutionCleanup -RepoRoot $RepoRoot } -SilentSuccess
@@ -829,7 +836,7 @@ function Install-SpringBrowser {
     if (-not (Test-Path -LiteralPath $playwrightScript -PathType Leaf)) { throw "Playwright installer missing: $playwrightScript" }
     $browserArguments = @('-NoProfile', '-File', $playwrightScript, 'install', 'chromium')
     if ($InstallBrowserDependencies) { $browserArguments += '--with-deps' }
-    Invoke-RepositoryProcess -FilePath pwsh -Arguments $browserArguments
+    Invoke-RepositoryProcess -FilePath (Get-PowerShellExecutable) -Arguments $browserArguments
 }
 
 function Invoke-SpringValidation {

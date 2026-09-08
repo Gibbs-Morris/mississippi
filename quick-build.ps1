@@ -12,6 +12,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
 
 # Determine the script directory (repo root)
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -26,7 +27,7 @@ Write-Host ""
 
 try {
     # Execute the final-build script and wait for completion
-    & pwsh -NoProfile -File $finalBuildScript -Configuration $Configuration
+    & $powerShellPath -NoProfile -File $finalBuildScript -Configuration $Configuration
     if ($LASTEXITCODE -ne 0) {
         throw "final-build-solutions.ps1 failed with exit code $LASTEXITCODE"
     }

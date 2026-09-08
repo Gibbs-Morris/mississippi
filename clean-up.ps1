@@ -20,6 +20,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
 
 # Determine repository root (this file lives there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -32,7 +33,7 @@ try {
     if (-not $SkipMississippi) {
         Write-Host "=== STEP 1: MISSISSIPPI SOLUTION CLEANUP ===" -ForegroundColor Yellow
         Write-Host "Running ReSharper CleanupCode on mississippi.slnx..."
-        & pwsh -NoProfile -File $mississippiCleanup
+        & $powerShellPath -NoProfile -File $mississippiCleanup
         if ($LASTEXITCODE -ne 0) {
             throw "Mississippi solution cleanup failed with exit code: $LASTEXITCODE"
         }
@@ -43,7 +44,7 @@ try {
     if (-not $SkipSamples) {
         Write-Host "=== STEP 2: SAMPLE SOLUTION CLEANUP ===" -ForegroundColor Yellow
         Write-Host "Running ReSharper CleanupCode on samples.slnx..."
-        & pwsh -NoProfile -File $sampleCleanup
+        & $powerShellPath -NoProfile -File $sampleCleanup
         if ($LASTEXITCODE -ne 0) {
             throw "Sample solution cleanup failed with exit code: $LASTEXITCODE"
         }

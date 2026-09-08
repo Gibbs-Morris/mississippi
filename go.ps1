@@ -14,6 +14,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
 
 # Determine the repository root directory (this script resides there)
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -29,7 +30,7 @@ try {
     $orchestrateArguments = @('-NoProfile', '-File', $orchestrateScript, '-Configuration', $Configuration)
     if ($SkipCleanup) { $orchestrateArguments += '-SkipCleanup' }
     if ($IncludeMutation) { $orchestrateArguments += '-IncludeMutation' }
-    & pwsh @orchestrateArguments
+    & $powerShellPath @orchestrateArguments
     if ($LASTEXITCODE -ne 0) {
         throw "orchestrate-solutions.ps1 failed with exit code $LASTEXITCODE"
     }
