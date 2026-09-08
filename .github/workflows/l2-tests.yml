@@ -85,7 +85,7 @@ jobs:
       - name: Run L2 Tests
         run: |
           mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L2Tests." --logger "trx;LogFilePrefix=test_results" --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
+          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L2Tests." -p:RepositoryTestResults=true --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
 
       - name: Upload Test Results
         if: always()

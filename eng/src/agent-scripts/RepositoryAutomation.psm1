@@ -221,7 +221,7 @@ function Invoke-SolutionTests {
         [Parameter(Mandatory)][string]$SolutionPath,
         [string]$Configuration = 'Release',
         [string]$ResultsRoot,
-        [string]$Logger = 'trx;LogFilePrefix=test_results',
+        [string]$Logger,
         [switch]$CollectCoverage,
         [string[]]$TestLevels,
         [string[]]$AdditionalArguments,
@@ -240,6 +240,9 @@ function Invoke-SolutionTests {
     if ($Logger) {
         $args += '--logger'
         $args += $Logger
+    }
+    else {
+        $args += '-p:RepositoryTestResults=true'
     }
 
     if ($CollectCoverage) {

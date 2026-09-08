@@ -44,6 +44,7 @@
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+        <VSTestLogger Condition="'$(RepositoryTestResults)' == 'true'">trx%3BLogFilePrefix=test_results_$(MSBuildProjectName)</VSTestLogger>
     </PropertyGroup>
 
     <ItemGroup>

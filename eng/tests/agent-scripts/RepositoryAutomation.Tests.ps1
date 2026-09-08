@@ -56,7 +56,7 @@ Describe 'Repository automation quality gates' {
         $result.SolutionPath | Should -Be $solution
         Should -Invoke Out-Host -ModuleName RepositoryAutomation -Times 1 -Exactly
         Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Times 1 -Exactly -ParameterFilter {
-            $Arguments -contains 'trx;LogFilePrefix=test_results' -and
+            $Arguments -contains '-p:RepositoryTestResults=true' -and
             $Arguments -contains 'FullyQualifiedName~.L0Tests.'
         }
     }
