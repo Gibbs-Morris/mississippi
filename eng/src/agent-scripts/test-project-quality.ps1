@@ -231,7 +231,7 @@ try {
 
         Write-Host "[7/7] Running Stryker mutation testing..." -ForegroundColor Cyan
         $mutationOutput = New-AutomationRunDirectory -Root $mutationRoot
-        $projectResult = @{ Project = $sourceProjectPath; Output = $null; ReportPath = $null; Status = 'Pending'; Success = $false }
+        $projectResult = @{ Project = $sourceProjectPath; Output = $null; ReportPath = $null; Error = $null; ReportError = $null; Status = 'Pending'; Success = $false }
         $manifestPath = Join-Path $mutationOutput 'project-results.json'
         $manifest = @{ Scope = 'Project'; Projects = @($projectResult) }
         ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
@@ -245,6 +245,8 @@ try {
             $mutationFailed = $true
             $projectResult.Output = $_.Exception.Data['OutputPath']
             $projectResult.ReportPath = $_.Exception.Data['ReportPath']
+            $projectResult.Error = $_.Exception.Message
+            $projectResult.ReportError = $_.Exception.Data['ReportError']
             $projectResult.Status = 'Failed'
             Write-Warning "Mutation testing failed: $($_.Exception.Message)"
         }

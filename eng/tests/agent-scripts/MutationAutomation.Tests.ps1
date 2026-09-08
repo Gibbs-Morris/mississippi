@@ -136,6 +136,22 @@ Describe 'Mutation automation' {
         (Get-Location).Path | Should -Be $originalLocation
     }
 
+    It 'preserves native error data and output paths when no report is produced' {
+        Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
+            $nativeFailure = [InvalidOperationException]::new('native process failed')
+            $nativeFailure.Data['ExitCode'] = 17
+            throw $nativeFailure
+        } -ParameterFilter { $Arguments[0] -eq 'stryker' }
+        $failure = $null
+        try { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output }
+        catch { $failure = $_ }
+        $failure.Exception.Message | Should -Be 'native process failed'
+        $failure.Exception.Data['ExitCode'] | Should -Be 17
+        Test-Path -LiteralPath $failure.Exception.Data['OutputPath'] -PathType Container | Should -BeTrue
+        $failure.Exception.Data['ReportError'] | Should -Match 'found 0'
+        $failure.Exception.Data['ReportPath'] | Should -BeNullOrEmpty
+    }
+
     It 'rejects a successful native exit without a report' {
         Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {} -ParameterFilter { $Arguments[0] -eq 'stryker' }
         { Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProject -TestProjects @('test.csproj') -OutputPath $output } | Should -Throw '*Expected one mutation-report.json*'

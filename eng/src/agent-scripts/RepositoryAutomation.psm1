@@ -459,14 +459,20 @@ function Invoke-StrykerMutationTestPerProject {
             $reportPath = Get-MutationReportPath -OutputPath $projectOutputPath
         }
         catch {
-            if ($processError) { throw "$($processError.Exception.Message) $($_.Exception.Message)" }
+            if ($processError) {
+                $processError.Exception.Data['ReportError'] = $_.Exception.Message
+                throw $processError
+            }
             throw
         }
         if ($processError) {
             $processError.Exception.Data['ReportPath'] = $reportPath
-            $processError.Exception.Data['OutputPath'] = $projectOutputPath
             throw $processError
         }
+    }
+    catch {
+        $_.Exception.Data['OutputPath'] = $projectOutputPath
+        throw
     }
     finally {
         Pop-Location
@@ -526,7 +532,7 @@ function Invoke-StrykerMutationTest {
 
     $projectResults = @($targets | ForEach-Object {
         @{ Project = $_.Project; Output = $null; ReportPath = $null; Success = $false;
-           Status = 'Pending'; Error = $null; Reason = $null }
+           Status = 'Pending'; Error = $null; ReportError = $null; Reason = $null }
     })
     $manifestPath = Join-Path $outputFullPath 'project-results.json'
     $manifest = @{ Scope = 'Solution'; Solution = $resolvedSolution.Path; Projects = $projectResults }
@@ -558,6 +564,7 @@ function Invoke-StrykerMutationTest {
             $result.ReportPath = $_.Exception.Data['ReportPath']
             $result.Status = 'Failed'
             $result.Error = $_.Exception.Message
+            $result.ReportError = $_.Exception.Data['ReportError']
         }
         ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
         Write-Host
