@@ -24,6 +24,12 @@
 
 Cleanup uses a fresh cache under `.scratchpad/cleanup-caches/` for each invocation, avoiding reuse of a previous source-generator analysis model. The cache path is logged and retained for troubleshooting.
 
+Mutation runs use the selected solution's declared source and test projects. Each target gets a fresh output directory, and `project-results.json` records every target before execution so interrupted or unmapped work stays visible. Native failures, missing or incomplete reports, and unmapped authored projects fail the run. Valid reports from failed score gates remain available for survivor analysis; the summarizer rejects missing target evidence instead of borrowing an older report. Focused quality runs use the same report contract.
+
+Manifests identify solution and focused project scopes. Survivor summaries select the latest solution run by default. Use `-SkipMutationRun -RunPath <run-directory>` to inspect a focused run; its summaries stay inside that directory and cannot replace repository tasks.
+
+The default summary command and `go.ps1 -IncludeMutation` generate survivor reports and tasks from complete failed-score evidence before returning the unsuccessful mutation exit code. A failed preparation step or incomplete run cannot reuse historical evidence.
+
 ---
 
 ## Script catalogue
@@ -105,7 +111,7 @@ pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1 | tee orchestration.log
 | Artifact | Path |
 | --- | --- |
 | Test results (TRX) | `.scratchpad/coverage-test-results` |
-| Mutation reports | `.scratchpad/mutation-test-results/<timestamp>` |
+| Mutation reports | `.scratchpad/mutation-test-results/<run>/<SourceProject>/<invocation>/reports/` |
 
 These folders are git-ignored but persist across runs for inspection or archiving.
 
@@ -164,8 +170,9 @@ MUTATION_RESULT: PASS|FAIL
 
 ### Artifacts
 
-- Coverage artifacts under `.scratchpad/coverage-test-results/<TestProjectName>/`.
-- Mutation reports under `.scratchpad/mutation-test-results/<timestamp>/reports/`.
+- Coverage artifacts under `.scratchpad/coverage-test-results/<TestProjectName>/<run>/`.
+- Mutation reports under `.scratchpad/mutation-test-results/<run>/<SourceProject>/<invocation>/reports/`.
+- Target inventory and outcomes in `.scratchpad/mutation-test-results/<run>/project-results.json`.
 
 Exit code is `0` on success (including mutation thresholds) and `1` otherwise.
 
