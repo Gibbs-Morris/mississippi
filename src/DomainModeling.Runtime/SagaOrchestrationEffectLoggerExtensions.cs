@@ -73,4 +73,17 @@ internal static partial class SagaOrchestrationEffectLoggerExtensions
         int stepIndex,
         Exception exception
     );
+
+    /// <summary>
+    ///     Logs that orchestration stopped because the registered workflow changed.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="sagaType">The saga type name.</param>
+    /// <param name="brookKey">The saga brook key.</param>
+    [LoggerMessage(5, LogLevel.Error, "Stopping saga {SagaType} at {BrookKey} because its workflow definition changed")]
+    public static partial void SagaWorkflowChanged(
+        this ILogger logger,
+        string sagaType,
+        string brookKey
+    );
 }

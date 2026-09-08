@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Sagas;
 
 
 namespace Mississippi.DomainModeling.Runtime;
@@ -36,34 +35,6 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
 
     private TimeProvider TimeProvider { get; }
 
-    private static string ComputeStepHash(
-        IReadOnlyList<SagaStepInfo> steps
-    )
-    {
-        ArgumentNullException.ThrowIfNull(steps);
-        StringBuilder builder = new();
-        for (int i = 0; i < steps.Count; i++)
-        {
-            SagaStepInfo step = steps[i];
-            if (i > 0)
-            {
-                builder.Append('|');
-            }
-
-            string stepTypeName = step.StepType.FullName ?? step.StepType.Name;
-            builder.Append(step.StepIndex)
-                .Append(':')
-                .Append(step.StepName)
-                .Append(':')
-                .Append(stepTypeName)
-                .Append(':')
-                .Append(step.HasCompensation);
-        }
-
-        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
-        return Convert.ToHexString(bytes);
-    }
-
     /// <inheritdoc />
     protected override OperationResult<IReadOnlyList<object>> HandleCore(
         StartSagaCommand<TInput> command,
@@ -88,7 +59,7 @@ public sealed class StartSagaCommandHandler<TSaga, TInput> : CommandHandlerBase<
         SagaStartedEvent started = new()
         {
             SagaId = command.SagaId,
-            StepHash = ComputeStepHash(StepInfoProvider.Steps),
+            StepHash = SagaStepHash.Compute(StepInfoProvider.Steps),
             StartedAt = TimeProvider.GetUtcNow(),
             CorrelationId = command.CorrelationId,
         };

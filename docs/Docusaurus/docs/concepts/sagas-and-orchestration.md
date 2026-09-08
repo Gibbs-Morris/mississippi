@@ -60,6 +60,10 @@ The runtime behavior is:
 8. Compensation walks backward through prior steps. When no earlier step remains, the effect yields `SagaCompensated`.
 9. If a compensation step returns failure or throws a non-cancellation exception, the effect yields terminal `SagaFailed`.
 
+Before executing a start or continuation boundary, the orchestration effect compares the persisted `StepHash` with the currently registered ordered step metadata. A missing or different hash produces terminal `SagaFailed` with error code `SAGA_STEP_HASH_MISMATCH`, without resolving or invoking a forward or compensation step. This also applies to reminder replay and prevents a deployment from interpreting an old step position using a changed workflow.
+
+The hash covers step order, index, name, implementation type name, and compensation availability. It does not detect changes inside a step implementation or in external configuration. Keep those semantics compatible while existing sagas are running; the hash is not a general workflow migration mechanism. A saga stopped by this guard is terminal and its reminder is removed when the next tick observes the failure.
+
 ### Reminder-Based Resume
 
 Saga orchestration also has a durable wake-up path for lifecycle events that were recorded before a silo or pod stopped running the active grain.

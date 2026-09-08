@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Sagas;
 
 
 namespace Mississippi.DomainModeling.Runtime;
@@ -80,24 +81,8 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     )
     {
         ArgumentNullException.ThrowIfNull(eventData);
-        return eventData switch
-        {
-            SagaStartedEvent => ExecuteStepAsync(currentState, 0, cancellationToken),
-            SagaStepCompleted completed => ExecuteNextOrCompleteAsync(
-                currentState,
-                completed.StepIndex,
-                cancellationToken),
-            SagaStepFailed => AsyncEnumerable.Empty<object>(),
-            SagaCompensating compensating => ExecuteCompensationAsync(
-                currentState,
-                compensating.FromStepIndex,
-                cancellationToken),
-            SagaStepCompensated compensated => ExecutePreviousCompensationAsync(
-                currentState,
-                compensated.StepIndex,
-                cancellationToken),
-            var _ => AsyncEnumerable.Empty<object>(),
-        };
+        ArgumentNullException.ThrowIfNull(currentState);
+        return HandleCoreAsync(eventData, currentState, brookKey, cancellationToken);
     }
 
     private async IAsyncEnumerable<object> ExecuteCompensationAsync(
@@ -260,6 +245,53 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
             {
                 FromStepIndex = stepIndex - 1,
             };
+        }
+    }
+
+    private async IAsyncEnumerable<object> HandleCoreAsync(
+        object eventData,
+        TSaga currentState,
+        string brookKey,
+        [EnumeratorCancellation] CancellationToken cancellationToken
+    )
+    {
+        if (SagaLifecycleEventClassifier.IsReplayBoundaryEvent(eventData) &&
+            !string.Equals(
+                currentState.StepHash,
+                SagaStepHash.Compute(StepInfoProvider.Steps),
+                StringComparison.Ordinal))
+        {
+            Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey);
+            yield return new SagaFailed
+            {
+                ErrorCode = "SAGA_STEP_HASH_MISMATCH",
+                ErrorMessage = "The registered saga steps differ from the persisted workflow definition.",
+                FailedAt = TimeProvider.GetUtcNow(),
+            };
+            yield break;
+        }
+
+        IAsyncEnumerable<object> events = eventData switch
+        {
+            SagaStartedEvent => ExecuteStepAsync(currentState, 0, cancellationToken),
+            SagaStepCompleted completed => ExecuteNextOrCompleteAsync(
+                currentState,
+                completed.StepIndex,
+                cancellationToken),
+            SagaStepFailed => AsyncEnumerable.Empty<object>(),
+            SagaCompensating compensating => ExecuteCompensationAsync(
+                currentState,
+                compensating.FromStepIndex,
+                cancellationToken),
+            SagaStepCompensated compensated => ExecutePreviousCompensationAsync(
+                currentState,
+                compensated.StepIndex,
+                cancellationToken),
+            var _ => AsyncEnumerable.Empty<object>(),
+        };
+        await foreach (object resultEvent in events)
+        {
+            yield return resultEvent;
         }
     }
 
