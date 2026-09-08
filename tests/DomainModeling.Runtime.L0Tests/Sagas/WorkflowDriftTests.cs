@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -264,6 +265,21 @@ public sealed class WorkflowDriftTests
     }
 
     /// <summary>
+    ///     Verifies delimiter characters in a step name cannot disguise a removed step.
+    /// </summary>
+    [Fact]
+    public void WorkflowHashCannotHideStepInName()
+    {
+        Type stepType = typeof(SagaSuccessStep);
+        SagaStepInfo first = new(0, "A", stepType, true);
+        SagaStepInfo second = new(1, "B", stepType, true);
+        SagaStepInfo combined = new(0, $"A:{stepType.FullName}:True|1:B", stepType, true);
+        Assert.NotEqual(SagaStepHash.Compute([first, second]), SagaStepHash.Compute([combined]));
+        Assert.Throws<EncoderFallbackException>(() =>
+            SagaStepHash.Compute([new(0, new((char)0xD800, 1), stepType, true)]));
+    }
+
+    /// <summary>
     ///     Verifies the shared hash retains the original fallback for types without a full name.
     /// </summary>
     [Fact]
@@ -272,7 +288,7 @@ public sealed class WorkflowDriftTests
         Type typeParameter = typeof(List<>).GetGenericArguments()[0];
         Assert.Null(typeParameter.FullName);
         Assert.Equal(
-            "35DFC0F956F98E0216AF5FE78BB0EA7470DAE1BF75AB8DB46FF24E92294D2F87",
+            "4C9EE7A7AF7B05044BAB83C4403EA0367DB8944ECEEECA191A45A5AB7C5F731E",
             SagaStepHash.Compute([new(0, "Open", typeParameter, false)]));
         Assert.Equal("steps", Assert.Throws<ArgumentNullException>(() => SagaStepHash.Compute(null!)).ParamName);
     }

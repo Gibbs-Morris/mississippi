@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -33,16 +34,12 @@ internal static class SagaStepHash
             }
 
             string stepTypeName = step.StepType.FullName ?? step.StepType.Name;
-            builder.Append(step.StepIndex)
-                .Append(':')
-                .Append(step.StepName)
-                .Append(':')
-                .Append(stepTypeName)
-                .Append(':')
-                .Append(step.HasCompensation);
+            builder.Append(
+                CultureInfo.InvariantCulture,
+                $"{step.StepIndex}:{step.StepName.Length}:{step.StepName}:{stepTypeName.Length}:{stepTypeName}:{step.HasCompensation}");
         }
 
-        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
+        byte[] bytes = SHA256.HashData(new UTF8Encoding(false, true).GetBytes(builder.ToString()));
         return Convert.ToHexString(bytes);
     }
 }

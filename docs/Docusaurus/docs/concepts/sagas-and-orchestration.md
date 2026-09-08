@@ -64,6 +64,8 @@ Before executing a start or continuation boundary, the orchestration effect comp
 
 The hash covers step order, index, name, implementation type name, and compensation availability. It does not detect changes inside a step implementation or in external configuration. Keep those semantics compatible while existing sagas are running; the hash is not a general workflow migration mechanism. A saga stopped by this guard is terminal and its reminder is removed when the next tick observes the failure.
 
+The workflow hash uses length-prefixed text fields and invariant numeric formatting. Custom names containing delimiters remain distinct from separate steps, and invalid Unicode names are rejected. This replaces the earlier delimiter-only hash format. Finish existing sagas on the earlier runtime before upgrading: a saga carrying the earlier hash will stop with `SAGA_STEP_HASH_MISMATCH` when the new runtime attempts to continue it. There is no automatic migration or resume for that terminal failure.
+
 ### Reminder-Based Resume
 
 Saga orchestration also has a durable wake-up path for lifecycle events that were recorded before a silo or pod stopped running the active grain.

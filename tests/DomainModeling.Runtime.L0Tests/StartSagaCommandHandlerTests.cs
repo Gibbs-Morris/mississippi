@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,33 +15,6 @@ namespace Mississippi.DomainModeling.Runtime.L0Tests;
 /// </summary>
 public sealed class StartSagaCommandHandlerTests
 {
-    private static string ComputeExpectedStepHash(
-        IReadOnlyList<SagaStepInfo> steps
-    )
-    {
-        StringBuilder builder = new();
-        for (int i = 0; i < steps.Count; i++)
-        {
-            SagaStepInfo step = steps[i];
-            if (i > 0)
-            {
-                builder.Append('|');
-            }
-
-            string stepTypeName = step.StepType.FullName ?? step.StepType.Name;
-            builder.Append(step.StepIndex)
-                .Append(':')
-                .Append(step.StepName)
-                .Append(':')
-                .Append(stepTypeName)
-                .Append(':')
-                .Append(step.HasCompensation);
-        }
-
-        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(builder.ToString()));
-        return Convert.ToHexString(bytes);
-    }
-
     private sealed class CreditStep : ISagaStep<TestSagaState>
     {
         public Task<StepResult> ExecuteAsync(
@@ -150,7 +121,7 @@ public sealed class StartSagaCommandHandlerTests
         Assert.Equal(command.SagaId, started.SagaId);
         Assert.Equal(command.CorrelationId, started.CorrelationId);
         Assert.Equal(now, started.StartedAt);
-        Assert.Equal(ComputeExpectedStepHash(steps), started.StepHash);
+        Assert.Equal("A01D7A71FF8A75261DB5923054965164F455F93D03A477B1B0D11C704D26DC8A", started.StepHash);
         Assert.Equal(command.SagaId, inputProvided.SagaId);
         Assert.Equal(command.Input, inputProvided.Input);
     }
