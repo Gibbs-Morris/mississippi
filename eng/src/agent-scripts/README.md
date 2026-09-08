@@ -51,7 +51,7 @@ These local commands cover the corresponding build and test steps. They do not r
 | --- | --- | --- |
 | [full-build.yml](../../../.github/workflows/full-build.yml) | `pwsh ./eng/src/agent-scripts/final-build-solutions.ps1` | Both solutions in Release with warnings as errors; CI also supplies the GitVersion version. |
 | [l0-tests.yml](../../../.github/workflows/l0-tests.yml), [l1-tests.yml](../../../.github/workflows/l1-tests.yml) | `pwsh ./go.ps1` | Local unit-test scripts combine L0/L1; CI runs each level separately for each solution. |
-| [l2-tests.yml](../../../.github/workflows/l2-tests.yml) | `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1 -TestLevels L2Tests` | CI targets L2 in both solutions; the local integration wrapper targets samples. Both fail on test errors. |
+| [l2-tests.yml](../../../.github/workflows/l2-tests.yml) | `pwsh ./eng/src/agent-scripts/integration-test-sample-solution.ps1 -TestLevels L2Tests` | CI targets L2 in both solutions with `continue-on-error`; workflow success does not prove L2 passed. Inspect the test step results. The local sample wrapper fails on test errors. |
 | [l3-tests.yml](../../../.github/workflows/l3-tests.yml) | `pwsh ./test-spring.ps1` | Spring browser smoke tests; use `-TestLevel L3 -Suite Full` for all browser journeys. |
 | [stryker.yml](../../../.github/workflows/stryker.yml) | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` | Mississippi mutation tests; opt into this step in `go.ps1` with `-IncludeMutation`. |
 | [cleanup.yml](../../../.github/workflows/cleanup.yml) | `pwsh ./clean-up.ps1` | Applies cleanup to both solutions; CI additionally fails if cleanup changes tracked files. |
