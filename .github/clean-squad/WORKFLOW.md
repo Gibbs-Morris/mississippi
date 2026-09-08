@@ -1015,6 +1015,8 @@ The Product Owner is an orchestrator, not an implementation agent.
 **Owner**: cs Product Owner
 **Sub-agents**: cs Plan Synthesizer, approved review personas from the Agent Roster
 
+Scope each governed run to one logical PR under [PR size and stacked delivery](../instructions/pr-size-and-stacking.instructions.md). For larger objectives, record ordered follow-on PRs, bases, size estimates, tests/docs, and landing intent in the plan. Complete this run through Phase 9 and its advancement gate before implementing a dependent run. Ready layers can remain unmerged in a native stack managed with `gh stack` and the linked skill; each run retains its own audit trail and existing human gates.
+
 ### Process
 
 1. Product Owner combines architecture, requirements, and Three Amigos output
@@ -1054,7 +1056,7 @@ Each review cycle invokes these personas (subset varies by task complexity):
 
 ### Process
 
-1. Product Owner creates a feature branch from `main`.
+1. Product Owner creates the planned branch from current `main`, or uses the `gh-stack` skill to create a layer on its verified, advancement-ready parent.
 2. For each increment:
    a. Product Owner invokes **cs Lead Developer** with the next slice of work
       from the plan.

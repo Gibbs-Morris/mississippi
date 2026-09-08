@@ -10,6 +10,8 @@ Governing thought: All planning and building agents share a common Chain-of-Veri
 
 ## Rules (RFC 2119)
 
+- Plans **MUST** define ordered PR outcomes, dependencies/bases, estimated changed lines, per-layer validation, and separate or grouped landing intent under [PR size and stacked delivery](pr-size-and-stacking.instructions.md). Why: Logical boundaries are decided before implementation.
+- Builders **MUST** complete the current PR's advancement gate before implementing its dependent successor, using `gh stack` and the linked skill for native stacks. Why: Plan completion does not override CI and review readiness.
 - Planning agents **MUST** apply the Chain-of-Verification (CoV) loop on every non-trivial claim: hypothesize → question → gather evidence → triangulate with a second independent source → conclude with confidence rating → record impact. Why: Prevents speculative plans.
 - Each non-trivial claim **MUST** be verified against at least two independent sources (different files, modules, tests, docs, or configs); single-source claims **MUST** be labelled **Single-source** with a note on what would confirm them. Why: Reduces false assumptions.
 - Planning agents **MUST** produce all required artifacts in the canonical order and naming convention listed below. Why: Enables plan interchangeability between `flow` and `epic` families.

@@ -84,7 +84,7 @@ flowchart TD
     end
 
     subgraph Phase5["Phase 5: Implementation"]
-        P5Branch["Create a feature branch from main"]
+        P5Branch["Create the planned branch from main or a verified stack parent"]
         P5Lead["Invoke cs Lead Developer with the next slice of work"]
         P5Code["cs Lead Developer writes a small, focused increment"]
         P5Tests["Invoke cs Test Engineer to write or validate tests"]

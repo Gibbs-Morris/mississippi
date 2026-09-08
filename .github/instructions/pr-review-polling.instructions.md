@@ -17,7 +17,9 @@ Governing thought: After pushing code to a branch with an open PR, agents sleep 
 - Agents **MUST NOT** batch unrelated fixes into a single commit; each comment gets its own commit. Why: Keeps the fix traceable to the review feedback that prompted it.
 - Agents **MUST NOT** resolve a thread before pushing the fix and replying with evidence. Why: Premature resolution hides unfinished work.
 - If a comment is declined (disagree or out-of-scope), agents **MUST** reply with rationale and leave the thread open for the reviewer. Why: Only the reviewer or author should close a declined thread.
-- Review threads where `isOutdated` is `true` **SHOULD** be skipped during the polling loop; agents **SHOULD** record them in the remediation ledger as `SKIPPED (outdated)` and leave them open for human review. Why: GitHub does not permit resolving outdated threads via the normal flow; attempting to do so causes API errors or confusing state.
+- Agents **MUST** inspect unresolved outdated threads for remaining concerns and record their disposition. Why: Moving code does not establish that feedback was addressed.
+- Agents **MUST** satisfy the [advancement gate](pr-size-and-stacking.instructions.md#advancement-gate) before starting the next dependent PR. Why: Zero new comments or an exhausted polling cap does not prove CI success, approval, or resolution of existing feedback.
+- Agents correcting a stacked PR **MUST** use the `gh-stack` skill to edit the owning layer and propagate changes before revalidating affected layers. Why: Fixes belong with the change reviewed, not in a later PR.
 - If the exact thread reply or resolution action cannot be completed with MCP or `gh` on the current machine, agents **MUST** stop and report the blocker rather than substituting a top-level PR comment. Why: A top-level comment does not satisfy the required per-thread audit trail.
 - After addressing all found comments, agents **MUST** sleep for another 300 seconds and poll again; this loop **MUST** repeat until either (a) a poll returns zero new unaddressed comments or (b) a configured maximum iteration cap is reached. Why: Reviewers may add follow-up comments after fixes land while still bounding the loop in adversarial scenarios.
 - Agents **SHOULD** log each addressed thread (thread ID, status, commit SHA) in a running remediation ledger in their output. Why: Provides an auditable summary of all review actions taken.
@@ -35,6 +37,7 @@ All agents that push code to branches associated with open pull requests.
 4. For each comment: fix → commit → push → reply → resolve.
 5. Sleep 300 seconds, poll again.
 6. Repeat until zero new comments or the iteration cap is reached.
+7. Separately verify CI/CD, required approvals, and all unresolved feedback before advancing; report any blocker.
 
 ## Procedure
 
@@ -58,6 +61,7 @@ LOOP (max 20 iterations)
   END FOR
   IF iteration cap reached THEN LOG remaining threads and EXIT LOOP
 END LOOP
+VERIFY the advancement gate; do not start a dependent layer while it is blocked
 ```
 
 ### GitHub MCP (preferred)
@@ -78,6 +82,8 @@ If MCP tools are unavailable:
 - `gh api -X POST repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies -f body='<reply>'` — reply to a top-level review comment in the thread
 - `gh api graphql -f query='mutation($threadId:ID!) { resolveReviewThread(input:{threadId:$threadId}) { thread { id isResolved } } }' -F threadId='<thread-node-id>'` — resolve a review thread
 - If any required thread action cannot be completed with `gh`, stop and report the blocker instead of posting a top-level PR comment
+
+The commands above show the first page only. Follow REST pagination and GraphQL `pageInfo`/`endCursor` for all threads and comments before claiming none remain. Check general PR discussion as well as inline threads. Record unresolved outdated or declined threads as blockers until an authorized reviewer resolves the concern. Check CI separately; comment queries do not establish build or deployment status.
 
 ## Core Principles
 

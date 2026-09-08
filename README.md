@@ -195,12 +195,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contributing
 
-Contributions to the Mississippi Framework are welcome. Please follow standard GitHub flow:
+Contributions to the Mississippi Framework are welcome. Follow the [PR size and stacked delivery policy](.github/instructions/pr-size-and-stacking.instructions.md): one logical change per PR, targeting 600 changed lines or fewer, with justified exceptions when a larger change is easier to review intact.
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+Use a feature branch (or a fork for standalone contributions). Plan dependent work as native GitHub stacked PRs using `gh stack` and the [gh-stack skill](https://github.com/github/gh-stack/blob/main/skills/gh-stack/SKILL.md); native stacks require branches in the same repository. Complete each PR's applicable CI/CD, required approvals, and feedback resolution before starting the next layer. Ready layers can remain open and merge together as a stack.
 
 ### Build automation
 
