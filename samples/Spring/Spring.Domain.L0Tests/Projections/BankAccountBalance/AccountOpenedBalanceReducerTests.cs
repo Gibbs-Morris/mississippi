@@ -30,9 +30,9 @@ public sealed class AccountOpenedBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.HolderName.Should().Be("John Doe");
-        result.Balance.Should().Be(500.00m);
-        result.IsOpen.Should().BeTrue();
+        Assert.Equal("John Doe", result.HolderName);
+        Assert.Equal(500.00m, result.Balance);
+        Assert.True(result.IsOpen);
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public sealed class AccountOpenedBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.IsOpen.Should().BeTrue();
+        Assert.True(result.IsOpen);
     }
 
     /// <summary>
@@ -117,7 +117,7 @@ public sealed class AccountOpenedBalanceReducerTests
         BankAccountBalanceProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Balance.Should().Be(0m);
-        result.HolderName.Should().Be("Zero Balance");
+        Assert.Equal(0m, result.Balance);
+        Assert.Equal("Zero Balance", result.HolderName);
     }
 }

@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-
-using FluentAssertions;
+using System.Globalization;
 
 using Mississippi.DomainModeling.Abstractions;
+
+using Xunit;
 
 
 namespace Mississippi.DomainModeling.TestHarness.Aggregates;
@@ -90,7 +91,6 @@ public static class CommandHandlerTestExtensions
     /// <param name="state">The current aggregate state (null uses default).</param>
     /// <param name="command">The command to execute.</param>
     /// <param name="expectedEvent">The expected event to be emitted.</param>
-    [CustomAssertion]
     public static void ShouldEmit<TCommand, TEvent, TAggregate>(
         this ICommandHandler<TCommand, TAggregate> handler,
         TAggregate? state,
@@ -105,9 +105,14 @@ public static class CommandHandlerTestExtensions
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(expectedEvent);
         OperationResult<IReadOnlyList<object>> result = handler.Handle(state, command);
-        result.Success.Should()
-            .BeTrue("Handler should succeed, but failed with: {0} - {1}", result.ErrorCode, result.ErrorMessage);
-        result.Value.Should().ContainSingle().Which.Should().BeEquivalentTo(expectedEvent);
+        Assert.True(
+            result.Success,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Handler should succeed, but failed with: {0} - {1}",
+                result.ErrorCode,
+                result.ErrorMessage));
+        StructuralAssertions.Equivalent(expectedEvent, Assert.Single(result.Value));
     }
 
     /// <summary>
@@ -119,7 +124,6 @@ public static class CommandHandlerTestExtensions
     /// <param name="state">The current aggregate state (null uses default).</param>
     /// <param name="command">The command to execute.</param>
     /// <param name="expectedEvents">The expected events in order.</param>
-    [CustomAssertion]
     public static void ShouldEmitEvents<TCommand, TAggregate>(
         this ICommandHandler<TCommand, TAggregate> handler,
         TAggregate? state,
@@ -133,9 +137,14 @@ public static class CommandHandlerTestExtensions
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(expectedEvents);
         OperationResult<IReadOnlyList<object>> result = handler.Handle(state, command);
-        result.Success.Should()
-            .BeTrue("Handler should succeed, but failed with: {0} - {1}", result.ErrorCode, result.ErrorMessage);
-        result.Value.Should().BeEquivalentTo(expectedEvents, options => options.WithStrictOrdering());
+        Assert.True(
+            result.Success,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Handler should succeed, but failed with: {0} - {1}",
+                result.ErrorCode,
+                result.ErrorMessage));
+        StructuralAssertions.Equivalent(expectedEvents, result.Value, true);
     }
 
     /// <summary>
@@ -146,7 +155,6 @@ public static class CommandHandlerTestExtensions
     /// <param name="handler">The handler to test.</param>
     /// <param name="state">The current aggregate state (null uses default).</param>
     /// <param name="command">The command to execute.</param>
-    [CustomAssertion]
     public static void ShouldFail<TCommand, TAggregate>(
         this ICommandHandler<TCommand, TAggregate> handler,
         TAggregate? state,
@@ -158,7 +166,12 @@ public static class CommandHandlerTestExtensions
         ArgumentNullException.ThrowIfNull(handler);
         ArgumentNullException.ThrowIfNull(command);
         OperationResult<IReadOnlyList<object>> result = handler.Handle(state, command);
-        result.Success.Should().BeFalse("Handler should fail but succeeded with {0} events", result.Value?.Count ?? 0);
+        Assert.False(
+            result.Success,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Handler should fail but succeeded with {0} events",
+                result.Value?.Count ?? 0));
     }
 
     /// <summary>
@@ -170,7 +183,6 @@ public static class CommandHandlerTestExtensions
     /// <param name="state">The current aggregate state (null uses default).</param>
     /// <param name="command">The command to execute.</param>
     /// <param name="expectedErrorCode">Expected error code string in the result.</param>
-    [CustomAssertion]
     public static void ShouldFail<TCommand, TAggregate>(
         this ICommandHandler<TCommand, TAggregate> handler,
         TAggregate? state,
@@ -184,8 +196,13 @@ public static class CommandHandlerTestExtensions
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(expectedErrorCode);
         OperationResult<IReadOnlyList<object>> result = handler.Handle(state, command);
-        result.Success.Should().BeFalse("Handler should fail but succeeded with {0} events", result.Value?.Count ?? 0);
-        result.ErrorCode.Should().Be(expectedErrorCode);
+        Assert.False(
+            result.Success,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Handler should fail but succeeded with {0} events",
+                result.Value?.Count ?? 0));
+        Assert.Equal(expectedErrorCode, result.ErrorCode);
     }
 
     /// <summary>
@@ -197,7 +214,6 @@ public static class CommandHandlerTestExtensions
     /// <param name="state">The current aggregate state (null uses default).</param>
     /// <param name="command">The command to execute.</param>
     /// <param name="expectedMessage">Expected substring in the error message.</param>
-    [CustomAssertion]
     public static void ShouldFailWithMessage<TCommand, TAggregate>(
         this ICommandHandler<TCommand, TAggregate> handler,
         TAggregate? state,
@@ -211,8 +227,13 @@ public static class CommandHandlerTestExtensions
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(expectedMessage);
         OperationResult<IReadOnlyList<object>> result = handler.Handle(state, command);
-        result.Success.Should().BeFalse("Handler should fail but succeeded with {0} events", result.Value?.Count ?? 0);
-        result.ErrorMessage.Should().Contain(expectedMessage);
+        Assert.False(
+            result.Success,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Handler should fail but succeeded with {0} events",
+                result.Value?.Count ?? 0));
+        Assert.Contains(expectedMessage, result.ErrorMessage, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -225,7 +246,6 @@ public static class CommandHandlerTestExtensions
     /// <param name="command">The command to execute.</param>
     /// <param name="expectedErrorCode">Expected error code string in the result.</param>
     /// <param name="expectedMessage">Expected substring in the error message.</param>
-    [CustomAssertion]
     public static void ShouldFailWithMessage<TCommand, TAggregate>(
         this ICommandHandler<TCommand, TAggregate> handler,
         TAggregate? state,
@@ -241,9 +261,14 @@ public static class CommandHandlerTestExtensions
         ArgumentNullException.ThrowIfNull(expectedErrorCode);
         ArgumentNullException.ThrowIfNull(expectedMessage);
         OperationResult<IReadOnlyList<object>> result = handler.Handle(state, command);
-        result.Success.Should().BeFalse("Handler should fail but succeeded with {0} events", result.Value?.Count ?? 0);
-        result.ErrorCode.Should().Be(expectedErrorCode);
-        result.ErrorMessage.Should().Contain(expectedMessage);
+        Assert.False(
+            result.Success,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Handler should fail but succeeded with {0} events",
+                result.Value?.Count ?? 0));
+        Assert.Equal(expectedErrorCode, result.ErrorCode);
+        Assert.Contains(expectedMessage, result.ErrorMessage, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -255,7 +280,6 @@ public static class CommandHandlerTestExtensions
     /// <param name="state">The current aggregate state (null uses default).</param>
     /// <param name="command">The command to execute.</param>
     /// <returns>The emitted events for further assertions.</returns>
-    [CustomAssertion]
     public static IReadOnlyList<object> ShouldSucceed<TCommand, TAggregate>(
         this ICommandHandler<TCommand, TAggregate> handler,
         TAggregate? state,
@@ -267,9 +291,14 @@ public static class CommandHandlerTestExtensions
         ArgumentNullException.ThrowIfNull(handler);
         ArgumentNullException.ThrowIfNull(command);
         OperationResult<IReadOnlyList<object>> result = handler.Handle(state, command);
-        result.Success.Should()
-            .BeTrue("Handler should succeed, but failed with: {0} - {1}", result.ErrorCode, result.ErrorMessage);
-        result.Value.Should().NotBeEmpty("Handler should emit at least one event on success");
+        Assert.True(
+            result.Success,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Handler should succeed, but failed with: {0} - {1}",
+                result.ErrorCode,
+                result.ErrorMessage));
+        Assert.NotEmpty(result.Value);
         return result.Value;
     }
 }

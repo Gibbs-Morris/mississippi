@@ -38,7 +38,7 @@ public sealed class FundsDepositedAggregateReducerTests
         BankAccountAggregate result = reducer.Apply(OpenAccount, @event);
 
         // Assert
-        result.Balance.Should().Be(150m);
+        Assert.Equal(150m, result.Balance);
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public sealed class FundsDepositedAggregateReducerTests
         BankAccountAggregate result = reducer.Apply(OpenAccount, @event);
 
         // Assert
-        result.DepositCount.Should().Be(1);
+        Assert.Equal(1, result.DepositCount);
     }
 
     /// <summary>
@@ -76,9 +76,9 @@ public sealed class FundsDepositedAggregateReducerTests
         BankAccountAggregate result = reducer.Apply(OpenAccount, @event);
 
         // Assert
-        result.IsOpen.Should().Be(OpenAccount.IsOpen);
-        result.HolderName.Should().Be(OpenAccount.HolderName);
-        result.WithdrawalCount.Should().Be(OpenAccount.WithdrawalCount);
+        Assert.Equal(OpenAccount.IsOpen, result.IsOpen);
+        Assert.Equal(OpenAccount.HolderName, result.HolderName);
+        Assert.Equal(OpenAccount.WithdrawalCount, result.WithdrawalCount);
     }
 
     /// <summary>
@@ -117,6 +117,6 @@ public sealed class FundsDepositedAggregateReducerTests
         Action act = () => reducer.Apply(OpenAccount, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        Assert.ThrowsAny<ArgumentNullException>(act);
     }
 }

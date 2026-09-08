@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
-using FluentAssertions;
-
 using Mississippi.DomainModeling.Abstractions;
 using Mississippi.Tributary.Abstractions;
+
+using Xunit;
 
 
 namespace Mississippi.DomainModeling.TestHarness.Aggregates;
@@ -20,12 +21,16 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///         Use this class to build readable test scenarios that establish state via events (Given),
 ///         execute a command (When), and verify emitted events and resulting state (Then).
 ///     </para>
+///     <para>
+///         Assertions throw immediately when they fail. A failed prerequisite stops the scenario
+///         before event or state callbacks are invoked.
+///     </para>
 ///     <code>
 ///         harness.CreateScenario()
 ///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
 ///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
+///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; Assert.Equal(50m, e.Amount))
+///             .ThenState(s =&gt; Assert.Equal(150m, s.Balance));
 ///     </code>
 /// </remarks>
 public sealed class AggregateScenario<TAggregate>
@@ -210,14 +215,9 @@ public sealed class AggregateScenario<TAggregate>
     )
         where TEvent : class
     {
-        whenCommand.Should().NotBeNull("When() must be called before ThenEmits()");
+        Assert.True(whenCommand is not null, "When() must be called before ThenEmits()");
         TEvent? evt = emittedEvents.OfType<TEvent>().FirstOrDefault();
-        if (evt is null)
-        {
-            evt.Should().NotBeNull($"Expected event of type {typeof(TEvent).Name} to be emitted");
-            return this;
-        }
-
+        Assert.True(evt is not null, $"Expected event of type {typeof(TEvent).Name} to be emitted");
         assertion?.Invoke(evt);
         return this;
     }
@@ -232,8 +232,8 @@ public sealed class AggregateScenario<TAggregate>
     )
     {
         ArgumentNullException.ThrowIfNull(assertions);
-        whenCommand.Should().NotBeNull("When() must be called before ThenEmitsEvents()");
-        emittedEvents.Should().HaveCount(assertions.Length);
+        Assert.True(whenCommand is not null, "When() must be called before ThenEmitsEvents()");
+        Assert.Equal(assertions.Length, emittedEvents.Count);
         for (int i = 0; i < assertions.Length; i++)
         {
             assertions[i](emittedEvents[i]);
@@ -247,17 +247,20 @@ public sealed class AggregateScenario<TAggregate>
     /// </summary>
     /// <param name="expectedErrorCode">The expected error code.</param>
     /// <returns>This scenario for fluent chaining.</returns>
-    [CustomAssertion]
     public AggregateScenario<TAggregate> ThenFails(
         string expectedErrorCode
     )
     {
         ArgumentNullException.ThrowIfNull(expectedErrorCode);
-        whenCommand.Should().NotBeNull("When() must be called before ThenFails()");
-        lastCommandSucceeded.Should()
-            .BeFalse("Command should have failed but succeeded with {0} events", emittedEvents.Count);
-        lastErrorCode.Should().NotBeNull("Expected an error code from the failed command");
-        lastErrorCode.Should().Be(expectedErrorCode);
+        Assert.True(whenCommand is not null, "When() must be called before ThenFails()");
+        Assert.False(
+            lastCommandSucceeded,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Command should have failed but succeeded with {0} events",
+                emittedEvents.Count));
+        Assert.True(lastErrorCode is not null, "Expected an error code from the failed command");
+        Assert.Equal(expectedErrorCode, lastErrorCode);
         return this;
     }
 
@@ -267,7 +270,6 @@ public sealed class AggregateScenario<TAggregate>
     /// <param name="expectedErrorCode">The expected error code.</param>
     /// <param name="expectedMessage">Expected substring in the failure message.</param>
     /// <returns>This scenario for fluent chaining.</returns>
-    [CustomAssertion]
     public AggregateScenario<TAggregate> ThenFails(
         string expectedErrorCode,
         string expectedMessage
@@ -275,13 +277,17 @@ public sealed class AggregateScenario<TAggregate>
     {
         ArgumentNullException.ThrowIfNull(expectedErrorCode);
         ArgumentNullException.ThrowIfNull(expectedMessage);
-        whenCommand.Should().NotBeNull("When() must be called before ThenFails()");
-        lastCommandSucceeded.Should()
-            .BeFalse("Command should have failed but succeeded with {0} events", emittedEvents.Count);
-        lastErrorCode.Should().NotBeNull("Expected an error code from the failed command");
-        lastErrorCode.Should().Be(expectedErrorCode);
-        lastErrorMessage.Should().NotBeNull("Expected an error message from the failed command");
-        lastErrorMessage.Should().Contain(expectedMessage);
+        Assert.True(whenCommand is not null, "When() must be called before ThenFails()");
+        Assert.False(
+            lastCommandSucceeded,
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Command should have failed but succeeded with {0} events",
+                emittedEvents.Count));
+        Assert.True(lastErrorCode is not null, "Expected an error code from the failed command");
+        Assert.Equal(expectedErrorCode, lastErrorCode);
+        Assert.True(lastErrorMessage is not null, "Expected an error message from the failed command");
+        Assert.Contains(expectedMessage, lastErrorMessage, StringComparison.Ordinal);
         return this;
     }
 
@@ -295,7 +301,7 @@ public sealed class AggregateScenario<TAggregate>
     )
     {
         ArgumentNullException.ThrowIfNull(assertion);
-        whenCommand.Should().NotBeNull("When() must be called before ThenState()");
+        Assert.True(whenCommand is not null, "When() must be called before ThenState()");
         assertion(State);
         return this;
     }
@@ -304,18 +310,15 @@ public sealed class AggregateScenario<TAggregate>
     ///     Asserts that the command succeeded (emitted at least one non-failure event).
     /// </summary>
     /// <returns>This scenario for fluent chaining.</returns>
-    [CustomAssertion]
     public AggregateScenario<TAggregate> ThenSucceeds()
     {
-        whenCommand.Should().NotBeNull("When() must be called before ThenSucceeds()");
-        emittedEvents.Should().NotBeEmpty("Command should emit at least one event on success");
+        Assert.True(whenCommand is not null, "When() must be called before ThenSucceeds()");
+        Assert.NotEmpty(emittedEvents);
 
         // Check that no failure events were emitted
-        emittedEvents.Select(evt => evt.GetType().Name)
-            .Should()
-            .NotContain(
-                name => name.Contains("Failed", StringComparison.Ordinal),
-                "Expected success events, but got a failure event");
+        Assert.DoesNotContain(
+            emittedEvents.Select(evt => evt.GetType().Name),
+            name => name.Contains("Failed", StringComparison.Ordinal));
         return this;
     }
 

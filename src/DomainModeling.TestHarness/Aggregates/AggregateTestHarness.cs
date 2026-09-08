@@ -46,8 +46,8 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///             .CreateScenario()
 ///             .Given(new AccountOpened { HolderName = "Test", InitialDeposit = 100m })
 ///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; e.Amount.Should().Be(50m))
-///             .ThenState(s =&gt; s.Balance.Should().Be(150m));
+///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; Assert.Equal(50m, e.Amount))
+///             .ThenState(s =&gt; Assert.Equal(150m, s.Balance));
 ///     </code>
 ///     <para>
 ///         <strong>Unified Testing Approach:</strong>

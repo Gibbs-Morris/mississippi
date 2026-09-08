@@ -36,10 +36,10 @@ public sealed class FundsDepositedLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().ContainSingle();
-        result.Entries[0].EntryType.Should().Be(LedgerEntryType.Deposit);
-        result.Entries[0].Amount.Should().Be(500m);
-        result.Entries[0].Sequence.Should().Be(1);
+        Assert.Single(result.Entries);
+        Assert.Equal(LedgerEntryType.Deposit, result.Entries[0].EntryType);
+        Assert.Equal(500m, result.Entries[0].Amount);
+        Assert.Equal(1, result.Entries[0].Sequence);
     }
 
     /// <summary>
@@ -72,9 +72,9 @@ public sealed class FundsDepositedLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().HaveCount(BankAccountLedgerProjection.MaxEntries);
-        result.Entries[0].Amount.Should().Be(999m, "newest entry should be first");
-        result.Entries[^1].Sequence.Should().Be(2, "oldest entry (seq 1) should be dropped");
+        Assert.Equal(BankAccountLedgerProjection.MaxEntries, result.Entries.Length);
+        Assert.Equal(999m, result.Entries[0].Amount);
+        Assert.Equal(2, result.Entries[^1].Sequence);
     }
 
     /// <summary>
@@ -98,8 +98,8 @@ public sealed class FundsDepositedLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.CurrentSequence.Should().Be(6);
-        result.Entries[0].Sequence.Should().Be(6);
+        Assert.Equal(6, result.CurrentSequence);
+        Assert.Equal(6, result.Entries[0].Sequence);
     }
 
     /// <summary>
@@ -131,9 +131,9 @@ public sealed class FundsDepositedLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().HaveCount(2);
-        result.Entries[0].Amount.Should().Be(200m, "newest entry should be first");
-        result.Entries[1].Amount.Should().Be(100m, "older entry should be second");
+        Assert.Equal(2, result.Entries.Length);
+        Assert.Equal(200m, result.Entries[0].Amount);
+        Assert.Equal(100m, result.Entries[1].Amount);
     }
 
     /// <summary>
@@ -157,7 +157,7 @@ public sealed class FundsDepositedLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Should().NotBeSameAs(initial);
+        Assert.NotSame(initial, result);
     }
 
     /// <summary>
@@ -177,7 +177,7 @@ public sealed class FundsDepositedLedgerReducerTests
         Action act = () => reducer.Apply(initial, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        Assert.ThrowsAny<ArgumentNullException>(act);
     }
 
     /// <summary>
@@ -201,7 +201,7 @@ public sealed class FundsDepositedLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().ContainSingle();
-        result.Entries[0].Amount.Should().Be(0m);
+        Assert.Single(result.Entries);
+        Assert.Equal(0m, result.Entries[0].Amount);
     }
 }

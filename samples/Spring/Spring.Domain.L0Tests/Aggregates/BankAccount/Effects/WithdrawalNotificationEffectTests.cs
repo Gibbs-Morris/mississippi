@@ -65,7 +65,7 @@ public sealed class WithdrawalNotificationEffectTests
         Func<Task> act = () => harness.InvokeAsync(effect, eventData, state);
 
         // Assert - OperationCanceledException should propagate
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(act);
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public sealed class WithdrawalNotificationEffectTests
         Func<Task> act = () => harness.InvokeAsync(effect, eventData, state);
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(await Record.ExceptionAsync(act));
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public sealed class WithdrawalNotificationEffectTests
         Func<Task> act = () => harness.InvokeAsync(effect, eventData, null!);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("aggregateState");
+        Assert.Equal("aggregateState", (await Assert.ThrowsAnyAsync<ArgumentNullException>(act)).ParamName);
     }
 
     /// <summary>
@@ -154,7 +154,7 @@ public sealed class WithdrawalNotificationEffectTests
         Func<Task> act = () => harness.InvokeAsync(effect, null!, state);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("eventData");
+        Assert.Equal("eventData", (await Assert.ThrowsAnyAsync<ArgumentNullException>(act)).ParamName);
     }
 
     /// <summary>
@@ -174,10 +174,7 @@ public sealed class WithdrawalNotificationEffectTests
                 It.IsAny<decimal>(),
                 It.IsAny<CancellationToken>()))
             .Callback<string, decimal, decimal, CancellationToken>((
-                accountId,
-                _,
-                _,
-                _
+                accountId, _, _, _
             ) => capturedAccountId = accountId)
             .Returns(Task.CompletedTask);
         FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate> harness =
@@ -199,7 +196,7 @@ public sealed class WithdrawalNotificationEffectTests
         await harness.InvokeAsync(effect, eventData, state);
 
         // Assert
-        capturedAccountId.Should().Be("custom-account-456");
+        Assert.Equal("custom-account-456", capturedAccountId);
     }
 
     /// <summary>
@@ -217,12 +214,8 @@ public sealed class WithdrawalNotificationEffectTests
                 It.IsAny<decimal>(),
                 It.IsAny<decimal>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<string, decimal, decimal, CancellationToken>((
-                _,
-                _,
-                balance,
-                _
-            ) => capturedRemainingBalance = balance)
+            .Callback<string, decimal, decimal, CancellationToken>((_, _, balance, _) =>
+                capturedRemainingBalance = balance)
             .Returns(Task.CompletedTask);
         FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate> harness =
             FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate>.Create()
@@ -243,7 +236,7 @@ public sealed class WithdrawalNotificationEffectTests
         await harness.InvokeAsync(effect, eventData, state);
 
         // Assert
-        capturedRemainingBalance.Should().Be(4567.89m);
+        Assert.Equal(4567.89m, capturedRemainingBalance);
     }
 
     /// <summary>
@@ -261,12 +254,7 @@ public sealed class WithdrawalNotificationEffectTests
                 It.IsAny<decimal>(),
                 It.IsAny<decimal>(),
                 It.IsAny<CancellationToken>()))
-            .Callback<string, decimal, decimal, CancellationToken>((
-                _,
-                _,
-                _,
-                token
-            ) => capturedToken = token)
+            .Callback<string, decimal, decimal, CancellationToken>((_, _, _, token) => capturedToken = token)
             .Returns(Task.CompletedTask);
         FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate> harness =
             FireAndForgetEffectTestHarness<WithdrawalNotificationEffect, FundsWithdrawn, BankAccountAggregate>.Create()
@@ -289,7 +277,7 @@ public sealed class WithdrawalNotificationEffectTests
         await harness.InvokeAsync(effect, eventData, state, expectedToken);
 
         // Assert
-        capturedToken.Should().Be(expectedToken);
+        Assert.Equal(expectedToken, capturedToken);
     }
 
     /// <summary>

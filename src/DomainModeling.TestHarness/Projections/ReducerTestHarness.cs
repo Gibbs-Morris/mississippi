@@ -24,7 +24,7 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///     <code>
 ///         // Quick apply and assert
 ///         var result = reducer.Apply(initialState, eventData);
-///         result.Balance.Should().Be(expected);
+///         Assert.Equal(expected, result.Balance);
 ///         // Or use ShouldProduce for expected output assertions
 ///         reducer.ShouldProduce(initialState, eventData, expectedProjection);
 ///     </code>
@@ -42,7 +42,7 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///         harness.CreateScenario()
 ///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
 ///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p =&gt; p.Balance.Should().Be(150m));
+///             .ThenAssert(p =&gt; Assert.Equal(150m, p.Balance));
 ///     </code>
 /// </remarks>
 /// <typeparam name="TProjection">The projection type being tested. Must have a parameterless constructor.</typeparam>

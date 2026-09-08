@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Testing utilities and fixtures for Mississippi.DomainModeling.</Description>
-    <PackageTags>$(PackageTags);testing;xunit;fluent-assertions</PackageTags>
+    <PackageTags>$(PackageTags);testing;xunit</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Orleans.Sdk" />
     <PackageReference Include="Moq" />
+    <PackageReference Include="xunit.assert" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />

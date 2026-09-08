@@ -125,10 +125,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all aggregates must have [Alias] attribute for stable serialization. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -143,10 +140,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all aggregates must have [BrookName] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -161,10 +155,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all aggregates must have [GenerateSerializer] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -179,10 +170,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all aggregates must have [SnapshotStorageName] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -197,10 +185,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all commands must have [Alias] attribute for stable serialization. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -215,10 +200,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all commands must have [GenerateSerializer] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -235,10 +217,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because event Alias values should contain the type name. Violations: {0}",
-                string.Join("; ", violations));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -252,10 +231,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all events must have [Alias] attribute for stable serialization. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -270,10 +246,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all events must have [EventStorageName] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -287,10 +260,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all events must have [GenerateSerializer] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -305,10 +275,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all projections must have [Alias] attribute for stable serialization. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -323,10 +290,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all projections must have [BrookName] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -341,10 +305,7 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all projections must have [GenerateSerializer] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 
     /// <summary>
@@ -359,9 +320,6 @@ public sealed class RequiredAttributeTests
             .ToList();
 
         // Assert
-        violations.Should()
-            .BeEmpty(
-                "because all projections must have [SnapshotStorageName] attribute. " + "Missing on: {0}",
-                string.Join(", ", violations.Select(t => t.Name)));
+        Assert.Empty(violations);
     }
 }

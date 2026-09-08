@@ -1,7 +1,5 @@
 using System.Linq;
 
-using FluentAssertions.Execution;
-
 using Mississippi.DomainModeling.Abstractions;
 
 using MississippiSamples.Spring.Domain.Aggregates.BankAccount;
@@ -79,9 +77,9 @@ public sealed class BankAccountAggregateTests
             .ThenState(s =>
             {
                 // 1000 + 500 + 250 - 200 = 1550
-                s.Balance.Should().Be(1550m);
-                s.DepositCount.Should().Be(2);
-                s.WithdrawalCount.Should().Be(1);
+                Assert.Equal(1550m, s.Balance);
+                Assert.Equal(2, s.DepositCount);
+                Assert.Equal(1, s.WithdrawalCount);
             });
     }
 
@@ -105,11 +103,11 @@ public sealed class BankAccountAggregateTests
                 {
                     Amount = 50m,
                 })
-            .ThenEmits<FundsDeposited>(e => e.Amount.Should().Be(50m))
+            .ThenEmits<FundsDeposited>(e => Assert.Equal(50m, e.Amount))
             .ThenState(s =>
             {
-                s.Balance.Should().Be(150m);
-                s.DepositCount.Should().Be(1);
+                Assert.Equal(150m, s.Balance);
+                Assert.Equal(1, s.DepositCount);
             });
     }
 
@@ -130,7 +128,7 @@ public sealed class BankAccountAggregateTests
                     Amount = 50m,
                 })
             .ThenFails(AggregateErrorCodes.InvalidState);
-        scenario.EmittedEvents.Should().BeEmpty("failures don't emit events with OperationResult");
+        Assert.Empty(scenario.EmittedEvents);
     }
 
     /// <summary>
@@ -170,9 +168,9 @@ public sealed class BankAccountAggregateTests
             .ThenState(s =>
             {
                 // 100 + 50 + 25 - 30 + 100 = 245
-                s.Balance.Should().Be(245m);
-                s.DepositCount.Should().Be(3);
-                s.WithdrawalCount.Should().Be(1);
+                Assert.Equal(245m, s.Balance);
+                Assert.Equal(3, s.DepositCount);
+                Assert.Equal(1, s.WithdrawalCount);
             });
     }
 
@@ -188,14 +186,14 @@ public sealed class BankAccountAggregateTests
             .When(new OpenAccount("Alice", 500m))
             .ThenEmits<AccountOpened>(e =>
             {
-                e.HolderName.Should().Be("Alice");
-                e.InitialDeposit.Should().Be(500m);
+                Assert.Equal("Alice", e.HolderName);
+                Assert.Equal(500m, e.InitialDeposit);
             })
             .ThenState(s =>
             {
-                s.IsOpen.Should().BeTrue();
-                s.HolderName.Should().Be("Alice");
-                s.Balance.Should().Be(500m);
+                Assert.True(s.IsOpen);
+                Assert.Equal("Alice", s.HolderName);
+                Assert.Equal(500m, s.Balance);
             });
     }
 
@@ -218,7 +216,7 @@ public sealed class BankAccountAggregateTests
                 })
             .When(new OpenAccount("Grace", 200m))
             .ThenFails(AggregateErrorCodes.AlreadyExists);
-        scenario.EmittedEvents.Should().BeEmpty("failures don't emit events with OperationResult");
+        Assert.Empty(scenario.EmittedEvents);
     }
 
     /// <summary>
@@ -246,7 +244,26 @@ public sealed class BankAccountAggregateTests
             });
 
         // Assert - state should not have changed
-        scenario.State.Should().BeEquivalentTo(stateBefore);
+        Assert.Equivalent(stateBefore, scenario.State, true);
+    }
+
+    /// <summary>
+    ///     Assertions before a command should fail without invoking the event assertion.
+    /// </summary>
+    [Fact]
+    public void ThenEmitsBeforeCommandDoesNotInvokeAssertion()
+    {
+        // Arrange
+        AggregateScenario<BankAccountAggregate> scenario = CreateHarness().CreateScenario();
+        bool wasAssertionInvoked = false;
+
+        // Act
+        XunitException exception = Assert.ThrowsAny<XunitException>(() =>
+            scenario.ThenEmits<FundsDeposited>(_ => wasAssertionInvoked = true));
+
+        // Assert
+        Assert.False(wasAssertionInvoked);
+        Assert.Contains("When() must be called before ThenEmits()", exception.Message, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -270,50 +287,24 @@ public sealed class BankAccountAggregateTests
         });
 
         // Assert
-        assertionInvocationCount.Should().Be(1);
-        receivedEvent.Should().BeSameAs(scenario.EmittedEvents.Single());
-        receivedEvent.Should()
-            .BeEquivalentTo(
-                new AccountOpened
-                {
-                    HolderName = "Alice",
-                    InitialDeposit = 500m,
-                });
-        returnedScenario.Should().BeSameAs(scenario);
+        Assert.Equal(1, assertionInvocationCount);
+        Assert.Same(scenario.EmittedEvents.Single(), receivedEvent);
+        Assert.Equivalent(
+            new AccountOpened
+            {
+                HolderName = "Alice",
+                InitialDeposit = 500m,
+            },
+            receivedEvent,
+            true);
+        Assert.Same(scenario, returnedScenario);
     }
 
     /// <summary>
-    ///     Missing events should record a scoped assertion failure without invoking the event assertion.
+    ///     Missing events should throw an assertion failure without invoking the event assertion.
     /// </summary>
     [Fact]
-    public void ThenEmitsMissingEventDoesNotInvokeAssertionWithinScope()
-    {
-        // Arrange
-        AggregateScenario<BankAccountAggregate> scenario = CreateHarness()
-            .CreateScenario()
-            .When(new OpenAccount("Alice", 500m));
-        bool wasAssertionInvoked = false;
-        AggregateScenario<BankAccountAggregate> returnedScenario;
-        string[] failures;
-
-        // Act
-        using (AssertionScope scope = new())
-        {
-            returnedScenario = scenario.ThenEmits<FundsDeposited>(_ => wasAssertionInvoked = true);
-            failures = scope.Discard();
-        }
-
-        // Assert
-        wasAssertionInvoked.Should().BeFalse();
-        returnedScenario.Should().BeSameAs(scenario);
-        failures.Should().ContainSingle().Which.Should().Contain("Expected event of type FundsDeposited to be emitted");
-    }
-
-    /// <summary>
-    ///     Missing events should throw an assertion failure when no assertion scope is active.
-    /// </summary>
-    [Fact]
-    public void ThenEmitsMissingEventThrowsAssertionFailureWithoutScope()
+    public void ThenEmitsMissingEventThrowsAssertionFailure()
     {
         // Arrange
         AggregateScenario<BankAccountAggregate> scenario = CreateHarness()
@@ -325,8 +316,11 @@ public sealed class BankAccountAggregateTests
         Action act = () => scenario.ThenEmits<FundsDeposited>(_ => wasAssertionInvoked = true);
 
         // Assert
-        act.Should().Throw<XunitException>().WithMessage("*Expected event of type FundsDeposited to be emitted*");
-        wasAssertionInvoked.Should().BeFalse();
+        Assert.Contains(
+            "Expected event of type FundsDeposited to be emitted",
+            Assert.ThrowsAny<XunitException>(act).Message,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.False(wasAssertionInvoked);
     }
 
     /// <summary>
@@ -344,7 +338,7 @@ public sealed class BankAccountAggregateTests
         AggregateScenario<BankAccountAggregate> returnedScenario = scenario.ThenEmits<AccountOpened>();
 
         // Assert
-        returnedScenario.Should().BeSameAs(scenario);
+        Assert.Same(scenario, returnedScenario);
     }
 
     /// <summary>
@@ -367,11 +361,11 @@ public sealed class BankAccountAggregateTests
                 {
                     Amount = 75m,
                 })
-            .ThenEmits<FundsWithdrawn>(e => e.Amount.Should().Be(75m))
+            .ThenEmits<FundsWithdrawn>(e => Assert.Equal(75m, e.Amount))
             .ThenState(s =>
             {
-                s.Balance.Should().Be(125m);
-                s.WithdrawalCount.Should().Be(1);
+                Assert.Equal(125m, s.Balance);
+                Assert.Equal(1, s.WithdrawalCount);
             });
     }
 
@@ -398,6 +392,6 @@ public sealed class BankAccountAggregateTests
                     Amount = 100m,
                 })
             .ThenFails(AggregateErrorCodes.InvalidCommand, "Insufficient funds");
-        scenario.EmittedEvents.Should().BeEmpty("failures don't emit events with OperationResult");
+        Assert.Empty(scenario.EmittedEvents);
     }
 }

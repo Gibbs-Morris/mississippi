@@ -2,6 +2,8 @@
 
 This folder contains pre-wired test fixtures that eliminate boilerplate when testing Spring domain logic.
 
+Use xUnit `Assert` inside assertion callbacks. Failed prerequisites throw immediately, before a callback can run.
+
 ## Available Fixtures
 
 | Fixture | Purpose | Common Methods |
@@ -32,7 +34,7 @@ AggregateTestHarness<BankAccountAggregate> harness = CommandHandlerTestExtension
 harness.CreateScenario()
     .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
     .When(new DepositFunds { Amount = 50m })
-    .ThenEmits<FundsDeposited>(evt => evt.Amount.Should().Be(50m));
+    .ThenEmits<FundsDeposited>(evt => Assert.Equal(50m, evt.Amount));
 ```
 
 **After (concise):**
@@ -40,7 +42,7 @@ harness.CreateScenario()
 ```csharp
 BankAccountFixture.OpenAccount("John", 100m)
     .When(new DepositFunds { Amount = 50m })
-    .ThenEmits<FundsDeposited>(evt => evt.Amount.Should().Be(50m));
+    .ThenEmits<FundsDeposited>(evt => Assert.Equal(50m, evt.Amount));
 ```
 
 ### Projection Testing

@@ -1,8 +1,10 @@
 using System;
-
-using FluentAssertions;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 using Mississippi.Tributary.Abstractions;
+
+using Xunit;
 
 
 namespace Mississippi.DomainModeling.TestHarness.Projections;
@@ -76,7 +78,6 @@ public static class ReducerTestExtensions
     /// <param name="eventData">The event to apply.</param>
     /// <param name="expected">The expected resulting projection.</param>
     /// <exception cref="ArgumentNullException">Thrown if reducer, eventData, or expected is null.</exception>
-    [CustomAssertion]
     public static void ShouldProduce<TEvent, TProjection>(
         this IEventReducer<TEvent, TProjection> reducer,
         TProjection? initialState,
@@ -90,7 +91,7 @@ public static class ReducerTestExtensions
         ArgumentNullException.ThrowIfNull(eventData);
         ArgumentNullException.ThrowIfNull(expected);
         TProjection result = reducer.Apply(initialState, eventData);
-        result.Should().BeEquivalentTo(expected);
+        StructuralAssertions.Equivalent(expected, result);
     }
 
     /// <summary>
@@ -104,7 +105,6 @@ public static class ReducerTestExtensions
     /// <param name="eventData">The event to apply.</param>
     /// <param name="expectedMessage">Optional: expected exception message substring.</param>
     /// <exception cref="ArgumentNullException">Thrown if reducer or eventData is null.</exception>
-    [CustomAssertion]
     public static void ShouldThrow<TException, TEvent, TProjection>(
         this IEventReducer<TEvent, TProjection> reducer,
         TProjection? initialState,
@@ -118,13 +118,24 @@ public static class ReducerTestExtensions
         ArgumentNullException.ThrowIfNull(reducer);
         TProjection state = initialState ?? new TProjection();
         Action act = () => reducer.Reduce(state, eventData!);
+        Exception exception = Assert.ThrowsAny<Exception>(act);
+        TException[] matchingExceptions =
+            exception is AggregateException aggregateException && exception is not TException
+                ? aggregateException.Flatten().InnerExceptions.OfType<TException>().ToArray()
+                : [Assert.IsType<TException>(exception, false)];
+        Assert.True(
+            matchingExceptions.Length > 0,
+            $"Expected an exception assignable to {typeof(TException).Name}, but got {exception.GetType().Name}.");
         if (expectedMessage is not null)
         {
-            act.Should().Throw<TException>().WithMessage($"*{expectedMessage}*");
-        }
-        else
-        {
-            act.Should().Throw<TException>();
+            string pattern = Regex.Escape(expectedMessage)
+                .Replace("\\*", ".*", StringComparison.Ordinal)
+                .Replace("\\?", ".", StringComparison.Ordinal);
+            Regex regex = new(
+                pattern,
+                RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant,
+                TimeSpan.FromSeconds(1));
+            Assert.All(matchingExceptions, matching => Assert.Matches(regex, matching.Message));
         }
     }
 }

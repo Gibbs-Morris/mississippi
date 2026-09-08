@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using FluentAssertions;
-
 using Mississippi.Tributary.Abstractions;
+
+using Xunit;
 
 
 namespace Mississippi.DomainModeling.TestHarness.Projections;
@@ -23,7 +23,7 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///         harness.CreateScenario()
 ///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
 ///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p =&gt; p.Balance.Should().Be(150m));
+///             .ThenAssert(p =&gt; Assert.Equal(150m, p.Balance));
 ///     </code>
 /// </remarks>
 public sealed class ProjectionScenario<TProjection>
@@ -134,7 +134,6 @@ public sealed class ProjectionScenario<TProjection>
     /// </summary>
     /// <param name="assertion">The assertion to execute.</param>
     /// <returns>This scenario for fluent chaining.</returns>
-    [CustomAssertion]
     public ProjectionScenario<TProjection> ThenAssert(
         Action<TProjection> assertion
     )
@@ -149,13 +148,12 @@ public sealed class ProjectionScenario<TProjection>
     /// </summary>
     /// <param name="expected">The expected projection state.</param>
     /// <returns>This scenario for fluent chaining.</returns>
-    [CustomAssertion]
     public ProjectionScenario<TProjection> ThenEquals(
         TProjection expected
     )
     {
         ArgumentNullException.ThrowIfNull(expected);
-        State.Should().BeEquivalentTo(expected);
+        StructuralAssertions.Equivalent(expected, State);
         return this;
     }
 
@@ -164,7 +162,6 @@ public sealed class ProjectionScenario<TProjection>
     /// </summary>
     /// <param name="expected">The expected projection state.</param>
     /// <returns>This scenario for fluent chaining.</returns>
-    [CustomAssertion]
     public ProjectionScenario<TProjection> ThenShouldBe(
         TProjection expected
     ) =>
@@ -175,7 +172,6 @@ public sealed class ProjectionScenario<TProjection>
     /// </summary>
     /// <param name="assertion">The assertion to execute.</param>
     /// <returns>This scenario for fluent chaining.</returns>
-    [CustomAssertion]
     public ProjectionScenario<TProjection> ThenShouldSatisfy(
         Action<TProjection> assertion
     ) =>
@@ -187,14 +183,13 @@ public sealed class ProjectionScenario<TProjection>
     /// <param name="predicate">The predicate that must return true.</param>
     /// <param name="because">The reason for the assertion.</param>
     /// <returns>This scenario for fluent chaining.</returns>
-    [CustomAssertion]
     public ProjectionScenario<TProjection> ThenShouldSatisfy(
         Func<TProjection, bool> predicate,
         string because
     )
     {
         ArgumentNullException.ThrowIfNull(predicate);
-        predicate(State).Should().BeTrue(because);
+        Assert.True(predicate(State), because);
         return this;
     }
 
