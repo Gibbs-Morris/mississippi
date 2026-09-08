@@ -126,7 +126,7 @@ description: <what it does>. Use this when <specific triggers/keywords>.
 license: <optional>
 compatibility: <optional>
 metadata:
-  owner: example-team
+  owner: <maintaining-team>
   version: "0.1"
 ---
 
