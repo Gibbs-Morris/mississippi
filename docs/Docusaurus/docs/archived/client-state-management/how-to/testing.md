@@ -27,7 +27,7 @@ See [Why Use Selectors?](../reference/selectors.md#why-use-selectors) for detail
 
 | Component | Testing Approach | Tooling |
 |-----------|-----------------|---------|
-| **Selectors** | Pure function calls with test state | Standard xUnit/NUnit, no special tooling |
+| **Selectors** | Pure function calls with test state | Standard xUnit, no special tooling |
 | **Reducers** | StoreTestHarness Given/When/Then | `Mississippi.Reservoir.Testing` |
 | **Effects** | StoreTestHarness with mocked services | `Mississippi.Reservoir.Testing` |
 | **Components** | Verify wiring, not logic | bUnit (optional, minimal tests) |
