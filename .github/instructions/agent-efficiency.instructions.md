@@ -19,7 +19,7 @@ Governing thought: Spend tokens on evidence and actions that advance the user's 
 - Agents **SHOULD** batch independent reads when supported. Why: Combining independent reads can reduce tool overhead.
 - Agents **SHOULD** stop optional research or validation once the relevant uncertainty is resolved. Why: Further checks need a new change, failure, missing fact, or unresolved concern to justify their cost.
 - Agents **MUST** reassess before a third substantially equivalent attempt when two consecutive attempts produce the same failure or no useful new evidence. Why: This is an early checkpoint before existing retry caps, not permission to spend every allowed attempt.
-- Agents **MUST** identify a changed hypothesis, input, or method, or a verified change in external conditions, before retrying after reassessment. Why: Rewording a command or plan does not make the same failed approach informative.
+- Agents **MUST** justify a retry after reassessment with a changed hypothesis, input, or method, a verified change in external conditions, or a bounded plan for safely retrying an unobservable operation. Why: Safety alone does not justify unlimited repetition.
 - Agents **SHOULD** keep a brief checkpoint at a stall or handoff: unmet requirement, attempts and evidence, current operation identifiers, and next decision. Why: Resuming work should not restart exhausted investigations.
 - Agents **MUST** check the existing operation's status or handle before considering a restart after an observation timeout. Why: A timeout or silent log does not prove that work stopped.
 - Agents **MAY** retry an operation whose state cannot be observed only when evidence establishes that duplicate execution is safe. Why: An idempotent retry can recover a lost handle, but missing status alone does not establish failure.
@@ -44,7 +44,7 @@ All repository agents, including long-running and persistent-goal workflows. Req
 
 | Evidence | Next action |
 |----------|-------------|
-| Two runs return the same error with unchanged inputs | Inspect the cause and change the hypothesis or method before another run. |
+| Two completed runs return the same error with unchanged inputs | Inspect the cause and change the hypothesis or method before another run. |
 | A test observation times out but its session is still running | Keep the session identifier and wait for that run; do not launch a duplicate. |
 | Access is denied and the user can grant the needed access | State the inaccessible scope and request that access; do not interpret denial as an empty result. |
 | A service outage blocks work and the user cannot restore it | Report the condition and what needs to recover; follow the host's waiting or blockage rules. |
@@ -52,6 +52,7 @@ All repository agents, including long-running and persistent-goal workflows. Req
 ## Core Principles
 
 - Useful progress includes evidence that rules out an approach, even without a file change.
+- A bounded retry plan states a total attempt limit for the same operation, the evidence expected, and the exit condition; resuming work does not reset the limit.
 - Reassessment changes the next action; repeated plans and status summaries alone do not advance the task.
 - Efficiency is judged across the whole task, including delegated work when used; shorter answers alone do not establish lower cost.
 
