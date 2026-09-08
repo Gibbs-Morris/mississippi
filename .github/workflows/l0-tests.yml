@@ -70,9 +70,10 @@ jobs:
           dotnet build ${{ github.workspace }}/${{ matrix.solution }} --configuration ${{ env.CONFIGURATION }} --no-restore --no-incremental -p:Version=${{ steps.gitversion.outputs.SemVer }}
 
       - name: Run L0 Tests
+        shell: pwsh
         run: |
-          mkdir -p "${{ github.workspace }}/.scratchpad/coverage-test-results"
-          dotnet test ${{ github.workspace }}/${{ matrix.solution }} --no-build --configuration ${{ env.CONFIGURATION }} --filter "FullyQualifiedName~.L0Tests." -p:RepositoryTestResults=true --results-directory ${{ github.workspace }}/.scratchpad/coverage-test-results
+          Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force
+          Invoke-SolutionTests -SolutionPath '${{ matrix.solution }}' -Configuration $env:CONFIGURATION -TestLevels L0Tests -AdditionalArguments '--no-build' -ResultsRoot (Join-Path $env:GITHUB_WORKSPACE '.scratchpad/coverage-test-results') | Out-Host
 
       - name: Upload Test Results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
