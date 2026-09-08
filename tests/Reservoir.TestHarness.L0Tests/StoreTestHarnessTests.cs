@@ -129,17 +129,11 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             })
-            .WithReducer<IncrementAction>((
-                state,
-                _
-            ) => state with
+            .WithReducer<IncrementAction>((state, _) => state with
             {
                 Counter = state.Counter + 1,
             });
@@ -164,10 +158,7 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             });
@@ -209,10 +200,7 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             });
@@ -289,10 +277,7 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             });
@@ -310,10 +295,7 @@ public sealed class StoreTestHarnessTests
     {
         // Arrange
         StoreTestHarness<TestState> harness = StoreTestHarnessFactory.ForFeature<TestState>()
-            .WithReducer<SetValueAction>((
-                state,
-                action
-            ) => state with
+            .WithReducer<SetValueAction>((state, action) => state with
             {
                 Value = action.Value,
             })
