@@ -136,30 +136,34 @@ Describe 'Build entry point process boundaries' {
         $LASTEXITCODE | Should -Be $WrapperExit
         $output | Should -Match 'FINAL:Debug'
         $output.Contains('QUICK BUILD COMPLETED SUCCESSFULLY') | Should -Be ($ExitCode -eq 0)
-        if ($ExitCode -ne 0) { $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code[\s|]+7' }
+        if ($ExitCode -ne 0) { $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code:?[\s|]+7' }
     }
 
-    It 'runs both builds after success and stops after a failed child: <ExitCode>' -ForEach @(
-        @{ ExitCode = 0 },
-        @{ ExitCode = 7 }
+    It 'runs both steps after success and stops after a failed child: <EntryPoint> <ExitCode>' -ForEach @(
+        @{ ExitCode = 0; EntryPoint = 'build.ps1'; Prefix = 'build'; Summary = 'ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY' },
+        @{ ExitCode = 7; EntryPoint = 'build.ps1'; Prefix = 'build'; Summary = 'ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY' },
+        @{ ExitCode = 0; EntryPoint = 'clean-up.ps1'; Prefix = 'clean-up'; Summary = 'ALL CLEANUP OPERATIONS COMPLETED SUCCESSFULLY' },
+        @{ ExitCode = 7; EntryPoint = 'clean-up.ps1'; Prefix = 'clean-up'; Summary = 'ALL CLEANUP OPERATIONS COMPLETED SUCCESSFULLY' }
     ) {
         $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
         $scripts = Join-Path $fixture 'eng/src/agent-scripts'
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
-        Copy-Item (Join-Path $PSScriptRoot '../../../build.ps1') $fixture
-        Set-Content (Join-Path $scripts 'build-mississippi-solution.ps1') "param([string]`$Configuration); Write-Output ('CORE:' + `$Configuration); exit $ExitCode"
-        Set-Content (Join-Path $scripts 'build-sample-solution.ps1') "param([string]`$Configuration); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
-        $output = & pwsh -NoProfile -File (Join-Path $fixture 'build.ps1') -Configuration Debug 2>&1 | Out-String
+        Copy-Item (Join-Path $PSScriptRoot '../../../' $EntryPoint) $fixture
+        Set-Content (Join-Path $scripts "$Prefix-mississippi-solution.ps1") "param([string]`$Configuration); Write-Output ('CORE:' + `$Configuration); exit $ExitCode"
+        Set-Content (Join-Path $scripts "$Prefix-sample-solution.ps1") "param([string]`$Configuration); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
+        $options = if ($Prefix -eq 'build') { @('-Configuration', 'Debug') } else { @() }
+        $expectedConfiguration = if ($Prefix -eq 'build') { 'Debug' } else { '' }
+        $output = & pwsh -NoProfile -File (Join-Path $fixture $EntryPoint) @options 2>&1 | Out-String
         if ($ExitCode -eq 0) {
             $LASTEXITCODE | Should -Be 0
-            $output | Should -Match 'SAMPLES:Debug'
-            $output | Should -Match 'ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY'
+            $output | Should -Match "SAMPLES:$expectedConfiguration"
+            $output | Should -Match $Summary
         }
         else {
             $LASTEXITCODE | Should -Be 1
-            $output | Should -Not -Match 'SAMPLES:Debug'
-            $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code[\s|]+7'
+            $output | Should -Not -Match 'SAMPLES:'
+            $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code:?[\s|]+7'
         }
-        $output | Should -Match 'CORE:Debug'
+        $output | Should -Match "CORE:$expectedConfiguration"
     }
 }
