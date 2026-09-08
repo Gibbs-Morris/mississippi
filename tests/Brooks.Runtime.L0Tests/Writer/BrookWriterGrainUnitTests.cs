@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -27,6 +29,12 @@ namespace Mississippi.Brooks.Runtime.L0Tests.Writer;
 /// </summary>
 public sealed class BrookWriterGrainUnitTests
 {
+    private static bool HasElapsedTime(
+        object state
+    ) =>
+        state is IEnumerable<KeyValuePair<string, object?>> values &&
+        values.Any(value => (value.Key == "ElapsedMs") && value.Value is long elapsed && (elapsed >= 0));
+
     /// <summary>
     ///     Leaves a storage failure unclassified because its append outcome may be unknown.
     /// </summary>
@@ -220,19 +228,29 @@ public sealed class BrookWriterGrainUnitTests
     {
         Mock<IBrookStorageWriter> storage = new(MockBehavior.Strict);
         Mock<IGrainContext> context = new(MockBehavior.Strict);
+        Mock<ILogger<BrookWriterGrain>> logger = new();
+        logger.Setup(value => value.IsEnabled(LogLevel.Error)).Returns(true);
         InvalidOperationException publicationFailure = new("Stream provider is unavailable.");
         context.SetupGet(value => value.GrainId)
             .Returns(GrainId.Create("brook-writer", new BrookKey("test", "republish").ToString()));
         context.SetupGet(value => value.ActivationServices).Throws(publicationFailure);
         BrookWriterGrain writer = new(
             storage.Object,
-            NullLogger<BrookWriterGrain>.Instance,
+            logger.Object,
             context.Object,
             Options.Create(new BrookProviderOptions()));
         KeyNotFoundException exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             writer.PublishCursorAsync(new(5)));
         Assert.Same(publicationFailure, exception.InnerException);
         storage.VerifyNoOtherCalls();
+        logger.Verify(
+            value => value.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id => id.Id == 8),
+                It.Is<It.IsAnyType>((state, type) => HasElapsedTime(state)),
+                exception,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -247,6 +265,8 @@ public sealed class BrookWriterGrainUnitTests
         Mock<IGrainContext> context = new(MockBehavior.Strict);
         Mock<IStreamProvider> streamProvider = new(MockBehavior.Strict);
         Mock<IAsyncStream<BrookCursorMovedEvent>> stream = new(MockBehavior.Strict);
+        Mock<ILogger<BrookWriterGrain>> logger = new();
+        logger.Setup(value => value.IsEnabled(LogLevel.Information)).Returns(true);
         BrookProviderOptions options = new();
         ServiceCollection services = new();
         services.AddKeyedSingleton(options.OrleansStreamProviderName, streamProvider.Object);
@@ -260,14 +280,18 @@ public sealed class BrookWriterGrainUnitTests
                     (update.NewPosition.Value == 5) && (update.BrookKey == key.ToString())),
                 null))
             .Returns(Task.CompletedTask);
-        BrookWriterGrain writer = new(
-            storage.Object,
-            NullLogger<BrookWriterGrain>.Instance,
-            context.Object,
-            Options.Create(options));
+        BrookWriterGrain writer = new(storage.Object, logger.Object, context.Object, Options.Create(options));
         await writer.PublishCursorAsync(new(5));
         stream.VerifyAll();
         storage.VerifyNoOtherCalls();
+        logger.Verify(
+            value => value.Log(
+                LogLevel.Information,
+                It.Is<EventId>(id => id.Id == 6),
+                It.Is<It.IsAnyType>((state, type) => HasElapsedTime(state)),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     /// <summary>
