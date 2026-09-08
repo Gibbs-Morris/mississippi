@@ -77,11 +77,11 @@ try {
     }
 
     if (-not $SkipMississippi) {
-        Invoke-BuildStep -Title 'STEP 1: Build Mississippi Solution' -Action { & $buildMississippi -Configuration $Configuration }
+        Invoke-BuildStep -Title 'STEP 1: Build Mississippi Solution' -Action { & pwsh -NoProfile -File $buildMississippi -Configuration $Configuration }
     }
 
     if (-not $SkipSamples) {
-        Invoke-BuildStep -Title 'STEP 2: Build Samples Solution' -Action { & $buildSamples -Configuration $Configuration }
+        Invoke-BuildStep -Title 'STEP 2: Build Samples Solution' -Action { & pwsh -NoProfile -File $buildSamples -Configuration $Configuration }
     }
 
     Write-Host '=== ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY ===' -ForegroundColor Green

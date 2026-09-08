@@ -106,3 +106,29 @@ Describe 'Standalone Pester runners' {
         $LASTEXITCODE | Should -Be $ExitCode
     }
 }
+
+Describe 'Build entry point process boundaries' {
+    It 'runs both builds after success and stops after a failed child: <ExitCode>' -ForEach @(
+        @{ ExitCode = 0 },
+        @{ ExitCode = 7 }
+    ) {
+        $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        $scripts = Join-Path $fixture 'eng/src/agent-scripts'
+        New-Item -ItemType Directory -Path $scripts -Force | Out-Null
+        Copy-Item (Join-Path $PSScriptRoot '../../../build.ps1') $fixture
+        Set-Content (Join-Path $scripts 'build-mississippi-solution.ps1') "param([string]`$Configuration); Write-Output ('CORE:' + `$Configuration); exit $ExitCode"
+        Set-Content (Join-Path $scripts 'build-sample-solution.ps1') "param([string]`$Configuration); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
+        $output = & pwsh -NoProfile -File (Join-Path $fixture 'build.ps1') -Configuration Debug 2>&1 | Out-String
+        if ($ExitCode -eq 0) {
+            $LASTEXITCODE | Should -Be 0
+            $output | Should -Match 'SAMPLES:Debug'
+            $output | Should -Match 'ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY'
+        }
+        else {
+            $LASTEXITCODE | Should -Be 1
+            $output | Should -Not -Match 'SAMPLES:Debug'
+            $output | Should -Match 'failed with exit code 7'
+        }
+        $output | Should -Match 'CORE:Debug'
+    }
+}
