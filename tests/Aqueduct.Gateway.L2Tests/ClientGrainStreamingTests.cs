@@ -43,7 +43,7 @@ public sealed class ClientGrainStreamingTests
         string? retrievedServerId = await clientGrain.GetServerIdAsync();
 
         // Assert
-        retrievedServerId.Should().Be(serverId);
+        Assert.Equal(serverId, retrievedServerId);
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public sealed class ClientGrainStreamingTests
         string? retrievedServerId = await freshGrain.GetServerIdAsync();
 
         // Assert
-        retrievedServerId.Should().BeNull();
+        Assert.Null(retrievedServerId);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public sealed class ClientGrainStreamingTests
         string? serverId = await clientGrain.GetServerIdAsync();
 
         // Assert
-        serverId.Should().BeNull();
+        Assert.Null(serverId);
     }
 
     /// <summary>
@@ -111,6 +111,6 @@ public sealed class ClientGrainStreamingTests
         string? retrievedServerId = await clientGrain.GetServerIdAsync();
 
         // Assert - should have the latest server
-        retrievedServerId.Should().Be(serverId2);
+        Assert.Equal(serverId2, retrievedServerId);
     }
 }
