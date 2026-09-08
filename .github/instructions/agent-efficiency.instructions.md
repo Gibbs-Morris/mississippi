@@ -55,6 +55,6 @@ All repository agents, including long-running and persistent-goal workflows. Req
 
 The two-attempt checkpoint is a Mississippi policy choice, not a measured optimum or a vendor limit. These sources inform the approach; no token-saving percentage is claimed.
 
-- [OpenAI: Outcome-first prompts and stopping conditions](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-5.5#outcome-first-prompts-and-stopping-conditions): define success and missing-evidence behavior while keeping correctness ahead of loop reduction.
+- [OpenAI: Outcome-first prompts and stopping conditions](https://developers.openai.com/api/docs/guides/prompt-guidance?model=gpt-5.5#outcome-first-prompts-and-stopping-conditions): define success and missing-evidence behavior while keeping correctness ahead of loop reduction.
 - [OpenAI: Testing and verification](https://developers.openai.com/api/docs/guides/latest-model#testing-and-verification): complete required checks and justify additional testing with changed evidence or remaining concerns.
 - [First-principles thinking](../../docs/key-principles/first-principles-thinking.md) and [chain of verification](../../docs/key-principles/chain-of-verification.md): challenge assumptions and check conclusions against evidence.
