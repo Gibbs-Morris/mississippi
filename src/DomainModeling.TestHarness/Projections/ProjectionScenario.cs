@@ -19,12 +19,12 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///         Use this class to build readable test scenarios that establish state via events (Given),
 ///         apply a new event (When), and verify the resulting projection (Then).
 ///     </para>
-///     <code>
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new FundsDeposited { Amount = 50m })
-///             .ThenAssert(p =&gt; Assert.Equal(150m, p.Balance));
-///     </code>
+///     <para>
+///         For executable usage examples, see the
+///         <see href="https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring/Spring.Domain.L0Tests">
+///             Spring domain tests
+///         </see>.
+///     </para>
 /// </remarks>
 public sealed class ProjectionScenario<TProjection>
     where TProjection : new()

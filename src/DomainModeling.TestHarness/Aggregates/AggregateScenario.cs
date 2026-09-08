@@ -25,13 +25,12 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///         Assertions throw immediately when they fail. A failed prerequisite stops the scenario
 ///         before event or state callbacks are invoked.
 ///     </para>
-///     <code>
-///         harness.CreateScenario()
-///             .Given(new AccountOpened { HolderName = "John", InitialDeposit = 100m })
-///             .When(new DepositFunds { Amount = 50m })
-///             .ThenEmits&lt;FundsDeposited&gt;(e =&gt; Assert.Equal(50m, e.Amount))
-///             .ThenState(s =&gt; Assert.Equal(150m, s.Balance));
-///     </code>
+///     <para>
+///         For executable usage examples, see the
+///         <see href="https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring/Spring.Domain.L0Tests">
+///             Spring domain tests
+///         </see>.
+///     </para>
 /// </remarks>
 public sealed class AggregateScenario<TAggregate>
     where TAggregate : new()
