@@ -66,7 +66,11 @@ Describe 'Mutation automation' {
         Set-Content (Join-Path $packageDirectory 'Package.csproj') '<Project />'
         (Get-Content $solution -Raw).Replace('</Solution>', '<Project Path="src/Package/Package.csproj" /></Solution>') | Set-Content $solution
         Set-Content (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj') '<Project><ItemGroup><ProjectReference Include="../../src/Widget/Widget.csproj" /><ProjectReference Include="../../src/Package/Package.csproj" /></ItemGroup></Project>'
-        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
+        Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation {
+            $manifest = @(Get-Content (Join-Path $OutputPath 'project-results.json') -Raw | ConvertFrom-Json)
+            ($manifest | Where-Object Project -Like '*Package.csproj').Status | Should -Be 'Skipped'
+            $completedOutput
+        }
         Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output | Should -Be $output
         Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1
         Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 0 -ParameterFilter { $ProjectPath -like '*Package.csproj' }

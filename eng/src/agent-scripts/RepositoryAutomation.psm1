@@ -532,6 +532,7 @@ function Invoke-StrykerMutationTest {
             $result.Status = 'Skipped'
             $result.Success = $true
             $result.Reason = 'No authored C# source'
+            ConvertTo-Json -InputObject @($projectResults) -Depth 6 | Set-Content -LiteralPath $manifestPath
             continue
         }
         try {
