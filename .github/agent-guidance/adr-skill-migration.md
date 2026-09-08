@@ -6,13 +6,18 @@ It contributes to [#553](https://github.com/Gibbs-Morris/mississippi/issues/553)
 and [#532](https://github.com/Gibbs-Morris/mississippi/issues/532), using one
 complete PR for the skill, direct consumer routes, and replaced procedure.
 
-Parent: [PR #618](https://github.com/Gibbs-Morris/mississippi/pull/618), head
+Initial parent: [PR #618](https://github.com/Gibbs-Morris/mississippi/pull/618), head
 `2f54a5f19004cb3de05ba6c531521db1e19b2bbe`. Before this layer started on September
 8, 2026, the parent passed 29 GitHub checks; its logging ancestor passed 30
 applicable checks with an intentional Pages deployment skip. Both had completed
 Codex code/security reviews, positive Copilot reviews, resolved inline threads,
 and `CLEAN` GitHub status against main
 `cc31f1a9c061f9ea83ef0c9eadbabc5b397cf9c6`.
+
+Before submission, the stack was rebased onto the subsequently merged assertion
+migration in main `e5b5054f4253046c2f16989eb417683ed9747734`. Current-head gates
+are re-established after that rebase; the initial readiness evidence above does
+not prove the rebased revisions are ready.
 
 ## Portable boundary
 
