@@ -35,7 +35,7 @@ public sealed class BankAccountE2ETests
     public async Task AccountsPageShouldDisplayTitle()
     {
         // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
         IPage page = await fixture.CreatePageAsync();
         try
         {
@@ -47,7 +47,7 @@ public sealed class BankAccountE2ETests
             string? title = await page.Locator("h1").TextContentAsync();
 
             // Assert
-            title.Should().Be("Bank Account Operations");
+            Assert.Equal("Bank Account Operations", title);
         }
         finally
         {
@@ -63,7 +63,7 @@ public sealed class BankAccountE2ETests
     public async Task DepositButtonShouldUpdateBalance()
     {
         // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
         IPage page = await fixture.CreatePageAsync();
         try
         {
@@ -79,7 +79,7 @@ public sealed class BankAccountE2ETests
 
             // Assert
             string? balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("575.00");
+            Assert.Contains("575.00", balanceText, StringComparison.Ordinal);
         }
         finally
         {
@@ -94,9 +94,9 @@ public sealed class BankAccountE2ETests
     public void FixtureShouldBeInitialized()
     {
         // Assert
-        fixture.IsInitialized.Should().BeTrue("the Spring AppHost should start successfully");
-        fixture.InitializationError.Should().BeNull("there should be no initialization errors");
-        fixture.GatewayBaseUri.Should().NotBe(new Uri("about:blank"), "the gateway should have a valid URL");
+        Assert.True(fixture.IsInitialized, "the Spring AppHost should start successfully");
+        Assert.Null(fixture.InitializationError);
+        Assert.NotEqual(new("about:blank"), fixture.GatewayBaseUri);
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public sealed class BankAccountE2ETests
     public async Task InitializeDemoAccountsShouldDisplayBalanceProjection()
     {
         // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
         IPage page = await fixture.CreatePageAsync();
         try
         {
@@ -119,11 +119,11 @@ public sealed class BankAccountE2ETests
 
             // Assert
             string? balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("500.00", "demo account should have £500 initial balance");
+            Assert.Contains("500.00", balanceText, StringComparison.Ordinal);
             string? holderText = await operationsPage.GetHolderNameTextAsync();
-            holderText.Should().NotBeNullOrEmpty("holder name should be displayed");
+            Assert.False(string.IsNullOrEmpty(holderText), "holder name should be displayed");
             string? statusText = await operationsPage.GetStatusTextAsync();
-            statusText.Should().Contain("Open", "account status should be Open");
+            Assert.Contains("Open", statusText, StringComparison.Ordinal);
         }
         finally
         {
@@ -139,7 +139,7 @@ public sealed class BankAccountE2ETests
     public async Task OperationsPageShouldDisplayAccountHeader()
     {
         // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
         IPage page = await fixture.CreatePageAsync();
         try
         {
@@ -148,8 +148,8 @@ public sealed class BankAccountE2ETests
 
             // Assert
             string? accountHeader = await operationsPage.GetAccountHeaderAsync();
-            accountHeader.Should().NotBeNullOrEmpty("account header should be displayed");
-            accountHeader.Should().Contain("Account A", "should show Account A panel label");
+            Assert.False(string.IsNullOrEmpty(accountHeader), "account header should be displayed");
+            Assert.Contains("Account A", accountHeader, StringComparison.Ordinal);
         }
         finally
         {
@@ -165,7 +165,7 @@ public sealed class BankAccountE2ETests
     public async Task WithdrawButtonShouldUpdateBalance()
     {
         // Arrange
-        fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        Assert.True(fixture.IsInitialized, "fixture must be initialized");
         IPage page = await fixture.CreatePageAsync();
         try
         {
@@ -182,7 +182,7 @@ public sealed class BankAccountE2ETests
 
             // Assert
             string? balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("450.00");
+            Assert.Contains("450.00", balanceText, StringComparison.Ordinal);
         }
         finally
         {

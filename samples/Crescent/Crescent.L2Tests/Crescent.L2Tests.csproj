@@ -7,9 +7,6 @@
     <PackageReference Include="Microsoft.Azure.Cosmos" />
     <PackageReference Include="Azure.Storage.Blobs" />
 
-    <!-- FluentAssertions for readable assertions -->
-    <PackageReference Include="FluentAssertions" />
-
     <!-- Orleans for in-process silo hosting -->
     <PackageReference Include="Microsoft.Orleans.Server" />
   </ItemGroup>

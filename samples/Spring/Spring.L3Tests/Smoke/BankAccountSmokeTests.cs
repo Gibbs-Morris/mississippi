@@ -28,7 +28,7 @@ public sealed class BankAccountSmokeTests
     public async Task CompleteBankAccountFlowShouldUpdateProjectionViaSignalR()
     {
         // Arrange
-        Fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
+        Assert.True(Fixture.IsInitialized, "fixture must be initialized");
         IPage page = await Fixture.CreatePageAsync();
         try
         {
@@ -44,18 +44,18 @@ public sealed class BankAccountSmokeTests
             OperationsPage operationsPage = await BankAccountScenario.PrepareAsync(Fixture, page, ProjectionTimeout);
             bool hasStyles = await page.Locator("link[rel='stylesheet']")
                 .EvaluateAsync<bool>("link => link.sheet !== null && link.sheet.cssRules.length > 0");
-            hasStyles.Should().BeTrue("the generated CSS isolation bundle must load successfully");
+            Assert.True(hasStyles, "the generated CSS isolation bundle must load successfully");
 
             // Wait for projection to show the balance via SignalR
             await operationsPage.WaitForBalanceAsync(ProjectionTimeout);
 
             // Assert - Verify initial state (demo accounts start with £500)
             string? balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("500.00", "demo account should start with £500");
+            Assert.Contains("500.00", balanceText, StringComparison.Ordinal);
             string? holderText = await operationsPage.GetHolderNameTextAsync();
-            holderText.Should().NotBeNullOrEmpty("holder name should be displayed");
+            Assert.False(string.IsNullOrEmpty(holderText), "holder name should be displayed");
             string? statusText = await operationsPage.GetStatusTextAsync();
-            statusText.Should().Contain("Open", "account status should be Open");
+            Assert.Contains("Open", statusText, StringComparison.Ordinal);
 
             // Act - Deposit funds
             const decimal depositAmount = 50.00m;
@@ -64,7 +64,7 @@ public sealed class BankAccountSmokeTests
             await operationsPage.WaitForCommandSuccessAsync(ProjectionTimeout);
             await operationsPage.WaitForBalanceValueAsync("550.00", ProjectionTimeout);
             balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("550.00", "balance should be £550 after deposit");
+            Assert.Contains("550.00", balanceText, StringComparison.Ordinal);
 
             // Act - Withdraw funds
             const decimal withdrawAmount = 25.00m;
@@ -75,7 +75,7 @@ public sealed class BankAccountSmokeTests
 
             // Assert - Final balance
             balanceText = await operationsPage.GetBalanceTextAsync();
-            balanceText.Should().Contain("525.00", "final balance should reflect all transactions");
+            Assert.Contains("525.00", balanceText, StringComparison.Ordinal);
         }
         catch (Exception testException)
         {

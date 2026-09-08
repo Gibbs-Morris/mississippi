@@ -47,14 +47,14 @@ public sealed class BlobStorageTests
 
         // Verify it exists
         bool existsBefore = await blobClient.ExistsAsync();
-        existsBefore.Should().BeTrue("the blob should exist before deletion");
+        Assert.True(existsBefore, "the blob should exist before deletion");
 
         // Act
         await blobClient.DeleteAsync();
 
         // Assert
         bool existsAfter = await blobClient.ExistsAsync();
-        existsAfter.Should().BeFalse("the blob should not exist after deletion");
+        Assert.False(existsAfter, "the blob should not exist after deletion");
     }
 
     /// <summary>
@@ -96,8 +96,8 @@ public sealed class BlobStorageTests
         }
 
         // Assert
-        listedBlobNames.Should().HaveCount(3, "we uploaded 3 blobs with the matching prefix");
-        listedBlobNames.Should().BeEquivalentTo(uploadedBlobNames, "the listed blobs should match the uploaded blobs");
+        Assert.Equal(3, listedBlobNames.Count);
+        Assert.Equivalent(uploadedBlobNames, listedBlobNames, true);
 
         // Cleanup
         await containerClient.DeleteIfExistsAsync();
@@ -127,7 +127,7 @@ public sealed class BlobStorageTests
         string actualContent = downloadResponse.Value.Content.ToString();
 
         // Assert
-        actualContent.Should().Be(expectedContent, "the downloaded content should match what was uploaded");
+        Assert.Equal(expectedContent, actualContent);
     }
 
     /// <summary>
@@ -148,7 +148,8 @@ public sealed class BlobStorageTests
         Func<Task> act = async () => await blobClient.DownloadContentAsync();
 
         // Assert
-        await act.Should().ThrowAsync<RequestFailedException>("the blob does not exist").Where(e => e.Status == 404);
+        RequestFailedException exception = await Assert.ThrowsAnyAsync<RequestFailedException>(act);
+        Assert.Equal(404, exception.Status);
     }
 
     /// <summary>
@@ -178,7 +179,7 @@ public sealed class BlobStorageTests
         byte[] actualContent = downloadResponse.Value.Content.ToArray();
 
         // Assert
-        actualContent.Should().BeEquivalentTo(expectedContent, "binary content should be preserved exactly");
+        Assert.Equal(expectedContent, actualContent);
     }
 
     /// <summary>
@@ -201,13 +202,13 @@ public sealed class BlobStorageTests
         AzureBlobContentInfo response = await blobClient.UploadAsync(stream, true);
 
         // Assert
-        response.Value.Should().NotBeNull("the upload should return content info");
+        Assert.True(response.Value is not null, "the upload should return content info");
 #pragma warning disable IDISP004 // Don't ignore created IDisposable - GetRawResponse returns wrapper that doesn't need disposal
-        response.GetRawResponse().Status.Should().Be(201, "HTTP 201 Created indicates successful upload");
+        Assert.Equal(201, response.GetRawResponse().Status);
 #pragma warning restore IDISP004
 
         // Verify the blob exists
         bool exists = await blobClient.ExistsAsync();
-        exists.Should().BeTrue("the blob should exist after upload");
+        Assert.True(exists, "the blob should exist after upload");
     }
 }

@@ -14,8 +14,6 @@ global using Aspire.Hosting.Testing;
 
 global using Azure.Storage.Blobs;
 
-global using FluentAssertions;
-
 global using Microsoft.Azure.Cosmos;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;

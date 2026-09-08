@@ -27,9 +27,9 @@ public sealed class ApiDocumentationE2ETests
                 () => page.GotoAsync(new Uri(Fixture.GatewayBaseUri, "/scalar/v1").AbsoluteUri),
                 candidate => Uri.TryCreate(candidate.Url, UriKind.Absolute, out Uri? responseUri) &&
                              (responseUri.AbsolutePath == "/openapi/v1.json"));
-            response.Status.Should().Be(200);
+            Assert.Equal(200, response.Status);
             string title = await page.TitleAsync();
-            title.Should().Be("Spring Bank API");
+            Assert.Equal("Spring Bank API", title);
         }
         finally
         {

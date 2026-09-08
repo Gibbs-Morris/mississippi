@@ -1364,7 +1364,6 @@
         "dependencies": {
           "Aspire.Hosting.Testing": "[13.5.3, )",
           "Azure.Storage.Blobs": "[12.29.2, )",
-          "FluentAssertions": "[8.10.0, )",
           "Microsoft.Azure.Cosmos": "[3.62.1, )",
           "Microsoft.NET.Test.Sdk": "[18.9.0, )",
           "Microsoft.Orleans.Server": "[10.3.1, )",
