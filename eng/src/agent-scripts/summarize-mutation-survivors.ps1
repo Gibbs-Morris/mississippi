@@ -698,7 +698,7 @@ if ($GenerateTasks) {
 
 $focusSelection = @($focusSelection | Where-Object { $_ })
 
-if ($focusSelection.Count -gt 0) {
+if ($selectedRun.Manifest.Scope -eq 'Solution' -and $focusSelection.Count -gt 0) {
     $taskItems = @()
     foreach ($survivor in $focusSelection) {
         $taskItems += ConvertTo-MutationTaskItem -Survivor $survivor

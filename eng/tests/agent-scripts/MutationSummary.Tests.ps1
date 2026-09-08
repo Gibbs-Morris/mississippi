@@ -127,6 +127,7 @@ exit 7
         Test-Path (Join-Path $selected 'mutation-survivors-enriched.json') | Should -BeTrue
         Test-Path (Join-Path $reportRoot 'mutation-survivors-enriched.json') | Should -BeFalse
         Test-Path (Join-Path $repo '.scratchpad/testing/mutation-survivors-summary.md') | Should -BeFalse
+        Test-Path (Join-Path $repo '.scratchpad/tasks') | Should -BeFalse
         & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun -RunPath $selected -GenerateTasks 2>&1 | Out-Null
         $LASTEXITCODE | Should -Not -Be 0
     }
