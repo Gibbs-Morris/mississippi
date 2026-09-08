@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    Performs a fast, strict build of both solutions by invoking eng\\src\\agent-scripts\\final-build-solutions.ps1.
+    Performs a fast, strict build of both solutions through the final-build script.
 #>
 
 [CmdletBinding()]
@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Build the path to the final-build script
-$finalBuildScript = Join-Path $scriptDir 'eng\\src\\agent-scripts\\final-build-solutions.ps1'
+$finalBuildScript = Join-Path $scriptDir 'eng' 'src' 'agent-scripts' 'final-build-solutions.ps1'
 
 Write-Host "=== QUICK BUILD MODE ===" -ForegroundColor Yellow
 Write-Host "Fast build with warnings as errors (bypasses tests and cleanup)"
