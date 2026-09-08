@@ -2,8 +2,9 @@
 Title: <Single outcome> +semver: <skip|fix|feature|breaking>
 Keep this description proportional to the change. Replace placeholders and remove
 optional sections that add no information. Do not invent benefits or test results.
-See .github/instructions/pr-description.instructions.md and
-.github/instructions/pr-size-and-stacking.instructions.md.
+Instruction files, relative to this template's directory:
+instructions/pr-description.instructions.md and
+instructions/pr-size-and-stacking.instructions.md.
 -->
 
 # [Title: Single logical outcome]
@@ -46,7 +47,7 @@ Identify pending or failed checks and explain non-applicable checks.]
 - [ ] Required approvals received; all review comments addressed and threads resolved
 
 <!-- Before starting the next dependent layer, satisfy the full advancement gate
-in pr-size-and-stacking.instructions.md. A draft or a quiet poll is not approval. -->
+in instructions/pr-size-and-stacking.instructions.md. A draft or a quiet poll is not approval. -->
 
 ## Migration Notes
 
