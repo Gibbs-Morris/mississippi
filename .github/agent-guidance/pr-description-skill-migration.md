@@ -38,14 +38,15 @@ and the [Agent Skills specification](https://agentskills.io/specification).
 | PR Manager title examples and duplicated description heading list | Replaced by skill, policy, and template links |
 | PR Manager delegation, hard rules, audit summary/provenance, freshness loop, thread handling, and merge readiness | Unchanged |
 | Epic Builder body heading list | Replaced by the same drafting route; sub-plan contribution and master-plan/dependency links explicitly retained |
-| Epic Builder publication, title, base selection, completion marker, and advancement workflow | Unchanged |
+| Epic Builder publication, title, base selection, completion marker, and advancement workflow | Preserved; submission and merge references explicitly name gh-stack to distinguish the drafting skill |
 | Repository PR template | Unchanged; still the local output contract |
 
 ## Verification and limits
 
 The bundled skill validator passed. All 15 policy bullets and the complete
-Rules section match the parent exactly. Prefix/suffix comparisons verify that
-the affected agents retain their non-drafting workflows and authority boundaries.
+Rules section match the parent exactly. Prefix/suffix comparisons, allowing only
+the two explicit gh-stack name clarifications, verify that the affected agents
+retain their non-drafting workflows and authority boundaries.
 All three consumer links resolve to the skill, the template is unchanged, the
 skill contains no repository bindings, and the ten evaluation cases parse.
 Markdown lint passed for the skill, policy, both changed agents, and this record.
@@ -72,9 +73,9 @@ claims of independent inspection when files were not accessible.
 Review also clarified the output boundary: title-only and body-only requests
 receive only the requested artifact. Dedicated cases record both situations.
 
-The globally applied instruction shrinks from 1,002 to 605 whitespace-delimited
-words, a reduction of 397 words and 59 lines. The two agent procedures remove
-another 101 words and 17 lines; those agents are loaded only when selected.
+The globally applied instruction shrinks from 1,002 to 631 whitespace-delimited
+words, a reduction of 371 words and 57 lines. The two agent procedures remove
+another 89 words and 14 lines; those agents are loaded only when selected.
 Skill discovery metadata adds its own startup cost. These are text-corpus
 measurements, not measured token counts or latency improvements. No application,
 test-project, package, or workflow configuration changes are included.
