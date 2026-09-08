@@ -6,6 +6,8 @@ using System.Text;
 
 using Mississippi.DomainModeling.Abstractions;
 
+using Orleans.Serialization.TypeSystem;
+
 
 namespace Mississippi.DomainModeling.Runtime.Sagas;
 
@@ -33,10 +35,12 @@ internal static class SagaStepHash
                 builder.Append('|');
             }
 
-            string stepTypeName = step.StepType.FullName ?? step.StepType.Name;
+            // Keep the defining assembly explicit even when Orleans formats a compound alias.
+            string stepTypeName = RuntimeTypeNameFormatter.Format(step.StepType);
+            string assemblyName = step.StepType.Assembly.GetName().Name!;
             builder.Append(
                 CultureInfo.InvariantCulture,
-                $"{step.StepIndex}:{step.StepName.Length}:{step.StepName}:{stepTypeName.Length}:{stepTypeName}:{step.HasCompensation}");
+                $"{step.StepIndex}:{step.StepName.Length}:{step.StepName}:{stepTypeName.Length}:{stepTypeName}:{assemblyName.Length}:{assemblyName}:{step.HasCompensation}");
         }
 
         byte[] bytes = SHA256.HashData(new UTF8Encoding(false, true).GetBytes(builder.ToString()));

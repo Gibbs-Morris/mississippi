@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -97,6 +99,19 @@ public sealed class WorkflowDriftTests
             null);
         Assert.True(result.Success);
         return Assert.IsType<SagaStartedEvent>(result.Value[0]);
+    }
+
+    private static Type CreateStepType(
+        string assemblyName,
+        int version
+    )
+    {
+        AssemblyName name = new(assemblyName)
+        {
+            Version = new(version, 0),
+        };
+        AssemblyBuilder assembly = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.RunAndCollect);
+        return assembly.DefineDynamicModule(assemblyName).DefineType("Workflow.Step").CreateType();
     }
 
     private static SagaStepInfo[] CreateSteps() =>
@@ -280,16 +295,46 @@ public sealed class WorkflowDriftTests
     }
 
     /// <summary>
-    ///     Verifies the shared hash retains the original fallback for types without a full name.
+    ///     Verifies the shared hash supports types without a full name through Orleans type formatting.
     /// </summary>
     [Fact]
-    public void WorkflowHashRetainsTypeNameFallback()
+    public void WorkflowHashSupportsTypeWithoutFullName()
     {
         Type typeParameter = typeof(List<>).GetGenericArguments()[0];
         Assert.Null(typeParameter.FullName);
         Assert.Equal(
-            "4C9EE7A7AF7B05044BAB83C4403EA0367DB8944ECEEECA191A45A5AB7C5F731E",
+            "ED0618B6485232FA73644E714144718AD2EAB28DE39C12162FC6FB77559F99CF",
             SagaStepHash.Compute([new(0, "Open", typeParameter, false)]));
         Assert.Equal("steps", Assert.Throws<ArgumentNullException>(() => SagaStepHash.Compute(null!)).ParamName);
+    }
+
+    /// <summary>
+    ///     Verifies assembly identity distinguishes types without treating assembly versions as workflow changes.
+    /// </summary>
+    /// <param name="assemblyName">The replacement assembly name.</param>
+    /// <param name="isGeneric">Whether the type is used as a generic argument.</param>
+    /// <param name="shouldMatch">Whether both definitions have the same stable identity.</param>
+    [Theory]
+    [InlineData("Original", false, true)]
+    [InlineData("Replacement", false, false)]
+    [InlineData("Original", true, true)]
+    [InlineData("Replacement", true, false)]
+    public void WorkflowHashUsesStableAssemblyIdentity(
+        string assemblyName,
+        bool isGeneric,
+        bool shouldMatch
+    )
+    {
+        Type original = CreateStepType("Original", 1);
+        Type replacement = CreateStepType(assemblyName, 2);
+        if (isGeneric)
+        {
+            original = typeof(List<>).MakeGenericType(original);
+            replacement = typeof(List<>).MakeGenericType(replacement);
+        }
+
+        string originalHash = SagaStepHash.Compute([new(0, "Step", original, true)]);
+        string replacementHash = SagaStepHash.Compute([new(0, "Step", replacement, true)]);
+        Assert.Equal(shouldMatch, originalHash == replacementHash);
     }
 }
