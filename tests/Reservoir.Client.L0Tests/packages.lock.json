@@ -162,18 +162,11 @@
       "Mississippi.Reservoir.TestHarness": {
         "type": "Project",
         "dependencies": {
-          "FluentAssertions": "[8.10.0, )",
           "Microsoft.Extensions.TimeProvider.Testing": "[10.9.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Core": "[1.0.0, )",
           "Moq": "[4.20.72, )"
         }
-      },
-      "FluentAssertions": {
-        "type": "CentralTransitive",
-        "requested": "[8.10.0, )",
-        "resolved": "8.10.0",
-        "contentHash": "yGvv+xp0gHFgGwhQcGoDdKIrhLhPi3zYYWWLLHPMctr+G6PWD7QH8L4wqoa5WRZquPbfSV/cP1MraI7ppAHrWw=="
       },
       "Microsoft.AspNetCore.Components.WebAssembly": {
         "type": "CentralTransitive",
