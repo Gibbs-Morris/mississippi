@@ -165,8 +165,10 @@ public sealed class CosmosDbTests : IAsyncDisposable
         }
 
         // Assert
-        results.Should().HaveCount(3, "we created 3 documents with the matching prefix");
-        results.Should().AllSatisfy(doc => { doc.Name.Should().StartWith($"Query Test {uniquePrefix}"); });
+        Assert.Equal(3, results.Count);
+        Assert.All(
+            results,
+            doc => { Assert.StartsWith($"Query Test {uniquePrefix}", doc.Name, StringComparison.Ordinal); });
     }
 
     /// <summary>
@@ -194,11 +196,11 @@ public sealed class CosmosDbTests : IAsyncDisposable
         ItemResponse<TestDocument> readResponse = await container.ReadItemAsync<TestDocument>(testId, new(testId));
 
         // Assert
-        readResponse.StatusCode.Should().Be(HttpStatusCode.OK, "the document should be read successfully");
-        readResponse.Resource.Should().NotBeNull();
-        readResponse.Resource.Id.Should().Be(testId);
-        readResponse.Resource.Name.Should().Be("Read Test Document");
-        readResponse.Resource.Value.Should().Be(123);
+        Assert.Equal(HttpStatusCode.OK, readResponse.StatusCode);
+        Assert.NotNull(readResponse.Resource);
+        Assert.Equal(testId, readResponse.Resource.Id);
+        Assert.Equal("Read Test Document", readResponse.Resource.Name);
+        Assert.Equal(123, readResponse.Resource.Value);
     }
 
     /// <summary>
@@ -216,9 +218,8 @@ public sealed class CosmosDbTests : IAsyncDisposable
         Func<Task> act = async () => await container.ReadItemAsync<TestDocument>(nonExistentId, new(nonExistentId));
 
         // Assert
-        await act.Should()
-            .ThrowAsync<CosmosException>("the document does not exist")
-            .Where(e => e.StatusCode == HttpStatusCode.NotFound);
+        CosmosException exception = await Assert.ThrowsAnyAsync<CosmosException>(act);
+        Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
     }
 
     /// <summary>
@@ -243,9 +244,9 @@ public sealed class CosmosDbTests : IAsyncDisposable
         ItemResponse<TestDocument> response = await container.CreateItemAsync(document, new PartitionKey(testId));
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created, "the document should be created successfully");
-        response.Resource.Should().NotBeNull();
-        response.Resource.Id.Should().Be(testId);
-        response.Resource.Name.Should().Be("Test Document");
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(response.Resource);
+        Assert.Equal(testId, response.Resource.Id);
+        Assert.Equal("Test Document", response.Resource.Name);
     }
 }

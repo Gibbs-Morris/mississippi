@@ -3,7 +3,6 @@
     <ProjectReference Include="..\Spring.TestHarness\Spring.TestHarness.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
 </Project>

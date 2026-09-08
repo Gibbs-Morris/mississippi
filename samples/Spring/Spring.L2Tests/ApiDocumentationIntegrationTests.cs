@@ -35,15 +35,13 @@ public sealed class ApiDocumentationIntegrationTests
         using HttpResponseMessage response = await client.GetAsync(
             new Uri("/openapi/v1.json", UriKind.Relative),
             timeout.Token);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         string content = await response.Content.ReadAsStringAsync(timeout.Token);
         using JsonDocument document = JsonDocument.Parse(content);
-        document.RootElement.GetProperty("info").GetProperty("title").GetString().Should().Be("Spring Bank API");
-        document.RootElement.GetProperty("info").GetProperty("version").GetString().Should().Be("v1");
+        Assert.Equal("Spring Bank API", document.RootElement.GetProperty("info").GetProperty("title").GetString());
+        Assert.Equal("v1", document.RootElement.GetProperty("info").GetProperty("version").GetString());
         JsonElement paths = document.RootElement.GetProperty("paths");
-        paths.TryGetProperty("/api/aggregates/bank-account/{entityId}/open", out JsonElement openEndpoint)
-            .Should()
-            .BeTrue();
-        openEndpoint.TryGetProperty("post", out JsonElement _).Should().BeTrue();
+        Assert.True(paths.TryGetProperty("/api/aggregates/bank-account/{entityId}/open", out JsonElement openEndpoint));
+        Assert.True(openEndpoint.TryGetProperty("post", out JsonElement _));
     }
 }

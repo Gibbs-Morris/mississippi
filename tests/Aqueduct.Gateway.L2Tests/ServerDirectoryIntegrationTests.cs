@@ -53,7 +53,7 @@ public sealed class ServerDirectoryIntegrationTests
 
         // Assert - serverId1 should be dead (no recent heartbeat), serverId2 might or might not depending on timing
         // We use a very short timeout so both might appear dead, but at minimum serverId1 should be there
-        deadServers.Should().NotBeNull();
+        Assert.NotNull(deadServers);
 
         // Note: The exact behavior depends on implementation - if registration counts as last-seen,
         // both might be dead after the delay. The key point is GetDeadServersAsync works.
@@ -75,7 +75,7 @@ public sealed class ServerDirectoryIntegrationTests
         Func<Task> act = () => directoryGrain.HeartbeatAsync(serverId, 10);
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(await Record.ExceptionAsync(act));
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ public sealed class ServerDirectoryIntegrationTests
         };
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(await Record.ExceptionAsync(act));
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public sealed class ServerDirectoryIntegrationTests
         ImmutableList<string> deadServers = await directoryGrain.GetDeadServersAsync(longTimeout);
 
         // Assert
-        deadServers.Should().NotContain(serverId);
+        Assert.DoesNotContain(serverId, deadServers);
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public sealed class ServerDirectoryIntegrationTests
         Func<Task> act = () => directoryGrain.RegisterServerAsync(serverId);
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(await Record.ExceptionAsync(act));
     }
 
     /// <summary>
@@ -159,7 +159,7 @@ public sealed class ServerDirectoryIntegrationTests
         Func<Task> act = () => directoryGrain.UnregisterServerAsync(serverId);
 
         // Assert
-        await act.Should().NotThrowAsync();
+        Assert.Null(await Record.ExceptionAsync(act));
     }
 
     /// <summary>
@@ -183,6 +183,6 @@ public sealed class ServerDirectoryIntegrationTests
         ImmutableList<string> deadServers = await directoryGrain.GetDeadServersAsync(shortTimeout);
 
         // Assert - unregistered server should not be in the dead list
-        deadServers.Should().NotContain(serverId);
+        Assert.DoesNotContain(serverId, deadServers);
     }
 }

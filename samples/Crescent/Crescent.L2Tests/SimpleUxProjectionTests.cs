@@ -56,19 +56,19 @@ public sealed class SimpleUxProjectionTests
         // Act - Step 1: Execute commands on aggregate (writes events)
         output.WriteLine("[Test] Step 1: Execute commands on aggregate to write events to brook");
         OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter(10));
-        initResult.Success.Should().BeTrue("Initialize should succeed");
+        Assert.True(initResult.Success, "Initialize should succeed");
         output.WriteLine("[Test] Command executed: Initialize(10)");
         for (int i = 0; i < 5; i++)
         {
             OperationResult incResult = await counter.ExecuteAsync(new IncrementCounter());
-            incResult.Success.Should().BeTrue($"Increment[{i + 1}] should succeed");
+            Assert.True(incResult.Success, $"Increment[{i + 1}] should succeed");
         }
 
         output.WriteLine("[Test] Command executed: Increment x5");
         for (int i = 0; i < 2; i++)
         {
             OperationResult decResult = await counter.ExecuteAsync(new DecrementCounter());
-            decResult.Success.Should().BeTrue($"Decrement[{i + 1}] should succeed");
+            Assert.True(decResult.Success, $"Decrement[{i + 1}] should succeed");
         }
 
         output.WriteLine("[Test] Command executed: Decrement x2");
@@ -82,17 +82,17 @@ public sealed class SimpleUxProjectionTests
 
         // Assert - Step 3: Verify the projection state matches expectations
         output.WriteLine("[Test] Step 3: Verify projection state matches expected values");
-        projection.Should().NotBeNull("Projection should exist after commands");
+        Assert.True(projection is not null, "Projection should exist after commands");
 
         // Expected: 10 (init) + 5 (increments) - 2 (decrements) = 13
         int expectedCount = 13;
         int expectedOperations = 8; // 1 init + 5 inc + 2 dec
         output.WriteLine($"[Test] Expected: Count={expectedCount}, Operations={expectedOperations}");
         output.WriteLine($"[Test] Actual: Count={projection.CurrentCount}, Operations={projection.TotalOperations}");
-        projection.CurrentCount.Should().Be(expectedCount, "Count should be 10 + 5 - 2 = 13");
-        projection.TotalOperations.Should().Be(expectedOperations, "Operations should be 1 + 5 + 2 = 8");
-        projection.IsPositive.Should().BeTrue("Count is positive");
-        projection.DisplayLabel.Should().Be($"Counter: {expectedCount}");
+        Assert.Equal(expectedCount, projection.CurrentCount);
+        Assert.Equal(expectedOperations, projection.TotalOperations);
+        Assert.True(projection.IsPositive, "Count is positive");
+        Assert.Equal($"Counter: {expectedCount}", projection.DisplayLabel);
         output.WriteLine("[Test] PASSED: Aggregate → Events → Projection flow verified!");
     }
 
@@ -123,8 +123,8 @@ public sealed class SimpleUxProjectionTests
         {
             output.WriteLine(
                 $"[Test] Projection returned default values: Count={projection.CurrentCount}, Ops={projection.TotalOperations}");
-            projection.CurrentCount.Should().Be(0, "Non-existent entity should have zero count");
-            projection.TotalOperations.Should().Be(0, "Non-existent entity should have zero operations");
+            Assert.Equal(0, projection.CurrentCount);
+            Assert.Equal(0, projection.TotalOperations);
         }
 
         output.WriteLine("[Test] PASSED: Non-existent entity handled correctly");
@@ -145,22 +145,22 @@ public sealed class SimpleUxProjectionTests
 
         // Act - First initialization should succeed
         OperationResult firstInit = await counter.ExecuteAsync(new InitializeCounter(100));
-        firstInit.Success.Should().BeTrue("First initialization should succeed");
+        Assert.True(firstInit.Success, "First initialization should succeed");
         output.WriteLine("[Test] First Initialize(100) succeeded");
 
         // Act - Second initialization should fail
         OperationResult secondInit = await counter.ExecuteAsync(new InitializeCounter(200));
-        secondInit.Success.Should().BeFalse("Second initialization should fail");
-        secondInit.ErrorCode.Should().Be(AggregateErrorCodes.AlreadyExists);
+        Assert.False(secondInit.Success, "Second initialization should fail");
+        Assert.Equal(AggregateErrorCodes.AlreadyExists, secondInit.ErrorCode);
         output.WriteLine($"[Test] Second Initialize(200) failed as expected: {secondInit.ErrorMessage}");
 
         // Assert - Projection should reflect first initialization only
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
-        projection.Should().NotBeNull();
-        projection.CurrentCount.Should().Be(100, "Should reflect first init value");
-        projection.TotalOperations.Should().Be(1, "Only one successful operation");
+        Assert.NotNull(projection);
+        Assert.Equal(100, projection.CurrentCount);
+        Assert.Equal(1, projection.TotalOperations);
         output.WriteLine("[Test] PASSED: Re-initialization correctly prevented");
     }
 }
