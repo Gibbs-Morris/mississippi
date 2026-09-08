@@ -5,10 +5,11 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.DomainModeling.Runtime.Sagas;
 
 using Moq;
 
@@ -215,11 +216,13 @@ public sealed class WorkflowDriftTests
         FakeTimeProvider timeProvider = new();
         SagaStartedEvent started = CreateStartedEvent(timeProvider);
         Mock<IServiceProvider> services = new(MockBehavior.Strict);
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> logger = new();
+        logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
         SagaOrchestrationEffect<TestSagaState> effect = new(
             new SagaStepInfoProvider<TestSagaState>(CreateSteps()),
             services.Object,
             timeProvider,
-            NullLogger<SagaOrchestrationEffect<TestSagaState>>.Instance);
+            logger.Object);
         List<object> events = await effect.HandleAsync(
                 started,
                 new()
@@ -232,5 +235,45 @@ public sealed class WorkflowDriftTests
             .ToListAsync();
         Assert.Equal("SAGA_STEP_HASH_MISMATCH", Assert.IsType<SagaFailed>(Assert.Single(events)).ErrorCode);
         services.VerifyNoOtherCalls();
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id => id.Id == 5),
+                It.Is<It.IsAnyType>((value, type) => value.ToString()!.Contains("transfer", StringComparison.Ordinal)),
+                null,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    ///     Verifies invalid arguments fail when orchestration is called rather than when its stream is enumerated.
+    /// </summary>
+    [Fact]
+    public void OrchestrationValidatesArgumentsBeforeEnumeration()
+    {
+        SagaOrchestrationEffect<TestSagaState> effect = new(
+            new SagaStepInfoProvider<TestSagaState>(CreateSteps()),
+            Mock.Of<IServiceProvider>(),
+            new FakeTimeProvider());
+        ArgumentNullException eventError = Assert.Throws<ArgumentNullException>(() =>
+            effect.HandleAsync(null!, new(), "transfer", 0, CancellationToken.None));
+        ArgumentNullException stateError = Assert.Throws<ArgumentNullException>(() =>
+            effect.HandleAsync(new(), null!, "transfer", 0, CancellationToken.None));
+        Assert.Equal("eventData", eventError.ParamName);
+        Assert.Equal("currentState", stateError.ParamName);
+    }
+
+    /// <summary>
+    ///     Verifies the shared hash retains the original fallback for types without a full name.
+    /// </summary>
+    [Fact]
+    public void WorkflowHashRetainsTypeNameFallback()
+    {
+        Type typeParameter = typeof(List<>).GetGenericArguments()[0];
+        Assert.Null(typeParameter.FullName);
+        Assert.Equal(
+            "35DFC0F956F98E0216AF5FE78BB0EA7470DAE1BF75AB8DB46FF24E92294D2F87",
+            SagaStepHash.Compute([new(0, "Open", typeParameter, false)]));
+        Assert.Equal("steps", Assert.Throws<ArgumentNullException>(() => SagaStepHash.Compute(null!)).ParamName);
     }
 }
