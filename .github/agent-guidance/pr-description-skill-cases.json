@@ -2,7 +2,7 @@
   {
     "id": "explicit-draft",
     "prompt": "Use write-pull-request-description to draft a title and body only. The diff fixes a parser accepting empty input; the new test rejects an empty string. The supplied template requires Summary and Verification; titles have no suffix. Tests passed for the selected head. Do not publish anything.",
-    "expected": "Explain the parser correction and matching test evidence using the supplied template, with no invented benefit or remote mutation."
+    "expected": "Draft from the sufficient supplied change and test evidence without demanding repository access or commit IDs; use the supplied template, with no invented benefit, independent-inspection claim, or remote mutation."
   },
   {
     "id": "implicit-stack-layer",

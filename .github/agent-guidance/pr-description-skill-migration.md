@@ -63,6 +63,12 @@ inputs. They are a reusable rubric, not a record of fresh model trials. Full
 cross-agent behavioral conformance and app/IDE smoke tests remain unverified;
 this PR does not claim to complete every evaluation checkbox in #549.
 
+A manual walkthrough of the supplied-diff case found an overly strict initial
+requirement for base/head metadata. The skill now accepts sufficient supplied
+change evidence for a draft without demanding repository access or commit IDs,
+while retaining actual-base checks for live PR/branch comparisons and avoiding
+claims of independent inspection when files were not accessible.
+
 The globally applied instruction shrinks from 1,002 to 605 whitespace-delimited
 words, a reduction of 397 words and 59 lines. The two agent procedures remove
 another 101 words and 17 lines; those agents are loaded only when selected.

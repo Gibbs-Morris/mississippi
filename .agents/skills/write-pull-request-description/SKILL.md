@@ -12,18 +12,23 @@ use existing authorization when those actions are part of the request.
 
 ## Establish the change and its evidence
 
-1. Identify the requested PR, branch comparison, or supplied diff. Establish the
-   head and actual target base before describing changes. For a stack, compare
-   the layer with its immediate parent, not the trunk. Do not assume a branch
-   name or include ancestor work as new. If the comparison cannot be established,
-   request the missing input or report the limitation before asserting scope.
+1. Identify the requested PR, branch comparison, or supplied diff. For a live PR
+   or branch comparison, establish the head and actual target base. For a stack,
+   compare the layer with its immediate parent, not the trunk. Do not assume a
+   branch name or include ancestor work as new. A supplied diff can define the
+   draft's scope without repository access or commit IDs; do not demand missing
+   metadata unless it is needed for the requested output or local policy. If the
+   change's scope cannot be established, request the narrow missing input or
+   report the limitation before asserting scope.
 2. Read the applicable local instructions and PR template. Determine title and
    versioning conventions, required sections, size accounting, verification
    gates, links, and any caller-specific audit content from that project. Do not
    impose a particular template, project layout, shell, or versioning system.
 3. Inspect the actual changes and enough surrounding code, tests, or documents
    to explain the outcome. Use the issue or user request to establish motivation;
-   a filename or commit subject alone is insufficient evidence of behavior.
+   a filename or commit subject alone is insufficient evidence of behavior. Use
+   sufficient supplied change evidence without claiming independent inspection
+   of inaccessible files.
    Follow local exemptions for generated material without hiding its scope.
    If the user includes uncommitted work, distinguish that proposed change from
    the current remote PR rather than silently mixing the two.
