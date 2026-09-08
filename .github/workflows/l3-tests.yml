@@ -1,0 +1,52 @@
+name: L3 Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Spring L3 browser suite
+        type: choice
+        options: [Smoke, Full]
+        default: Smoke
+  merge_group:
+  pull_request:
+    branches: [main, 'feature/**', 'topic/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  spring-l3:
+    name: L3 Spring E2E (${{ inputs.suite || 'Smoke' }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      SPRING_TEST_SUITE: ${{ inputs.suite || 'Smoke' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            artifacts/tools
+          key: spring-${{ runner.os }}-${{ hashFiles('global.json', 'Directory.Packages.props', '**/packages.lock.json') }}
+      - name: Run Spring L3 browser tests
+        shell: pwsh
+        run: ./test-spring.ps1 -TestLevel L3 -Suite $env:SPRING_TEST_SUITE -InstallBrowserDependencies
+      - name: Retain validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-l3-${{ inputs.suite || 'Smoke' }}-${{ runner.os }}
+          path: artifacts/spring/
+          if-no-files-found: error
+          retention-days: 7

@@ -769,7 +769,129 @@ function Invoke-SolutionsPipeline {
     Write-Host 'All steps completed without errors. Solutions are ready for deployment.'
 }
 
-Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline
+function Get-SpringTestResult {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+
+    [xml]$report = Get-Content -LiteralPath $Path -Raw
+    $counters = $report.TestRun.ResultSummary.Counters
+    if ($report.TestRun.ResultSummary.outcome -ne 'Completed' -or
+        [int]$counters.total -le 0 -or [int]$counters.passed -ne [int]$counters.total -or
+        [int]$counters.executed -ne [int]$counters.total) {
+        throw 'Spring validation requires a completed run with at least one test and every test passing.'
+    }
+    return [int]$counters.passed
+}
+
+function Install-SpringBrowser {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Project,
+        [string]$Configuration = 'Release',
+        [switch]$InstallBrowserDependencies
+    )
+
+    $targetDirectory = (Invoke-RepositoryProcess -FilePath dotnet -SuppressCommandEcho `
+        -Arguments @('msbuild', $Project, "-property:Configuration=$Configuration", '-getProperty:TargetDir') | Out-String).Trim()
+    $playwrightScript = Join-Path $targetDirectory 'playwright.ps1'
+    if (-not (Test-Path -LiteralPath $playwrightScript -PathType Leaf)) { throw "Playwright installer missing: $playwrightScript" }
+    $browserArguments = @('-NoProfile', '-File', $playwrightScript, 'install', 'chromium')
+    if ($InstallBrowserDependencies) { $browserArguments += '--with-deps' }
+    Invoke-RepositoryProcess -FilePath pwsh -Arguments $browserArguments
+}
+
+function Invoke-SpringValidation {
+    [CmdletBinding()]
+    param(
+        [string]$RepoRoot = (Get-RepositoryRoot),
+        [ValidateSet('L2', 'L3')][string]$TestLevel = 'L3',
+        [ValidateSet('Smoke', 'Full')][string]$Suite = 'Smoke',
+        [ValidateSet('Debug', 'Release')][string]$Configuration = 'Release',
+        [switch]$Doctor,
+        [switch]$InstallBrowserDependencies
+    )
+
+    $TestLevel = $TestLevel.ToUpperInvariant()
+    $Suite = if ($Suite -eq 'Smoke') { 'Smoke' } else { 'Full' }
+    $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
+    $runDirectory = New-AutomationRunDirectory -Root (Join-Path $RepoRoot 'artifacts/spring') -Prefix "$TestLevel-$Suite-$([guid]::NewGuid().ToString('N'))"
+    $project = Join-Path $RepoRoot "samples/Spring/Spring.${TestLevel}Tests/Spring.${TestLevel}Tests.csproj"
+    $summary = [ordered]@{ schemaVersion = 1; status = 'FAIL'; phase = 'selection'; testLevel = $TestLevel; suite = $Suite; project = $project; passed = 0; artifacts = $runDirectory }
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    $previousPath = $env:PATH
+    $previousArtifacts = $env:SPRING_TEST_ARTIFACTS
+    $previousBrowsers = $env:PLAYWRIGHT_BROWSERS_PATH
+    Push-Location $RepoRoot
+    try {
+        if ($TestLevel -eq 'L2' -and $Suite -eq 'Smoke' -and -not $Doctor) {
+            throw 'Spring smoke journeys are L3. Use -TestLevel L2 -Suite Full for API/infrastructure tests.'
+        }
+        $summary.phase = 'prerequisites'
+        $summary.sdk = (Invoke-RepositoryProcess -FilePath dotnet -Arguments @('--version') `
+            -ErrorMessage 'Install the SDK selected by global.json.' | Out-String).Trim()
+        $dockerOs = (Invoke-RepositoryProcess -FilePath docker -Arguments @('info', '--format', '{{.OSType}}') `
+            -ErrorMessage 'Start Docker with Linux containers and grant this user access to its daemon.' | Out-String).Trim()
+        if ($dockerOs -ne 'linux') { throw 'Spring requires Docker running Linux containers.' }
+        [xml]$packages = Get-Content -LiteralPath (Join-Path $RepoRoot 'Directory.Packages.props') -Raw
+        $aspireVersion = ($packages.Project.ItemGroup.PackageVersion | Where-Object Include -eq 'Aspire.Hosting.AppHost').Version
+        if ([string]::IsNullOrWhiteSpace($aspireVersion)) { throw 'Aspire.Hosting.AppHost version is missing from Directory.Packages.props.' }
+        $summary.aspireVersion = $aspireVersion
+        if ($Doctor) {
+            $summary.status = 'READY'
+            return
+        }
+
+        $summary.phase = 'tooling'
+        $toolPath = Join-Path $RepoRoot "artifacts/tools/aspire-$aspireVersion"
+        $aspire = Join-Path $toolPath $(if ($IsWindows) { 'aspire.cmd' } else { 'aspire' })
+        if (-not (Test-Path -LiteralPath $aspire -PathType Leaf)) {
+            Invoke-RepositoryProcess -FilePath dotnet -Arguments @('tool', 'install', 'Aspire.Cli', '--version', $aspireVersion, '--tool-path', $toolPath)
+        }
+        $env:PATH = $toolPath + [System.IO.Path]::PathSeparator + $previousPath
+        $installedVersion = (Invoke-RepositoryProcess -FilePath $aspire -Arguments @('--version') | Out-String).Trim()
+        if ($installedVersion.Split('+')[0] -ne $aspireVersion) { throw "Expected Aspire CLI $aspireVersion; found $installedVersion." }
+        $summary.phase = 'restore'
+        Invoke-RepositoryProcess -FilePath dotnet -Arguments @('restore', $project, '--locked-mode') |
+            Tee-Object -FilePath (Join-Path $runDirectory 'restore.log') | Out-Host
+        $summary.phase = 'build'
+        Invoke-SolutionBuild -SolutionPath $project -Configuration $Configuration -WarnAsError -NoRestore |
+            Tee-Object -FilePath (Join-Path $runDirectory 'build.log') | Out-Host
+        if ($TestLevel -eq 'L3') {
+            $summary.phase = 'browser'
+            $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $RepoRoot 'artifacts/tools/playwright'
+            Install-SpringBrowser -Project $project -Configuration $Configuration -InstallBrowserDependencies:$InstallBrowserDependencies
+        }
+        $env:SPRING_TEST_ARTIFACTS = $runDirectory
+        $summary.phase = 'test'
+        $testArguments = @('test', $project, '--configuration', $Configuration, '--no-build', '--no-restore',
+            '--logger', 'trx;LogFileName=spring.trx', '--results-directory', $runDirectory,
+            '--blame-hang-timeout', '5m', '--blame-hang-dump-type', 'none')
+        if ($Suite -eq 'Smoke') { $testArguments += @('--filter', 'Category=Smoke') }
+        $testArguments += @('--', 'RunConfiguration.TreatNoTestsAsError=true', 'RunConfiguration.TestSessionTimeout=900000')
+        Invoke-RepositoryProcess -FilePath dotnet -Arguments $testArguments |
+            Tee-Object -FilePath (Join-Path $runDirectory 'test.log') | Out-Host
+        $summary.passed = Get-SpringTestResult -Path (Join-Path $runDirectory 'spring.trx')
+        $summary.phase = 'complete'
+        $summary.status = 'PASS'
+    }
+    catch {
+        $summary.error = $_.Exception.Message
+        throw
+    }
+    finally {
+        $env:PATH = $previousPath
+        $env:SPRING_TEST_ARTIFACTS = $previousArtifacts
+        $env:PLAYWRIGHT_BROWSERS_PATH = $previousBrowsers
+        Pop-Location
+        $summary.durationSeconds = [Math]::Round($timer.Elapsed.TotalSeconds, 2)
+        $summaryPath = Join-Path $runDirectory 'summary.json'
+        $summary | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $summaryPath -Encoding utf8
+        Write-Output "RESULT: $($summary.status) | LEVEL: $TestLevel | SUITE: $Suite | PHASE: $($summary.phase) | PASSED: $($summary.passed)"
+        Write-Output "SUMMARY: $summaryPath"
+    }
+}
+
+Export-ModuleMember -Function Get-RepositoryRoot, Write-AutomationBanner, Invoke-AutomationStep, Invoke-DotnetToolRestore, Invoke-SolutionRestore, Invoke-SolutionBuild, New-AutomationRunDirectory, Invoke-SolutionTests, Invoke-SlnGeneration, Invoke-ReSharperCleanup, Get-TestProjects, Invoke-StrykerMutationTestPerProject, Invoke-StrykerMutationTest, Invoke-MississippiSolutionBuild, Invoke-SampleSolutionBuild, Invoke-FinalSolutionsBuild, Invoke-MississippiSolutionUnitTests, Invoke-SampleSolutionUnitTests, Invoke-MississippiSolutionCleanup, Invoke-SampleSolutionCleanup, Invoke-MississippiSolutionMutationTests, Invoke-SolutionsPipeline, Invoke-SpringValidation
 
 
 

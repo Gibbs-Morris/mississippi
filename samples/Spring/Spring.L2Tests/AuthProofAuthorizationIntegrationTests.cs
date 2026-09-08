@@ -10,21 +10,21 @@ namespace MississippiSamples.Spring.L2Tests;
 /// <summary>
 ///     Integration tests proving generated endpoint authorization behavior for the Spring auth-proof slice.
 /// </summary>
-[Collection(SpringTestCollection.Name)]
+[Collection(SpringApiCollectionDefinition.Name)]
 public sealed class AuthProofAuthorizationIntegrationTests
 {
     private static readonly TimeSpan EventualConsistencyTimeout = TimeSpan.FromSeconds(30);
 
     private static readonly TimeSpan PollingInterval = TimeSpan.FromMilliseconds(500);
 
-    private readonly SpringFixture fixture;
+    private readonly SpringApplicationFixture fixture;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="AuthProofAuthorizationIntegrationTests" /> class.
     /// </summary>
     /// <param name="fixture">The shared Spring fixture.</param>
     public AuthProofAuthorizationIntegrationTests(
-        SpringFixture fixture
+        SpringApplicationFixture fixture
     ) =>
         this.fixture = fixture;
 
@@ -183,7 +183,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task AuthenticatedEndpointShouldReturn401ForAnonymousRequest()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -204,7 +204,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task PolicyProtectedEndpointShouldReturn200WhenClaimPresent()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -227,7 +227,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task PolicyProtectedEndpointShouldReturn403WhenClaimMissing()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -249,7 +249,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task ProjectionEndpointShouldReturn200WhenClaimPresent()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         Dictionary<string, string> authorizedHeaders = new()
         {
@@ -282,7 +282,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task ProjectionEndpointShouldReturn401ForAnonymousRequest()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await GetAuthProofProjectionAsync(
             client,
@@ -302,7 +302,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task ProjectionEndpointShouldReturn403WhenClaimMissing()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await GetAuthProofProjectionAsync(
             client,
@@ -323,7 +323,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task RoleProtectedEndpointShouldReturn200WhenRolePresent()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -345,7 +345,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task RoleProtectedEndpointShouldReturn403WhenRoleMissing()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         string aggregateId = $"auth-proof-{Guid.NewGuid():N}";
         using HttpResponseMessage response = await PostAuthProofCommandAsync(
             client,
@@ -367,7 +367,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task SagaEndpointShouldReturn200WhenRolePresent()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         Guid sagaId = Guid.NewGuid();
         using HttpResponseMessage response = await PostAuthProofSagaStartAsync(
             client,
@@ -388,7 +388,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task SagaEndpointShouldReturn401ForAnonymousRequest()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         Guid sagaId = Guid.NewGuid();
         using HttpResponseMessage response = await GetAuthProofSagaStatusAsync(
             client,
@@ -408,7 +408,7 @@ public sealed class AuthProofAuthorizationIntegrationTests
     public async Task SagaEndpointShouldReturn403WhenRoleMissing()
     {
         fixture.IsInitialized.Should().BeTrue("fixture must be initialized");
-        HttpClient client = fixture.CreateHttpClient();
+        HttpClient client = fixture.GatewayClient;
         Guid sagaId = Guid.NewGuid();
         using HttpResponseMessage response = await GetAuthProofSagaStatusAsync(
             client,

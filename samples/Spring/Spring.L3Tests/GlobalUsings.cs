@@ -3,6 +3,6 @@ global using System.Threading.Tasks;
 
 global using FluentAssertions;
 
-global using MississippiSamples.Spring.TestHarness;
+global using Microsoft.Playwright;
 
 global using Xunit;

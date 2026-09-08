@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 
 
-namespace MississippiSamples.Spring.L2Tests.Pages;
+namespace MississippiSamples.Spring.L3Tests.Pages;
 
 /// <summary>
 ///     Page Object Model for the Spring sample Accounts page (Demo Account Setup).
@@ -62,7 +62,7 @@ public sealed class AccountsPage
             accountsUri.ToString(),
             new()
             {
-                WaitUntil = WaitUntilState.NetworkIdle,
+                WaitUntil = WaitUntilState.DOMContentLoaded,
             });
     }
 

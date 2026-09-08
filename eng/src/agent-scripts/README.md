@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-- Install the .NET SDK referenced in `global.json` (currently `9.0.301`).
+- Install the .NET SDK referenced in `global.json`.
 - Use PowerShell 7+; every script starts with `#!/usr/bin/env pwsh`.
 - Run `dotnet tool restore` from the repo root to provision the required local tools.
 
@@ -28,6 +28,7 @@
 
 | Script | Purpose | Typical call |
 | --- | --- | --- |
+| **../../../test-spring.ps1** (repository root) | Select Spring L2 API tests or L3 browser suites (default L3 Smoke); emits level/suite JSON and diagnostics. See [Spring test placement](../../../samples/Spring/TESTING.md). | `pwsh ./test-spring.ps1 -TestLevel L3 -Suite Smoke` |
 | **build-mississippi-solution.ps1** | Restore dependencies and compile `mississippi.slnx` (default `Release`). | `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 -Configuration Debug` |
 | **unit-test-mississippi-solution.ps1** | Run all unit & integration tests for the Mississippi solution, emitting results under `.scratchpad/coverage-test-results`. | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` |
 | **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute Stryker.NET to measure mutation score. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` |
