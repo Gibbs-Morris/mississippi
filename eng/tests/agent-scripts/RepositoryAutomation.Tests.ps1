@@ -62,9 +62,11 @@ Describe 'Repository automation quality gates' {
         }
     }
 
-    It 'validates executed tests across the selected solution: <Executed>' -ForEach @(
-        @{ Executed = 0 },
-        @{ Executed = 2 }
+    It 'validates executed tests across the selected solution: <Executed> <Logger>' -ForEach @(
+        @{ Executed = 0; Logger = $null },
+        @{ Executed = 2; Logger = $null },
+        @{ Executed = 0; Logger = 'trx;LogFileName=custom.trx' },
+        @{ Executed = 2; Logger = 'trx;LogFileName=custom.trx' }
     ) {
         $solution = Join-Path $TestDrive 'test.slnx'
         Set-Content $solution '<Solution />'
@@ -75,11 +77,11 @@ Describe 'Repository automation quality gates' {
         Mock New-AutomationRunDirectory { $Root } -ModuleName RepositoryAutomation
         Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
         if ($Executed -eq 0) {
-            { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot $reports -TestLevels L4Tests } |
+            { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot $reports -TestLevels L4Tests -Logger $Logger } |
                 Should -Throw '*No tests executed*'
         }
         else {
-            (Invoke-SolutionTests -SolutionPath $solution -ResultsRoot $reports -TestLevels L0Tests).ResultsDirectory |
+            (Invoke-SolutionTests -SolutionPath $solution -ResultsRoot $reports -TestLevels L0Tests -Logger $Logger).ResultsDirectory |
                 Should -Be $reports
         }
     }

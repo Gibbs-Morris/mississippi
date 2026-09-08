@@ -295,7 +295,7 @@ function Invoke-SolutionTests {
 
     Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $testArguments -ErrorMessage "Failed to run tests for $($resolved.Path)." | Out-Host
 
-    if ($resultsDirectory -and -not $Logger) {
+    if ($resultsDirectory) {
         if ((Get-TestExecutionCount -ResultsDirectory $resultsDirectory) -lt 1) {
             throw "No tests executed for '$($resolved.Path)' with levels '$($TestLevels -join ',')'. Reports: $resultsDirectory"
         }
