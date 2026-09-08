@@ -84,6 +84,24 @@ Describe 'Repository automation quality gates' {
         }
     }
 
+    It 'isolates cleanup caches between invocations' {
+        $solution = Join-Path $TestDrive 'cleanup.slnx'
+        $settings = Join-Path $TestDrive 'Directory.DotSettings'
+        Set-Content $solution '<Solution />'
+        Set-Content $settings '<ResourceDictionary />'
+        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+        Invoke-ReSharperCleanup -SolutionPath $solution -SettingsPath $settings
+        Invoke-ReSharperCleanup -SolutionPath $solution -SettingsPath $settings
+        $caches = @(Get-ChildItem (Join-Path $TestDrive '.scratchpad/cleanup-caches') -Directory)
+        $caches.Count | Should -Be 2
+        foreach ($cache in $caches) {
+            $expectedArgument = "--caches-home=$($cache.FullName)"
+            Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
+                $Arguments -contains $expectedArgument
+            }
+        }
+    }
+
     It 'distinguishes missing reports from a reported empty test run' {
         $solution = Join-Path $TestDrive 'missing.slnx'
         Set-Content $solution '<Solution />'

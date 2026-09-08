@@ -22,6 +22,8 @@
 
 `pwsh ./go.ps1` builds both solutions, runs L0/L1 tests, summarizes Mississippi coverage, applies cleanup, and performs a final build with warnings as errors. Add `-IncludeMutation` to run Mississippi mutation tests and refresh survivor tasks. Separate CI jobs cover additional checks listed below.
 
+Cleanup uses a fresh cache under `.scratchpad/cleanup-caches/` for each invocation, avoiding reuse of a previous source-generator analysis model. The cache path is logged and retained for troubleshooting.
+
 ---
 
 ## Script catalogue

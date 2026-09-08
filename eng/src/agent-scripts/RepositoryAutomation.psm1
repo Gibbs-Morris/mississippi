@@ -322,18 +322,21 @@ function Invoke-ReSharperCleanup {
 
     $resolvedSolution = Resolve-Path -LiteralPath $SolutionPath
     $resolvedSettings = Resolve-Path -LiteralPath $SettingsPath
-    $args = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)")
+    $cacheRoot = Join-Path (Split-Path -Parent $resolvedSolution.Path) '.scratchpad/cleanup-caches'
+    $cacheDirectory = New-AutomationRunDirectory -Root $cacheRoot
+    Write-Host "Cleanup cache: $cacheDirectory" -ForegroundColor DarkGray
+    $cleanupArguments = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)", "--caches-home=$cacheDirectory")
 
     if ($IncludePaths -and $IncludePaths.Count -gt 0) {
-        $args += "--include=$($IncludePaths -join ';')"
+        $cleanupArguments += "--include=$($IncludePaths -join ';')"
     }
 
     if ($ExcludePaths -and $ExcludePaths.Count -gt 0) {
-        $args += "--exclude=$($ExcludePaths -join ';')"
+        $cleanupArguments += "--exclude=$($ExcludePaths -join ';')"
     }
 
-    $args += $resolvedSolution.Path
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho | Out-Host
+    $cleanupArguments += $resolvedSolution.Path
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $cleanupArguments -ErrorMessage "ReSharper cleanup failed for $($resolvedSolution.Path)." -SuppressCommandEcho | Out-Host
 }
 
 function Get-TestProjects {
