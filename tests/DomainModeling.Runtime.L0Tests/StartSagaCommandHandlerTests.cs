@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 
 using Mississippi.DomainModeling.Abstractions;
+
+using Moq;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
@@ -89,6 +93,64 @@ public sealed class StartSagaCommandHandlerTests
         OperationResult<IReadOnlyList<object>> result = handler.Handle(command, state);
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+    }
+
+    /// <summary>
+    ///     Verifies runtime interruption and cancellation are not classified as invalid configuration.
+    /// </summary>
+    /// <param name="isCancellation">Whether to inject cancellation instead of an interruption.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HandlePropagatesMetadataInterruption(
+        bool isCancellation
+    )
+    {
+        Exception failure = isCancellation ? new OperationCanceledException() : new ThreadInterruptedException();
+        Mock<ISagaStepInfoProvider<TestSagaState>> metadata = new();
+        metadata.SetupGet(p => p.Steps).Throws(failure);
+        StartSagaCommandHandler<TestSagaState, string> handler = new(metadata.Object, new FakeTimeProvider());
+        Assert.Throws(
+            failure.GetType(),
+            () => handler.Handle(
+                new()
+                {
+                    SagaId = Guid.NewGuid(),
+                    Input = "transfer",
+                },
+                null));
+    }
+
+    /// <summary>
+    ///     Verifies invalid workflow text is rejected at the command boundary without starting the saga.
+    /// </summary>
+    [Fact]
+    public void HandleRejectsInvalidWorkflowMetadata()
+    {
+        Mock<ILogger<StartSagaCommandHandler<TestSagaState, string>>> logger = new();
+        logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
+        StartSagaCommandHandler<TestSagaState, string> handler = new(
+            new SagaStepInfoProvider<TestSagaState>([new(0, new((char)0xD800, 1), typeof(DebitStep), true)]),
+            new FakeTimeProvider(),
+            logger.Object);
+        OperationResult<IReadOnlyList<object>> result = handler.Handle(
+            new()
+            {
+                SagaId = Guid.NewGuid(),
+                Input = "transfer",
+            },
+            null);
+        Assert.False(result.Success);
+        Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
+        Assert.Equal("The registered saga workflow metadata is invalid.", result.ErrorMessage);
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id => id.Id == 1),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<EncoderFallbackException>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     /// <summary>
