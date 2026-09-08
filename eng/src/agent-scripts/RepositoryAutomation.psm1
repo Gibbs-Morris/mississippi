@@ -216,6 +216,24 @@ function New-AutomationRunDirectory {
     return $runDirectory
 }
 
+function Get-TestExecutionCount {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ResultsDirectory
+    )
+
+    $reports = @(Get-ChildItem -LiteralPath $ResultsDirectory -Recurse -Filter '*.trx' -File -ErrorAction Stop)
+    if ($reports.Count -eq 0) {
+        throw "No TRX reports were produced in '$ResultsDirectory'. Check the test logger configuration."
+    }
+    $executed = 0
+    foreach ($report in $reports) {
+        [xml]$trx = Get-Content -LiteralPath $report.FullName -Raw
+        $executed += [int]$trx.TestRun.ResultSummary.Counters.executed
+    }
+    return $executed
+}
+
 function Invoke-SolutionTests {
     [CmdletBinding()]
     param(
@@ -271,16 +289,7 @@ function Invoke-SolutionTests {
     Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $testArguments -ErrorMessage "Failed to run tests for $($resolved.Path)." | Out-Host
 
     if ($resultsDirectory -and -not $Logger) {
-        $reports = @(Get-ChildItem -LiteralPath $resultsDirectory -Recurse -Filter '*.trx' -File -ErrorAction Stop)
-        if ($reports.Count -eq 0) {
-            throw "No TRX reports were produced for '$($resolved.Path)'. Check the test logger configuration. Reports: $resultsDirectory"
-        }
-        $executed = 0
-        foreach ($report in $reports) {
-            [xml]$trx = Get-Content -LiteralPath $report.FullName -Raw
-            $executed += [int]$trx.TestRun.ResultSummary.Counters.executed
-        }
-        if ($executed -lt 1) {
+        if ((Get-TestExecutionCount -ResultsDirectory $resultsDirectory) -lt 1) {
             throw "No tests executed for '$($resolved.Path)' with levels '$($TestLevels -join ',')'. Reports: $resultsDirectory"
         }
     }
