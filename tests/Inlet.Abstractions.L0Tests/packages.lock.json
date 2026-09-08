@@ -501,6 +501,9 @@
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.11, )"
         }
       },
+      "Mississippi.Inlet.Generators.Abstractions": {
+        "type": "Project"
+      },
       "Mississippi.Inlet.Runtime.Abstractions": {
         "type": "Project",
         "dependencies": {
