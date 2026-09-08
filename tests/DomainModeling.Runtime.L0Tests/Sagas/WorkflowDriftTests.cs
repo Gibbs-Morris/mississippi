@@ -34,7 +34,10 @@ public sealed class WorkflowDriftTests
             TheoryData<string, string> cases = new();
             foreach (string boundary in new[] { "Started", "Completed", "Compensating", "Compensated" })
             {
-                foreach (string change in new[] { "Name", "Type", "Index", "Compensation", "Order", "Removed" })
+                foreach (string change in new[]
+                         {
+                             "Name", "Type", "Index", "Compensation", "Order", "Removed", "InvalidUnicode",
+                         })
                 {
                     cases.Add(boundary, change);
                 }
@@ -80,6 +83,7 @@ public sealed class WorkflowDriftTests
             "Compensation" => [new(0, "Debit", typeof(SagaSuccessStep), false), CreateSteps()[1]],
             "Order" => CreateSteps().Reverse().ToArray(),
             "Removed" => [CreateSteps()[0]],
+            "InvalidUnicode" => [new(0, new((char)0xD800, 1), typeof(SagaSuccessStep), true), CreateSteps()[1]],
             var _ => throw new ArgumentOutOfRangeException(nameof(change)),
         };
 
@@ -149,10 +153,13 @@ public sealed class WorkflowDriftTests
             .ReturnsAsync(CompensationResult.Succeeded());
         Mock<IServiceProvider> services = new();
         services.Setup(s => s.GetService(It.IsAny<Type>())).Returns(step.Object);
+        Mock<ILogger<SagaOrchestrationEffect<TestSagaState>>> logger = new();
+        logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
         SagaOrchestrationEffect<TestSagaState> effect = new(
             new SagaStepInfoProvider<TestSagaState>(CreateChangedSteps(change)),
             services.Object,
-            timeProvider);
+            timeProvider,
+            logger.Object);
         List<object> events = await effect.HandleAsync(
                 CreateBoundary(boundary, started),
                 state,
@@ -162,13 +169,51 @@ public sealed class WorkflowDriftTests
             .ToListAsync();
         SagaFailed failure = Assert.IsType<SagaFailed>(Assert.Single(events));
         Assert.Equal("SAGA_STEP_HASH_MISMATCH", failure.ErrorCode);
-        Assert.Equal("The registered saga steps differ from the persisted workflow definition.", failure.ErrorMessage);
+        Assert.Equal(
+            "The registered saga steps differ from the persisted workflow definition or cannot be hashed.",
+            failure.ErrorMessage);
         Assert.Equal(timeProvider.GetUtcNow(), failure.FailedAt);
         Assert.Equal(SagaPhase.Failed, new SagaFailedReducer<TestSagaState>().Reduce(state, failure).Phase);
         services.Verify(s => s.GetService(It.IsAny<Type>()), Times.Never);
         step.Verify(s => s.ExecuteAsync(It.IsAny<TestSagaState>(), It.IsAny<CancellationToken>()), Times.Never);
         step.As<ICompensatable<TestSagaState>>()
             .Verify(s => s.CompensateAsync(It.IsAny<TestSagaState>(), It.IsAny<CancellationToken>()), Times.Never);
+        if (change == "InvalidUnicode")
+        {
+            logger.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.Is<EventId>(id => id.Id == 5),
+                    It.IsAny<It.IsAnyType>(),
+                    It.IsAny<EncoderFallbackException>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies catastrophic metadata failures propagate instead of being converted into workflow drift.
+    /// </summary>
+    /// <returns>A task representing the test.</returns>
+    [Fact]
+    public async Task CriticalMetadataFailurePropagates()
+    {
+        FakeTimeProvider timeProvider = new();
+        SagaStartedEvent started = CreateStartedEvent(timeProvider);
+        Mock<ISagaStepInfoProvider<TestSagaState>> metadata = new();
+        metadata.SetupGet(p => p.Steps).Throws(new ThreadInterruptedException());
+        SagaOrchestrationEffect<TestSagaState> effect = new(metadata.Object, Mock.Of<IServiceProvider>(), timeProvider);
+        await Assert.ThrowsAsync<ThreadInterruptedException>(() => effect.HandleAsync(
+                started,
+                new()
+                {
+                    StepHash = started.StepHash,
+                },
+                "transfer",
+                0,
+                CancellationToken.None)
+            .ToListAsync()
+            .AsTask());
     }
 
     /// <summary>

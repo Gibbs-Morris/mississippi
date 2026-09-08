@@ -256,16 +256,13 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
     )
     {
         if (SagaLifecycleEventClassifier.IsReplayBoundaryEvent(eventData) &&
-            !string.Equals(
-                currentState.StepHash,
-                SagaStepHash.Compute(StepInfoProvider.Steps),
-                StringComparison.Ordinal))
+            !HasMatchingWorkflow(currentState, brookKey, cancellationToken))
         {
-            Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey);
             yield return new SagaFailed
             {
                 ErrorCode = "SAGA_STEP_HASH_MISMATCH",
-                ErrorMessage = "The registered saga steps differ from the persisted workflow definition.",
+                ErrorMessage =
+                    "The registered saga steps differ from the persisted workflow definition or cannot be hashed.",
                 FailedAt = TimeProvider.GetUtcNow(),
             };
             yield break;
@@ -293,6 +290,32 @@ public sealed class SagaOrchestrationEffect<TSaga> : IEventEffect<TSaga>
         {
             yield return resultEvent;
         }
+    }
+
+    private bool HasMatchingWorkflow(
+        TSaga currentState,
+        string brookKey,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            if (string.Equals(
+                    currentState.StepHash,
+                    SagaStepHash.Compute(StepInfoProvider.Steps),
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+        catch (Exception exception) when (!ShouldPropagateException(exception, cancellationToken))
+        {
+            Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey, exception);
+            return false;
+        }
+
+        Logger?.SagaWorkflowChanged(typeof(TSaga).Name, brookKey);
+        return false;
     }
 
     private ISagaStep<TSaga> ResolveStep(

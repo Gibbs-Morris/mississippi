@@ -75,15 +75,20 @@ internal static partial class SagaOrchestrationEffectLoggerExtensions
     );
 
     /// <summary>
-    ///     Logs that orchestration stopped because the registered workflow changed.
+    ///     Logs that orchestration stopped because the registered workflow could not be matched.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="sagaType">The saga type name.</param>
     /// <param name="brookKey">The saga brook key.</param>
-    [LoggerMessage(5, LogLevel.Error, "Stopping saga {SagaType} at {BrookKey} because its workflow definition changed")]
+    /// <param name="exception">The metadata hashing failure, when present.</param>
+    [LoggerMessage(
+        5,
+        LogLevel.Error,
+        "Stopping saga {SagaType} at {BrookKey} because its workflow definition cannot be matched")]
     public static partial void SagaWorkflowChanged(
         this ILogger logger,
         string sagaType,
-        string brookKey
+        string brookKey,
+        Exception? exception = null
     );
 }
