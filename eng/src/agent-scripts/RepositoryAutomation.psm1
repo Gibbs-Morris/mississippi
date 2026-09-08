@@ -491,7 +491,8 @@ function Get-MutationTargets {
     foreach ($testProject in @($projects | Where-Object { $_ -like '*Tests.csproj' })) {
         [xml]$definition = Get-Content -LiteralPath $testProject -Raw
         foreach ($reference in $definition.SelectNodes('//ProjectReference')) {
-            $path = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $testProject) $reference.GetAttribute('Include'))).Path
+            $relativePath = $reference.GetAttribute('Include').Replace('\', '/')
+            $path = (Resolve-Path -LiteralPath (Join-Path (Split-Path -Parent $testProject) $relativePath)).Path
             if ($targets.ContainsKey($path)) { $targets[$path].Tests += $testProject }
         }
     }

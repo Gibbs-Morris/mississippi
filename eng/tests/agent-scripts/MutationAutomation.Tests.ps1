@@ -17,7 +17,7 @@ Describe 'Mutation automation' {
         Set-Content $sourceProject '<Project />'
         Set-Content (Join-Path $repo 'src/Widget/IWidget.cs') 'internal interface IWidget {}'
         foreach ($level in @('L0', 'L1', 'L2')) {
-            Set-Content (Join-Path $repo "tests/Widget.${level}Tests/Widget.${level}Tests.csproj") '<Project><ItemGroup><ProjectReference Include="../../src/Widget/Widget.csproj" /></ItemGroup></Project>'
+            Set-Content (Join-Path $repo "tests/Widget.${level}Tests/Widget.${level}Tests.csproj") '<Project><ItemGroup><ProjectReference Include="..\..\src\Widget\Widget.csproj" /></ItemGroup></Project>'
         }
         Set-Content (Join-Path $repo 'samples/Other.L0Tests/Other.L0Tests.csproj') '<Project />'
         $solution = Join-Path $repo 'mississippi.slnx'
@@ -43,7 +43,7 @@ Describe 'Mutation automation' {
         @(Get-TestProjects -SolutionPath $legacy).Count | Should -Be 3
     }
 
-    It 'groups every declared test level for each source project exactly once' {
+    It 'groups every declared test level from Windows-style project references exactly once' {
         Mock Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation { $completedOutput }
         Invoke-StrykerMutationTest -SolutionPath $solution -OutputPath $output -Configuration Debug | Should -Be $output
         Should -Invoke Invoke-StrykerMutationTestPerProject -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
