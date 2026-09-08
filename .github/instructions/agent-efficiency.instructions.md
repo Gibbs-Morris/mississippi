@@ -12,8 +12,11 @@ Governing thought: Spend tokens on evidence and actions that advance the user's 
 
 - Agents **MUST** preserve the user's full acceptance criteria and applicable quality, safety, and review gates when optimizing token use. Why: A cheaper partial result is not completion.
 - Agents **SHOULD** choose the next action by its expected contribution to an unresolved requirement, considering token cost, runtime, and tool overhead. Why: An unbounded goal is not a reason for unbounded repetition.
-- Agents **MUST** honor explicit user budgets and report when the remaining budget cannot cover required work. Why: Budget exhaustion leaves work incomplete; it does not waive requirements.
-- Agents **SHOULD** bound searches and tool output to the question being answered, reuse still-current evidence, and batch independent reads when supported. Why: Repeated context loading and large log dumps consume tokens without necessarily improving decisions.
+- Agents **MUST** honor explicit user budgets. Why: Spending limits are part of the task's constraints.
+- Agents **MUST** report when the remaining budget cannot cover required work. Why: Budget exhaustion leaves work incomplete; it does not waive requirements.
+- Agents **SHOULD** bound searches and tool output to the question being answered. Why: Large log dumps consume tokens without necessarily improving decisions.
+- Agents **SHOULD** reuse still-current evidence. Why: Repeated context loading adds cost without resolving new uncertainty.
+- Agents **SHOULD** batch independent reads when supported. Why: Combining independent reads can reduce tool overhead.
 - Agents **SHOULD** stop optional research or validation once the relevant uncertainty is resolved. Why: Further checks need a new change, failure, missing fact, or unresolved concern to justify their cost.
 - Agents **MUST** reassess before a third substantially equivalent attempt when two consecutive attempts produce the same failure or no useful new evidence. Why: This is an early checkpoint before existing retry caps, not permission to spend every allowed attempt.
 - Agents **MUST** identify a changed hypothesis, input, method, or verified external condition before retrying after reassessment. Why: Rewording a command or plan does not make the same failed approach informative.
