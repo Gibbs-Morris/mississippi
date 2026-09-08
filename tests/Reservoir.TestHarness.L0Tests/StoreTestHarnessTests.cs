@@ -230,7 +230,7 @@ public sealed class StoreTestHarnessTests
         // Assert
         Action act = () => scenario.ThenEmitsNothing();
         Assert.Matches(
-            "(?is)^.*Expected\\ no\\ actions.*ValueSetNotification.*$",
+            "(?is)^.*Expected no actions.*ValueSetNotification.*$",
             Assert.ThrowsAny<InvalidOperationException>(act).Message);
     }
 
@@ -265,7 +265,7 @@ public sealed class StoreTestHarnessTests
         // Assert
         Action act = () => scenario.ThenEmits<ValueSetNotification>();
         Assert.Matches(
-            "(?is)^.*Expected\\ action.*ValueSetNotification.*$",
+            "(?is)^.*Expected action.*ValueSetNotification.*$",
             Assert.ThrowsAny<InvalidOperationException>(act).Message);
     }
 
