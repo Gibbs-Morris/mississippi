@@ -53,8 +53,8 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Underlying scripts
-$buildMississippi = Join-Path $repoRoot 'eng\src\agent-scripts\build-mississippi-solution.ps1'
-$buildSamples     = Join-Path $repoRoot 'eng\src\agent-scripts\build-sample-solution.ps1'
+$buildMississippi = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-mississippi-solution.ps1'
+$buildSamples     = Join-Path $repoRoot 'eng' 'src' 'agent-scripts' 'build-sample-solution.ps1'
 
 function Invoke-BuildStep {
     param(
