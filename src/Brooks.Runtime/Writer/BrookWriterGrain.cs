@@ -89,7 +89,7 @@ internal sealed class BrookWriterGrain
         Logger.EventsAppended(key, events.Length, newPosition.Value, sw.ElapsedMilliseconds);
         try
         {
-            await PublishCursorAsync(newPosition, cancellationToken);
+            await PublishCursorAsync(newPosition, CancellationToken.None);
         }
         catch (Exception exception) when (exception is not (OutOfMemoryException or StackOverflowException
                                               or ThreadInterruptedException))

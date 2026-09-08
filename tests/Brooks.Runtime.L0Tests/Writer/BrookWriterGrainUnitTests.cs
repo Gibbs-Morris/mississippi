@@ -83,7 +83,7 @@ public sealed class BrookWriterGrainUnitTests
         Mock<IAsyncStream<BrookCursorMovedEvent>> stream = new(MockBehavior.Strict);
         BrookProviderOptions options = new();
         ServiceCollection services = new();
-        services.AddKeyedSingleton<IStreamProvider>(options.OrleansStreamProviderName, streams.Object);
+        services.AddKeyedSingleton(options.OrleansStreamProviderName, streams.Object);
         using ServiceProvider provider = services.BuildServiceProvider();
         context.SetupGet(value => value.GrainId).Returns(GrainId.Create("brook-writer", key.ToString()));
         context.SetupGet(value => value.ActivationServices).Returns(provider);
@@ -113,17 +113,30 @@ public sealed class BrookWriterGrainUnitTests
     }
 
     /// <summary>
-    ///     Reports committed storage even when cancellation arrives before publication.
+    ///     Publishes committed storage even when caller cancellation arrives before publication.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
     [Fact]
-    public async Task AppendEventsAsyncReportsCommittedPositionWhenCancelledAfterAppend()
+    public async Task AppendEventsAsyncPublishesCommittedPositionWhenCancelledAfterAppend()
     {
         BrookKey key = new("test", "cancelled-publication");
         Mock<IBrookStorageWriter> storage = new(MockBehavior.Strict);
         Mock<IGrainContext> context = new(MockBehavior.Strict);
         using CancellationTokenSource cancellation = new();
+        Mock<IStreamProvider> streams = new(MockBehavior.Strict);
+        Mock<IAsyncStream<BrookCursorMovedEvent>> stream = new(MockBehavior.Strict);
+        BrookProviderOptions options = new();
+        ServiceCollection services = new();
+        services.AddKeyedSingleton(options.OrleansStreamProviderName, streams.Object);
+        using ServiceProvider provider = services.BuildServiceProvider();
         context.SetupGet(value => value.GrainId).Returns(GrainId.Create("brook-writer", key.ToString()));
+        context.SetupGet(value => value.ActivationServices).Returns(provider);
+        streams.Setup(value => value.GetStream<BrookCursorMovedEvent>(It.IsAny<StreamId>())).Returns(stream.Object);
+        stream.Setup(value => value.OnNextAsync(
+                It.Is<BrookCursorMovedEvent>(update =>
+                    (update.NewPosition.Value == 0) && (update.BrookKey == key.ToString())),
+                null))
+            .Returns(Task.CompletedTask);
         storage.Setup(value => value.AppendEventsAsync(
                 key,
                 It.IsAny<IReadOnlyList<BrookEvent>>(),
@@ -138,7 +151,7 @@ public sealed class BrookWriterGrainUnitTests
             storage.Object,
             NullLogger<BrookWriterGrain>.Instance,
             context.Object,
-            Options.Create(new BrookProviderOptions()));
+            Options.Create(options));
         ImmutableArray<BrookEvent> events =
         [
             new()
@@ -146,11 +159,11 @@ public sealed class BrookWriterGrainUnitTests
                 Id = "committed-event",
             },
         ];
-        BrookCursorPublicationException exception = await Assert.ThrowsAsync<BrookCursorPublicationException>(() =>
-            writer.AppendEventsAsync(events, cancellationToken: cancellation.Token));
-        Assert.Equal(0, exception.Position.Value);
-        Assert.IsType<OperationCanceledException>(exception.InnerException);
-        context.VerifyGet(value => value.ActivationServices, Times.Never);
+        BrookPosition position = await writer.AppendEventsAsync(events, cancellationToken: cancellation.Token);
+        Assert.Equal(0, position.Value);
+        Assert.True(cancellation.IsCancellationRequested);
+        stream.Verify(value => value.OnNextAsync(It.IsAny<BrookCursorMovedEvent>(), null), Times.Once);
+        storage.VerifyAll();
     }
 
     /// <summary>
@@ -236,7 +249,7 @@ public sealed class BrookWriterGrainUnitTests
         Mock<IAsyncStream<BrookCursorMovedEvent>> stream = new(MockBehavior.Strict);
         BrookProviderOptions options = new();
         ServiceCollection services = new();
-        services.AddKeyedSingleton<IStreamProvider>(options.OrleansStreamProviderName, streamProvider.Object);
+        services.AddKeyedSingleton(options.OrleansStreamProviderName, streamProvider.Object);
         using ServiceProvider serviceProvider = services.BuildServiceProvider();
         context.SetupGet(value => value.GrainId).Returns(GrainId.Create("brook-writer", key.ToString()));
         context.SetupGet(value => value.ActivationServices).Returns(serviceProvider);
@@ -272,6 +285,28 @@ public sealed class BrookWriterGrainUnitTests
             context.Object,
             Options.Create(new BrookProviderOptions()));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => writer.PublishCursorAsync(new(-1)));
+        storage.VerifyNoOtherCalls();
+        context.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    ///     Observes cancellation of an explicit publication-only request before touching infrastructure.
+    /// </summary>
+    /// <returns>A task representing the test operation.</returns>
+    [Fact]
+    public async Task PublishCursorAsyncRespectsCancellationBeforePublication()
+    {
+        Mock<IBrookStorageWriter> storage = new(MockBehavior.Strict);
+        Mock<IGrainContext> context = new(MockBehavior.Strict);
+        using CancellationTokenSource cancellation = new();
+        await cancellation.CancelAsync();
+        BrookWriterGrain writer = new(
+            storage.Object,
+            NullLogger<BrookWriterGrain>.Instance,
+            context.Object,
+            Options.Create(new BrookProviderOptions()));
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            writer.PublishCursorAsync(new(5), cancellation.Token));
         storage.VerifyNoOtherCalls();
         context.VerifyNoOtherCalls();
     }
