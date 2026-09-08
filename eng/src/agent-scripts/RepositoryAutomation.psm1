@@ -230,25 +230,25 @@ function Invoke-SolutionTests {
     )
 
     $resolved = Resolve-Path -LiteralPath $SolutionPath
-    $args = @('test', $resolved.Path, '--configuration', $Configuration, '--no-restore')
+    $testArguments = @('test', $resolved.Path, '--configuration', $Configuration, '--no-restore')
 
     $resultsDirectory = $null
     if ($ResultsRoot) {
         $resultsDirectory = New-AutomationRunDirectory -Root $ResultsRoot
-        $args += @('--results-directory', $resultsDirectory)
+        $testArguments += @('--results-directory', $resultsDirectory)
     }
 
     if ($Logger) {
-        $args += '--logger'
-        $args += $Logger
+        $testArguments += '--logger'
+        $testArguments += $Logger
     }
     else {
-        $args += '-p:RepositoryTestResults=true'
+        $testArguments += '-p:RepositoryTestResults=true'
     }
 
     if ($CollectCoverage) {
-        $args += '--collect'
-        $args += 'XPlat Code Coverage'
+        $testArguments += '--collect'
+        $testArguments += 'XPlat Code Coverage'
     }
 
     # Build filter expression for test levels (e.g., L0Tests, L1Tests)
@@ -256,19 +256,19 @@ function Invoke-SolutionTests {
     if ($TestLevels -and $TestLevels.Count -gt 0) {
         $filterParts = $TestLevels | ForEach-Object { "FullyQualifiedName~.$($_)." }
         $filterExpression = $filterParts -join '|'
-        $args += '--filter'
-        $args += $filterExpression
+        $testArguments += '--filter'
+        $testArguments += $filterExpression
     }
 
     if ($AdditionalArguments) {
-        $args += $AdditionalArguments
+        $testArguments += $AdditionalArguments
     }
 
     if (-not $Quiet) {
         Write-Host "Executing tests: $($resolved.Path)" -ForegroundColor ([ConsoleColor]::Cyan)
     }
 
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $args -ErrorMessage "Failed to run tests for $($resolved.Path)." | Out-Host
+    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $testArguments -ErrorMessage "Failed to run tests for $($resolved.Path)." | Out-Host
 
     if ($resultsDirectory -and -not $Logger) {
         $executed = 0
