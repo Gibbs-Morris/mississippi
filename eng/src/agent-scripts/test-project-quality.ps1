@@ -218,7 +218,7 @@ try {
     if ($cobertura) { $coveragePercent = Parse-CoberturaCoveragePercent -CoberturaPath $cobertura.FullName }
     if ($null -eq $trxSummary -or $trxSummary.Executed -lt 1 -or $trxSummary.Failed -gt 0 -or $trxSummary.Outcome -ne 'Completed') { $testFailed = $true }
     if ($null -eq $coveragePercent) { $testFailed = $true }
-    if ($testFailed) { throw 'Tests and a current coverage report must pass before mutation testing.' }
+    if ($testFailed -and -not $SkipMutation) { throw 'Tests and a current coverage report must pass before mutation testing.' }
 
     # Prepare Stryker
     if (-not $SkipMutation) {

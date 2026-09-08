@@ -175,6 +175,27 @@ Describe 'Mutation automation' {
         }
     }
 
+    It 'prints a failed non-mutation summary when coverage is missing' {
+        $qualityScript = Join-Path $PSScriptRoot '../../src/agent-scripts/test-project-quality.ps1'
+        Mock Import-Module {}
+        Mock dotnet {
+            $results = $args[[Array]::IndexOf($args, '--results-directory') + 1]
+            Set-Content (Join-Path $results 'test_results.trx') '<TestRun><ResultSummary outcome="Completed"><Counters total="1" executed="1" passed="1" failed="0" notExecuted="0" /></ResultSummary></TestRun>'
+            & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -Command 'exit 0'
+        }
+        Mock Invoke-StrykerMutationTestPerProject {}
+        Push-Location $repo
+        try {
+            $summary = & $qualityScript -TestProject (Join-Path $repo 'tests/Widget.L0Tests/Widget.L0Tests.csproj') -SkipMutation -NoBuild 6>&1
+            $LASTEXITCODE | Should -Be 1
+            ($summary | Out-String) | Should -Match 'RESULT: FAIL'
+            ($summary | Out-String) | Should -Match 'TEST_PASSED: 1'
+            ($summary | Out-String) | Should -Match 'COVERAGE: N/A'
+        }
+        finally { Pop-Location }
+        Should -Invoke Invoke-StrykerMutationTestPerProject -Exactly 0
+    }
+
     It 'does not reuse an earlier report for a later invocation' {
         Mock Invoke-RepositoryProcess -ModuleName RepositoryAutomation {
             Set-Content (Join-Path $Arguments[8] 'mutation-report.json') '{"files":{}}'
