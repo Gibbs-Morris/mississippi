@@ -98,8 +98,21 @@ Describe 'Repository automation quality gates' {
         Set-Content $solution '<Solution />'
         Mock Invoke-RepositoryProcess { 'Compiler error details'; throw 'Build failed' } -ModuleName RepositoryAutomation
         Mock Out-Host {} -ModuleName RepositoryAutomation
-        { Invoke-AutomationStep -Name Build -Action { Invoke-SolutionBuild -SolutionPath $solution } } | Should -Throw '*Build failed*'
+        Mock Invoke-DotnetToolRestore {} -ModuleName RepositoryAutomation
+        Mock Invoke-SolutionRestore {} -ModuleName RepositoryAutomation
+        Copy-Item $solution (Join-Path $TestDrive 'mississippi.slnx')
+        { Invoke-AutomationStep -Name Build -Action { Invoke-MississippiSolutionBuild -RepoRoot $TestDrive } } | Should -Throw '*Build failed*'
         Should -Invoke Out-Host -ModuleName RepositoryAutomation -Times 1 -Exactly
+    }
+
+    It 'preserves compiler output in an artifact even when the build fails' {
+        $solution = Join-Path $TestDrive 'logged.slnx'
+        Set-Content $solution '<Solution />'
+        $log = Join-Path $TestDrive 'build.log'
+        Mock Invoke-RepositoryProcess { 'Compiler error details'; throw 'Build failed' } -ModuleName RepositoryAutomation
+        { Invoke-SolutionBuild -SolutionPath $solution | Tee-Object -FilePath $log | Out-Null } |
+            Should -Throw '*Build failed*'
+        Get-Content -LiteralPath $log -Raw | Should -Match 'Compiler error details'
     }
 }
 
