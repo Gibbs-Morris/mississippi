@@ -11,6 +11,7 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 ## Rules (RFC 2119)
 
 - Copilot **MUST** follow all repository instruction files, especially shared guardrails, C#, naming, logging, and testing guidance. Why: Keeps suggestions compliant.
+- Copilot **MUST** follow [token efficiency and reassessment](instructions/agent-efficiency.instructions.md), including during persistent goals. Why: Repeated effort needs new evidence or a better approach while preserving the full outcome and required gates.
 - Copilot **MUST** follow [PR size and stacked delivery](instructions/pr-size-and-stacking.instructions.md), using the `gh-stack` skill for dependent PRs and completing each layer's CI/review gate before starting the next. Why: Reviewable increments prevent unchecked work from accumulating.
 - Build/tidy guidance **MUST** use canonical scripts: `pwsh ./go.ps1` for full pipeline; `pwsh ./clean-up.ps1` to format/tidy; extra formatters **MUST NOT** be assumed. Why: Ensures consistent gates.
 - For local iteration speed, Copilot **SHOULD** prefer `pwsh ./clean-up-targeted.ps1` with `-Files` or `-FileListPath` to clean only changed files, then **MUST** run full `pwsh ./clean-up.ps1` before completion/handoff. Why: Preserves canonical gates while reducing local feedback time.
