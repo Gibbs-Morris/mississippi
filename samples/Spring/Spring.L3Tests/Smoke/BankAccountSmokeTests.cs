@@ -77,9 +77,23 @@ public sealed class BankAccountSmokeTests
             balanceText = await operationsPage.GetBalanceTextAsync();
             balanceText.Should().Contain("525.00", "final balance should reflect all transactions");
         }
-        finally
+        catch (Exception testException)
         {
-            await SpringBrowserFixture.SaveBrowserArtifactsAsync(page);
+            try
+            {
+                await SpringBrowserFixture.SaveBrowserArtifactsAsync(page);
+            }
+            catch (Exception artifactException)
+            {
+                throw new AggregateException(
+                    "Banking journey and artifact capture both failed.",
+                    testException,
+                    artifactException);
+            }
+
+            throw;
         }
+
+        await SpringBrowserFixture.SaveBrowserArtifactsAsync(page);
     }
 }
