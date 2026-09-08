@@ -3,6 +3,10 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+BeforeAll {
+    $powerShellPath = Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })
+}
+
 Describe 'PowerShell test orchestration' {
     BeforeAll {
         $sourceRoot = Split-Path -Parent $PSScriptRoot
@@ -75,7 +79,7 @@ Describe 'PowerShell test orchestration' {
         @{ ExitCode = 1 }
     ) {
         Set-Content (Join-Path $fixtureRunners 'verify-scratchpad-task-scripts.ps1') "exit $ExitCode"
-        & (Get-Process -Id $PID).Path -NoProfile -File $orchestrator | Out-Null
+        & $powerShellPath -NoProfile -File $orchestrator | Out-Null
         $LASTEXITCODE | Should -Be $ExitCode
     }
 }
@@ -102,7 +106,7 @@ Describe 'Standalone Pester runners' {
         Copy-Item (Join-Path $PSScriptRoot $Runner) $fixture
         Copy-Item (Join-Path $PSScriptRoot 'run-pester-suite.ps1') $fixture
         Set-Content (Join-Path $fixture $TestFile) $Body
-        & (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $fixture $Runner) | Out-Null
+        & $powerShellPath -NoProfile -File (Join-Path $fixture $Runner) | Out-Null
         $LASTEXITCODE | Should -Be $ExitCode
     }
 }
@@ -117,7 +121,7 @@ Describe 'Build entry point process boundaries' {
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../go.ps1') $fixture
         Set-Content (Join-Path $scripts 'orchestrate-solutions.ps1') "param([string]`$Configuration, [switch]`$SkipCleanup, [switch]`$IncludeMutation); Write-Output ([string]::Join('|', `$Configuration, `$SkipCleanup, `$IncludeMutation)); exit $ExitCode"
-        $output = & pwsh -NoProfile -File (Join-Path $fixture 'go.ps1') -Configuration Debug -SkipCleanup -IncludeMutation 2>&1 | Out-String
+        $output = & $powerShellPath -NoProfile -File (Join-Path $fixture 'go.ps1') -Configuration Debug -SkipCleanup -IncludeMutation 2>&1 | Out-String
         $LASTEXITCODE | Should -Be $(if ($ExitCode -eq 0) { 0 } else { 1 })
         $output | Should -Match 'Debug\|True\|True'
         $output.Contains('SUCCESS: Main pipeline orchestration completed successfully') | Should -Be ($ExitCode -eq 0)
@@ -132,7 +136,7 @@ Describe 'Build entry point process boundaries' {
         New-Item -ItemType Directory -Path $scripts -Force | Out-Null
         Copy-Item (Join-Path $PSScriptRoot '../../../quick-build.ps1') $fixture
         Set-Content (Join-Path $scripts 'final-build-solutions.ps1') "param([string]`$Configuration); Write-Output ('FINAL:' + `$Configuration); exit $ExitCode"
-        $output = & pwsh -NoProfile -File (Join-Path $fixture 'quick-build.ps1') -Configuration Debug 2>&1 | Out-String
+        $output = & $powerShellPath -NoProfile -File (Join-Path $fixture 'quick-build.ps1') -Configuration Debug 2>&1 | Out-String
         $LASTEXITCODE | Should -Be $WrapperExit
         $output | Should -Match 'FINAL:Debug'
         $output.Contains('QUICK BUILD COMPLETED SUCCESSFULLY') | Should -Be ($ExitCode -eq 0)
@@ -153,7 +157,7 @@ Describe 'Build entry point process boundaries' {
         Set-Content (Join-Path $scripts "$Prefix-sample-solution.ps1") "param([string]`$Configuration); Write-Output ('SAMPLES:' + `$Configuration); exit 0"
         $options = if ($Prefix -eq 'build') { @('-Configuration', 'Debug') } else { @() }
         $expectedConfiguration = if ($Prefix -eq 'build') { 'Debug' } else { '' }
-        $output = & pwsh -NoProfile -File (Join-Path $fixture $EntryPoint) @options 2>&1 | Out-String
+        $output = & $powerShellPath -NoProfile -File (Join-Path $fixture $EntryPoint) @options 2>&1 | Out-String
         if ($ExitCode -eq 0) {
             $LASTEXITCODE | Should -Be 0
             $output | Should -Match "SAMPLES:$expectedConfiguration"
