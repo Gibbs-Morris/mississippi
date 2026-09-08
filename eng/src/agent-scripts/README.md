@@ -107,7 +107,7 @@ pwsh ./eng/src/agent-scripts/orchestrate-solutions.ps1 | tee orchestration.log
 | Artifact | Path |
 | --- | --- |
 | Test results (TRX) | `.scratchpad/coverage-test-results` |
-| Mutation reports | `.scratchpad/mutation-test-results/<timestamp>` |
+| Mutation reports | `.scratchpad/mutation-test-results/<run>/<SourceProject>/<invocation>/reports/` |
 
 These folders are git-ignored but persist across runs for inspection or archiving.
 
@@ -166,8 +166,9 @@ MUTATION_RESULT: PASS|FAIL
 
 ### Artifacts
 
-- Coverage artifacts under `.scratchpad/coverage-test-results/<TestProjectName>/`.
-- Mutation reports under `.scratchpad/mutation-test-results/<timestamp>/reports/`.
+- Coverage artifacts under `.scratchpad/coverage-test-results/<TestProjectName>/<run>/`.
+- Mutation reports under `.scratchpad/mutation-test-results/<run>/<SourceProject>/<invocation>/reports/`.
+- Target inventory and outcomes in `.scratchpad/mutation-test-results/<run>/project-results.json`.
 
 Exit code is `0` on success (including mutation thresholds) and `1` otherwise.
 
