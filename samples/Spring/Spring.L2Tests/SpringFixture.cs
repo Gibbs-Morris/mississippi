@@ -257,7 +257,14 @@ public sealed class SpringFixture
         {
             InitializationError = ex;
             IsInitialized = false;
-            await DisposeAsync();
+            try
+            {
+                await DisposeAsync();
+            }
+            catch (Exception cleanupException)
+            {
+                throw new AggregateException("Spring startup and cleanup both failed.", ex, cleanupException);
+            }
 
             // Re-throw to fail the test fixture, but keep the error captured for diagnostics
             throw;
