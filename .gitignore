@@ -45,10 +45,9 @@ Generated\ Files/
 [Bb]uild[Ll]og.*
 *.trx
 
-# NUnit
+# Legacy test reports
 *.VisualState.xml
 TestResult.xml
-nunit-*.xml
 
 # Custom test output directories (legacy paths retained for safety)
 test-results/
