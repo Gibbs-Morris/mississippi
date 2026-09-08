@@ -154,7 +154,14 @@ public sealed class SpringFixture
 #pragma warning restore VSTHRD002
         gatewayHttpClient?.Dispose();
         playwright?.Dispose();
-        appBuilder?.Dispose();
+        if (app is not null)
+        {
+            app.Dispose();
+        }
+        else
+        {
+            appBuilder?.Dispose();
+        }
     }
 
     /// <inheritdoc />
@@ -183,7 +190,11 @@ public sealed class SpringFixture
             {
                 gatewayHttpClient?.Dispose();
                 playwright?.Dispose();
-                if (appBuilder is not null)
+                if (app is not null)
+                {
+                    await app.DisposeAsync();
+                }
+                else if (appBuilder is not null)
                 {
                     await appBuilder.DisposeAsync();
                 }
