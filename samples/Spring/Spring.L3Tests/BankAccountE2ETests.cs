@@ -79,6 +79,7 @@ public sealed class BankAccountE2ETests
 
             // Assert
             string? balanceText = await operationsPage.GetBalanceTextAsync();
+            Assert.NotNull(balanceText);
             Assert.Contains("575.00", balanceText, StringComparison.Ordinal);
         }
         finally
@@ -119,10 +120,12 @@ public sealed class BankAccountE2ETests
 
             // Assert
             string? balanceText = await operationsPage.GetBalanceTextAsync();
+            Assert.NotNull(balanceText);
             Assert.Contains("500.00", balanceText, StringComparison.Ordinal);
             string? holderText = await operationsPage.GetHolderNameTextAsync();
             Assert.False(string.IsNullOrEmpty(holderText), "holder name should be displayed");
             string? statusText = await operationsPage.GetStatusTextAsync();
+            Assert.NotNull(statusText);
             Assert.Contains("Open", statusText, StringComparison.Ordinal);
         }
         finally
@@ -182,6 +185,7 @@ public sealed class BankAccountE2ETests
 
             // Assert
             string? balanceText = await operationsPage.GetBalanceTextAsync();
+            Assert.NotNull(balanceText);
             Assert.Contains("450.00", balanceText, StringComparison.Ordinal);
         }
         finally

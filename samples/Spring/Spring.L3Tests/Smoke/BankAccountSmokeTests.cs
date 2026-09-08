@@ -51,10 +51,12 @@ public sealed class BankAccountSmokeTests
 
             // Assert - Verify initial state (demo accounts start with £500)
             string? balanceText = await operationsPage.GetBalanceTextAsync();
+            Assert.NotNull(balanceText);
             Assert.Contains("500.00", balanceText, StringComparison.Ordinal);
             string? holderText = await operationsPage.GetHolderNameTextAsync();
             Assert.False(string.IsNullOrEmpty(holderText), "holder name should be displayed");
             string? statusText = await operationsPage.GetStatusTextAsync();
+            Assert.NotNull(statusText);
             Assert.Contains("Open", statusText, StringComparison.Ordinal);
 
             // Act - Deposit funds
@@ -64,6 +66,7 @@ public sealed class BankAccountSmokeTests
             await operationsPage.WaitForCommandSuccessAsync(ProjectionTimeout);
             await operationsPage.WaitForBalanceValueAsync("550.00", ProjectionTimeout);
             balanceText = await operationsPage.GetBalanceTextAsync();
+            Assert.NotNull(balanceText);
             Assert.Contains("550.00", balanceText, StringComparison.Ordinal);
 
             // Act - Withdraw funds
@@ -75,6 +78,7 @@ public sealed class BankAccountSmokeTests
 
             // Assert - Final balance
             balanceText = await operationsPage.GetBalanceTextAsync();
+            Assert.NotNull(balanceText);
             Assert.Contains("525.00", balanceText, StringComparison.Ordinal);
         }
         catch (Exception testException)
