@@ -26,7 +26,7 @@ Describe 'Mutation summary report aggregation' {
             $manifest += @{ Project = $project; Status = 'Completed'; ReportPath = (Join-Path $reportDirectory 'mutation-report.json') }
         }
         $manifestPath = Join-Path $reportRoot '2026-09-04.12-00-00/project-results.json'
-        ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content $manifestPath
+        ConvertTo-Json -InputObject @{ Scope = 'Solution'; Projects = $manifest } -Depth 6 | Set-Content $manifestPath
         $oldDirectory = Join-Path $reportRoot '2026-09-03.12-00-00/reports'
         New-Item -ItemType Directory -Path $oldDirectory -Force | Out-Null
         Set-Content (Join-Path $oldDirectory 'mutation-report.json') 'invalid stale report'
@@ -66,21 +66,42 @@ Describe 'Mutation summary report aggregation' {
 
     It 'rejects an unfinished target even when another report is available' {
         $manifest[0].Status = 'Pending'
-        ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content $manifestPath
+        ConvertTo-Json -InputObject @{ Scope = 'Solution'; Projects = $manifest } -Depth 6 | Set-Content $manifestPath
         & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun 2>&1 | Out-Null
         $LASTEXITCODE | Should -Not -Be 0
     }
 
     It 'retains valid reports from failed score runs for survivor analysis' {
         $manifest[0].Status = 'Failed'
-        ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content $manifestPath
+        ConvertTo-Json -InputObject @{ Scope = 'Solution'; Projects = $manifest } -Depth 6 | Set-Content $manifestPath
         & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun | Out-Null
         $LASTEXITCODE | Should -Be 0
     }
 
+    It 'ignores a newer focused run for repository summaries' {
+        $focused = Join-Path $reportRoot '2026-09-06.12-00-00'
+        New-Item -ItemType Directory -Path $focused | Out-Null
+        Set-Content (Join-Path $focused 'project-results.json') '{"Scope":"Project","Projects":[{"Status":"Pending"}]}'
+        & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun | Out-Null
+        $LASTEXITCODE | Should -Be 0
+        (Get-Content (Join-Path $reportRoot 'mutation-survivors-enriched.json') -Raw | ConvertFrom-Json).totalSurvivors | Should -Be 2
+    }
+
+    It 'writes an explicitly selected focused summary only within that run' {
+        ConvertTo-Json -InputObject @{ Scope = 'Project'; Projects = $manifest } -Depth 6 | Set-Content $manifestPath
+        $selected = Split-Path -Parent $manifestPath
+        & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun -RunPath $selected | Out-Null
+        $LASTEXITCODE | Should -Be 0
+        Test-Path (Join-Path $selected 'mutation-survivors-enriched.json') | Should -BeTrue
+        Test-Path (Join-Path $reportRoot 'mutation-survivors-enriched.json') | Should -BeFalse
+        Test-Path (Join-Path $repo '.scratchpad/testing/mutation-survivors-summary.md') | Should -BeFalse
+        & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun -RunPath $selected -GenerateTasks 2>&1 | Out-Null
+        $LASTEXITCODE | Should -Not -Be 0
+    }
+
     It 'rejects a report from outside the selected run' {
         $manifest[0].ReportPath = Join-Path $oldDirectory 'mutation-report.json'
-        ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content $manifestPath
+        ConvertTo-Json -InputObject @{ Scope = 'Solution'; Projects = $manifest } -Depth 6 | Set-Content $manifestPath
         & (Join-Path $PSHOME $(if ($IsWindows) { 'pwsh.exe' } else { 'pwsh' })) -NoProfile -File $summaryScript -SkipMutationRun 2>&1 | Out-Null
         $LASTEXITCODE | Should -Not -Be 0
     }

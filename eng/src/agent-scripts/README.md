@@ -26,6 +26,8 @@ Cleanup uses a fresh cache under `.scratchpad/cleanup-caches/` for each invocati
 
 Mutation runs use the selected solution's declared source and test projects. Each target gets a fresh output directory, and `project-results.json` records every target before execution so interrupted or unmapped work stays visible. Native failures, missing or incomplete reports, and unmapped authored projects fail the run. Valid reports from failed score gates remain available for survivor analysis; the summarizer rejects missing target evidence instead of borrowing an older report. Focused quality runs use the same report contract.
 
+Manifests identify solution and focused project scopes. Survivor summaries select the latest solution run by default. Use `-SkipMutationRun -RunPath <run-directory>` to inspect a focused run; its summaries stay inside that directory and cannot replace repository tasks.
+
 ---
 
 ## Script catalogue

@@ -523,7 +523,8 @@ function Invoke-StrykerMutationTest {
            Status = 'Pending'; Error = $null; Reason = $null }
     })
     $manifestPath = Join-Path $outputFullPath 'project-results.json'
-    ConvertTo-Json -InputObject @($projectResults) -Depth 6 | Set-Content -LiteralPath $manifestPath
+    $manifest = @{ Scope = 'Solution'; Solution = $resolvedSolution.Path; Projects = $projectResults }
+    ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
     for ($index = 0; $index -lt $targets.Count; $index++) {
         $target = $targets[$index]
         $result = $projectResults[$index]
@@ -532,7 +533,7 @@ function Invoke-StrykerMutationTest {
             $result.Status = 'Skipped'
             $result.Success = $true
             $result.Reason = 'No authored C# source'
-            ConvertTo-Json -InputObject @($projectResults) -Depth 6 | Set-Content -LiteralPath $manifestPath
+            ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
             continue
         }
         try {
@@ -552,10 +553,10 @@ function Invoke-StrykerMutationTest {
             $result.Status = 'Failed'
             $result.Error = $_.Exception.Message
         }
-        ConvertTo-Json -InputObject @($projectResults) -Depth 6 | Set-Content -LiteralPath $manifestPath
+        ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
         Write-Host
     }
-    ConvertTo-Json -InputObject @($projectResults) -Depth 6 | Set-Content -LiteralPath $manifestPath
+    ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
 
     # Check if any projects failed
     $failedProjects = @($projectResults | Where-Object { -not $_.Success })

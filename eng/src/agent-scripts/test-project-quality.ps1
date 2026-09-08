@@ -233,7 +233,8 @@ try {
         $mutationOutput = New-AutomationRunDirectory -Root $mutationRoot
         $projectResult = @{ Project = $sourceProjectPath; Output = $null; ReportPath = $null; Status = 'Pending'; Success = $false }
         $manifestPath = Join-Path $mutationOutput 'project-results.json'
-        ConvertTo-Json -InputObject @($projectResult) -Depth 6 | Set-Content -LiteralPath $manifestPath
+        $manifest = @{ Scope = 'Project'; Projects = @($projectResult) }
+        ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
         try {
             $projectResult.Output = Invoke-StrykerMutationTestPerProject -ProjectPath $sourceProjectPath -TestProjects @($testProjectPath) -OutputPath $mutationOutput -Configuration $Configuration
             $projectResult.ReportPath = Get-MutationReportPath -OutputPath $projectResult.Output
@@ -247,7 +248,7 @@ try {
             $projectResult.Status = 'Failed'
             Write-Warning "Mutation testing failed: $($_.Exception.Message)"
         }
-        ConvertTo-Json -InputObject @($projectResult) -Depth 6 | Set-Content -LiteralPath $manifestPath
+        ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $manifestPath
 
         # Only this invocation's output can supply its mutation evidence.
         $mutationJson = if ($projectResult.ReportPath) { Get-Item -LiteralPath $projectResult.ReportPath } else { $null }

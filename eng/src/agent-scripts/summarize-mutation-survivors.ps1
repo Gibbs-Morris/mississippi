@@ -4,6 +4,7 @@
 param(
     [switch]$SkipMutationRun,
     [string]$MutationScriptPath,
+    [string]$RunPath,
     [int]$Top,
     [int]$ContextLines = 3,
     [ValidateSet('Simple','Weighted')]
@@ -119,18 +120,31 @@ function New-SurvivorKey
     return '{0}|{1}|{2}|{3}|{4}|{5}|{6}' -f $fileKey, $mutatorKey, $StartLine, $EndLine, $replacementKey, $StartColumn, $EndColumn
 }
 
-function Get-LatestMutationReportPaths
+function Get-MutationRun
 {
-    param([string]$MutationOutputPath)
+    param([string]$MutationOutputPath, [string]$SelectedRun)
 
-    if (-not (Test-Path -Path $MutationOutputPath -PathType Container)) { return @() }
+    $runs = if ($SelectedRun) { @(Get-Item -LiteralPath $SelectedRun) }
+        else { @(Get-ChildItem -LiteralPath $MutationOutputPath -Directory | Sort-Object Name -Descending) }
+    foreach ($run in $runs) {
+        $manifestPath = Join-Path $run.FullName 'project-results.json'
+        if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "Mutation run manifest missing: $manifestPath" }
+        $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable
+        if ($manifest -isnot [System.Collections.IDictionary] -or $manifest.Scope -notin @('Solution', 'Project')) {
+            throw "Mutation run scope is missing or invalid: $manifestPath"
+        }
+        if ($SelectedRun -or $manifest.Scope -eq 'Solution') {
+            return @{ Path = $run.FullName; Manifest = $manifest }
+        }
+    }
+    throw "No solution mutation run was found under '$MutationOutputPath'. Use -RunPath to select a focused run."
+}
 
-    $latestRun = Get-ChildItem -LiteralPath $MutationOutputPath -Directory |
-        Sort-Object Name -Descending | Select-Object -First 1
-    if ($null -eq $latestRun) { return @() }
-    $manifestPath = Join-Path $latestRun.FullName 'project-results.json'
-    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw "Mutation run manifest missing: $manifestPath" }
-    $projects = @(Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json -AsHashtable)
+function Get-MutationRunReportPaths
+{
+    param([System.Collections.IDictionary]$Run)
+    $manifestPath = Join-Path $Run.Path 'project-results.json'
+    $projects = @($Run.Manifest.Projects)
     if ($projects.Count -eq 0) { throw "Mutation run manifest is empty: $manifestPath" }
     $paths = @()
     foreach ($project in $projects) {
@@ -139,7 +153,7 @@ function Get-LatestMutationReportPaths
             throw "Mutation run is incomplete for '$($project.Project)': $manifestPath"
         }
         $path = (Resolve-Path -LiteralPath $project.ReportPath).Path
-        $relative = [System.IO.Path]::GetRelativePath($latestRun.FullName, $path)
+        $relative = [System.IO.Path]::GetRelativePath($Run.Path, $path)
         if ([System.IO.Path]::IsPathRooted($relative) -or $relative -match '^\.\.([\\/]|$)') {
             throw "Mutation report is outside the selected run: $path"
         }
@@ -334,6 +348,7 @@ else
 
 if (-not $SkipMutationRun)
 {
+    if ($RunPath) { throw '-RunPath requires -SkipMutationRun.' }
     Write-Host "Running mutation tests via '$MutationScriptPath'..." -ForegroundColor Cyan
     & pwsh -NoLogo -NoProfile -File $MutationScriptPath
     if ($LASTEXITCODE -ne 0)
@@ -350,7 +365,12 @@ else
 $mutationOutputDirectory = Join-Path $repoRoot '.scratchpad/mutation-test-results'
 if (-not (Test-Path -LiteralPath $mutationOutputDirectory)) { New-Item -ItemType Directory -Path $mutationOutputDirectory | Out-Null }
 # Reports from the latest run are authoritative; cached survivors may be stale.
-$mutationReportPaths = @(Get-LatestMutationReportPaths -MutationOutputPath $mutationOutputDirectory)
+$selectedRun = Get-MutationRun -MutationOutputPath $mutationOutputDirectory -SelectedRun $RunPath
+if ($selectedRun.Manifest.Scope -eq 'Project') {
+    if ($GenerateTasks -or $EmitTestSkeletons) { throw 'Focused summaries cannot replace repository tasks or generate test skeletons.' }
+    $mutationOutputDirectory = $selectedRun.Path
+}
+$mutationReportPaths = @(Get-MutationRunReportPaths -Run $selectedRun)
 if ($mutationReportPaths.Count -eq 0) {
     throw "No mutation-report.json files were found in the latest run under '$mutationOutputDirectory'."
 }
@@ -487,6 +507,7 @@ $enriched | ConvertTo-Json -Depth 6 | Set-Content -Path $enrichedJsonPath -Encod
 
 $summaryJsonPath = Join-Path $mutationOutputDirectory 'mutation-survivors-summary.json'
 $summaryMarkdownPath = Join-Path $repoRoot '.scratchpad/testing/mutation-survivors-summary.md'
+if ($selectedRun.Manifest.Scope -eq 'Project') { $summaryMarkdownPath = Join-Path $mutationOutputDirectory 'mutation-survivors-summary.md' }
 
 $null = New-Item -Path (Split-Path -Parent $summaryJsonPath) -ItemType Directory -Force
 $null = New-Item -Path (Split-Path -Parent $summaryMarkdownPath) -ItemType Directory -Force
