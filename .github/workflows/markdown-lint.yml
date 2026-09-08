@@ -37,6 +37,8 @@ jobs:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: true
+          # Inclusion-only selection disables unset validators, including Markdown Prettier.
+          # Super-Linter v8 rejects mixing true and false VALIDATE_<LANGUAGE> flags.
           VALIDATE_MARKDOWN: true
 
       - name: Markdown lint passed
