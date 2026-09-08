@@ -136,7 +136,7 @@ Describe 'Build entry point process boundaries' {
         $LASTEXITCODE | Should -Be $WrapperExit
         $output | Should -Match 'FINAL:Debug'
         $output.Contains('QUICK BUILD COMPLETED SUCCESSFULLY') | Should -Be ($ExitCode -eq 0)
-        if ($ExitCode -ne 0) { $output | Should -Match 'failed with exit code 7' }
+        if ($ExitCode -ne 0) { $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code[\s|]+7' }
     }
 
     It 'runs both builds after success and stops after a failed child: <ExitCode>' -ForEach @(
@@ -158,7 +158,7 @@ Describe 'Build entry point process boundaries' {
         else {
             $LASTEXITCODE | Should -Be 1
             $output | Should -Not -Match 'SAMPLES:Debug'
-            $output | Should -Match 'failed with exit code 7'
+            $output | Should -Match 'failed[\s|]+with[\s|]+exit[\s|]+code[\s|]+7'
         }
         $output | Should -Match 'CORE:Debug'
     }
