@@ -12,7 +12,7 @@ This reference covers `Mississippi.Brooks.Abstractions.Writer`, the low-level wr
 
 ## AppendEventsAsync
 
-`AppendEventsAsync(events, expectedCursorPosition, cancellationToken)` appends events and then publishes the resulting cursor position.
+`AppendEventsAsync(events, expectedCursorPosition, cancellationToken)` appends events and then publishes the resulting cursor position. The caller's token is passed to storage; once storage reports commitment, publication proceeds independently of caller cancellation so committed progress is not hidden by an aborted request.
 
 | Observed outcome | Meaning | Caller responsibility |
 | --- | --- | --- |
