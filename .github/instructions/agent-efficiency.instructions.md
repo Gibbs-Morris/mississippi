@@ -22,7 +22,8 @@ Governing thought: Spend tokens on evidence and actions that advance the user's 
 - Agents **MUST** identify a changed hypothesis, input, method, or verified external condition before retrying after reassessment. Why: Rewording a command or plan does not make the same failed approach informative.
 - Agents **SHOULD** keep a brief checkpoint at a stall or handoff: unmet requirement, attempts and evidence, current operation identifiers, and next decision. Why: Resuming work should not restart exhausted investigations.
 - Agents **MUST** verify the state of an existing asynchronous operation before restarting it after an observation timeout. Why: A timeout or silent log does not prove that work stopped.
-- Agents **SHOULD** use event-driven waits or bounded polling of a specific operation, preserving mandated review intervals. Why: Waiting can be necessary without repeatedly loading unchanged output.
+- Agents **SHOULD** use event-driven waits or bounded polling of a specific operation. Why: Waiting can be necessary without repeatedly loading unchanged output.
+- Agents **MUST** honor the applicable workflow's required waiting intervals. Why: Choosing an efficient waiting strategy does not waive mandatory review time.
 - Agents **SHOULD** continue authorized work using a materially different, evidence-backed approach after reassessment. Why: Stopping a failed tactic does not abandon the goal.
 - Agents **MUST** explain the blocker when no safe, useful next action remains. Why: The user needs the evidence that prevents further progress.
 - Agents **MUST** request only the missing input or decision needed to proceed when a blocker requires something the user can provide. Why: External conditions outside the user's control do not justify inventing a user decision.
