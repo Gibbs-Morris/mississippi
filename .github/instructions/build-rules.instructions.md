@@ -4,20 +4,20 @@ applyTo: '**'
 
 # Build Rules and Quality Gates
 
-Governing thought: Every change ships only after a clean build, cleanup, tests, and mutation tests (where required) with zero warnings.
+Governing thought: Every change ships only after a clean build, cleanup, and tests with zero warnings; mutation testing provides an additional quality signal.
 
 > Drift check: Verify commands in `eng/src/agent-scripts/` (or `./go.ps1`) before use; scripts are the source of truth for switches and order.
 
 ## Rules (RFC 2119)
 
 - Builds **MUST** finish with zero compiler/analyzer warnings; agents **MUST NOT** add `NoWarn`, relax severity, or suppress rules without explicit approval. Why: Zero-warnings is a hard gate.
-- Agents **MUST** run and pass build, cleanup, unit tests, and mutation tests (for Mississippi projects) before calling work complete. Why: Full quality pipeline prevents regressions.
+- Agents **MUST** run and pass build, cleanup, and unit tests before calling work complete. Why: The required quality pipeline prevents regressions.
 - For local iteration, agents **SHOULD** run `pwsh ./clean-up-targeted.ps1` against changed files to shorten feedback loops, but full `pwsh ./clean-up.ps1` **MUST** still pass before completion. Why: Faster inner loop without weakening gates.
 - Agents **MUST NOT** add `[SuppressMessage]` or `#pragma warning disable` except for explicitly approved, minimal scopes. Why: Suppressions hide defects.
 - Agents **MUST** keep StyleCop/ReSharper cleanup clean. Why: Consistent formatting enables readable diffs.
 - Solution files **MUST** be edited in `.slnx` form only; `.sln` files **MUST NOT** be hand-edited because automation regenerates them with SlnGen during builds/cleanup for legacy tooling compatibility. Why: Prevents drift between canonical and generated solutions.
 - Mississippi code changes **MUST** add comprehensive tests; Samples changes **SHOULD** add minimal illustrative tests. Why: Maintains coverage expectations per solution type.
-- Mississippi mutation tests **MUST** be allowed to run to completion (plan for ~30 minutes) and **MUST** not be cancelled early. Why: Mutation score enforces assertion quality.
+- Agents **MUST** apply the [mutation-testing policy](mutation-testing.instructions.md) when choosing or interpreting mutation validation. Why: Mutation scores and tooling thresholds are additional signals, not mandatory repository completion criteria.
 - Package versions **MUST** remain in `Directory.Packages.props`; project files **MUST NOT** add `Version` attributes. Why: Central Package Management avoids drift.
 
 ## Scope and Audience
@@ -30,9 +30,9 @@ All contributors changing Mississippi or Samples solutions.
   `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1`  
   `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1`
 - Tests (Mississippi): `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1`
-- Mutation (Mississippi): `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` (wait for completion)
+- Optional mutation (Mississippi): `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` (report execution status and available results)
 - Samples equivalents: `build-sample-solution.ps1`, `clean-up-sample-solution.ps1`, `unit-test-sample-solution.ps1`
-- Final gate both solutions: `pwsh ./go.ps1`
+- Final gate both solutions: `pwsh ./go.ps1` (mutation is opt-in with `-IncludeMutation`)
 
 Targeted cleanup (iteration only):
 
@@ -45,7 +45,7 @@ Sample benchmark (20 files, 3 runs, `jb cleanupcode --no-build`) shows targeted 
 ## Core Principles
 
 - Zero warnings always; fix code rather than suppressing.
-- Two solutions: Mississippi (full tests + mutation) vs Samples (minimal illustrative tests, no mutation gate).
+- Two solutions: Mississippi (comprehensive tests, optional mutation signal) vs Samples (minimal illustrative tests, no mutation requirement).
 - Use repository scripts for consistent parameters, coverage, mutation reporting, and cleanup.
 - Tests accompany behavior changes; mutation keeps assertions strong.
 
@@ -54,7 +54,7 @@ Sample benchmark (20 files, 3 runs, `jb cleanupcode --no-build`) shows targeted 
 1. Build in Release and fix warnings until clean.
 2. Run cleanup script; resolve any reported issues.
 3. Add/update tests (comprehensive for Mississippi, minimal for Samples).
-4. Run unit tests; for Mississippi, run mutation tests and wait for completion.
+4. Run unit tests; add a focused mutation run only when useful and proportionate or explicitly requested.
 5. Re-run build/tests if code changed; finish with `pwsh ./go.ps1` before handoff.
 
 ## References

@@ -204,8 +204,8 @@ Execute the sub-plan end-to-end:
 * Follow all repository quality gates:
   * Zero compiler/analyzer warnings
   * Comprehensive test coverage
-  * Mutation testing for Mississippi projects (if applicable)
   * StyleCop/ReSharper cleanup compliance
+* Treat mutation testing as an additional signal under the [mutation-testing policy](../instructions/mutation-testing.instructions.md): report results and significant gaps, improve tests proportionately, and avoid significant survivor chasing unless explicitly requested.
 
 ### Deployability check
 

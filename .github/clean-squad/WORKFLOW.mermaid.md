@@ -95,7 +95,7 @@ flowchart TD
         P5Remediate["cs Lead Developer remediates cs Commit Guardian findings in the current increment"]
         P5Commit["Commit with a scoped message and record increment artifacts"]
         P5More{"More plan items to implement?"}
-        P5Full["After all increments, run the full build, full tests, and mutation tests if Mississippi"]
+        P5Full["After all increments, run the full build and full conventional tests; consider mutation only when proportionate or explicitly requested"]
 
         P5Branch --> P5Lead --> P5Code --> P5Tests --> P5Build --> P5RunTests --> P5Guard --> P5Issues
         P5Issues -- Yes --> P5Remediate --> P5Tests
@@ -119,8 +119,8 @@ flowchart TD
     subgraph Phase7["Phase 7: QA Validation"]
         P7Lead["Invoke cs QA Lead to review test strategy and coverage"]
         P7Exploratory["Invoke cs QA Exploratory"]
-        P7Mutation["Invoke cs Test Engineer for mutation testing validation"]
-        P7Gaps{"QA gaps identified?"}
+        P7Mutation["Invoke cs Test Engineer to report mutation evidence or explicit not-run status; record costly gaps for follow-up; run or improve tests only when proportionate or explicitly requested"]
+        P7Gaps{"Gaps affecting required quality gates identified?"}
         P7Remediate["Feed QA gaps back for remediation of the current increment"]
 
         P7Lead --> P7Exploratory --> P7Mutation --> P7Gaps

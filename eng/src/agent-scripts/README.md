@@ -20,6 +20,8 @@
 6. `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1` to confirm a clean Release build.
 7. Repeat until the feature is complete, then mirror the steps on the Samples solution when relevant (no mutation testing there).
 
+Follow the [mutation-testing policy](../../../.github/instructions/mutation-testing.instructions.md): use `test-project-quality.ps1 -SkipMutation` for routine test and coverage validation, report available mutation results and significant gaps, and keep improvements proportionate. There is no mandatory repository mutation-score threshold or ordinary mutation completion gate; costly historical gaps belong in dedicated follow-up work unless explicitly requested.
+
 `pwsh ./go.ps1` builds both solutions, runs L0/L1 tests, summarizes Mississippi coverage, applies cleanup, and performs a final build with warnings as errors. Add `-IncludeMutation` to run Mississippi mutation tests and refresh survivor tasks. Separate CI jobs cover additional checks listed below.
 
 Cleanup uses a fresh cache under `.scratchpad/cleanup-caches/` for each invocation, avoiding reuse of a previous source-generator analysis model. The cache path is logged and retained for troubleshooting.
@@ -40,7 +42,7 @@ The default summary command and `go.ps1 -IncludeMutation` generate survivor repo
 | **build-mississippi-solution.ps1** | Restore dependencies and compile `mississippi.slnx` (default `Release`). | `pwsh ./eng/src/agent-scripts/build-mississippi-solution.ps1 -Configuration Debug` |
 | **unit-test-mississippi-solution.ps1** | Run Mississippi L0/L1 tests with coverage, emitting results under `.scratchpad/coverage-test-results`. | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` |
 | **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute Stryker.NET to measure mutation score. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` |
-| **test-project-quality.ps1** | Run `dotnet test` (with coverage) for a single project and optionally Stryker; prints a machine-readable summary. | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests` |
+| **test-project-quality.ps1** | Run `dotnet test` (with coverage) for a single project and optionally Stryker; prints a machine-readable summary. | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests -SkipMutation` |
 | **clean-up-mississippi-solution.ps1** | Produce a temporary `.sln` and run ReSharper CleanupCode using repository settings. | `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` |
 | **build-sample-solution.ps1** | Build `samples.slnx`. | `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1` |
 | **unit-test-sample-solution.ps1** | Run sample L0/L1 tests (no mutation testing). | `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1` |
@@ -174,7 +176,7 @@ MUTATION_RESULT: PASS|FAIL
 - Mutation reports under `.scratchpad/mutation-test-results/<run>/<SourceProject>/<invocation>/reports/`.
 - Target inventory and outcomes in `.scratchpad/mutation-test-results/<run>/project-results.json`.
 
-Exit code is `0` on success (including mutation thresholds) and `1` otherwise.
+Exit code is `0` on success and `1` otherwise; when mutation is enabled, configured Stryker thresholds can make the command fail. Report that tooling failure accurately, separately from conventional test results. Tooling thresholds do not establish a mandatory repository mutation-score threshold or completion criterion, and failed or incomplete mutation runs are not passes.
 
 Happy building! 🚀
 

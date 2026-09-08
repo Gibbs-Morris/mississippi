@@ -314,7 +314,7 @@ Scope this governed run to one logical PR and record ordered follow-ons under [P
    i. Move to the next increment.
    j. Update `.thinking/<task>/activity-log.md` before delegation, after validation, and after commit.
 
-3. After all increments: run full build, full tests, mutation tests (if Mississippi).
+3. After all increments: run full build and full conventional tests. Consider mutation testing only when proportionate or explicitly requested under the [mutation-testing policy](../instructions/mutation-testing.instructions.md).
 
 ### Phase 5 Audit Requirements
 
@@ -358,8 +358,8 @@ Scope this governed run to one logical PR and record ordered follow-ons under [P
 
 1. Invoke **cs QA Lead** to review test strategy and coverage.
 2. Invoke **cs QA Exploratory** for exploratory testing perspective.
-3. Invoke **cs Test Engineer** for mutation testing validation.
-4. Address any gaps.
+3. Invoke **cs Test Engineer** to report available mutation evidence and significant gaps, or an explicit not-run status. Run or improve mutation tests only when proportionate or explicitly requested.
+4. Address gaps affecting required quality gates. Record costly mutation gaps for dedicated follow-up; there is no mandatory repository mutation-score threshold or ordinary completion gate.
 5. Update `.thinking/<task>/activity-log.md` with QA results and remaining risks.
 
 ### Phase 7 Audit Requirements
@@ -512,7 +512,7 @@ You may only declare a task complete when ALL of the following are true:
 - [ ] All plan items implemented
 - [ ] All tests passing
 - [ ] Build clean (zero warnings)
-- [ ] Mutation tests passing (Mississippi projects)
+- [ ] Mutation execution status, available results, and significant gaps reported; costly remediation deferred unless explicitly requested
 - [ ] Code reviewed by all relevant personas
 - [ ] QA validated
 - [ ] Documentation complete (Docusaurus docs cover all new/changed public APIs and behaviors, or skip reason recorded)

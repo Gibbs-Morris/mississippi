@@ -40,7 +40,8 @@ verified examples, or diagrams; mention observability changes when relevant. -->
 Identify pending or failed checks and explain non-applicable checks.]
 
 - [ ] One logical change; size exception explained if needed
-- [ ] Applicable build, cleanup, lint, tests, coverage, and mutation gates pass
+- [ ] Applicable build, cleanup, lint, tests, and coverage gates pass
+- [ ] Mutation execution status, available results, and significant gaps reported under the [mutation-testing policy](instructions/mutation-testing.instructions.md); no mandatory repository score threshold
 - [ ] Required tests, consumer updates, and documentation are in this PR
 - [ ] Self-review completed; unrelated changes and unsupported generated claims removed
 - [ ] Applicable CI/CD is successful for the current revision
