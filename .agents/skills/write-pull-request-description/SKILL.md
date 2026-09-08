@@ -77,7 +77,7 @@ head, base, or required audit inputs changed during preparation, refresh the
 affected claims and readiness evidence. If refresh is unavailable, identify the
 revision actually described and what remains unverified.
 
-Return the requested title/body and any material unresolved limitation. Publish
+Return the requested title/body and note any unresolved limitations. Publish
 only when the user's existing request authorizes that action and the applicable
 workflow gates allow it; otherwise return the draft without changing remote
 state. Report publication only after confirming the tool's result.
