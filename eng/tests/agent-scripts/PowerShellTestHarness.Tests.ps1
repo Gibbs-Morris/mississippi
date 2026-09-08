@@ -108,6 +108,21 @@ Describe 'Standalone Pester runners' {
 }
 
 Describe 'Build entry point process boundaries' {
+    It 'forwards pipeline options and handles child exit <ExitCode>' -ForEach @(
+        @{ ExitCode = 0 },
+        @{ ExitCode = 7 }
+    ) {
+        $fixture = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+        $scripts = Join-Path $fixture 'eng/src/agent-scripts'
+        New-Item -ItemType Directory -Path $scripts -Force | Out-Null
+        Copy-Item (Join-Path $PSScriptRoot '../../../go.ps1') $fixture
+        Set-Content (Join-Path $scripts 'orchestrate-solutions.ps1') "param([string]`$Configuration, [switch]`$SkipCleanup, [switch]`$IncludeMutation); Write-Output ([string]::Join('|', `$Configuration, `$SkipCleanup, `$IncludeMutation)); exit $ExitCode"
+        $output = & pwsh -NoProfile -File (Join-Path $fixture 'go.ps1') -Configuration Debug -SkipCleanup -IncludeMutation 2>&1 | Out-String
+        $LASTEXITCODE | Should -Be $(if ($ExitCode -eq 0) { 0 } else { 1 })
+        $output | Should -Match 'Debug\|True\|True'
+        $output.Contains('SUCCESS: Main pipeline orchestration completed successfully') | Should -Be ($ExitCode -eq 0)
+    }
+
     It 'handles the final-build child exit code in quick-build: <ExitCode>' -ForEach @(
         @{ ExitCode = 0; WrapperExit = 0 },
         @{ ExitCode = 7; WrapperExit = 1 }

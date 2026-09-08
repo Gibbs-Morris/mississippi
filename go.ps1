@@ -26,7 +26,10 @@ Write-Host "Executing orchestrate-solutions.ps1 script..."
 
 try {
     # Execute the orchestrate script and wait for completion
-    & $orchestrateScript -Configuration $Configuration -SkipCleanup:$SkipCleanup -IncludeMutation:$IncludeMutation
+    $orchestrateArguments = @('-NoProfile', '-File', $orchestrateScript, '-Configuration', $Configuration)
+    if ($SkipCleanup) { $orchestrateArguments += '-SkipCleanup' }
+    if ($IncludeMutation) { $orchestrateArguments += '-IncludeMutation' }
+    & pwsh @orchestrateArguments
     if ($LASTEXITCODE -ne 0) {
         throw "orchestrate-solutions.ps1 failed with exit code $LASTEXITCODE"
     }
