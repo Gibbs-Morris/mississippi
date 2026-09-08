@@ -84,6 +84,14 @@ Describe 'Repository automation quality gates' {
         }
     }
 
+    It 'distinguishes missing reports from a reported empty test run' {
+        $solution = Join-Path $TestDrive 'missing.slnx'
+        Set-Content $solution '<Solution />'
+        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+        { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot (Join-Path $TestDrive 'missing-results') } |
+            Should -Throw '*No TRX reports were produced*'
+    }
+
     It 'stops the pipeline when the coverage summarizer exits unsuccessfully' {
         Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-MississippiSolutionUnitTests {} -ModuleName RepositoryAutomation

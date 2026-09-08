@@ -271,8 +271,12 @@ function Invoke-SolutionTests {
     Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $testArguments -ErrorMessage "Failed to run tests for $($resolved.Path)." | Out-Host
 
     if ($resultsDirectory -and -not $Logger) {
+        $reports = @(Get-ChildItem -LiteralPath $resultsDirectory -Recurse -Filter '*.trx' -File -ErrorAction Stop)
+        if ($reports.Count -eq 0) {
+            throw "No TRX reports were produced for '$($resolved.Path)'. Check the test logger configuration. Reports: $resultsDirectory"
+        }
         $executed = 0
-        foreach ($report in Get-ChildItem -LiteralPath $resultsDirectory -Recurse -Filter '*.trx' -File) {
+        foreach ($report in $reports) {
             [xml]$trx = Get-Content -LiteralPath $report.FullName -Raw
             $executed += [int]$trx.TestRun.ResultSummary.Counters.executed
         }
