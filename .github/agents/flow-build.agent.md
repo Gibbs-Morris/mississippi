@@ -36,10 +36,12 @@ Issue intake is a required execution prerequisite even for older plans that omit
 You may ask the user questions ONLY to obtain:
 
 1. the plan path, or
-2. missing runtime or GitHub access credentials that cannot be inferred and are required for validation or issue tracking, or
+2. confirmation that required runtime or GitHub access has been configured through an approved secure mechanism, or
 3. a decision explicitly marked as required-but-unresolved inside the plan.
 
 Outside of the above, you do not ask questions; you execute.
+
+Never ask users to paste credentials, tokens, or other secret values into chat. Ask them to configure the required access locally or through an approved secret store, then verify access through the intended integration without printing secrets.
 
 ---
 
@@ -121,9 +123,9 @@ When a plan path is provided:
 * Prefer the configured GitHub MCP tools; check `Get-Command gh` before the CLI fallback. If issue access or creation is blocked, report the blocker and leave implementation unstarted.
 * Identify build/test commands and prerequisites from repo docs/config.
 * Identify required dependencies/SDK versions from repo.
-* Identify secrets/config that are required to run tests locally/CI.
+* Identify access/configuration prerequisites for tests locally/CI without reading or printing secret values.
 
-  * If missing and cannot be inferred, ask (gating exception).
+  * If required access is missing, ask the user to configure it through an approved secure mechanism, then retry validation (gating exception).
 
 ### 4. Execute the plan end-to-end
 
