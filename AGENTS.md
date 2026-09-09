@@ -81,7 +81,7 @@ PowerShell fallback when `rg` is unavailable:
 $instructionFiles = Get-ChildItem -LiteralPath .github/instructions -Recurse -File -Filter '*.instructions.md' |
     Sort-Object FullName
 $instructionFiles.FullName
-$instructionFiles | Select-String -Pattern '^applyTo:' -List
+Select-String -LiteralPath $instructionFiles.FullName -Pattern '^applyTo:' -List
 ```
 
 The file inventory includes candidates even when the scope search returns no
