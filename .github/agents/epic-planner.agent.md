@@ -282,7 +282,7 @@ After sub-plans are finalized, ask the user:
 
 If yes:
 
-- Create one issue per sub-plan using the configured GitHub MCP issue-creation tool or `gh issue create`
+- Create one issue per sub-plan using the configured GitHub MCP issue-creation tool. If unavailable, confirm `gh` is installed with `Get-Command gh` before using `gh issue create`. If neither integration works, stop and report the blocker under [issue tracking and PR traceability](../instructions/issue-tracking.instructions.md); do not claim success. Verify the returned issue number or URL before recording creation as complete.
 - Issue title: `[epic/<name>] Sub-plan <ID>: <Title>`
 - Issue body must include:
   - A machine-parseable HTML comment at the top: `<!-- sub-plan-path: /plan/YYYY-MM-DD/<name>/sub-plans/<id>-<slug>.md -->` — this enables the **epic Builder** to resolve a GitHub issue reference to a sub-plan path automatically.
