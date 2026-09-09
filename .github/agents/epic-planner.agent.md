@@ -51,6 +51,7 @@ Given a user task:
 - Prefer **existing repo patterns**; do not introduce new patterns/libs unless necessary.
 - **Evidence-based planning**: every non-trivial claim must cite evidence.
 - Plans, sub-plans, and instruction updates **must not** contain secrets, PII, or internal-only URLs.
+- Public planning artifacts, issue metadata, and PR 1 content contain only disclosure-approved information. Keep confidential details in the restricted record defined by [issue tracking and PR traceability](../instructions/issue-tracking.instructions.md). If a complete execution plan cannot be published safely, report that this public-PR-1 workflow is blocked and use an authorized private workflow; do not publish confidential plans or hand them to this workflow's builder.
 - Plan folder is **read-only** after PR 1 merges — no agent modifies it (except `epic Builder` adding `.complete.json` markers).
 - Sub-plan decomposition follows the **continuously deployable** rule (see below).
 
@@ -276,6 +277,8 @@ Follow [issue tracking and PR traceability](../instructions/issue-tracking.instr
 
 ### Additional Sub-Plan Issues (optional)
 
+Skip optional child issues for confidential sub-plans; use the required sanitized tracking issue and restricted record instead. The steps below apply only to sub-plans whose content and metadata are approved for disclosure.
+
 After sub-plans are finalized, ask the user:
 
 > "Would you like me to create GitHub issues for each sub-plan?"
@@ -286,7 +289,7 @@ If yes:
 - Issue title: `[epic/<name>] Sub-plan <ID>: <Title>`
 - Issue body must include:
   - A machine-parseable HTML comment at the top: `<!-- sub-plan-path: /plan/YYYY-MM-DD/<name>/sub-plans/<id>-<slug>.md -->` — this enables the **epic Builder** to resolve a GitHub issue reference to a sub-plan path automatically.
-  - Full sub-plan markdown content (self-contained)
+  - Disclosure-approved sub-plan markdown content (self-contained); never copy confidential details from the restricted record
 - Labels: `epic/<name>`, `sub-plan`
 - Reference the master plan path and dependency graph in each issue
 - Assign the issue to the user (or leave unassigned for agent pickup)
@@ -300,6 +303,8 @@ Before PR 1 or builder handoff, record the verified tracking issue URL in `PLAN.
 ## PR 1 CREATION
 
 After all sub-plans, reviews, dependency graph, and instruction updates are complete:
+
+Verify that every file and the PR description are approved for disclosure before publishing. Do not create public PR 1 when doing so would expose confidential plan content.
 
 1. Ensure all files are saved
 2. Create branch: `feature/epic/<name>/plan`
