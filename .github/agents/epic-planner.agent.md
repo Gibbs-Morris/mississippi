@@ -293,6 +293,8 @@ If yes:
 
 If no, track the sub-plans and their PRs in the existing repository tracking issue.
 
+Before PR 1 or builder handoff, record the verified tracking issue URL in `PLAN.md` and each sub-plan, using its child issue when one exists or the shared tracking issue otherwise.
+
 ---
 
 ## PR 1 CREATION
@@ -329,6 +331,7 @@ When handing off to `epic Builder`, invoke `runSubagent` with:
 - `description`: short task summary (3-5 words)
 - `prompt`: must include:
   - The sub-plan path: `/plan/YYYY-MM-DD/<name>/sub-plans/<id>-<slug>.md`
+  - The verified repository issue URL recorded in the sub-plan
   - A one-line summary of the sub-plan objective
   - Any runtime context the builder needs (e.g., branch name, environment notes)
 
