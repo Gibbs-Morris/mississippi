@@ -39,6 +39,8 @@ public sealed class EventBrookWriterCommitBoundaryTests
         bool isCursorCommitted
     )
     {
+        const long finalPosition = 2;
+        BrookPosition originalPosition = new(0);
         BrookKey key = new("test", "commit-boundary");
         Mock<ICosmosRepository> repository = new();
         Mock<IDistributedLockManager> locks = new();
@@ -52,11 +54,15 @@ public sealed class EventBrookWriterCommitBoundaryTests
         mapper.Setup(m => m.Map(It.IsAny<BrookEvent>())).Returns(new EventStorageModel());
         Mock<IBrookRecoveryService> recovery = new();
         recovery.Setup(r => r.GetOrRecoverCursorPositionAsync(key, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BrookPosition(0));
-        List<long> retainedPositions = [0];
+            .ReturnsAsync(originalPosition);
+        List<long> retainedPositions = [originalPosition.Value];
         bool hasPendingEvidence = false;
-        long cursor = 0;
-        repository.Setup(r => r.CreatePendingCursorAsync(key, new(0), 2, It.IsAny<CancellationToken>()))
+        long cursor = originalPosition.Value;
+        repository.Setup(r => r.CreatePendingCursorAsync(
+                key,
+                It.Is<BrookPosition>(p => p == originalPosition),
+                finalPosition,
+                It.IsAny<CancellationToken>()))
             .Callback(() => hasPendingEvidence = true)
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.AppendEventBatchAsync(
@@ -68,8 +74,8 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 retainedPositions.Add(position))
             .Returns(Task.CompletedTask);
         InvalidOperationException failure = new("Cursor commit acknowledgement or pending cleanup failed.");
-        repository.Setup(r => r.CommitCursorPositionAsync(key, 2, It.IsAny<CancellationToken>()))
-            .Callback(() => cursor = isCursorCommitted ? 2 : 0)
+        repository.Setup(r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<CancellationToken>()))
+            .Callback(() => cursor = isCursorCommitted ? finalPosition : originalPosition.Value)
             .ThrowsAsync(failure);
         repository.Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .Callback<BrookKey, long, CancellationToken>((_, position, _) => retainedPositions.Remove(position))
@@ -107,7 +113,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
             },
         ];
         InvalidOperationException thrown = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            writer.AppendEventsAsync(key, events, new BrookPosition(0), TestContext.Current.CancellationToken));
+            writer.AppendEventsAsync(key, events, originalPosition, TestContext.Current.CancellationToken));
         Assert.Same(failure, thrown);
         logger.Verify(
             l => l.Log(
@@ -115,14 +121,17 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 It.Is<EventId>(id => id.Id == 1013),
                 It.Is<It.IsAnyType>((state, _) =>
                     ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("BrookId", key)) &&
-                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("FinalPosition", 2L))),
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(
+                        new("FinalPosition", finalPosition))),
                 failure,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
         Assert.Equal(new long[] { 0, 1, 2 }, retainedPositions.Order());
         Assert.True(hasPendingEvidence);
-        Assert.Equal(isCursorCommitted ? 2 : 0, cursor);
-        repository.Verify(r => r.CommitCursorPositionAsync(key, 2, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(isCursorCommitted ? finalPosition : originalPosition.Value, cursor);
+        repository.Verify(
+            r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<CancellationToken>()),
+            Times.Once);
         repository.Verify(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
         repository.Verify(r => r.DeletePendingCursorAsync(key, It.IsAny<CancellationToken>()), Times.Never);
     }
