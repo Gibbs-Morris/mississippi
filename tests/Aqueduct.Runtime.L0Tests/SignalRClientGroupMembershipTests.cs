@@ -34,13 +34,6 @@ public sealed class SignalRClientGroupMembershipTests
             new FakeTimeProvider());
 
     /// <summary>
-    ///     Construction requires the factory used for group cleanup.
-    /// </summary>
-    [Fact]
-    public void ConstructorShouldRejectMissingGrainFactory() =>
-        Assert.Throws<ArgumentNullException>(() => CreateGrain(null!));
-
-    /// <summary>
     ///     Outstanding removals can complete in any order without losing cleanup progress.
     /// </summary>
     /// <returns>The asynchronous test operation.</returns>
@@ -64,7 +57,7 @@ public sealed class SignalRClientGroupMembershipTests
 
         Task disconnect = client.DisconnectAsync();
         Assert.False(disconnect.IsCompleted);
-        foreach ((ISignalRGroupGrain group, _) in pending)
+        foreach ((ISignalRGroupGrain group, var _) in pending)
         {
             _ = group.Received(1).RemoveConnectionAsync("connection");
         }
@@ -76,11 +69,18 @@ public sealed class SignalRClientGroupMembershipTests
 
         await disconnect.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         await client.DisconnectAsync();
-        foreach ((ISignalRGroupGrain group, _) in pending)
+        foreach ((ISignalRGroupGrain group, var _) in pending)
         {
             await group.Received(1).RemoveConnectionAsync("connection");
         }
     }
+
+    /// <summary>
+    ///     Construction requires the factory used for group cleanup.
+    /// </summary>
+    [Fact]
+    public void ConstructorShouldRejectMissingGrainFactory() =>
+        Assert.Throws<ArgumentNullException>(() => CreateGrain(null!));
 
     /// <summary>
     ///     A client without a connection cannot create group membership.
@@ -242,7 +242,7 @@ public sealed class SignalRClientGroupMembershipTests
         IGrainFactory factory = Substitute.For<IGrainFactory>();
         SignalRClientGrain client = CreateGrain(factory);
         await client.ConnectAsync("hub", "server");
-        string groupName = exceedsLength ? new string('g', 4192) : "invalid:group";
+        string groupName = exceedsLength ? new('g', 4192) : "invalid:group";
         await Assert.ThrowsAsync<ArgumentException>(() => client.AddToGroupAsync(groupName));
         await client.DisconnectAsync();
         Assert.Null(await client.GetServerIdAsync());
