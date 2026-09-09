@@ -47,6 +47,12 @@ not depend solely on implicit skill selection.
 
 ## Verification
 
+- The existing PowerShell CI orchestrator runs
+  [13 executable contract checks](../../eng/tests/agent-scripts/PrFeedbackSkill.Tests.ps1)
+  on Windows and Linux: the shipped query's cursor, continuation, state, and
+  comment-anchor fields; six negative query fixtures; four consumer routes;
+  and missing/broken route fixtures. These are local document-contract checks,
+  not a GraphQL parser, GitHub service test, or model-behavior evaluation.
 - Source comparison preserves the 14 policy bullets and all caller content
   outside the explicitly replaced procedure sections.
 - Skill schema, portability, and local resource/consumer links pass.
