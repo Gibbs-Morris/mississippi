@@ -51,7 +51,9 @@ Configuration is provided through `BrookStorageOptions`:
 
 ## Batching
 
-<!-- Placeholder: document BatchSizeEstimator and transactional batch limits -->
+Large appends write their event batches before advancing the committed cursor. Cursor commitment also removes pending-cursor metadata, so a failure from that operation can occur after the cursor has already advanced.
+
+Once a cursor commit has been attempted, the writer does not delete appended events or pending metadata in response to its exception. It preserves the original failure and any remaining recovery evidence. Callers still need authoritative recovery to distinguish a committed cursor from an unknown outcome; an exception alone is not proof that the append did not commit.
 
 ## Operational Notes
 

@@ -272,10 +272,6 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                     cancellationToken);
                 processedEvents += batchEvents.Count;
             }
-
-            await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
-            LogLargeBatchCommitted(Logger, brookId, finalPosition, batches.Count, null);
-            return new(finalPosition);
         }
         catch
         {
@@ -288,6 +284,11 @@ internal sealed class EventBrookWriter : IEventBrookWriter
                 cancellationToken);
             throw;
         }
+
+        // A commit exception may occur after the cursor advanced; rollback would then delete committed history.
+        await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
+        LogLargeBatchCommitted(Logger, brookId, finalPosition, batches.Count, null);
+        return new(finalPosition);
     }
 
     private async Task<BrookPosition> AppendSingleBatchAsync(
