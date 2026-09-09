@@ -44,6 +44,15 @@ BeforeAll {
 }
 
 Describe 'PR feedback skill query contract' {
+    It 'passes the verified host to every documented API request' {
+        $reference = Get-Content -LiteralPath (Join-Path $repositoryRoot "$skillPath/references/github-thread-actions.md") -Raw
+        $commands = [regex]::Matches($reference, '(?m)^gh api .+$')
+        $commands.Count | Should -BeGreaterThan 0
+        foreach ($command in $commands) {
+            $command.Value | Should -Match '--hostname\s+API_HOST(?:\s|$)'
+        }
+    }
+
     It 'ships the cursor, continuation, identity, and anchor fields needed for complete collection' {
         { Assert-ReviewQueryContract -Query $query } | Should -Not -Throw
     }

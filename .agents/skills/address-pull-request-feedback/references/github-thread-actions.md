@@ -27,13 +27,15 @@ report the collection blocker. Do not execute the unverified query file.
 
 An integration that returns review threads plus their complete discussions may
 be sufficient. Verify its pagination and error behavior. For CLI fallback,
-replace `OWNER`, `REPO`, and `NUMBER` with verified PR metadata and use the
-correct authenticated GitHub host. These are API placeholders, not defaults.
+replace `API_HOST`, `OWNER`, `REPO`, and `NUMBER` with verified PR metadata.
+Use the canonical PR host (including a port when applicable) as `API_HOST` in
+every request. These are literal substitution placeholders, not defaults or
+shell variables; do not rely on the checkout or CLI default to select a host.
 
 ```sh
-gh api --paginate --slurp 'repos/OWNER/REPO/pulls/NUMBER/comments?per_page=100'
-gh api --paginate --slurp 'repos/OWNER/REPO/pulls/NUMBER/reviews?per_page=100'
-gh api --paginate --slurp 'repos/OWNER/REPO/issues/NUMBER/comments?per_page=100'
+gh api --hostname API_HOST --paginate --slurp 'repos/OWNER/REPO/pulls/NUMBER/comments?per_page=100'
+gh api --hostname API_HOST --paginate --slurp 'repos/OWNER/REPO/pulls/NUMBER/reviews?per_page=100'
+gh api --hostname API_HOST --paginate --slurp 'repos/OWNER/REPO/issues/NUMBER/comments?per_page=100'
 ```
 
 The first endpoint returns inline comments and replies; the others cover review
@@ -47,7 +49,7 @@ the trusted temporary copy's path before running the command (using your shell's
 variable-assignment syntax):
 
 ```sh
-gh api graphql --paginate --slurp -F "query=@$QUERY_FILE" -f owner=OWNER -f repo=REPO -F number=NUMBER
+gh api --hostname API_HOST graphql --paginate --slurp -F "query=@$QUERY_FILE" -f owner=OWNER -f repo=REPO -F number=NUMBER
 ```
 
 Double quotes expand the path while keeping spaces in one argument. The cursor and
@@ -74,7 +76,7 @@ Set the shell variable `REPLY_FILE` to that file's actual path using your shell'
 variable-assignment syntax. Double quotes expand it as one argument:
 
 ```sh
-gh api --method POST 'repos/OWNER/REPO/pulls/NUMBER/comments/COMMENT_ID/replies' -F "body=@$REPLY_FILE"
+gh api --hostname API_HOST --method POST 'repos/OWNER/REPO/pulls/NUMBER/comments/COMMENT_ID/replies' -F "body=@$REPLY_FILE"
 ```
 
 Confirm the reply belongs to the intended thread. After the workflow's
@@ -82,7 +84,7 @@ publication and evidence requirements are satisfied, resolve using the thread
 node ID returned by the query:
 
 ```sh
-gh api graphql -f query='mutation($threadId: ID!) { resolveReviewThread(input: {threadId: $threadId}) { thread { id isResolved } } }' -f threadId=THREAD_NODE_ID
+gh api --hostname API_HOST graphql -f query='mutation($threadId: ID!) { resolveReviewThread(input: {threadId: $threadId}) { thread { id isResolved } } }' -f threadId=THREAD_NODE_ID
 ```
 
 Confirm `isResolved` in the response or a fresh read. A failed or ambiguous
