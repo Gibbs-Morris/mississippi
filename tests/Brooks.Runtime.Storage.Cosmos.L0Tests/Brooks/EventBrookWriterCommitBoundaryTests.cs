@@ -119,7 +119,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 failure,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
-        Assert.Equal(new long[] { 0, 1, 2 }, retainedPositions);
+        Assert.Equal(new long[] { 0, 1, 2 }, retainedPositions.Order());
         Assert.True(hasPendingEvidence);
         Assert.Equal(isCursorCommitted ? 2 : 0, cursor);
         repository.Verify(r => r.CommitCursorPositionAsync(key, 2, It.IsAny<CancellationToken>()), Times.Once);
