@@ -119,6 +119,24 @@ Use more than successful compilation to judge completion.
 4. Exercise the command through the application and observe the projection and subscribed client state.
 5. Check command progress and projection progress as separate observations. The [client synchronization model](../concepts/read-models-and-client-sync.md) delivers projection changes asynchronously.
 
+For the Spring example, run the domain tests from the repository root with PowerShell 7 and the .NET SDK selected by `global.json`. The canonical quality script builds the test project and its dependencies, executes the tests, and writes TRX and coverage evidence.
+
+```powershell
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject samples/Spring/Spring.Domain.L0Tests/Spring.Domain.L0Tests.csproj -SourceProject samples/Spring/Spring.Domain/Spring.Domain.csproj -SkipMutation
+```
+
+Require exit code 0, `RESULT: PASS`, a nonzero `TEST_TOTAL`, and matching `TEST_PASSED` and `TEST_TOTAL`. Inspect the emitted `test_results.trx` path for the individual handler and reducer results. `-SkipMutation` selects the ordinary test-and-coverage check.
+
+Build the consuming sample projects with the canonical sample build entry point:
+
+```powershell
+pwsh ./build.ps1 -SkipMississippi -Configuration Release
+```
+
+This builds `samples.slnx`, including Spring's runtime, gateway, client, and their referenced projects. Require exit code 0 and `ALL REQUESTED BUILDS COMPLETED SUCCESSFULLY`, with zero build warnings and errors. The build checks generated integration; the tests above check business behavior.
+
+For another Mississippi repository sample, substitute its actual test and source project paths in the quality command. In your own application, use your solution's build/test entry points and apply the same acceptance cases and nonempty test-result checks; these PowerShell scripts belong to the Mississippi repository.
+
 Spring provides [withdrawal handler tests](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/Handlers/WithdrawFundsHandlerTests.cs) and [withdrawal reducer tests](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/Reducers/FundsWithdrawnAggregateReducerTests.cs) as concrete examples. Its [repository validation guide](https://github.com/Gibbs-Morris/mississippi/blob/main/README.md#validate-spring-after-a-change) explains the executable API and browser checks.
 
 ## Summary
