@@ -199,6 +199,11 @@ internal sealed class GenericAggregateGrain<TAggregate>
     ) =>
         ex is OutOfMemoryException or StackOverflowException or ThreadInterruptedException;
 
+    private static bool IsSagaPhaseNotStarted(
+        TAggregate aggregate
+    ) =>
+        aggregate is ISagaState sagaState && (sagaState.Phase == SagaPhase.NotStarted);
+
     private static bool IsTerminalSagaPhase(
         TAggregate aggregate
     ) =>
@@ -324,6 +329,15 @@ internal sealed class GenericAggregateGrain<TAggregate>
             if (currentState is not null && IsTerminalSagaPhase(currentState))
             {
                 Logger.SagaReminderTerminalState(brookKey, ((ISagaState)currentState).Phase, reminderName);
+                await UnregisterSagaReminderIfExistsAsync();
+                return;
+            }
+
+            if (currentState is not null && IsSagaPhaseNotStarted(currentState))
+            {
+                // No saga lifecycle event ever committed, so the reminder is stale (for example, it
+                // was registered for an append that failed). Recovery would be bogus; drop it.
+                Logger.SagaReminderStaleNotStarted(reminderName, brookKey);
                 await UnregisterSagaReminderIfExistsAsync();
                 return;
             }
@@ -677,6 +691,23 @@ internal sealed class GenericAggregateGrain<TAggregate>
         return position;
     }
 
+    /// <summary>
+    ///     Persists the supplied events and dispatches synchronous and fire-and-forget effects.
+    /// </summary>
+    /// <param name="events">The domain events produced by the command handler.</param>
+    /// <param name="currentPosition">The brook position before the append.</param>
+    /// <param name="commandTypeName">The command type name, for diagnostics.</param>
+    /// <param name="aggregateKey">The aggregate key, for diagnostics.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    ///     <para>
+    ///         The saga resume reminder is registered before the append so committed saga lifecycle
+    ///         events are never left without a durable wake-up safety net. If the append fails, a
+    ///         reminder that was newly created for this append is rolled back so it cannot fire later
+    ///         and attempt recovery for events that never committed. A reminder that already existed
+    ///         before this command is left in place because it guards earlier committed saga work.
+    ///     </para>
+    /// </remarks>
     private async Task PersistEventsAndDispatchEffectsAsync(
         IReadOnlyList<object> events,
         BrookPosition currentPosition,
@@ -686,10 +717,19 @@ internal sealed class GenericAggregateGrain<TAggregate>
     )
     {
         ImmutableArray<BrookEvent> brookEvents = BrookEventConverter.ToStorageEvents(brookKey, events);
-        await RegisterSagaReminderIfNeededAsync(events);
+        bool reminderNewlyRegistered = await RegisterSagaReminderIfNeededAsync(events);
         BrookPosition? expectedCursorPosition = currentPosition.NotSet ? null : currentPosition;
-        await BrookGrainFactory.GetBrookWriterGrain(brookKey)
-            .AppendEventsAsync(brookEvents, expectedCursorPosition, cancellationToken);
+        try
+        {
+            await BrookGrainFactory.GetBrookWriterGrain(brookKey)
+                .AppendEventsAsync(brookEvents, expectedCursorPosition, cancellationToken);
+        }
+        catch (Exception appendException) when (reminderNewlyRegistered && !IsCriticalException(appendException))
+        {
+            await RollBackSagaReminderAfterFailedAppendAsync();
+            throw;
+        }
+
         lastKnownPosition = new BrookPosition(currentPosition.Value + brookEvents.Length);
         await DispatchSynchronousEffectsAsync(
             events,
@@ -861,21 +901,32 @@ internal sealed class GenericAggregateGrain<TAggregate>
             confirmedPosition);
     }
 
-    private async Task RegisterSagaReminderIfNeededAsync(
+    /// <summary>
+    ///     Registers or updates the saga resume reminder when the events require a durable wake-up.
+    /// </summary>
+    /// <param name="events">The domain events about to be appended.</param>
+    /// <returns>
+    ///     <see langword="true" /> when this call created a reminder that did not previously exist;
+    ///     <see langword="false" /> when no registration was needed or a reminder already existed.
+    ///     Callers use this to decide whether a failed append should roll the reminder back.
+    /// </returns>
+    private async Task<bool> RegisterSagaReminderIfNeededAsync(
         IReadOnlyList<object> events
     )
     {
         if (!IsSagaAggregateType || !events.Any(SagaLifecycleEventClassifier.IsOrchestrationLifecycleEvent))
         {
-            return;
+            return false;
         }
 
+        IGrainReminder? existingReminder = await SagaReminderRegistry.GetReminderAsync(this, SagaResumeReminderName);
         Logger.SagaReminderRegistering(SagaResumeReminderName, brookKey);
         await SagaReminderRegistry.RegisterOrUpdateAsync(
             this,
             SagaResumeReminderName,
             SagaResumeReminderDueTime,
             SagaResumeReminderPeriod);
+        return existingReminder is null;
     }
 
     private async Task<bool> ReplaySagaBoundaryAsync(
@@ -892,6 +943,27 @@ internal sealed class GenericAggregateGrain<TAggregate>
 
         await DispatchEffectsAsync([boundaryEvent], currentState, brookKey, eventPosition, cancellationToken);
         return true;
+    }
+
+    /// <summary>
+    ///     Best-effort removal of a saga reminder that was registered for an append that never committed.
+    /// </summary>
+    /// <remarks>
+    ///     Rollback failures are logged and swallowed so the original append exception propagates to
+    ///     the caller. A leaked reminder is handled defensively by <see cref="ReceiveReminder" />,
+    ///     which unregisters stale reminders instead of running recovery for uncommitted work.
+    /// </remarks>
+    private async Task RollBackSagaReminderAfterFailedAppendAsync()
+    {
+        Logger.SagaReminderRollingBackAfterFailedAppend(SagaResumeReminderName, brookKey);
+        try
+        {
+            await UnregisterSagaReminderIfExistsAsync();
+        }
+        catch (Exception rollbackException) when (!IsCriticalException(rollbackException))
+        {
+            Logger.SagaReminderRollbackFailed(SagaResumeReminderName, brookKey, rollbackException);
+        }
     }
 
     private async Task UnregisterSagaReminderIfExistsAsync()
