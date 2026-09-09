@@ -24,6 +24,7 @@ Governing thought: After pushing code to a branch with an open PR, agents sleep 
 - After addressing all found comments, agents **MUST** sleep for another 300 seconds and poll again; this loop **MUST** repeat until either (a) a poll returns zero new unaddressed comments or (b) a configured maximum iteration cap is reached. Why: Reviewers may add follow-up comments after fixes land while still bounding the loop in adversarial scenarios.
 - Agents **SHOULD** log each addressed thread (thread ID, status, commit SHA) in a running remediation ledger in their output. Why: Provides an auditable summary of all review actions taken.
 - Agents **SHOULD** configure that maximum-iteration cap to a reasonable value (e.g., 20 iterations); if the cap condition in the previous rule is reached, agents **MUST** log the remaining unresolved threads in the ledger and stop with a summary for human review. Why: Prevents runaway loops in adversarial or high-volume review scenarios while keeping the stopping condition unambiguous.
+- Agents **MUST** use the [address-pull-request-feedback skill](../../.agents/skills/address-pull-request-feedback/SKILL.md) for this feedback workflow. Why: One shared procedure keeps the retained review rules consistent across callers.
 
 ## Scope and Audience
 
@@ -31,66 +32,18 @@ All agents that push code to branches associated with open pull requests.
 
 ## At-a-Glance Quick-Start
 
-1. Trigger: code pushed to a branch with an open PR.
-2. Sleep 300 seconds.
-3. Poll for new unresolved review comments (GitHub MCP or `gh` CLI).
-4. For each comment: fix → commit → push → reply → resolve.
-5. Sleep 300 seconds, poll again.
-6. Repeat until zero new comments or the iteration cap is reached.
-7. Separately verify CI/CD, required approvals, and all unresolved feedback before advancing; report any blocker.
+Read the shared skill for collection, disposition, focused fixes, thread updates,
+and polling. Apply the [Rules (RFC 2119)](#rules-rfc-2119) in this file, including
+the 300-second wait, isolated commits, declined-thread handling, and advancement
+gate. A quiet poll does not replace that gate.
 
 ## Procedure
 
-### Poll and Remediate Loop
-
-```text
-[TRIGGER: code pushed to a branch with an open PR]
-IF no open PR THEN EXIT
-LOOP (max 20 iterations)
-  SLEEP 300 seconds  (e.g. Start-Sleep -Seconds 300)
-  POLL for unresolved review comments/threads
-  IF no new unaddressed comments THEN EXIT LOOP
-  FOR EACH unaddressed comment (one at a time)
-    READ the comment and understand the request
-    APPLY the minimal focused fix
-    COMMIT with a message referencing the comment
-    PUSH the branch
-    REPLY to the thread with: what changed, commit SHA, rationale
-    IF fix applied THEN RESOLVE the thread
-    ELSE reply with decline rationale and LEAVE thread open
-  END FOR
-  IF iteration cap reached THEN LOG remaining threads and EXIT LOOP
-END LOOP
-VERIFY the advancement gate; do not start a dependent layer while it is blocked
-```
-
-### GitHub MCP (preferred)
-
-Use MCP tools for:
-
-- Fetching PR review comments and threads
-- Replying to comment threads
-- Resolving threads
-
-### GitHub CLI Fallback
-
-If MCP tools are unavailable:
-
-- `gh pr view <number> --json reviews,comments` — fetch review states (approved/changes-requested) and general PR discussion; does NOT return inline review thread comments
-- `gh api repos/{owner}/{repo}/pulls/{pull_number}/comments` — list review comments on the PR
-- `gh api graphql -f query='query($owner:String!, $repo:String!, $number:Int!) { repository(owner:$owner, name:$repo) { pullRequest(number:$number) { reviewThreads(first:100) { nodes { id isResolved isOutdated comments(first:100) { nodes { databaseId url body path line } } } } } } }' -F owner=<owner> -F repo=<repo> -F number=<pull_number>` — fetch thread IDs and top-level comment IDs
-- `gh api -X POST repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies -f body='<reply>'` — reply to a top-level review comment in the thread
-- `gh api graphql -f query='mutation($threadId:ID!) { resolveReviewThread(input:{threadId:$threadId}) { thread { id isResolved } } }' -F threadId='<thread-node-id>'` — resolve a review thread
-- If any required thread action cannot be completed with `gh`, stop and report the blocker instead of posting a top-level PR comment
-
-The commands above show the first page only. Follow REST pagination and GraphQL `pageInfo`/`endCursor` for all threads and comments before claiming none remain. Check general PR discussion as well as inline threads. Record unresolved outdated or declined threads as blockers until an authorized reviewer resolves the concern. Check CI separately; comment queries do not establish build or deployment status.
-
-## Core Principles
-
-- Sleep before polling; do not race reviewers.
-- One comment = one commit = one reply = one resolution.
-- Prefer MCP; fall back to CLI. Never skip the feedback loop.
-- Keep a ledger of actions for traceability.
+Use the skill's [GitHub thread actions](../../.agents/skills/address-pull-request-feedback/references/github-thread-actions.md)
+when CLI fallback or pagination details are needed. It covers inline comments,
+review submissions, general discussion, thread identities, and exact reply and
+resolution actions. Read the linked files directly if skill discovery is
+unavailable; the retained rules remain mandatory.
 
 ## References
 

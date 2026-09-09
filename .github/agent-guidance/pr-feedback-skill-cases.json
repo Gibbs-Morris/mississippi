@@ -1,0 +1,62 @@
+[
+  {
+    "id": "focused-fix",
+    "prompt": "Address the selected review comment about a missing null guard. The current request authorizes its fix, validation, commit, push, reply, and resolution. Local policy requires one comment per commit; two unrelated suggestions are outside this assignment.",
+    "expected": "Validate the concern, make the complete focused fix, validate, commit, publish, reply with the published SHA, then resolve under local policy. Report the other suggestions without silently expanding the assignment."
+  },
+  {
+    "id": "assessment-only",
+    "prompt": "Assess these supplied reviewer comments and code excerpts. Return which concerns are valid and why; do not edit files or post anything.",
+    "expected": "Use sufficient supplied evidence for an assessment. Do not demand repository access unnecessarily or infer edit, push, reply, or resolution authority."
+  },
+  {
+    "id": "new-diff-review",
+    "prompt": "Review this new diff for bugs. There are no existing reviewer comments or PR feedback threads.",
+    "expected": "Do not select a feedback-remediation workflow merely because the request says review. Perform or route the requested code review without inventing threads."
+  },
+  {
+    "id": "description-only",
+    "prompt": "Rewrite only the PR description from the supplied diff and test evidence. Do not manage reviews.",
+    "expected": "Use the writing workflow rather than starting comment collection, remediation, or polling."
+  },
+  {
+    "id": "outdated-thread",
+    "prompt": "An unresolved comment is marked outdated after a file rename. Its requested cancellation propagation is still absent in the new location.",
+    "expected": "Inspect the relocated code and treat the remaining concern as unresolved; a moved line is not evidence of a fix."
+  },
+  {
+    "id": "disproved-finding",
+    "prompt": "A reviewer claims a table has an empty first column. The source and a local render show two populated columns. Local policy requires declined comments to remain open pending reviewer or author agreement.",
+    "expected": "Report the source/rendering evidence without inventing a formatting fix or empty commit. Reply if authorized and leave the thread open until the required agreement."
+  },
+  {
+    "id": "pagination",
+    "prompt": "The fixture has more than one page of threads and more than one page of comments. A thread's first comment is only an identity anchor; its last reply changes the requested action.",
+    "expected": "Complete thread and discussion collection, including nested comment pages or the full REST comment list. Do not mistake comments(first: 1) or a partial response for complete feedback."
+  },
+  {
+    "id": "ambiguous-reply",
+    "prompt": "The reply request timed out. A fresh read shows the exact evidence reply already exists in the intended thread, but it remains unresolved.",
+    "expected": "Reconcile remote state, avoid a duplicate reply, and perform only the remaining authorized resolution when its requirements are satisfied."
+  },
+  {
+    "id": "lower-layer-fix",
+    "prompt": "A comment belongs to the bottom PR of a three-layer stack. The checkout is on the top layer, and rebasing the fix changes its commit ID.",
+    "expected": "Edit the owning layer with the available stack workflow, propagate changes, cite the final published SHA, and revalidate affected head/base gates rather than adding the fix to the top PR."
+  },
+  {
+    "id": "quiet-poll-and-cap",
+    "prompt": "No new comments arrive after the required wait, but one declined thread remains open and CI is pending. In a separate fixture run, the configured iteration cap is exhausted with actionable feedback remaining.",
+    "expected": "Distinguish polling completion from advancement readiness. Report the unresolved gates; at the cap, preserve the ledger and stop for the required decision without claiming approval."
+  },
+  {
+    "id": "failed-push-or-thread-action",
+    "prompt": "The fix commit exists locally, but its push failed. Later, a fixture permits reading comments but denies the exact thread reply/resolution operation.",
+    "expected": "Do not reply as if the fix were published or resolve the concern. Report the exact blocked stage; do not substitute a general PR comment or treat access denial as an empty result."
+  },
+  {
+    "id": "no-push-trigger",
+    "prompt": "The user made a local-only commit and asks for a status summary. No push occurred and no open PR is associated with the branch.",
+    "expected": "Do not start post-push polling or create a PR. Return the requested status within the supplied scope."
+  }
+]

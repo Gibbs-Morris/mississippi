@@ -1298,12 +1298,12 @@ agent time.
 
 ### Review Thread Handling
 
-- Use GitHub MCP or GitHub CLI to read, reply to, and resolve threads.
-- For each comment:
-  - Read and understand it.
-  - Determine if it is in scope.
-  - If in scope: fix, commit, push, reply with evidence, resolve.
-  - If out of scope: reply with reasoned explanation, leave open for reviewer.
+Use the [address-pull-request-feedback skill](../../.agents/skills/address-pull-request-feedback/SKILL.md)
+with the [post-push review policy](../instructions/pr-review-polling.instructions.md)
+for thread collection, disposition, and remediation. This workflow's delegation,
+canonical ownership, freshness, wait accounting, and merge-readiness contracts
+remain in force.
+
 - Resolving threads is **critical** — the PR cannot merge with open threads.
 - One comment = one commit = one reply = one resolution.
 
