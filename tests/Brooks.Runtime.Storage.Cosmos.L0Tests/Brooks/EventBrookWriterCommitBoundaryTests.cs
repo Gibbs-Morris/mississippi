@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
@@ -78,6 +79,8 @@ public sealed class EventBrookWriterCommitBoundaryTests
             .Returns(Task.CompletedTask);
         repository.Setup(r => r.EventExistsAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((BrookKey _, long position, CancellationToken _) => retainedPositions.Contains(position));
+        Mock<ILogger<EventBrookWriter>> logger = new();
+        logger.Setup(l => l.IsEnabled(LogLevel.Error)).Returns(true);
         EventBrookWriter writer = new(
             repository.Object,
             locks.Object,
@@ -90,7 +93,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 }),
             mapper.Object,
             recovery.Object,
-            NullLogger<EventBrookWriter>.Instance,
+            logger.Object,
             new FakeTimeProvider());
         ImmutableArray<BrookEvent> events =
         [
@@ -104,8 +107,18 @@ public sealed class EventBrookWriterCommitBoundaryTests
             },
         ];
         InvalidOperationException thrown = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            writer.AppendEventsAsync(key, events, new BrookPosition(0)));
+            writer.AppendEventsAsync(key, events, new BrookPosition(0), TestContext.Current.CancellationToken));
         Assert.Same(failure, thrown);
+        logger.Verify(
+            l => l.Log(
+                LogLevel.Error,
+                It.Is<EventId>(id => id.Id == 1013),
+                It.Is<It.IsAnyType>((state, _) =>
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("BrookId", key)) &&
+                    ((IReadOnlyList<KeyValuePair<string, object?>>)state).Contains(new("FinalPosition", 2L))),
+                failure,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
         Assert.Equal(new long[] { 0, 1, 2 }, retainedPositions);
         Assert.True(hasPendingEvidence);
         Assert.Equal(isCursorCommitted ? 2 : 0, cursor);

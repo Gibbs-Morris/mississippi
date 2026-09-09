@@ -286,7 +286,16 @@ internal sealed class EventBrookWriter : IEventBrookWriter
         }
 
         // A commit exception may occur after the cursor advanced; rollback would then delete committed history.
-        await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
+        try
+        {
+            await Repository.CommitCursorPositionAsync(brookId, finalPosition, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            Logger.CursorCommitFailed(exception, brookId, finalPosition);
+            throw;
+        }
+
         LogLargeBatchCommitted(Logger, brookId, finalPosition, batches.Count, null);
         return new(finalPosition);
     }
