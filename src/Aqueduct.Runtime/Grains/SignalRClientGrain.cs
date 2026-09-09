@@ -97,10 +97,11 @@ internal sealed class SignalRClientGrain
         bool isConnected = !string.IsNullOrEmpty(state.ServerId);
         if (isConnected)
         {
+            ISignalRGroupGrain groupGrain = GetGroupGrain(groupName);
+
             // Retain cleanup ownership even when the remote add has an uncertain outcome.
             groups.Add(groupName);
-            await GetGroupGrain(groupName)
-                .AddConnectionAsync(connectionId)
+            await groupGrain.AddConnectionAsync(connectionId)
                 .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
         }
 

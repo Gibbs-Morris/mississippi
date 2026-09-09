@@ -183,4 +183,26 @@ public sealed class SignalRClientGroupMembershipTests
         await Assert.ThrowsAnyAsync<ArgumentException>(() => client.AddToGroupAsync(groupName!));
         await Assert.ThrowsAnyAsync<ArgumentException>(() => client.RemoveFromGroupAsync(groupName!));
     }
+
+    /// <summary>
+    ///     Local key validation failures must not leave a group that poisons disconnect cleanup.
+    /// </summary>
+    /// <param name="exceedsLength">Whether to exceed the key length rather than include a separator.</param>
+    /// <returns>The asynchronous test operation.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InvalidGroupKeysShouldNotPoisonDisconnect(
+        bool exceedsLength
+    )
+    {
+        IGrainFactory factory = Substitute.For<IGrainFactory>();
+        SignalRClientGrain client = CreateGrain(factory);
+        await client.ConnectAsync("hub", "server");
+        string groupName = exceedsLength ? new string('g', 4192) : "invalid:group";
+        await Assert.ThrowsAsync<ArgumentException>(() => client.AddToGroupAsync(groupName));
+        await client.DisconnectAsync();
+        Assert.Null(await client.GetServerIdAsync());
+        Assert.Empty(factory.ReceivedCalls());
+    }
 }
