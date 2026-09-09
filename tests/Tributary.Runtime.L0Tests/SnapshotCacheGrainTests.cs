@@ -57,10 +57,7 @@ public sealed class SnapshotCacheGrainTests
             snapshotStateConverterMock.Setup(c => c.ToEnvelope(
                     It.IsAny<SnapshotCacheGrainTestState>(),
                     It.IsAny<string>()))
-                .Returns((
-                    SnapshotCacheGrainTestState _,
-                    string hash
-                ) => new()
+                .Returns((SnapshotCacheGrainTestState _, string hash) => new()
                 {
                     Data = [1, 2, 3, 4],
                     DataContentType = "application/json",
@@ -385,8 +382,8 @@ public sealed class SnapshotCacheGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act - call GetStateAsync multiple times
-        SnapshotCacheGrainTestState result1 = await grain.GetStateAsync();
-        SnapshotCacheGrainTestState result2 = await grain.GetStateAsync();
+        SnapshotCacheGrainTestState result1 = await grain.GetStateAsync(TestContext.Current.CancellationToken);
+        SnapshotCacheGrainTestState result2 = await grain.GetStateAsync(TestContext.Current.CancellationToken);
 
         // Assert - should return same cached state, only one deserialize call
         Assert.Same(result1, result2);
@@ -426,7 +423,7 @@ public sealed class SnapshotCacheGrainTests
 
         // Act
         await grain.OnActivateAsync(CancellationToken.None);
-        SnapshotCacheGrainTestState result = await grain.GetStateAsync();
+        SnapshotCacheGrainTestState result = await grain.GetStateAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedState.Value, result.Value);
@@ -474,7 +471,7 @@ public sealed class SnapshotCacheGrainTests
 
         // Act
         await grain.OnActivateAsync(CancellationToken.None);
-        SnapshotCacheGrainTestState result = await grain.GetStateAsync();
+        SnapshotCacheGrainTestState result = await grain.GetStateAsync(TestContext.Current.CancellationToken);
 
         // Assert - state should be the initial state created by the factory
         Assert.NotNull(result);
@@ -511,10 +508,7 @@ public sealed class SnapshotCacheGrainTests
             .Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         converterMock.Setup(c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()))
-            .Returns((
-                SnapshotCacheGrainTestState _,
-                string hash
-            ) => new()
+            .Returns((SnapshotCacheGrainTestState _, string hash) => new()
             {
                 Data = [1, 2, 3, 4],
                 DataContentType = "application/json",
@@ -578,10 +572,7 @@ public sealed class SnapshotCacheGrainTests
             .Returns(readerGrainMock.Object);
         Mock<ISnapshotStateConverter<SnapshotCacheGrainTestState>> converterMock = new();
         converterMock.Setup(c => c.ToEnvelope(It.IsAny<SnapshotCacheGrainTestState>(), It.IsAny<string>()))
-            .Returns((
-                SnapshotCacheGrainTestState _,
-                string hash
-            ) => new()
+            .Returns((SnapshotCacheGrainTestState _, string hash) => new()
             {
                 Data = [1, 2, 3, 4],
                 DataContentType = "application/json",

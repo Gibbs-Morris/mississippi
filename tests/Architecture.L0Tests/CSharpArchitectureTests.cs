@@ -4,7 +4,7 @@ using System.Linq;
 
 using ArchUnitNET.Domain;
 using ArchUnitNET.Fluent;
-using ArchUnitNET.xUnit;
+using ArchUnitNET.xUnitV3;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -33,12 +33,15 @@ public sealed class CSharpArchitectureTests : ArchitectureTestBase
     ///     Known exclusions:
     ///     - Orleans generated code (OrleansCodeGen namespace).
     ///     - LoggerMessage source-generated callback fields (double-underscore prefix like __*Callback).
+    ///     - Stryker's injected MutantControl helper in its generated Stryker namespace.
     /// </remarks>
     [Fact]
     public void PrivateFieldsShouldNotHaveUnderscorePrefix()
     {
         List<string> violations = ArchitectureModel.Classes
             .Where(type => !type.FullName.StartsWith("OrleansCodeGen.", StringComparison.Ordinal) &&
+                           !((type.Name == "MutantControl") &&
+                             type.FullName.StartsWith("Stryker", StringComparison.Ordinal)) &&
                            !type.Name.EndsWith("LoggerExtensions", StringComparison.Ordinal))
             .SelectMany(type => type.Members.OfType<FieldMember>())
             .Where(field => (field.Visibility == Visibility.Private) &&

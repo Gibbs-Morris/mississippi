@@ -37,23 +37,23 @@ public sealed class BlobStorageTests
         // Arrange
         BlobServiceClient blobServiceClient = fixture.CreateBlobServiceClient();
         BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(TestContainerName);
-        await containerClient.CreateIfNotExistsAsync();
+        await containerClient.CreateIfNotExistsAsync(cancellationToken: TestContext.Current.CancellationToken);
         string blobName = $"delete-test-{Guid.NewGuid()}.txt";
         BlobClient blobClient = containerClient.GetBlobClient(blobName);
 
         // Upload the blob first
         using MemoryStream stream = new(Encoding.UTF8.GetBytes("Content to delete"));
-        await blobClient.UploadAsync(stream, true);
+        await blobClient.UploadAsync(stream, true, TestContext.Current.CancellationToken);
 
         // Verify it exists
-        bool existsBefore = await blobClient.ExistsAsync();
+        bool existsBefore = await blobClient.ExistsAsync(TestContext.Current.CancellationToken);
         Assert.True(existsBefore, "the blob should exist before deletion");
 
         // Act
-        await blobClient.DeleteAsync();
+        await blobClient.DeleteAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
-        bool existsAfter = await blobClient.ExistsAsync();
+        bool existsAfter = await blobClient.ExistsAsync(TestContext.Current.CancellationToken);
         Assert.False(existsAfter, "the blob should not exist after deletion");
     }
 
@@ -71,7 +71,7 @@ public sealed class BlobStorageTests
         // Use a unique container for this test to avoid interference
         string containerName = $"list-test-{uniquePrefix}";
         BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-        await containerClient.CreateIfNotExistsAsync();
+        await containerClient.CreateIfNotExistsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Upload multiple blobs
         List<string> uploadedBlobNames = new();
@@ -81,7 +81,7 @@ public sealed class BlobStorageTests
             uploadedBlobNames.Add(blobName);
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
             using MemoryStream stream = new(Encoding.UTF8.GetBytes($"Content {i}"));
-            await blobClient.UploadAsync(stream, true);
+            await blobClient.UploadAsync(stream, true, TestContext.Current.CancellationToken);
         }
 
         // Act
@@ -100,7 +100,7 @@ public sealed class BlobStorageTests
         Assert.Equivalent(uploadedBlobNames, listedBlobNames, true);
 
         // Cleanup
-        await containerClient.DeleteIfExistsAsync();
+        await containerClient.DeleteIfExistsAsync(cancellationToken: TestContext.Current.CancellationToken);
     }
 
     /// <summary>
@@ -113,17 +113,18 @@ public sealed class BlobStorageTests
         // Arrange
         BlobServiceClient blobServiceClient = fixture.CreateBlobServiceClient();
         BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(TestContainerName);
-        await containerClient.CreateIfNotExistsAsync();
+        await containerClient.CreateIfNotExistsAsync(cancellationToken: TestContext.Current.CancellationToken);
         string blobName = $"read-test-{Guid.NewGuid()}.txt";
         string expectedContent = $"Test content written at {ReadBlobTimestampUtc:O}";
         BlobClient blobClient = containerClient.GetBlobClient(blobName);
 
         // Write the blob first
         using MemoryStream uploadStream = new(Encoding.UTF8.GetBytes(expectedContent));
-        await blobClient.UploadAsync(uploadStream, true);
+        await blobClient.UploadAsync(uploadStream, true, TestContext.Current.CancellationToken);
 
         // Act
-        AzureBlobDownloadResult downloadResponse = await blobClient.DownloadContentAsync();
+        AzureBlobDownloadResult downloadResponse =
+            await blobClient.DownloadContentAsync(TestContext.Current.CancellationToken);
         string actualContent = downloadResponse.Value.Content.ToString();
 
         // Assert
@@ -140,7 +141,7 @@ public sealed class BlobStorageTests
         // Arrange
         BlobServiceClient blobServiceClient = fixture.CreateBlobServiceClient();
         BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(TestContainerName);
-        await containerClient.CreateIfNotExistsAsync();
+        await containerClient.CreateIfNotExistsAsync(cancellationToken: TestContext.Current.CancellationToken);
         string nonExistentBlobName = $"non-existent-{Guid.NewGuid()}.txt";
         BlobClient blobClient = containerClient.GetBlobClient(nonExistentBlobName);
 
@@ -162,7 +163,7 @@ public sealed class BlobStorageTests
         // Arrange
         BlobServiceClient blobServiceClient = fixture.CreateBlobServiceClient();
         BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(TestContainerName);
-        await containerClient.CreateIfNotExistsAsync();
+        await containerClient.CreateIfNotExistsAsync(cancellationToken: TestContext.Current.CancellationToken);
         string blobName = $"binary-test-{Guid.NewGuid()}.bin";
         byte[] expectedContent = new byte[1024];
 #pragma warning disable CA5394 // Random is insecure - acceptable for test data generation
@@ -172,10 +173,11 @@ public sealed class BlobStorageTests
 
         // Act - Upload
         using MemoryStream uploadStream = new(expectedContent);
-        await blobClient.UploadAsync(uploadStream, true);
+        await blobClient.UploadAsync(uploadStream, true, TestContext.Current.CancellationToken);
 
         // Act - Download
-        AzureBlobDownloadResult downloadResponse = await blobClient.DownloadContentAsync();
+        AzureBlobDownloadResult downloadResponse =
+            await blobClient.DownloadContentAsync(TestContext.Current.CancellationToken);
         byte[] actualContent = downloadResponse.Value.Content.ToArray();
 
         // Assert
@@ -192,14 +194,17 @@ public sealed class BlobStorageTests
         // Arrange
         BlobServiceClient blobServiceClient = fixture.CreateBlobServiceClient();
         BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(TestContainerName);
-        await containerClient.CreateIfNotExistsAsync();
+        await containerClient.CreateIfNotExistsAsync(cancellationToken: TestContext.Current.CancellationToken);
         string blobName = $"test-blob-{Guid.NewGuid()}.txt";
         string content = "Hello, Aspire Blob Storage!";
         BlobClient blobClient = containerClient.GetBlobClient(blobName);
 
         // Act
         using MemoryStream stream = new(Encoding.UTF8.GetBytes(content));
-        AzureBlobContentInfo response = await blobClient.UploadAsync(stream, true);
+        AzureBlobContentInfo response = await blobClient.UploadAsync(
+            stream,
+            true,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(response);
@@ -209,7 +214,7 @@ public sealed class BlobStorageTests
 #pragma warning restore IDISP004
 
         // Verify the blob exists
-        bool exists = await blobClient.ExistsAsync();
+        bool exists = await blobClient.ExistsAsync(TestContext.Current.CancellationToken);
         Assert.True(exists, "the blob should exist after upload");
     }
 }

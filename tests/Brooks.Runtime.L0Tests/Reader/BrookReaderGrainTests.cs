@@ -44,7 +44,7 @@ public sealed class BrookReaderGrainTests
                 Id = i.ToString(CultureInfo.InvariantCulture),
             })
             .ToImmutableArray();
-        await writer.AppendEventsAsync(batch);
+        await writer.AppendEventsAsync(batch, cancellationToken: TestContext.Current.CancellationToken);
 
         // Ensure cursor cache has advanced before full reader walk
         IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
@@ -54,7 +54,7 @@ public sealed class BrookReaderGrainTests
         BrookAsyncReaderKey asyncReaderKey = BrookAsyncReaderKey.Create(key);
         IBrookAsyncReaderGrain asyncReader = cluster.GrainFactory.GetGrain<IBrookAsyncReaderGrain>(asyncReaderKey);
         List<BrookEvent> got = new();
-        await foreach (BrookEvent e in asyncReader.ReadEventsAsync(0, 4))
+        await foreach (BrookEvent e in asyncReader.ReadEventsAsync(0, 4, TestContext.Current.CancellationToken))
         {
             got.Add(e);
         }
@@ -74,19 +74,22 @@ public sealed class BrookReaderGrainTests
         BrookKey key = new("t", $"reader2-{Guid.NewGuid():N}");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
         await writer.AppendEventsAsync(
-        [
-            new()
-            {
-                Id = "a",
-            },
-        ]);
+            [
+                new()
+                {
+                    Id = "a",
+                },
+            ],
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Ensure cursor advanced
         IBrookCursorGrain cursorGrain = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
         await cursorGrain.GetLatestPositionConfirmedAsync();
         IBrookReaderGrain reader = cluster.GrainFactory.GetGrain<IBrookReaderGrain>(key);
-        ImmutableArray<BrookEvent> batch = await reader.ReadEventsBatchAsync(0);
-        Assert.Single(batch);
-        Assert.Equal("a", batch[0].Id);
+        ImmutableArray<BrookEvent> batch = await reader.ReadEventsBatchAsync(
+            0,
+            cancellationToken: TestContext.Current.CancellationToken);
+        BrookEvent item = Assert.Single(batch);
+        Assert.Equal("a", item.Id);
     }
 }

@@ -44,7 +44,8 @@
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <VSTestLogger Condition="'$(RepositoryTestResults)' == 'true'">trx%3BLogFilePrefix=test_results_$(MSBuildProjectName)</VSTestLogger>
+        <OutputType>Exe</OutputType>
+        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     </PropertyGroup>
 
     <ItemGroup>
@@ -84,16 +85,16 @@
     <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
         <PackageReference Include="Moq" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.collector">
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PackageReference Include="coverlet.MTP">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <Using Include="Xunit" />
+        <None Include="$(MSBuildThisFileDirectory)testconfig.json" Link="testconfig.json" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Benchmarks'))">
         <IsPackable>false</IsPackable>

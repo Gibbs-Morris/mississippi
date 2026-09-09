@@ -126,7 +126,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("CreateOrderMapper.Map(request)", generatedCode, StringComparison.Ordinal);
     }
 
@@ -159,7 +159,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("ArgumentNullException.ThrowIfNull(request);", generatedCode, StringComparison.Ordinal);
     }
 
@@ -192,7 +192,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
             "/// <param name=\"entityId\">The entity identifier.</param>",
             generatedCode,
@@ -237,7 +237,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("[HttpPost(\"submit-for-review\")]", generatedCode, StringComparison.Ordinal);
     }
 
@@ -270,7 +270,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("[FromBody] CreateOrderDto request", generatedCode, StringComparison.Ordinal);
     }
 
@@ -313,7 +313,7 @@ public class AggregateControllerGeneratorTests
                                    """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(expectedAttribute, generatedCode, StringComparison.Ordinal);
     }
 
@@ -346,7 +346,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("[HttpPost(\"submit-order-for-review\")]", generatedCode, StringComparison.Ordinal);
     }
 
@@ -385,7 +385,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("CreateOrderMapper = createOrderMapper;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("ShipOrderMapper = shipOrderMapper;", generatedCode, StringComparison.Ordinal);
     }
@@ -419,8 +419,8 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        Assert.Single(runResult.GeneratedTrees);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        SyntaxTree item = Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = item.GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("public sealed class BankAccountController", generatedCode, StringComparison.Ordinal);
         Assert.Contains("AggregateControllerBase<BankAccountAggregate>", generatedCode, StringComparison.Ordinal);
     }
@@ -454,7 +454,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("[Route(\"api/aggregates/bank-account/{entityId}\")]", generatedCode, StringComparison.Ordinal);
     }
 
@@ -493,7 +493,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
             "public Task<ActionResult<OperationResult>> CreateOrderAsync(",
             generatedCode,
@@ -533,7 +533,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("public OrderController(", generatedCode, StringComparison.Ordinal);
         Assert.Contains("IAggregateGrainFactory aggregateGrainFactory", generatedCode, StringComparison.Ordinal);
         Assert.Contains("ILogger<OrderController> logger", generatedCode, StringComparison.Ordinal);
@@ -569,7 +569,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
             "private Task<OperationResult> ExecuteCommandAsync<TCommand>(",
             generatedCode,
@@ -610,7 +610,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
             "[global::System.CodeDom.Compiler.GeneratedCode(\"AggregateControllerGenerator\"",
             generatedCode,
@@ -652,7 +652,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
             "IMapper<CreateOrderDto, CreateOrder> createOrderMapper",
             generatedCode,
@@ -692,7 +692,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("using System;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using System.Threading;", generatedCode, StringComparison.Ordinal);
         Assert.Contains("using System.Threading.Tasks;", generatedCode, StringComparison.Ordinal);
@@ -732,7 +732,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("/// <summary>", generatedCode, StringComparison.Ordinal);
         Assert.Contains("Controller for Order aggregate commands.", generatedCode, StringComparison.Ordinal);
         Assert.Contains("Executes the CreateOrder command.", generatedCode, StringComparison.Ordinal);
@@ -767,7 +767,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
 
         // The output namespace transforms .Domain.Aggregates.*.Commands → .Server.Controllers.Aggregates
         Assert.Contains("namespace TestApp.Server.Controllers.Aggregates;", generatedCode, StringComparison.Ordinal);
@@ -802,7 +802,7 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("[Route(\"api/aggregates/orders/{entityId}\")]", generatedCode, StringComparison.Ordinal);
     }
 
@@ -835,10 +835,10 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        Assert.Single(runResult.Results);
-        GeneratorRunResult generatorResult = runResult.Results[0];
-        Assert.Single(generatorResult.GeneratedSources);
-        Assert.Equal("BankAccountController.g.cs", generatorResult.GeneratedSources[0].HintName);
+        GeneratorRunResult item = Assert.Single(runResult.Results);
+        GeneratorRunResult generatorResult = item;
+        GeneratedSourceResult item_2 = Assert.Single(generatorResult.GeneratedSources);
+        Assert.Equal("BankAccountController.g.cs", item_2.HintName);
     }
 
     /// <summary>
@@ -866,7 +866,9 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        string generatedCode = Assert.Single(runResult.GeneratedTrees)
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
         Assert.Contains("[AllowAnonymous]", generatedCode, StringComparison.Ordinal);
         Assert.Contains("[Authorize(Policy = \"orders.write\")]", generatedCode, StringComparison.Ordinal);
         Assert.Contains(
@@ -898,7 +900,9 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        string generatedCode = Assert.Single(runResult.GeneratedTrees)
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
         Assert.Contains("[AllowAnonymous]", generatedCode, StringComparison.Ordinal);
     }
 
@@ -927,7 +931,9 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        string generatedCode = Assert.Single(runResult.GeneratedTrees)
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
         Assert.Contains("[Authorize(Policy = \"aggregate-policy\")]", generatedCode, StringComparison.Ordinal);
         Assert.Contains(
             "[Authorize(Roles = \"admin,operator\", AuthenticationSchemes = \"Bearer\")]",
@@ -959,7 +965,9 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        string generatedCode = Assert.Single(runResult.GeneratedTrees)
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
         Assert.Contains("[Authorize(Policy = \"quote\\\"slash\\\\name\")]", generatedCode, StringComparison.Ordinal);
     }
 
@@ -1039,7 +1047,9 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        string generatedCode = Assert.Single(runResult.GeneratedTrees).GetText().ToString();
+        string generatedCode = Assert.Single(runResult.GeneratedTrees)
+            .GetText(TestContext.Current.CancellationToken)
+            .ToString();
         Assert.DoesNotContain("[Authorize", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("[AllowAnonymous]", generatedCode, StringComparison.Ordinal);
     }
@@ -1073,8 +1083,8 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        Assert.Single(runResult.GeneratedTrees);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        SyntaxTree item = Assert.Single(runResult.GeneratedTrees);
+        string generatedCode = item.GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("OrderController", generatedCode, StringComparison.Ordinal);
     }
 

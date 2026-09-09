@@ -16,7 +16,7 @@ namespace MississippiSamples.Spring.TestHarness;
 /// <remarks>
 ///     <para>
 ///         This class implements both <see cref="IAsyncLifetime" /> and <see cref="IDisposable" />.
-///         <see cref="IAsyncLifetime.DisposeAsync" /> is the primary cleanup path used by xUnit.
+///         <see cref="IAsyncDisposable.DisposeAsync" /> is the primary cleanup path used by xUnit.
 ///         The synchronous <see cref="IDisposable.Dispose" /> method exists as a fallback for edge cases
 ///         where async disposal isn't invoked (e.g., finalizer scenarios or alternative test runners).
 ///         Both methods share the same cleanup logic and are guarded against double-disposal.
@@ -85,7 +85,7 @@ public sealed class SpringApplicationFixture
     }
 
     /// <inheritdoc />
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (disposed)
         {
@@ -112,7 +112,7 @@ public sealed class SpringApplicationFixture
     }
 
     /// <inheritdoc />
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         if (isInitializationStarted)

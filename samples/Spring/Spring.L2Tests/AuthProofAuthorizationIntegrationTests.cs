@@ -270,7 +270,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
             client,
             aggregateId,
             authorizedHeaders,
-            HttpStatusCode.OK);
+            HttpStatusCode.OK,
+            TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, projectionStatusCode);
     }
 
@@ -290,7 +291,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
             new Dictionary<string, string>
             {
                 ["X-Spring-Anonymous"] = "true",
-            });
+            },
+            TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -311,7 +313,8 @@ public sealed class AuthProofAuthorizationIntegrationTests
             {
                 ["X-Spring-User"] = "auth-proof-insufficient",
                 ["X-Spring-Roles"] = "none",
-            });
+            },
+            TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 

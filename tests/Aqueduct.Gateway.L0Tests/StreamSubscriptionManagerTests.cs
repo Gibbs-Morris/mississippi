@@ -186,8 +186,11 @@ public sealed class StreamSubscriptionManagerTests
         using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            manager.EnsureInitializedAsync(string.Empty, _ => Task.CompletedTask, _ => Task.CompletedTask));
+        await Assert.ThrowsAsync<ArgumentException>(() => manager.EnsureInitializedAsync(
+            string.Empty,
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -204,8 +207,11 @@ public sealed class StreamSubscriptionManagerTests
         using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            manager.EnsureInitializedAsync(null!, _ => Task.CompletedTask, _ => Task.CompletedTask));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.EnsureInitializedAsync(
+            null!,
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -222,8 +228,11 @@ public sealed class StreamSubscriptionManagerTests
         using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            manager.EnsureInitializedAsync("TestHub", _ => Task.CompletedTask, null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.EnsureInitializedAsync(
+            "TestHub",
+            _ => Task.CompletedTask,
+            null!,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -240,8 +249,11 @@ public sealed class StreamSubscriptionManagerTests
         using StreamSubscriptionManager manager = new(CreateServerIdProvider(), clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            manager.EnsureInitializedAsync("TestHub", null!, _ => Task.CompletedTask));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.EnsureInitializedAsync(
+            "TestHub",
+            null!,
+            _ => Task.CompletedTask,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -281,7 +293,11 @@ public sealed class StreamSubscriptionManagerTests
         using StreamSubscriptionManager manager = new(serverIdProvider, clusterClient, options, logger);
 
         // Act
-        await manager.EnsureInitializedAsync("TestHub", _ => Task.CompletedTask, _ => Task.CompletedTask);
+        await manager.EnsureInitializedAsync(
+            "TestHub",
+            _ => Task.CompletedTask,
+            _ => Task.CompletedTask,
+            TestContext.Current.CancellationToken);
 
         // Assert
         StreamId expectedServerStreamId = StreamId.Create(options.Value.ServerStreamNamespace, serverId);

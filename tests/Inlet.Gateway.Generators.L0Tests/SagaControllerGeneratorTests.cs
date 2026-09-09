@@ -180,7 +180,7 @@ public sealed class SagaControllerGeneratorTests
             RunGenerator(AttributeStubs, sagaSource);
         string controllerCode = runResult.GeneratedTrees.First(tree =>
                 tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("[AllowAnonymous]", controllerCode, StringComparison.Ordinal);
         Assert.Contains("[Authorize(Policy = \"saga-policy\")]", controllerCode, StringComparison.Ordinal);
@@ -214,7 +214,7 @@ public sealed class SagaControllerGeneratorTests
             RunGenerator(AttributeStubs, sagaSource);
         string controllerCode = runResult.GeneratedTrees.First(tree =>
                 tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("[AllowAnonymous]", controllerCode, StringComparison.Ordinal);
     }
@@ -244,7 +244,7 @@ public sealed class SagaControllerGeneratorTests
             RunGenerator(AttributeStubs, sagaSource);
         string controllerCode = runResult.GeneratedTrees.First(tree =>
                 tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains(
             "[Authorize(Policy = \"saga-policy\", Roles = \"operator\")]",
@@ -286,7 +286,7 @@ public sealed class SagaControllerGeneratorTests
             tree => tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal));
         string controllerCode = runResult.GeneratedTrees.First(tree =>
                 tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("api/sagas/transfer", controllerCode, StringComparison.Ordinal);
         Assert.Contains("AccountId = request.AccountId", controllerCode, StringComparison.Ordinal);
@@ -325,7 +325,7 @@ public sealed class SagaControllerGeneratorTests
             RunGenerator(AttributeStubs, sagaSource);
         string controllerCode = runResult.GeneratedTrees.First(tree =>
                 tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("using TestApp.Domain.Inputs;", controllerCode, StringComparison.Ordinal);
     }
@@ -358,7 +358,7 @@ public sealed class SagaControllerGeneratorTests
             RunGenerator(AttributeStubs, sagaSource);
         string dtoCode = runResult.GeneratedTrees.First(tree =>
                 tree.FilePath.Contains("StartTransferSagaDto.g.cs", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("[JsonRequired]", dtoCode, StringComparison.Ordinal);
         Assert.Contains("public required string AccountId", dtoCode, StringComparison.Ordinal);
@@ -389,7 +389,7 @@ public sealed class SagaControllerGeneratorTests
             RunGenerator(AttributeStubs, sagaSource);
         string controllerCode = runResult.GeneratedTrees.First(tree =>
                 tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains(
             "new TransferInput(request.AccountId, request.Amount)",
@@ -532,7 +532,7 @@ public sealed class SagaControllerGeneratorTests
             RunGenerator(AttributeStubs, sagaSource);
         string controllerCode = runResult.GeneratedTrees.First(tree =>
                 tree.FilePath.Contains("TransferSagaController.g.cs", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("api/sagas/custom-route", controllerCode, StringComparison.Ordinal);
     }

@@ -174,10 +174,11 @@ public sealed class ProjectionClientRegistrationGeneratorTests
                                         """;
         (Compilation outputCompilation, ImmutableArray<Diagnostic> diagnostics, GeneratorDriverRunResult runResult) =
             RunGenerator(ProjectionStubs, projectionSource);
-        string generatedCode = runResult.GeneratedTrees.Single().GetText().ToString();
+        string generatedCode =
+            runResult.GeneratedTrees.Single().GetText(TestContext.Current.CancellationToken).ToString();
         Diagnostic[] relevantDiagnostics =
         [
-            .. diagnostics.Concat(outputCompilation.GetDiagnostics())
+            .. diagnostics.Concat(outputCompilation.GetDiagnostics(TestContext.Current.CancellationToken))
                 .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error),
         ];
         Assert.Contains(

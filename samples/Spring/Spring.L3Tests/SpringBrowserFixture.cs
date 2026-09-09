@@ -8,9 +8,7 @@ namespace MississippiSamples.Spring.L3Tests;
 /// <summary>
 ///     Provides xUnit with an Aspire deployment and Chromium for Spring L3 browser journeys.
 /// </summary>
-public sealed class SpringBrowserFixture
-    : IAsyncLifetime,
-      IAsyncDisposable
+public sealed class SpringBrowserFixture : IAsyncLifetime
 {
     private IBrowser? browser;
 
@@ -88,7 +86,7 @@ public sealed class SpringBrowserFixture
     }
 
     /// <inheritdoc />
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (disposed)
         {
@@ -117,7 +115,7 @@ public sealed class SpringBrowserFixture
     }
 
     /// <inheritdoc />
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         if (isInitializationStarted)
@@ -151,7 +149,4 @@ public sealed class SpringBrowserFixture
             throw;
         }
     }
-
-    /// <inheritdoc />
-    ValueTask IAsyncDisposable.DisposeAsync() => new(DisposeAsync());
 }

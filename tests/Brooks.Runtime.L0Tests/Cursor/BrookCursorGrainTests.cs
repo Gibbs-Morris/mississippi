@@ -62,9 +62,10 @@ public sealed class BrookCursorGrainTests
         BrookKey key = new("t", "id2");
         IBrookWriterGrain writer = cluster.GrainFactory.GetGrain<IBrookWriterGrain>(key);
         await writer.AppendEventsAsync(
-        [
-            new(), new(), new(), new(), new(),
-        ]);
+            [
+                new(), new(), new(), new(), new(),
+            ],
+            cancellationToken: TestContext.Current.CancellationToken);
         IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
         BrookPosition confirmed = await cursor.GetLatestPositionConfirmedAsync();
 

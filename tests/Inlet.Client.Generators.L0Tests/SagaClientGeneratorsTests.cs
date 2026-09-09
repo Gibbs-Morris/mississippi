@@ -131,7 +131,7 @@ public sealed class SagaClientGeneratorsTests
         Assert.Contains(
             runResult.GeneratedTrees,
             tree => tree.FilePath.Contains("StartTransferSagaActionEffect.g.cs", StringComparison.Ordinal));
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("/api/sagas/transfer", generatedCode, StringComparison.Ordinal);
     }
 
@@ -162,7 +162,7 @@ public sealed class SagaClientGeneratorsTests
             new SagaClientActionEffectsGenerator(),
             AttributeStubs,
             sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("/api/sagas/custom-route", generatedCode, StringComparison.Ordinal);
     }
 
@@ -233,7 +233,7 @@ public sealed class SagaClientGeneratorsTests
         Assert.Contains(
             runResult.GeneratedTrees,
             tree => tree.FilePath.Contains("StartTransferSagaRequestDto.g.cs", StringComparison.Ordinal));
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("string AccountId", generatedCode, StringComparison.Ordinal);
         Assert.Contains("decimal Amount", generatedCode, StringComparison.Ordinal);
         Assert.Contains("string? CorrelationId", generatedCode, StringComparison.Ordinal);
@@ -266,13 +266,14 @@ public sealed class SagaClientGeneratorsTests
             new SagaClientActionEffectsGenerator(),
             AttributeStubs,
             sagaSource);
-        string actionEffectCode = actionResult.GeneratedTrees[0].GetText().ToString();
+        string actionEffectCode =
+            actionResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("/api/sagas/money-transfer", actionEffectCode, StringComparison.Ordinal);
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult stateResult) = RunGenerator(
             new SagaClientStateGenerator(),
             AttributeStubs,
             sagaSource);
-        string stateCode = stateResult.GeneratedTrees[0].GetText().ToString();
+        string stateCode = stateResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("FeatureKey => \"moneyTransfer\"", stateCode, StringComparison.Ordinal);
     }
 
@@ -443,7 +444,7 @@ public sealed class SagaClientGeneratorsTests
             new SagaClientMappersGenerator(),
             AttributeStubs,
             sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("StartTransferSagaActionMapper", generatedCode, StringComparison.Ordinal);
         Assert.Contains(
             "new(input.AccountId, input.Amount, input.CorrelationId)",
@@ -478,7 +479,7 @@ public sealed class SagaClientGeneratorsTests
             new SagaClientReducersGenerator(),
             AttributeStubs,
             sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains(
             "AggregateCommandStateReducers.ReduceCommandExecuting",
             generatedCode,
@@ -513,7 +514,7 @@ public sealed class SagaClientGeneratorsTests
             new SagaClientRegistrationGenerator(),
             AttributeStubs,
             sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("AddTransferSagaFeature", generatedCode, StringComparison.Ordinal);
         Assert.Contains("AddMapper<StartTransferSagaAction", generatedCode, StringComparison.Ordinal);
         Assert.Contains(
@@ -549,7 +550,7 @@ public sealed class SagaClientGeneratorsTests
             new SagaClientStateGenerator(),
             AttributeStubs,
             sagaSource);
-        string generatedCode = runResult.GeneratedTrees[0].GetText().ToString();
+        string generatedCode = runResult.GeneratedTrees[0].GetText(TestContext.Current.CancellationToken).ToString();
         Assert.Contains("FeatureKey => \"customKey\"", generatedCode, StringComparison.Ordinal);
     }
 }

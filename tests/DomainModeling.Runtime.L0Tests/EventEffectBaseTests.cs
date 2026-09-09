@@ -115,8 +115,8 @@ public sealed class EventEffectBaseTests
         }
 
         // Assert
-        Assert.Single(results);
-        Assert.IsType<OtherEvent>(results[0]);
+        object item = Assert.Single(results);
+        Assert.IsType<OtherEvent>(item);
     }
 
     /// <summary>

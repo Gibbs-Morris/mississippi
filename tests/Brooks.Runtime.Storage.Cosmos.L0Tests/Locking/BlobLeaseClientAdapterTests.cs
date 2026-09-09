@@ -56,11 +56,14 @@ public sealed class BlobLeaseClientAdapterTests
         TimeSpan duration = TimeSpan.FromSeconds(15);
         Mock<Response<BlobLease>> responseMock = new();
         Mock<BlobLeaseClient> innerMock = new();
-        innerMock.Setup(c => c.AcquireAsync(duration, null, CancellationToken.None)).ReturnsAsync(responseMock.Object);
+        innerMock.Setup(c => c.AcquireAsync(duration, null, TestContext.Current.CancellationToken))
+            .ReturnsAsync(responseMock.Object);
         BlobLeaseClientAdapter adapter = new(innerMock.Object);
 
         // Act
-        Response<BlobLease> result = await adapter.AcquireAsync(duration);
+        Response<BlobLease> result = await adapter.AcquireAsync(
+            duration,
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Same(responseMock.Object, result);
@@ -121,11 +124,13 @@ public sealed class BlobLeaseClientAdapterTests
         // Arrange
         Mock<Response<ReleasedObjectInfo>> responseMock = new();
         Mock<BlobLeaseClient> innerMock = new();
-        innerMock.Setup(c => c.ReleaseAsync(null, default)).ReturnsAsync(responseMock.Object);
+        innerMock.Setup(c => c.ReleaseAsync(null, TestContext.Current.CancellationToken))
+            .ReturnsAsync(responseMock.Object);
         BlobLeaseClientAdapter adapter = new(innerMock.Object);
 
         // Act
-        Response<ReleasedObjectInfo> result = await adapter.ReleaseAsync();
+        Response<ReleasedObjectInfo> result =
+            await adapter.ReleaseAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Same(responseMock.Object, result);
@@ -167,11 +172,12 @@ public sealed class BlobLeaseClientAdapterTests
         // Arrange
         Mock<Response<BlobLease>> responseMock = new();
         Mock<BlobLeaseClient> innerMock = new();
-        innerMock.Setup(c => c.RenewAsync(null, default)).ReturnsAsync(responseMock.Object);
+        innerMock.Setup(c => c.RenewAsync(null, TestContext.Current.CancellationToken))
+            .ReturnsAsync(responseMock.Object);
         BlobLeaseClientAdapter adapter = new(innerMock.Object);
 
         // Act
-        Response<BlobLease> result = await adapter.RenewAsync();
+        Response<BlobLease> result = await adapter.RenewAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Same(responseMock.Object, result);

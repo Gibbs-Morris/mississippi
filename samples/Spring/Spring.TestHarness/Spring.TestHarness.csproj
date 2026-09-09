@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- xunit.core marks consumers as tests; this project only shares fixture contracts. -->
+    <!-- Shared fixture contracts remain in a library, without the executable test-project package. -->
     <IsTestProject>false</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
@@ -8,6 +8,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.Testing" />
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.v3.extensibility.core" />
   </ItemGroup>
 </Project>

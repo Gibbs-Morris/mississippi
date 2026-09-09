@@ -36,8 +36,8 @@ public sealed class FundsDepositedLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        Assert.Single(result.Entries);
-        Assert.Equal(LedgerEntryType.Deposit, result.Entries[0].EntryType);
+        LedgerEntry item = Assert.Single(result.Entries);
+        Assert.Equal(LedgerEntryType.Deposit, item.EntryType);
         Assert.Equal(500m, result.Entries[0].Amount);
         Assert.Equal(1, result.Entries[0].Sequence);
     }
@@ -201,7 +201,7 @@ public sealed class FundsDepositedLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        Assert.Single(result.Entries);
-        Assert.Equal(0m, result.Entries[0].Amount);
+        LedgerEntry item = Assert.Single(result.Entries);
+        Assert.Equal(0m, item.Amount);
     }
 }

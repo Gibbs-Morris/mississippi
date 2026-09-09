@@ -247,7 +247,6 @@ function Invoke-SolutionTests {
         [Parameter(Mandatory)][string]$SolutionPath,
         [string]$Configuration = 'Release',
         [string]$ResultsRoot,
-        [string]$Logger,
         [switch]$CollectCoverage,
         [string[]]$TestLevels,
         [string[]]$AdditionalArguments,
@@ -255,58 +254,50 @@ function Invoke-SolutionTests {
     )
 
     $resolved = Resolve-Path -LiteralPath $SolutionPath
-    $testArguments = @('test', $resolved.Path, '--configuration', $Configuration, '--no-restore')
-
-    $resultsDirectory = $null
-    if ($ResultsRoot) {
-        $resultsDirectory = New-AutomationRunDirectory -Root $ResultsRoot
-        $testArguments += @('--results-directory', $resultsDirectory)
+    $projects = @(Get-TestProjects -SolutionPath $resolved.Path)
+    if ($TestLevels) {
+        $levels = ($TestLevels | ForEach-Object { [regex]::Escape($_) }) -join '|'
+        $projects = @($projects | Where-Object { $_ -match "\.($levels)\.csproj$" })
     }
-
-    if ($Logger) {
-        $testArguments += '--logger'
-        $testArguments += $Logger
-    }
-    else {
-        $testArguments += '-p:RepositoryTestResults=true'
-    }
-
-    if ($CollectCoverage) {
-        $testArguments += '--collect'
-        $testArguments += 'XPlat Code Coverage'
-    }
-
-    # Build filter expression for test levels (e.g., L0Tests, L1Tests)
-    # Filters by FullyQualifiedName containing the level pattern
-    if ($TestLevels -and $TestLevels.Count -gt 0) {
-        $filterParts = $TestLevels | ForEach-Object { "FullyQualifiedName~.$($_)." }
-        $filterExpression = $filterParts -join '|'
-        $testArguments += '--filter'
-        $testArguments += $filterExpression
-    }
-
-    if ($AdditionalArguments) {
-        $testArguments += $AdditionalArguments
-    }
-
-    if (-not $Quiet) {
-        Write-Host "Executing tests: $($resolved.Path)" -ForegroundColor ([ConsoleColor]::Cyan)
-    }
-
-    Invoke-RepositoryProcess -FilePath 'dotnet' -Arguments $testArguments -ErrorMessage "Failed to run tests for $($resolved.Path)." | Out-Host
-
-    if ($resultsDirectory) {
-        if ((Get-TestExecutionCount -ResultsDirectory $resultsDirectory) -lt 1) {
-            throw "No tests executed for '$($resolved.Path)' with levels '$($TestLevels -join ',')'. Reports: $resultsDirectory"
+    if ($projects.Count -eq 0) { throw "No tests executed: no projects match levels '$($TestLevels -join ',')'." }
+    if (-not $ResultsRoot) { $ResultsRoot = Join-Path (Get-RepositoryRoot) '.scratchpad/coverage-test-results' }
+    $resultsDirectory = New-AutomationRunDirectory -Root $ResultsRoot
+    $failures = [System.Collections.Generic.List[string]]::new()
+    foreach ($project in $projects) {
+        $projectName = [System.IO.Path]::GetFileNameWithoutExtension($project)
+        $moduleDirectory = Join-Path $resultsDirectory $projectName
+        $null = New-Item -ItemType Directory -Path $moduleDirectory -Force
+        $arguments = @('test', '--project', $project, '--configuration', $Configuration, '--no-restore',
+            '--report-xunit-trx', '--report-xunit-trx-filename', "test_results_$projectName.trx",
+            '--results-directory', $moduleDirectory)
+        # These existing SDK facade projects have no test implementations; all other modules must execute tests.
+        $emptyFacade = $projectName -in @('Sdk.Client.L0Tests', 'Sdk.Gateway.L0Tests', 'Sdk.Runtime.L0Tests')
+        if ($emptyFacade) { $arguments += @('--ignore-exit-code', '8') }
+        if ($CollectCoverage) { $arguments += @('--coverlet', '--coverlet-output-format', 'cobertura') }
+        if ($TestLevels) {
+            $filter = ($TestLevels | ForEach-Object { "FullyQualifiedName~.$($_)." }) -join '|'
+            $arguments += @('--filter', $filter)
+        }
+        if ($AdditionalArguments) { $arguments += $AdditionalArguments }
+        if (-not $Quiet) { Write-Host "Executing tests: $project" -ForegroundColor Cyan }
+        try {
+            Invoke-RepositoryProcess -FilePath dotnet -Arguments $arguments -ErrorMessage "Failed to run tests for $project." | Out-Host
+            $executed = Get-TestExecutionCount -ResultsDirectory $moduleDirectory
+            if ($executed -lt 1 -and -not $emptyFacade) { throw "No tests executed for '$project'. Reports: $moduleDirectory" }
+            if (@(Get-ChildItem -LiteralPath $moduleDirectory -Recurse -Filter '*.trx' -File).Count -ne 1) {
+                throw "Expected one TRX report for '$project'. Reports: $moduleDirectory"
+            }
+        }
+        catch {
+            $failures.Add($_.Exception.Message)
         }
     }
-
-    return [pscustomobject]@{
-        SolutionPath     = $resolved.Path
-        ResultsDirectory = $resultsDirectory
+    if ($failures.Count -gt 0) { throw "Test modules failed. Reports: $resultsDirectory`n$($failures -join "`n")" }
+    if ((Get-TestExecutionCount -ResultsDirectory $resultsDirectory) -lt 1) {
+        throw "No tests executed for '$($resolved.Path)'. Reports: $resultsDirectory"
     }
+    return [pscustomobject]@{ SolutionPath = $resolved.Path; ResultsDirectory = $resultsDirectory }
 }
-
 function Invoke-SlnGeneration {
     [CmdletBinding()]
     param(
@@ -341,7 +332,12 @@ function Invoke-ReSharperCleanup {
     $cacheRoot = Join-Path (Split-Path -Parent $resolvedSolution.Path) '.scratchpad/cleanup-caches'
     $cacheDirectory = New-AutomationRunDirectory -Root $cacheRoot
     Write-Host "Cleanup cache: $cacheDirectory" -ForegroundColor DarkGray
-    $cleanupArguments = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)", "--caches-home=$cacheDirectory")
+    $sdkVersion = @(Invoke-RepositoryProcess -FilePath dotnet -Arguments @('--version') -SuppressCommandEcho)
+    if ($sdkVersion.Count -ne 1 -or $sdkVersion[0] -notmatch '^\d+\.\d+\.\d+(?:-[\w.-]+)?$') {
+        throw 'Expected one SDK version selected by global.json.'
+    }
+    $cleanupArguments = @('tool','run','jb','cleanupcode', "--profile=$Profile", "--settings=$($resolvedSettings.Path)",
+        "--caches-home=$cacheDirectory", "--dotnetcoresdk=$($sdkVersion[0])")
 
     if ($IncludePaths -and $IncludePaths.Count -gt 0) {
         $cleanupArguments += "--include=$($IncludePaths -join ';')"
@@ -428,15 +424,13 @@ function Invoke-StrykerMutationTestPerProject {
     $configPath = Join-Path $repoRoot 'stryker-config.json'
     
     Write-Host "  Running Stryker for project: $projectName" -ForegroundColor ([ConsoleColor]::Cyan)
-    # Avoid VSTest's early-cancellation race, which can leave mutants Pending after exit 0.
-    $arguments = @('stryker', '--project', [System.IO.Path]::GetFileName($resolvedProject), '--config-file', $configPath, '--configuration', $Configuration, '--output', $projectOutputPath, '--disable-bail', '--break-on-initial-test-failure')
+    # MTP executes xUnit v3 test applications; complete reports remain mandatory after any tool exit status.
+    $arguments = @('stryker', '--project', [System.IO.Path]::GetFileName($resolvedProject), '--config-file', $configPath, '--configuration', $Configuration, '--output', $projectOutputPath, '--test-runner', 'mtp', '--disable-bail', '--break-on-initial-test-failure')
     foreach ($testProject in $TestProjects) {
         $arguments += @('--test-project', $testProject)
     }
-    if ($TestProjects -match '\.L[2-4]Tests\.csproj$') {
-        # Integration fixtures use shared localhost ports across test processes.
-        $arguments += @('--concurrency', '1')
-    }
+    # MTP reuses test servers; serialize mutants to isolate process-global state and integration fixtures.
+    $arguments += @('--concurrency', '1')
     # Stryker's multiple-test-project mode runs from the source project directory.
     Push-Location -LiteralPath (Split-Path -Parent $resolvedProject)
     try {
@@ -714,13 +708,13 @@ function Invoke-MississippiSolutionUnitTests {
     Write-Host "[3/3] Executing unit tests for mississippi.slnx..." -ForegroundColor ([ConsoleColor]::Cyan)
     Write-Host "Configuration: $Configuration"
     Write-Host "Test levels: $($TestLevels -join ', ')"
-    Write-Host 'Test flags: --no-restore --collect:XPlat Code Coverage'
+    Write-Host 'Test flags: --no-restore --coverlet --report-xunit-trx'
     $testResult = (Invoke-SolutionTests -SolutionPath $solutionPath -Configuration $Configuration -ResultsRoot $resultsRoot -CollectCoverage -TestLevels $TestLevels -Quiet | Select-Object -Last 1)
     $runDirectory = $testResult.ResultsDirectory
     Write-Host "Results directory: $runDirectory"
-    Write-Host 'Logger: TRX format (unique test_results prefix per project/framework)'
+    Write-Host 'Logger: xUnit TRX reports, one per test module'
 
-    $coverageFiles = Get-ChildItem -Path $runDirectory -Recurse -Filter 'coverage.cobertura.xml' -ErrorAction SilentlyContinue
+    $coverageFiles = Get-ChildItem -Path $runDirectory -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue
     if (-not $coverageFiles -or $coverageFiles.Count -eq 0) {
         throw "Unit tests completed but no coverage reports were produced in '$runDirectory'."
     }
@@ -745,7 +739,7 @@ function Invoke-MississippiSolutionUnitTests {
     Write-Host "Aggregated coverage report: $finalCoveragePath" -ForegroundColor ([ConsoleColor]::Green)
     Write-Host
     Write-Host '=== MISSISSIPPI SOLUTION UNIT TESTING COMPLETED ===' -ForegroundColor ([ConsoleColor]::Green)
-    $resultsFile = Join-Path $runDirectory 'test_results*.trx'
+    $resultsFile = Join-Path $runDirectory '*/test_results*.trx'
     Write-Host "All tests passed | Results saved to: $resultsFile"
     Write-Host 'Coverage report ready for summarize-coverage-gaps.ps1' -ForegroundColor ([ConsoleColor]::Green)
 }
@@ -1050,11 +1044,10 @@ function Invoke-SpringValidation {
         }
         $env:SPRING_TEST_ARTIFACTS = $runDirectory
         $summary.phase = 'test'
-        $testArguments = @('test', $project, '--configuration', $Configuration, '--no-build', '--no-restore',
-            '--logger', 'trx;LogFileName=spring.trx', '--results-directory', $runDirectory,
-            '--blame-hang-timeout', '5m', '--blame-hang-dump-type', 'none')
+        $testArguments = @('test', '--project', $project, '--configuration', $Configuration, '--no-build', '--no-restore',
+            '--report-xunit-trx', '--report-xunit-trx-filename', 'spring.trx', '--results-directory', $runDirectory,
+            '--minimum-expected-tests', '1', '--timeout', '15m')
         if ($Suite -eq 'Smoke') { $testArguments += @('--filter', 'Category=Smoke') }
-        $testArguments += @('--', 'RunConfiguration.TreatNoTestsAsError=true', 'RunConfiguration.TestSessionTimeout=900000')
         Invoke-RepositoryProcess -FilePath dotnet -Arguments $testArguments |
             Tee-Object -FilePath (Join-Path $runDirectory 'test.log') | Out-Host
         $summary.passed = Get-SpringTestResult -Path (Join-Path $runDirectory 'spring.trx')

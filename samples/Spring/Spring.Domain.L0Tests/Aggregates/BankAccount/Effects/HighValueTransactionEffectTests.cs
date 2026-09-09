@@ -54,7 +54,7 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Single(harness.DispatchedCommands);
@@ -87,7 +87,7 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         harness.DispatchedCommands.ShouldHaveNoDispatches();
@@ -118,7 +118,7 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         harness.DispatchedCommands.ShouldHaveNoDispatches();
@@ -152,7 +152,7 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Single(harness.DispatchedCommands);
@@ -187,7 +187,7 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         FlagTransaction command = harness.DispatchedCommands.ShouldHaveDispatched<FlagTransaction>();
@@ -219,7 +219,7 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         (Type AggregateType, string EntityId, object Command) dispatch =
@@ -258,7 +258,7 @@ public sealed class HighValueTransactionEffectTests
         };
 
         // Act - should not throw, effect logs the failure instead
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert - command was still dispatched even though it failed
         Assert.Single(harness.DispatchedCommands);

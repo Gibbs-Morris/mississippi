@@ -43,8 +43,8 @@ public sealed class TransactionFlaggedProjectionReducerTests
         FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        Assert.Single(result.Entries);
-        FlaggedTransaction entry = result.Entries[0];
+        FlaggedTransaction item = Assert.Single(result.Entries);
+        FlaggedTransaction entry = item;
         Assert.Equal("acc-123", entry.AccountId);
         Assert.Equal(15_000m, entry.Amount);
         Assert.Equal(OriginalTimestamp, entry.OriginalTimestamp);

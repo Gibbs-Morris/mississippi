@@ -72,7 +72,7 @@ public sealed class JsonSerializationProviderTests
         JsonSerializationProvider provider = CreateProvider();
         await using MemoryStream stream = new(Encoding.UTF8.GetBytes("null"));
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            provider.DeserializeAsync<SampleModel>(stream).AsTask());
+            provider.DeserializeAsync<SampleModel>(stream, TestContext.Current.CancellationToken).AsTask());
     }
 
     /// <summary>
