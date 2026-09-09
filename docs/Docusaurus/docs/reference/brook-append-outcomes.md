@@ -24,7 +24,7 @@ The optional expected cursor is an optimistic concurrency precondition. Omitting
 
 ## BrookCursorPublicationException
 
-`Position` identifies the committed cursor when the writer supplies it. `InnerException` describes the publication failure. General-purpose constructors which do not receive a position leave `Position` unset (`-1`); that value is not evidence of a committed append and cannot be published.
+`Position` identifies the committed cursor when the writer supplies it. The position-bearing constructor rejects an unset or negative position; zero is the first valid committed event position. `InnerException` describes the publication failure. General-purpose constructors which do not receive a position leave `Position` unset (`-1`); that value is not evidence of a committed append and cannot be published.
 
 A lost response can hide this exception from the caller. Do not classify every timeout as either a failed append or a known publication failure.
 
