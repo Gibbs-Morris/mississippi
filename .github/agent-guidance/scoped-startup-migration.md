@@ -57,19 +57,19 @@ guarantee every model's instruction selection.
 
 At the assessed parent, the instruction bodies contain 29,398 whitespace-delimited
 words. The two entrypoints add 1,408, giving 30,806 words under the previous
-blanket preparation rule. The revised entrypoints contain 1,859 words and the
+blanket preparation rule. The revised entrypoints contain 1,868 words and the
 tested rg command pair adds 132. Supporting task references are additional.
 
 | Static scenario | Selected instruction bodies | Total with entrypoints and metadata |
 | --- | ---: | ---: |
-| Agent Markdown | 11,592 | 13,583 |
-| Core C# | 17,063 | 19,054 |
-| Sample C# | 21,143 | 23,134 |
-| PowerShell | 11,329 | 13,320 |
-| Product documentation | 13,000 | 14,991 |
-| ADR | 13,746 | 15,737 |
-| C# snippet in Markdown | 16,310 | 18,301 |
-| Global rule maintenance | 29,398 | 31,389 |
+| Agent Markdown | 11,592 | 13,592 |
+| Core C# | 17,063 | 19,063 |
+| Sample C# | 21,143 | 23,143 |
+| PowerShell | 11,329 | 13,329 |
+| Product documentation | 13,000 | 15,000 |
+| ADR | 13,746 | 15,746 |
+| C# snippet in Markdown | 16,310 | 18,310 |
+| Global rule maintenance | 29,398 | 31,398 |
 
 The savings depend on the task. Full-inventory work intentionally keeps the full
 corpus and pays the added routing overhead. Unknown scopes may also require
