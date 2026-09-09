@@ -119,18 +119,16 @@ You MUST follow this sequence and keep the headings exactly as listed.
   - Keep boundaries crisp; avoid scope creep.
 - Ensure SKILL.md uses this baseline structure (adjust as needed):
 
+Replace the example name, description, and title with the requested capability.
+Add optional metadata only when its actual value is known.
+
 ```yaml
 ---
-name: <skill-name>
-description: <what it does>. Use this when <specific triggers/keywords>.
-license: <optional>
-compatibility: <optional>
-metadata:
-  owner: <maintaining-team>
-  version: "0.1"
+name: review-api-compatibility
+description: Assess compatibility risks in proposed public API changes. Use when reviewing a changed public contract against its supported consumers.
 ---
 
-# <Human title>
+# Review API Compatibility
 
 ## When to use this skill
 - ...
