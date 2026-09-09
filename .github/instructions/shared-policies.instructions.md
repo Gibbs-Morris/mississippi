@@ -10,7 +10,7 @@ Governing thought: Common rules for every instruction—zero warnings, centraliz
 
 ## Rules (RFC 2119)
 
-- Contributors **MUST** follow [issue tracking and PR traceability](issue-tracking.instructions.md) before implementation and throughout delivery. Why: Planned work and every PR need a current repository issue.
+- Contributors **MUST** follow the intake timing and ongoing updates in [issue tracking and PR traceability](issue-tracking.instructions.md). Why: Planned work and every PR need a current repository issue.
 - Contributors **MUST** follow [PR size and stacked delivery](pr-size-and-stacking.instructions.md) for scope, size exceptions, planning, and advancement gates. Why: Humans and agents share one reviewability policy.
 - **Zero Warnings Everywhere** - All projects and tests **MUST** build with zero compiler/analyzer warnings; contributors **MUST NOT** relax rule severity, add project-wide `NoWarn`, or use `#pragma`/`[SuppressMessage]` without explicit approval. Why: Keeps quality gates deterministic.
 - **Central Package Management** - Package versions **MUST** live in `Directory.Packages.props`; `PackageReference` items **MUST NOT** declare `Version` and package changes **MUST** use `dotnet add/remove package`. Why: Prevents drift and NU10xx noise.

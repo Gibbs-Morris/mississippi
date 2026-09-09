@@ -41,7 +41,7 @@ verified examples, or diagrams; mention observability changes when relevant. -->
 Identify pending or failed checks and explain non-applicable checks.]
 
 - [ ] One logical change; size exception explained if needed
-- [ ] Repository issue linked; plan recorded before implementation and issue status current
+- [ ] Repository issue linked; plan recorded at the policy's intake point and issue status current
 - [ ] Applicable build, cleanup, lint, tests, and coverage gates pass
 - [ ] Mutation execution status, available results, and significant gaps reported under the [mutation-testing policy](instructions/mutation-testing.instructions.md); no mandatory repository score threshold
 - [ ] Required tests, consumer updates, and documentation are in this PR

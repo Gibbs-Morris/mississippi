@@ -11,7 +11,7 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 ## Rules (RFC 2119)
 
 - Copilot **MUST** follow all repository instruction files, especially shared guardrails, C#, naming, logging, and testing guidance. Why: Keeps suggestions compliant.
-- Copilot **MUST** follow [issue tracking and PR traceability](instructions/issue-tracking.instructions.md): record the plan in a repository issue before implementation, keep it current, and link every PR to an issue. Why: Requested work needs a durable record through delivery.
+- Copilot **MUST** follow [issue tracking and PR traceability](instructions/issue-tracking.instructions.md), including its intake timing, ongoing updates, and issue link on every PR. Why: Requested work needs a durable record through delivery.
 - Copilot **MUST** follow [token efficiency and reassessment](instructions/agent-efficiency.instructions.md), including during persistent goals. Why: Repeated effort needs new evidence or a better approach while preserving the full outcome and required gates.
 - Copilot **MUST** follow the [mutation-testing policy](instructions/mutation-testing.instructions.md), prioritizing correct delivery and meaningful unit-test coverage over survivor chasing. Why: Mutation testing is an additional quality signal with no mandatory repository score threshold or ordinary completion gate.
 - Copilot **MUST** follow [PR size and stacked delivery](instructions/pr-size-and-stacking.instructions.md), using the `gh-stack` skill for dependent PRs and completing each layer's CI/review gate before starting the next. Why: Reviewable increments prevent unchecked work from accumulating.

@@ -19,6 +19,7 @@ Governing thought: Record planned repository work in a GitHub issue before imple
 - Issue updates **MUST** record completed and remaining work, relevant decisions or blockers, actual validation results, and PR links as those become available. Why: Future work starts from evidence rather than stale checklists.
 - Contributors **MUST** preserve relevant existing issue content and discussion when updating the plan or status. Why: Progress updates should not erase the original request or others' decisions.
 - Every PR **MUST** include at least one relevant issue number or URL from this repository in its description, including draft, automated, and stacked PRs. Why: Every proposed change needs traceability, regardless of author or base branch.
+- For pre-existing PRs or unattended automated PRs whose producers cannot create issues before generating changes, maintainers **MUST** complete issue intake during triage before further implementation or review approval. Why: Generated changes can predate tracking, but still need a documented plan and issue link before acceptance.
 - PRs **MUST** use a non-closing reference such as `Refs #123` for partial delivery or a stack layer that leaves issue scope unfinished. Why: An intermediate merge should not close the larger task.
 - Closing keywords such as `Fixes #123` or `Closes #123` **MUST** be used only when the PR completes that issue's acceptance criteria. Why: Automatic closure should reflect completed work.
 - Before declaring a PR ready to merge, contributors **MUST** verify that its issue references resolve to the intended issues and that issue status, remaining work, and validation match the current PR. Why: A stale or unrelated link does not establish traceability.
@@ -27,6 +28,8 @@ Governing thought: Record planned repository work in a GitHub issue before imple
 ## Scope and Audience
 
 All contributors and agents delivering repository changes, including code, tests, documentation, configuration, and automation. Read-only investigation and planning can precede issue creation; implementation begins with changes intended to deliver the planned outcome. Every PR is covered, including a planning-only PR.
+
+The triage rule is an exception to pre-implementation timing for existing changes and unattended producers such as Dependabot or the scheduled guideline improver when their permissions defer issue creation until after execution. It is not an exception to issue content, updates, or PR links. During triage, a maintainer records the generated scope, acceptance criteria, validation, and any remaining implementation plan in a reused or new issue, then links the PR. Do not claim that this retrospective intake happened before generation. Interactive agent tasks use the normal plan-then-issue-then-implementation order.
 
 An external tracker can provide context, but the work still has a local repository issue. Optional child issues for an epic do not replace its required tracking issue. A relevant issue can cover several PRs when its plan and progress distinguish their outcomes.
 
