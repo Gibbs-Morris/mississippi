@@ -75,6 +75,10 @@ internal sealed class SignalRGroupGrain
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     Membership changes run synchronously and may interleave with a broadcast awaiting a client.
+    ///     This avoids a client/group call cycle during joins or disconnect cleanup.
+    /// </remarks>
     public Task AddConnectionAsync(
         string connectionId
     )
@@ -112,6 +116,9 @@ internal sealed class SignalRGroupGrain
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     Membership changes may interleave with broadcasts, which enumerate an immutable membership snapshot.
+    /// </remarks>
     public Task RemoveConnectionAsync(
         string connectionId
     )
