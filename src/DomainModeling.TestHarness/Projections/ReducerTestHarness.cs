@@ -25,7 +25,8 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///         For executable usage examples, see the
 ///         <see href="https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring/Spring.Domain.L0Tests">
 ///             Spring domain tests
-///         </see>.
+///         </see>
+///         .
 ///     </para>
 ///     <para>
 ///         <strong>Multi-Reducer Scenario Testing (L0):</strong>
@@ -35,7 +36,8 @@ namespace Mississippi.DomainModeling.TestHarness.Projections;
 ///         For executable usage examples, see the
 ///         <see href="https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring/Spring.Domain.L0Tests">
 ///             Spring domain tests
-///         </see>.
+///         </see>
+///         .
 ///     </para>
 /// </remarks>
 /// <typeparam name="TProjection">The projection type being tested. Must have a parameterless constructor.</typeparam>

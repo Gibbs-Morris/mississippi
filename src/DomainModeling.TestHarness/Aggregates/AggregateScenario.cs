@@ -29,7 +29,8 @@ namespace Mississippi.DomainModeling.TestHarness.Aggregates;
 ///         For executable usage examples, see the
 ///         <see href="https://github.com/Gibbs-Morris/mississippi/tree/main/samples/Spring/Spring.Domain.L0Tests">
 ///             Spring domain tests
-///         </see>.
+///         </see>
+///         .
 ///     </para>
 /// </remarks>
 public sealed class AggregateScenario<TAggregate>
