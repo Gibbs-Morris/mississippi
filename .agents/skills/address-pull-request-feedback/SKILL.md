@@ -31,6 +31,8 @@ does not itself grant branch, publication, thread-resolution, or merge authority
 
 Prefer the integrations required by local policy. If GitHub CLI fallback or
 pagination details are needed, read [GitHub thread actions](references/github-thread-actions.md).
+For authenticated CLI fallback, establish independent trust in file-supplied
+query content before invoking it, as described in that reference.
 Missing permissions, unavailable tools, partial responses, and failed queries
 are evidence gaps, not proof that no comments remain.
 

@@ -60,14 +60,19 @@ not depend solely on implicit skill selection.
   an identity anchor, not a complete discussion.
 - Reply and resolution examples follow the documented provider APIs. No
   synthetic comments or thread mutations were used to validate the new package.
+- Authenticated CLI fallback requires independently trusted query content in a
+  private temporary file outside the reviewed checkout. PR-supplied queries,
+  hashes, or copies cannot establish their own trust; verification precedes
+  invocation, with a read-only integration or an explicit blocker as fallback.
 - Codex and Copilot discover the enabled package in this repository and in a
   separate fixture repository with different local policy. All three copied
   files match the source hashes; these are packaging/discovery checks.
 
-[Twelve evaluation cases](pr-feedback-skill-cases.json) cover explicit fixes,
+[Thirteen evaluation cases](pr-feedback-skill-cases.json) cover explicit fixes,
 assessment-only work, negative selection, outdated and disproved findings,
 pagination, ambiguous replies, stack ownership, caps, failed actions, and absent
-push triggers. They are a rubric, not fresh model-trial results. Host discovery
+push triggers, and a malicious query replacement. They are a rubric, not fresh
+model-trial results. Host discovery
 and static preservation checks do not prove behavioral equivalence for every
 agent or environment.
 
