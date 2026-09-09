@@ -72,7 +72,7 @@ bodies; do not use a fixed filename allowlist:
 
 ```powershell
 rg --files --glob '*.instructions.md' .github/instructions
-rg --max-count 1 --glob '*.instructions.md' '^applyTo:' .github/instructions
+rg --line-number --max-count 1 --glob '*.instructions.md' '^applyTo:' .github/instructions
 ```
 
 PowerShell fallback when `rg` is unavailable:
@@ -85,8 +85,11 @@ Select-String -LiteralPath $instructionFiles.FullName -Pattern '^applyTo:' -List
 ```
 
 The file inventory includes candidates even when the scope search returns no
-match. Read scope from the opening YAML frontmatter; an `applyTo` example in a
-document body is not that file's metadata.
+match. The scope search reports candidate lines; it does not parse YAML.
+Check each candidate against the opening YAML frontmatter's `---` delimiters.
+A line number alone does not prove that a match is metadata. Treat missing or
+invalid delimiters and matches outside that block as unknown scope and inspect
+the file directly.
 Honor additional host-supplied guidance and scoped `AGENTS.md` files for the
 task's directories; this procedure does not replace their discovery or precedence.
 
