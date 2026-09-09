@@ -24,7 +24,7 @@ The following code blocks reproduce the selected source files with XML documenta
 
 ## Step 1: Define the State Needed by the Rule
 
-Open `Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs`. Its `IsOpen` and `Balance` properties are the state the withdrawal handler needs to make its decision.
+Open `samples/Spring/Spring.Domain/Aggregates/BankAccount/BankAccountAggregate.cs`. Its `IsOpen` and `Balance` properties are the state the withdrawal handler needs to make its decision.
 
 ```csharp
 using Mississippi.Brooks.Abstractions.Attributes;
@@ -67,7 +67,7 @@ The aggregate's `[BrookName]` identifies the event-stream family `SPRING.BANKING
 
 ## Step 2: Express the Request as a Command
 
-Open `Commands/WithdrawFunds.cs`. The command carries the requested amount; the aggregate identity is supplied by the caller's route or grain selection.
+Open `samples/Spring/Spring.Domain/Aggregates/BankAccount/Commands/WithdrawFunds.cs`. The command carries the requested amount; the aggregate identity is supplied by the caller's route or grain selection.
 
 ```csharp
 using Mississippi.Inlet.Generators.Abstractions;
@@ -104,7 +104,7 @@ A useful command names business intent. For a withdrawal, prefer `WithdrawFunds`
 
 ## Step 3: Record the Accepted Fact as an Event
 
-Open `Events/FundsWithdrawn.cs`. This event records the accepted amount, using a past-tense name to distinguish the fact from the request.
+Open `samples/Spring/Spring.Domain/Aggregates/BankAccount/Events/FundsWithdrawn.cs`. This event records the accepted amount, using a past-tense name to distinguish the fact from the request.
 
 ```csharp
 using Mississippi.Brooks.Abstractions.Attributes;
@@ -129,7 +129,7 @@ The event's `[EventStorageName]` supplies its persisted type identity. Preserve 
 
 ## Step 4: Validate the Business Rule in a Handler
 
-Open `Handlers/WithdrawFundsHandler.cs`. The handler receives the command and current aggregate state and returns either accepted events or a failed operation result.
+Open `samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/WithdrawFundsHandler.cs`. The handler receives the command and current aggregate state and returns either accepted events or a failed operation result.
 
 ```csharp
 using System.Collections.Generic;
@@ -198,7 +198,7 @@ Use these cases as an implementation brief for an AI assistant, then compare its
 
 ## Step 5: Apply the Event with a Pure Reducer
 
-Open `Reducers/FundsWithdrawnReducer.cs`. It subtracts the recorded amount and increments the withdrawal count by returning a new state value.
+Open `samples/Spring/Spring.Domain/Aggregates/BankAccount/Reducers/FundsWithdrawnReducer.cs`. It subtracts the recorded amount and increments the withdrawal count by returning a new state value.
 
 ```csharp
 using System;
