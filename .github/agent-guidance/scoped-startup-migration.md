@@ -7,11 +7,17 @@ native stack #619 and contributes to
 It is bootstrap policy, not another skill: the loading contract applies before
 specialized work is selected.
 
-Initial parent: [PR #622](https://github.com/Gibbs-Morris/mississippi/pull/622),
+Preimplementation snapshot: [PR #622](https://github.com/Gibbs-Morris/mississippi/pull/622),
 head `19fc6214aba699a40dc31e1d4a3c383884df57ad`, on main
 `4aed4bcf9fab3200ec8c55b39e131576cf780bf8`. Before this layer started, the parent
 passed 30 checks, completed Codex code/security reviews, received a positive
 Copilot review with no findings, had no unresolved threads, and reported CLEAN.
+
+These revisions record the gate before implementation began. The stack was
+subsequently rebased on September 9 onto main
+`f5bb7c0c2bd843deb27483e001a3350e106e83cd` after PR #621 merged. That later rebase
+does not replace the historical gate evidence above. GitHub's PR refs and checks
+identify the revisions to use for each new advancement audit.
 
 ## Preservation boundary
 
