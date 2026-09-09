@@ -101,14 +101,11 @@ When HEAD, required CI identity, or reviewer-meaningful canonical facts change:
 
 #### Review Thread Protocol
 
-When review comments arrive:
-
-1. Read and understand each comment
-2. Apply the minimal focused fix
-3. Commit with a message scoped to that single comment
-4. Push the branch
-5. Reply to the thread with what was changed and the commit SHA
-6. Resolve the thread (if fix applied) or reply with rationale (if declined)
+When review comments arrive, use the
+[address-pull-request-feedback skill](../../.agents/skills/address-pull-request-feedback/SKILL.md)
+with the [post-push review policy](../instructions/pr-review-polling.instructions.md),
+within the active bounded delegation. Keep this role's audit, freshness, wait,
+and merge-readiness requirements while using the shared thread procedure.
 
 For Product Owner canonical audit recording during review-thread handling, return evidence that includes:
 

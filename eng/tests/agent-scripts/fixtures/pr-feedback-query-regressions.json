@@ -1,0 +1,32 @@
+[
+  {
+    "name": "missing cursor declaration",
+    "before": "$endCursor: String",
+    "after": "$unused: String"
+  },
+  {
+    "name": "missing continuation binding",
+    "before": "after: $endCursor",
+    "after": "after: null"
+  },
+  {
+    "name": "missing end cursor",
+    "before": "endCursor\n",
+    "after": "removedCursor\n"
+  },
+  {
+    "name": "missing comment anchor ID",
+    "before": "              id",
+    "after": "              removedId"
+  },
+  {
+    "name": "missing thread state",
+    "before": "isResolved",
+    "after": "removedState"
+  },
+  {
+    "name": "mutation replacement",
+    "before": "query ReviewThreads",
+    "after": "mutation ReviewThreads"
+  }
+]
