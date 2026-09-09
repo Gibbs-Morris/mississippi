@@ -241,6 +241,42 @@ function Get-TestExecutionCount {
     return $executed
 }
 
+function Invoke-TestModule {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ProjectPath,
+        [Parameter(Mandatory)][string]$ResultsDirectory,
+        [string]$Configuration = 'Release',
+        [switch]$CollectCoverage,
+        [string[]]$TestLevels,
+        [string[]]$AdditionalArguments,
+        [switch]$Quiet
+    )
+
+    $projectName = [System.IO.Path]::GetFileNameWithoutExtension($ProjectPath)
+    $moduleDirectory = Join-Path $ResultsDirectory $projectName
+    $null = New-Item -ItemType Directory -Path $moduleDirectory -Force
+    $arguments = @('test', '--project', $ProjectPath, '--configuration', $Configuration, '--no-restore',
+        '--report-xunit-trx', '--report-xunit-trx-filename', "test_results_$projectName.trx",
+        '--results-directory', $moduleDirectory)
+    # These existing SDK facade projects have no test implementations; all other modules must execute tests.
+    $emptyFacade = $projectName -in @('Sdk.Client.L0Tests', 'Sdk.Gateway.L0Tests', 'Sdk.Runtime.L0Tests')
+    if ($emptyFacade) { $arguments += @('--ignore-exit-code', '8') }
+    if ($CollectCoverage) { $arguments += @('--coverlet', '--coverlet-output-format', 'cobertura') }
+    if ($TestLevels) {
+        $filter = ($TestLevels | ForEach-Object { "FullyQualifiedName~.$($_)." }) -join '|'
+        $arguments += @('--filter', $filter)
+    }
+    if ($AdditionalArguments) { $arguments += $AdditionalArguments }
+    if (-not $Quiet) { Write-Host "Executing tests: $ProjectPath" -ForegroundColor Cyan }
+    Invoke-RepositoryProcess -FilePath dotnet -Arguments $arguments -ErrorMessage "Failed to run tests for $ProjectPath." | Out-Host
+    $executed = Get-TestExecutionCount -ResultsDirectory $moduleDirectory
+    if ($executed -lt 1 -and -not $emptyFacade) { throw "No tests executed for '$ProjectPath'. Reports: $moduleDirectory" }
+    if (@(Get-ChildItem -LiteralPath $moduleDirectory -Recurse -Filter '*.trx' -File).Count -ne 1) {
+        throw "Expected one TRX report for '$ProjectPath'. Reports: $moduleDirectory"
+    }
+}
+
 function Invoke-SolutionTests {
     [CmdletBinding()]
     param(
@@ -264,29 +300,9 @@ function Invoke-SolutionTests {
     $resultsDirectory = New-AutomationRunDirectory -Root $ResultsRoot
     $failures = [System.Collections.Generic.List[string]]::new()
     foreach ($project in $projects) {
-        $projectName = [System.IO.Path]::GetFileNameWithoutExtension($project)
-        $moduleDirectory = Join-Path $resultsDirectory $projectName
-        $null = New-Item -ItemType Directory -Path $moduleDirectory -Force
-        $arguments = @('test', '--project', $project, '--configuration', $Configuration, '--no-restore',
-            '--report-xunit-trx', '--report-xunit-trx-filename', "test_results_$projectName.trx",
-            '--results-directory', $moduleDirectory)
-        # These existing SDK facade projects have no test implementations; all other modules must execute tests.
-        $emptyFacade = $projectName -in @('Sdk.Client.L0Tests', 'Sdk.Gateway.L0Tests', 'Sdk.Runtime.L0Tests')
-        if ($emptyFacade) { $arguments += @('--ignore-exit-code', '8') }
-        if ($CollectCoverage) { $arguments += @('--coverlet', '--coverlet-output-format', 'cobertura') }
-        if ($TestLevels) {
-            $filter = ($TestLevels | ForEach-Object { "FullyQualifiedName~.$($_)." }) -join '|'
-            $arguments += @('--filter', $filter)
-        }
-        if ($AdditionalArguments) { $arguments += $AdditionalArguments }
-        if (-not $Quiet) { Write-Host "Executing tests: $project" -ForegroundColor Cyan }
         try {
-            Invoke-RepositoryProcess -FilePath dotnet -Arguments $arguments -ErrorMessage "Failed to run tests for $project." | Out-Host
-            $executed = Get-TestExecutionCount -ResultsDirectory $moduleDirectory
-            if ($executed -lt 1 -and -not $emptyFacade) { throw "No tests executed for '$project'. Reports: $moduleDirectory" }
-            if (@(Get-ChildItem -LiteralPath $moduleDirectory -Recurse -Filter '*.trx' -File).Count -ne 1) {
-                throw "Expected one TRX report for '$project'. Reports: $moduleDirectory"
-            }
+            Invoke-TestModule -ProjectPath $project -ResultsDirectory $resultsDirectory -Configuration $Configuration `
+                -CollectCoverage:$CollectCoverage -TestLevels $TestLevels -AdditionalArguments $AdditionalArguments -Quiet:$Quiet
         }
         catch {
             $failures.Add($_.Exception.Message)
