@@ -1,0 +1,52 @@
+[
+  {
+    "id": "supplied-draft",
+    "prompt": "Use author-architecture-decision to draft a MADR 4.0.0 body from these facts, without creating files: we propose in-process caching for read-only reference data that changes once a day. We considered no cache and a shared cache. The selected proposal avoids a network dependency; stale data until refresh is an accepted trade-off. No benchmark or approval has occurred.",
+    "expected": "Use the supplied evidence, real alternatives, and proposed outcome; do not invent benchmarks, acceptance, participants, or a need for repository access."
+  },
+  {
+    "id": "trivial-choice",
+    "prompt": "Assess whether renaming a private local variable from item to entry needs an ADR. It changes no behavior, structure, compatibility, or team convention, and policy reserves ADRs for significant decisions.",
+    "expected": "Explain that no new ADR is warranted and avoid generating a ceremonial decision record."
+  },
+  {
+    "id": "mutable-proposal",
+    "prompt": "Update only the Consequences section of a proposed ADR to include this risk: update notifications can be lost, leaving cache entries stale until the scheduled refresh. The selected option, context, and all other sections remain valid. Return only the replacement section.",
+    "expected": "Return only the requested section, retain the proposed state, and avoid rewriting unrelated content or requiring publication."
+  },
+  {
+    "id": "supersede-accepted",
+    "prompt": "Record a changed decision. Existing ADR 0012 is accepted and its Context and Decision Outcome are immutable. The approved new decision replaces its cache with direct reads because freshness now matters more than latency. Local policy requires a new proposed superseding record and permits only status/link metadata changes on the predecessor.",
+    "expected": "Preserve the predecessor's historical content, create the successor in the required proposed state, and describe only the permitted predecessor metadata/link updates."
+  },
+  {
+    "id": "numbering-collision",
+    "prompt": "Prepare two new branch ADRs for merge. They currently use provisional numbers 0018 and 0019; current trunk already contains accepted records through 0020. Local policy requires the new records to form the next contiguous block, with matching titles, ordering metadata, filenames, and relative links. Do not renumber existing accepted records.",
+    "expected": "Assign the two new records 0021 and 0022, update all affected references together, and preserve existing accepted records."
+  },
+  {
+    "id": "different-project",
+    "prompt": "This project keeps ADRs under decisions and uses descriptive identifiers without sequence numbers. Its template has a title, Decision, Reasons, and Consequences sections; metadata requires status and date, with no site-sidebar fields. Draft a proposed record dated 2026-09-08 for daily in-memory caching of reference data instead of reading it on every request: avoiding repeated reads motivates it, and possible staleness until the daily refresh is the trade-off. Do not change the project's format or publish anything.",
+    "expected": "Honor the local path, identifiers, metadata, and template without imposing numbered filenames, Docusaurus fields, or another repository's conventions."
+  },
+  {
+    "id": "missing-decision",
+    "prompt": "Write a completed ADR. I have not supplied a decision, alternatives, rationale, evidence, repository, or acceptance status.",
+    "expected": "Ask for the narrow missing decision context instead of inventing an architecture, approval, or completed record."
+  },
+  {
+    "id": "unrelated",
+    "prompt": "What does git status show? Answer briefly.",
+    "expected": "Answer the Git question without starting an ADR-authoring workflow."
+  },
+  {
+    "id": "incidental-pr-summary",
+    "prompt": "For a PR body, write one sentence explaining that this change records the existing cache decision in an ADR. Do not create or modify an ADR.",
+    "expected": "Complete the PR-summary task without authoring an ADR, creating files, or expanding the requested output."
+  },
+  {
+    "id": "metadata-only",
+    "prompt": "Correct only a broken related-document link in an accepted ADR. Local policy permits link metadata corrections, protects the Context and Decision Outcome, and does not require diagram work for link-only edits.",
+    "expected": "Make or describe only the requested permitted link correction, preserving historical content without adding diagrams or a new decision."
+  }
+]

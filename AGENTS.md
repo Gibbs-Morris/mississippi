@@ -6,13 +6,17 @@ applyTo: '**'
 
 Governing thought: Agents follow repository instructions and iterate from correctness to quality to performance.
 
-> Drift check: Review `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` before relying on this summary.
+> Drift check: Review `.github/copilot-instructions.md` and discover applicable `.github/instructions/*.instructions.md` using the instruction-loading procedure below before relying on this summary.
 
 ## Rules (RFC 2119)
 
-- Agents MUST read `.github/copilot-instructions.md` first, then all instruction files under `.github/instructions/`, before making changes. Why: Ensures all work follows the repository's authoritative policies and conventions.
+- Agents MUST read `.github/copilot-instructions.md` first, then all globally scoped and task-applicable instruction files under `.github/instructions/`, before planning repository work, making changes, reviewing content, or answering repository questions. Why: Preserves authoritative requirements without preloading unrelated bodies.
 - Agents MUST follow every rule and guideline in those documents when planning or writing code. Why: Keeps contributions consistent, reviewable, and compliant with quality gates.
 - Agents MUST follow [issue tracking and PR traceability](.github/instructions/issue-tracking.instructions.md), including its intake timing, ongoing updates, and issue link on every PR. Why: Requested work needs a durable record through delivery.
+- Instruction selection MUST cover the task's edited, reviewed, and generated content, languages, frameworks, and role/workflow, not just changed filenames. Why: A C# example or runtime explanation still needs its relevant guidance.
+- Agents MUST read an instruction whose applicability is unclear, whose metadata is missing or unrecognized, or whose scope may overlap the task before excluding it. Why: Uncertainty cannot silently remove requirements.
+- Agents MUST reassess instruction selection when the task expands. Why: Initial context selection does not cover requirements introduced by later work.
+- Agents MUST follow relevant policy references and explicit skill routes. Why: Selected guidance can require additional task-specific instructions.
 - Agents MUST follow [token efficiency and reassessment](.github/instructions/agent-efficiency.instructions.md), including during persistent goals. Why: Repeated effort needs new evidence or a better approach while preserving the full outcome and required gates.
 - Agents MUST follow the [mutation-testing policy](.github/instructions/mutation-testing.instructions.md): report results and significant gaps, prioritize correctness and strong unit tests, and keep mutation work proportionate. Why: Mutation testing is an additional quality signal with no mandatory repository score threshold or ordinary completion gate.
 - Agents MUST follow the "make it work, make it right, make it fast" loop: get tests passing first, then refactor for clarity and correctness, then optimize only where needed. Why: Surfaces issues early and avoids premature optimization.
@@ -26,7 +30,7 @@ All agents working in this repository.
 
 ## At-a-Glance Quick-Start
 
-- Read `.github/copilot-instructions.md`, then all `.github/instructions/*.instructions.md`.
+- Read `.github/copilot-instructions.md`, then discover instruction scopes and load all global plus task-applicable guidance.
 - Consult `docs/key-principles/` for foundational thinking and reasoning frameworks.
 - Prioritize correctness first, cleanup next, and performance improvements last.
 
@@ -62,15 +66,61 @@ For test placement and CI scheduling, see [Spring test levels and suites](sample
 | `markdown.md` | Markdown authoring (CommonMark and GFM) |
 | `mermaid.md` | Mermaid diagram types and syntax |
 
-## Procedures
+## Instruction Loading
 
-Use PowerShell to review instruction files:
+Discover current instruction names and `applyTo` metadata before selecting
+bodies; do not use a fixed filename allowlist.
+
+Shell execution is optional. Repository file-list/read tools or a complete
+host-supplied inventory and file contents can provide the same names,
+frontmatter, and bodies. If scope discovery is unavailable but the instruction
+files are readable, read them all. If necessary files cannot be accessed,
+request the missing inventory or bodies from the user/host and report
+preparation incomplete; do not assume the missing guidance is irrelevant.
+
+```text
+rg --files --glob '*.instructions.md' .github/instructions
+rg --line-number --max-count 1 --glob '*.instructions.md' '^[ \t]*applyTo:' .github/instructions
+```
+
+PowerShell fallback when `rg` is unavailable:
 
 ```powershell
-Get-ChildItem -Path .github -Recurse -Filter "*.instructions.md" |
-    Sort-Object FullName |
-    ForEach-Object { Get-Content -Path $_.FullName -Raw }
+$instructionFiles = Get-ChildItem -LiteralPath .github/instructions -Recurse -File -Filter '*.instructions.md' |
+    Sort-Object FullName
+$instructionFiles.FullName
+Select-String -LiteralPath $instructionFiles.FullName -Pattern '^[ \t]*applyTo:' -List
 ```
+
+The file inventory includes candidates even when the scope search returns no
+match. The scope search reports candidate lines; it does not parse YAML.
+Check each candidate against the opening YAML frontmatter's `---` delimiters.
+A line number alone does not prove that a match is metadata. Treat missing or
+invalid delimiters and matches outside that block as unknown scope and inspect
+the file directly.
+Honor additional host-supplied guidance and scoped `AGENTS.md` files for the
+task's directories; this procedure does not replace their discovery or precedence.
+
+1. Read every instruction with global `applyTo: '**'` in full. Global scopes
+   remain global; selection does not weaken their rules or quality gates.
+2. Read instructions matching repository-relative task paths and all relevant
+   content/domain scopes. Include files being reviewed, examples being written,
+   questions about runtime behavior, and any active agent workflow. Use the
+   metadata, filenames, and the file's stated scope together; a path match is
+   sufficient to include guidance, not the only reason to include it.
+3. Follow the selected policies' relevant references and skill routes. Read the
+   relevant skill and supporting reference when its task applies, using the
+   linked file directly if the host cannot discover skills. Avoid loading every
+   skill body or every unrelated reference as a startup checklist.
+4. If discovery is incomplete, metadata cannot be interpreted, or scope is
+   uncertain, inspect the candidate files directly. Do not treat a denied read
+   or a missing match as proof that no instruction applies.
+5. Reuse already-read, unchanged guidance. Refresh selection when new paths,
+   languages, frameworks, or workflow requirements enter the task.
+
+Specialized full-inventory duties, such as rule maintenance and overlapping-scope
+conflict checks, still apply when that work is requested. This procedure reduces
+irrelevant context loading; it does not change a policy's scope or obligation.
 
 ## Core Principles
 

@@ -15,6 +15,7 @@ Governing thought: Mississippi documentation exists to help engineers make corre
 - Claims **MUST** be backed by source code, tests, verified samples, design docs, ADRs, or runtime evidence; if a claim cannot be verified, it **MUST NOT** be published as fact. Why: Truthfulness is non-negotiable.
 - Authors **MUST** distinguish guaranteed behavior, default behavior, typical behavior, implementation detail, unsupported behavior, and future intent. Why: Readers need to know what Mississippi actually promises.
 - Each page **MUST** answer one primary question and **MUST** use exactly one page type. Why: Mixed page types produce confusing documents.
+- For the nine product-documentation page types, authors and reviewers **MUST** read and follow the selected contract in the [author-technical-documentation skill](../../.agents/skills/author-technical-documentation/SKILL.md), together with the corresponding local guide below, before drafting or validating. Why: Required page-type behavior stays explicit while unrelated types load only when needed.
 - Every public page **MUST** include `title`, `description`, and `sidebar_position` in frontmatter; authors **MAY** add `sidebar_label`, `pagination_label`, `slug`, `tags`, `draft`, and `id` when needed. Why: Core metadata keeps pages navigable while allowing repo-compatible stability fields.
 - Authors **MUST** use `.md` unless the page genuinely needs MDX components. Why: Plain Markdown is easier to maintain.
 - Internal doc links **MUST** use relative Markdown links. Why: Relative links survive route and branch changes more reliably.
@@ -31,33 +32,25 @@ Governing thought: Mississippi documentation exists to help engineers make corre
 
 All contributors and agents writing or updating public docs under `docs/Docusaurus/docs/`.
 
-## At-a-Glance Quick-Start
+## Procedure and Page-Type Contracts
 
-- Classify the page type before writing.
-- Verify all technical claims from repo evidence.
-- Use `title`, `description`, and `sidebar_position` frontmatter at minimum.
-- Write one page for one primary question.
-- Use Mermaid for diagrams and verified examples for runnable code.
-- Validate links and the Docusaurus build before considering the work complete.
+Use the shared skill to classify the page and read only its selected contract.
+All rules above remain mandatory when a skill is unavailable or not selected;
+read the linked files directly if automatic discovery is unavailable. ADRs use
+their [dedicated policy and template](adr.instructions.md) rather than these
+product-page layouts; shared evidence, metadata, and validation rules still apply.
 
-## Canonical Page Types
-
-- `getting-started`
-- `tutorials`
-- `how-to`
-- `concepts`
-- `reference`
-- `operations`
-- `troubleshooting`
-- `migration`
-- `release-notes`
-
-## Core Principles
-
-- **Truth Before Style**: Verified content matters more than polished prose.
-- **Single Question Per Page**: Readers should know immediately whether they are in the right place.
-- **Page Type Is The Contract**: Physical location may migrate, but page type still governs structure and content.
-- **Evidence And Adjacency**: Every page should say what is true, what is not guaranteed, and where the reader goes next.
+| Page type | Portable contract | Local authoring guide |
+| --- | --- | --- |
+| `getting-started` | [Contract](../../.agents/skills/author-technical-documentation/references/getting-started.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-getting-started.md) |
+| `tutorials` | [Contract](../../.agents/skills/author-technical-documentation/references/tutorials.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-tutorials.md) |
+| `how-to` | [Contract](../../.agents/skills/author-technical-documentation/references/how-to.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-how-to.md) |
+| `concepts` | [Contract](../../.agents/skills/author-technical-documentation/references/concepts.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-concepts.md) |
+| `reference` | [Contract](../../.agents/skills/author-technical-documentation/references/reference.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-reference.md) |
+| `operations` | [Contract](../../.agents/skills/author-technical-documentation/references/operations.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-operations.md) |
+| `troubleshooting` | [Contract](../../.agents/skills/author-technical-documentation/references/troubleshooting.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-troubleshooting.md) |
+| `migration` | [Contract](../../.agents/skills/author-technical-documentation/references/migration.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-migration.md) |
+| `release-notes` | [Contract](../../.agents/skills/author-technical-documentation/references/release-notes.md) | [Guide](../../docs/Docusaurus/docs/contributing/documentation-release-notes.md) |
 
 ## Distributed-Systems Checklist
 
@@ -74,21 +67,6 @@ Apply the relevant subset of these topics when the page describes runtime behavi
 - diagnostics or telemetry needed to validate behavior
 - security constraints
 - unsupported or dangerous patterns
-
-## Definition of Done
-
-Before publishing, confirm that:
-
-- the page type is correct
-- the page scope is narrow and coherent
-- frontmatter is complete
-- internal links resolve
-- the Docusaurus site builds successfully
-- code examples are verified
-- claims about defaults, guarantees, and failure modes are evidenced
-- terminology matches the codebase
-- the page links to adjacent content
-- the page does not overclaim what Mississippi guarantees
 
 ## References
 

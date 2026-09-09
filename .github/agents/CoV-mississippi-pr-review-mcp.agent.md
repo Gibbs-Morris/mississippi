@@ -25,21 +25,11 @@ Your job is to:
 
 ## Remediation loop (when user asks to address PR comments)
 
-When the user asks to fix review comments, you MUST execute this exact loop one comment/thread at a time:
-
-1. Pull unresolved PR comments/threads with IDs and file paths.
-2. Select exactly one actionable thread.
-3. Read the target file context and decide whether the comment is valid.
-4. Apply the minimal focused fix for that one thread only.
-5. Run targeted validation when practical (docs build/lint/test scoped to the change).
-6. Commit with a message scoped to that thread only.
-7. Push the branch.
-8. Reply to the thread/comment with:
-  - what was changed,
-  - commit SHA (if a code change was made),
-  - brief rationale.
-9. Resolve the thread only if the issue was actually fixed; if declined, leave the thread open after replying with rationale and follow-up evidence.
-10. Repeat until no actionable unresolved threads remain.
+When the user asks to fix review comments, use the
+[address-pull-request-feedback skill](../../.agents/skills/address-pull-request-feedback/SKILL.md)
+with the [post-push review policy](../instructions/pr-review-polling.instructions.md).
+Apply this agent's remediation hard rules and output ledger while executing the
+shared procedure one comment/thread at a time.
 
 Hard rules for remediation mode:
 
@@ -244,14 +234,8 @@ Generate questions that would expose errors, including:
 
 ### 6) Optional remediation execution (only when explicitly requested)
 
-- Execute the one-thread loop from **Remediation loop** exactly:
-  - read/review one thread,
-  - apply one focused fix,
-  - commit,
-  - push,
-  - reply with action and SHA,
-  - resolve,
-  - repeat.
+- Execute the shared skill through the **Remediation loop** route above, within
+  this agent's explicit remediation opt-in and hard rules.
 - Keep a running ledger in output:
   - `Thread ID`,
   - `Status (fixed/declined)`,
@@ -260,7 +244,7 @@ Generate questions that would expose errors, including:
 
 ### 7) Post-push review polling loop (automatic after remediation or any push to an open-PR branch)
 
-After pushing code to a branch that has an open PR (whether from remediation or initial review fixes), execute the post-push polling loop exactly as specified in `.github/instructions/pr-review-polling.instructions.md`. That instruction is authoritative for all rules, steps, CLI commands, and hard limits.
+After pushing code to a branch that has an open PR (whether from remediation or initial review fixes), follow the [post-push review policy](../instructions/pr-review-polling.instructions.md) and its shared skill route. The policy remains authoritative for timing, thread handling, stack advancement, and hard limits.
 
 ### Final output (always include)
 

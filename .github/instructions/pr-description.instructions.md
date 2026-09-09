@@ -52,72 +52,15 @@ Governing thought: PR descriptions explain one change, why it matters, and how i
 
 All contributors creating or updating pull requests.
 
-## At-a-Glance Quick-Start
-
-- Title format: `<Human-readable summary> +semver: <feature|fix|breaking|skip>`
-- Before writing: `git diff <actual-pr-base>...HEAD --stat` to inspect this PR's changes
-- Use the PR template in `.github/PULL_REQUEST_TEMPLATE.md`
-- Update title and description on every push if PR exists
-- Explain the outcome and motivation, then give the evidence needed to review it; remove unused template sections
-
 ## Procedure
 
-### Initial PR Description
-
-1. Identify the PR base and run `git diff <actual-pr-base>...HEAD --stat`
-2. Read through each changed file to understand what was done
-3. Identify the business problem being solved
-4. Write the Business Value section first
-5. Add stack context and size rationale when applicable
-6. Explain the design and review order only to the depth needed
-7. Record actual validation results and unresolved work
-8. Add verified examples or migration guidance where needed
-
-### Updating on Subsequent Commits
-
-1. After each commit/push, review changes since last description update
-2. Update scope, review map, stack dependencies, and size rationale if they changed
-3. Update code examples if APIs changed
-4. Verify Business Value still accurately reflects the PR scope
-5. Remove any stale information that no longer applies
-
-## Template Structure
-
-Use the template proportionally; retain the outcome, review context, and validation evidence, and remove optional sections that add no information:
-
-1. **Business Value** - Why this matters (required)
-2. **Scope and Review Guide** - Single outcome, review order, size exception if needed
-3. **Stack Context** - Parent, position, and landing intent (stacked PRs only)
-4. **How It Works** - Design explanation (non-trivial changes only)
-5. **Quality Gates** - Actual results and readiness checklist
-6. **Migration Notes** - Breaking change guidance (if applicable)
-7. **Related Issues** - Verified repository issue links (required for every PR); closing references only for completed issue scope
-
-## Good vs Bad Examples
-
-### Bad: Implementation-focused
-
-> "Added FireAndForgetEffectWorkerGrain.cs that implements IFireAndForgetEffectWorkerGrain interface"
-
-### Good: Value-focused
-
-> "Commands now return without waiting for external notification calls. Those calls run in background worker grains. The linked tests verify that a slow notification does not block command completion."
-
-### Bad: Missing context
-
-> "Changed HandleAsync signature to include brookKey parameter"
-
-### Good: Complete context
-
-> "**Breaking change**: The `HandleAsync` method on `EventEffectBase` now requires `brookKey` and `eventPosition` parameters. This enables effects to correlate with specific aggregate instances and event positions for debugging and idempotency. Existing effects must add these parameters (they can be ignored if not needed)."
-
-## Core Principles
-
-- Lead with business value, not implementation details
-- Write for the reviewer who has no context
-- Include enough detail that someone could implement similar functionality
-- Keep descriptions synchronized with actual code changes
-- Use tables and diagrams to convey complex relationships
+When drafting or updating a PR title or description, use the
+[write-pull-request-description skill](../../.agents/skills/write-pull-request-description/SKILL.md)
+with the rules above and the [repository PR template](../PULL_REQUEST_TEMPLATE.md).
+The skill owns the drafting and evidence-reconciliation procedure; this file
+retains the repository's mandatory title, content, and validation requirements.
+The rules above apply even when the skill is not selected or available. If the
+host cannot discover skills automatically, read the linked skill file directly.
 
 ## References
 

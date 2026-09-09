@@ -13,7 +13,8 @@ $testPaths = @(
     (Join-Path $PSScriptRoot 'RepositoryAutomation.Tests.ps1'),
     (Join-Path $PSScriptRoot 'MutationAutomation.Tests.ps1'),
     (Join-Path $PSScriptRoot 'MutationSummary.Tests.ps1'),
-    (Join-Path $PSScriptRoot 'PowerShellTestHarness.Tests.ps1')
+    (Join-Path $PSScriptRoot 'PowerShellTestHarness.Tests.ps1'),
+    (Join-Path $PSScriptRoot 'PrFeedbackSkill.Tests.ps1')
 )
 foreach ($testPath in $testPaths) {
     if (-not (Test-Path -LiteralPath $testPath -PathType Leaf)) { throw "Test file not found: $testPath" }

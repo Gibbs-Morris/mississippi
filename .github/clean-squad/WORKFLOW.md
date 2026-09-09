@@ -1003,7 +1003,7 @@ The Product Owner is an orchestrator, not an implementation agent.
 ### ADR Protocol
 
 - Every significant decision **MUST** be recorded as an ADR.
-- ADRs **MUST** use the MADR 4.0.0 template defined in `.github/instructions/adr.instructions.md`.
+- ADRs **MUST** use the MADR 4.0.0 template specified by `.github/instructions/adr.instructions.md`.
 - ADRs **MUST** be published to `docs/Docusaurus/docs/adr/` using the filename pattern `NNNN-title-with-dashes.md`.
 - When a feature branch adds ADRs, the branch owner **MUST** treat those numbers as provisional and perform a final renumbering pass against the latest `main` during merge preparation, updating filenames, `ADR-NNNN` titles, `sidebar_position`, and relative ADR links for ADRs introduced by that branch.
 - ADRs are immutable — superseded decisions get a new ADR referencing the old.
@@ -1298,12 +1298,12 @@ agent time.
 
 ### Review Thread Handling
 
-- Use GitHub MCP or GitHub CLI to read, reply to, and resolve threads.
-- For each comment:
-  - Read and understand it.
-  - Determine if it is in scope.
-  - If in scope: fix, commit, push, reply with evidence, resolve.
-  - If out of scope: reply with reasoned explanation, leave open for reviewer.
+Use the [address-pull-request-feedback skill](../../.agents/skills/address-pull-request-feedback/SKILL.md)
+with the [post-push review policy](../instructions/pr-review-polling.instructions.md)
+for thread collection, disposition, and remediation. This workflow's delegation,
+canonical ownership, freshness, wait accounting, and merge-readiness contracts
+remain in force.
+
 - Resolving threads is **critical** — the PR cannot merge with open threads.
 - One comment = one commit = one reply = one resolution.
 
