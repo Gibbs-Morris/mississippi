@@ -79,7 +79,7 @@ preparation incomplete; do not assume the missing guidance is irrelevant.
 
 ```powershell
 rg --files --glob '*.instructions.md' .github/instructions
-rg --line-number --max-count 1 --glob '*.instructions.md' '^applyTo:' .github/instructions
+rg --line-number --max-count 1 --glob '*.instructions.md' '^[ \t]*applyTo:' .github/instructions
 ```
 
 PowerShell fallback when `rg` is unavailable:
@@ -88,7 +88,7 @@ PowerShell fallback when `rg` is unavailable:
 $instructionFiles = Get-ChildItem -LiteralPath .github/instructions -Recurse -File -Filter '*.instructions.md' |
     Sort-Object FullName
 $instructionFiles.FullName
-Select-String -LiteralPath $instructionFiles.FullName -Pattern '^applyTo:' -List
+Select-String -LiteralPath $instructionFiles.FullName -Pattern '^[ \t]*applyTo:' -List
 ```
 
 The file inventory includes candidates even when the scope search returns no

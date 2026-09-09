@@ -53,9 +53,10 @@ an example in a document body does not.
 - Global rule maintenance retains all 44 files. Semantic additions, generated
   content, and uncertainty cases are explicit test inputs, not proof that a
   model automatically inferred them.
-- A malformed-metadata fixture keeps all four candidate names discoverable;
-  missing and invalid headers require inspection, and a body-level example is
-  not accepted as metadata.
+- A six-file metadata fixture keeps all candidate names discoverable. Both
+  discovery methods find space- and tab-indented scope candidates; valid
+  space-indented frontmatter parses, while invalid tab indentation, missing or
+  malformed headers, and body-level examples require direct inspection.
 - Source comparisons verify unchanged instruction/skill bodies and preserved
   substantive entrypoint rules and validation sections. Markdown lint and
   relative-link checks pass.
@@ -69,19 +70,19 @@ guarantee every model's instruction selection.
 At parent snapshot `32703e87af5c11e37ffcd64236b99cec87380377`, the instruction bodies contain
 29,477 whitespace-delimited words. The two original entrypoints add 1,408,
 giving 30,885 words under the previous blanket preparation rule.
-The revised entrypoints contain 1,985 words and the tested rg command pair
+The revised entrypoints contain 1,987 words and the tested rg command pair
 adds 132. Supporting task references are additional.
 
 | Static scenario | Selected instruction bodies | Total with entrypoints and metadata |
 | --- | ---: | ---: |
-| Agent Markdown | 11,659 | 13,776 |
-| Core C# | 17,131 | 19,248 |
-| Sample C# | 21,211 | 23,328 |
-| PowerShell | 11,396 | 13,513 |
-| Product documentation | 13,067 | 15,184 |
-| ADR | 13,824 | 15,941 |
-| C# snippet in Markdown | 16,378 | 18,495 |
-| Global rule maintenance | 29,477 | 31,594 |
+| Agent Markdown | 11,659 | 13,778 |
+| Core C# | 17,131 | 19,250 |
+| Sample C# | 21,211 | 23,330 |
+| PowerShell | 11,396 | 13,515 |
+| Product documentation | 13,067 | 15,186 |
+| ADR | 13,824 | 15,943 |
+| C# snippet in Markdown | 16,378 | 18,497 |
+| Global rule maintenance | 29,477 | 31,596 |
 
 The savings depend on the task. Full-inventory work intentionally keeps the full
 corpus and pays the added routing overhead. Unknown scopes may also require
