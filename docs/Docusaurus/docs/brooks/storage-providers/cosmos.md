@@ -55,6 +55,8 @@ Large appends write their event batches before advancing the committed cursor. C
 
 Once a cursor commit has been attempted, the writer does not attempt compensating deletes in response to its exception. The commit operation may already have removed pending metadata before reporting failure. The writer propagates the original failure and leaves appended events and any remaining pending metadata intact. Callers still need authoritative recovery to distinguish a committed cursor from an unknown outcome; an exception alone is not proof that the append did not commit.
 
+The current recovery service does not reconcile pending metadata when a committed cursor already exists. A leftover pending document can therefore block later appends; preserving the event data does not by itself restore write availability.
+
 ## Operational Notes
 
 <!-- Placeholder: throughput, partitioning, retry behavior, monitoring -->
