@@ -41,10 +41,22 @@ Use the SDK composition packages when following the full application pattern. Us
 
 | Package | Consumer role |
 | --- | --- |
-| [Mississippi.Sdk.Runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Runtime/Sdk.Runtime.csproj) | Composes runtime dependencies, Cosmos providers, and Inlet runtime generators for a silo project |
-| [Mississippi.Sdk.Gateway](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Gateway/Sdk.Gateway.csproj) | Composes gateway dependencies and Inlet gateway generators |
-| [Mississippi.Sdk.Client](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Client/Sdk.Client.csproj) | Composes client hosting, Inlet, Reservoir, and Inlet client generators |
+| [Mississippi.Sdk.Runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Runtime/Sdk.Runtime.csproj) | Composes runtime libraries and Cosmos providers for a silo project |
+| [Mississippi.Sdk.Gateway](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Gateway/Sdk.Gateway.csproj) | Composes gateway libraries for an ASP.NET Core project |
+| [Mississippi.Sdk.Client](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Sdk.Client/Sdk.Client.csproj) | Composes client hosting, Inlet, and Reservoir libraries |
 | [Mississippi.Hosting.Client](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Hosting.Client/Hosting.Client.csproj) | Provides `AddMississippiClient()` and `MississippiClientBuilder` for Blazor WebAssembly startup |
+
+### Build-Time Generator References
+
+Configure source generation in the project that consumes the domain types. SDK library references and compiler analyzer references are separate inputs. In source-based applications, Spring explicitly references both the matching Inlet generator and `Inlet.Generators.Core` with `OutputItemType="Analyzer"`, `ReferenceOutputAssembly="false"`, and `PrivateAssets="all"`.
+
+| Consuming project | Generator project | Verified project configuration |
+| --- | --- | --- |
+| Orleans runtime | `Inlet.Runtime.Generators` | [Spring.Runtime.csproj](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Spring.Runtime.csproj) |
+| ASP.NET Core gateway | `Inlet.Gateway.Generators` | [Spring.Gateway.csproj](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Spring.Gateway.csproj) |
+| Blazor client | `Inlet.Client.Generators` | [Spring.Client.csproj](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Spring.Client.csproj) |
+
+The SDK projects mark their own analyzer references private. Use the explicit consuming-project configuration above when building from source, and verify analyzer delivery separately when composing an application from NuGet packages.
 
 See [Spring host applications](../samples/spring-sample/concepts/host-applications.md) for the domain, runtime, gateway, and client project boundaries. For a client entry point, use [Inlet getting started](../inlet/getting-started/getting-started.md).
 
