@@ -6,7 +6,7 @@ applyTo: 'docs/Docusaurus/docs/adr/[0-9][0-9][0-9][0-9]-*.md'
 
 Governing thought: ADRs use the MADR 4.0.0 template, live in `docs/Docusaurus/docs/adr/` for Docusaurus publishing, and are immutable once accepted.
 
-> Drift check: Review the MADR 4.0.0 specification at <https://adr.github.io/madr/> before modifying the template; check `docs/key-principles/architecture-decision-records.md` for foundational thinking.
+> Drift check: Review the MADR 4.0.0 specification at <https://adr.github.io/madr/> before modifying the [skill's MADR body template](../../.agents/skills/author-architecture-decision/assets/madr-body.md); check `docs/key-principles/architecture-decision-records.md` for foundational thinking.
 
 ## Rules (RFC 2119)
 
