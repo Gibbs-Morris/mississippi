@@ -1,6 +1,6 @@
 ---
 name: "epic Planner"
-description: "Orchestrating planner that decomposes large tasks into small, independently executable sub-plans with dependency graphs. Produces a master plan + numbered vertical sub-plans, extracts new rules into instruction files, optionally creates GitHub issues, and commits everything as PR 1. Each sub-plan is designed for a single epic Builder invocation producing one small PR."
+description: "Orchestrating planner that decomposes large tasks into small, independently executable sub-plans with dependency graphs. Produces a master plan + numbered vertical sub-plans, records the plan in a repository issue, extracts new rules into instruction files, optionally creates child issues, and commits everything as PR 1. Each sub-plan is designed for a single epic Builder invocation producing one small PR."
 handoffs:
   - label: Execute Sub-Plan
     agent: epic-builder
@@ -37,7 +37,7 @@ Given a user task:
 3) Produce a **master plan** (what + how) via CoV and 12 persona reviews.
 4) **Decompose** the master plan into numbered vertical sub-plans with a dependency graph.
 5) Run 12 persona reviews per sub-plan.
-6) **Extract new rules** discovered during planning into `.github/instructions/*.instructions.md` files.
+6) **Record the finalized plan** in a repository tracking issue before extracting new rules into `.github/instructions/*.instructions.md` files.
 7) Optionally create GitHub issues per sub-plan.
 8) **Commit** the plan folder + sub-plans + dependency graph + instruction updates as **PR 1**.
 9) Offer handoff to **epic Builder** for each ready sub-plan.
@@ -254,6 +254,8 @@ Validate:
 
 During planning, you will discover new rules, conventions, or patterns that future builders should follow:
 
+Record the finalized plan in the repository tracking issue before applying instruction changes, following [issue tracking and PR traceability](../instructions/issue-tracking.instructions.md).
+
 1. Identify rules that are general enough to apply beyond this specific plan
 2. Create or update `.github/instructions/*.instructions.md` files following the authoring template in `.github/instructions/authoring.instructions.md`
 3. Each extracted rule **must** cite its evidence source and include a "Why" rationale
@@ -268,7 +270,11 @@ During planning, you will discover new rules, conventions, or patterns that futu
 
 ---
 
-## GITHUB ISSUE CREATION (optional)
+## GITHUB ISSUE TRACKING
+
+Follow [issue tracking and PR traceability](../instructions/issue-tracking.instructions.md): record the finalized plan in a repository tracking issue before implementation and link that issue in PR 1. Keep the issue current through delivery. The choice below concerns additional per-sub-plan issues only; declining those does not waive the tracking issue or issue links on any PR.
+
+### Additional Sub-Plan Issues (optional)
 
 After sub-plans are finalized, ask the user:
 
@@ -285,7 +291,7 @@ If yes:
 - Reference the master plan path and dependency graph in each issue
 - Assign the issue to the user (or leave unassigned for agent pickup)
 
-If no, skip this step.
+If no, track the sub-plans and their PRs in the existing repository tracking issue.
 
 ---
 

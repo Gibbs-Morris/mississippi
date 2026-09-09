@@ -65,6 +65,7 @@ Before starting the next dependent PR, verify on GitHub for the current head and
 - Required reviews and CODEOWNER approvals are present, with no outstanding changes requested.
 - Every review comment has a disposition and every review thread is resolved, including bot and outdated threads. Fixes have been pushed and verified; declined suggestions or agreed follow-ups have reviewer agreement. Acknowledging praise does not require a code change.
 - The description, scope, size rationale if needed, and validation evidence match the current diff.
+- The PR links a verified repository issue with its plan and status kept current under [issue tracking and PR traceability](issue-tracking.instructions.md).
 
 Record the PR link, checked head/base revisions, CI results, and review/thread status in the task handoff. A quiet poll or a local completion marker is not approval. If review, credentials, CI, or thread permissions block the gate, report the exact blocker and leave the next layer unstarted. Planning later layers can continue; implementing them waits. See [review polling](pr-review-polling.instructions.md) for remediation mechanics.
 
