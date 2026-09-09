@@ -63,7 +63,7 @@ Complete file: [BankAccountAggregate.cs](https://github.com/Gibbs-Morris/mississ
 
 The aggregate's `[BrookName]` identifies the event-stream family `SPRING.BANKING.ACCOUNT`; the entity ID distinguishes individual accounts. `[SnapshotStorageName]` identifies the serialized snapshot type. The Cosmos database and container are separate host configuration.
 
-`[GenerateSerializer]`, `[Alias]`, and `[Id]` describe Orleans serialization. `[GenerateAggregateEndpoints]` opts into generated integration around the reusable aggregate runtime. `[GenerateMcpTools]` also exposes the opted-in commands as tools when the gateway registers the generated MCP surface.
+`[GenerateSerializer]`, `[Alias]`, and `[Id]` describe Orleans serialization. `[GenerateAggregateEndpoints]` opts into generated integration around the reusable aggregate runtime. `[GenerateMcpTools]` opts the commands into generated tool classes. Spring maps the HTTP `/mcp` endpoint only in Development; use the [local MCP how-to](../how-to/mcp-server-vscode-testing.md) to explore those tools.
 
 ## Step 2: Express the Request as a Command
 
