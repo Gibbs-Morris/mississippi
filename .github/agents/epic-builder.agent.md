@@ -245,19 +245,13 @@ Note: `prNumber` and `prUrl` are filled in after the PR is created (update the f
 
 After implementation is complete and the completion marker is written:
 
-1. For native stacks, use `gh stack submit --auto` with the skill's remote guidance, then verify membership with `gh stack view --json`; use MCP or `gh pr create` for standalone PRs
+1. For native stacks, use `gh stack submit --auto` with the gh-stack skill's remote guidance, then verify membership with `gh stack view --json`; use MCP or `gh pr create` for standalone PRs
 2. **Title**: `<sub-plan title> +semver: <type>` (using the `semver` field from `dependencies.json` or the sub-plan's PR metadata section)
-3. **Body**: Follow `.github/PULL_REQUEST_TEMPLATE.md` structure:
-   * Business Value: reference the master plan objective and this sub-plan's contribution
-   * How It Works: summarize the implementation
-   * Scope and Review Guide: this layer's outcome, key files, and size rationale if needed
-   * Stack Context: position, parent PR, verified parent gate, and landing intent
-   * Quality Gates: checklist of build/test/cleanup results
-   * Reference: link to master plan path and dependency graph
+3. **Body**: Use the [write-pull-request-description skill](../../.agents/skills/write-pull-request-description/SKILL.md) with the [PR authoring policy](../instructions/pr-description.instructions.md) and [repository template](../PULL_REQUEST_TEMPLATE.md). Preserve this sub-plan's contribution to the master plan, links to the master plan and dependency graph, and this layer's stack and validation context.
 4. **Base**: the verified immediate parent for a stack layer, otherwise `main`; update generated titles/bodies to match the repository template
 5. After PR is created, update the `.complete.json` marker with the `prNumber` and `prUrl`, then push the update.
 6. Mark the PR ready when appropriate, complete review polling, and verify the full advancement gate for the final pushed revision. Report blockers precisely; do not equate PR creation or a marker with readiness for the next layer.
-7. Hold ready layers open for grouped landing when planned. When merge is authorized, use the skill's `gh stack merge <target> --yes` workflow for the ready scope; revalidate affected layers after updates.
+7. Hold ready layers open for grouped landing when planned. When merge is authorized, use the gh-stack skill's `gh stack merge <target> --yes` workflow for the ready scope; revalidate affected layers after updates.
 
 ---
 

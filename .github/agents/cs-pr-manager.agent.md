@@ -71,23 +71,18 @@ At Phase 9 entry or resume after a failed startup boundary:
 
 ### 2. PR Title
 
-Format: `<Human-readable description> +semver: <type>`
-
-Examples:
-
-- `Add fire-and-forget event effects for async side effects +semver: feature`
-- `Fix null reference in aggregate grain activation +semver: fix`
+Use the [write-pull-request-description skill](../../.agents/skills/write-pull-request-description/SKILL.md)
+with the [PR authoring policy](../instructions/pr-description.instructions.md)
+and [repository template](../PULL_REQUEST_TEMPLATE.md) to draft or refresh the
+PR title.
 
 ### 3. PR Description
 
-Follow the template in `.github/PULL_REQUEST_TEMPLATE.md`:
+Use `write-pull-request-description` with the same policy and template for the
+PR body. Publication remains within the active bounded delegation.
 
-- **Business Value** — why this matters (required)
-- **Scope and Review Guide** — one outcome, review path, and size rationale when needed
-- **Stack Context** — position, parent gate evidence, and landing intent when stacked
-- **How It Works** — explanation or diagrams only when useful for this change
-- **Quality Gates** — build/test evidence, plus mutation results or an explicit not-run status as an additional signal
-- **Migration Notes** — breaking change guidance if applicable
+Report mutation execution status, available results, and significant gaps as an
+additional quality signal under the [mutation-testing policy](../instructions/mutation-testing.instructions.md).
 
 The PR description must also contain the `Reviewer Audit Summary` defined by `.github/clean-squad/WORKFLOW.md`, sourced from current policy-authoritative audit inputs only. Do not rely on `.thinking/` paths as reviewer-visible evidence; keep `.thinking/` references internal, inline any reviewer-needed detail directly in the PR body, and use reviewer-visible comments only when separately delegated or authorized.
 
