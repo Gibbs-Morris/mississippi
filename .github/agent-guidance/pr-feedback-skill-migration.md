@@ -52,10 +52,12 @@ not depend solely on implicit skill selection.
 - Skill schema, portability, and local resource/consumer links pass.
 - Markdown lint adds no findings. The CoV PR agent's existing findings decrease
   from 14 to 5 when duplicated lists are removed; other changed guidance passes.
-- A read-only CLI test uses two threads per GraphQL page and ten comments per
-  REST page. It retrieves 7 threads over 4 pages and 14 inline comments over 2
-  pages; every thread anchor joins to a top-level REST comment. The query's first
-  comment is an identity anchor, not a complete discussion.
+- A read-only CLI test uses a test-only copy of the bundled query with
+  `reviewThreads(first: 2)` and ten comments per REST page; the shipped query
+  retains `reviewThreads(first: 100)`. The reduced page sizes exercise pagination:
+  7 threads over 4 GraphQL pages and 14 inline comments over 2 REST pages. Every
+  thread anchor joins to a top-level REST comment. The query's first comment is
+  an identity anchor, not a complete discussion.
 - Reply and resolution examples follow the documented provider APIs. No
   synthetic comments or thread mutations were used to validate the new package.
 - Codex and Copilot discover the enabled package in this repository and in a
