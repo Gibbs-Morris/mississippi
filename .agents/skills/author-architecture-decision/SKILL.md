@@ -1,11 +1,13 @@
 ---
 name: author-architecture-decision
-description: Draft, revise, or supersede architecture decision records (ADRs) from evidence and local lifecycle rules. Use when writing an ADR, updating a proposed record, or recording a changed accepted decision. Not for designing a system from scratch or summarizing an ADR in a pull request.
+description: Assess whether a choice warrants an architecture decision record (ADR), or draft, revise, or supersede one from evidence and local lifecycle rules. Use when deciding whether to record an architectural choice or writing an ADR. Not for designing a system from scratch or summarizing an ADR in a pull request.
 ---
 
 # Author an architecture decision
 
-Produce the requested decision record or focused update. Respect the user's
+Assess whether a record is warranted, or produce the requested record or focused
+update. For assessment-only requests, return a recommendation and rationale
+without creating or editing a record. Respect the user's
 format and output scope, the project's lifecycle, and the caller's authority.
 Writing a record does not itself approve the decision, implement it, or authorize
 publication, branch changes, or workflow-state updates.
