@@ -182,10 +182,12 @@ Skill names and descriptions support discovery; the body loads when selected.
 Link supporting references from the body and explain when to read them. An
 agent's tool permissions remain separate from skill discovery.
 
-Placement and format checked September 8, 2026 against the
+Shared placement and format follow the
 [GitHub skill guidance](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills),
 [Codex skill guidance](https://learn.chatgpt.com/docs/build-skills), and
 [Agent Skills specification](https://agentskills.io/specification).
+For dated verification evidence, see the
+[pilot research record](../../.github/agent-guidance/logging-skill-pilot.md#research-decisions).
 
 ### Layer 4 — Custom Agents (Purpose-Built Personas)
 

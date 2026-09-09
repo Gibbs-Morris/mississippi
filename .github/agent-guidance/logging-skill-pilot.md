@@ -24,6 +24,10 @@ The removed quick-start's unconditional public helper example is not a new acces
 
 ## Research decisions
 
+Shared-root placement and skill format were checked September 8, 2026 against
+the GitHub, Codex, and Agent Skills sources linked below. This is dated
+verification evidence, not a guarantee that host behavior remains unchanged.
+
 - Use a specific procedure only when it adds value; avoid a skill per policy file. [Agent Skills authoring guidance](https://agentskills.io/skill-creation/best-practices)
 - Keep mandatory standards in custom instructions; load detailed task procedure on demand. [GitHub skill guidance](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills)
 - Use the single shared `.agents/skills` root, supported by [Copilot](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) and [Codex](https://learn.chatgpt.com/docs/build-skills).
