@@ -10,7 +10,8 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 
 ## Rules (RFC 2119)
 
-- Copilot **MUST** follow all repository instruction files, especially shared guardrails, C#, naming, logging, and testing guidance. Why: Keeps suggestions compliant.
+- Copilot **MUST** follow all applicable repository instruction files, especially shared guardrails, C#, naming, logging, and testing guidance. Why: Keeps suggestions compliant with their declared scopes.
+- Copilot **MUST** use the [instruction-loading procedure](../AGENTS.md#instruction-loading) when selecting guidance not already supplied by the host. Why: All global and relevant requirements remain mandatory while unrelated instruction bodies stay out of startup context.
 - Copilot **MUST** follow [token efficiency and reassessment](instructions/agent-efficiency.instructions.md), including during persistent goals. Why: Repeated effort needs new evidence or a better approach while preserving the full outcome and required gates.
 - Copilot **MUST** follow the [mutation-testing policy](instructions/mutation-testing.instructions.md), prioritizing correct delivery and meaningful unit-test coverage over survivor chasing. Why: Mutation testing is an additional quality signal with no mandatory repository score threshold or ordinary completion gate.
 - Copilot **MUST** follow [PR size and stacked delivery](instructions/pr-size-and-stacking.instructions.md), using the `gh-stack` skill for dependent PRs and completing each layer's CI/review gate before starting the next. Why: Reviewable increments prevent unchecked work from accumulating.
@@ -30,7 +31,7 @@ These rules apply to Copilot chat/search responses for this repository.
 
 ## At-a-Glance Quick-Start
 
-- Use shared guardrails and C#/naming/logging/testing instructions as the baseline.
+- Use all global guardrails and the instruction scopes relevant to the task, including C#/naming/logging/testing guidance when applicable.
 - Build/test with `pwsh ./go.ps1`; tidy with `pwsh ./clean-up.ps1`.
 - **When you see StyleCop/formatting warnings (SA1xxx), run cleanup first**—don't manually fix indentation/spacing.
 - Manage packages with `dotnet add/remove package`; never add `Version` attributes.
