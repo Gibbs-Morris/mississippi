@@ -33,16 +33,16 @@ You are the **epic Builder** — a sub-plan execution agent. You ONLY execute wo
 * Acceptable inputs:
 
   * Path to a sub-plan file: `/plan/YYYY-MM-DD/<name>/sub-plans/<id>-<slug>.md`
-  * GitHub issue number (e.g., `#42`) or URL (e.g., `https://github.com/<owner>/<repo>/issues/42`) — the issue must have been created by the **epic Planner** and must contain the sub-plan path in its metadata block (see below).
+  * GitHub issue number (e.g., `#42`) or URL (e.g., `https://github.com/<owner>/<repo>/issues/42`) — the issue identifies the sub-plan through the metadata block or an unambiguous plan path (see below); a relevant reused issue is valid regardless of who created it.
 
 ### Resolving a GitHub issue to a sub-plan path
 
 When a GitHub issue reference is provided instead of a direct path:
 
-1. Fetch the issue body via MCP (`mcp_github_issue_read`).
+1. Fetch the issue body through the configured GitHub MCP tool, or confirm `gh` is installed with `Get-Command gh` before using `gh issue view`. If neither integration works, report the access blocker without claiming the issue was read.
 2. Locate the **`<!-- sub-plan-path: ... -->`** HTML comment in the issue body. This machine-parseable marker is written by the epic Planner.
 3. Extract the sub-plan path from the marker.
-4. If the marker is missing, search the issue body for a path matching `/plan/YYYY-MM-DD/<name>/sub-plans/<id>-<slug>.md`. If still not found, ask the user for the sub-plan path.
+4. If the marker is missing, search the issue body for a path matching `/plan/YYYY-MM-DD/<name>/sub-plans/<id>-<slug>.md`. If the path is missing or multiple sub-plans are possible, ask the user for the intended sub-plan path.
 5. Proceed with the resolved path as if the user had provided it directly.
 
 * If the provided path is not under `/plan/`, or does not exist, or does not contain a readable sub-plan, ask for a correct sub-plan path.
@@ -52,10 +52,12 @@ When a GitHub issue reference is provided instead of a direct path:
 You may ask the user questions ONLY to obtain:
 
 1. the sub-plan path, or
-2. missing runtime secrets/credentials that cannot be inferred and are required to run tests/build, or
+2. confirmation that required runtime or GitHub access has been configured through an approved secure mechanism, or
 3. a decision explicitly marked as required-but-unresolved inside the sub-plan.
 
 Outside of the above, you do not ask questions; you execute.
+
+Never ask users to paste credentials, tokens, or other secret values into chat. Ask them to configure access locally or through an approved secret store, then verify access without printing secrets.
 
 ---
 
@@ -109,7 +111,7 @@ You may only conclude a turn when ALL are true:
 4. **RELENTLESS ITERATION**: If tests fail, iterate until green.
 5. **SUB-PLAN IS LAW**: Do not invent scope. If sub-plan is unclear, request an updated sub-plan path (gating exception).
 6. **NO OPTION PARALYSIS**: The sub-plan already chose; implement what it says.
-7. **PLAN FOLDER IS READ-ONLY**: Do NOT modify any existing files in the plan folder. The only permitted write is adding the `.complete.json` marker.
+7. **PLAN CONTENT IS READ-ONLY**: Do not modify existing plan content except to add a missing verified repository issue URL to the selected legacy sub-plan during issue intake. Do not change its implementation steps, acceptance criteria, dependencies, or other plan files. Adding the `.complete.json` marker remains permitted.
 
 ---
 
@@ -159,7 +161,7 @@ Currently ready sub-plans (no unmet dependencies):
 Action: Resolve the listed gate blockers before starting this dependent sub-plan.
 ```
 
-### 6. If all dependencies are met: proceed to implementation
+### 6. If all dependencies are met: continue with plan ingestion and issue intake
 
 ---
 
@@ -176,9 +178,12 @@ Action: Resolve the listed gate blockers before starting this dependent sub-plan
 
 ### 2. Validate preconditions
 
+* Read the verified issue URL from the sub-plan or handoff and check that its recorded scope covers this work under [issue tracking and PR traceability](../instructions/issue-tracking.instructions.md).
+* For a legacy sub-plan without tracking, search for a relevant open issue and reuse it or create one before implementation. Record this sub-plan's scope, acceptance criteria, implementation plan, and validation there, using the policy's restricted record for confidential details.
+* Prefer configured GitHub MCP tools; check `Get-Command gh` before the CLI fallback. If issue access or creation is blocked, report it and leave implementation unstarted. Verify the issue number or URL before recording success.
 * Identify build/test commands and prerequisites from repo docs/config.
 * Identify required dependencies/SDK versions from repo.
-* If missing secrets/config that cannot be inferred, ask (gating exception).
+* If required access is missing, ask the user to configure it through an approved secure mechanism, then retry validation (gating exception).
 
 ---
 
@@ -190,6 +195,7 @@ Create only the branch for the current sub-plan after dependency verification:
 * For a standalone change or a dependency already merged, branch from current `main`.
 * For the first layer of planned dependent work, initialize with `gh stack init <branch>` before editing; for a successor, check out its verified parent and run `gh stack add <branch>`. Follow the skill's remote and non-interactive guidance.
 * New epic branches use `feature/epic/...` to also match existing branch filters. [Native stacks inherit trunk PR checks](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs#rules-and-ci-enforcement), regardless of the immediate parent's prefix; verify native membership and actual CI, including for older plans with `epic/...` names. If native stacking is unavailable, use standalone PRs after dependencies merge to `main`.
+* Before implementation, add the verified repository issue URL to the selected legacy sub-plan if it is missing. This tracking metadata is the only permitted edit to existing plan content and is included in this sub-plan's PR.
 
 ---
 
@@ -197,6 +203,7 @@ Create only the branch for the current sub-plan after dependency verification:
 
 Execute the sub-plan end-to-end:
 
+* Keep the issue current through implementation and review, link it in every PR description, and record the PR link and validation on the issue.
 * Implement in small, verifiable increments.
 * Run tests frequently.
 * Keep changes minimal and consistent with repo patterns.
