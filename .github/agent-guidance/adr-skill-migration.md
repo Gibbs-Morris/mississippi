@@ -69,8 +69,8 @@ and negative activation boundaries. They are an evaluation rubric, not recorded
 passing model trials. Full cross-agent behavioral conformance and app/IDE smoke
 tests remain unverified, so this PR does not close every evaluation item in #553.
 
-The ADR instruction shrinks from 1,069 to 749 whitespace-delimited words,
-removing 320 words and 82 lines from the currently mandated instruction reads.
+The ADR instruction shrinks from 1,069 to 757 whitespace-delimited words,
+removing 312 words and 81 lines from the currently mandated instruction reads.
 The two agent changes remove a net 272 words and 92 lines. Discovery metadata
 adds its own startup cost; these are corpus measurements, not measured token
 counts or latency savings. No actual ADR, application, test project, package, or
