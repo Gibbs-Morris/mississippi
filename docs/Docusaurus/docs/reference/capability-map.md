@@ -74,7 +74,7 @@ Start with [building an aggregate](../samples/spring-sample/tutorials/building-a
 | [Mississippi.Tributary.Runtime.Storage.Abstractions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime.Storage.Abstractions/Tributary.Runtime.Storage.Abstractions.csproj) | Snapshot storage provider, reader, and writer contracts |
 | [Mississippi.Tributary.Runtime.Storage.Cosmos](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Runtime.Storage.Cosmos/Tributary.Runtime.Storage.Cosmos.csproj) | Cosmos snapshot storage |
 | [Mississippi.Common.Runtime.Storage.Abstractions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Common.Runtime.Storage.Abstractions/Common.Runtime.Storage.Abstractions.csproj) | Shared retry-policy contract for storage implementations |
-| [Mississippi.Common.Runtime.Storage.Cosmos](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Common.Runtime.Storage.Cosmos/Common.Runtime.Storage.Cosmos.csproj) | Cosmos retry implementation and retry options |
+| [Mississippi.Common.Runtime.Storage.Cosmos](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Common.Runtime.Storage.Cosmos/Common.Runtime.Storage.Cosmos.csproj) | Cosmos retry policy for transient storage failures |
 
 Use [Brooks storage providers](../brooks/storage-providers/index.md) and [Tributary storage providers](../tributary/storage-providers/index.md) for the event and snapshot provider boundaries. Keep the persisted event history distinct from the derived state that reducers reconstruct.
 
