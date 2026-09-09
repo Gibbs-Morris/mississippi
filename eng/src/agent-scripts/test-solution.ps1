@@ -10,8 +10,15 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
-$arguments = @()
-if ($NoBuild) { $arguments += '--no-build' }
-Invoke-SolutionTests -SolutionPath $SolutionPath -Configuration $Configuration -TestLevels $TestLevels `
-    -AdditionalArguments $arguments | Out-Host
+try {
+    Import-Module (Join-Path $PSScriptRoot 'RepositoryAutomation.psm1') -Force
+    $arguments = @()
+    if ($NoBuild) { $arguments += '--no-build' }
+    Invoke-SolutionTests -SolutionPath $SolutionPath -Configuration $Configuration -TestLevels $TestLevels `
+        -AdditionalArguments $arguments | Out-Host
+    exit 0
+}
+catch {
+    [Console]::Error.WriteLine("ERROR: $($_.Exception.Message)")
+    exit 1
+}
