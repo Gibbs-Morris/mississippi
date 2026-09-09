@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,6 +9,8 @@ using Microsoft.Extensions.Time.Testing;
 using Mississippi.DomainModeling.Abstractions;
 
 using Moq;
+
+using EncoderFallbackException = System.Text.EncoderFallbackException;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests;
