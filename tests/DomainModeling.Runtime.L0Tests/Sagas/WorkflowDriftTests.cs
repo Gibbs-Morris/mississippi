@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,6 +14,8 @@ using Mississippi.DomainModeling.Abstractions;
 using Mississippi.DomainModeling.Runtime.Sagas;
 
 using Moq;
+
+using EncoderFallbackException = System.Text.EncoderFallbackException;
 
 
 namespace Mississippi.DomainModeling.Runtime.L0Tests.Sagas;
