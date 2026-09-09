@@ -77,7 +77,7 @@ files are readable, read them all. If necessary files cannot be accessed,
 request the missing inventory or bodies from the user/host and report
 preparation incomplete; do not assume the missing guidance is irrelevant.
 
-```powershell
+```text
 rg --files --glob '*.instructions.md' .github/instructions
 rg --line-number --max-count 1 --glob '*.instructions.md' '^[ \t]*applyTo:' .github/instructions
 ```
