@@ -57,7 +57,7 @@ public sealed class SignalRClientGroupMembershipTests
 
         Task disconnect = client.DisconnectAsync();
         Assert.False(disconnect.IsCompleted);
-        foreach ((ISignalRGroupGrain group, var _) in pending)
+        foreach ((ISignalRGroupGrain group, TaskCompletionSource _) in pending)
         {
             _ = group.Received(1).RemoveConnectionAsync("connection");
         }
@@ -69,7 +69,7 @@ public sealed class SignalRClientGroupMembershipTests
 
         await disconnect.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         await client.DisconnectAsync();
-        foreach ((ISignalRGroupGrain group, var _) in pending)
+        foreach ((ISignalRGroupGrain group, TaskCompletionSource _) in pending)
         {
             await group.Received(1).RemoveConnectionAsync("connection");
         }
