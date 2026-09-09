@@ -43,13 +43,13 @@ public sealed class TransactionFlaggedProjectionReducerTests
         FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().ContainSingle();
+        Assert.Single(result.Entries);
         FlaggedTransaction entry = result.Entries[0];
-        entry.AccountId.Should().Be("acc-123");
-        entry.Amount.Should().Be(15_000m);
-        entry.OriginalTimestamp.Should().Be(OriginalTimestamp);
-        entry.FlaggedTimestamp.Should().Be(FlaggedTimestamp);
-        entry.Sequence.Should().Be(1);
+        Assert.Equal("acc-123", entry.AccountId);
+        Assert.Equal(15_000m, entry.Amount);
+        Assert.Equal(OriginalTimestamp, entry.OriginalTimestamp);
+        Assert.Equal(FlaggedTimestamp, entry.FlaggedTimestamp);
+        Assert.Equal(1, entry.Sequence);
     }
 
     /// <summary>
@@ -87,9 +87,9 @@ public sealed class TransactionFlaggedProjectionReducerTests
         FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().HaveCount(FlaggedTransactionsProjection.MaxEntries);
-        result.Entries[0].AccountId.Should().Be("acc-new", "newest entry should be first");
-        result.Entries[^1].Sequence.Should().Be(2, "oldest entry (seq 1) should be dropped");
+        Assert.Equal(FlaggedTransactionsProjection.MaxEntries, result.Entries.Length);
+        Assert.Equal("acc-new", result.Entries[0].AccountId);
+        Assert.Equal(2, result.Entries[^1].Sequence);
     }
 
     /// <summary>
@@ -116,8 +116,8 @@ public sealed class TransactionFlaggedProjectionReducerTests
         FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.CurrentSequence.Should().Be(16);
-        result.Entries[0].Sequence.Should().Be(16);
+        Assert.Equal(16, result.CurrentSequence);
+        Assert.Equal(16, result.Entries[0].Sequence);
     }
 
     /// <summary>
@@ -147,10 +147,10 @@ public sealed class TransactionFlaggedProjectionReducerTests
 
         // Assert
         FlaggedTransaction entry = result.Entries[0];
-        entry.AccountId.Should().Be("special-account-id");
-        entry.Amount.Should().Be(123_456.78m);
-        entry.OriginalTimestamp.Should().Be(customOriginal);
-        entry.FlaggedTimestamp.Should().Be(customFlagged);
+        Assert.Equal("special-account-id", entry.AccountId);
+        Assert.Equal(123_456.78m, entry.Amount);
+        Assert.Equal(customOriginal, entry.OriginalTimestamp);
+        Assert.Equal(customFlagged, entry.FlaggedTimestamp);
     }
 
     /// <summary>
@@ -187,9 +187,9 @@ public sealed class TransactionFlaggedProjectionReducerTests
         FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().HaveCount(2);
-        result.Entries[0].AccountId.Should().Be("new-acc", "newest entry should be first");
-        result.Entries[1].AccountId.Should().Be("old-acc", "older entry should be second");
+        Assert.Equal(2, result.Entries.Length);
+        Assert.Equal("new-acc", result.Entries[0].AccountId);
+        Assert.Equal("old-acc", result.Entries[1].AccountId);
     }
 
     /// <summary>
@@ -216,7 +216,7 @@ public sealed class TransactionFlaggedProjectionReducerTests
         FlaggedTransactionsProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Should().NotBeSameAs(initial);
+        Assert.NotSame(initial, result);
     }
 
     /// <summary>
@@ -236,6 +236,6 @@ public sealed class TransactionFlaggedProjectionReducerTests
         Action act = () => reducer.Apply(initial, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        Assert.ThrowsAny<ArgumentNullException>(act);
     }
 }

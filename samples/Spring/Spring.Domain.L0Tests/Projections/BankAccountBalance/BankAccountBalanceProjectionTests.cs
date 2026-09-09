@@ -46,8 +46,8 @@ public sealed class BankAccountBalanceProjectionTests
             });
 
         // Assert
-        result.Balance.Should().Be(250.00m);
-        result.HolderName.Should().Be("Quick Test");
+        Assert.Equal(250.00m, result.Balance);
+        Assert.Equal("Quick Test", result.HolderName);
     }
 
     /// <summary>
@@ -72,9 +72,9 @@ public sealed class BankAccountBalanceProjectionTests
                 });
 
         // Assert
-        scenario.AppliedEvents.Should().HaveCount(2);
-        scenario.AppliedEvents[0].Should().BeOfType<AccountOpened>();
-        scenario.AppliedEvents[1].Should().BeOfType<FundsDeposited>();
+        Assert.Equal(2, scenario.AppliedEvents.Count);
+        Assert.IsType<AccountOpened>(scenario.AppliedEvents[0]);
+        Assert.IsType<FundsDeposited>(scenario.AppliedEvents[1]);
     }
 
     /// <summary>
@@ -146,7 +146,7 @@ public sealed class BankAccountBalanceProjectionTests
                 {
                     Amount = 25.00m,
                 })
-            .ThenAssert(projection => { projection.Balance.Should().Be(175.00m); });
+            .ThenAssert(projection => { Assert.Equal(175.00m, projection.Balance); });
     }
 
     /// <summary>
@@ -176,9 +176,9 @@ public sealed class BankAccountBalanceProjectionTests
                 })
             .ThenAssert(projection =>
             {
-                projection.HolderName.Should().Be("John Doe");
-                projection.Balance.Should().Be(175.00m);
-                projection.IsOpen.Should().BeTrue();
+                Assert.Equal("John Doe", projection.HolderName);
+                Assert.Equal(175.00m, projection.Balance);
+                Assert.True(projection.IsOpen);
             });
     }
 
@@ -206,7 +206,7 @@ public sealed class BankAccountBalanceProjectionTests
                 {
                     Amount = 50.00m,
                 })
-            .ThenAssert(projection => { projection.Balance.Should().Be(350.00m); });
+            .ThenAssert(projection => { Assert.Equal(350.00m, projection.Balance); });
     }
 
     /// <summary>

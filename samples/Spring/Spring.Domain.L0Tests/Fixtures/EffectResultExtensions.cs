@@ -22,11 +22,12 @@ public static class EffectResultExtensions
     {
         ArgumentNullException.ThrowIfNull(result);
         because ??= string.Empty;
-        result.WasFlagged.Should()
-            .BeTrue(because.Length > 0 ? because : $"deposit of {result.DepositAmount:C} should exceed AML threshold");
-        result.DispatchedCommands.Should().ContainSingle();
-        result.DispatchedCommands[0].Command.Should().BeOfType<FlagTransaction>();
-        result.DispatchedCommands[0].AggregateType.Should().Be<TransactionInvestigationQueueAggregate>();
+        Assert.True(
+            result.WasFlagged,
+            because.Length > 0 ? because : $"deposit of {result.DepositAmount:C} should exceed AML threshold");
+        Assert.Single(result.DispatchedCommands);
+        Assert.IsType<FlagTransaction>(result.DispatchedCommands[0].Command);
+        Assert.Equal(typeof(TransactionInvestigationQueueAggregate), result.DispatchedCommands[0].AggregateType);
         return result;
     }
 
@@ -43,9 +44,9 @@ public static class EffectResultExtensions
     {
         ArgumentNullException.ThrowIfNull(result);
         because ??= string.Empty;
-        result.WasFlagged.Should()
-            .BeFalse(
-                because.Length > 0 ? because : $"deposit of {result.DepositAmount:C} should not exceed AML threshold");
+        Assert.False(
+            result.WasFlagged,
+            because.Length > 0 ? because : $"deposit of {result.DepositAmount:C} should not exceed AML threshold");
         return result;
     }
 
@@ -61,9 +62,9 @@ public static class EffectResultExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(result);
-        result.DispatchedCommands.Should().ContainSingle();
-        FlagTransaction command = result.DispatchedCommands[0].Command.Should().BeOfType<FlagTransaction>().Subject;
-        command.AccountId.Should().Be(expectedAccountId);
+        Assert.Single(result.DispatchedCommands);
+        FlagTransaction command = Assert.IsType<FlagTransaction>(result.DispatchedCommands[0].Command);
+        Assert.Equal(expectedAccountId, command.AccountId);
         return result;
     }
 
@@ -79,9 +80,9 @@ public static class EffectResultExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(result);
-        result.DispatchedCommands.Should().ContainSingle();
-        FlagTransaction command = result.DispatchedCommands[0].Command.Should().BeOfType<FlagTransaction>().Subject;
-        command.Amount.Should().Be(expectedAmount);
+        Assert.Single(result.DispatchedCommands);
+        FlagTransaction command = Assert.IsType<FlagTransaction>(result.DispatchedCommands[0].Command);
+        Assert.Equal(expectedAmount, command.Amount);
         return result;
     }
 }

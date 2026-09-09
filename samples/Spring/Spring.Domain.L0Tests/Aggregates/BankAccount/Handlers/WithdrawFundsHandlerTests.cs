@@ -45,9 +45,9 @@ public sealed class WithdrawFundsHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(AccountWithBalance(100m), command);
 
         // Assert
-        events.Should().ContainSingle();
-        FundsWithdrawn withdrawn = events[0].Should().BeOfType<FundsWithdrawn>().Subject;
-        withdrawn.Amount.Should().Be(100m);
+        Assert.Single(events);
+        FundsWithdrawn withdrawn = Assert.IsType<FundsWithdrawn>(events[0]);
+        Assert.Equal(100m, withdrawn.Amount);
     }
 
     /// <summary>

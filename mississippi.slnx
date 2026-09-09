@@ -71,6 +71,7 @@
   </Folder>
   <Folder Name="/src/" />
   <Folder Name="/Tests/">
+    <Project Path="tests/DomainModeling.TestHarness.L0Tests/DomainModeling.TestHarness.L0Tests.csproj" />
     <Project Path="tests/Inlet.Generators.Core.L0Tests/Inlet.Generators.Core.L0Tests.csproj" />
     <Project Path="tests/Inlet.Runtime.Generators.L0Tests/Inlet.Runtime.Generators.L0Tests.csproj" />
   </Folder>

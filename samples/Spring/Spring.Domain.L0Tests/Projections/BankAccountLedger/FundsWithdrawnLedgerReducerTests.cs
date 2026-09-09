@@ -50,13 +50,13 @@ public sealed class FundsWithdrawnLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().HaveCount(3);
-        result.Entries[0].EntryType.Should().Be(LedgerEntryType.Withdrawal);
-        result.Entries[0].Sequence.Should().Be(3);
-        result.Entries[1].EntryType.Should().Be(LedgerEntryType.Deposit);
-        result.Entries[1].Sequence.Should().Be(2);
-        result.Entries[2].EntryType.Should().Be(LedgerEntryType.Deposit);
-        result.Entries[2].Sequence.Should().Be(1);
+        Assert.Equal(3, result.Entries.Length);
+        Assert.Equal(LedgerEntryType.Withdrawal, result.Entries[0].EntryType);
+        Assert.Equal(3, result.Entries[0].Sequence);
+        Assert.Equal(LedgerEntryType.Deposit, result.Entries[1].EntryType);
+        Assert.Equal(2, result.Entries[1].Sequence);
+        Assert.Equal(LedgerEntryType.Deposit, result.Entries[2].EntryType);
+        Assert.Equal(1, result.Entries[2].Sequence);
     }
 
     /// <summary>
@@ -80,10 +80,10 @@ public sealed class FundsWithdrawnLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().ContainSingle();
-        result.Entries[0].EntryType.Should().Be(LedgerEntryType.Withdrawal);
-        result.Entries[0].Amount.Should().Be(200m);
-        result.Entries[0].Sequence.Should().Be(1);
+        Assert.Single(result.Entries);
+        Assert.Equal(LedgerEntryType.Withdrawal, result.Entries[0].EntryType);
+        Assert.Equal(200m, result.Entries[0].Amount);
+        Assert.Equal(1, result.Entries[0].Sequence);
     }
 
     /// <summary>
@@ -116,9 +116,9 @@ public sealed class FundsWithdrawnLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().HaveCount(BankAccountLedgerProjection.MaxEntries);
-        result.Entries[0].Amount.Should().Be(777m, "newest entry should be first");
-        result.Entries[^1].Sequence.Should().Be(2, "oldest entry (seq 1) should be dropped");
+        Assert.Equal(BankAccountLedgerProjection.MaxEntries, result.Entries.Length);
+        Assert.Equal(777m, result.Entries[0].Amount);
+        Assert.Equal(2, result.Entries[^1].Sequence);
     }
 
     /// <summary>
@@ -142,8 +142,8 @@ public sealed class FundsWithdrawnLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.CurrentSequence.Should().Be(11);
-        result.Entries[0].Sequence.Should().Be(11);
+        Assert.Equal(11, result.CurrentSequence);
+        Assert.Equal(11, result.Entries[0].Sequence);
     }
 
     /// <summary>
@@ -175,10 +175,10 @@ public sealed class FundsWithdrawnLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().HaveCount(2);
-        result.Entries[0].EntryType.Should().Be(LedgerEntryType.Withdrawal);
-        result.Entries[0].Amount.Should().Be(100m, "newest entry should be first");
-        result.Entries[1].Amount.Should().Be(500m, "older entry should be second");
+        Assert.Equal(2, result.Entries.Length);
+        Assert.Equal(LedgerEntryType.Withdrawal, result.Entries[0].EntryType);
+        Assert.Equal(100m, result.Entries[0].Amount);
+        Assert.Equal(500m, result.Entries[1].Amount);
     }
 
     /// <summary>
@@ -202,7 +202,7 @@ public sealed class FundsWithdrawnLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Should().NotBeSameAs(initial);
+        Assert.NotSame(initial, result);
     }
 
     /// <summary>
@@ -222,7 +222,7 @@ public sealed class FundsWithdrawnLedgerReducerTests
         Action act = () => reducer.Apply(initial, null!);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>();
+        Assert.ThrowsAny<ArgumentNullException>(act);
     }
 
     /// <summary>
@@ -246,7 +246,7 @@ public sealed class FundsWithdrawnLedgerReducerTests
         BankAccountLedgerProjection result = reducer.Apply(initial, evt);
 
         // Assert
-        result.Entries.Should().ContainSingle();
-        result.Entries[0].Amount.Should().Be(0m);
+        Assert.Single(result.Entries);
+        Assert.Equal(0m, result.Entries[0].Amount);
     }
 }
