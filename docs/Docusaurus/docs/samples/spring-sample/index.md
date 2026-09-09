@@ -26,7 +26,7 @@ flowchart LR
 | Lesson | Where to Look |
 |--------|---------------|
 | **Define an aggregate** with `Command`s, `CommandHandler`s, events, and `EventReducer`s | [Building an Aggregate](./tutorials/building-an-aggregate.md) |
-| **Add side effects** that react to events (sync and fire-and-forget) | [Building an Aggregate - Effects](./tutorials/building-an-aggregate.md#step-6-add-effects) |
+| **Explore event reactions** in the sample (sync and fire-and-forget) | [Aggregate Event Reactions](./tutorials/building-an-aggregate.md#continue-with-reactions-to-events) |
 | **Orchestrate multi-step workflows** with sagas and compensation | [Building a Saga](./tutorials/building-a-saga.md) |
 | **Create read-optimized views** from event streams | [Building Projections](./tutorials/building-projections.md) |
 | **Keep hosts minimal** with source-generated registration | [Host Architecture](./concepts/host-applications.md) |
