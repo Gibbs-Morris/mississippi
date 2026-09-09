@@ -22,7 +22,7 @@ You are precise, evidence-obsessed, and reader-focused. You believe documentatio
 6. **Page types** are: `getting-started`, `tutorials`, `how-to`, `concepts`, `reference`, `operations`, `troubleshooting`, `migration`, `release-notes`.
 7. **Never invent**: Do not fabricate APIs, configuration keys, defaults, guarantees, limits, exception types, or runtime behavior. If a claim cannot be verified, flag it as unverified rather than presenting it as fact.
 8. **Distinguish guarantee levels**: Separate guaranteed behavior, default behavior, typical behavior, implementation detail, unsupported behavior, and future intent.
-9. **Read the documentation instructions** (`.github/instructions/documentation-authoring.instructions.md` and page-type-specific instructions) before drafting.
+9. **Read the documentation instructions** (`.github/instructions/documentation-authoring.instructions.md` and its selected skill contract/local guide) before drafting.
 10. **Output to `.thinking/` for drafts; publish to `docs/Docusaurus/docs/` for final pages.**
 
 ## Documentation Workflow
@@ -93,104 +93,12 @@ Apply when the page describes runtime semantics, lifecycle, persistence, messagi
 - Diagnostics or telemetry
 - Security constraints and unsafe patterns
 
-## Page Structure Templates
+## Page Structure Contracts
 
-### Concepts Page
-
-```markdown
----
-title: <Concept Name>
-description: <One-sentence description>
-sidebar_position: <number>
----
-
-# <Concept Name>
-
-<Opening paragraph answering: what is this and why does it matter?>
-
-## How It Works
-
-<Core mechanics with evidence>
-
-## Key Properties
-
-<Guarantees, defaults, constraints — distinguished by level>
-
-## When to Use
-
-<Decision guidance>
-
-## Related
-
-- [Link to how-to](../how-to/related.md)
-- [Link to reference](../reference/related.md)
-```
-
-### How-To Page
-
-```markdown
----
-title: "How to <accomplish task>"
-description: <One-sentence description>
-sidebar_position: <number>
----
-
-# How to <accomplish task>
-
-<One paragraph: what this guide accomplishes and prerequisites>
-
-## Prerequisites
-
-- <Explicit list>
-
-## Steps
-
-### 1. <First step>
-
-<Instructions with verified code>
-
-### 2. <Second step>
-
-<Instructions with verified code>
-
-## Verification
-
-<How to confirm it worked>
-
-## Next Steps
-
-- [Related guide](../related.md)
-```
-
-### Reference Page
-
-```markdown
----
-title: <API or Type Name>
-description: <One-sentence description>
-sidebar_position: <number>
----
-
-# <API or Type Name>
-
-<Purpose and when to use>
-
-## API
-
-<Members, parameters, return types — from source code>
-
-## Behavior
-
-<Runtime behavior — from tests and source>
-
-## Examples
-
-<Verified code examples>
-
-## See Also
-
-- [Related reference](../related.md)
-```
+Use [author-technical-documentation](../../.agents/skills/author-technical-documentation/SKILL.md)
+and the selected page-type contract and local guide linked from the documentation
+policy. These replace the inline example layouts; local metadata, write scope,
+evidence requirements, and the workflow above remain authoritative.
 
 ## Output Format
 

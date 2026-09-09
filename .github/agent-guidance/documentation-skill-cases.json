@@ -1,0 +1,52 @@
+[
+  {
+    "id": "explicit-how-to",
+    "prompt": "Use author-technical-documentation to draft a how-to page for the supplied verified cache-refresh command. The command is refresh-cache --dry-run, which reports affected entries without changing them. The command was verified in the supplied test evidence. Return a draft only; use the local required headings and do not publish.",
+    "expected": "Produce the requested how-to draft with prerequisites, ordered steps, and verification, preserving dry-run semantics and publication scope."
+  },
+  {
+    "id": "partial-reference-update",
+    "prompt": "Update only the timeout row in this reference table. The old row says 5 seconds; the supplied source configuration now sets TimeoutSeconds to 10. All other rows and headings remain correct. Return only the replacement row.",
+    "expected": "Return only the corrected row using supplied evidence, without redrafting the page or requesting unnecessary repository access."
+  },
+  {
+    "id": "review-only",
+    "prompt": "Review this supplied reference claim: default timeout is 5 seconds. The supplied current configuration sets TimeoutSeconds to 10. Return findings using Must Fix/Should Fix/Consider; do not edit or publish anything.",
+    "expected": "Report the evidenced incorrect default in the caller's review format without making edits or treating review as authoring permission."
+  },
+  {
+    "id": "getting-started-focus",
+    "prompt": "Plan a getting-started page for a new user to run the verified local sample. Optional cloud-hosting and production-tuning branches are not needed for first success. Keep one happy path and link deeper material rather than drafting extra pages.",
+    "expected": "Select the getting-started contract, minimize setup/theory and unnecessary branches, and include an observable verification step."
+  },
+  {
+    "id": "concept-guarantees",
+    "prompt": "Draft the Guarantees and Non-guarantees sections of a concept page from these supplied facts: one activation processes commands serially; projections update asynchronously; no global cross-aggregate ordering guarantee has been established. Return only those two sections.",
+    "expected": "Keep the guarantee scope bounded and distinguish asynchronous projection behavior from unproven global ordering."
+  },
+  {
+    "id": "migration-unknowns",
+    "prompt": "Outline a migration guide from version 1.4 to 2.0. The supplied release record confirms a renamed configuration key, but storage compatibility and rollback support have not been verified. Do not invent upgrade commands or compatibility guarantees.",
+    "expected": "Use exact version scope and identify the missing compatibility/rollback evidence instead of presenting a validated operational procedure."
+  },
+  {
+    "id": "different-project",
+    "prompt": "This project publishes Markdown under handbook, requires only title metadata, and explicitly overrides the how-to template with Overview, Steps, and Validation sections. The verified command git status --short -- sample.txt returned ?? sample.txt without changing the file. Draft a page using that evidence and local format; do not add site-sidebar metadata or change configuration.",
+    "expected": "Honor the explicit local format and metadata overrides without importing another project's paths or publication fields."
+  },
+  {
+    "id": "missing-evidence",
+    "prompt": "Write a validated operations guide with exact scaling thresholds and rollback instructions. No system, measurements, deployment configuration, or supporting evidence has been supplied.",
+    "expected": "Request the missing system/evidence or identify an incomplete outline; do not fabricate production thresholds, safe-live claims, or completed validation."
+  },
+  {
+    "id": "unrelated-question",
+    "prompt": "What does a Git merge base mean? Give a brief explanation, not a documentation page.",
+    "expected": "Answer the question without starting a page-authoring workflow."
+  },
+  {
+    "id": "adjacent-adr",
+    "prompt": "I need an ADR recording the approved cache decision, using the project's MADR lifecycle and template. Do not turn it into a concept or how-to page.",
+    "expected": "Use the ADR-specific contract rather than forcing one of the product-documentation page types."
+  }
+]
