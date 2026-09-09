@@ -28,15 +28,18 @@ namespace Mississippi.Brooks.Runtime.Storage.Cosmos.L0Tests.Brooks;
 public sealed class EventBrookWriterCommitBoundaryTests
 {
     /// <summary>
-    ///     Preserves event and pending-cursor evidence when a commit attempt reports failure.
+    ///     Does not compensate for a failed commit, including when the commit already removed pending metadata.
     /// </summary>
     /// <param name="isCursorCommitted">Whether the simulated cursor write completed before its acknowledgement failed.</param>
+    /// <param name="isPendingDeleted">Whether the commit removed pending metadata before reporting failure.</param>
     /// <returns>A task representing the test.</returns>
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task CommitFailurePreservesEventsAndPendingEvidence(
-        bool isCursorCommitted
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task CommitFailureDoesNotTriggerCompensatingDeletes(
+        bool isCursorCommitted,
+        bool isPendingDeleted
     )
     {
         const long finalPosition = 2;
@@ -75,7 +78,11 @@ public sealed class EventBrookWriterCommitBoundaryTests
             .Returns(Task.CompletedTask);
         InvalidOperationException failure = new("Cursor commit acknowledgement or pending cleanup failed.");
         repository.Setup(r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<CancellationToken>()))
-            .Callback(() => cursor = isCursorCommitted ? finalPosition : originalPosition.Value)
+            .Callback(() =>
+            {
+                cursor = isCursorCommitted ? finalPosition : originalPosition.Value;
+                hasPendingEvidence = !isPendingDeleted;
+            })
             .ThrowsAsync(failure);
         repository.Setup(r => r.DeleteEventAsync(key, It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .Callback<BrookKey, long, CancellationToken>((_, position, _) => retainedPositions.Remove(position))
@@ -127,7 +134,7 @@ public sealed class EventBrookWriterCommitBoundaryTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
         Assert.Equal(new long[] { 0, 1, 2 }, retainedPositions.Order());
-        Assert.True(hasPendingEvidence);
+        Assert.Equal(!isPendingDeleted, hasPendingEvidence);
         Assert.Equal(isCursorCommitted ? finalPosition : originalPosition.Value, cursor);
         repository.Verify(
             r => r.CommitCursorPositionAsync(key, finalPosition, It.IsAny<CancellationToken>()),
