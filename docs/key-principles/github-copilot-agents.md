@@ -520,6 +520,10 @@ matching instructions.
 ### Directory Structure
 
 ```text
+.agents/
+└── skills/
+    └── build-and-test/
+        └── SKILL.md
 .github/
 ├── copilot-instructions.md          # Global repo context
 ├── instructions/
@@ -527,14 +531,11 @@ matching instructions.
 │   ├── testing.instructions.md
 │   ├── logging-rules.instructions.md
 │   └── ...
-├── agents/
-│   ├── dev.agent.md
-│   ├── technical-writer.agent.md
-│   ├── CoV-coding.agent.md
-│   └── ...
-└── skills/
-    └── build-and-test/
-        └── SKILL.md
+└── agents/
+    ├── dev.agent.md
+    ├── technical-writer.agent.md
+    ├── CoV-coding.agent.md
+    └── ...
 ```
 
 ### Step-by-Step: Creating Your First Agent
