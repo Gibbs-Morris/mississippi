@@ -75,6 +75,10 @@ internal sealed class SignalRGroupGrain
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     Membership changes run synchronously and may interleave with a broadcast awaiting a client.
+    ///     This avoids a client/group call cycle during joins or disconnect cleanup.
+    /// </remarks>
     public Task AddConnectionAsync(
         string connectionId
     )
@@ -112,6 +116,9 @@ internal sealed class SignalRGroupGrain
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     Membership changes may interleave with broadcasts, which enumerate an immutable membership snapshot.
+    /// </remarks>
     public Task RemoveConnectionAsync(
         string connectionId
     )
@@ -152,17 +159,19 @@ internal sealed class SignalRGroupGrain
         ArgumentException.ThrowIfNullOrEmpty(method);
         string groupKey = this.GetPrimaryKeyString();
         string hubName = ExtractHubName(groupKey);
-        Logger.SendingToGroup(groupKey, method, state.ConnectionIds.Count);
+        ImmutableHashSet<string> connections = state.ConnectionIds;
+        int connectionCount = connections.Count;
+        Logger.SendingToGroup(groupKey, method, connectionCount);
 
         // Fan out to each connection
-        foreach (string connectionId in state.ConnectionIds)
+        foreach (string connectionId in connections)
         {
             ISignalRClientGrain clientGrain = GrainFactory.GetGrain<ISignalRClientGrain>($"{hubName}:{connectionId}");
             await clientGrain.SendMessageAsync(method, args)
                 .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
         }
 
-        AqueductMetrics.RecordGroupMessageSent(hubName, method, state.ConnectionIds.Count);
-        Logger.SentToGroup(groupKey, method, state.ConnectionIds.Count);
+        AqueductMetrics.RecordGroupMessageSent(hubName, method, connectionCount);
+        Logger.SentToGroup(groupKey, method, connectionCount);
     }
 }

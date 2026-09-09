@@ -56,6 +56,7 @@ Think of Aqueduct as the distributed real-time transport boundary in Mississippi
 
 ## Next Steps
 
+- [SignalR Group Membership](group-membership.md)
 - [Aqueduct Getting Started](../getting-started/getting-started.md)
 - [Inlet Overview](../../inlet/index.md)
 - [Aqueduct Reference](../reference/reference.md)

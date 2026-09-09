@@ -49,23 +49,23 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
-    ///     AddToGroupAsync should call group grain.
+    ///     AddToGroupAsync should route through the client grain that owns cleanup.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
-    [Fact(DisplayName = "AddToGroupAsync Calls Group Grain")]
-    public async Task AddToGroupAsyncShouldCallGroupGrain()
+    [Fact(DisplayName = "AddToGroupAsync Calls Client Grain")]
+    public async Task AddToGroupAsyncShouldCallClientGrain()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
-        ISignalRGroupGrain groupGrain = Substitute.For<ISignalRGroupGrain>();
-        grainFactory.GetGroupGrain("TestAqueductHub", "group1").Returns(groupGrain);
+        ISignalRClientGrain clientGrain = Substitute.For<ISignalRClientGrain>();
+        grainFactory.GetClientGrain("TestAqueductHub", "conn1").Returns(clientGrain);
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(grainFactory: grainFactory);
 
         // Act
         await manager.AddToGroupAsync("conn1", "group1", TestContext.Current.CancellationToken);
 
         // Assert
-        await groupGrain.Received(1).AddConnectionAsync("conn1");
+        await clientGrain.Received(1).AddToGroupAsync("group1");
     }
 
     /// <summary>
@@ -370,23 +370,23 @@ public sealed class AqueductHubLifetimeManagerTests
     }
 
     /// <summary>
-    ///     RemoveFromGroupAsync should call group grain.
+    ///     RemoveFromGroupAsync should update the client grain's cleanup ownership.
     /// </summary>
     /// <returns>A task representing the test operation.</returns>
-    [Fact(DisplayName = "RemoveFromGroupAsync Calls Group Grain")]
-    public async Task RemoveFromGroupAsyncShouldCallGroupGrain()
+    [Fact(DisplayName = "RemoveFromGroupAsync Calls Client Grain")]
+    public async Task RemoveFromGroupAsyncShouldCallClientGrain()
     {
         // Arrange
         IAqueductGrainFactory grainFactory = Substitute.For<IAqueductGrainFactory>();
-        ISignalRGroupGrain groupGrain = Substitute.For<ISignalRGroupGrain>();
-        grainFactory.GetGroupGrain("TestAqueductHub", "group1").Returns(groupGrain);
+        ISignalRClientGrain clientGrain = Substitute.For<ISignalRClientGrain>();
+        grainFactory.GetClientGrain("TestAqueductHub", "conn1").Returns(clientGrain);
         using AqueductHubLifetimeManager<TestAqueductHub> manager = CreateManager(grainFactory: grainFactory);
 
         // Act
         await manager.RemoveFromGroupAsync("conn1", "group1", TestContext.Current.CancellationToken);
 
         // Assert
-        await groupGrain.Received(1).RemoveConnectionAsync("conn1");
+        await clientGrain.Received(1).RemoveFromGroupAsync("group1");
     }
 
     /// <summary>
