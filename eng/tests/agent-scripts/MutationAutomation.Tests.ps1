@@ -95,7 +95,9 @@ Describe 'Mutation automation' {
             $Arguments -contains '--test-project' -and $Arguments -contains '--config-file' -and $Arguments -contains '--disable-bail' -and
             $Arguments -contains 'Debug' -and $Arguments -contains 'Widget.csproj' -and
             $Arguments -contains (Join-Path $repo 'MSBuild.dll') -and
-            $Arguments -notcontains '--concurrency'
+            $Arguments -contains '--test-runner' -and $Arguments -contains 'mtp' -and
+            $Arguments -contains '--concurrency' -and
+            $Arguments[[array]::IndexOf($Arguments, '--concurrency') + 1] -eq '1'
         }
     }
 
