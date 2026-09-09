@@ -25,7 +25,7 @@ All C# contributors emitting logs (services, grains, libraries).
 
 ## At-a-Glance Quick-Start
 
-For adding or converting logging calls, use [Add .NET source-generated logging](../../.agents/skills/add-dotnet-source-generated-logging/SKILL.md). The rules above remain mandatory whether or not the skill is selected; the skill supplies the implementation and verification procedure.
+For adding or converting logging calls, use [Add .NET source-generated logging](../../.agents/skills/add-dotnet-source-generated-logging/SKILL.md). The [Rules (RFC 2119)](#rules-rfc-2119) remain mandatory whether or not the skill is selected; the skill supplies the implementation and verification procedure.
 
 ## References
 
