@@ -51,9 +51,11 @@ unsupported. It does not accept the GraphQL thread node ID.
 
 Write the exact reply into a temporary UTF-8 file. Keep review text out of shell
 command construction, and preserve its actual newlines and literal characters.
+Set the shell variable `REPLY_FILE` to that file's actual path using your shell's
+variable-assignment syntax. Double quotes expand it as one argument:
 
 ```sh
-gh api --method POST 'repos/OWNER/REPO/pulls/NUMBER/comments/COMMENT_ID/replies' -F 'body=@REPLY_FILE'
+gh api --method POST 'repos/OWNER/REPO/pulls/NUMBER/comments/COMMENT_ID/replies' -F "body=@$REPLY_FILE"
 ```
 
 Confirm the reply belongs to the intended thread. After the workflow's
