@@ -46,7 +46,7 @@ public sealed class ServerDirectoryIntegrationTests
         TimeSpan shortTimeout = TimeSpan.FromMilliseconds(1);
 
         // Small delay to ensure serverId1's registration time is older than timeout
-        await Task.Delay(TimeSpan.FromMilliseconds(10));
+        await Task.Delay(TimeSpan.FromMilliseconds(10), TestContext.Current.CancellationToken);
 
         // Act
         ImmutableList<string> deadServers = await directoryGrain.GetDeadServersAsync(shortTimeout);
@@ -176,7 +176,7 @@ public sealed class ServerDirectoryIntegrationTests
         await directoryGrain.UnregisterServerAsync(serverId);
 
         // Wait a bit and use short timeout
-        await Task.Delay(TimeSpan.FromMilliseconds(10));
+        await Task.Delay(TimeSpan.FromMilliseconds(10), TestContext.Current.CancellationToken);
         TimeSpan shortTimeout = TimeSpan.FromMilliseconds(1);
 
         // Act

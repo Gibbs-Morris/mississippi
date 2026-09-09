@@ -25,8 +25,8 @@ public static class EffectResultExtensions
         Assert.True(
             result.WasFlagged,
             because.Length > 0 ? because : $"deposit of {result.DepositAmount:C} should exceed AML threshold");
-        Assert.Single(result.DispatchedCommands);
-        Assert.IsType<FlagTransaction>(result.DispatchedCommands[0].Command);
+        (Type AggregateType, string EntityId, object Command) item = Assert.Single(result.DispatchedCommands);
+        Assert.IsType<FlagTransaction>(item.Command);
         Assert.Equal(typeof(TransactionInvestigationQueueAggregate), result.DispatchedCommands[0].AggregateType);
         return result;
     }
@@ -62,8 +62,8 @@ public static class EffectResultExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(result);
-        Assert.Single(result.DispatchedCommands);
-        FlagTransaction command = Assert.IsType<FlagTransaction>(result.DispatchedCommands[0].Command);
+        (Type AggregateType, string EntityId, object Command) item = Assert.Single(result.DispatchedCommands);
+        FlagTransaction command = Assert.IsType<FlagTransaction>(item.Command);
         Assert.Equal(expectedAccountId, command.AccountId);
         return result;
     }
@@ -80,8 +80,8 @@ public static class EffectResultExtensions
     )
     {
         ArgumentNullException.ThrowIfNull(result);
-        Assert.Single(result.DispatchedCommands);
-        FlagTransaction command = Assert.IsType<FlagTransaction>(result.DispatchedCommands[0].Command);
+        (Type AggregateType, string EntityId, object Command) item = Assert.Single(result.DispatchedCommands);
+        FlagTransaction command = Assert.IsType<FlagTransaction>(item.Command);
         Assert.Equal(expectedAmount, command.Amount);
         return result;
     }

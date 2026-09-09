@@ -10,6 +10,8 @@ Governing thought: Default to fast, deterministic L0 tests with strong coverage,
 
 ## Rules (RFC 2119)
 
+- Test projects **MUST** use xUnit Core Framework v3 and xUnit `Assert`, with the repository's Microsoft.Testing.Platform runner. Support libraries **MUST** remain libraries and use assertion-only or extensibility packages when needed. Why: Keeps execution and shared contracts consistent.
+- Test commands **MUST** preserve nonempty execution checks and per-project TRX evidence; use canonical scripts rather than VSTest-only logger or collector arguments. Why: MTP uses different runner and coverage options.
 - Test projects **MUST** follow level naming (`<Product>.<Feature>.L0Tests`…`L4Tests`); legacy `*.Tests` **MUST** migrate when touched. Why: Keeps analyzers and InternalsVisibleTo aligned.
 - New tests **MUST** default to L0; L1 **SHOULD** be used only when light infra is required. Why: Keeps feedback fast and deterministic.
 - When L0 cannot cover a behavior, authors **SHOULD** attempt L1 before moving to L2. Why: Preserves fast feedback and limits infra reliance.

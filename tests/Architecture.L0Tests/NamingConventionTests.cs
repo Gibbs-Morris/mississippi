@@ -1,5 +1,5 @@
 using ArchUnitNET.Fluent;
-using ArchUnitNET.xUnit;
+using ArchUnitNET.xUnitV3;
 
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

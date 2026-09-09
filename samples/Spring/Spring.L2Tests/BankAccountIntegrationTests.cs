@@ -210,7 +210,8 @@ public sealed class BankAccountIntegrationTests
                    {
                        HolderName = holderName,
                        InitialDeposit = initialDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
             Assert.Equal(HttpStatusCode.OK, openResponse.StatusCode);
         }
@@ -221,7 +222,8 @@ public sealed class BankAccountIntegrationTests
                    new
                    {
                        Amount = firstDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
             Assert.Equal(HttpStatusCode.OK, deposit1Response.StatusCode);
         }
@@ -232,7 +234,8 @@ public sealed class BankAccountIntegrationTests
                    new
                    {
                        Amount = secondDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
             Assert.Equal(HttpStatusCode.OK, deposit2Response.StatusCode);
         }
@@ -243,7 +246,8 @@ public sealed class BankAccountIntegrationTests
                    new
                    {
                        Amount = withdrawal,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
             Assert.Equal(HttpStatusCode.OK, withdrawResponse.StatusCode);
         }
@@ -280,7 +284,8 @@ public sealed class BankAccountIntegrationTests
                    {
                        HolderName = "Source Holder",
                        InitialDeposit = sourceInitialDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
             Assert.Equal(HttpStatusCode.OK, openSourceResponse.StatusCode);
         }
@@ -291,7 +296,8 @@ public sealed class BankAccountIntegrationTests
                    {
                        HolderName = "Destination Holder",
                        InitialDeposit = destinationInitialDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
             Assert.Equal(HttpStatusCode.OK, openDestinationResponse.StatusCode);
         }
@@ -304,8 +310,10 @@ public sealed class BankAccountIntegrationTests
                 DestinationAccountId = destinationAccountId,
                 SourceAccountId = sourceAccountId,
                 CorrelationId = (string?)null,
-            });
-        string startTransferBody = await startTransferResponse.Content.ReadAsStringAsync();
+            },
+            TestContext.Current.CancellationToken);
+        string startTransferBody =
+            await startTransferResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.True(
             startTransferResponse.StatusCode == HttpStatusCode.OK,
             $"starting the money transfer saga should succeed, but got {(int)startTransferResponse.StatusCode}: {startTransferBody}");
@@ -355,7 +363,8 @@ public sealed class BankAccountIntegrationTests
                    {
                        HolderName = holderName,
                        InitialDeposit = initialDeposit,
-                   }))
+                   },
+                   TestContext.Current.CancellationToken))
         {
             Assert.Equal(HttpStatusCode.OK, openResponse.StatusCode);
         }

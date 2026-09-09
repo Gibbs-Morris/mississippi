@@ -75,7 +75,7 @@ public sealed class BlobDistributedLockTests
         timeProvider.Advance(TimeSpan.FromHours(1));
 
         // Act
-        await sut.RenewAsync();
+        await sut.RenewAsync(TestContext.Current.CancellationToken);
 
         // Assert
         leaseClient.Verify(l => l.RenewAsync(It.IsAny<RequestConditions>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -103,7 +103,7 @@ public sealed class BlobDistributedLockTests
             timeProvider);
 
         // Act
-        await sut.RenewAsync();
+        await sut.RenewAsync(TestContext.Current.CancellationToken);
 
         // Assert
         leaseClient.Verify(
@@ -139,6 +139,7 @@ public sealed class BlobDistributedLockTests
         timeProvider.Advance(TimeSpan.FromMinutes(5));
 
         // Act + Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.RenewAsync());
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sut.RenewAsync(TestContext.Current.CancellationToken));
     }
 }

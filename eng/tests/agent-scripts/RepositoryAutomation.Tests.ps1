@@ -48,50 +48,63 @@ Describe 'Repository automation quality gates' {
         Should -Invoke Invoke-SolutionBuild -ModuleName RepositoryAutomation -Times 2 -Exactly -ParameterFilter { $WarnAsError }
     }
 
-    It 'preserves test output and uses unique TRX filenames across projects' {
+    It 'isolates MTP reports and excludes unselected test levels' {
         $solution = Join-Path $TestDrive 'test.slnx'
         Set-Content $solution '<Solution />'
-        Mock Invoke-RepositoryProcess { 'Test failure details' } -ModuleName RepositoryAutomation
+        Mock Get-TestProjects { @('First.L0Tests.csproj', 'Second.L0Tests.csproj', 'Other.L2Tests.csproj') } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            $directory = $Arguments[[array]::IndexOf($Arguments, '--results-directory') + 1]
+            $name = $Arguments[[array]::IndexOf($Arguments, '--report-xunit-trx-filename') + 1]
+            Set-Content (Join-Path $directory $name) '<TestRun><ResultSummary><Counters executed="1" /></ResultSummary></TestRun>'
+            'Test details'
+        } -ModuleName RepositoryAutomation
         Mock Out-Host {} -ModuleName RepositoryAutomation
-        $result = Invoke-SolutionTests -SolutionPath $solution -TestLevels L0Tests
+        $result = Invoke-SolutionTests -SolutionPath $solution -TestLevels L0Tests -ResultsRoot (Join-Path $TestDrive 'isolated')
         $result.SolutionPath | Should -Be $solution
-        Should -Invoke Out-Host -ModuleName RepositoryAutomation -Times 1 -Exactly
-        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Times 1 -Exactly -ParameterFilter {
-            $Arguments -contains '-p:RepositoryTestResults=true' -and
-            $Arguments -contains 'FullyQualifiedName~.L0Tests.'
+        @(Get-ChildItem $result.ResultsDirectory -Recurse -Filter '*.trx').Count | Should -Be 2
+        Should -Invoke Out-Host -ModuleName RepositoryAutomation -Times 2 -Exactly
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Times 2 -Exactly -ParameterFilter {
+            $Arguments -contains '--report-xunit-trx' -and $Arguments -contains '--project' -and
+            $Arguments -contains 'FullyQualifiedName~.L0Tests.' -and $Arguments -notcontains '--ignore-exit-code'
         }
     }
 
-    It 'validates executed tests across the selected solution: <Executed> <Logger>' -ForEach @(
-        @{ Executed = 0; Logger = $null },
-        @{ Executed = 2; Logger = $null },
-        @{ Executed = 0; Logger = 'trx;LogFileName=custom.trx' },
-        @{ Executed = 2; Logger = 'trx;LogFileName=custom.trx' }
-    ) {
+    It 'rejects empty ordinary modules: <Executed>' -ForEach @(@{ Executed = 0 }, @{ Executed = 2 }) {
         $solution = Join-Path $TestDrive 'test.slnx'
         Set-Content $solution '<Solution />'
-        $reports = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
-        New-Item -ItemType Directory -Path $reports | Out-Null
-        Set-Content (Join-Path $reports 'empty.trx') '<TestRun><ResultSummary><Counters executed="0" /></ResultSummary></TestRun>'
-        Set-Content (Join-Path $reports 'selected.trx') "<TestRun><ResultSummary><Counters executed='$Executed' /></ResultSummary></TestRun>"
-        Mock New-AutomationRunDirectory { $Root } -ModuleName RepositoryAutomation
-        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+        Mock Get-TestProjects { @('Widget.L0Tests.csproj') } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            $directory = $Arguments[[array]::IndexOf($Arguments, '--results-directory') + 1]
+            Set-Content (Join-Path $directory 'result.trx') "<TestRun><ResultSummary><Counters executed='$Executed' /></ResultSummary></TestRun>"
+        } -ModuleName RepositoryAutomation
         if ($Executed -eq 0) {
-            { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot $reports -TestLevels L4Tests -Logger $Logger } |
-                Should -Throw '*No tests executed*'
+            { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot (Join-Path $TestDrive 'empty') } | Should -Throw '*No tests executed*'
         }
         else {
-            (Invoke-SolutionTests -SolutionPath $solution -ResultsRoot $reports -TestLevels L0Tests -Logger $Logger).ResultsDirectory |
-                Should -Be $reports
+            (Invoke-SolutionTests -SolutionPath $solution -ResultsRoot (Join-Path $TestDrive 'passing')).ResultsDirectory | Should -Not -BeNullOrEmpty
         }
     }
 
+    It 'allows only the existing empty SDK facades and still rejects an entirely empty run' {
+        $solution = Join-Path $TestDrive 'facades.slnx'
+        Set-Content $solution '<Solution />'
+        Mock Get-TestProjects { @('Sdk.Client.L0Tests.csproj') } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            $directory = $Arguments[[array]::IndexOf($Arguments, '--results-directory') + 1]
+            Set-Content (Join-Path $directory 'empty.trx') '<TestRun><ResultSummary><Counters executed="0" /></ResultSummary></TestRun>'
+        } -ModuleName RepositoryAutomation
+        { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot (Join-Path $TestDrive 'facades') } | Should -Throw '*No tests executed*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Times 1 -Exactly -ParameterFilter {
+            $Arguments -contains '--ignore-exit-code' -and $Arguments -contains '8'
+        }
+    }
     It 'isolates cleanup caches between invocations' {
         $solution = Join-Path $TestDrive 'cleanup.slnx'
         $settings = Join-Path $TestDrive 'Directory.DotSettings'
         Set-Content $solution '<Solution />'
         Set-Content $settings '<ResourceDictionary />'
         Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess { '10.0.400' } -ModuleName RepositoryAutomation -ParameterFilter { $Arguments[0] -eq '--version' }
         Invoke-ReSharperCleanup -SolutionPath $solution -SettingsPath $settings
         Invoke-ReSharperCleanup -SolutionPath $solution -SettingsPath $settings
         $caches = @(Get-ChildItem (Join-Path $TestDrive '.scratchpad/cleanup-caches') -Directory)
@@ -99,19 +112,47 @@ Describe 'Repository automation quality gates' {
         foreach ($cache in $caches) {
             $expectedArgument = "--caches-home=$($cache.FullName)"
             Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Exactly 1 -ParameterFilter {
-                $Arguments -contains $expectedArgument
+                $Arguments -contains $expectedArgument -and $Arguments -contains '--dotnetcoresdk=10.0.400'
             }
         }
     }
 
-    It 'distinguishes missing reports from a reported empty test run' {
-        $solution = Join-Path $TestDrive 'missing.slnx'
+    It 'rejects a missing module report even when another module executes tests' {
+        $solution = Join-Path $TestDrive 'partial.slnx'
         Set-Content $solution '<Solution />'
-        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
-        { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot (Join-Path $TestDrive 'missing-results') } |
+        Mock Get-TestProjects { @('First.L0Tests.csproj', 'Second.L0Tests.csproj') } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            if ($Arguments -contains 'First.L0Tests.csproj') {
+                $directory = $Arguments[[array]::IndexOf($Arguments, '--results-directory') + 1]
+                Set-Content (Join-Path $directory 'result.trx') '<TestRun><ResultSummary><Counters executed="1" /></ResultSummary></TestRun>'
+            }
+        } -ModuleName RepositoryAutomation
+        { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot (Join-Path $TestDrive 'partial') } |
             Should -Throw '*No TRX reports were produced*'
     }
 
+    It 'rejects a test level with no matching projects' {
+        $solution = Join-Path $TestDrive 'missing.slnx'
+        Set-Content $solution '<Solution />'
+        Mock Get-TestProjects { @('Widget.L0Tests.csproj') } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {} -ModuleName RepositoryAutomation
+        { Invoke-SolutionTests -SolutionPath $solution -TestLevels L4Tests } | Should -Throw '*No projects match*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Times 0 -Exactly
+    }
+
+    It 'collects a later module result after an earlier module fails' {
+        $solution = Join-Path $TestDrive 'failures.slnx'
+        Set-Content $solution '<Solution />'
+        Mock Get-TestProjects { @('First.L0Tests.csproj', 'Second.L0Tests.csproj') } -ModuleName RepositoryAutomation
+        Mock Invoke-RepositoryProcess {
+            if ($Arguments -contains 'First.L0Tests.csproj') { throw 'first module failed' }
+            $directory = $Arguments[[array]::IndexOf($Arguments, '--results-directory') + 1]
+            Set-Content (Join-Path $directory 'result.trx') '<TestRun><ResultSummary><Counters executed="1" /></ResultSummary></TestRun>'
+        } -ModuleName RepositoryAutomation
+        { Invoke-SolutionTests -SolutionPath $solution -ResultsRoot (Join-Path $TestDrive 'failures') } |
+            Should -Throw '*first module failed*'
+        Should -Invoke Invoke-RepositoryProcess -ModuleName RepositoryAutomation -Times 2 -Exactly
+    }
     It 'stops the pipeline when the coverage summarizer exits unsuccessfully' {
         Mock Invoke-MississippiSolutionBuild {} -ModuleName RepositoryAutomation
         Mock Invoke-MississippiSolutionUnitTests {} -ModuleName RepositoryAutomation

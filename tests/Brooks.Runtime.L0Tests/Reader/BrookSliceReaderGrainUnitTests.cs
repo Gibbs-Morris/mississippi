@@ -100,10 +100,7 @@ public sealed class BrookSliceReaderGrainUnitTests
         CancellationToken capturedToken = default;
         (BrookSliceReaderGrain sut, Mock<IBrookStorageReader> storage, Mock<IGrainContext> _) = CreateGrain();
         storage.Setup(s => s.ReadEventsAsync(TestRangeKey, It.IsAny<CancellationToken>()))
-            .Returns((
-                BrookRangeKey _,
-                CancellationToken ct
-            ) =>
+            .Returns((BrookRangeKey _, CancellationToken ct) =>
             {
                 capturedToken = ct;
                 return EmptyAsyncEnumerableAsync();
@@ -236,7 +233,7 @@ public sealed class BrookSliceReaderGrainUnitTests
 
         // Act: Start from position 2
         List<BrookEvent> result = new();
-        await foreach (BrookEvent ev in sut.ReadAsync(2, 3))
+        await foreach (BrookEvent ev in sut.ReadAsync(2, 3, TestContext.Current.CancellationToken))
         {
             result.Add(ev);
         }
@@ -287,7 +284,7 @@ public sealed class BrookSliceReaderGrainUnitTests
 
         // Act: Read up to position 2
         List<BrookEvent> result = new();
-        await foreach (BrookEvent ev in sut.ReadAsync(0, 2))
+        await foreach (BrookEvent ev in sut.ReadAsync(0, 2, TestContext.Current.CancellationToken))
         {
             result.Add(ev);
         }
@@ -317,7 +314,7 @@ public sealed class BrookSliceReaderGrainUnitTests
         // Act & Assert
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
-            await foreach (BrookEvent unused in sut.ReadAsync(0, 5))
+            await foreach (BrookEvent unused in sut.ReadAsync(0, 5, TestContext.Current.CancellationToken))
             {
                 _ = unused;
             }
@@ -354,7 +351,7 @@ public sealed class BrookSliceReaderGrainUnitTests
         // Act & Assert: Cache has 2 events (positions 0, 1), requesting up to position 5 should fail
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
-            await foreach (BrookEvent unused in sut.ReadAsync(0, 5))
+            await foreach (BrookEvent unused in sut.ReadAsync(0, 5, TestContext.Current.CancellationToken))
             {
                 _ = unused;
             }
@@ -395,7 +392,7 @@ public sealed class BrookSliceReaderGrainUnitTests
 
         // Act
         List<BrookEvent> result = new();
-        await foreach (BrookEvent ev in sut.ReadAsync(0, 2))
+        await foreach (BrookEvent ev in sut.ReadAsync(0, 2, TestContext.Current.CancellationToken))
         {
             result.Add(ev);
         }
@@ -468,7 +465,7 @@ public sealed class BrookSliceReaderGrainUnitTests
         await sut.OnActivateAsync(CancellationToken.None);
 
         // Act
-        ImmutableArray<BrookEvent> result = await sut.ReadBatchAsync(0, 2);
+        ImmutableArray<BrookEvent> result = await sut.ReadBatchAsync(0, 2, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(3, result.Length);

@@ -154,7 +154,10 @@ public sealed class AggregateServiceBaseTests
         TestableAggregateService service = new(mockFactory.Object, NullServiceLogger);
 
         // Act
-        OperationResult result = await service.TestExecuteCommandAsync("entity-1", command);
+        OperationResult result = await service.TestExecuteCommandAsync(
+            "entity-1",
+            command,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Success);
@@ -178,7 +181,10 @@ public sealed class AggregateServiceBaseTests
         TestableAggregateService service = new(mockFactory.Object, NullServiceLogger);
 
         // Act
-        OperationResult result = await service.TestExecuteCommandAsync("entity-1", command);
+        OperationResult result = await service.TestExecuteCommandAsync(
+            "entity-1",
+            command,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result.Success);
@@ -198,7 +204,7 @@ public sealed class AggregateServiceBaseTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            service.TestExecuteCommandAsync<TestCommand>("entity-1", null!));
+            service.TestExecuteCommandAsync<TestCommand>("entity-1", null!, TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -213,7 +219,8 @@ public sealed class AggregateServiceBaseTests
         TestCommand command = new("test");
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => service.TestExecuteCommandAsync(string.Empty, command));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+            service.TestExecuteCommandAsync(string.Empty, command, TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -228,7 +235,8 @@ public sealed class AggregateServiceBaseTests
         TestCommand command = new("test");
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => service.TestExecuteCommandAsync(null!, command));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+            service.TestExecuteCommandAsync(null!, command, TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -243,7 +251,8 @@ public sealed class AggregateServiceBaseTests
         TestCommand command = new("test");
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => service.TestExecuteCommandAsync("   ", command));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+            service.TestExecuteCommandAsync("   ", command, TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -275,7 +284,7 @@ public sealed class AggregateServiceBaseTests
         TrackingAggregateService service = new(mockFactory.Object, NullServiceLogger);
 
         // Act
-        await service.TestExecuteCommandAsync("entity-1", command);
+        await service.TestExecuteCommandAsync("entity-1", command, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(service.OnAfterExecuteCalled);
@@ -301,7 +310,7 @@ public sealed class AggregateServiceBaseTests
         TrackingAggregateService service = new(mockFactory.Object, NullServiceLogger);
 
         // Act
-        await service.TestExecuteCommandAsync("entity-1", command);
+        await service.TestExecuteCommandAsync("entity-1", command, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(service.OnBeforeExecuteCalled);

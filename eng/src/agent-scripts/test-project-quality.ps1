@@ -202,7 +202,9 @@ try {
     if (-not (Test-Path -LiteralPath $mutationRoot)) { New-Item -ItemType Directory -Path $mutationRoot | Out-Null }
 
     Write-Host "[3/7] Running dotnet test with coverage..." -ForegroundColor Cyan
-    $testArguments = @('test', $testProjectPath, '--configuration', $Configuration, '--logger', 'trx;LogFileName=test_results.trx', '--results-directory', $resultsDir, '--collect', 'XPlat Code Coverage', '--verbosity', 'minimal')
+    $testArguments = @('test', '--project', $testProjectPath, '--configuration', $Configuration,
+        '--report-xunit-trx', '--report-xunit-trx-filename', 'test_results.trx', '--results-directory', $resultsDir,
+        '--coverlet', '--coverlet-output-format', 'cobertura', '--minimum-expected-tests', '1')
     if ($NoBuild) { $testArguments += '--no-build' }
     dotnet @testArguments
     if ($LASTEXITCODE -ne 0) { $testFailed = $true }
@@ -213,7 +215,7 @@ try {
     $trxSummary = $null
     if ($trx) { $trxSummary = Parse-TrxSummary -TrxPath $trx.FullName }
 
-    $cobertura = Get-ChildItem -Path $resultsDir -Recurse -Filter coverage.cobertura.xml | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $cobertura = Get-ChildItem -Path $resultsDir -Recurse -Filter '*cobertura*.xml' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     $coveragePercent = $null
     if ($cobertura) { $coveragePercent = Parse-CoberturaCoveragePercent -CoberturaPath $cobertura.FullName }
     if ($null -eq $trxSummary -or $trxSummary.Executed -lt 1 -or $trxSummary.Failed -gt 0 -or $trxSummary.Outcome -ne 'Completed') { $testFailed = $true }

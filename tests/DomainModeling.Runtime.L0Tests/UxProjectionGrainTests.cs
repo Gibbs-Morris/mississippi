@@ -118,7 +118,7 @@ public sealed class UxProjectionGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
-        TestProjection? result = await grain.GetAsync();
+        TestProjection? result = await grain.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -156,8 +156,8 @@ public sealed class UxProjectionGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act - call GetAsync twice with advancing cursor
-        TestProjection? result1 = await grain.GetAsync();
-        TestProjection? result2 = await grain.GetAsync();
+        TestProjection? result1 = await grain.GetAsync(TestContext.Current.CancellationToken);
+        TestProjection? result2 = await grain.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert - both calls should fetch from versioned cache since cursor advanced
         Assert.NotNull(result1);
@@ -192,7 +192,7 @@ public sealed class UxProjectionGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
-        await grain.GetAsync();
+        await grain.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(capturedKey);
@@ -218,7 +218,7 @@ public sealed class UxProjectionGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
-        TestProjection? result = await grain.GetAsync();
+        TestProjection? result = await grain.GetAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(result);
@@ -242,7 +242,7 @@ public sealed class UxProjectionGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
-        TestProjection? result = await grain.GetAtVersionAsync(notSetVersion);
+        TestProjection? result = await grain.GetAtVersionAsync(notSetVersion, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(result);
@@ -274,7 +274,7 @@ public sealed class UxProjectionGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
-        TestProjection? result = await grain.GetAtVersionAsync(requestedVersion);
+        TestProjection? result = await grain.GetAtVersionAsync(requestedVersion, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -302,7 +302,7 @@ public sealed class UxProjectionGrainTests
         await grain.OnActivateAsync(CancellationToken.None);
 
         // Act
-        BrookPosition result = await grain.GetLatestVersionAsync();
+        BrookPosition result = await grain.GetLatestVersionAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(42, result.Value);

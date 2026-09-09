@@ -119,8 +119,8 @@ public sealed class ActionEffectBaseTests
         }
 
         // Assert
-        Assert.Single(results);
-        Assert.IsType<OtherAction>(results[0]);
+        IAction item = Assert.Single(results);
+        Assert.IsType<OtherAction>(item);
     }
 
     /// <summary>

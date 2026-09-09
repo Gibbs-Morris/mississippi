@@ -1,7 +1,5 @@
 using Mississippi.DomainModeling.Abstractions;
 
-using Xunit.Abstractions;
-
 
 namespace MississippiSamples.Crescent.L2Tests;
 
@@ -55,14 +53,18 @@ public sealed class AggregateLifecycleTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter());
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(),
+            TestContext.Current.CancellationToken);
         Assert.True(initResult.Success, "Initialize should succeed");
         output.WriteLine("[Test] Initialize() succeeded");
 
         // Act - Increment 10 times
         for (int i = 0; i < 10; i++)
         {
-            OperationResult incResult = await counter.ExecuteAsync(new IncrementCounter());
+            OperationResult incResult = await counter.ExecuteAsync(
+                new IncrementCounter(),
+                TestContext.Current.CancellationToken);
             Assert.True(incResult.Success, $"Increment[{i + 1}] should succeed");
         }
 
@@ -71,7 +73,9 @@ public sealed class AggregateLifecycleTests
         // Act - Decrement 5 times
         for (int i = 0; i < 5; i++)
         {
-            OperationResult decResult = await counter.ExecuteAsync(new DecrementCounter());
+            OperationResult decResult = await counter.ExecuteAsync(
+                new DecrementCounter(),
+                TestContext.Current.CancellationToken);
             Assert.True(decResult.Success, $"Decrement[{i + 1}] should succeed");
         }
 
@@ -82,7 +86,8 @@ public sealed class AggregateLifecycleTests
             new ResetCounter
             {
                 NewValue = 100,
-            });
+            },
+            TestContext.Current.CancellationToken);
         Assert.True(resetResult.Success, "Reset should succeed");
         output.WriteLine("[Test] Reset(100) succeeded");
 
@@ -93,7 +98,8 @@ public sealed class AggregateLifecycleTests
                 new IncrementCounter
                 {
                     Amount = i * 10,
-                });
+                },
+                TestContext.Current.CancellationToken);
             Assert.True(incResult.Success, $"Increment({i * 10}) should succeed");
         }
 
@@ -129,14 +135,16 @@ public sealed class AggregateLifecycleTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter());
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(),
+            TestContext.Current.CancellationToken);
         Assert.True(initResult.Success, "Initialize should succeed");
 
         // Act - Fire concurrent increment commands
         List<Task<OperationResult>> tasks = [];
         for (int i = 0; i < concurrentOps; i++)
         {
-            tasks.Add(counter.ExecuteAsync(new IncrementCounter()));
+            tasks.Add(counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken));
         }
 
         OperationResult[] results = await Task.WhenAll(tasks);
@@ -173,14 +181,18 @@ public sealed class AggregateLifecycleTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter());
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(),
+            TestContext.Current.CancellationToken);
         Assert.True(initResult.Success, "Initialize should succeed");
 
         // Act - Run rapid increments
         int successCount = 0;
         for (int i = 0; i < operationCount; i++)
         {
-            OperationResult result = await counter.ExecuteAsync(new IncrementCounter());
+            OperationResult result = await counter.ExecuteAsync(
+                new IncrementCounter(),
+                TestContext.Current.CancellationToken);
             if (result.Success)
             {
                 successCount++;
@@ -192,7 +204,7 @@ public sealed class AggregateLifecycleTests
         output.WriteLine($"[Test] All {operationCount} increment operations completed");
 
         // Verify projection - add a small delay to allow projection catch-up under heavy emulator load
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
         IUxProjectionGrain<CounterSummaryProjection> projectionGrain = fixture.UxProjectionGrainFactory
             .GetUxProjectionGrain<CounterSummaryProjection>(entityId);
         CounterSummaryProjection? projection = await projectionGrain.GetAsync(CancellationToken.None);
@@ -217,17 +229,23 @@ public sealed class AggregateLifecycleTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Attempt increment before initialization (should fail)
-        OperationResult incResultBeforeInit = await counter.ExecuteAsync(new IncrementCounter());
+        OperationResult incResultBeforeInit = await counter.ExecuteAsync(
+            new IncrementCounter(),
+            TestContext.Current.CancellationToken);
         Assert.False(incResultBeforeInit.Success, "Increment before init should fail");
         output.WriteLine($"[Test] Increment before init failed as expected: {incResultBeforeInit.ErrorMessage}");
 
         // Act - Now initialize
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter(10));
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(10),
+            TestContext.Current.CancellationToken);
         Assert.True(initResult.Success, "Initialize should succeed");
         output.WriteLine("[Test] Initialize(10) succeeded");
 
         // Act - Attempt to re-initialize (should fail)
-        OperationResult reinitResult = await counter.ExecuteAsync(new InitializeCounter(20));
+        OperationResult reinitResult = await counter.ExecuteAsync(
+            new InitializeCounter(20),
+            TestContext.Current.CancellationToken);
         Assert.False(reinitResult.Success, "Re-initialization should fail");
         Assert.Equal(AggregateErrorCodes.AlreadyExists, reinitResult.ErrorCode);
         output.WriteLine($"[Test] Re-initialize failed as expected: {reinitResult.ErrorMessage}");
@@ -237,7 +255,8 @@ public sealed class AggregateLifecycleTests
             new DecrementCounter
             {
                 Amount = 0,
-            });
+            },
+            TestContext.Current.CancellationToken);
         Assert.False(zeroDecResult.Success, "Decrement(0) should fail validation");
         output.WriteLine($"[Test] Decrement(0) failed as expected: {zeroDecResult.ErrorMessage}");
 

@@ -343,7 +343,9 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         // Act
         service.Initialize();
         store.Dispatch(new TestAction());
-        Task completedTask = await Task.WhenAny(sendCalledTcs.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+        Task completedTask = await Task.WhenAny(
+            sendCalledTcs.Task,
+            Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
 
         // Assert - service should be subscribed (no exception means success)
         // The subscription is internal, so we verify via send side effects when DevTools is connected
@@ -441,7 +443,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         store.Dispatch(new TestAction());
 
         // Allow async JS interop to complete
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert - JS module should have been imported
         jsRuntimeMock.Verify(r => r.InvokeAsync<IJSObjectReference>("import", It.IsAny<object[]>()), Times.Once);
@@ -468,7 +470,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         store.Dispatch(new TestAction());
 
         // Allow async operations to complete
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert - connection attempted but send not invoked
         jsModuleMock.Verify(m => m.InvokeAsync<bool>("connect", It.IsAny<object[]>()), Times.Once);
@@ -496,7 +498,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
         store.Dispatch(new TestAction());
 
         // Allow async operations to complete
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert - init should have been called
         jsModuleMock.Verify(m => m.InvokeAsync<object>("init", It.IsAny<object[]>()), Times.Once);
@@ -545,11 +547,11 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
 
         // Dispatch first to establish connection
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Act - dispatch second action
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert - send should have been called for both actions
         jsModuleMock.Verify(m => m.InvokeAsync<object>("send", It.IsAny<object[]>()), Times.AtLeast(1));
@@ -576,7 +578,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
             .ReturnsAsync(new object());
         service.Initialize();
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         int sendCountBeforeStop = sendCount;
 
         // Act
@@ -584,7 +586,7 @@ public sealed class ReduxDevToolsServiceConnectionTests : IAsyncDisposable
 
         // Assert - dispatching should not send after stop
         store.Dispatch(new TestAction());
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         Assert.Equal(sendCountBeforeStop, sendCount);
     }
 }

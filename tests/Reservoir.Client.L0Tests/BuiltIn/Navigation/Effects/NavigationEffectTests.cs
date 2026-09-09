@@ -501,8 +501,8 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        Assert.Single(nav.Navigations);
-        Assert.Contains("key=value", nav.Navigations[0].Uri, StringComparison.Ordinal);
+        TestableNavigationManager.NavigationRecord item = Assert.Single(nav.Navigations);
+        Assert.Contains("key=value", item.Uri, StringComparison.Ordinal);
         Assert.False(nav.Navigations[0].ReplaceHistoryEntry);
     }
 
@@ -527,8 +527,8 @@ public sealed class NavigationEffectTests
         await ConsumeEffectAsync(effect, action, state);
 
         // Assert
-        Assert.Single(nav.Navigations);
-        Assert.Contains("key=value", nav.Navigations[0].Uri, StringComparison.Ordinal);
+        TestableNavigationManager.NavigationRecord item = Assert.Single(nav.Navigations);
+        Assert.Contains("key=value", item.Uri, StringComparison.Ordinal);
         Assert.True(nav.Navigations[0].ReplaceHistoryEntry);
     }
 }

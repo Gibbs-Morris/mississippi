@@ -36,7 +36,7 @@ function Resolve-LatestCoverageReport {
     $searchRoot = Join-Path $RepoRoot '.scratchpad/coverage-test-results'
     if (-not (Test-Path -LiteralPath $searchRoot)) { return $null }
 
-    $reports = Get-ChildItem -Path $searchRoot -Recurse -Filter 'coverage.cobertura.xml' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
+    $reports = Get-ChildItem -Path $searchRoot -Recurse -Filter '*cobertura*.xml' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending
     return $reports | Select-Object -First 1
 }
 
@@ -162,7 +162,7 @@ Import-Module -Name $taskModulePath -Force
 if (-not $CoverageReportPath) {
     $latest = Resolve-LatestCoverageReport -RepoRoot $effectiveRepoRoot
     if (-not $latest) {
-        throw "No coverage.cobertura.xml report found under '.scratchpad/coverage-test-results'."
+        throw "No Cobertura report found under '.scratchpad/coverage-test-results'."
     }
     $CoverageReportPath = $latest.FullName
 }

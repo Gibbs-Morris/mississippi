@@ -248,8 +248,8 @@ public sealed class HeartbeatManagerTests
         Func<int> connectionCountProvider = () => 5;
 
         // Act - Start multiple times
-        await manager.StartAsync(connectionCountProvider);
-        await manager.StartAsync(connectionCountProvider);
+        await manager.StartAsync(connectionCountProvider, TestContext.Current.CancellationToken);
+        await manager.StartAsync(connectionCountProvider, TestContext.Current.CancellationToken);
 
         // Assert - RegisterServerAsync should only be called once
         await directoryGrain.Received(1).RegisterServerAsync(manager.ServerId);
@@ -273,7 +273,7 @@ public sealed class HeartbeatManagerTests
         Func<int> connectionCountProvider = () => 5;
 
         // Act
-        await manager.StartAsync(connectionCountProvider);
+        await manager.StartAsync(connectionCountProvider, TestContext.Current.CancellationToken);
 
         // Assert
         await directoryGrain.Received(1).RegisterServerAsync(serverId);
@@ -293,7 +293,9 @@ public sealed class HeartbeatManagerTests
         using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.StartAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => manager.StartAsync(
+            null!,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -311,10 +313,10 @@ public sealed class HeartbeatManagerTests
         ILogger<HeartbeatManager> logger = Substitute.For<ILogger<HeartbeatManager>>();
         using HeartbeatManager manager = new(CreateServerIdProvider(), grainFactory, options, logger);
         string serverId = manager.ServerId;
-        await manager.StartAsync(() => 5);
+        await manager.StartAsync(() => 5, TestContext.Current.CancellationToken);
 
         // Act
-        await manager.StopAsync();
+        await manager.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
         await directoryGrain.Received(1).UnregisterServerAsync(serverId);

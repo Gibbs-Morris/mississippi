@@ -152,7 +152,7 @@ public sealed class DomainClientRegistrationGeneratorTests
             RunGenerator(AttributeStubs, FeatureRegistrationStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainFeatureRegistrations", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("AddTestAppDomainClient", generatedCode, StringComparison.Ordinal);
         Assert.Contains(
@@ -188,7 +188,7 @@ public sealed class DomainClientRegistrationGeneratorTests
             RunGenerator(AttributeStubs, FeatureRegistrationStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainFeatureRegistrations", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("AddCoreLogicClient", generatedCode, StringComparison.Ordinal);
         Assert.Contains(

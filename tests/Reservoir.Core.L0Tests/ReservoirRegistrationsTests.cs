@@ -135,13 +135,11 @@ public sealed class ReservoirRegistrationsTests
         IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        builder.AddFeatureState<TestFeatureState>(feature => feature.AddReducer<TestAction>(static (
-                state,
-                _
-            ) => state with
-            {
-                Counter = state.Counter + 1,
-            })
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddReducer<TestAction>(static (state, _) =>
+                state with
+                {
+                    Counter = state.Counter + 1,
+                })
             .AddActionEffect<TestActionEffect>());
         using ServiceProvider provider = services.BuildServiceProvider();
 
@@ -165,10 +163,7 @@ public sealed class ReservoirRegistrationsTests
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => builder.AddFeatureState<TestFeatureState>(feature =>
         {
-            feature.AddReducer<TestAction>(static (
-                state,
-                _
-            ) => state with
+            feature.AddReducer<TestAction>(static (state, _) => state with
             {
                 Counter = state.Counter + 1,
             });
@@ -208,8 +203,8 @@ public sealed class ReservoirRegistrationsTests
         // Assert
         Assert.Same(replacementTimeProvider, provider.GetRequiredService<TimeProvider>());
         IMarker[] markers = [.. provider.GetServices<IMarker>()];
-        Assert.Single(markers);
-        Assert.IsType<InsertedMarker>(markers[0]);
+        IMarker item = Assert.Single(markers);
+        Assert.IsType<InsertedMarker>(item);
     }
 
     /// <summary>
@@ -242,10 +237,7 @@ public sealed class ReservoirRegistrationsTests
         IReservoirBuilder builder = services.AddReservoir();
 
         // Act
-        builder.AddFeatureState<TestFeatureState>(feature => feature.AddReducer<TestAction>((
-            state,
-            _
-        ) => state with
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddReducer<TestAction>((state, _) => state with
         {
             Counter = state.Counter + 1,
         }));

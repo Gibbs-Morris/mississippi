@@ -84,8 +84,8 @@ public sealed class BatchSizeEstimatorTests
         long overhead = estimator.EstimateBatchSize(Array.Empty<BrookEvent>());
         long maxSize = overhead + (singleEventSize * events.Length);
         List<IReadOnlyList<BrookEvent>> batches = estimator.CreateSizeLimitedBatches(events, 10, maxSize).ToList();
-        Assert.Single(batches);
-        Assert.Equal(events.Length, batches[0].Count);
+        IReadOnlyList<BrookEvent> item = Assert.Single(batches);
+        Assert.Equal(events.Length, item.Count);
     }
 
     /// <summary>

@@ -96,7 +96,11 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToAllAsync(string.Empty, "method", []));
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToAllAsync(
+            string.Empty,
+            "method",
+            [],
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -116,7 +120,8 @@ public sealed class AqueductNotifierTests
         await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToAllAsync(
             null!,
             "method",
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -136,7 +141,8 @@ public sealed class AqueductNotifierTests
         await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToAllAsync(
             "TestHub",
             string.Empty,
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -156,7 +162,8 @@ public sealed class AqueductNotifierTests
         await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToAllAsync(
             "TestHub",
             null!,
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -175,7 +182,12 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act
-        await notifier.SendToConnectionAsync("TestHub", "conn1", "Notify", ImmutableArray.Create<object?>("arg1"));
+        await notifier.SendToConnectionAsync(
+            "TestHub",
+            "conn1",
+            "Notify",
+            ImmutableArray.Create<object?>("arg1"),
+            TestContext.Current.CancellationToken);
 
         // Assert
         await mockClientGrain.Received(1).SendMessageAsync("Notify", Arg.Any<ImmutableArray<object?>>());
@@ -195,8 +207,12 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            notifier.SendToConnectionAsync("TestHub", string.Empty, "method", ImmutableArray<object?>.Empty));
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToConnectionAsync(
+            "TestHub",
+            string.Empty,
+            "method",
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -213,8 +229,12 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            notifier.SendToConnectionAsync("TestHub", null!, "method", ImmutableArray<object?>.Empty));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToConnectionAsync(
+            "TestHub",
+            null!,
+            "method",
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -231,8 +251,12 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            notifier.SendToConnectionAsync(string.Empty, "conn1", "method", ImmutableArray<object?>.Empty));
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToConnectionAsync(
+            string.Empty,
+            "conn1",
+            "method",
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -249,8 +273,12 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            notifier.SendToConnectionAsync(null!, "conn1", "method", ImmutableArray<object?>.Empty));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToConnectionAsync(
+            null!,
+            "conn1",
+            "method",
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -267,8 +295,12 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            notifier.SendToConnectionAsync("TestHub", "conn1", string.Empty, ImmutableArray<object?>.Empty));
+        await Assert.ThrowsAsync<ArgumentException>(() => notifier.SendToConnectionAsync(
+            "TestHub",
+            "conn1",
+            string.Empty,
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -285,8 +317,12 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
-            notifier.SendToConnectionAsync("TestHub", "conn1", null!, ImmutableArray<object?>.Empty));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => notifier.SendToConnectionAsync(
+            "TestHub",
+            "conn1",
+            null!,
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -305,7 +341,12 @@ public sealed class AqueductNotifierTests
         AqueductNotifier notifier = new(clusterClient, options, logger);
 
         // Act
-        await notifier.SendToGroupAsync("TestHub", "group1", "Notify", ImmutableArray.Create<object?>("arg1"));
+        await notifier.SendToGroupAsync(
+            "TestHub",
+            "group1",
+            "Notify",
+            ImmutableArray.Create<object?>("arg1"),
+            TestContext.Current.CancellationToken);
 
         // Assert
         await mockGroupGrain.Received(1).SendMessageAsync("Notify", Arg.Any<ImmutableArray<object?>>());
@@ -329,7 +370,8 @@ public sealed class AqueductNotifierTests
             "TestHub",
             string.Empty,
             "method",
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -350,7 +392,8 @@ public sealed class AqueductNotifierTests
             "TestHub",
             null!,
             "method",
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -371,7 +414,8 @@ public sealed class AqueductNotifierTests
             string.Empty,
             "group1",
             "method",
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -392,7 +436,8 @@ public sealed class AqueductNotifierTests
             null!,
             "group1",
             "method",
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -413,7 +458,8 @@ public sealed class AqueductNotifierTests
             "TestHub",
             "group1",
             string.Empty,
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>
@@ -434,6 +480,7 @@ public sealed class AqueductNotifierTests
             "TestHub",
             "group1",
             null!,
-            ImmutableArray<object?>.Empty));
+            ImmutableArray<object?>.Empty,
+            TestContext.Current.CancellationToken));
     }
 }

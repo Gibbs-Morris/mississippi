@@ -151,7 +151,10 @@ public sealed class CosmosDbTests : IAsyncDisposable
                 Value = i * 10,
                 CreatedAt = CreatedAtUtc,
             };
-            await container.CreateItemAsync(doc, new PartitionKey(doc.Id));
+            await container.CreateItemAsync(
+                doc,
+                new PartitionKey(doc.Id),
+                cancellationToken: TestContext.Current.CancellationToken);
         }
 
         // Act
@@ -160,7 +163,7 @@ public sealed class CosmosDbTests : IAsyncDisposable
         using FeedIterator<TestDocument> iterator = container.GetItemQueryIterator<TestDocument>(query);
         while (iterator.HasMoreResults)
         {
-            FeedResponse<TestDocument> batch = await iterator.ReadNextAsync();
+            FeedResponse<TestDocument> batch = await iterator.ReadNextAsync(TestContext.Current.CancellationToken);
             results.AddRange(batch);
         }
 
@@ -190,10 +193,16 @@ public sealed class CosmosDbTests : IAsyncDisposable
         Container container = await GetOrCreateContainerAsync();
 
         // Write the document first
-        await container.CreateItemAsync(document, new PartitionKey(testId));
+        await container.CreateItemAsync(
+            document,
+            new PartitionKey(testId),
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        ItemResponse<TestDocument> readResponse = await container.ReadItemAsync<TestDocument>(testId, new(testId));
+        ItemResponse<TestDocument> readResponse = await container.ReadItemAsync<TestDocument>(
+            testId,
+            new(testId),
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, readResponse.StatusCode);
@@ -241,7 +250,10 @@ public sealed class CosmosDbTests : IAsyncDisposable
         Container container = await GetOrCreateContainerAsync();
 
         // Act
-        ItemResponse<TestDocument> response = await container.CreateItemAsync(document, new PartitionKey(testId));
+        ItemResponse<TestDocument> response = await container.CreateItemAsync(
+            document,
+            new PartitionKey(testId),
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);

@@ -235,7 +235,7 @@ public sealed class StoreTests : IDisposable
         store.Dispatch(new IncrementAction());
 
         // Assert
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.True(dispatchCount >= 2); // Initial + returned action
     }
 
@@ -262,7 +262,7 @@ public sealed class StoreTests : IDisposable
         store.Dispatch(new IncrementAction());
 
         // Assert
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.True(secondEffectRan);
     }
 
@@ -397,7 +397,7 @@ public sealed class StoreTests : IDisposable
         store.Dispatch(new IncrementAction());
 
         // Assert
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         Assert.True(effectHandled);
     }
 

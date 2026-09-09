@@ -43,6 +43,7 @@ The default summary command and `go.ps1 -IncludeMutation` generate survivor repo
 | **unit-test-mississippi-solution.ps1** | Run Mississippi L0/L1 tests with coverage, emitting results under `.scratchpad/coverage-test-results`. | `pwsh ./eng/src/agent-scripts/unit-test-mississippi-solution.ps1` |
 | **mutation-test-mississippi-solution.ps1** | Generate `mississippi.sln` with SLNGen and execute Stryker.NET to measure mutation score. | `pwsh ./eng/src/agent-scripts/mutation-test-mississippi-solution.ps1` |
 | **test-project-quality.ps1** | Run `dotnet test` (with coverage) for a single project and optionally Stryker; prints a machine-readable summary. | `pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Common.Abstractions.L0Tests -SkipMutation` |
+| **test-solution.ps1** | Run selected test levels through MTP with strict execution and separate TRX reports for each project. | `pwsh ./eng/src/agent-scripts/test-solution.ps1 -SolutionPath mississippi.slnx -NoBuild` |
 | **clean-up-mississippi-solution.ps1** | Produce a temporary `.sln` and run ReSharper CleanupCode using repository settings. | `pwsh ./eng/src/agent-scripts/clean-up-mississippi-solution.ps1` |
 | **build-sample-solution.ps1** | Build `samples.slnx`. | `pwsh ./eng/src/agent-scripts/build-sample-solution.ps1` |
 | **unit-test-sample-solution.ps1** | Run sample L0/L1 tests (no mutation testing). | `pwsh ./eng/src/agent-scripts/unit-test-sample-solution.ps1` |
@@ -199,3 +200,13 @@ All command-line scripts in this folder are thin shims over the shared PowerShel
 3. Cover the logic with Pester (see `eng/tests/agent-scripts/RepositoryAutomation.Tests.ps1` for examples) and wire the suite into `eng/tests/orchestrate-powershell-tests.ps1` so CI runs it.
 
 > Tip: when experimenting interactively you can `Import-Module ./eng/src/agent-scripts/RepositoryAutomation.psm1 -Force` and call the functions directly (for example `Invoke-MississippiSolutionBuild -Configuration Debug`).
+
+## xUnit v3 runner and reports
+
+Actual test projects use xUnit Core Framework v3 through `xunit.v3` 4.0.0 and Microsoft.Testing.Platform 2.3.3. Shared fixture libraries use extensibility contracts; assertion-only harnesses use `xunit.v3.assert`. Library projects do not become executables.
+
+Use `test-solution.ps1` for L0/L1 selection, `test-project-quality.ps1` for focused coverage, and `test-spring.ps1` for Spring L2/L3 validation. `dotnet test` uses explicit `--project` or `--solution` selectors with MTP. VSTest's `--logger`, `--collect`, and run-configuration arguments do not apply to these commands.
+
+Solution execution selects projects by level and checks every module's TRX result. Each project has its own results directory. The three existing empty SDK facade projects (`Sdk.Client.L0Tests`, `Sdk.Gateway.L0Tests`, and `Sdk.Runtime.L0Tests`) may return the MTP no-tests exit code; every other selected project must execute tests, and an entirely empty solution run fails.
+
+Coverlet MTP uses the shared `testconfig.json` copied into test outputs. Its settings preserve the previous collector's source/attribute and automatic-property coverage choices. Cobertura filenames include timestamps; report consumers search for `*cobertura*.xml`. Stryker uses its MTP runner and retains complete-report validation independently of score-threshold exit status.

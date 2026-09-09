@@ -115,7 +115,7 @@ public sealed class DomainServerRegistrationGeneratorTests
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("AddTestAppDomainServer", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregateMappers();", generatedCode, StringComparison.Ordinal);
@@ -141,7 +141,7 @@ public sealed class DomainServerRegistrationGeneratorTests
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("AddCoreLogicServer", generatedCode, StringComparison.Ordinal);
         Assert.Contains("services.AddOrderAggregateMappers();", generatedCode, StringComparison.Ordinal);
@@ -166,7 +166,7 @@ public sealed class DomainServerRegistrationGeneratorTests
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("Controllers.Aggregates.Mappers;", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("Controllers.Projections.Mappers;", generatedCode, StringComparison.Ordinal);
@@ -193,7 +193,7 @@ public sealed class DomainServerRegistrationGeneratorTests
             RunGenerator(AttributeStubs, source);
         string generatedCode = runResult.GeneratedTrees
             .First(tree => tree.FilePath.Contains("DomainServerRegistrations", StringComparison.Ordinal))
-            .GetText()
+            .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("Controllers.Projections.Mappers;", generatedCode, StringComparison.Ordinal);
         Assert.DoesNotContain("Controllers.Aggregates.Mappers;", generatedCode, StringComparison.Ordinal);

@@ -76,8 +76,8 @@ public sealed class FlagTransactionHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(existingState, command);
 
         // Assert
-        Assert.Single(events);
-        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(events[0]);
+        object item = Assert.Single(events);
+        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(item);
         Assert.Equal("acc-456", flagged.AccountId);
         Assert.Equal(25_000m, flagged.Amount);
     }
@@ -100,8 +100,8 @@ public sealed class FlagTransactionHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
-        Assert.Single(events);
-        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(events[0]);
+        object item = Assert.Single(events);
+        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(item);
         Assert.Equal("acc-123", flagged.AccountId);
         Assert.Equal(15_000m, flagged.Amount);
         Assert.Equal(TestTimestamp, flagged.OriginalTimestamp);
@@ -162,8 +162,8 @@ public sealed class FlagTransactionHandlerTests
         IReadOnlyList<object> events = handler.ShouldSucceed(null, command);
 
         // Assert
-        Assert.Single(events);
-        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(events[0]);
+        object item = Assert.Single(events);
+        TransactionFlagged flagged = Assert.IsType<TransactionFlagged>(item);
         Assert.Equal(10_000_000m, flagged.Amount);
     }
 

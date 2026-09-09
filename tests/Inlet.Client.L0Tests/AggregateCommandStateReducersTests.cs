@@ -30,8 +30,8 @@ public sealed class AggregateCommandStateReducersTests
             AggregateCommandStateReducers.ComputeCommandExecuting(state, action);
 
         // Assert
-        Assert.Single(history);
-        Assert.Equal("cmd-123", history[0].CommandId);
+        CommandHistoryEntry item = Assert.Single(history);
+        Assert.Equal("cmd-123", item.CommandId);
     }
 
     /// <summary>
@@ -192,8 +192,8 @@ public sealed class AggregateCommandStateReducersTests
             AggregateCommandStateReducers.ComputeCommandFailed(state, action);
 
         // Assert
-        Assert.Single(history);
-        Assert.Equal(CommandStatus.Failed, history[0].Status);
+        CommandHistoryEntry item = Assert.Single(history);
+        Assert.Equal(CommandStatus.Failed, item.Status);
     }
 
     /// <summary>
@@ -264,8 +264,8 @@ public sealed class AggregateCommandStateReducersTests
             AggregateCommandStateReducers.ComputeCommandSucceeded(state, action);
 
         // Assert
-        Assert.Single(history);
-        Assert.Equal(CommandStatus.Succeeded, history[0].Status);
+        CommandHistoryEntry item = Assert.Single(history);
+        Assert.Equal(CommandStatus.Succeeded, item.Status);
     }
 
     /// <summary>

@@ -203,8 +203,8 @@ public sealed class RootEventEffectTests
         }
 
         // Assert
-        Assert.Single(results);
-        Assert.IsType<SecondEvent>(results[0]);
+        object item = Assert.Single(results);
+        Assert.IsType<SecondEvent>(item);
     }
 
     /// <summary>

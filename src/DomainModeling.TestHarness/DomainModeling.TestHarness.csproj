@@ -7,7 +7,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Orleans.Sdk" />
     <PackageReference Include="Moq" />
-    <PackageReference Include="xunit.assert" />
+    <PackageReference Include="xunit.v3.assert" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DomainModeling.Abstractions\DomainModeling.Abstractions.csproj" />

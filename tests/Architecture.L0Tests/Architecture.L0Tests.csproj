@@ -1,7 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-        <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
-    </ItemGroup>
 
     <!-- Reference all src projects to include them in architecture analysis -->
     <ItemGroup>
@@ -31,5 +28,8 @@
         <ProjectReference Include="..\..\src\Reservoir.Core\Reservoir.Core.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Abstractions\Reservoir.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Reservoir.Client\Reservoir.Client.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="TngTech.ArchUnitNET.xUnitV3" />
     </ItemGroup>
 </Project>

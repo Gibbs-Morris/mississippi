@@ -193,7 +193,7 @@ public sealed class WithdrawalNotificationEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("custom-account-456", capturedAccountId);
@@ -233,7 +233,7 @@ public sealed class WithdrawalNotificationEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(4567.89m, capturedRemainingBalance);
@@ -312,7 +312,7 @@ public sealed class WithdrawalNotificationEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert
         notificationServiceMock.Verify(
@@ -351,7 +351,7 @@ public sealed class WithdrawalNotificationEffectTests
         };
 
         // Act
-        await harness.InvokeAsync(effect, eventData, state);
+        await harness.InvokeAsync(effect, eventData, state, TestContext.Current.CancellationToken);
 
         // Assert - notification should still be sent (business may want audit trail)
         notificationServiceMock.Verify(

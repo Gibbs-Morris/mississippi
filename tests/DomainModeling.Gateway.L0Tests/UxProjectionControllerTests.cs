@@ -32,10 +32,7 @@ public sealed class UxProjectionControllerTests
     {
         factoryMock ??= new();
         Mock<IMapper<TestProjection, TestProjection>> mapperMock = new();
-        mapperMock.Setup(m => m.Map(It.IsAny<TestProjection>()))
-            .Returns((
-                TestProjection p
-            ) => p);
+        mapperMock.Setup(m => m.Map(It.IsAny<TestProjection>())).Returns((TestProjection p) => p);
         TestableController controller = new(
             factoryMock.Object,
             mapperMock.Object,
@@ -125,7 +122,9 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock, "\"42\"");
 
         // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestProjection> result = await controller.GetAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         StatusCodeResult statusCodeResult = Assert.IsType<StatusCodeResult>(result.Result);
@@ -151,7 +150,7 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        await controller.GetAsync(TestEntityId);
+        await controller.GetAsync(TestEntityId, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(controller.Response.Headers.TryGetValue("Cache-Control", out StringValues cacheControl));
@@ -177,7 +176,9 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock, "\"41\"");
 
         // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestProjection> result = await controller.GetAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -206,7 +207,9 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestProjection> result = await controller.GetAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<OkObjectResult>(result.Result);
@@ -229,7 +232,9 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestProjection> result = await controller.GetAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -252,7 +257,9 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<TestProjection> result = await controller.GetAsync(TestEntityId);
+        ActionResult<TestProjection> result = await controller.GetAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -276,7 +283,10 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<TestProjection> result = await controller.GetAtVersionAsync(TestEntityId, 10);
+        ActionResult<TestProjection> result = await controller.GetAtVersionAsync(
+            TestEntityId,
+            10,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -295,17 +305,17 @@ public sealed class UxProjectionControllerTests
         BrookPosition? capturedVersion = null;
         Mock<IUxProjectionGrain<TestProjection>> grainMock = new();
         grainMock.Setup(g => g.GetAtVersionAsync(It.IsAny<BrookPosition>(), It.IsAny<CancellationToken>()))
-            .Callback<BrookPosition, CancellationToken>((
-                v,
-                _
-            ) => capturedVersion = v)
+            .Callback<BrookPosition, CancellationToken>((v, _) => capturedVersion = v)
             .ReturnsAsync(expectedProjection);
         Mock<IUxProjectionGrainFactory> factoryMock = new();
         factoryMock.Setup(f => f.GetUxProjectionGrain<TestProjection>(TestEntityId)).Returns(grainMock.Object);
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<TestProjection> result = await controller.GetAtVersionAsync(TestEntityId, version);
+        ActionResult<TestProjection> result = await controller.GetAtVersionAsync(
+            TestEntityId,
+            version,
+            TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -331,7 +341,9 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<long> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<long> result = await controller.GetLatestVersionAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         Assert.IsType<NotFoundResult>(result.Result);
@@ -353,7 +365,9 @@ public sealed class UxProjectionControllerTests
         TestableController controller = CreateController(factoryMock);
 
         // Act
-        ActionResult<long> result = await controller.GetLatestVersionAsync(TestEntityId);
+        ActionResult<long> result = await controller.GetLatestVersionAsync(
+            TestEntityId,
+            TestContext.Current.CancellationToken);
 
         // Assert
         OkObjectResult okResult = Assert.IsType<OkObjectResult>(result.Result);

@@ -167,7 +167,10 @@ Describe 'Spring validation' {
             Should -Invoke Invoke-RepositoryProcess -Times $browserCalls -Exactly -ParameterFilter { $Arguments[0] -eq 'msbuild' }
             Should -Invoke Invoke-RepositoryProcess -Times 1 -ParameterFilter {
                 $Arguments[0] -eq 'test' -and $Arguments -contains '--no-build' -and
-                $Arguments -contains 'RunConfiguration.TreatNoTestsAsError=true'
+                $Arguments -contains '--minimum-expected-tests' -and
+                $Arguments[[array]::IndexOf($Arguments, '--minimum-expected-tests') + 1] -eq '1' -and
+                $Arguments -contains '--report-xunit-trx' -and $Arguments -contains '--timeout' -and
+                $Arguments[[array]::IndexOf($Arguments, '--timeout') + 1] -eq '15m'
             }
             $filterCalls = if ($Suite -eq 'Smoke') { 1 } else { 0 }
             Should -Invoke Invoke-RepositoryProcess -Times $filterCalls -Exactly -ParameterFilter { $Arguments -contains 'Category=Smoke' }

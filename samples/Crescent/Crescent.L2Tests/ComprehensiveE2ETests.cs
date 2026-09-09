@@ -1,7 +1,5 @@
 using Mississippi.DomainModeling.Abstractions;
 
-using Xunit.Abstractions;
-
 
 namespace MississippiSamples.Crescent.L2Tests;
 
@@ -55,12 +53,12 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize with 0
-        await counter.ExecuteAsync(new InitializeCounter());
+        await counter.ExecuteAsync(new InitializeCounter(), TestContext.Current.CancellationToken);
 
         // Act - Decrement to go negative
         for (int i = 0; i < 5; i++)
         {
-            await counter.ExecuteAsync(new DecrementCounter());
+            await counter.ExecuteAsync(new DecrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Assert - Verify projection shows negative
@@ -78,7 +76,7 @@ public sealed class ComprehensiveE2ETests
         // Act - Increment back to zero
         for (int i = 0; i < 5; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Wait for projection to catch up
@@ -95,7 +93,7 @@ public sealed class ComprehensiveE2ETests
 
             output.WriteLine(
                 $"[Test] Waiting for projection to return to zero (attempt {attempt}/{MaxAttempts}). CurrentCount={afterZero?.CurrentCount}");
-            await Task.Delay(RetryDelayMs);
+            await Task.Delay(RetryDelayMs, TestContext.Current.CancellationToken);
         }
 
         Assert.True(afterZero is not null, "Projection should exist after incrementing back");
@@ -121,21 +119,25 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(counterId2);
 
         // Act - Initialize counter1 with 100, counter2 with 200
-        OperationResult init1 = await counter1.ExecuteAsync(new InitializeCounter(100));
-        OperationResult init2 = await counter2.ExecuteAsync(new InitializeCounter(200));
+        OperationResult init1 = await counter1.ExecuteAsync(
+            new InitializeCounter(100),
+            TestContext.Current.CancellationToken);
+        OperationResult init2 = await counter2.ExecuteAsync(
+            new InitializeCounter(200),
+            TestContext.Current.CancellationToken);
         Assert.True(init1.Success);
         Assert.True(init2.Success);
 
         // Act - Increment counter1 by 10 operations
         for (int i = 0; i < 10; i++)
         {
-            await counter1.ExecuteAsync(new IncrementCounter());
+            await counter1.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Act - Decrement counter2 by 5 operations
         for (int i = 0; i < 5; i++)
         {
-            await counter2.ExecuteAsync(new DecrementCounter());
+            await counter2.ExecuteAsync(new DecrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Assert - Verify projections are isolated
@@ -175,12 +177,14 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        await counter.ExecuteAsync(new InitializeCounter());
+        await counter.ExecuteAsync(new InitializeCounter(), TestContext.Current.CancellationToken);
 
         // Act - Perform many increments
         for (int i = 0; i < opCount; i++)
         {
-            OperationResult result = await counter.ExecuteAsync(new IncrementCounter());
+            OperationResult result = await counter.ExecuteAsync(
+                new IncrementCounter(),
+                TestContext.Current.CancellationToken);
             Assert.True(result.Success, $"Increment[{i}] should succeed");
         }
 
@@ -210,10 +214,10 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Setup: Initialize and perform operations
-        await counter.ExecuteAsync(new InitializeCounter(25));
+        await counter.ExecuteAsync(new InitializeCounter(25), TestContext.Current.CancellationToken);
         for (int i = 0; i < 10; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Act - First read
@@ -225,7 +229,7 @@ public sealed class ComprehensiveE2ETests
         int expectedOps = beforeDeactivation.TotalOperations;
 
         // Small delay to simulate some idle time
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         // Act - Read again (simulating after potential deactivation)
         CounterSummaryProjection? afterDeactivation = await projGrain.GetAsync(CancellationToken.None);
@@ -258,10 +262,10 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize and perform some operations
-        await counter.ExecuteAsync(new InitializeCounter(50));
+        await counter.ExecuteAsync(new InitializeCounter(50), TestContext.Current.CancellationToken);
         for (int i = 0; i < 5; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Act - Read projection multiple times
@@ -301,7 +305,7 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize
-        await counter.ExecuteAsync(new InitializeCounter());
+        await counter.ExecuteAsync(new InitializeCounter(), TestContext.Current.CancellationToken);
 
         // Act - Rapid fire: increment by different amounts (+1, +2, +3, +4, +5 = 15)
         for (int i = 1; i <= 5; i++)
@@ -310,7 +314,8 @@ public sealed class ComprehensiveE2ETests
                 new IncrementCounter
                 {
                     Amount = i,
-                });
+                },
+                TestContext.Current.CancellationToken);
             Assert.True(result.Success, $"Increment({i}) should succeed");
         }
 
@@ -321,7 +326,8 @@ public sealed class ComprehensiveE2ETests
                 new DecrementCounter
                 {
                     Amount = i,
-                });
+                },
+                TestContext.Current.CancellationToken);
         }
 
         // Assert - Verify projection
@@ -351,10 +357,10 @@ public sealed class ComprehensiveE2ETests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - Initialize and increment
-        await counter.ExecuteAsync(new InitializeCounter(10));
+        await counter.ExecuteAsync(new InitializeCounter(10), TestContext.Current.CancellationToken);
         for (int i = 0; i < 5; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Act - Reset to 1000
@@ -362,13 +368,14 @@ public sealed class ComprehensiveE2ETests
             new ResetCounter
             {
                 NewValue = 1000,
-            });
+            },
+            TestContext.Current.CancellationToken);
         Assert.True(resetResult.Success, "Reset should succeed");
 
         // Act - Increment 3 more times after reset
         for (int i = 0; i < 3; i++)
         {
-            await counter.ExecuteAsync(new IncrementCounter());
+            await counter.ExecuteAsync(new IncrementCounter(), TestContext.Current.CancellationToken);
         }
 
         // Assert - Verify projection

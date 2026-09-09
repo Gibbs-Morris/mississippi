@@ -123,10 +123,7 @@ public sealed class CrescentFixture
         // Brooks expects it as a keyed service with key BrookCosmosDefaults.CosmosClientServiceKey
         builder.Services.AddKeyedSingleton(
             BrookCosmosDefaults.CosmosClientServiceKey,
-            (
-                _,
-                _
-            ) => new CosmosClient(
+            (_, _) => new CosmosClient(
                 cosmosConnectionString,
                 new()
                 {
@@ -137,10 +134,7 @@ public sealed class CrescentFixture
         // Snapshots also need a keyed CosmosClient
         builder.Services.AddKeyedSingleton(
             SnapshotCosmosDefaults.CosmosClientServiceKey,
-            (
-                _,
-                _
-            ) => new CosmosClient(
+            (_, _) => new CosmosClient(
                 cosmosConnectionString,
                 new()
                 {
@@ -152,10 +146,7 @@ public sealed class CrescentFixture
         // BlobDistributedLockManager uses [FromKeyedServices(BrookCosmosDefaults.BlobLockingServiceKey)]
         builder.Services.AddKeyedSingleton(
             BrookCosmosDefaults.BlobLockingServiceKey,
-            (
-                _,
-                _
-            ) => new BlobServiceClient(blobConnectionString));
+            (_, _) => new BlobServiceClient(blobConnectionString));
 
         // Configure Cosmos DB storage for brooks (event streams)
         // Use the overload without connection strings since we pre-registered the clients
@@ -378,7 +369,7 @@ public sealed class CrescentFixture
     }
 
     /// <inheritdoc />
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (orleansHost is not null)
         {
@@ -395,7 +386,7 @@ public sealed class CrescentFixture
 
     /// <inheritdoc />
 #pragma warning disable IDISP001 // Dispose created - appHost implements builder pattern; BuildAsync returns app that we dispose
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         try
         {

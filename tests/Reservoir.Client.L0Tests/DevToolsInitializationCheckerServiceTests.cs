@@ -54,7 +54,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
 
         // Advance time past the check delay
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(50); // Give async task time to complete
+        await Task.Delay(50, TestContext.Current.CancellationToken); // Give async task time to complete
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - checker didn't run (no change to tracker)
@@ -82,7 +82,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
 
         // Advance time past the check delay
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(50); // Give async task time to complete
+        await Task.Delay(50, TestContext.Current.CancellationToken); // Give async task time to complete
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - tracker wasn't checked because service exited early
@@ -113,7 +113,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
 
         // Advance time past the check delay
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(50); // Give async task time to complete
+        await Task.Delay(50, TestContext.Current.CancellationToken); // Give async task time to complete
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - the check ran (tracker is still false, meaning warning would be logged)
@@ -236,7 +236,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
         // Act
         await sut.StartAsync(CancellationToken.None);
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - tracker shows initialization was called, no exception
@@ -267,7 +267,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
 
         // Advance time past the check delay
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(50); // Give async task time to complete
+        await Task.Delay(50, TestContext.Current.CancellationToken); // Give async task time to complete
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - tracker shows initialization was called
@@ -298,7 +298,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
 
         // Now advance time - the check task should have been cancelled
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
 
         // Assert - no exception thrown, graceful shutdown
         Assert.False(tracker.WasInitialized);
@@ -326,7 +326,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
         // Act
         await sut.StartAsync(CancellationToken.None);
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - tracker wasn't initialized (exception was thrown in background task)
@@ -358,7 +358,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
 
         // Give the async task time to complete and propagate exception
         // The exception happens inside a fire-and-forget task, so we need to wait a bit
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - we can't easily catch the exception from a fire-and-forget task,
@@ -388,7 +388,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
         // Act
         await sut.StartAsync(CancellationToken.None);
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - no exception thrown, service completed normally with warning only
@@ -417,7 +417,7 @@ public sealed class DevToolsInitializationCheckerServiceTests
         // Act
         await sut.StartAsync(CancellationToken.None);
         fakeTime.Advance(TimeSpan.FromSeconds(10));
-        await Task.Delay(50);
+        await Task.Delay(50, TestContext.Current.CancellationToken);
         await sut.StopAsync(CancellationToken.None);
 
         // Assert - no exception thrown (would have propagated), service completed normally

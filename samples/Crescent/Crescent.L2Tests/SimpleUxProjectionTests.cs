@@ -1,7 +1,5 @@
 using Mississippi.DomainModeling.Abstractions;
 
-using Xunit.Abstractions;
-
 
 namespace MississippiSamples.Crescent.L2Tests;
 
@@ -55,19 +53,25 @@ public sealed class SimpleUxProjectionTests
 
         // Act - Step 1: Execute commands on aggregate (writes events)
         output.WriteLine("[Test] Step 1: Execute commands on aggregate to write events to brook");
-        OperationResult initResult = await counter.ExecuteAsync(new InitializeCounter(10));
+        OperationResult initResult = await counter.ExecuteAsync(
+            new InitializeCounter(10),
+            TestContext.Current.CancellationToken);
         Assert.True(initResult.Success, "Initialize should succeed");
         output.WriteLine("[Test] Command executed: Initialize(10)");
         for (int i = 0; i < 5; i++)
         {
-            OperationResult incResult = await counter.ExecuteAsync(new IncrementCounter());
+            OperationResult incResult = await counter.ExecuteAsync(
+                new IncrementCounter(),
+                TestContext.Current.CancellationToken);
             Assert.True(incResult.Success, $"Increment[{i + 1}] should succeed");
         }
 
         output.WriteLine("[Test] Command executed: Increment x5");
         for (int i = 0; i < 2; i++)
         {
-            OperationResult decResult = await counter.ExecuteAsync(new DecrementCounter());
+            OperationResult decResult = await counter.ExecuteAsync(
+                new DecrementCounter(),
+                TestContext.Current.CancellationToken);
             Assert.True(decResult.Success, $"Decrement[{i + 1}] should succeed");
         }
 
@@ -144,12 +148,16 @@ public sealed class SimpleUxProjectionTests
             .GetGenericAggregate<CounterAggregate>(entityId);
 
         // Act - First initialization should succeed
-        OperationResult firstInit = await counter.ExecuteAsync(new InitializeCounter(100));
+        OperationResult firstInit = await counter.ExecuteAsync(
+            new InitializeCounter(100),
+            TestContext.Current.CancellationToken);
         Assert.True(firstInit.Success, "First initialization should succeed");
         output.WriteLine("[Test] First Initialize(100) succeeded");
 
         // Act - Second initialization should fail
-        OperationResult secondInit = await counter.ExecuteAsync(new InitializeCounter(200));
+        OperationResult secondInit = await counter.ExecuteAsync(
+            new InitializeCounter(200),
+            TestContext.Current.CancellationToken);
         Assert.False(secondInit.Success, "Second initialization should fail");
         Assert.Equal(AggregateErrorCodes.AlreadyExists, secondInit.ErrorCode);
         output.WriteLine($"[Test] Second Initialize(200) failed as expected: {secondInit.ErrorMessage}");

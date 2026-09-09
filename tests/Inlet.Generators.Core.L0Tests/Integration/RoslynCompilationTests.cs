@@ -182,8 +182,8 @@ public class RoslynCompilationTests
 
         // Records with init properties are still positional - compiler synthesizes constructor
         Assert.True(model.IsPositionalRecord);
-        Assert.Single(model.Properties);
-        Assert.Equal("Amount", model.Properties[0].Name);
+        PropertyModel item = Assert.Single(model.Properties);
+        Assert.Equal("Amount", item.Name);
     }
 
     /// <summary>
@@ -360,8 +360,8 @@ public class RoslynCompilationTests
         Assert.NotNull(projectionSymbol);
         ProjectionModel model = new(projectionSymbol, "/customers");
         Assert.True(model.HasMappedProperties);
-        Assert.Single(model.NestedCustomTypes);
-        Assert.Equal("Address", model.NestedCustomTypes[0]);
+        string item = Assert.Single(model.NestedCustomTypes);
+        Assert.Equal("Address", item);
     }
 
     /// <summary>

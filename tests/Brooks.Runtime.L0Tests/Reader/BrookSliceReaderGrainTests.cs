@@ -43,7 +43,7 @@ public sealed class BrookSliceReaderGrainTests
                 Id = i.ToString(CultureInfo.InvariantCulture),
             })
             .ToImmutableArray();
-        await writer.AppendEventsAsync(batch);
+        await writer.AppendEventsAsync(batch, cancellationToken: TestContext.Current.CancellationToken);
 
         // Ensure cursor cache has advanced before slice read
         IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
@@ -51,7 +51,7 @@ public sealed class BrookSliceReaderGrainTests
         BrookRangeKey sliceKey = BrookRangeKey.FromBrookCompositeKey(key, 2, 8); // covers [2..10)
         IBrookSliceReaderGrain slice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(sliceKey);
         List<BrookEvent> got = new();
-        await foreach (BrookEvent e in slice.ReadAsync(3, 6))
+        await foreach (BrookEvent e in slice.ReadAsync(3, 6, TestContext.Current.CancellationToken))
         {
             got.Add(e);
         }
@@ -77,12 +77,12 @@ public sealed class BrookSliceReaderGrainTests
                 Id = i.ToString(CultureInfo.InvariantCulture),
             })
             .ToImmutableArray();
-        await writer.AppendEventsAsync(batch);
+        await writer.AppendEventsAsync(batch, cancellationToken: TestContext.Current.CancellationToken);
         IBrookCursorGrain cursor = cluster.GrainFactory.GetGrain<IBrookCursorGrain>(key);
         await cursor.GetLatestPositionConfirmedAsync();
         BrookRangeKey sliceKey = BrookRangeKey.FromBrookCompositeKey(key, 0, 5);
         IBrookSliceReaderGrain slice = cluster.GrainFactory.GetGrain<IBrookSliceReaderGrain>(sliceKey);
-        ImmutableArray<BrookEvent> got = await slice.ReadBatchAsync(1, 3);
+        ImmutableArray<BrookEvent> got = await slice.ReadBatchAsync(1, 3, TestContext.Current.CancellationToken);
         Assert.Equal(["1", "2", "3"], got.Select(e => e.Id).ToArray());
     }
 }
