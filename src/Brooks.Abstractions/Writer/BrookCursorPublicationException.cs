@@ -55,8 +55,15 @@ public sealed class BrookCursorPublicationException : Exception
         BrookPosition position,
         Exception innerException
     )
-        : base("Events were committed, but the cursor update could not be published.", innerException) =>
+        : base("Events were committed, but the cursor update could not be published.", innerException)
+    {
+        if (position.NotSet)
+        {
+            throw new ArgumentOutOfRangeException(nameof(position), "A committed cursor position must be supplied.");
+        }
+
         Position = position;
+    }
 
     /// <summary>
     ///     Gets the committed position, or the unset position when it was not supplied.

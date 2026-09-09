@@ -15,6 +15,31 @@ namespace Mississippi.Brooks.Abstractions.L0Tests.Writer;
 public sealed class BrookCursorPublicationExceptionTests
 {
     /// <summary>
+    ///     Accepts the first committed event position.
+    /// </summary>
+    [Fact]
+    public void PositionConstructorAcceptsZero()
+    {
+        InvalidOperationException cause = new("Publication failed.");
+        BrookCursorPublicationException exception = new(new BrookPosition(0), cause);
+        Assert.Equal(0, exception.Position.Value);
+        Assert.Same(cause, exception.InnerException);
+    }
+
+    /// <summary>
+    ///     Rejects an explicitly unset position rather than claiming that it represents a commit.
+    /// </summary>
+    [Fact]
+    public void PositionConstructorRejectsUnsetPosition()
+    {
+        ArgumentOutOfRangeException exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new BrookCursorPublicationException(
+                new BrookPosition(-1),
+                new InvalidOperationException("Publication failed.")));
+        Assert.Equal("position", exception.ParamName);
+    }
+
+    /// <summary>
     ///     Keeps the committed position and underlying publication error across serialization.
     /// </summary>
     /// <param name="isBaseException">Whether the transport contract is the base exception type.</param>
