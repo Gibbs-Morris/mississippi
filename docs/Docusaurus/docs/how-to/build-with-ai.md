@@ -13,6 +13,10 @@ Build one feature by specifying its business rules, representing accepted change
 
 This workflow uses Spring's bank-account withdrawal as a concrete reference. The business benefit is a reviewable path from a requirement to observable behavior: a reviewer can inspect the rule, the accepted event, and the resulting state separately.
 
+## When to Use This
+
+Use this procedure when you want an AI assistant to implement one business operation with explicit source references and acceptance checks.
+
 ## Before You Begin
 
 - Choose the capability and packages from the [capability map](../reference/capability-map.md).
@@ -20,7 +24,9 @@ This workflow uses Spring's bank-account withdrawal as a concrete reference. The
 - Give the assistant access to the source and tests for the framework version your application uses.
 - Read the [write model](../concepts/write-model.md) so commands, events, and reducers have distinct responsibilities.
 
-## 1. Specify One Business Decision
+## Steps
+
+### 1. Specify One Business Decision
 
 Write the rule and examples before requesting code. For a withdrawal, identify the account, the requested amount, the conditions for acceptance, and the state the user should eventually see.
 
@@ -36,7 +42,7 @@ Spring's [WithdrawFundsHandler](https://github.com/Gibbs-Morris/mississippi/blob
 
 Use explicit outcomes such as these instead of a request like "make withdrawals work." They give the assistant a target that tests can check.
 
-## 2. Assign Each Concern to Its Artifact
+### 2. Assign Each Concern to Its Artifact
 
 Keep the same vocabulary in the requirement, code, and tests.
 
@@ -51,7 +57,7 @@ Keep the same vocabulary in the requirement, code, and tests.
 
 The handler returns events or a failed operation result. The reducer applies a recorded fact to state. The runtime handles event persistence through the aggregate execution path. This separation lets you change how a screen displays a withdrawal while keeping the business decision in one place.
 
-## 3. Provide a Bounded Implementation Brief
+### 3. Provide a Bounded Implementation Brief
 
 Give the assistant a brief that names the artifacts, references, and acceptance tests. The following is a prompt template; replace the bracketed values with your application's details.
 
@@ -83,7 +89,7 @@ Report executed checks and the behavior each check verifies.
 
 Keep the task to one operation at a time. Review the resulting domain diff before asking for another feature. The template guides implementation; the acceptance tests provide evidence for whether the result is correct.
 
-## 4. Keep Deterministic Transitions Explicit
+### 4. Keep Deterministic Transitions Explicit
 
 A pure reducer computes the next state from the prior state and its event or action. Given the same inputs and reducer implementation, it computes the same result. Put externally obtained facts into the event or action before reduction, so replay uses the recorded inputs.
 
@@ -101,7 +107,7 @@ Use these choices when reviewing generated suggestions:
 
 The server reducer contract is [EventReducerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/EventReducerBase.cs). Reservoir uses its own action-reduction contracts for local feature state; see [Reservoir reference](../reservoir/reference/reference.md).
 
-## 5. Let Generators Connect the Domain
+### 5. Let Generators Connect the Domain
 
 After verifying the business behavior, follow the existing application's attributed domain pattern. Inlet generates the supported transport and client artifacts from those inputs. For example, Spring's `WithdrawFunds` declares a command route and `BankAccountAggregate` opts into aggregate endpoints.
 
@@ -109,7 +115,7 @@ Use the generated artifacts as part of the application's build. Keep the human-a
 
 Continue through [building an aggregate](../samples/spring-sample/tutorials/building-an-aggregate.md), [building projections](../samples/spring-sample/tutorials/building-projections.md), and [client composition](../inlet/how-to/how-to.md) for the concrete integration paths.
 
-## 6. Verify the Business Result and the Client Result
+## Verify the Result
 
 Use more than successful compilation to judge completion.
 
