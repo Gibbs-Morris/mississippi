@@ -1,6 +1,6 @@
 ---
 name: author-architecture-decision
-description: Assess whether a choice warrants an architecture decision record (ADR), or draft, revise, or supersede one from evidence and local lifecycle rules. Use when deciding whether to record an architectural choice or writing an ADR. Not for designing a system from scratch or summarizing an ADR in a pull request.
+description: Assess whether a choice warrants an architecture decision record (ADR), or draft, revise, or supersede one from evidence and local lifecycle rules. Use when deciding whether to record an architectural choice or when writing an ADR. Not for designing a system from scratch or summarizing an ADR in a pull request.
 ---
 
 # Author an architecture decision
