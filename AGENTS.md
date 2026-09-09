@@ -68,7 +68,14 @@ For test placement and CI scheduling, see [Spring test levels and suites](sample
 ## Instruction Loading
 
 Discover current instruction names and `applyTo` metadata before selecting
-bodies; do not use a fixed filename allowlist:
+bodies; do not use a fixed filename allowlist.
+
+Shell execution is optional. Repository file-list/read tools or a complete
+host-supplied inventory and file contents can provide the same names,
+frontmatter, and bodies. If scope discovery is unavailable but the instruction
+files are readable, read them all. If necessary files cannot be accessed,
+request the missing inventory or bodies from the user/host and report
+preparation incomplete; do not assume the missing guidance is irrelevant.
 
 ```powershell
 rg --files --glob '*.instructions.md' .github/instructions

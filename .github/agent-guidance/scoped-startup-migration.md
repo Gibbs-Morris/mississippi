@@ -42,6 +42,9 @@ an example in a document body does not.
 
 - The loading trigger explicitly covers planning, edits, reviews, and repository
   questions, so advisory tasks also require instruction selection.
+- Hosts without shell access can use file tools or complete supplied context;
+  fallback full reads retain uncertain guidance, and inaccessible files remain
+  explicit preparation gaps.
 - Both documented metadata-discovery methods enumerate all 44 current files and
   return their first scope line; opening frontmatter parses for every file.
 - All 17 global files remain in every static selection case. Cases cover agent
@@ -66,19 +69,19 @@ guarantee every model's instruction selection.
 At parent snapshot `32703e87af5c11e37ffcd64236b99cec87380377`, the instruction bodies contain
 29,477 whitespace-delimited words. The two original entrypoints add 1,408,
 giving 30,885 words under the previous blanket preparation rule.
-The revised entrypoints contain 1,910 words and the tested rg command pair
+The revised entrypoints contain 1,985 words and the tested rg command pair
 adds 132. Supporting task references are additional.
 
 | Static scenario | Selected instruction bodies | Total with entrypoints and metadata |
 | --- | ---: | ---: |
-| Agent Markdown | 11,659 | 13,701 |
-| Core C# | 17,131 | 19,173 |
-| Sample C# | 21,211 | 23,253 |
-| PowerShell | 11,396 | 13,438 |
-| Product documentation | 13,067 | 15,109 |
-| ADR | 13,824 | 15,866 |
-| C# snippet in Markdown | 16,378 | 18,420 |
-| Global rule maintenance | 29,477 | 31,519 |
+| Agent Markdown | 11,659 | 13,776 |
+| Core C# | 17,131 | 19,248 |
+| Sample C# | 21,211 | 23,328 |
+| PowerShell | 11,396 | 13,513 |
+| Product documentation | 13,067 | 15,184 |
+| ADR | 13,824 | 15,941 |
+| C# snippet in Markdown | 16,378 | 18,495 |
+| Global rule maintenance | 29,477 | 31,594 |
 
 The savings depend on the task. Full-inventory work intentionally keeps the full
 corpus and pays the added routing overhead. Unknown scopes may also require
