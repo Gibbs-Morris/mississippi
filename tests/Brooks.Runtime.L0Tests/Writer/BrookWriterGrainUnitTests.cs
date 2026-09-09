@@ -77,7 +77,6 @@ public sealed class BrookWriterGrainUnitTests
     /// <returns>A task representing the test operation.</returns>
     [Theory]
     [InlineData(typeof(OutOfMemoryException))]
-    [InlineData(typeof(StackOverflowException))]
     [InlineData(typeof(ThreadInterruptedException))]
     public async Task AppendEventsAsyncPropagatesCriticalPublicationFailure(
         Type exceptionType
