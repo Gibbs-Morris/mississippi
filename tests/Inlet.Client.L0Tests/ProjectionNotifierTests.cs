@@ -74,9 +74,8 @@ public sealed class ProjectionNotifierTests : IDisposable
 
         // Assert
         Assert.NotNull(dispatchedAction);
-        ProjectionConnectionChangedAction<TestProjection> typed_2 =
+        ProjectionConnectionChangedAction<TestProjection> typed =
             Assert.IsType<ProjectionConnectionChangedAction<TestProjection>>(dispatchedAction);
-        ProjectionConnectionChangedAction<TestProjection> typed = typed_2;
         Assert.Equal("entity-1", typed.EntityId);
         Assert.False(typed.IsConnected);
     }
@@ -97,9 +96,8 @@ public sealed class ProjectionNotifierTests : IDisposable
 
         // Assert
         Assert.NotNull(dispatchedAction);
-        ProjectionConnectionChangedAction<TestProjection> typed_2 =
+        ProjectionConnectionChangedAction<TestProjection> typed =
             Assert.IsType<ProjectionConnectionChangedAction<TestProjection>>(dispatchedAction);
-        ProjectionConnectionChangedAction<TestProjection> typed = typed_2;
         Assert.Equal("entity-1", typed.EntityId);
         Assert.True(typed.IsConnected);
     }
@@ -134,9 +132,8 @@ public sealed class ProjectionNotifierTests : IDisposable
 
         // Assert
         Assert.NotNull(dispatchedAction);
-        ProjectionErrorAction<TestProjection> typed_2 =
+        ProjectionErrorAction<TestProjection> typed =
             Assert.IsType<ProjectionErrorAction<TestProjection>>(dispatchedAction);
-        ProjectionErrorAction<TestProjection> typed = typed_2;
         Assert.Equal("entity-1", typed.EntityId);
         Assert.Same(error, typed.Error);
     }
@@ -185,9 +182,8 @@ public sealed class ProjectionNotifierTests : IDisposable
 
         // Assert
         Assert.NotNull(dispatchedAction);
-        ProjectionUpdatedAction<TestProjection> typed_2 =
+        ProjectionUpdatedAction<TestProjection> typed =
             Assert.IsType<ProjectionUpdatedAction<TestProjection>>(dispatchedAction);
-        ProjectionUpdatedAction<TestProjection> typed = typed_2;
         Assert.Equal("entity-1", typed.EntityId);
         Assert.Same(data, typed.Data);
         Assert.Equal(10L, typed.Version);
@@ -209,9 +205,8 @@ public sealed class ProjectionNotifierTests : IDisposable
 
         // Assert
         Assert.NotNull(dispatchedAction);
-        ProjectionUpdatedAction<TestProjection> typed_2 =
+        ProjectionUpdatedAction<TestProjection> typed =
             Assert.IsType<ProjectionUpdatedAction<TestProjection>>(dispatchedAction);
-        ProjectionUpdatedAction<TestProjection> typed = typed_2;
         Assert.Equal("entity-1", typed.EntityId);
         Assert.Null(typed.Data);
         Assert.Equal(5L, typed.Version);

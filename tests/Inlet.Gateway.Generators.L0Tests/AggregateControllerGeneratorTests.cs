@@ -835,10 +835,9 @@ public class AggregateControllerGeneratorTests
                                        """;
         (Compilation _, ImmutableArray<Diagnostic> _, GeneratorDriverRunResult runResult) =
             RunGenerator(AttributeStubs, aggregateSource);
-        GeneratorRunResult item = Assert.Single(runResult.Results);
-        GeneratorRunResult generatorResult = item;
-        GeneratedSourceResult item_2 = Assert.Single(generatorResult.GeneratedSources);
-        Assert.Equal("BankAccountController.g.cs", item_2.HintName);
+        GeneratorRunResult generatorResult = Assert.Single(runResult.Results);
+        GeneratedSourceResult generatedSource = Assert.Single(generatorResult.GeneratedSources);
+        Assert.Equal("BankAccountController.g.cs", generatedSource.HintName);
     }
 
     /// <summary>
