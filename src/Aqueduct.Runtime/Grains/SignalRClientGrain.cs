@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
@@ -47,7 +46,7 @@ internal sealed class SignalRClientGrain
     : ISignalRClientGrain,
       IGrainBase
 {
-    private readonly HashSet<string> groups = new(StringComparer.Ordinal);
+    private ImmutableHashSet<string> groups = ImmutableHashSet.Create<string>(StringComparer.Ordinal);
 
     private SignalRClientState state = new();
 
@@ -100,7 +99,7 @@ internal sealed class SignalRClientGrain
             ISignalRGroupGrain groupGrain = GetGroupGrain(groupName);
 
             // Retain cleanup ownership even when the remote add has an uncertain outcome.
-            groups.Add(groupName);
+            ImmutableInterlocked.Update(ref groups, static (current, name) => current.Add(name), groupName);
             await groupGrain.AddConnectionAsync(connectionId)
                 .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
         }
@@ -193,7 +192,7 @@ internal sealed class SignalRClientGrain
             await GetGroupGrain(groupName)
                 .RemoveConnectionAsync(connectionId)
                 .ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
-            groups.Remove(groupName);
+            ImmutableInterlocked.Update(ref groups, static (current, name) => current.Remove(name), groupName);
         }
 
         Logger.ClientGroupChanged(

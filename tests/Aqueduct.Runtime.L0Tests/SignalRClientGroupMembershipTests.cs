@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging.Abstractions;
@@ -38,6 +39,48 @@ public sealed class SignalRClientGroupMembershipTests
     [Fact]
     public void ConstructorShouldRejectMissingGrainFactory() =>
         Assert.Throws<ArgumentNullException>(() => CreateGrain(null!));
+
+    /// <summary>
+    ///     Outstanding removals can complete in any order without losing cleanup progress.
+    /// </summary>
+    /// <returns>The asynchronous test operation.</returns>
+    [Fact]
+    public async Task ConcurrentRemovalsShouldEachClearTracking()
+    {
+        IGrainFactory factory = Substitute.For<IGrainFactory>();
+        SignalRClientGrain client = CreateGrain(factory);
+        await client.ConnectAsync("hub", "server");
+        List<(ISignalRGroupGrain Grain, TaskCompletionSource Completion)> pending = [];
+        for (int index = 0; index < 16; index++)
+        {
+            string groupName = $"group-{index}";
+            ISignalRGroupGrain group = Substitute.For<ISignalRGroupGrain>();
+            TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            factory.GetGrain<ISignalRGroupGrain>($"hub:{groupName}").Returns(group);
+            group.RemoveConnectionAsync("connection").Returns(completion.Task);
+            await client.AddToGroupAsync(groupName);
+            pending.Add((group, completion));
+        }
+
+        Task disconnect = client.DisconnectAsync();
+        Assert.False(disconnect.IsCompleted);
+        foreach ((ISignalRGroupGrain group, _) in pending)
+        {
+            _ = group.Received(1).RemoveConnectionAsync("connection");
+        }
+
+        for (int index = pending.Count - 1; index >= 0; index--)
+        {
+            pending[index].Completion.SetResult();
+        }
+
+        await disconnect.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await client.DisconnectAsync();
+        foreach ((ISignalRGroupGrain group, _) in pending)
+        {
+            await group.Received(1).RemoveConnectionAsync("connection");
+        }
+    }
 
     /// <summary>
     ///     A client without a connection cannot create group membership.
