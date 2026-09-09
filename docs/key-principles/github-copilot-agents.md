@@ -54,8 +54,8 @@ specificity and capability:
 │  Layer 4: Custom Agents (.agent.md)              │
 │  Purpose-built personas with tools and handoffs  │
 ├──────────────────────────────────────────────────┤
-│  Layer 3: Skills (SKILL.md + tools)              │
-│  Reusable tool bundles agents can reference      │
+│  Layer 3: Skills (SKILL.md)                       │
+│  Reusable workflows with optional resources      │
 ├──────────────────────────────────────────────────┤
 │  Layer 2: Instruction Files (.instructions.md)   │
 │  Scoped rules auto-attached by glob pattern      │
@@ -157,10 +157,9 @@ Description of what this skill does.
 
 Conditions under which this skill should be invoked.
 
-## Tools Required
+## Supporting Resources (Optional)
 
-- `mcp_github_create_pull_request` — Creates a PR
-- `run_in_terminal` — Executes build commands
+Link bundled references or scripts here only when this workflow needs them.
 
 ## Procedure
 
