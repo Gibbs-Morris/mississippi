@@ -52,7 +52,7 @@ Given a user task:
 - **Evidence-based planning**: every non-trivial claim must cite evidence.
 - Plans, sub-plans, and instruction updates **must not** contain secrets, PII, or internal-only URLs.
 - Public planning artifacts, issue metadata, and PR 1 content contain only disclosure-approved information. Keep confidential details in the restricted record defined by [issue tracking and PR traceability](../instructions/issue-tracking.instructions.md). If a complete execution plan cannot be published safely, report that this public-PR-1 workflow is blocked and use an authorized private workflow; do not publish confidential plans or hand them to this workflow's builder.
-- Plan folder is **read-only** after PR 1 merges — no agent modifies it (except `epic Builder` adding `.complete.json` markers).
+- Plan content is **read-only** after PR 1 merges, except for `epic Builder` adding `.complete.json` markers or a missing verified repository issue URL to the selected legacy sub-plan under [builder issue intake](epic-builder.agent.md). Implementation steps, acceptance criteria, dependencies, and other plan files stay unchanged; final folder deletion still follows the PR Z protocol.
 - Sub-plan decomposition follows the **continuously deployable** rule (see below).
 
 ## Shared methodology
