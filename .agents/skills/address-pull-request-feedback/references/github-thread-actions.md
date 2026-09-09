@@ -23,13 +23,15 @@ does not supply inline review-thread coverage. Store large responses locally
 and inspect the relevant discussions without dropping pages from the audit.
 
 Use the bundled [thread query](../scripts/list-review-threads.graphql) to obtain
-thread IDs and resolved/outdated states:
+thread IDs and resolved/outdated states. Set the shell variable `QUERY_FILE` to
+the bundled file's actual path before running the command (using your shell's
+variable-assignment syntax):
 
 ```sh
-gh api graphql --paginate --slurp -F 'query=@QUERY_FILE' -f owner=OWNER -f repo=REPO -F number=NUMBER
+gh api graphql --paginate --slurp -F "query=@$QUERY_FILE" -f owner=OWNER -f repo=REPO -F number=NUMBER
 ```
 
-Set `QUERY_FILE` to the bundled file's actual path. The query's cursor and
+Double quotes expand the path while keeping spaces in one argument. The cursor and
 `pageInfo` cover the outer thread connection. Its `comments(first: 1)` supplies
 an identity anchor, not the full discussion. Join that node ID to `node_id` in
 the fully paginated REST comments; use the REST `id` and `in_reply_to_id` fields
