@@ -52,7 +52,7 @@ Given a user task:
 - **Evidence-based planning**: every non-trivial claim must cite evidence.
 - Plans, sub-plans, and instruction updates **must not** contain secrets, PII, or internal-only URLs.
 - Public planning artifacts, issue metadata, and PR 1 content contain only disclosure-approved information. Keep confidential details in the restricted record defined by [issue tracking and PR traceability](../instructions/issue-tracking.instructions.md). If a complete execution plan cannot be published safely, report that this public-PR-1 workflow is blocked and use an authorized private workflow; do not publish confidential plans or hand them to this workflow's builder.
-- Plan content is **read-only** after PR 1 merges, except for `epic Builder` adding `.complete.json` markers or adding missing issue-URL metadata or refreshing closed tracking in the selected sub-plan under [builder issue intake](epic-builder.agent.md), retaining replaced URLs as history. Implementation steps, acceptance criteria, dependencies, and other plan files stay unchanged; final folder deletion still follows the PR Z protocol.
+- Plan content is **read-only** after PR 1 merges, except for `epic Builder` adding `.complete.json` markers or adding missing issue-URL metadata or refreshing closed tracking in the selected sub-plan and master `PLAN.md` under [builder issue intake](epic-builder.agent.md), retaining replaced URLs as history. Implementation steps, acceptance criteria, dependencies, and other plan files stay unchanged; final folder deletion still follows the PR Z protocol.
 - Sub-plan decomposition follows the **continuously deployable** rule (see below).
 
 ## Shared methodology
@@ -143,6 +143,8 @@ Each sub-plan file (`sub-plans/<id>-<slug>.md`) must follow this template:
 
 ## Context
 - Master plan: `/plan/YYYY-MM-DD/<name>/PLAN.md`
+- Master issue URL: [Verified repository tracking issue; populate after planning]
+- Child issue URL: [Verified optional child issue, or none]
 - This is sub-plan <ID> of <total>
 
 ## Dependencies
@@ -296,7 +298,7 @@ If yes:
 
 If no, track the sub-plans and their PRs in the existing repository tracking issue.
 
-Before PR 1 or builder handoff, record the verified tracking issue URL in `PLAN.md` and each sub-plan, using its child issue when one exists or the shared tracking issue otherwise.
+Before PR 1 or builder handoff, record the verified master issue URL in `PLAN.md` and every sub-plan. Store an optional child issue URL separately in its sub-plan and link the child issue back to the master. A child issue never replaces the master reference; every builder handoff carries both when a child exists.
 
 ---
 
@@ -336,7 +338,7 @@ When handing off to `epic Builder`, invoke `runSubagent` with:
 - `description`: short task summary (3-5 words)
 - `prompt`: must include:
   - The sub-plan path: `/plan/YYYY-MM-DD/<name>/sub-plans/<id>-<slug>.md`
-  - The verified repository issue URL recorded in the sub-plan
+  - The verified master issue URL and any separate child issue URL recorded in the sub-plan
   - A one-line summary of the sub-plan objective
   - Any runtime context the builder needs (e.g., branch name, environment notes)
 
