@@ -11,7 +11,7 @@
 .heading { max-width: 760px; padding: 4.5rem 0 2.5rem; }
 .eyebrow { color: var(--rf-color-text-accent); font-family: var(--rf-raw-font-mono); font-size: .75rem; letter-spacing: .13em; }
 h1 { font-size: clamp(2.5rem, 6vw, 4.7rem); line-height: 1.03; letter-spacing: -.045em; margin: 1rem 0; }
-h1:focus { outline: none; }
+h1:focus { outline: 2px solid var(--rf-color-focus-ring); outline-offset: 4px; }
 .lead { color: var(--rf-color-text-secondary); font-size: 1.15rem; line-height: 1.6; max-width: 58ch; }
 footer { margin-top: 4rem; padding: 1.5rem 0 2rem; border-top: 1px solid var(--rf-color-text-muted); color: var(--rf-color-text-secondary); font-size: .8rem; }
 .skip-link { position: absolute; top: .5rem; left: .5rem; transform: translateY(-180%); padding: .75rem; background: var(--rf-color-surface-elevated); color: var(--rf-color-text-primary); z-index: 10; }
