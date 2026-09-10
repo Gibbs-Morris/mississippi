@@ -68,6 +68,12 @@ function Resolve-SourceProjectPathFromTest {
         throw "Test project has no <ProjectReference>; cannot infer source project. Use -SourceProject."
     }
 
+    # An explicit project-relative target avoids selecting a test-support reference.
+    $configuredSource = $proj.SelectSingleNode('//Project/PropertyGroup/MutationSourceProject')
+    if ($configuredSource -and -not [string]::IsNullOrWhiteSpace($configuredSource.InnerText)) {
+        return (Resolve-Path -LiteralPath (Join-Path $dir $configuredSource.InnerText.Trim()) -ErrorAction Stop).Path
+    }
+
     # Prefer refs that live under /src/
     $srcRefs = $projectRefs | Where-Object { $_ -match "[\\/]src[\\/]" }
     if (@($srcRefs).Count -eq 1) {
@@ -392,5 +398,3 @@ catch {
 finally {
     if ($null -ne $executionLease) { Exit-RepositoryExecutionLease -Lease $executionLease }
 }
-
-

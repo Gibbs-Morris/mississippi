@@ -158,6 +158,8 @@ In the first test, B remains `seed-b` immediately after the A action because the
 
 Use collection assertions such as `Assert.Single` when exact count or order matters. `ThenEmits<TAction>` is an existence/type-specific assertion, not an exact emission-count check. Dispose each scenario to release its service provider.
 
+The Spring client test project also declares `MutationSourceProject` as `../Spring.Client/Spring.Client.csproj`. The repository quality script uses this explicit project-relative target before its usual inference, so the test-harness dependency remains test support when mutation is requested. The commands below also pass `-SourceProject` explicitly.
+
 ## Verify the result
 
 Run the sample test project from the repository root:
