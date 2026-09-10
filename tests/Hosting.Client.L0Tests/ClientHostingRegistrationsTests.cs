@@ -195,6 +195,47 @@ public sealed class ClientHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Changes to a captured host are reported without being overwritten by the staged graph.
+    /// </summary>
+    /// <param name="replaceExisting">Whether to replace an existing descriptor instead of adding one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HostServiceChangesFailWithoutLosingRegistrations(
+        bool replaceExisting
+    )
+    {
+        ServiceCollection services = [];
+        services.AddSingleton(TimeProvider.System);
+        WebAssemblyHostBuilder host = CreateHost(services);
+        ClientBuilder? captured = null;
+        ServiceDescriptor hostOwned = ServiceDescriptor.Singleton("host-owned");
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            host.UseMississippi(client =>
+            {
+                captured = client;
+                client.Reservoir(_ => { });
+                if (replaceExisting)
+                {
+                    host.Services[0] = hostOwned;
+                }
+                else
+                {
+                    host.Services.Add(hostOwned);
+                }
+            }));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesChanged, Assert.Single(exception.Diagnostics).Code);
+        Assert.Contains(hostOwned, services);
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IStore));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(ClientAttachment));
+        Assert.NotNull(captured);
+        Assert.True(captured.Services.IsReadOnly);
+        host.UseMississippi(client => client.Reservoir(_ => { }));
+        Assert.Contains(hostOwned, services);
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(ClientAttachment));
+    }
+
+    /// <summary>
     ///     Invalid composition never reaches the host.
     /// </summary>
     [Fact]

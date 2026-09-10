@@ -20,4 +20,9 @@ public static class BuilderDiagnosticCodes
     ///     Identifies a second attachment attempted for the same host role.
     /// </summary>
     public const string DuplicateHostAttachment = "MSB001";
+
+    /// <summary>
+    ///     Identifies direct host service changes made while its staged composition callback was running.
+    /// </summary>
+    public const string HostServicesChanged = "MSB004";
 }
