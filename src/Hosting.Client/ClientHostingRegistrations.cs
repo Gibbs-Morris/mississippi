@@ -22,7 +22,13 @@ public static class ClientHostingRegistrations
     /// <param name="builder">The host receiving the client services.</param>
     /// <param name="configure">The client composition callback.</param>
     /// <returns>The original host builder.</returns>
-    /// <exception cref="BuilderValidationException">The host or composition has already been attached.</exception>
+    /// <remarks>
+    ///     Register services through the supplied client inside the callback. Direct changes to the captured host service
+    ///     collection reject attachment and remain on the host; staged client registrations are discarded.
+    /// </remarks>
+    /// <exception cref="BuilderValidationException">
+    ///     The host or composition has already been attached, or host services changed during configuration.
+    /// </exception>
     public static WebAssemblyHostBuilder UseMississippi(
         this WebAssemblyHostBuilder builder,
         Action<ClientBuilder> configure
@@ -47,8 +53,9 @@ public static class ClientHostingRegistrations
         ClientBuilder? client = null;
         try
         {
+            ServiceDescriptor[] originalHostServices = builder.Services.ToArray();
             ServiceCollection stagedServices = [];
-            foreach (ServiceDescriptor descriptor in builder.Services.Where(descriptor =>
+            foreach (ServiceDescriptor descriptor in originalHostServices.Where(descriptor =>
                          !ReferenceEquals(descriptor, attachment)))
             {
                 ((IServiceCollection)stagedServices).Add(descriptor);
@@ -60,6 +67,17 @@ public static class ClientHostingRegistrations
             if (diagnostics.Count > 0)
             {
                 throw new BuilderValidationException(diagnostics);
+            }
+
+            if (!builder.Services.SequenceEqual(originalHostServices))
+            {
+                throw new BuilderValidationException(
+                [
+                    new(
+                        BuilderDiagnosticCodes.HostServicesChanged,
+                        "Host services changed during Mississippi client composition.",
+                        "Register services through client.Services inside UseMississippi(...), or configure the host before calling it."),
+                ]);
             }
 
             client.Complete();
