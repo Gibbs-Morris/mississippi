@@ -54,6 +54,8 @@ Keep local state and server-derived state distinct. Use [Inlet](../../inlet/inde
 
 Deterministic reduction depends on pure functions and immutable inputs. Give overlapping asynchronous operations explicit request identities and result actions; their completion order is a separate concern from the reducer's calculation. Read the relevant current state when deciding how a result should affect the feature.
 
+The store invokes started effects with `CancellationToken.None`. Give cancelable work its own lifetime controls in the effect or service; component disposal releases its store subscription, while effect lifetime is managed separately. Expose expected failures through explicit failure actions: the store boundary catches effect exceptions instead of turning them into feature error state.
+
 System restore/reset actions use the store's dedicated restoration path. Their behavior belongs with development tooling and state restoration rather than the ordinary action pipeline shown above.
 
 ## Trade-offs
