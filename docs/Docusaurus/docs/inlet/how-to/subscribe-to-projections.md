@@ -68,6 +68,7 @@ Update `samples/Spring/Spring.Client/App.razor` to include the provider alongsid
 <ReservoirNavigationProvider/>
 <ReservoirDevToolsInitializerComponent/>
 <AccountProjectionProvider/>
+<NavLink href="/projection-watch">Workspace balance</NavLink>
 
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
@@ -83,7 +84,66 @@ Update `samples/Spring/Spring.Client/App.razor` to include the provider alongsid
 
 Page navigation can now occur while the initial subscription is pending: the provider and its interest remain part of the application shell. Keep the provider mounted for the client session. The scoped hub-connection provider disposes its connection when its service scope ends.
 
-### 3. Display Shared State In A Page
+### 3. Give Operations The Same Ownership Boundary
+
+Spring's Operations page also manages account projection subscriptions. In `samples/Spring/Spring.Client/Pages/OperationsPage.razor.cs`, add this import:
+
+```csharp
+using MississippiSamples.Spring.Client.Components;
+```
+
+Replace `SyncProjectionSubscription` with the following method. The workspace account's balance belongs to the shell; Operations continues owning its ledger and other account balances.
+
+```csharp
+private void SyncProjectionSubscription(
+    string? currentEntityId,
+    ref string? subscribedEntityId
+)
+{
+    if (string.Equals(currentEntityId, subscribedEntityId, StringComparison.Ordinal))
+    {
+        return;
+    }
+
+    UnsubscribeFromAccountProjections(subscribedEntityId);
+    if (!string.IsNullOrWhiteSpace(currentEntityId))
+    {
+        if (!string.Equals(currentEntityId, AccountProjectionProvider.AccountId, StringComparison.Ordinal))
+        {
+            SubscribeToProjection<BankAccountBalanceProjectionDto>(currentEntityId);
+        }
+
+        SubscribeToProjection<BankAccountLedgerProjectionDto>(currentEntityId);
+    }
+
+    subscribedEntityId = currentEntityId;
+}
+```
+
+Replace `UnsubscribeFromAccountProjections` with the matching release method:
+
+```csharp
+private void UnsubscribeFromAccountProjections(
+    string? entityId
+)
+{
+    if (string.IsNullOrWhiteSpace(entityId))
+    {
+        return;
+    }
+
+    if (!string.Equals(entityId, AccountProjectionProvider.AccountId, StringComparison.Ordinal))
+    {
+        UnsubscribeFromProjection<BankAccountBalanceProjectionDto>(entityId);
+    }
+
+    UnsubscribeFromProjection<BankAccountLedgerProjectionDto>(entityId);
+}
+```
+
+This gives the configured balance pair one owner even when Operations displays it. Apply the same boundary to any additional page that manages that pair's subscriptions.
+
+### 4. Display Shared State In A Page
 
 Create `samples/Spring/Spring.Client/Pages/ProjectionWatch.razor`:
 
@@ -129,7 +189,7 @@ else
 
 `InletComponent` inherits Reservoir's store subscription and render lifecycle. Disposing this display page releases its store listener. The application provider continues owning the live account interest, ready for other pages or a return visit.
 
-### 4. Present Fetch And Transport State
+### 5. Present Fetch And Transport State
 
 Use `IsProjectionLoading<T>()` and `GetProjectionError<T>()` for the entity's fetch state. `GetProjection<T>()` returns its DTO when available, and `GetProjectionState<T>()` exposes its version.
 
@@ -151,7 +211,7 @@ Run Spring using the [sample startup instructions](https://github.com/Gibbs-Morr
 
 1. Confirm the configured account's holder, balance, and version appear after the initial fetch.
 2. Leave the page open and deposit into the same account from another browser tab. Confirm the displayed projection updates.
-3. Navigate to another page and back. Confirm the account remains selected and its data is available from the shared store.
+3. Select the configured account in Operations, then follow the Workspace balance link. Deposit into that account from another browser tab and confirm the watch page still receives updates after Operations closes.
 4. Repeat navigation while the initial projection request is delayed in browser Network tools. The application owner remains mounted while the request finishes.
 5. Click Refresh and confirm the latest data returns.
 
