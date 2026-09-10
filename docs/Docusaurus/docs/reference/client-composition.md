@@ -38,6 +38,8 @@ The nested Inlet SignalR builder also closes when `AddInletBlazorSignalR(...)` b
 
 The client starts with a copy of the host's service descriptors, preserving host-provided defaults when subsystem registrations use `TryAdd`. Its staged changes become visible to the host only after the callback and validation succeed.
 
+The host's attachment identity is independent of its mutable service descriptors. Clearing those descriptors cannot bypass an in-progress or completed attachment. Failed composition releases that identity for a fresh attempt on a writable host; successful attachment remains terminal for that host collection.
+
 Inside the callback, add services through `client.Services`. Configure the host's own `builder.Services` before calling `UseMississippi(...)`. If a callback changes the captured host collection directly, attachment fails with `MSB004` instead of overwriting those changes. The direct host changes remain, the staged client graph is discarded, and a fresh callback can retry.
 
 The host service collection must remain writable until composition finishes. A read-only host is rejected with `MSB005` before configuration or publication. If a callback freezes the host collection, its staged scope still closes and cleanup does not mask an exception from the callback. A frozen host requires a fresh host instance; subsequent attempts report `MSB005` rather than duplicate attachment.
