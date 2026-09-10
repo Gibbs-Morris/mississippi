@@ -38,7 +38,7 @@ internal static class ShowcaseReducers
             }
             : state;
 
-    /// <summary>Resets the form while retaining its theme and action history count.</summary>
+    /// <summary>Resets the form, preserves its theme, and advances the action count.</summary>
     /// <param name="state">Current state.</param>
     /// <param name="action">The request.</param>
     /// <returns>A reset state.</returns>
