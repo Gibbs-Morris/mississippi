@@ -72,6 +72,8 @@ Keep diagnostic `StoreEvents` observers non-throwing too. An exception from an o
 
 Serialize dispatches for a shared store, including work arriving from background producers or effect continuations. Concurrent read-modify-write reductions can otherwise replace one another's state updates and interleave notifications. Use one execution context or an application synchronization policy, and coordinate system restoration with that policy.
 
+A new store initializes from its registered initial state. When selections must survive a client reload or a new scope, preserve them through the application's URL or storage mechanism and rehydrate them when the application starts. Treat Reservoir snapshots and restoration actions as application-supplied state, with persistence owned by that surrounding mechanism.
+
 ## Trade-offs
 
 A feature introduces a few named artifacts—state, actions, reducers, and selectors. That structure gives a reviewable test boundary and reusable display logic. Simple selectors remain inexpensive to read; memoization can reuse a derived result while its input references stay the same.
