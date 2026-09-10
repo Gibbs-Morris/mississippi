@@ -34,6 +34,7 @@ public static class RuntimeHostingRegistrations
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
         ArgumentNullException.ThrowIfNull(configure);
+        ThrowIfHostServicesReadOnly(siloBuilder.Services);
         if (siloBuilder.Services is RuntimeServiceCollection ||
             siloBuilder.Services.Any(descriptor => descriptor.ServiceType == typeof(RuntimeAttachment)))
         {
@@ -91,7 +92,10 @@ public static class RuntimeHostingRegistrations
             if (!completed)
             {
                 runtime.Abort();
-                siloBuilder.Services.Remove(attachment);
+                if (!siloBuilder.Services.IsReadOnly)
+                {
+                    siloBuilder.Services.Remove(attachment);
+                }
             }
         }
     }
@@ -101,6 +105,7 @@ public static class RuntimeHostingRegistrations
         ServiceDescriptor[] originalHostServices
     )
     {
+        ThrowIfHostServicesReadOnly(services);
         if (!services.SequenceEqual(originalHostServices))
         {
             throw new BuilderValidationException(
@@ -109,6 +114,22 @@ public static class RuntimeHostingRegistrations
                     BuilderDiagnosticCodes.HostServicesChanged,
                     "Host services changed during Mississippi runtime composition.",
                     "Register services through runtime.Services or the staged ConfigureSilo(...) callback, or configure the host before UseMississippi(...)."),
+            ]);
+        }
+    }
+
+    private static void ThrowIfHostServicesReadOnly(
+        IServiceCollection services
+    )
+    {
+        if (services.IsReadOnly)
+        {
+            throw new BuilderValidationException(
+            [
+                new(
+                    BuilderDiagnosticCodes.HostServicesReadOnly,
+                    "Host services are read-only and cannot accept Mississippi runtime composition.",
+                    "Compose Mississippi before the host services become read-only; use a fresh host if they are already frozen."),
             ]);
         }
     }

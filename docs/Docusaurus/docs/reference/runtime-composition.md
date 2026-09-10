@@ -42,6 +42,8 @@ The runtime starts with a copy of the host's service descriptors. Native callbac
 
 Inside composition, register services through `runtime.Services` or the staged silo passed to `ConfigureSilo(...)`. Configure the outer host's services before `UseMississippi(...)`. Direct changes to the captured host collection during either callback reject attachment with `MSB004` instead of being overwritten. Those direct changes remain on the host, the staged graph closes without attaching, and a fresh callback can retry. Application callback mutations are detected before automatic native application begins.
 
+The host services must remain writable until composition finishes. A read-only host is rejected with `MSB005` before configuration or publication. Freezing the captured host inside either callback still closes the staged scope, and cleanup preserves an exception thrown by the callback. A frozen host requires a fresh host instance; subsequent attempts report `MSB005` rather than duplicate attachment.
+
 The staged graph retains the runtime attachment reservation and its nonterminal scope identity. Calling `UseMississippi(...)` again through a native callback or a wrapper over its staged services is rejected as duplicate attachment, even after clearing staged registrations; successful publication keeps one runtime attachment marker.
 
 If application or native configuration throws, the staged scope closes, its changes are discarded, and the attachment reservation is released. A fresh terminal callback can retry. Catching a native callback exception inside application configuration does not make that partially configured scope valid: terminal validation still rejects it.
@@ -60,6 +62,7 @@ Staging covers service descriptors. The forwarded configuration and existing ser
 | `MSB002` | The runtime builder has already attached | Configure it inside the terminal callback |
 | `MSB003` | The scope closed without attaching | Retry with a fresh scope |
 | `MSB004` | Direct changes to captured host services during composition | Use `runtime.Services` or the staged native callback, or configure the host before composition |
+| `MSB005` | Host services are read-only | Compose before freezing the host services; create a fresh host if they are already frozen |
 | `MSB101` | The supplied silo has different services or configuration from the owning host | Pass the owning silo to `ApplyToSilo(...)` |
 | `MSB102` | Native configuration was applied twice | Apply explicitly once or rely on terminal automatic application |
 | `MSB103` | A native callback failed, leaving an incomplete scope | Correct the callback and retry with a fresh scope |

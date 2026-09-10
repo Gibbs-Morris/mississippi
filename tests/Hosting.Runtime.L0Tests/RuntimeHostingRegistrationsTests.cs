@@ -324,6 +324,82 @@ public sealed class RuntimeHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Freezing host services cannot mask application or native failures, or misdiagnose the next attempt.
+    /// </summary>
+    /// <param name="nativeCallback">Whether the host is frozen inside queued native configuration.</param>
+    /// <param name="throwFromCallback">Whether the callback also throws after freezing host services.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void ReadOnlyHostDuringConfigurationReportsTheCauseAndClosesTheScope(
+        bool nativeCallback,
+        bool throwFromCallback
+    )
+    {
+        TestSiloBuilder silo = new();
+        ServiceCollection services = Assert.IsType<ServiceCollection>(silo.Services);
+        RuntimeBuilder? captured = null;
+        InvalidOperationException expected = new("Application configuration failed.");
+        Action freezeHost = () =>
+        {
+            services.MakeReadOnly();
+            if (throwFromCallback)
+            {
+                throw expected;
+            }
+        };
+        Exception? exception = Record.Exception(() => silo.UseMississippi(runtime =>
+        {
+            captured = runtime;
+            runtime.Services.AddSingleton(new object());
+            if (nativeCallback)
+            {
+                runtime.ConfigureSilo(_ => freezeHost());
+            }
+            else
+            {
+                freezeHost();
+            }
+        }));
+        if (throwFromCallback)
+        {
+            Assert.Same(expected, exception);
+        }
+        else
+        {
+            BuilderValidationException validation = Assert.IsType<BuilderValidationException>(exception);
+            Assert.Equal(BuilderDiagnosticCodes.HostServicesReadOnly, Assert.Single(validation.Diagnostics).Code);
+        }
+
+        Assert.NotNull(captured);
+        Assert.True(captured.Services.IsReadOnly);
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(object));
+        bool invoked = false;
+        BuilderValidationException retry = Assert.Throws<BuilderValidationException>(() =>
+            silo.UseMississippi(_ => invoked = true));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesReadOnly, Assert.Single(retry.Diagnostics).Code);
+        Assert.False(invoked);
+    }
+
+    /// <summary>
+    ///     An already frozen host fails before reservation or application configuration.
+    /// </summary>
+    [Fact]
+    public void ReadOnlyHostIsRejectedBeforeConfiguration()
+    {
+        TestSiloBuilder silo = new();
+        Assert.IsType<ServiceCollection>(silo.Services).MakeReadOnly();
+        bool invoked = false;
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            silo.UseMississippi(_ => invoked = true));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesReadOnly, Assert.Single(exception.Diagnostics).Code);
+        Assert.False(invoked);
+        Assert.Empty(silo.Services);
+    }
+
+    /// <summary>
     ///     Recursive attachment releases its reservation on failure and allows a fresh retry.
     /// </summary>
     [Fact]
