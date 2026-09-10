@@ -187,7 +187,7 @@ Then update the plan accordingly.
    - Keep only `PLAN.md` at the folder root.
 3) After planning, verify the supplied repository issue or search for a relevant open issue; reuse it or create one under [issue tracking and PR traceability](../instructions/issue-tracking.instructions.md) before implementation or builder handoff.
 4) Record the finalized problem, scope, acceptance criteria, implementation steps, and validation in the issue body or a linked comment, using the policy's private record for confidential details. Do not record only the local plan path: the flow plan folder is deleted at completion.
-5) Add the verified repository issue URL to `PLAN.md`. Use the configured GitHub MCP tools, or verify `gh` with `Get-Command gh` before the CLI fallback; if issue access or creation fails, report the blocker and leave implementation unstarted.
+5) Add the verified repository issue URL to `PLAN.md`. Use the configured GitHub MCP tools, or verify `gh` with `gh --version` before the CLI fallback; if issue access or creation fails, report the blocker and leave implementation unstarted.
 
 ## What you return to the user in chat
 
