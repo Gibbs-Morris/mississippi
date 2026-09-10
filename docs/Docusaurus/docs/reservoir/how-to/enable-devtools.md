@@ -66,7 +66,7 @@ The component calls `ReduxDevToolsService.Initialize()` after its first render, 
 
 Use `ActionSanitizer` and `StateSanitizer` to return the explicit payload the extension should receive. Return a sanitized object when redacting fields: a `null` sanitizer result selects the normal serialization fallback.
 
-Keep enough action identity and non-sensitive context to connect an action with its state transition. If you intend to restore snapshots, retain a shape that can be deserialized into the registered feature types, and review the strict restoration option.
+Keep enough action identity and non-sensitive context to connect an action with its state transition. If you intend to restore snapshots, retain every field value required to reproduce the intended feature state. Successful deserialization alone is insufficient: omitted optional properties can receive defaults even in strict mode. Verify a semantic round trip before restoring sanitized payloads; use redacted, incomplete payloads for inspection only.
 
 ## Verify the result
 
