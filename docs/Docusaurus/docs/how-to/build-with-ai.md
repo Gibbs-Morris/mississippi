@@ -138,6 +138,9 @@ Use more than successful compilation to judge completion.
 5. Check command progress and projection progress as separate observations. The [client synchronization model](../concepts/read-models-and-client-sync.md) delivers projection changes asynchronously.
 
 6. For exposed interfaces, verify anonymous requests are rejected (`401`/`403` as appropriate), authenticated callers without permission are denied, and the application rejects access to unauthorized entities. Check allowed and denied projection subscriptions too. [Spring auth-proof mode](../samples/spring-sample/how-to/auth-proof-mode.md) supplies executable HTTP authorization cases with development identities. Add application-specific SignalR integration checks for allowed and denied subscriptions.
+
+### Run the Spring Checks
+
 For the Spring example, run the domain tests from the repository root with PowerShell 7 and the .NET SDK selected by `global.json`. The canonical quality script builds the test project and its dependencies, executes the tests, and writes TRX and coverage evidence.
 
 ```powershell
