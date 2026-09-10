@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +33,8 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public IServiceCollection Services { get; }
 
+    private bool IsConfiguringFeature { get; set; }
+
     /// <summary>
     ///     Adds a feature state without additional feature configuration.
     /// </summary>
@@ -40,7 +43,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     public IReservoirBuilder AddFeatureState<TState>()
         where TState : class, IFeatureState, new()
     {
-        ThrowIfReadOnly();
+        ThrowIfConfigurationUnavailable();
         ReservoirBuilderRegistrations.AddFeatureState<TState>(Services);
         return this;
     }
@@ -57,7 +60,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
         where TState : class, IFeatureState, new()
     {
         ArgumentNullException.ThrowIfNull(configure);
-        ThrowIfReadOnly();
+        ThrowIfConfigurationUnavailable();
         AddFeatureStateTransactionally(configure);
         return this;
     }
@@ -70,7 +73,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     public IReservoirBuilder AddMiddleware<TMiddleware>()
         where TMiddleware : class, IMiddleware
     {
-        ThrowIfReadOnly();
+        ThrowIfConfigurationUnavailable();
         ReservoirBuilderRegistrations.AddMiddleware<TMiddleware>(Services);
         return this;
     }
@@ -80,8 +83,9 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     )
         where TState : class, IFeatureState, new()
     {
+        ServiceDescriptor[] originalServices = Services.ToArray();
         ServiceCollection stagedServices = [];
-        foreach (ServiceDescriptor descriptor in Services)
+        foreach (ServiceDescriptor descriptor in originalServices)
         {
             ((IServiceCollection)stagedServices).Add(descriptor);
         }
@@ -89,7 +93,23 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
         try
         {
             ReservoirBuilderRegistrations.AddFeatureState<TState>(stagedServices);
-            configure(new ReservoirFeatureBuilder<TState>(stagedServices));
+            IsConfiguringFeature = true;
+            try
+            {
+                configure(new ReservoirFeatureBuilder<TState>(stagedServices));
+            }
+            finally
+            {
+                IsConfiguringFeature = false;
+            }
+
+            ThrowIfConfigurationUnavailable();
+            if (!Services.SequenceEqual(originalServices))
+            {
+                throw new InvalidOperationException(
+                    "Parent Reservoir services changed during a feature callback. Use the supplied feature builder, or configure parent services outside that callback.");
+            }
+
             Services.Clear();
             foreach (ServiceDescriptor descriptor in stagedServices)
             {
@@ -102,8 +122,14 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
         }
     }
 
-    private void ThrowIfReadOnly()
+    private void ThrowIfConfigurationUnavailable()
     {
+        if (IsConfiguringFeature)
+        {
+            throw new InvalidOperationException(
+                "Reservoir root configuration is unavailable inside a feature callback. Use the supplied feature builder; register other states and middleware outside that callback.");
+        }
+
         if (Services.IsReadOnly)
         {
             throw new InvalidOperationException(
