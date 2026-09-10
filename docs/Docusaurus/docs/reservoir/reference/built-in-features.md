@@ -53,6 +53,8 @@ Use these actions for application navigation. The effect accepts relative applic
 
 For `SetQueryParamsAction`, use Blazor's supported query values: `bool`, `DateOnly`, `DateTime`, `decimal`, `double`, `float`, `Guid`, `int`, `long`, and `string`, including their supported nullable and array forms. The [Blazor navigation reference](https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/navigation?view=aspnetcore-10.0#query-strings) defines this contract. Validate values before dispatch: unsupported object types are rejected by Blazor, and the live effect boundary catches that exception without producing a navigation error action.
 
+To remove an existing query parameter, include its key in `SetQueryParamsAction.Parameters` with a null value. Omitting the key preserves its current query value. This follows the same Blazor query-update contract used for additions and replacements.
+
 ## Lifecycle Milestones
 
 `LifecycleState` uses feature key `reservoir:lifecycle`. It starts in `NotStarted` with null timestamps.
