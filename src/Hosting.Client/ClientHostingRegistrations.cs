@@ -101,7 +101,13 @@ public static class ClientHostingRegistrations
                 client?.Abort();
                 if (!builder.Services.IsReadOnly)
                 {
-                    builder.Services.Remove(attachment);
+                    for (int index = builder.Services.Count - 1; index >= 0; index--)
+                    {
+                        if (builder.Services[index].ServiceType == typeof(ClientAttachment))
+                        {
+                            builder.Services.RemoveAt(index);
+                        }
+                    }
                 }
             }
         }

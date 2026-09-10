@@ -42,7 +42,7 @@ Inside the callback, add services through `client.Services`. Configure the host'
 
 The host service collection must remain writable until composition finishes. A read-only host is rejected with `MSB005` before configuration or publication. If a callback freezes the host collection, its staged scope still closes and cleanup does not mask an exception from the callback. A frozen host requires a fresh host instance; subsequent attempts report `MSB005` rather than duplicate attachment.
 
-If the callback throws or validation fails, its staged service changes are discarded, its captured builders and collection are closed, and the attachment reservation is released. A corrected `UseMississippi(...)` call creates a fresh scope and can then succeed. Duplicate and recursive attachment are rejected before the duplicate callback runs. Different hosts can each attach their own client composition.
+If the callback throws or validation fails, its staged service changes are discarded and its captured builders and collection are closed. When the host remains writable, cleanup removes all client attachment reservations, including replaced or duplicated descriptors, so a corrected `UseMississippi(...)` call can create a fresh scope and succeed. Duplicate and recursive attachment are rejected before the duplicate callback runs. Different hosts can each attach their own client composition.
 
 Staging covers service descriptors configured through the supplied builder. It does not roll back changes to shared object instances, direct mutations of the host captured by application code, or external side effects. Composition validation does not build a service provider, verify network connectivity, or replace service option validation.
 
