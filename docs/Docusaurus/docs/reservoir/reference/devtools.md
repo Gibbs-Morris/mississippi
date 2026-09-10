@@ -19,7 +19,7 @@ sidebar_label: DevTools
 | `Name` | `null` | Nonblank value is forwarded as the extension instance name |
 | `MaxAge` | `null` | Maximum retained action count in DevTools history; forwarded as `maxAge` |
 | `Latency` | `null` | Batching latency in milliseconds; forwarded as `latency` |
-| `AutoPause` | `null` | Set values are forwarded as `autoPause` |
+| `AutoPause` | `null` | When true, DevTools pauses while its window is not open; forwarded as `autoPause` |
 | `AdditionalOptions` | Empty dictionary | Extra extension options, applied after typed options |
 | `ActionSanitizer` | `null` | Optional action-payload replacement |
 | `StateSanitizer` | `null` | Optional state-payload replacement |
