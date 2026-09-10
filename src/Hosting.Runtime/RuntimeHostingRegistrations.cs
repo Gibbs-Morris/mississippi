@@ -129,7 +129,8 @@ public static class RuntimeHostingRegistrations
 
             hostServices.Add(attachment);
         }
-        catch (Exception publicationException)
+        catch (Exception publicationException) when (publicationException is not (OutOfMemoryException
+                                                         or AccessViolationException or StackOverflowException))
         {
             try
             {
@@ -140,7 +141,8 @@ public static class RuntimeHostingRegistrations
                     hostServices.Add(descriptor);
                 }
             }
-            catch (Exception restorationException)
+            catch (Exception restorationException) when (restorationException is not (OutOfMemoryException
+                                                             or AccessViolationException or StackOverflowException))
             {
                 throw new AggregateException(
                     "Runtime service publication failed and the original host registrations could not be restored. Use a fresh host.",
