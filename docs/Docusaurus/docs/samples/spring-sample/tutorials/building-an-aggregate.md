@@ -239,7 +239,7 @@ internal sealed class AccountClosedProjectionReducer : EventReducerBase<AccountC
 
 The balance projection exposes account status to clients. Applying the same closure event keeps its `IsOpen` value aligned with aggregate state. You define the read-model transition; the existing projection path, generated DTOs, and delivery code continue to carry that state.
 
-Aggregate and projection types share the `SPRING.BANKING.ACCOUNT` brook family. Their snapshot storage names identify their separate state shapes. Database and container names remain host configuration.
+Aggregate and projection types share the brook family selected by `[BrookName("SPRING", "BANKING", "ACCOUNT")]`. Their snapshot storage names identify their separate state shapes. Database and container names remain host configuration.
 
 Update the remarks in `samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs`. Replace the line listing only `AccountOpened`, `FundsDeposited`, and `FundsWithdrawn` with this description so it remains accurate as the view gains another reducer:
 
