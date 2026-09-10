@@ -12,6 +12,10 @@ Give a page ownership of the projection data it needs. Subscribe when the page s
 
 This keeps account screens connected to the same server read model while leaving business rules in the domain. The typed DTO, entity ID, and explicit lifecycle also give an AI assistant concrete boundaries for generating and testing the page.
 
+## When To Use This
+
+Use this pattern when a Blazor screen selects an entity and owns the live projection state shared by its child components. Configure the generated projection features and Inlet connection before adding the screen.
+
 ## Before You Begin
 
 - Start from the [Spring sample](../../samples/spring-sample/index.md), with its generated client features and [Inlet client composition](./how-to.md).
