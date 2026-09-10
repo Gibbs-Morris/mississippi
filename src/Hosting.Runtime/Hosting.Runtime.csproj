@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Validated terminal composition for Mississippi Orleans runtime hosts.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hosting.Runtime.Abstractions\Hosting.Runtime.Abstractions.csproj" />
+  </ItemGroup>
+</Project>
