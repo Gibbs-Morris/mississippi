@@ -119,6 +119,8 @@ After verifying the business behavior and defining interface access, follow the 
 
 For a network-accessible gateway, configure authentication and authorization before exposing the generated transport. Select a named application policy and require authorization through Inlet's force mode or the contracts' `[GenerateAuthorization]` metadata. The default `GeneratedApiAuthorization.Mode` is `Disabled`; review the [authorization options](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/GeneratedApiAuthorizationOptions.cs) and [generation metadata](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAuthorizationAttribute.cs) explicitly.
 
+Protect an HTTP MCP endpoint and its tools through a separate application authorization boundary, or restrict them to a trusted local development environment. Generated HTTP-controller and Inlet subscription policies apply to those interfaces; generated MCP tools invoke domain grains directly. Include MCP access checks when that transport is part of the application.
+
 Treat permission to act on a particular entity as an application decision. Name the boundary that receives the entity ID and verifies access; subscription identity policies receive a null resource. Include that decision and its tests in the implementation brief.
 
 Use the generated artifacts as part of the application's build. Keep the human-authored rule in the handler and the state transition in the reducer. When reviewing assistant changes, check the domain attributes and the resulting API/client behavior together.
