@@ -91,6 +91,7 @@ public sealed class ThemeScopeTests : BunitContext
             Render<CascadingRefractionProvider>(p =>
                 p.AddChildContent<InputField>(input => input.Add(c => c.Label, "Email")));
         string? id = cut.Find("input").Id;
+        Assert.False(string.IsNullOrWhiteSpace(id));
         cut.Render(p => p.Add(c => c.ThemeMode, RefractionThemeMode.Light));
         Assert.Equal("light", cut.Find(".rf-theme").GetAttribute("data-rf-theme"));
         Assert.Equal(id, cut.Find("input").Id);
