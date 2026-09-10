@@ -12,11 +12,11 @@ Keep a workspace's account projection subscribed for the lifetime of the Blazor 
 
 This keeps related account screens connected to the same server read model while leaving business rules in the domain. A fixed entity ID, typed DTO, and explicit application lifetime give an AI assistant concrete boundaries for generating and testing those screens.
 
-## When To Use This
+## When to use this
 
 Use this pattern for a workspace with a small, fixed set of entities that should stay live as users navigate between pages. The application shell owns the subscriptions; individual pages own only their store listeners and presentation.
 
-## Before You Begin
+## Before you begin
 
 - Start from [Spring](../../samples/spring-sample/index.md), with its generated client features and [Inlet client composition](./how-to.md).
 - Choose an existing account ID for the workspace. Replace `doc-account-001` in the provider below with that ID before running the client.
@@ -139,7 +139,7 @@ Read `SignalRConnectionState.Status` for the shared transport indicator. Project
 
 `RefreshProjection<T>(entityId)` requests the latest projection and publishes the result into Reservoir. Inlet also re-establishes active interests and refreshes them after a successful SignalR reconnection. Keep the loading, empty, error, and data presentation usable throughout that process.
 
-## Verify The Result
+## Verify the result
 
 From the repository root, build the sample:
 
