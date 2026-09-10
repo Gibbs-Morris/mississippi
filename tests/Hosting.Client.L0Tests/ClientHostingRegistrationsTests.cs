@@ -83,6 +83,42 @@ public sealed class ClientHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     A captured Reservoir builder rejects callbacks before application code can run after attachment.
+    /// </summary>
+    [Fact]
+    public void CapturedReservoirRejectsFeatureCallbackAfterAttachment()
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder host = CreateHost(services);
+        IReservoirBuilder? captured = null;
+        host.UseMississippi(client => client.Reservoir(reservoir => captured = reservoir));
+        Assert.NotNull(captured);
+        ServiceDescriptor[] original = services.ToArray();
+        bool invoked = false;
+        Assert.Throws<InvalidOperationException>(() =>
+            captured.AddFeatureState<ClientLifecycleState>(_ => invoked = true));
+        Assert.False(invoked);
+        Assert.Equal(original, services);
+    }
+
+    /// <summary>
+    ///     Even an otherwise idempotent feature registration rejects a completed builder.
+    /// </summary>
+    [Fact]
+    public void CapturedReservoirRejectsRepeatedFeatureAfterAttachment()
+    {
+        WebAssemblyHostBuilder host = CreateHost(new ServiceCollection());
+        IReservoirBuilder? captured = null;
+        host.UseMississippi(client => client.Reservoir(reservoir =>
+        {
+            captured = reservoir;
+            reservoir.AddFeatureState<ClientLifecycleState>();
+        }));
+        Assert.NotNull(captured);
+        Assert.Throws<InvalidOperationException>(() => captured.AddFeatureState<ClientLifecycleState>());
+    }
+
+    /// <summary>
     ///     Duplicate attachment is rejected before invoking user code or altering the host.
     /// </summary>
     [Fact]
@@ -100,6 +136,24 @@ public sealed class ClientHostingRegistrationsTests
         BuilderDiagnostic diagnostic = Assert.Single(exception.Diagnostics);
         Assert.Equal("MSB001", diagnostic.Code);
         Assert.Contains("one UseMississippi", diagnostic.Remediation, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Feature-scoped builders cannot silently accept registrations after their callback has returned.
+    /// </summary>
+    [Fact]
+    public void FeatureScopeBecomesReadOnlyWhenItsCallbackReturns()
+    {
+        WebAssemblyHostBuilder host = CreateHost(new ServiceCollection());
+        IReservoirFeatureBuilder<ClientLifecycleState>? captured = null;
+        host.UseMississippi(client => client.Reservoir(reservoir =>
+        {
+            reservoir.AddFeatureState<ClientLifecycleState>(feature => captured = feature);
+            Assert.NotNull(captured);
+            Assert.True(captured.Services.IsReadOnly);
+        }));
+        Assert.NotNull(captured);
+        Assert.Throws<InvalidOperationException>(() => captured.Services.AddSingleton(TimeProvider.System));
     }
 
     /// <summary>

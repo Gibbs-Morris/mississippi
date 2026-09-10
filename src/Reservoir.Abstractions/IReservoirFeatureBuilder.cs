@@ -23,6 +23,7 @@ public interface IReservoirFeatureBuilder<TState>
     ///     Gets the service collection used for advanced extension scenarios.
     ///     During feature configuration this collection may be a staged view whose mutations are committed
     ///     back to the host builder after the callback completes successfully.
+    ///     A staged collection becomes read-only when its feature callback exits, including on failure.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     IServiceCollection Services { get; }
