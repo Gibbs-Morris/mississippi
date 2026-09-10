@@ -3,7 +3,8 @@
  * Neo Blue holographic HUD system.
  */
 
-:root {
+:root,
+[data-rf-theme] {
     /* ═══════════════════════════════════════════════════════════════════════
      * RAW TOKENS - Base palette values (not meant for direct consumption)
      * ═══════════════════════════════════════════════════════════════════════ */
@@ -24,11 +25,20 @@
     --rf-raw-neutral-400: hsl(220, 4%, 65%);
     --rf-raw-neutral-200: hsl(220, 4%, 85%);
     --rf-raw-neutral-100: hsl(220, 5%, 95%);
+    --rf-raw-neutral-0: #fff;
+    --rf-raw-neutral-1000: #000;
 
     /* Status colors */
     --rf-raw-amber: hsl(40, 100%, 55%);
     --rf-raw-red: hsl(0, 85%, 55%);
     --rf-raw-green: hsl(145, 75%, 50%);
+    --rf-raw-amber-dark: hsl(35, 75%, 28%);
+    --rf-raw-red-dark: hsl(0, 70%, 35%);
+    --rf-raw-green-dark: hsl(145, 65%, 25%);
+    --rf-raw-cyan-contrast: #0ff;
+    --rf-raw-yellow-contrast: #ff0;
+    --rf-raw-red-contrast: #f99;
+    --rf-raw-green-contrast: #9f9;
 
     /* Alpha and glow values */
     --rf-raw-alpha-soft: 0.08;
@@ -51,10 +61,10 @@
     /* Typography */
     --rf-raw-font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
     --rf-raw-font-sans: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    --rf-raw-text-xs: 0.625rem;
-    --rf-raw-text-sm: 0.75rem;
-    --rf-raw-text-base: 0.875rem;
-    --rf-raw-text-lg: 1rem;
+    --rf-raw-text-xs: 0.75rem;
+    --rf-raw-text-sm: 0.875rem;
+    --rf-raw-text-base: 1rem;
+    --rf-raw-text-lg: 1.125rem;
     --rf-raw-text-xl: 1.25rem;
 
     /* Timing */
@@ -94,4 +104,63 @@
     --rf-color-focus-ring: var(--rf-raw-neo-blue-n2);
     --rf-focus-ring-width: 2px;
     --rf-focus-ring-offset: 2px;
+}
+
+[data-rf-theme] {
+    color-scheme: dark;
+}
+
+[data-rf-theme="light"] {
+    color-scheme: light;
+    --rf-color-surface-void: var(--rf-raw-neutral-0);
+    --rf-color-surface-glass: var(--rf-raw-neutral-100);
+    --rf-color-surface-elevated: var(--rf-raw-neutral-100);
+    --rf-color-action-primary: var(--rf-raw-neo-blue-n5);
+    --rf-color-action-hover: var(--rf-raw-neo-blue-n4);
+    --rf-color-action-pressed: var(--rf-raw-neo-blue-n5);
+    --rf-color-text-primary: var(--rf-raw-neutral-900);
+    --rf-color-text-secondary: var(--rf-raw-neutral-600);
+    --rf-color-text-muted: var(--rf-raw-neutral-600);
+    --rf-color-text-accent: var(--rf-raw-neo-blue-n5);
+    --rf-color-status-warning: var(--rf-raw-amber-dark);
+    --rf-color-status-error: var(--rf-raw-red-dark);
+    --rf-color-status-success: var(--rf-raw-green-dark);
+    --rf-color-focus-ring: var(--rf-raw-neo-blue-n5);
+}
+
+[data-rf-theme="high-contrast"] {
+    --rf-color-surface-void: var(--rf-raw-neutral-1000);
+    --rf-color-surface-glass: var(--rf-raw-neutral-900);
+    --rf-color-surface-elevated: var(--rf-raw-neutral-900);
+    --rf-color-action-primary: var(--rf-raw-cyan-contrast);
+    --rf-color-action-hover: var(--rf-raw-yellow-contrast);
+    --rf-color-action-pressed: var(--rf-raw-neutral-0);
+    --rf-color-text-primary: var(--rf-raw-neutral-0);
+    --rf-color-text-secondary: var(--rf-raw-neutral-0);
+    --rf-color-text-muted: var(--rf-raw-neutral-0);
+    --rf-color-text-accent: var(--rf-raw-cyan-contrast);
+    --rf-color-status-warning: var(--rf-raw-yellow-contrast);
+    --rf-color-status-error: var(--rf-raw-red-contrast);
+    --rf-color-status-success: var(--rf-raw-green-contrast);
+    --rf-color-focus-ring: var(--rf-raw-yellow-contrast);
+}
+
+@media (forced-colors: active) {
+    [data-rf-theme] {
+        color-scheme: light dark;
+        --rf-color-surface-void: Canvas;
+        --rf-color-surface-glass: Canvas;
+        --rf-color-surface-elevated: Canvas;
+        --rf-color-action-primary: LinkText;
+        --rf-color-action-hover: Highlight;
+        --rf-color-action-pressed: LinkText;
+        --rf-color-text-primary: CanvasText;
+        --rf-color-text-secondary: CanvasText;
+        --rf-color-text-muted: GrayText;
+        --rf-color-text-accent: LinkText;
+        --rf-color-status-warning: CanvasText;
+        --rf-color-status-error: CanvasText;
+        --rf-color-status-success: CanvasText;
+        --rf-color-focus-ring: Highlight;
+    }
 }

@@ -3,10 +3,10 @@ using System.Reflection;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Refraction.Client.Infrastructure;
+using Mississippi.Refraction.Client.Infrastructure.Theming;
 
 
-namespace Mississippi.Refraction.Client.L0Tests.Infrastructure;
+namespace Mississippi.Refraction.Client.L0Tests.Infrastructure.Theming;
 
 /// <summary>
 ///     Tests for <see cref="CascadingRefractionProvider" />.
@@ -32,16 +32,16 @@ public sealed class CascadingRefractionProviderTests
     }
 
     /// <summary>
-    ///     CascadingRefractionProvider has ReducedMotion parameter.
+    ///     CascadingRefractionProvider has IsReducedMotion parameter.
     /// </summary>
     [Fact]
-    public void CascadingRefractionProviderHasReducedMotionParameter()
+    public void CascadingRefractionProviderHasIsReducedMotionParameter()
     {
         // Arrange
         Type componentType = typeof(CascadingRefractionProvider);
 
         // Act
-        PropertyInfo? reducedMotion = componentType.GetProperty("ReducedMotion");
+        PropertyInfo? reducedMotion = componentType.GetProperty("IsReducedMotion");
 
         // Assert
         Assert.NotNull(reducedMotion);
@@ -63,16 +63,16 @@ public sealed class CascadingRefractionProviderTests
     }
 
     /// <summary>
-    ///     CascadingRefractionProvider ReducedMotion defaults to false.
+    ///     CascadingRefractionProvider IsReducedMotion defaults to false.
     /// </summary>
     [Fact]
-    public void CascadingRefractionProviderReducedMotionDefaultsToFalse()
+    public void CascadingRefractionProviderIsReducedMotionDefaultsToFalse()
     {
         // Arrange
         CascadingRefractionProvider provider = new();
 
         // Act
-        PropertyInfo? reducedMotion = typeof(CascadingRefractionProvider).GetProperty("ReducedMotion");
+        PropertyInfo? reducedMotion = typeof(CascadingRefractionProvider).GetProperty("IsReducedMotion");
 
         // Assert
         Assert.NotNull(reducedMotion);
