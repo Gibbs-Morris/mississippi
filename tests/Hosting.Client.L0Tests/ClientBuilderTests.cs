@@ -87,7 +87,7 @@ public sealed class ClientBuilderTests
         client.Complete();
         BuilderDiagnostic diagnostic = Assert.Single(client.Validate());
         Assert.Empty(before);
-        Assert.Equal("MSB002", diagnostic.Code);
+        Assert.Equal(BuilderDiagnosticCodes.BuilderAlreadyAttached, diagnostic.Code);
         Assert.Contains("already been attached", diagnostic.Message, StringComparison.Ordinal);
         Assert.Contains("UseMississippi", diagnostic.Remediation, StringComparison.Ordinal);
     }
