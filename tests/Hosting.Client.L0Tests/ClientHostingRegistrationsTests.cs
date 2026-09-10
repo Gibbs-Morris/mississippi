@@ -332,6 +332,49 @@ public sealed class ClientHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Host descriptor rewrites cannot leave replacement or duplicate reservations after rejected composition.
+    /// </summary>
+    /// <param name="replaceReservation">Whether to replace the original reservation instead of duplicating it.</param>
+    /// <param name="keyedReservation">Whether the rewritten reservation uses a service key.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void RewrittenReservationsDoNotBlockRetry(
+        bool replaceReservation,
+        bool keyedReservation
+    )
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder host = CreateHost(services);
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() => host.UseMississippi(_ =>
+        {
+            ServiceDescriptor reservation = Assert.Single(services);
+            if (replaceReservation)
+            {
+                host.Services.Remove(reservation);
+            }
+
+            if (keyedReservation)
+            {
+                host.Services.AddKeyedSingleton(reservation.ServiceType, "copy", reservation.ImplementationInstance!);
+            }
+            else
+            {
+                host.Services.AddSingleton(reservation.ServiceType, reservation.ImplementationInstance!);
+            }
+
+            host.Services.AddSingleton(TimeProvider.System);
+        }));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesChanged, Assert.Single(exception.Diagnostics).Code);
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(ClientAttachment));
+        Assert.Equal(typeof(TimeProvider), Assert.Single(services).ServiceType);
+        host.UseMississippi(_ => { });
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(ClientAttachment));
+    }
+
+    /// <summary>
     ///     Attachment is tracked per host rather than across independent hosts.
     /// </summary>
     [Fact]
