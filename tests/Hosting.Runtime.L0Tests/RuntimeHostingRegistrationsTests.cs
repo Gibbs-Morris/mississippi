@@ -20,6 +20,18 @@ namespace Mississippi.Hosting.Runtime.L0Tests;
 /// </summary>
 public sealed class RuntimeHostingRegistrationsTests
 {
+    private static void AssertDamagedHostRejectsRetry(
+        ISiloBuilder silo
+    )
+    {
+        bool invoked = false;
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            silo.UseMississippi(_ => invoked = true));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesDamaged, Assert.Single(exception.Diagnostics).Code);
+        Assert.False(invoked);
+        new TestSiloBuilder().UseMississippi(_ => { });
+    }
+
     /// <summary>
     ///     Clearing the original host cannot permit recursive attachment through application or native callbacks.
     /// </summary>
@@ -286,6 +298,7 @@ public sealed class RuntimeHostingRegistrationsTests
         services.Failures.Enqueue(new InvalidOperationException("Recovery must stop after the fatal fault."));
         Assert.Same(fatal, Assert.Throws(exceptionType, () => silo.UseMississippi(_ => { })));
         Assert.Single(services.Failures);
+        AssertDamagedHostRejectsRetry(silo);
     }
 
     /// <summary>
@@ -485,6 +498,8 @@ public sealed class RuntimeHostingRegistrationsTests
             first => Assert.Same(publication, first),
             second => Assert.Same(restoration, second));
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
+        services.Clear();
+        AssertDamagedHostRejectsRetry(silo);
     }
 
     /// <summary>

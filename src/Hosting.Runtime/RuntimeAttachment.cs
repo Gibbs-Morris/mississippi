@@ -1,16 +1,12 @@
 namespace Mississippi.Hosting.Runtime;
 
 /// <summary>
-///     Marks a host whose runtime attachment is reserved or complete.
+///     Tracks the attachment and unrecoverable failure state of one runtime host.
 /// </summary>
 internal sealed class RuntimeAttachment
 {
-    private RuntimeAttachment()
-    {
-    }
-
     /// <summary>
-    ///     Gets the immutable marker used by host-specific runtime attachment descriptors.
+    ///     Gets or sets a value indicating whether the host service graph cannot be safely reused.
     /// </summary>
-    public static RuntimeAttachment Instance { get; } = new();
+    public bool IsDamaged { get; set; }
 }

@@ -50,7 +50,7 @@ The original host's attachment identity is also tracked independently of its des
 
 If application or native configuration throws, the staged scope closes, its changes are discarded, and the independent attachment reservation is released. Cleanup removes all runtime attachment descriptors from a writable host, including replaced, duplicate, and keyed copies, so a fresh terminal callback can retry. Catching a native callback exception inside application configuration does not make that partially configured scope valid: terminal validation still rejects it.
 
-If the host collection throws while staged services are being published, composition restores the original host descriptors and rethrows the publication error. If restoration also fails, an `AggregateException` reports both errors. Create a fresh host in that case because its registrations may be incomplete.
+If the host collection throws while staged services are being published, composition restores the original host descriptors and rethrows the publication error. If restoration also fails, an `AggregateException` reports both errors. The host is permanently marked unusable, and another attachment attempt fails with `MSB006` before invoking configuration, even if its descriptors are cleared. Create a fresh host because the original registrations may be incomplete.
 
 Out-of-memory, access-violation, and stack-overflow faults propagate directly. Publication restoration and error aggregation are skipped for those fatal runtime faults.
 
@@ -69,6 +69,7 @@ Staging covers service descriptors. The forwarded configuration and existing ser
 | `MSB003` | The scope closed without attaching | Retry with a fresh scope |
 | `MSB004` | Direct changes to captured host services during composition | Use `runtime.Services` or the staged native callback, or configure the host before composition |
 | `MSB005` | Host services are read-only | Compose before freezing the host services; create a fresh host if they are already frozen |
+| `MSB006` | Failed publication left the host service graph unrestored | Create a fresh host; the damaged collection cannot be reused |
 | `MSB101` | The supplied silo has different services or configuration from the owning host | Pass the owning silo to `ApplyToSilo(...)` |
 | `MSB102` | Native configuration was applied twice | Apply explicitly once or rely on terminal automatic application |
 | `MSB103` | A native callback failed, leaving an incomplete scope | Correct the callback and retry with a fresh scope |

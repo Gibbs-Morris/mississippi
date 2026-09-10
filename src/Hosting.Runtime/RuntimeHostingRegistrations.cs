@@ -37,10 +37,22 @@ public static class RuntimeHostingRegistrations
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
         ArgumentNullException.ThrowIfNull(configure);
+        if (HostAttachments.TryGetValue(siloBuilder.Services, out RuntimeAttachment? previous) && previous.IsDamaged)
+        {
+            throw new BuilderValidationException(
+            [
+                new(
+                    BuilderDiagnosticCodes.HostServicesDamaged,
+                    "The runtime host service graph could not be restored after failed publication.",
+                    "Create a fresh host and configure it again; this service collection cannot be reused."),
+            ]);
+        }
+
         ThrowIfHostServicesReadOnly(siloBuilder.Services);
+        RuntimeAttachment state = new();
         if (siloBuilder.Services is RuntimeServiceCollection ||
             siloBuilder.Services.Any(descriptor => descriptor.ServiceType == typeof(RuntimeAttachment)) ||
-            !HostAttachments.TryAdd(siloBuilder.Services, RuntimeAttachment.Instance))
+            !HostAttachments.TryAdd(siloBuilder.Services, state))
         {
             throw new BuilderValidationException(
             [
@@ -51,8 +63,9 @@ public static class RuntimeHostingRegistrations
             ]);
         }
 
-        ServiceDescriptor attachment = ServiceDescriptor.Singleton(RuntimeAttachment.Instance);
+        ServiceDescriptor attachment = ServiceDescriptor.Singleton(state);
         bool completed = false;
+        bool canReuseHost = true;
         RuntimeBuilder? runtime = null;
         try
         {
@@ -81,7 +94,7 @@ public static class RuntimeHostingRegistrations
 
             ThrowIfHostServicesChanged(siloBuilder.Services, originalHostServices);
             runtime.Complete();
-            PublishServices(siloBuilder.Services, stagedServices, originalHostServices, attachment);
+            PublishServices(siloBuilder.Services, stagedServices, originalHostServices, attachment, ref canReuseHost);
             completed = true;
             return siloBuilder;
         }
@@ -89,9 +102,10 @@ public static class RuntimeHostingRegistrations
         {
             if (!completed)
             {
-                try
+                runtime?.Abort();
+                state.IsDamaged = true;
+                if (canReuseHost)
                 {
-                    runtime?.Abort();
                     if (!siloBuilder.Services.IsReadOnly)
                     {
                         for (int index = siloBuilder.Services.Count - 1; index >= 0; index--)
@@ -102,9 +116,7 @@ public static class RuntimeHostingRegistrations
                             }
                         }
                     }
-                }
-                finally
-                {
+
                     HostAttachments.Remove(siloBuilder.Services);
                 }
             }
@@ -115,9 +127,11 @@ public static class RuntimeHostingRegistrations
         IServiceCollection hostServices,
         IEnumerable<ServiceDescriptor> stagedServices,
         IReadOnlyList<ServiceDescriptor> originalHostServices,
-        ServiceDescriptor attachment
+        ServiceDescriptor attachment,
+        ref bool canReuseHost
     )
     {
+        canReuseHost = false;
         try
         {
             hostServices.Clear();
@@ -140,6 +154,8 @@ public static class RuntimeHostingRegistrations
                 {
                     hostServices.Add(descriptor);
                 }
+
+                canReuseHost = true;
             }
             catch (Exception restorationException) when (restorationException is not (OutOfMemoryException
                                                              or AccessViolationException or StackOverflowException))
