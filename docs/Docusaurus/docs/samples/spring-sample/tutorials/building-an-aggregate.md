@@ -465,6 +465,11 @@ Remove-Item -LiteralPath @(
     'samples/Spring/Spring.Domain/Projections/BankAccountBalance/Reducers/AccountClosedProjectionReducer.cs',
     'samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/AccountClosureTests.cs'
 )
+$projectionPath = 'samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs'
+$projectionSource = Get-Content -LiteralPath $projectionPath -Raw
+$updatedRemark = 'Its reducers apply the account events relevant to this view.'
+$originalRemark = 'It subscribes to events from the BankAccount aggregate: AccountOpened, FundsDeposited, FundsWithdrawn.'
+Set-Content -LiteralPath $projectionPath -NoNewline -Value $projectionSource.Replace($updatedRemark, $originalRemark)
 pwsh ./build.ps1 -SkipMississippi -Configuration Release
 ```
 
