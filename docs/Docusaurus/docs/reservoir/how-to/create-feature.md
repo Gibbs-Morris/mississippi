@@ -295,10 +295,10 @@ To verify the repository's reference implementation, run from its root:
 
 ```powershell
 pwsh ./build.ps1 -SkipMississippi -Configuration Release
-pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject Reservoir.Core.L0Tests -SkipMutation
+pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject samples/Spring/Spring.Client.L0Tests/Spring.Client.L0Tests.csproj -SourceProject samples/Spring/Spring.Client/Spring.Client.csproj -SkipMutation
 ```
 
-Require successful exit codes, a zero-warning sample build, and `RESULT: PASS` with executed tests. The sample build verifies the feature and page integrations; the core tests verify store, reducer, and selector mechanics. These scripts belong to the Mississippi repository; use your application's own build and test entry points for its feature.
+Require successful exit codes, a zero-warning sample build, and `RESULT: PASS` with executed tests. The sample build verifies the feature and page integrations. [DualEntitySelectionTests](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client.L0Tests/Features/DualEntitySelection/DualEntitySelectionTests.cs) verifies the documented selection sequence, slot preservation, immutable prior states, and the presence predicate. Confirm that all six cases in that class execute successfully. These scripts belong to the Mississippi repository; use your application's own build and test entry points for its feature.
 
 ## Summary
 
