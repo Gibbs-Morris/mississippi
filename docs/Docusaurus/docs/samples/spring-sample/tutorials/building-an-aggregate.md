@@ -468,6 +468,12 @@ Remove-Item -LiteralPath @(
 pwsh ./build.ps1 -SkipMississippi -Configuration Release
 ```
 
+## Framework Contracts
+
+- [CommandHandlerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/CommandHandlerBase.cs) accepts a command and current state and returns events or a failure result.
+- [OperationResult](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/OperationResult.cs) carries success values or error codes and messages.
+- [EventReducerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/EventReducerBase.cs) applies an event and checks that reference state is replaced.
+
 ## Summary
 
 You added a business operation with explicit validation, an accepted event, write and read reducers, and executable acceptance tests. These are small artifacts an AI assistant can implement against a defined policy while generators connect the supported application surfaces.
@@ -477,9 +483,3 @@ You added a business operation with explicit validation, an accepted event, writ
 - [Build projections](./building-projections.md) for more views of the same events.
 - [Build a saga](./building-a-saga.md) to coordinate work across accounts.
 - [Build with an AI assistant](../../../how-to/build-with-ai.md) to specify another operation and its verification.
-
-## Framework Contracts
-
-- [CommandHandlerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/CommandHandlerBase.cs) accepts a command and current state and returns events or a failure result.
-- [OperationResult](https://github.com/Gibbs-Morris/mississippi/blob/main/src/DomainModeling.Abstractions/OperationResult.cs) carries success values or error codes and messages.
-- [EventReducerBase](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Tributary.Abstractions/EventReducerBase.cs) applies an event and checks that reference state is replaced.
