@@ -59,7 +59,7 @@ A non-null sanitizer result replaces that payload. A null result falls back to t
 
 The store's system restoration path updates local feature state directly and can notify listeners. It bypasses ordinary user reducers, effects, and middleware. Use application commands for server-side business changes.
 
-Strict restoration rejects the whole proposed restore when a registered feature is missing or fails deserialization. In the default mode, valid registered features can be restored while missing or invalid entries are left as they are. Extra input keys are outside the registered-feature iteration.
+For JSON restoration, a missing feature, a null deserialized result, or a caught `JsonException` rejects the whole proposed restore in strict mode; default mode skips those entries and can apply the other valid features. Other exceptions from a state type or converter, such as `NotSupportedException`, propagate from message processing rather than following that skip/reject path. Extra input keys are outside the registered-feature iteration.
 
 Strict validation applies to JSON restoration through `JUMP_TO_STATE`, `JUMP_TO_ACTION`, and the final imported snapshot from `IMPORT_STATE`. `RESET` restores registered initial state and `ROLLBACK` restores the in-memory committed snapshot through system actions; those operations do not use the JSON strict-validation path.
 
