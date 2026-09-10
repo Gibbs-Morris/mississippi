@@ -190,6 +190,67 @@ public sealed class RuntimeHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Direct host mutations fail attachment without overwriting registrations made outside the staged graph.
+    /// </summary>
+    /// <param name="nativeCallback">Whether the direct mutation occurs inside queued native configuration.</param>
+    /// <param name="replaceExisting">Whether to replace an existing descriptor instead of adding one.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void HostServiceChangesFailWithoutLosingRegistrations(
+        bool nativeCallback,
+        bool replaceExisting
+    )
+    {
+        TestSiloBuilder silo = new();
+        silo.Services.AddSingleton(TimeProvider.System);
+        RuntimeBuilder? captured = null;
+        bool nativeInvoked = false;
+        ServiceDescriptor hostOwned = ServiceDescriptor.Singleton("host-owned");
+        Action changeHostServices = () =>
+        {
+            if (replaceExisting)
+            {
+                silo.Services[0] = hostOwned;
+            }
+            else
+            {
+                silo.Services.Add(hostOwned);
+            }
+        };
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            silo.UseMississippi(runtime =>
+            {
+                captured = runtime;
+                runtime.Services.AddSingleton(new object());
+                runtime.ConfigureSilo(_ =>
+                {
+                    nativeInvoked = true;
+                    if (nativeCallback)
+                    {
+                        changeHostServices();
+                    }
+                });
+                if (!nativeCallback)
+                {
+                    changeHostServices();
+                }
+            }));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesChanged, Assert.Single(exception.Diagnostics).Code);
+        Assert.Equal(nativeCallback, nativeInvoked);
+        Assert.Contains(hostOwned, silo.Services);
+        Assert.DoesNotContain(silo.Services, descriptor => descriptor.ServiceType == typeof(object));
+        Assert.DoesNotContain(silo.Services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
+        Assert.NotNull(captured);
+        Assert.True(captured.Services.IsReadOnly);
+        silo.UseMississippi(_ => { });
+        Assert.Contains(hostOwned, silo.Services);
+        Assert.Single(silo.Services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
+    }
+
+    /// <summary>
     ///     Native application is bound to one host and one application phase.
     /// </summary>
     [Fact]
