@@ -253,6 +253,42 @@ public sealed class RuntimeHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Fatal runtime faults propagate directly instead of triggering restoration or aggregate-error allocation.
+    /// </summary>
+    /// <param name="exceptionType">The fatal runtime fault type.</param>
+    /// <param name="duringRestoration">Whether the fault occurs during restoration instead of publication.</param>
+    [Theory]
+    [InlineData(typeof(OutOfMemoryException), false)]
+    [InlineData(typeof(OutOfMemoryException), true)]
+    [InlineData(typeof(AccessViolationException), false)]
+    [InlineData(typeof(AccessViolationException), true)]
+    [InlineData(typeof(StackOverflowException), false)]
+    [InlineData(typeof(StackOverflowException), true)]
+    public void FatalPublicationFaultsPropagateDirectly(
+        Type exceptionType,
+        bool duringRestoration
+    )
+    {
+        FaultingServiceCollection services = new()
+        {
+            ShouldFailOnClear = true,
+        };
+        IConfiguration configuration = Mock.Of<IConfiguration>();
+        ISiloBuilder silo = Mock.Of<ISiloBuilder>(candidate =>
+            (candidate.Services == services) && (candidate.Configuration == configuration));
+        Exception fatal = Assert.IsType<Exception>(Activator.CreateInstance(exceptionType), false);
+        if (duringRestoration)
+        {
+            services.Failures.Enqueue(new InvalidOperationException("Publication failed."));
+        }
+
+        services.Failures.Enqueue(fatal);
+        services.Failures.Enqueue(new InvalidOperationException("Recovery must stop after the fatal fault."));
+        Assert.Same(fatal, Assert.Throws(exceptionType, () => silo.UseMississippi(_ => { })));
+        Assert.Single(services.Failures);
+    }
+
+    /// <summary>
     ///     Direct host mutations fail attachment without overwriting registrations made outside the staged graph.
     /// </summary>
     /// <param name="nativeCallback">Whether the direct mutation occurs inside queued native configuration.</param>

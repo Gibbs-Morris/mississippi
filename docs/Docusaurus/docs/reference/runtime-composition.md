@@ -52,6 +52,8 @@ If application or native configuration throws, the staged scope closes, its chan
 
 If the host collection throws while staged services are being published, composition restores the original host descriptors and rethrows the publication error. If restoration also fails, an `AggregateException` reports both errors. Create a fresh host in that case because its registrations may be incomplete.
 
+Out-of-memory, access-violation, and stack-overflow faults propagate directly. Publication restoration and error aggregation are skipped for those fatal runtime faults.
+
 Captured runtime builders and native adapters cannot modify the staged service collection after the terminal scope closes. Registration callbacks are synchronous; asynchronous initialization belongs in hosted services or Orleans lifecycle participants.
 
 Staging covers service descriptors. The forwarded configuration and existing service instances are shared objects; their mutations and external callback side effects are not rolled back. Composition does not build a service provider, start a silo, or validate network connectivity.
