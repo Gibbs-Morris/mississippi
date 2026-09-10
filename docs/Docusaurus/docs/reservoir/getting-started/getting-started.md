@@ -92,6 +92,8 @@ Reservoir-only startup begins by creating `IReservoirBuilder` with `AddReservoir
 
 ## Next Steps
 
+- [Add a Reservoir Feature](../how-to/create-feature.md) to connect typed state, actions, reducers, and selectors.
+
 - Read [Reservoir Concepts](../concepts/concepts.md) for the top-level builder and feature-builder mental model.
 - Read [Reservoir Reference](../reference/reference.md) for the exact public registration surface.
 - Use [Inlet Getting Started](../../inlet/getting-started/getting-started.md) if the next step is a full Mississippi client app with client sync on top of Reservoir.
