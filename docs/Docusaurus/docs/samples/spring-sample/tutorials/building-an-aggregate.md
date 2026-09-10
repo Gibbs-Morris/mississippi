@@ -10,7 +10,7 @@ description: Add and test an account-closure command, event, aggregate reducer, 
 
 ## Overview
 
-Add an account-closure operation to Spring and verify it with executable tests. You will create six files: a command, an event, a handler, two reducers, and a test class. The existing generators then connect the new operation to Spring's runtime, gateway, and client projects.
+Add an account-closure operation to Spring and verify it with executable tests. You will create six files: a command, an event, a handler, two reducers, and a test class. You will also update the existing projection's source description. The existing generators then connect the new operation to Spring's runtime, gateway, and client projects.
 
 The closure policy is application logic for this exercise: require a reason, require an open account, and require a zero balance. Its value is explicit review: a developer or AI assistant can trace each condition to a test, each accepted closure to an event, and that event to both write and read state.
 
@@ -231,6 +231,12 @@ The balance projection exposes account status to clients. Applying the same clos
 
 Aggregate and projection types share the `SPRING.BANKING.ACCOUNT` brook family. Their snapshot storage names identify their separate state shapes. Database and container names remain host configuration.
 
+Update the remarks in `samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs`. Replace the line listing only `AccountOpened`, `FundsDeposited`, and `FundsWithdrawn` with this description so it remains accurate as the view gains another reducer:
+
+```csharp
+///         Its reducers apply the account events relevant to this view.
+```
+
 ## Step 6: Create the Acceptance Tests
 
 Create `samples/Spring/Spring.Domain.L0Tests/Aggregates/BankAccount/AccountClosureTests.cs`. The existing test project's [global imports](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain.L0Tests/GlobalUsings.cs) supply xUnit.
@@ -434,7 +440,7 @@ For local AI tool exploration, Spring maps the HTTP `/mcp` endpoint only in Deve
 
 ## Clean Up the Exercise
 
-Keep the six files when continuing development. To restore the tutorial checkout, remove only the files you created, then rebuild the sample:
+Keep the six new files and the projection remark update when continuing development. To restore the tutorial checkout, remove only the files you created and restore the original event-list remark in `BankAccountBalanceProjection.cs`, then rebuild the sample:
 
 ```powershell
 Remove-Item -LiteralPath @(
