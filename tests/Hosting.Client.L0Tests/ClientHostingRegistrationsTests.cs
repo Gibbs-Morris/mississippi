@@ -7,11 +7,10 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Hosting.Abstractions;
-using Mississippi.Hosting.Client;
 using Mississippi.Reservoir.Abstractions;
 
 
-namespace MississippiTests.Hosting.Client.L0Tests;
+namespace Mississippi.Hosting.Client.L0Tests;
 
 /// <summary>
 ///     Verifies terminal attachment against a host's service collection without a browser runtime.
