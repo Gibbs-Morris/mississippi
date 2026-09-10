@@ -21,7 +21,7 @@ namespace Mississippi.Inlet.Client;
 /// </summary>
 /// <remarks>
 ///     Public for application startup callbacks. Configuration closes when service registration begins
-///     or the parent service collection becomes read-only.
+///     or the parent service collection becomes read-only, and always closes when its configuration callback exits.
 /// </remarks>
 public sealed class InletBlazorSignalRBuilder
 {
@@ -131,7 +131,7 @@ public sealed class InletBlazorSignalRBuilder
     internal void Build()
     {
         ThrowIfConfigurationClosed();
-        isConfigurationClosed = true;
+        CloseConfiguration();
 
         // Register options
         Services.TryAddSingleton(options);
@@ -177,6 +177,11 @@ public sealed class InletBlazorSignalRBuilder
             .AddActionEffect<InletSignalRActionEffect>());
         ReservoirBuilder.AddSignalRConnectionFeature();
     }
+
+    /// <summary>
+    ///     Closes configuration after successful or failed callback completion.
+    /// </summary>
+    internal void CloseConfiguration() => isConfigurationClosed = true;
 
     private void ThrowIfConfigurationClosed()
     {

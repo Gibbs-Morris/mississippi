@@ -32,7 +32,7 @@ The callback runs synchronously during startup. Configure the supplied builder i
 
 Feature-scoped Reservoir builders are writable only inside their `AddFeatureState(...)` callback. That scope closes when the callback exits, including on failure. After client attachment, a captured Reservoir builder rejects further registration before invoking another feature callback.
 
-The nested Inlet SignalR builder also closes when `AddInletBlazorSignalR(...)` builds its registrations, preventing later changes to configuration captured by deferred service factories.
+The nested Inlet SignalR builder also closes when `AddInletBlazorSignalR(...)` builds its registrations, preventing later changes to configuration captured by deferred service factories. It closes when a configuration callback fails as well, including in Reservoir-only applications whose parent collection remains writable; retry through a fresh `AddInletBlazorSignalR(...)` callback.
 
 ## Behavior
 
