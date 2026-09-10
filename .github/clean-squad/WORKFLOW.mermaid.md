@@ -76,7 +76,7 @@ flowchart TD
         P4Synth["Invoke cs Plan Synthesizer to categorize feedback"]
         P4Revise["Revise the plan"]
         P4More{"More review cycles needed?"}
-        P4Final["Write final-plan.md, complete issue intake, and record the verified issue URL before G2"]
+        P4Final["Write 04-planning/final-plan.md, complete issue intake, and record the verified issue URL before G2"]
 
         P4Draft --> P4Review --> P4Feedback --> P4Synth --> P4Revise --> P4More
         P4More -- Yes --> P4Review
