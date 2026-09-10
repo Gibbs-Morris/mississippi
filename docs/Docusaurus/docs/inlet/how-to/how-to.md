@@ -12,7 +12,11 @@ description: Compose Mississippi client, Reservoir, Inlet, SignalR support, and 
 
 Use this page when you need to wire a Blazor client that combines the Mississippi client builder, Reservoir, Inlet client support, built-in Reservoir features, SignalR projection updates, and generated client feature registrations.
 
-## Before You Begin
+## When to use this
+
+Use this guide when configuring a Blazor client that sends generated commands and consumes live projections through Inlet. Start from Spring's host setup or an application with equivalent gateway and runtime infrastructure.
+
+## Before you begin
 
 - Read [Reservoir Getting Started](../../reservoir/getting-started/getting-started.md).
 - Read [Inlet Getting Started](../getting-started/getting-started.md).
@@ -124,7 +128,7 @@ builder.AddMississippiClient(client =>
 
 Source code: [Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs)
 
-## Verify The Result
+## Verify the result
 
 - Full Mississippi client startup should begin with `AddMississippiClient(...)`.
 - Reservoir registrations should all hang off the same `IReservoirBuilder` value inside `client.Reservoir(...)`.
