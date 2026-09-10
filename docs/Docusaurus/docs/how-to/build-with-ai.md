@@ -125,7 +125,7 @@ Treat permission to act on a particular entity as an application decision. Name 
 
 Use the generated artifacts as part of the application's build. Keep the human-authored rule in the handler and the state transition in the reducer. When reviewing assistant changes, check the domain attributes and the resulting API/client behavior together.
 
-Continue through [building an aggregate](../samples/spring-sample/tutorials/building-an-aggregate.md), [building projections](../samples/spring-sample/tutorials/building-projections.md), and [client composition](../inlet/how-to/how-to.md) for the concrete integration paths.
+Continue through [adding an aggregate command](../samples/spring-sample/tutorials/building-an-aggregate.md), [building projections](../samples/spring-sample/tutorials/building-projections.md), and [client composition](../inlet/how-to/how-to.md) for the concrete integration paths.
 
 ## Verify the result
 
@@ -167,6 +167,6 @@ Give an AI assistant explicit business intent, concrete source references, and o
 
 ## Next Steps
 
-- [Build an aggregate](../samples/spring-sample/tutorials/building-an-aggregate.md) to follow the domain implementation path.
+- [Add an aggregate command](../samples/spring-sample/tutorials/building-an-aggregate.md) to follow the domain implementation path.
 - [Read models and client sync](../concepts/read-models-and-client-sync.md) to understand when the UI observes a change.
 - [Capability and package map](../reference/capability-map.md) to choose the next feature area.
