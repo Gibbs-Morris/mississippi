@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -40,8 +41,19 @@ public static class BrooksRuntimeRegistrations
         }
 
         IServiceCollection services = builder.Services;
-        services.RemoveAll<BrookGrainFactory>();
-        services.AddSingleton<BrookGrainFactory>();
+        ServiceDescriptor[] concreteFactories = services.Where(descriptor =>
+                (descriptor.ServiceType == typeof(BrookGrainFactory)) && !descriptor.IsKeyedService)
+            .ToArray();
+        if ((concreteFactories.Length != 1) || (concreteFactories[0].Lifetime != ServiceLifetime.Singleton))
+        {
+            foreach (ServiceDescriptor descriptor in concreteFactories)
+            {
+                services.Remove(descriptor);
+            }
+
+            services.AddSingleton<BrookGrainFactory>();
+        }
+
         services.RemoveAll<IBrookGrainFactory>();
         services.RemoveAll<IInternalBrookGrainFactory>();
         services.AddSingleton<IBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());

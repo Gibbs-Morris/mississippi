@@ -91,6 +91,32 @@ public sealed class BrooksRuntimeRegistrationsTests
     }
 
     /// <summary>
+    ///     An existing singleton factory callback remains authoritative without moving its descriptor.
+    /// </summary>
+    [Fact]
+    public void ExistingConcreteSingletonConfigurationIsPreserved()
+    {
+        ServiceCollection services = [];
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IGrainFactory>());
+        int calls = 0;
+        ServiceDescriptor configured = ServiceDescriptor.Singleton<BrookGrainFactory>(provider =>
+        {
+            calls++;
+            return ActivatorUtilities.CreateInstance<BrookGrainFactory>(provider);
+        });
+        int position = services.Count;
+        ((IServiceCollection)services).Add(configured);
+        CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
+        Assert.Same(configured, services[position]);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        BrookGrainFactory canonical = provider.GetRequiredService<BrookGrainFactory>();
+        Assert.Same(canonical, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Same(canonical, provider.GetRequiredService<IInternalBrookGrainFactory>());
+        Assert.Equal(1, calls);
+    }
+
+    /// <summary>
     ///     Existing host customizations survive default Brooks composition.
     /// </summary>
     [Fact]
@@ -108,12 +134,17 @@ public sealed class BrooksRuntimeRegistrationsTests
     ///     Public and internal grain access use the same canonical factory even when the host registered another one.
     /// </summary>
     /// <param name="existingLifetime">The lifetime of the pre-existing concrete factory registration.</param>
+    /// <param name="duplicateExisting">Whether the host registered the concrete factory more than once.</param>
     [Theory]
-    [InlineData(ServiceLifetime.Singleton)]
-    [InlineData(ServiceLifetime.Scoped)]
-    [InlineData(ServiceLifetime.Transient)]
+    [InlineData(ServiceLifetime.Singleton, false)]
+    [InlineData(ServiceLifetime.Singleton, true)]
+    [InlineData(ServiceLifetime.Scoped, false)]
+    [InlineData(ServiceLifetime.Scoped, true)]
+    [InlineData(ServiceLifetime.Transient, false)]
+    [InlineData(ServiceLifetime.Transient, true)]
     public void GrainFactoryRegistrationsRemainAuthoritativeAndConsistent(
-        ServiceLifetime existingLifetime
+        ServiceLifetime existingLifetime,
+        bool duplicateExisting
     )
     {
         ServiceCollection services = [];
@@ -121,6 +152,12 @@ public sealed class BrooksRuntimeRegistrationsTests
         services.AddSingleton(Mock.Of<IGrainFactory>());
         ((IServiceCollection)services).Add(
             ServiceDescriptor.Describe(typeof(BrookGrainFactory), typeof(BrookGrainFactory), existingLifetime));
+        if (duplicateExisting)
+        {
+            ((IServiceCollection)services).Add(
+                ServiceDescriptor.Describe(typeof(BrookGrainFactory), typeof(BrookGrainFactory), existingLifetime));
+        }
+
         IBrookGrainFactory custom = Mock.Of<IBrookGrainFactory>();
         services.AddSingleton(custom);
         CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
@@ -132,6 +169,7 @@ public sealed class BrooksRuntimeRegistrationsTests
         using IServiceScope scope = provider.CreateScope();
         Assert.Same(canonical, scope.ServiceProvider.GetRequiredService<BrookGrainFactory>());
         Assert.NotSame(custom, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Same(canonical, Assert.Single(provider.GetServices<BrookGrainFactory>()));
         Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IBrookGrainFactory));
         Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IInternalBrookGrainFactory));
     }
