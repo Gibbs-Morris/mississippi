@@ -64,6 +64,8 @@ For `SetQueryParamsAction`, use Blazor's supported query values: `bool`, `DateOn
 
 The application dispatches these actions at the milestones it defines. Supply timestamps in the payload, using the application's time source. The reducers use those values directly, keeping the transition deterministic and easy to test. Each reducer updates the fields shown above and preserves the other fields.
 
+Order and deduplicate lifecycle milestones in the application. The reducers apply each supplied phase and timestamp directly: `AppInitAction` after `AppReadyAction` returns the phase to `Initializing` while preserving `ReadyAt`, and repeated actions replace their corresponding timestamps.
+
 Use lifecycle state to explain what initialization has completed, and give an AI assistant precise milestone actions and expected state when adding startup behavior.
 
 ## Source and Verification
