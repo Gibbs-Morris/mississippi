@@ -20,7 +20,7 @@ This map describes the current development source, and its GitHub source links f
 | Your application needs to | Capability | Start with |
 | --- | --- | --- |
 | Accept a business request only when its rules hold | Commands, handlers, and aggregate state | [Write model](../concepts/write-model.md) |
-| Keep a durable history of accepted changes | Named brooks and persisted events | [Brooks](../brooks/index.md) |
+| Keep a durable history of accepted changes | Named event streams and persisted events (Brooks) | [Brooks](../brooks/index.md) |
 | Reconstruct state from events | Event reducers and snapshots | [Tributary](../tributary/index.md) |
 | Present several views of the same business history | UX projections | [Build projections](../samples/spring-sample/tutorials/building-projections.md) |
 | Coordinate work across aggregates | Saga steps and compensation | [Build a saga](../samples/spring-sample/tutorials/building-a-saga.md) |
