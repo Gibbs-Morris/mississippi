@@ -22,6 +22,8 @@ internal sealed class SelectionFollowUpEffect : ActionEffectBase<SetEntityAIdAct
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
+        // This fixture deliberately derives its follow-up from the reduced state.
+        _ = action;
         cancellationToken.ThrowIfCancellationRequested();
         yield return new SetEntityBIdAction(currentState.AccountAId ?? string.Empty);
     }
