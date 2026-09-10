@@ -41,6 +41,8 @@ Source code:
 
 `AddInletBlazorSignalR(...)` configures a dedicated `InletBlazorSignalRBuilder`.
 
+Configure it inside that callback. Once its registrations are built, further configuration or another build attempt throws `InvalidOperationException`; a read-only parent service collection also prevents configuration. This keeps deferred projection factories bound to the configuration that was registered.
+
 | Member | Purpose |
 |--------|---------|
 | `AddProjectionFetcher<TFetcher>()` | Use a custom `IProjectionFetcher` implementation |

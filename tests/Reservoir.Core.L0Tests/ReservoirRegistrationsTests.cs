@@ -356,4 +356,38 @@ public sealed class ReservoirRegistrationsTests
         // Assert
         Assert.NotNull(rootReducer);
     }
+
+    /// <summary>
+    ///     A failed feature callback closes its staged builder while the parent remains usable.
+    /// </summary>
+    [Fact]
+    public void FailedFeatureCallbackClosesCapturedScopeAndPermitsRetry()
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        IReservoirFeatureBuilder<TestFeatureState>? captured = null;
+        Assert.Throws<InvalidOperationException>(() => builder.AddFeatureState<TestFeatureState>(feature =>
+        {
+            captured = feature;
+            throw new InvalidOperationException("Configuration failed.");
+        }));
+        Assert.NotNull(captured);
+        Assert.True(captured.Services.IsReadOnly);
+        Assert.Throws<InvalidOperationException>(() => captured.AddActionEffect<TestActionEffect>());
+        builder.AddFeatureState<TestFeatureState>(feature => feature.AddActionEffect<TestActionEffect>());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Single(provider.GetServices<IActionEffect<TestFeatureState>>());
+    }
+
+    /// <summary>
+    ///     A completed Reservoir builder also rejects middleware registration.
+    /// </summary>
+    [Fact]
+    public void ReadOnlyReservoirRejectsMiddlewareRegistration()
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder builder = services.AddReservoir();
+        services.MakeReadOnly();
+        Assert.Throws<InvalidOperationException>(() => builder.AddMiddleware<TestMiddleware>());
+    }
 }

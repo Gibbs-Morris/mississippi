@@ -40,6 +40,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     public IReservoirBuilder AddFeatureState<TState>()
         where TState : class, IFeatureState, new()
     {
+        ThrowIfReadOnly();
         ReservoirBuilderRegistrations.AddFeatureState<TState>(Services);
         return this;
     }
@@ -56,6 +57,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
         where TState : class, IFeatureState, new()
     {
         ArgumentNullException.ThrowIfNull(configure);
+        ThrowIfReadOnly();
         AddFeatureStateTransactionally(configure);
         return this;
     }
@@ -68,6 +70,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     public IReservoirBuilder AddMiddleware<TMiddleware>()
         where TMiddleware : class, IMiddleware
     {
+        ThrowIfReadOnly();
         ReservoirBuilderRegistrations.AddMiddleware<TMiddleware>(Services);
         return this;
     }
@@ -77,18 +80,34 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     )
         where TState : class, IFeatureState, new()
     {
-        IServiceCollection stagedServices = new ServiceCollection();
+        ServiceCollection stagedServices = [];
         foreach (ServiceDescriptor descriptor in Services)
         {
-            stagedServices.Add(descriptor);
+            ((IServiceCollection)stagedServices).Add(descriptor);
         }
 
-        ReservoirBuilderRegistrations.AddFeatureState<TState>(stagedServices);
-        configure(new ReservoirFeatureBuilder<TState>(stagedServices));
-        Services.Clear();
-        foreach (ServiceDescriptor descriptor in stagedServices)
+        try
         {
-            Services.Add(descriptor);
+            ReservoirBuilderRegistrations.AddFeatureState<TState>(stagedServices);
+            configure(new ReservoirFeatureBuilder<TState>(stagedServices));
+            Services.Clear();
+            foreach (ServiceDescriptor descriptor in stagedServices)
+            {
+                Services.Add(descriptor);
+            }
+        }
+        finally
+        {
+            stagedServices.MakeReadOnly();
+        }
+    }
+
+    private void ThrowIfReadOnly()
+    {
+        if (Services.IsReadOnly)
+        {
+            throw new InvalidOperationException(
+                "Reservoir configuration is complete. Configure features before terminal host attachment.");
         }
     }
 }

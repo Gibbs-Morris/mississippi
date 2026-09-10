@@ -30,6 +30,10 @@ An empty client composition is allowed. Features are added explicitly through th
 
 The callback runs synchronously during startup. Configure the supplied builder inside the callback; do not capture it for later mutations. The host is built and run separately with the normal WebAssembly host APIs.
 
+Feature-scoped Reservoir builders are writable only inside their `AddFeatureState(...)` callback. That scope closes when the callback exits, including on failure. After client attachment, a captured Reservoir builder rejects further registration before invoking another feature callback.
+
+The nested Inlet SignalR builder also closes when `AddInletBlazorSignalR(...)` builds its registrations, preventing later changes to configuration captured by deferred service factories.
+
 ## Behavior
 
 The client starts with a copy of the host's service descriptors, preserving host-provided defaults when subsystem registrations use `TryAdd`. Its staged changes become visible to the host only after the callback and validation succeed.
