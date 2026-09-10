@@ -40,6 +40,8 @@ The client starts with a copy of the host's service descriptors, preserving host
 
 Inside the callback, add services through `client.Services`. Configure the host's own `builder.Services` before calling `UseMississippi(...)`. If a callback changes the captured host collection directly, attachment fails with `MSB004` instead of overwriting those changes. The direct host changes remain, the staged client graph is discarded, and a fresh callback can retry.
 
+The host service collection must remain writable until composition finishes. A read-only host is rejected with `MSB005` before configuration or publication. If a callback freezes the host collection, its staged scope still closes and cleanup does not mask an exception from the callback. A frozen host requires a fresh host instance; subsequent attempts report `MSB005` rather than duplicate attachment.
+
 If the callback throws or validation fails, its staged service changes are discarded, its captured builders and collection are closed, and the attachment reservation is released. A corrected `UseMississippi(...)` call creates a fresh scope and can then succeed. Duplicate and recursive attachment are rejected before the duplicate callback runs. Different hosts can each attach their own client composition.
 
 Staging covers service descriptors configured through the supplied builder. It does not roll back changes to shared object instances, direct mutations of the host captured by application code, or external side effects. Composition validation does not build a service provider, verify network connectivity, or replace service option validation.
@@ -56,6 +58,7 @@ Use the named `BuilderDiagnosticCodes` constants when comparing `Code` programma
 | `MSB002` | The client builder has already completed attachment | Move all client configuration inside the terminal callback |
 | `MSB003` | A captured client scope closed without attaching (`ConfigurationScopeClosed`) | Retry with a new `UseMississippi(...)` callback |
 | `MSB004` | The captured host service collection changed during composition (`HostServicesChanged`) | Use `client.Services` inside the callback, or configure host services before it |
+| `MSB005` | Host services are read-only (`HostServicesReadOnly`) | Compose before freezing the host services; create a fresh host if they are already frozen |
 
 Null host or callback arguments produce `ArgumentNullException`. Exceptions thrown by application callbacks propagate unchanged. Directly mutating the read-only `Services` collection after attachment produces `InvalidOperationException`.
 
