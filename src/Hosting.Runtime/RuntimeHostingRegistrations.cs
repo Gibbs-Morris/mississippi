@@ -81,14 +81,7 @@ public static class RuntimeHostingRegistrations
 
             ThrowIfHostServicesChanged(siloBuilder.Services, originalHostServices);
             runtime.Complete();
-            siloBuilder.Services.Clear();
-            foreach (ServiceDescriptor descriptor in stagedServices.Where(descriptor =>
-                         descriptor.ServiceType != typeof(RuntimeAttachment)))
-            {
-                siloBuilder.Services.Add(descriptor);
-            }
-
-            siloBuilder.Services.Add(attachment);
+            PublishServices(siloBuilder.Services, stagedServices, originalHostServices, attachment);
             completed = true;
             return siloBuilder;
         }
@@ -115,6 +108,47 @@ public static class RuntimeHostingRegistrations
                     HostAttachments.Remove(siloBuilder.Services);
                 }
             }
+        }
+    }
+
+    private static void PublishServices(
+        IServiceCollection hostServices,
+        IEnumerable<ServiceDescriptor> stagedServices,
+        IReadOnlyList<ServiceDescriptor> originalHostServices,
+        ServiceDescriptor attachment
+    )
+    {
+        try
+        {
+            hostServices.Clear();
+            foreach (ServiceDescriptor descriptor in stagedServices.Where(descriptor =>
+                         descriptor.ServiceType != typeof(RuntimeAttachment)))
+            {
+                hostServices.Add(descriptor);
+            }
+
+            hostServices.Add(attachment);
+        }
+        catch (Exception publicationException)
+        {
+            try
+            {
+                hostServices.Clear();
+                foreach (ServiceDescriptor descriptor in originalHostServices.Where(descriptor =>
+                             !ReferenceEquals(descriptor, attachment)))
+                {
+                    hostServices.Add(descriptor);
+                }
+            }
+            catch (Exception restorationException)
+            {
+                throw new AggregateException(
+                    "Runtime service publication failed and the original host registrations could not be restored. Use a fresh host.",
+                    publicationException,
+                    restorationException);
+            }
+
+            throw;
         }
     }
 

@@ -50,6 +50,8 @@ The original host's attachment identity is also tracked independently of its des
 
 If application or native configuration throws, the staged scope closes, its changes are discarded, and the independent attachment reservation is released. Cleanup removes all runtime attachment descriptors from a writable host, including replaced, duplicate, and keyed copies, so a fresh terminal callback can retry. Catching a native callback exception inside application configuration does not make that partially configured scope valid: terminal validation still rejects it.
 
+If the host collection throws while staged services are being published, composition restores the original host descriptors and rethrows the publication error. If restoration also fails, an `AggregateException` reports both errors. Create a fresh host in that case because its registrations may be incomplete.
+
 Captured runtime builders and native adapters cannot modify the staged service collection after the terminal scope closes. Registration callbacks are synchronous; asynchronous initialization belongs in hosted services or Orleans lifecycle participants.
 
 Staging covers service descriptors. The forwarded configuration and existing service instances are shared objects; their mutations and external callback side effects are not rolled back. Composition does not build a service provider, start a silo, or validate network connectivity.
