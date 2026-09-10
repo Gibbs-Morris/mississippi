@@ -33,7 +33,7 @@ environments with Aspire's local prerequisites configured.
 - **LightSpeed.Client** - Blazor WebAssembly application with Refraction controls
 - **LightSpeed.Gateway** - ASP.NET Core host for the Blazor WebAssembly app
 - **LightSpeed.AppHost** - Aspire orchestration for local development
-- **LightSpeed.Client.L0Tests** - Reducer, selector, and store-registration examples
+- **LightSpeed.Client.L0Tests** - State, component-callback, focus, and store-integration tests
 
 ## Explore the state flow
 
@@ -58,6 +58,6 @@ store integration and separate markup, logic, and styles.
 | Event sourcing | ✅ Commands, events, projections | ❌ None |
 | Real-time updates | ✅ SignalR with Inlet | ❌ None |
 | Refraction controls | ❌ Not focused | ✅ Primary focus |
-| Tests | ✅ L0 and L2 tests | ✅ Local state and registration tests |
+| Tests | ✅ L0 and L2 tests | ✅ Local state and component interaction tests |
 
 LightSpeed is ideal when you want to explore Refraction framework capabilities without the overhead of the full Mississippi stack.
