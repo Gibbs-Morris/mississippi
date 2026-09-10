@@ -24,6 +24,7 @@ public sealed class ShowcaseShellTests : BunitContext
             .AddChildContent("<p>Example controls</p>"));
         Assert.Equal("/kitchen-sink#main-content", cut.Find(".skip-link").GetAttribute("href"));
         Assert.Equal("-1", cut.Find("main").GetAttribute("tabindex"));
+        Assert.Equal("-1", cut.Find("h1").GetAttribute("tabindex"));
         string? mainReference = cut.Find("main").GetAttribute("blazor:elementReference");
         Assert.False(string.IsNullOrWhiteSpace(mainReference), cut.Find("main").OuterHtml);
         cut.Find(".skip-link").Click();
