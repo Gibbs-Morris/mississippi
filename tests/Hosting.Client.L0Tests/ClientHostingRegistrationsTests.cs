@@ -119,6 +119,46 @@ public sealed class ClientHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Clearing descriptors cannot remove an in-progress or completed host attachment identity.
+    /// </summary>
+    /// <param name="duringConfiguration">Whether the collection is cleared inside the original callback.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ClearedHostServicesCannotBypassAttachmentIdentity(
+        bool duringConfiguration
+    )
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder host = CreateHost(services);
+        bool invoked = false;
+        if (duringConfiguration)
+        {
+            BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+                host.UseMississippi(_ =>
+                {
+                    services.Clear();
+                    host.UseMississippi(_ => invoked = true);
+                }));
+            Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
+            Assert.False(invoked);
+            Assert.Empty(services);
+            host.UseMississippi(_ => { });
+            Assert.Single(services, descriptor => descriptor.ServiceType == typeof(ClientAttachment));
+        }
+        else
+        {
+            host.UseMississippi(_ => { });
+            services.Clear();
+            BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+                host.UseMississippi(_ => invoked = true));
+            Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
+            Assert.False(invoked);
+            Assert.Empty(services);
+        }
+    }
+
+    /// <summary>
     ///     Duplicate attachment is rejected before invoking user code or altering the host.
     /// </summary>
     [Fact]

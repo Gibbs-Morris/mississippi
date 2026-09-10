@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,8 @@ namespace Mississippi.Hosting.Client;
 /// <remarks>Public to provide the canonical terminal client attachment API.</remarks>
 public static class ClientHostingRegistrations
 {
+    private static ConditionalWeakTable<IServiceCollection, ClientAttachment> HostAttachments { get; } = new();
+
     /// <summary>
     ///     Configures, validates, and attaches Mississippi client services once.
     /// </summary>
@@ -38,23 +41,24 @@ public static class ClientHostingRegistrations
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
         ThrowIfHostServicesReadOnly(builder.Services);
-        if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(ClientAttachment)))
+        if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(ClientAttachment)) ||
+            !HostAttachments.TryAdd(builder.Services, ClientAttachment.Instance))
         {
             throw new BuilderValidationException(
             [
                 new(
                     BuilderDiagnosticCodes.DuplicateHostAttachment,
-                    "Mississippi client services are already attached to this host.",
+                    "Mississippi client services are already attaching or attached to this host.",
                     "Combine client configuration in one UseMississippi(...) call."),
             ]);
         }
 
         ServiceDescriptor attachment = ServiceDescriptor.Singleton(ClientAttachment.Instance);
-        builder.Services.Add(attachment);
         bool completed = false;
         ClientBuilder? client = null;
         try
         {
+            builder.Services.Add(attachment);
             ServiceDescriptor[] originalHostServices = builder.Services.ToArray();
             ServiceCollection stagedServices = [];
             foreach (ServiceDescriptor descriptor in originalHostServices.Where(descriptor =>
@@ -98,16 +102,23 @@ public static class ClientHostingRegistrations
         {
             if (!completed)
             {
-                client?.Abort();
-                if (!builder.Services.IsReadOnly)
+                try
                 {
-                    for (int index = builder.Services.Count - 1; index >= 0; index--)
+                    client?.Abort();
+                    if (!builder.Services.IsReadOnly)
                     {
-                        if (builder.Services[index].ServiceType == typeof(ClientAttachment))
+                        for (int index = builder.Services.Count - 1; index >= 0; index--)
                         {
-                            builder.Services.RemoveAt(index);
+                            if (builder.Services[index].ServiceType == typeof(ClientAttachment))
+                            {
+                                builder.Services.RemoveAt(index);
+                            }
                         }
                     }
+                }
+                finally
+                {
+                    HostAttachments.Remove(builder.Services);
                 }
             }
         }
