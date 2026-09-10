@@ -48,7 +48,7 @@ The host service collection must remain writable until composition finishes. A r
 
 If the callback throws or validation fails, its staged service changes are discarded and its captured builders and collection are closed. When the host remains writable, cleanup removes all client attachment reservations, including replaced or duplicated descriptors, so a corrected `UseMississippi(...)` call can create a fresh scope and succeed. Duplicate and recursive attachment are rejected before the duplicate callback runs. Different hosts can each attach their own client composition.
 
-If the host collection throws while staged services are being published, composition restores the original host descriptors and rethrows the publication error. If restoration also fails, an `AggregateException` reports both errors. Create a fresh host in that case because its registrations may be incomplete.
+If the host collection throws while staged services are being published, composition restores the original host descriptors and rethrows the publication error. If restoration also fails, an `AggregateException` reports both errors. The host is permanently marked unusable, and another attachment attempt fails with `MSB006` before invoking configuration, even if its descriptors are cleared. Create a fresh host because the original registrations may be incomplete.
 
 Out-of-memory, access-violation, and stack-overflow faults propagate directly. Publication restoration and error aggregation are skipped for those fatal runtime faults.
 
@@ -67,6 +67,7 @@ Use the named `BuilderDiagnosticCodes` constants when comparing `Code` programma
 | `MSB003` | A captured client scope closed without attaching (`ConfigurationScopeClosed`) | Retry with a new `UseMississippi(...)` callback |
 | `MSB004` | The captured host service collection changed during composition (`HostServicesChanged`) | Use `client.Services` inside the callback, or configure host services before it |
 | `MSB005` | Host services are read-only (`HostServicesReadOnly`) | Compose before freezing the host services; create a fresh host if they are already frozen |
+| `MSB006` | Failed publication left the host service graph unrestored (`HostServicesDamaged`) | Create a fresh host; the damaged collection cannot be reused |
 
 Null host or callback arguments produce `ArgumentNullException`. Exceptions thrown by application callbacks propagate unchanged. Directly mutating the read-only `Services` collection after attachment produces `InvalidOperationException`.
 

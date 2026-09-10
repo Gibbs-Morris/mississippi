@@ -17,6 +17,18 @@ namespace Mississippi.Hosting.Client.L0Tests;
 /// </summary>
 public sealed class ClientHostingRegistrationsTests
 {
+    private static void AssertDamagedHostRejectsRetry(
+        WebAssemblyHostBuilder host
+    )
+    {
+        bool invoked = false;
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            host.UseMississippi(_ => invoked = true));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesDamaged, Assert.Single(exception.Diagnostics).Code);
+        Assert.False(invoked);
+        CreateHost(new ServiceCollection()).UseMississippi(_ => { });
+    }
+
     private static WebAssemblyHostBuilder CreateHost(
         IServiceCollection services
     )
@@ -248,6 +260,7 @@ public sealed class ClientHostingRegistrationsTests
         services.Failures.Enqueue(new InvalidOperationException("Recovery must stop after the fatal fault."));
         Assert.Same(fatal, Assert.Throws(exceptionType, () => host.UseMississippi(_ => { })));
         Assert.Single(services.Failures);
+        AssertDamagedHostRejectsRetry(host);
     }
 
     /// <summary>
@@ -387,6 +400,8 @@ public sealed class ClientHostingRegistrationsTests
             first => Assert.Same(publication, first),
             second => Assert.Same(restoration, second));
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(ClientAttachment));
+        services.Clear();
+        AssertDamagedHostRejectsRetry(host);
     }
 
     /// <summary>
