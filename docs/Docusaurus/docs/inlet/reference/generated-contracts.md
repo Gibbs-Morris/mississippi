@@ -57,12 +57,34 @@ Generated domain registrations compose application types. Supply their host infr
 | Host | Spring composition to follow |
 |------|------------------------------|
 | Runtime | Orleans silo and stream provider, event sourcing and snapshot storage, `AddInletSilo()`, projection assembly scan, and generated domain registrations |
-| Gateway | Orleans client, JSON serialization, aggregate and UX projection support, SignalR and Aqueduct services, `AddInletServer()`, projection assembly scan and generated mappers; map controllers and `MapInletHub()` |
+| Gateway | Orleans client, JSON serialization, aggregate and UX projection support, SignalR and Aqueduct services, configured authentication/authorization and `AddInletServer(...)`, projection assembly scan and generated mappers; map controllers and `MapInletHub()` |
 | Client | An `HttpClient` with the gateway base address, `AddMississippiClient(...)`, generated domain features, `AddInletClient()` and `AddInletBlazorSignalR(...)` on the Reservoir builder |
 
 Use the complete [Spring host configuration](../../samples/spring-sample/concepts/host-applications.md) as a starting point. In particular, retain Spring's explicit `AddAqueduct<InletHub>(...)` services and matching stream-provider configuration alongside `AddInletServer()`.
 
 Pass all domain projection assemblies together to `ScanProjectionAssemblies(...)` in each server host. Each call installs registries built from that call's exported projection types; a single combined scan retains mappings for every supplied domain.
+
+### Authorization For An Exposed Gateway
+
+Before exposing a gateway, configure its ASP.NET Core authentication handler, authorization policies, and authentication/authorization middleware. Choose a policy that permits the users, roles, or claims appropriate for the generated application surface.
+
+For example, after defining an `application-access` policy, replace the bare Inlet registration with this startup configuration:
+
+```csharp
+builder.Services.AddInletServer(options =>
+{
+    options.GeneratedApiAuthorization.Mode =
+        GeneratedApiAuthorizationMode.RequireAuthorizationForAllGeneratedEndpoints;
+    options.GeneratedApiAuthorization.DefaultPolicy = "application-access";
+    options.GeneratedApiAuthorization.AllowAnonymousOptOut = false;
+});
+```
+
+`GeneratedApiAuthorizationMode` is in `Mississippi.Inlet.Gateway`. Its default is `Disabled`; selecting force mode supplies authorization defaults for generated endpoints. Review `[GenerateAuthorization]` metadata on aggregates, commands, projections, and sagas because those contracts can specify their own policies, roles, and schemes.
+
+The hub applies projection authorization when a client subscribes. Its authorization callback receives the user and a null resource. Use these policies for identity-based access; entity-specific permissions require an application boundary that receives and checks the requested entity ID before granting access.
+
+Verify anonymous and insufficiently privileged requests as well as successful access. [Spring auth-proof mode](../../samples/spring-sample/how-to/auth-proof-mode.md) demonstrates HTTP `401`/`403` checks and allowed/denied projection subscriptions with development identities. Configure the deployment's real authentication mechanism for an exposed application.
 
 ## Projection Identity Across The Boundary
 
@@ -115,6 +137,7 @@ The notification identifies what to read. The HTTP request supplies the projecti
 ## Source Code
 
 - Domain inputs: [BankAccountBalanceProjection.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Projections/BankAccountBalance/BankAccountBalanceProjection.cs) and [generator attributes](https://github.com/Gibbs-Morris/mississippi/tree/main/src/Inlet.Generators.Abstractions).
+- Authorization contracts: [GeneratedApiAuthorizationOptions.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/GeneratedApiAuthorizationOptions.cs) and [InletHub.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/InletHub.cs).
 - Host composition: [runtime](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Runtime/Program.cs), [gateway](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Gateway/Program.cs), and [client](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs).
 - Domain registration generators: [silo](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Runtime.Generators/DomainSiloRegistrationGenerator.cs), [server](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway.Generators/DomainServerRegistrationGenerator.cs), and [client](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/DomainClientRegistrationGenerator.cs).
 - Client behavior: [command effects generator](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client.Generators/CommandClientActionEffectsGenerator.cs), [InletSignalRActionEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/InletSignalRActionEffect.cs), and [AutoProjectionFetcher.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/AutoProjectionFetcher.cs).
