@@ -45,11 +45,11 @@ It composes with Aqueduct for real-time delivery, with Reservoir on the client, 
 
 Start here when you need to understand generated projection, API, and registration alignment across the full Mississippi stack.
 
-## Current Coverage
+## Build With Inlet
 
-This section now includes typed boundary pages for getting started, concepts, package selection, reference, operations, and troubleshooting.
+Use [Generated Application Contracts](./reference/generated-contracts.md) to connect domain inputs to each host's registrations. Then [own a live projection subscription](./how-to/subscribe-to-projections.md) in a Blazor page.
 
-They establish the composition and source-generation boundary while deeper generated-surface documentation is still being written.
+The generated contracts let teams concentrate their review on business rules and typed boundaries. Those same boundaries give AI-assisted implementation a repeatable path from domain changes to consumer verification.
 
 ## Learn More
 
