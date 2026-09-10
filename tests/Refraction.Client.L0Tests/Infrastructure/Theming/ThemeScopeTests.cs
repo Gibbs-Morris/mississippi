@@ -18,7 +18,7 @@ public sealed class ThemeScopeTests : BunitContext
     {
         using IRenderedComponent<CascadingRefractionProvider> cut =
             Render<CascadingRefractionProvider>(p => p.Add(c => c.Class, " "));
-        Assert.Equal("rf-theme", cut.Find("div").ClassName);
+        Assert.Contains("rf-theme", cut.Find("div").ClassList);
     }
 
     /// <summary>Branding attributes reach the wrapper while owned selectors remain authoritative.</summary>
