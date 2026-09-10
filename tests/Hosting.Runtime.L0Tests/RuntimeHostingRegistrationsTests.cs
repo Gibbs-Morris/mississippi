@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Mississippi.Hosting.Abstractions;
@@ -383,6 +384,71 @@ public sealed class RuntimeHostingRegistrationsTests
             Assert.Throws<ArgumentNullException>(() => runtime.ConfigureSilo(null!));
             Assert.Throws<ArgumentNullException>(() => runtime.ApplyToSilo(null!));
         });
+    }
+
+    /// <summary>
+    ///     Publication faults restore the original host graph and permit a fresh runtime attempt.
+    /// </summary>
+    /// <param name="failDuringClear">Whether to fail after clearing instead of while inserting descriptors.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PublicationFailureRestoresHostAndAllowsRetry(
+        bool failDuringClear
+    )
+    {
+        FaultingServiceCollection services = new()
+        {
+            ShouldFailOnClear = failDuringClear,
+        };
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton("original");
+        ServiceDescriptor[] original = services.ToArray();
+        IConfiguration configuration = Mock.Of<IConfiguration>();
+        ISiloBuilder silo = Mock.Of<ISiloBuilder>(candidate =>
+            (candidate.Services == services) && (candidate.Configuration == configuration));
+        InvalidOperationException expected = new("Host service publication failed.");
+        services.Failures.Enqueue(expected);
+        RuntimeBuilder? captured = null;
+        Assert.Same(
+            expected,
+            Assert.Throws<InvalidOperationException>(() => silo.UseMississippi(runtime =>
+            {
+                captured = runtime;
+                runtime.Services.Clear();
+                runtime.Services.AddSingleton(new object());
+            })));
+        Assert.Equal(original, services);
+        Assert.NotNull(captured);
+        Assert.Equal(BuilderDiagnosticCodes.ConfigurationScopeClosed, Assert.Single(captured.Validate()).Code);
+        silo.UseMississippi(_ => { });
+        Assert.Same(original[0], services[0]);
+        Assert.Same(original[1], services[1]);
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
+    }
+
+    /// <summary>
+    ///     A failed restoration reports both faults instead of concealing either cause.
+    /// </summary>
+    [Fact]
+    public void PublicationRestorationFailureReportsBothCauses()
+    {
+        FaultingServiceCollection services = new();
+        services.AddSingleton("original");
+        IConfiguration configuration = Mock.Of<IConfiguration>();
+        ISiloBuilder silo = Mock.Of<ISiloBuilder>(candidate =>
+            (candidate.Services == services) && (candidate.Configuration == configuration));
+        InvalidOperationException publication = new("Publication failed.");
+        InvalidOperationException restoration = new("Restoration failed.");
+        services.Failures.Enqueue(publication);
+        services.Failures.Enqueue(restoration);
+        AggregateException exception = Assert.Throws<AggregateException>(() =>
+            silo.UseMississippi(runtime => runtime.Services.AddSingleton(new object())));
+        Assert.Collection(
+            exception.InnerExceptions,
+            first => Assert.Same(publication, first),
+            second => Assert.Same(restoration, second));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
     }
 
     /// <summary>
