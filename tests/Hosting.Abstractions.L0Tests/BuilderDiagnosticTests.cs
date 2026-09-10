@@ -1,9 +1,7 @@
 using System;
 
-using Mississippi.Hosting.Abstractions;
 
-
-namespace MississippiTests.Hosting.Abstractions.L0Tests;
+namespace Mississippi.Hosting.Abstractions.L0Tests;
 
 /// <summary>
 ///     Verifies diagnostic values exposed to host applications.

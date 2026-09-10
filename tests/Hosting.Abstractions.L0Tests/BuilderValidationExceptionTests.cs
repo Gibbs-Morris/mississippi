@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 
-using Mississippi.Hosting.Abstractions;
 
-
-namespace MississippiTests.Hosting.Abstractions.L0Tests;
+namespace Mississippi.Hosting.Abstractions.L0Tests;
 
 /// <summary>
 ///     Verifies stable exception evidence for invalid composition.
