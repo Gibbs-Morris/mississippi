@@ -40,7 +40,6 @@ Add `SelectionFollowUpEffect.cs` to your test feature folder. In Spring, the pat
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 
 using Mississippi.Reservoir.Abstractions;
 using Mississippi.Reservoir.Abstractions.Actions;
@@ -62,7 +61,6 @@ internal sealed class SelectionFollowUpEffect : ActionEffectBase<SetEntityAIdAct
         [EnumeratorCancellation] CancellationToken cancellationToken
     )
     {
-        await Task.CompletedTask;
         cancellationToken.ThrowIfCancellationRequested();
         yield return new SetEntityBIdAction(currentState.AccountAId ?? string.Empty);
     }
