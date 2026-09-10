@@ -49,7 +49,7 @@ Implementation: [RootActionEffect](https://github.com/Gibbs-Morris/mississippi/b
 
 ## Cancellation and Failure Handling
 
-`IStore.Dispatch` returns `void`; asynchronous completion is observed through later actions and state. The store passes `CancellationToken.None` to started effects. Give cancelable external work an explicit lifetime owned by the effect or its service.
+`IStore.Dispatch` returns `void` and supplies no effect-completion signal. When callers need to observe completion, design the effect to emit an explicit terminal/result action and handle it in state. Effects that emit no action, including `SimpleActionEffectBase` implementations, supply no such signal through dispatch. The store passes `CancellationToken.None` to started effects. Give cancelable external work an explicit lifetime owned by the effect or its service.
 
 Publish expected failures as actions that reducers can turn into visible error state. The store boundary catches effect exceptions; exception throwing by itself does not create a feature error action. Handle the expected failures of your injected service at the appropriate boundary and preserve useful request context in the result action.
 
