@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
+    <PropertyGroup>
+        <MutationSourceProject>../Spring.Client/Spring.Client.csproj</MutationSourceProject>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="AngleSharp" />
         <PackageReference Include="bunit" />
