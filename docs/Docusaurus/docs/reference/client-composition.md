@@ -50,6 +50,8 @@ If the callback throws or validation fails, its staged service changes are disca
 
 If the host collection throws while staged services are being published, composition restores the original host descriptors and rethrows the publication error. If restoration also fails, an `AggregateException` reports both errors. Create a fresh host in that case because its registrations may be incomplete.
 
+Out-of-memory, access-violation, and stack-overflow faults propagate directly. Publication restoration and error aggregation are skipped for those fatal runtime faults.
+
 Staging covers service descriptors configured through the supplied builder. It does not roll back changes to shared object instances, direct mutations of the host captured by application code, or external side effects. Composition validation does not build a service provider, verify network connectivity, or replace service option validation.
 
 ## Failure behavior
