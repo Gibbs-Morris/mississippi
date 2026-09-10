@@ -282,7 +282,11 @@ public sealed class AccountClosureTests
             {
                 Reason = "Customer request",
             },
-            new());
+            new()
+            {
+                HolderName = "Existing account",
+                IsOpen = false,
+            });
         Assert.False(result.Success);
         Assert.Equal(AggregateErrorCodes.InvalidState, result.ErrorCode);
     }
