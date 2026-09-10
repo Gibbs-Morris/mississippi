@@ -151,6 +151,8 @@ Create `samples/Spring/Spring.Client/Pages/ProjectionWatch.razor`:
 @page "/projection-watch"
 @namespace MississippiSamples.Spring.Client.Pages
 @inherits InletComponent
+@using Microsoft.AspNetCore.Components
+@inject NavigationManager Navigation
 @using Mississippi.Inlet.Client
 @using Mississippi.Inlet.Client.SignalRConnection
 @using MississippiSamples.Spring.Client.Components
@@ -178,9 +180,13 @@ else
 }
 
 <button type="button" @onclick="RefreshCurrent">Refresh</button>
+<button type="button" @onclick="ReloadWorkspace">Reconnect workspace</button>
 
 @code {
     private const string AccountId = AccountProjectionProvider.AccountId;
+
+    private void ReloadWorkspace() =>
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
 
     private void RefreshCurrent() =>
         RefreshProjection<BankAccountBalanceProjectionDto>(AccountId);
@@ -199,6 +205,8 @@ Read `SignalRConnectionState.Status` for the shared transport indicator. Project
 
 `RefreshProjection<T>(entityId)` requests the latest projection and publishes the result into Reservoir. Inlet also re-establishes active interests and refreshes them after a successful SignalR reconnection. Keep the loading, empty, error, and data presentation usable throughout that process.
 
+If the initial connection attempt fails, make the gateway available and select **Reconnect workspace**. This performs a full client reload, initializes a fresh store, and starts the application owner's subscription again. Local Reservoir state is reset by that reload; the account data remains on the server. Use **Refresh** for an established subscription's data read.
+
 ## Verify the result
 
 From the repository root, build the sample:
@@ -214,6 +222,7 @@ Run Spring using the [sample startup instructions](https://github.com/Gibbs-Morr
 3. Select the configured account in Operations, then follow the Workspace balance link. Deposit into that account from another browser tab and confirm the watch page still receives updates after Operations closes.
 4. Repeat navigation while the initial projection request is delayed in browser Network tools. The application owner remains mounted while the request finishes.
 5. Click Refresh and confirm the latest data returns.
+6. Block the initial hub negotiation in browser Network tools, reload, then restore connectivity and select Reconnect workspace. Confirm the account loads and a later deposit still updates the page.
 
 For Spring's existing automated browser validation, run `pwsh ./test-spring.ps1 -Doctor` and then `pwsh ./test-spring.ps1`. A `PASS` summary means tests executed successfully; the manual checks above exercise the additional workspace page specifically.
 
