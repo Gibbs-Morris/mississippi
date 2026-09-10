@@ -43,6 +43,8 @@ Handle middleware failures deliberately. An exception before `nextAction` preven
 
 For recognized reset and restore system actions, observe `ActionDispatchingEvent` followed by `StateRestoredEvent`. Use `StateRestoredEvent` as the restoration completion boundary; those operations use the dedicated path instead of emitting the ordinary `ActionDispatchedEvent`.
 
+Keep synchronous `StoreEvents` observers from throwing into dispatch. Failure during `ActionDispatchingEvent` interrupts processing before reduction; failure during `ActionDispatchedEvent` occurs after state updates and before listeners and effects. Contain diagnostic errors inside the observer; see [state flow](../concepts/state-flow.md) for the complete dispatch boundaries.
+
 ## Source and Verification
 
 - [IMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IMiddleware.cs).
