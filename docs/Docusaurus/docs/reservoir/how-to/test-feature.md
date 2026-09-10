@@ -172,6 +172,12 @@ The cancellation case also checks the already-reduced state: canceling effect en
 
 These cases deliberately avoid timing-based waits and external services. Use controlled test doubles for your own I/O so failures describe the behavior being checked.
 
+## Source and Contracts
+
+- [StoreTestHarness](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.TestHarness/StoreTestHarness.cs).
+- [StoreScenario](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.TestHarness/StoreScenario.cs).
+- [Executable sample tests](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client.L0Tests/Features/DualEntitySelection/DualEntitySelectionHarnessTests.cs).
+
 ## Summary
 
 Arrange known state, execute one action, inspect effect output, and apply a captured result explicitly when verifying its reducer. This separates the effect contract from the resulting state transition.
@@ -180,9 +186,3 @@ Arrange known state, execute one action, inspect effect output, and apply a capt
 
 - [Action effect reference](../reference/action-effects.md) for matching, lifetime, and failure handling.
 - [Selector reference](../reference/selectors.md) for pure derived-value tests.
-
-## Source and Contracts
-
-- [StoreTestHarness](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.TestHarness/StoreTestHarness.cs).
-- [StoreScenario](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.TestHarness/StoreScenario.cs).
-- [Executable sample tests](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client.L0Tests/Features/DualEntitySelection/DualEntitySelectionHarnessTests.cs).
