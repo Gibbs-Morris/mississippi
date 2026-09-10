@@ -183,7 +183,7 @@ public sealed class InletBlazorSignalRBuilder
         if (isConfigurationClosed || Services.IsReadOnly)
         {
             throw new InvalidOperationException(
-                "Inlet SignalR configuration is closed. Configure this builder inside AddInletBlazorSignalR(...).");
+                "Inlet SignalR configuration is closed or its parent services are read-only. Configure inside AddInletBlazorSignalR(...) while the parent scope is open.");
         }
     }
 }
