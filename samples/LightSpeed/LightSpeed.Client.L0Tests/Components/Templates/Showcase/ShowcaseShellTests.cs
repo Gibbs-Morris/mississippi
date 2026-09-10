@@ -51,6 +51,7 @@ public sealed class ShowcaseShellTests : BunitContext
         using IRenderedComponent<ShowcaseShell> cut = Render<ShowcaseShell>(p => p
             .Add(c => c.ThemeMode, initial)
             .Add(c => c.ThemeChanged, value => selected = value));
+        Assert.Equal(3, cut.FindAll(".theme-options button").Count);
         Assert.Equal(
             "false",
             cut.FindAll(".theme-options button")

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,7 +12,12 @@ namespace MississippiSamples.LightSpeed.Client.Components.Templates.Showcase;
 /// <remarks>Public so pages can compose it in Razor.</remarks>
 public sealed partial class ShowcaseShell : ComponentBase
 {
-    private static IReadOnlyList<RefractionThemeMode> Modes { get; } = Enum.GetValues<RefractionThemeMode>();
+    private static IReadOnlyList<RefractionThemeMode> Modes { get; } =
+    [
+        RefractionThemeMode.Dark,
+        RefractionThemeMode.Light,
+        RefractionThemeMode.HighContrast,
+    ];
 
     /// <summary>Gets or sets page content.</summary>
     [Parameter]
