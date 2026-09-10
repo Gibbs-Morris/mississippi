@@ -180,9 +180,8 @@ internal sealed class AccountClosedReducer : EventReducerBase<AccountClosed, Ban
         AccountClosed eventData
     )
     {
-        ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(eventData);
-        return state with
+        return (state ?? new()) with
         {
             IsOpen = false,
         };
@@ -190,7 +189,7 @@ internal sealed class AccountClosedReducer : EventReducerBase<AccountClosed, Ban
 }
 ```
 
-The reducer applies the accepted event by returning a new record with `IsOpen` set to false. It preserves the other account fields. Keep acceptance checks in the handler so reconstruction applies recorded facts consistently.
+The reducer applies the accepted event by returning a new record with `IsOpen` set to false. It uses a default state when no initial state is supplied and preserves the other fields when state exists. Keep acceptance checks in the handler so reconstruction applies recorded facts consistently.
 
 Pure reducers make replay predictable: the same initial state, ordered events, and reducer implementation produce the same state. Keep external calls and time-dependent decisions outside this transition.
 
@@ -219,9 +218,8 @@ internal sealed class AccountClosedProjectionReducer : EventReducerBase<AccountC
         AccountClosed eventData
     )
     {
-        ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(eventData);
-        return state with
+        return (state ?? new()) with
         {
             IsOpen = false,
         };
@@ -360,6 +358,24 @@ public sealed class AccountClosureTests
     }
 
     /// <summary>
+    ///     Both reducers can apply a recorded closure to default initial state.
+    /// </summary>
+    [Fact]
+    public void ReducersAcceptDefaultInitialState()
+    {
+        AccountClosed closed = new()
+        {
+            Reason = "Customer request",
+        };
+        BankAccountAggregate aggregate = new AccountClosedReducer().Reduce(null!, closed);
+        BankAccountBalanceProjection projection = new AccountClosedProjectionReducer().Reduce(null!, closed);
+        Assert.False(aggregate.IsOpen);
+        Assert.False(projection.IsOpen);
+        Assert.Equal(0m, aggregate.Balance);
+        Assert.Equal(0m, projection.Balance);
+    }
+
+    /// <summary>
     ///     A valid reason still requires an existing open account.
     /// </summary>
     [Fact]
@@ -377,7 +393,7 @@ public sealed class AccountClosureTests
 }
 ```
 
-These tests check rejection boundaries, command-first validation, the exact accepted event, and immutable updates to both models. They execute the business code without starting Orleans or storage emulators.
+These tests check rejection boundaries, command-first validation, the exact accepted event, immutable updates to both models, and reduction from default initial state. They execute the business code without starting Orleans or storage emulators.
 
 ## Step 7: Run the Tests and Build Generated Integration
 
@@ -387,7 +403,7 @@ Run the domain quality command after creating all six files:
 pwsh ./eng/src/agent-scripts/test-project-quality.ps1 -TestProject samples/Spring/Spring.Domain.L0Tests/Spring.Domain.L0Tests.csproj -SourceProject samples/Spring/Spring.Domain/Spring.Domain.csproj -SkipMutation
 ```
 
-Require exit code 0, `RESULT: PASS`, a nonzero `TEST_TOTAL`, and matching `TEST_PASSED` and `TEST_TOTAL`. Inspect the emitted TRX report and confirm that all eight `AccountClosureTests` cases executed successfully.
+Require exit code 0, `RESULT: PASS`, a nonzero `TEST_TOTAL`, and matching `TEST_PASSED` and `TEST_TOTAL`. Inspect the emitted TRX report and confirm that all nine `AccountClosureTests` cases executed successfully.
 
 Build the consuming sample projects:
 
