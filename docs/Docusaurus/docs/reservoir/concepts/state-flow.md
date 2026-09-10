@@ -37,6 +37,8 @@ Within a feature, Reservoir applies every matching reducer. Reducers for the exa
 
 The store emits `ActionDispatchingEvent` before reduction. It then emits `ActionDispatchedEvent` with the resulting state snapshot after reduction, notifies listeners, and starts effects. `Dispatch` returns `void`; observe asynchronous progress through the actions and state your effects produce. Put request identifiers and required input values in the originating action so the work remains explicit.
 
+For one dispatched action, the store consumes one feature root's effect stream before moving to the next root. Within a root, matching effects are consumed sequentially in pipeline order. Keep each stream finite so later effects can run; separate dispatch calls can still overlap.
+
 ## Guarantees
 
 - `AddReservoir()` registers `IStore` with scoped lifetime. Features in the same scope share that store.
