@@ -39,6 +39,13 @@ namespace MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands;
 ///     Requests account closure through generated gateway and client code.
 /// </summary>
 [GenerateCommand(Route = "close")]
+[GenerateMcpToolMetadata(
+    Title = "Close Bank Account",
+    Description = "Closes an open bank account with a zero balance and records the closure reason.",
+    Destructive = true,
+    Idempotent = false,
+    ReadOnly = false,
+    OpenWorld = false)]
 [GenerateSerializer]
 [Alias("MississippiSamples.Spring.Domain.Aggregates.BankAccount.Commands.CloseAccount")]
 public sealed record CloseAccount
@@ -47,11 +54,14 @@ public sealed record CloseAccount
     ///     Gets the business reason for closing the account.
     /// </summary>
     [Id(0)]
+    [GenerateMcpParameterDescription("Business reason for closing this zero-balance account. Must be nonblank.")]
     public required string Reason { get; init; }
 }
 ```
 
 The command names intent and carries the reason. `[GenerateCommand]` gives it the `close` route segment. The command is public because it appears in the generated gateway controller's public constructor signature through `IMapper<CloseAccountDto, CloseAccount>`. Spring's [friend-assembly declarations](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Spring.Domain.csproj) support internal handlers and events; the client generators produce their own transport artifacts. Orleans serialization uses the explicit alias and member ID.
+
+The MCP metadata makes the generated tool's purpose and inputs explicit to AI clients. The handler below enforces the account and balance conditions.
 
 ## Step 2: Create the Accepted Event
 
