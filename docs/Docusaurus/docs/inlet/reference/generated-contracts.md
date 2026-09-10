@@ -12,7 +12,7 @@ Inlet generates the repetitive application boundary around your domain types. Yo
 
 This reference maps the contracts in the Spring sample across its runtime, gateway, and Blazor client. Use it when choosing where to register a capability or tracing a generated type back to its source.
 
-## Applies To
+## Applies to
 
 - The Inlet runtime, gateway, and client generators and their shared attributes.
 - Applications with generator references configured, such as [Spring](../../samples/spring-sample/index.md).
