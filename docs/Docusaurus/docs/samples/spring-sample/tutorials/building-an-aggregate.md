@@ -186,15 +186,15 @@ internal sealed class WithdrawFundsHandler : CommandHandlerBase<WithdrawFunds, B
 
 Complete file: [WithdrawFundsHandler.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Aggregates/BankAccount/Handlers/WithdrawFundsHandler.cs).
 
-The checks are deliberately observable: Spring first requires an open account, then a positive amount, then sufficient funds. New aggregate state can be `null`, so the first check handles that case too. When more than one condition is invalid, this order determines the returned error.
+This excerpt records the current Spring implementation, including its state check before amount checks. New aggregate state can be `null`. When writing a new handler, follow the repository convention: validate command properties first and return `InvalidCommand`, then check aggregate state and return `InvalidState` for state conflicts. Test inputs that violate both conditions to make that classification explicit.
 
 The handler returns `OperationResult<IReadOnlyList<object>>`. A rejected command returns an error code and message; an accepted withdrawal returns one `FundsWithdrawn` event. The aggregate runtime appends accepted events to its brook. Keep state updates in the reducer so both normal execution and reconstruction use the same transition.
 
 ### Checkpoint: Predict the Outcome
 
-For an open account with balance 100, a withdrawal of 25 emits an event for 25. Withdrawing the entire 100 is also valid. Withdrawing 101, zero, or a negative amount returns `InvalidCommand`. Withdrawing from a closed or new account returns `InvalidState`.
+For an open account with balance 100, a withdrawal of 25 emits an event for 25. Withdrawing the entire 100 is also valid. Withdrawing 101, zero, or a negative amount returns `InvalidCommand`. A positive withdrawal from a closed or new account returns `InvalidState`.
 
-Use these cases as an implementation brief for an AI assistant, then compare its proposed handler with the explicit checks above. The framework's named contracts organize the work; the acceptance cases verify the business decision.
+Use these cases to understand the existing operation. For a new implementation brief, also specify the input-first validation convention and include a case with both invalid input and invalid state. The framework's named contracts organize the work; the acceptance cases verify the business decision.
 
 ## Step 5: Apply the Event with a Pure Reducer
 
