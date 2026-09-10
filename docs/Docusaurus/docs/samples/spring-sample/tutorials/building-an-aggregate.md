@@ -14,7 +14,7 @@ Add an account-closure operation to Spring and verify it with executable tests. 
 
 The closure policy is application logic for this exercise: require a reason, require an open account, and require a zero balance. Its value is explicit review: a developer or AI assistant can trace each condition to a test, each accepted closure to an event, and that event to both write and read state.
 
-## Before You Begin
+## Before you begin
 
 - Use a disposable checkout of the Mississippi repository with the existing `samples/Spring` application. Keep this exercise on its own branch or worktree.
 - Install PowerShell 7 and the .NET SDK selected by the checkout's `global.json`.
