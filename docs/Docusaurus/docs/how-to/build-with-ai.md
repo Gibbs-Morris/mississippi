@@ -70,6 +70,10 @@ Business rule:
 Acceptance cases:
 [Given state -> command -> event or rejection -> resulting state.]
 
+Interface access:
+[Authentication mechanism, permitted callers, and operation/entity permissions.]
+[The application boundary that checks the requested entity ID.]
+
 Use these references:
 [Paths to the existing aggregate, handler, event, reducer, and tests.]
 [Relevant Mississippi documentation and source for the installed version.]
@@ -80,6 +84,8 @@ Deliver:
 - Events representing accepted facts and pure reducers applying them.
 - Tests for acceptance, rejection, boundaries, and state transitions.
 - Generated integration through the supported Inlet attributes.
+- Authentication and authorization for exposed APIs and subscriptions.
+- Interface tests for anonymous callers, insufficient permissions, and denied entities.
 - The projection and client changes needed to observe the result.
 
 Before editing, identify the files and verification steps.
@@ -109,7 +115,11 @@ The server reducer contract is [EventReducerBase](https://github.com/Gibbs-Morri
 
 ### 5. Let Generators Connect the Domain
 
-After verifying the business behavior, follow the existing application's attributed domain pattern. Inlet generates the supported transport and client artifacts from those inputs. For example, Spring's `WithdrawFunds` declares a command route and `BankAccountAggregate` opts into aggregate endpoints.
+After verifying the business behavior and defining interface access, follow the existing application's attributed domain pattern. Inlet generates the supported transport and client artifacts from those inputs. For example, Spring's `WithdrawFunds` declares a command route and `BankAccountAggregate` opts into aggregate endpoints.
+
+For a network-accessible gateway, configure authentication and authorization before exposing the generated transport. Select a named application policy and require authorization through Inlet's force mode or the contracts' `[GenerateAuthorization]` metadata. The default `GeneratedApiAuthorization.Mode` is `Disabled`; review the [authorization options](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Gateway/GeneratedApiAuthorizationOptions.cs) and [generation metadata](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Generators.Abstractions/GenerateAuthorizationAttribute.cs) explicitly.
+
+Treat permission to act on a particular entity as an application decision. Name the boundary that receives the entity ID and verifies access; subscription identity policies receive a null resource. Include that decision and its tests in the implementation brief.
 
 Use the generated artifacts as part of the application's build. Keep the human-authored rule in the handler and the state transition in the reducer. When reviewing assistant changes, check the domain attributes and the resulting API/client behavior together.
 
@@ -125,6 +135,7 @@ Use more than successful compilation to judge completion.
 4. Exercise the command through the application and observe the projection and subscribed client state.
 5. Check command progress and projection progress as separate observations. The [client synchronization model](../concepts/read-models-and-client-sync.md) delivers projection changes asynchronously.
 
+6. For exposed interfaces, verify anonymous requests are rejected (`401`/`403` as appropriate), authenticated callers without permission are denied, and the application rejects access to unauthorized entities. Check allowed and denied projection subscriptions too. [Spring auth-proof mode](../samples/spring-sample/how-to/auth-proof-mode.md) supplies concrete HTTP and subscription examples with development identities.
 For the Spring example, run the domain tests from the repository root with PowerShell 7 and the .NET SDK selected by `global.json`. The canonical quality script builds the test project and its dependencies, executes the tests, and writes TRX and coverage evidence.
 
 ```powershell
