@@ -133,7 +133,7 @@ else
 
 Use `IsProjectionLoading<T>()` and `GetProjectionError<T>()` for the entity's fetch state. `GetProjection<T>()` returns its DTO when available, and `GetProjectionState<T>()` exposes its version.
 
-An initial HTTP 404 is an empty projection result. Inlet retains the active subscription so later events can provide data. Give this state a useful presentation, such as an invitation to open the account.
+The initial fetch maps HTTP 404 to `NotFound`: no projection data is available yet. Inlet publishes a loaded result with null DTO data and retains the active subscription so later events can provide data. Present this separately from a fetch error. Give this state a useful presentation, such as an invitation to open the account.
 
 Read `SignalRConnectionState.Status` for the shared transport indicator. Projection entry `IsConnected` is separately controlled by projection connection actions; use the transport feature for the connection display above.
 
