@@ -58,6 +58,8 @@ The store invokes started effects with `CancellationToken.None`. Give cancelable
 
 System restore/reset actions use the store's dedicated restoration path. Their behavior belongs with development tooling and state restoration rather than the ordinary action pipeline shown above.
 
+Keep store subscription callbacks non-throwing. If an `IStore.Subscribe` callback throws, `Dispatch` propagates that exception after reduction and `ActionDispatchedEvent`; it interrupts the remaining listeners and prevents effect triggering for that dispatch.
+
 ## Trade-offs
 
 A feature introduces a few named artifacts—state, actions, reducers, and selectors. That structure gives a reviewable test boundary and reusable display logic. Simple selectors remain inexpensive to read; memoization can reuse a derived result while its input references stay the same.
