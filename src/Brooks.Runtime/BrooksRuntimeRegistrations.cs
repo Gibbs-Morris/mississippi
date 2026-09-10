@@ -40,7 +40,8 @@ public static class BrooksRuntimeRegistrations
         }
 
         IServiceCollection services = builder.Services;
-        services.TryAddSingleton<BrookGrainFactory>();
+        services.RemoveAll<BrookGrainFactory>();
+        services.AddSingleton<BrookGrainFactory>();
         services.RemoveAll<IBrookGrainFactory>();
         services.RemoveAll<IInternalBrookGrainFactory>();
         services.AddSingleton<IBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
