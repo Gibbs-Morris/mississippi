@@ -26,7 +26,7 @@ public sealed class ClientBuilderTests
         BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
             client.Reservoir(_ => invoked = true));
         Assert.False(invoked);
-        Assert.Equal("MSB002", Assert.Single(exception.Diagnostics).Code);
+        Assert.Equal(BuilderDiagnosticCodes.BuilderAlreadyAttached, Assert.Single(exception.Diagnostics).Code);
         Assert.True(client.Services.IsReadOnly);
         Assert.Throws<InvalidOperationException>(() => client.Services.AddSingleton(TimeProvider.System));
     }
