@@ -232,7 +232,7 @@ namespace MississippiSamples.Spring.Client.Features.DualEntitySelection;
 internal static class DualEntitySelectionFeatureRegistration
 {
     /// <summary>
-    ///     Adds the dual entity selection feature to the service collection.
+    ///     Adds the dual entity selection feature to the Reservoir builder.
     /// </summary>
     /// <param name="builder">The Reservoir builder.</param>
     /// <returns>The builder for chaining.</returns>
