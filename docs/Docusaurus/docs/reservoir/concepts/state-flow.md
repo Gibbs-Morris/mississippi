@@ -45,7 +45,7 @@ An effect can yield an action synchronously before reaching an incomplete await.
 
 ## Guarantees
 
-- `AddReservoir()` registers `IStore` with scoped lifetime. Features in the same scope share that store.
+- By default, `AddReservoir()` registers `IStore` with scoped lifetime, and features in the same scope share that store. Its `TryAddScoped` registration preserves an existing `IStore` descriptor; an application override therefore supplies its own lifetime.
 - A registered feature is retrieved through its `IFeatureState.FeatureKey`.
 - The normal dispatch path runs reduction before listener notification and effect triggering.
 - Local reducers can return the current reference for an intentional no-op.
