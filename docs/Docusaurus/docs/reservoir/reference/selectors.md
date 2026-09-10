@@ -29,6 +29,8 @@ Each state type is a class implementing `IFeatureState`. The extension retrieves
 
 Use a selector that answers one question. Spring's [DualEntitySelectionSelectors](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/DualEntitySelection/Selectors/DualEntitySelectionSelectors.cs) provides ID getters and a presence predicate. Its [BankAccountCompositeSelectors](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Features/BankAccountAggregate/Selectors/BankAccountCompositeSelectors.cs) combines command and projection state for display.
 
+Multi-state selection reads each feature separately. Schedule the complete selection together with dispatch in the same serialized execution context when the values must represent one coherent state. Concurrent selection and reduction can otherwise combine values from different points in the update.
+
 ## Memoization
 
 `Memoize.Create` accepts a pure selector with one, two, or three reference-type inputs and returns a function with the same input/result shape.
