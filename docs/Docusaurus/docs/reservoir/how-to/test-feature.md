@@ -160,6 +160,8 @@ Use collection assertions such as `Assert.Single` when exact count or order matt
 
 The Spring client test project also declares `MutationSourceProject` as `../Spring.Client/Spring.Client.csproj`. The repository quality script uses this explicit project-relative target before its usual inference, so the test-harness dependency remains test support when mutation is requested. The commands below also pass `-SourceProject` explicitly.
 
+Use sealed action types, as in this example, when testing the same action identity used by live dispatch. Harness reducer/effect matching can accept an assignable derived action through `is` and `CanHandle`, while the live store indexes typed registrations by exact runtime action type. If your feature relies on action inheritance, verify that dispatch behavior with the real store as well as the harness.
+
 ## Verify the result
 
 Run the sample test project from the repository root:
