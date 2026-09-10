@@ -295,6 +295,67 @@ public sealed class ClientHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Publication faults restore the original host graph, close failed scopes, and preserve the original failure.
+    /// </summary>
+    /// <param name="failDuringClear">Whether to fail after clearing instead of while inserting descriptors.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PublicationFailureRestoresHostAndAllowsRetry(
+        bool failDuringClear
+    )
+    {
+        FaultingServiceCollection services = new()
+        {
+            ShouldFailOnClear = failDuringClear,
+        };
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton("original");
+        ServiceDescriptor[] original = services.ToArray();
+        WebAssemblyHostBuilder host = CreateHost(services);
+        InvalidOperationException expected = new("Host service publication failed.");
+        services.Failures.Enqueue(expected);
+        ClientBuilder? captured = null;
+        Assert.Same(
+            expected,
+            Assert.Throws<InvalidOperationException>(() => host.UseMississippi(client =>
+            {
+                captured = client;
+                client.Services.Clear();
+                client.Services.AddSingleton(new object());
+            })));
+        Assert.Equal(original, services);
+        Assert.NotNull(captured);
+        Assert.Equal(BuilderDiagnosticCodes.ConfigurationScopeClosed, Assert.Single(captured.Validate()).Code);
+        host.UseMississippi(_ => { });
+        Assert.Same(original[0], services[0]);
+        Assert.Same(original[1], services[1]);
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(ClientAttachment));
+    }
+
+    /// <summary>
+    ///     A failed restoration reports both faults instead of concealing either cause.
+    /// </summary>
+    [Fact]
+    public void PublicationRestorationFailureReportsBothCauses()
+    {
+        FaultingServiceCollection services = new();
+        services.AddSingleton("original");
+        WebAssemblyHostBuilder host = CreateHost(services);
+        InvalidOperationException publication = new("Publication failed.");
+        InvalidOperationException restoration = new("Restoration failed.");
+        services.Failures.Enqueue(publication);
+        services.Failures.Enqueue(restoration);
+        AggregateException exception = Assert.Throws<AggregateException>(() =>
+            host.UseMississippi(client => client.Services.AddSingleton(new object())));
+        Assert.Collection(
+            exception.InnerExceptions,
+            first => Assert.Same(publication, first),
+            second => Assert.Same(restoration, second));
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(ClientAttachment));
+    }
+
+    /// <summary>
     ///     Freezing captured host services cannot mask callback failures or report a duplicate on the next attempt.
     /// </summary>
     /// <param name="throwFromCallback">Whether the callback also throws after freezing host services.</param>

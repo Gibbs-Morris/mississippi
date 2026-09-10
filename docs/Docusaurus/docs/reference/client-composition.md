@@ -46,6 +46,8 @@ The host service collection must remain writable until composition finishes. A r
 
 If the callback throws or validation fails, its staged service changes are discarded and its captured builders and collection are closed. When the host remains writable, cleanup removes all client attachment reservations, including replaced or duplicated descriptors, so a corrected `UseMississippi(...)` call can create a fresh scope and succeed. Duplicate and recursive attachment are rejected before the duplicate callback runs. Different hosts can each attach their own client composition.
 
+If the host collection throws while staged services are being published, composition restores the original host descriptors and rethrows the publication error. If restoration also fails, an `AggregateException` reports both errors. Create a fresh host in that case because its registrations may be incomplete.
+
 Staging covers service descriptors configured through the supplied builder. It does not roll back changes to shared object instances, direct mutations of the host captured by application code, or external side effects. Composition validation does not build a service provider, verify network connectivity, or replace service option validation.
 
 ## Failure behavior
