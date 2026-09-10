@@ -35,7 +35,7 @@ builder.Services.AddScoped(sp =>
     };
 });
 #pragma warning restore IDISP014
-builder.AddMississippiClient(client =>
+builder.UseMississippi(client =>
 {
     client.AddMississippiSamplesSpringDomainClient();
     client.Reservoir(reservoir =>

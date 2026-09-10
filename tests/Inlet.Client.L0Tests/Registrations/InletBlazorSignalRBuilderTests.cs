@@ -16,6 +16,18 @@ namespace Mississippi.Inlet.Client.L0Tests.Registrations;
 /// </summary>
 public sealed class InletBlazorSignalRBuilderTests
 {
+    private static void AssertConfigurationIsClosed(
+        InletBlazorSignalRBuilder builder
+    )
+    {
+        Assert.Throws<InvalidOperationException>(() => builder.WithRoutePrefix("/changed"));
+        Assert.Throws<InvalidOperationException>(() =>
+            builder.ScanProjectionDtos(typeof(InletBlazorSignalRBuilderTests).Assembly));
+        Assert.Throws<InvalidOperationException>(() => builder.WithHubPath("/changed"));
+        Assert.Throws<InvalidOperationException>(() => builder.AddProjectionFetcher<TestProjectionFetcher>());
+        Assert.Throws<InvalidOperationException>(() => builder.Build());
+    }
+
     /// <summary>
     ///     AddProjectionFetcher returns builder for chaining.
     /// </summary>
@@ -154,6 +166,18 @@ public sealed class InletBlazorSignalRBuilderTests
     }
 
     /// <summary>
+    ///     Completed SignalR composition cannot change values captured by deferred service factories.
+    /// </summary>
+    [Fact]
+    public void BuiltSignalRBuilderRejectsFurtherConfiguration()
+    {
+        ServiceCollection services = [];
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
+        builder.Build();
+        AssertConfigurationIsClosed(builder);
+    }
+
+    /// <summary>
     ///     Constructor accepts non-null builder.
     /// </summary>
     [Fact]
@@ -178,6 +202,43 @@ public sealed class InletBlazorSignalRBuilderTests
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new InletBlazorSignalRBuilder(null!));
+    }
+
+    /// <summary>
+    ///     A failed callback closes its SignalR builder even when the standalone Reservoir parent remains writable.
+    /// </summary>
+    [Fact]
+    public void FailedCallbackClosesSignalRConfigurationAndAllowsFreshRetry()
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder reservoir = services.AddReservoir();
+        InletBlazorSignalRBuilder? captured = null;
+        InvalidOperationException expected = new("SignalR configuration failed.");
+        Assert.Same(
+            expected,
+            Assert.Throws<InvalidOperationException>(() => reservoir.AddInletBlazorSignalR(builder =>
+            {
+                captured = builder;
+                throw expected;
+            })));
+        Assert.NotNull(captured);
+        Assert.False(services.IsReadOnly);
+        AssertConfigurationIsClosed(captured);
+        reservoir.AddInletBlazorSignalR(builder => builder.WithHubPath("/retry"));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Equal("/retry", provider.GetRequiredService<InletSignalRActionEffectOptions>().HubPath);
+    }
+
+    /// <summary>
+    ///     A read-only parent closes SignalR configuration even before its own build step.
+    /// </summary>
+    [Fact]
+    public void ReadOnlyParentRejectsSignalRConfiguration()
+    {
+        ServiceCollection services = [];
+        InletBlazorSignalRBuilder builder = new(services.AddReservoir());
+        services.MakeReadOnly();
+        AssertConfigurationIsClosed(builder);
     }
 
     /// <summary>
