@@ -139,6 +139,44 @@ public sealed class ClientHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Failed client configuration closes all escaped scopes while permitting a fresh retry.
+    /// </summary>
+    [Fact]
+    public void FailedCallbackClosesCapturedBuildersAndServices()
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder host = CreateHost(services);
+        ClientBuilder? capturedClient = null;
+        IReservoirBuilder? capturedReservoir = null;
+        IServiceCollection? capturedServices = null;
+        Assert.Throws<InvalidOperationException>(() => host.UseMississippi(client =>
+        {
+            capturedClient = client;
+            capturedServices = client.Services;
+            client.Reservoir(reservoir => capturedReservoir = reservoir);
+            throw new InvalidOperationException("Configuration failed.");
+        }));
+        Assert.NotNull(capturedClient);
+        Assert.NotNull(capturedReservoir);
+        Assert.NotNull(capturedServices);
+        Assert.True(capturedServices.IsReadOnly);
+        Assert.Empty(services);
+        bool invoked = false;
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            capturedClient.Reservoir(_ => invoked = true));
+        Assert.Equal("MSB003", Assert.Single(exception.Diagnostics).Code);
+        Assert.False(invoked);
+        Assert.Throws<InvalidOperationException>(() =>
+            capturedReservoir.AddFeatureState<ClientLifecycleState>(_ => invoked = true));
+        Assert.False(invoked);
+        Assert.Throws<InvalidOperationException>(() => capturedServices.AddSingleton(TimeProvider.System));
+        host.UseMississippi(client => client.Reservoir(reservoir => reservoir.AddFeatureState<ClientLifecycleState>()));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        Assert.NotNull(scope.ServiceProvider.GetRequiredService<IStore>());
+    }
+
+    /// <summary>
     ///     Feature-scoped builders cannot silently accept registrations after their callback has returned.
     /// </summary>
     [Fact]

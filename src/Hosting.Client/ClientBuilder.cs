@@ -30,6 +30,8 @@ public sealed class ClientBuilder : IMississippiBuilder
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public IServiceCollection Services => StagedServices;
 
+    private bool IsAttached { get; set; }
+
     private IReservoirBuilder? ReservoirBuilder { get; set; }
 
     private ServiceCollection StagedServices { get; }
@@ -56,8 +58,14 @@ public sealed class ClientBuilder : IMississippiBuilder
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<BuilderDiagnostic> Validate() =>
-        StagedServices.IsReadOnly
+    public IReadOnlyList<BuilderDiagnostic> Validate()
+    {
+        if (!StagedServices.IsReadOnly)
+        {
+            return [];
+        }
+
+        return IsAttached
             ?
             [
                 new(
@@ -65,10 +73,30 @@ public sealed class ClientBuilder : IMississippiBuilder
                     "The client builder has already been attached.",
                     "Configure all client features inside UseMississippi(...)."),
             ]
-            : [];
+            :
+            [
+                new(
+                    BuilderDiagnosticCodes.ConfigurationScopeClosed,
+                    "The client composition scope closed without attachment.",
+                    "Start a new UseMississippi(...) callback instead of reusing captured builders."),
+            ];
+    }
+
+    /// <summary>
+    ///     Closes an unsuccessful composition without marking it attached.
+    /// </summary>
+    internal void Abort()
+    {
+        IsAttached = false;
+        StagedServices.MakeReadOnly();
+    }
 
     /// <summary>
     ///     Prevents further changes after successful composition.
     /// </summary>
-    internal void Complete() => StagedServices.MakeReadOnly();
+    internal void Complete()
+    {
+        IsAttached = true;
+        StagedServices.MakeReadOnly();
+    }
 }
