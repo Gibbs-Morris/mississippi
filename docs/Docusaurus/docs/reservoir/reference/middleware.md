@@ -21,6 +21,8 @@ Middleware wraps the synchronous dispatch path for ordinary Reservoir actions. U
 | Call `nextAction` with another action | Continue with that replacement |
 | Return without calling `nextAction` | Stop that ordinary action's downstream pipeline |
 
+Use `nextAction` for an ordinary action replacement. The system-action check occurs at the `Store.Dispatch` entry point before middleware is built, so passing a restore/reset action to `nextAction` continues through the ordinary core instead of performing restoration. Dispatch a system action through the store entry point when that operation is intended.
+
 Call `nextAction` once for the normal pass-through pattern. Multiple calls deliberately execute the downstream pipeline multiple times and should be treated as multiple dispatch paths.
 
 ## Registration and Ordering
