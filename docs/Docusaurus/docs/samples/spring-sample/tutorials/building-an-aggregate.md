@@ -186,7 +186,7 @@ internal sealed class AccountClosedReducer : EventReducerBase<AccountClosed, Ban
 {
     /// <inheritdoc />
     protected override BankAccountAggregate ReduceCore(
-        BankAccountAggregate state,
+        BankAccountAggregate? state,
         AccountClosed eventData
     )
     {
