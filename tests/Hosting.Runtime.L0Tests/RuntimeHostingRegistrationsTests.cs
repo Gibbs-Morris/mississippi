@@ -74,7 +74,7 @@ public sealed class RuntimeHostingRegistrationsTests
         Assert.NotNull(captured);
         Assert.Same(original, silo.Services[0]);
         Assert.True(captured.Services.IsReadOnly);
-        Assert.Equal("MSB002", Assert.Single(captured.Validate()).Code);
+        Assert.Equal(BuilderDiagnosticCodes.BuilderAlreadyAttached, Assert.Single(captured.Validate()).Code);
     }
 
     /// <summary>
@@ -171,15 +171,19 @@ public sealed class RuntimeHostingRegistrationsTests
         {
             BuilderValidationException wrongHost = Assert.Throws<BuilderValidationException>(() =>
                 runtime.ApplyToSilo(other));
-            Assert.Equal("MSB101", Assert.Single(wrongHost.Diagnostics).Code);
+            Assert.Equal(RuntimeBuilderDiagnosticCodes.SiloHostMismatch, Assert.Single(wrongHost.Diagnostics).Code);
             Assert.Empty(other.Services);
             runtime.ApplyToSilo(silo);
             BuilderValidationException duplicate = Assert.Throws<BuilderValidationException>(() =>
                 runtime.ApplyToSilo(silo));
-            Assert.Equal("MSB102", Assert.Single(duplicate.Diagnostics).Code);
+            Assert.Equal(
+                RuntimeBuilderDiagnosticCodes.DuplicateSiloApplication,
+                Assert.Single(duplicate.Diagnostics).Code);
             BuilderValidationException lateConfiguration = Assert.Throws<BuilderValidationException>(() =>
                 runtime.ConfigureSilo(_ => { }));
-            Assert.Equal("MSB104", Assert.Single(lateConfiguration.Diagnostics).Code);
+            Assert.Equal(
+                RuntimeBuilderDiagnosticCodes.SiloConfigurationAlreadyApplied,
+                Assert.Single(lateConfiguration.Diagnostics).Code);
         });
         other.UseMississippi(_ => { });
     }
@@ -258,7 +262,7 @@ public sealed class RuntimeHostingRegistrationsTests
                     RuntimeBuilderDiagnosticCodes.SiloConfigurationFailed,
                     Assert.Single(runtime.Validate()).Code);
             }));
-        Assert.Equal("MSB103", Assert.Single(exception.Diagnostics).Code);
+        Assert.Equal(RuntimeBuilderDiagnosticCodes.SiloConfigurationFailed, Assert.Single(exception.Diagnostics).Code);
         Assert.Empty(silo.Services);
     }
 
