@@ -20,12 +20,12 @@ Use this page when you need to wire a Blazor client that combines the Mississipp
 
 ## Steps
 
-1. Create the top-level Mississippi client builder.
+1. Configure and attach the top-level Mississippi client builder.
 
-This step establishes the public client root for a full Mississippi app.
+Keep steps 2–5 inside this single callback. `UseMississippi(...)` validates and attaches the completed composition when the callback returns; the client and its nested builders cannot be configured afterward.
 
 ```csharp
-builder.AddMississippiClient(client =>
+builder.UseMississippi(client =>
 {
     // Additional composition steps go here.
 });
@@ -100,7 +100,7 @@ await builder.Build().RunAsync();
 This excerpt matches the current Spring sample startup shape.
 
 ```csharp
-builder.AddMississippiClient(client =>
+builder.UseMississippi(client =>
 {
     client.AddMississippiSamplesSpringDomainClient();
     client.Reservoir(reservoir =>
@@ -128,11 +128,11 @@ Source code: [Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississi
 
 ## Verify The Result
 
-- Full Mississippi client startup should begin with `AddMississippiClient(...)`.
+- Full Mississippi client startup should begin with `UseMississippi(...)`.
 - Reservoir registrations should all hang off the same `IReservoirBuilder` value inside `client.Reservoir(...)`.
 - Inlet client registrations should extend that Reservoir builder instead of calling unrelated `IServiceCollection` helpers.
 - SignalR configuration should be expressed inside `AddInletBlazorSignalR(...)`.
-- Generated domain registration methods should read like `Add{Domain}Client()` on `MississippiClientBuilder`.
+- Generated domain registration methods should read like `Add{Domain}Client()` on `ClientBuilder`.
 - Generated feature registration methods should still read like `AddProjectionsFeature()` or `Add{Aggregate}AggregateFeature()` on `IReservoirBuilder`.
 
 ## Source Code
@@ -148,7 +148,7 @@ Source code: [Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississi
 
 ## Summary
 
-Compose Inlet in full Mississippi client apps by starting with `AddMississippiClient()`, then layering Reservoir and Inlet registrations inside `client.Reservoir(...)`. Stay with `AddReservoir()` only when the app is intentionally Reservoir-only.
+Compose Inlet in full Mississippi client apps by starting with `UseMississippi(...)`, then layering Reservoir and Inlet registrations inside `client.Reservoir(...)`. Stay with `AddReservoir()` only when the app is intentionally Reservoir-only.
 
 ## Next Steps
 

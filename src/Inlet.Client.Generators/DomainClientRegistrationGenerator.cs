@@ -182,8 +182,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             sb.AppendLine("    /// </summary>");
             sb.AppendLine("    /// <param name=\"client\">The Mississippi client builder.</param>");
             sb.AppendLine("    /// <returns>The Mississippi client builder for chaining.</returns>");
-            sb.AppendLine(
-                $"    public static MississippiClientBuilder {model.DomainMethodName}(this MississippiClientBuilder client)");
+            sb.AppendLine($"    public static ClientBuilder {model.DomainMethodName}(this ClientBuilder client)");
             sb.AppendLine("    {");
             sb.AppendLine("        ArgumentNullException.ThrowIfNull(client);");
             sb.AppendLine("        client.Reservoir(reservoir =>");
@@ -329,10 +328,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
         IncrementalValueProvider<(Compilation Compilation, AnalyzerConfigOptionsProvider Options)>
             compilationAndOptions = context.CompilationProvider.Combine(context.AnalyzerConfigOptionsProvider);
         IncrementalValueProvider<(IReadOnlyList<DomainRegistrationModel> Domains, string TargetRootNamespace)>
-            domainsProvider = compilationAndOptions.Select((
-                source,
-                _
-            ) =>
+            domainsProvider = compilationAndOptions.Select((source, _) =>
             {
                 source.Options.GlobalOptions.TryGetValue(
                     TargetNamespaceResolver.RootNamespaceProperty,
@@ -351,10 +347,7 @@ public sealed class DomainClientRegistrationGenerator : IIncrementalGenerator
             });
         context.RegisterSourceOutput(
             domainsProvider,
-            static (
-                spc,
-                result
-            ) =>
+            static (spc, result) =>
             {
                 if (result.Domains.Count == 0)
                 {

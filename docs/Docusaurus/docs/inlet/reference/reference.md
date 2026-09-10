@@ -3,7 +3,7 @@ id: inlet-reference
 title: Inlet Reference
 sidebar_label: Reference
 sidebar_position: 1
-description: Reference the current builder-based Inlet client registration surface and the generated client method shapes for MississippiClientBuilder and IReservoirBuilder.
+description: Reference the current builder-based Inlet client registration surface and the generated client method shapes for ClientBuilder and IReservoirBuilder.
 ---
 
 # Inlet Reference
@@ -21,7 +21,7 @@ Inlet is the Mississippi composition and source-generation layer.
 
 ## Verified Client Registration Surface
 
-These client-side Inlet extensions compose on `IReservoirBuilder`. Full Mississippi client apps reach them through `MississippiClientBuilder.Reservoir(...)`.
+These client-side Inlet extensions compose on `IReservoirBuilder`. Full Mississippi client apps reach them through `ClientBuilder.Reservoir(...)`.
 
 | Method | Receiver | Purpose |
 |--------|----------|---------|
@@ -63,7 +63,7 @@ The current Inlet client generators emit builder-based client registrations.
 | Command client generator | `Add{Aggregate}AggregateFeature()` | `IReservoirBuilder` |
 | Saga client generator | `Add{Saga}SagaFeature()` | `IReservoirBuilder` |
 | Projection client generator | `AddProjectionsFeature()` | `IReservoirBuilder` |
-| Domain client generator | `Add{Domain}Client()` | `MississippiClientBuilder` |
+| Domain client generator | `Add{Domain}Client()` | `ClientBuilder` |
 
 Source code:
 
@@ -88,15 +88,17 @@ Source code:
 
 ## Defaults And Constraints
 
-This reference covers the verified subsystem boundary and the current client-side builder surface. Inlet client registrations assume a Reservoir builder exists; full Mississippi client apps create that builder by starting with `AddMississippiClient()` and then using `Reservoir(...)`.
+This reference covers the verified subsystem boundary and the current client-side builder surface. Inlet client registrations assume a Reservoir builder exists; full Mississippi client apps create that builder by starting with `UseMississippi(...)` and then using `Reservoir(...)`.
 
 ## Failure Behavior
+
+Client terminal attachment uses `BuilderValidationException` with stable diagnostic codes and remediation text. See [Client Composition](../../reference/client-composition.md) for the attachment contract and failure behavior.
 
 For generator and runtime registration failure behavior, refer to the [Inlet Operations](../operations/operations.md) page. Generator misalignment typically surfaces at compile time.
 
 ## Summary
 
-Use this page as the current active reference for Inlet's builder-based client registrations and the generated client method shapes that compose through `MississippiClientBuilder` and `IReservoirBuilder`.
+Use this page as the current active reference for Inlet's builder-based client registrations and the generated client method shapes that compose through `ClientBuilder` and `IReservoirBuilder`.
 
 ## Next Steps
 
