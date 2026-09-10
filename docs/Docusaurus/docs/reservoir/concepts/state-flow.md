@@ -35,7 +35,7 @@ flowchart TB
 
 Within a feature, Reservoir applies every matching reducer. Reducers for the exact runtime action type run in registration order, followed by untyped fallback reducers in their own registration order. The final result becomes that feature's state when it is a different, non-null reference.
 
-The store emits dispatch events, notifies listeners, and starts effects after reduction. `Dispatch` returns `void`; observe asynchronous progress through the actions and state your effects produce. Put request identifiers and required input values in the originating action so the work remains explicit.
+The store emits `ActionDispatchingEvent` before reduction. It then emits `ActionDispatchedEvent` with the resulting state snapshot after reduction, notifies listeners, and starts effects. `Dispatch` returns `void`; observe asynchronous progress through the actions and state your effects produce. Put request identifiers and required input values in the originating action so the work remains explicit.
 
 ## Guarantees
 
