@@ -107,12 +107,20 @@ public sealed class BrooksRuntimeRegistrationsTests
     /// <summary>
     ///     Public and internal grain access use the same canonical factory even when the host registered another one.
     /// </summary>
-    [Fact]
-    public void GrainFactoryRegistrationsRemainAuthoritativeAndConsistent()
+    /// <param name="existingLifetime">The lifetime of the pre-existing concrete factory registration.</param>
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient)]
+    public void GrainFactoryRegistrationsRemainAuthoritativeAndConsistent(
+        ServiceLifetime existingLifetime
+    )
     {
         ServiceCollection services = [];
         services.AddLogging();
         services.AddSingleton(Mock.Of<IGrainFactory>());
+        ((IServiceCollection)services).Add(
+            ServiceDescriptor.Describe(typeof(BrookGrainFactory), typeof(BrookGrainFactory), existingLifetime));
         IBrookGrainFactory custom = Mock.Of<IBrookGrainFactory>();
         services.AddSingleton(custom);
         CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
@@ -120,6 +128,9 @@ public sealed class BrooksRuntimeRegistrationsTests
         BrookGrainFactory canonical = provider.GetRequiredService<BrookGrainFactory>();
         Assert.Same(canonical, provider.GetRequiredService<IBrookGrainFactory>());
         Assert.Same(canonical, provider.GetRequiredService<IInternalBrookGrainFactory>());
+        Assert.Same(canonical, provider.GetRequiredService<BrookGrainFactory>());
+        using IServiceScope scope = provider.CreateScope();
+        Assert.Same(canonical, scope.ServiceProvider.GetRequiredService<BrookGrainFactory>());
         Assert.NotSame(custom, provider.GetRequiredService<IBrookGrainFactory>());
         Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IBrookGrainFactory));
         Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IInternalBrookGrainFactory));

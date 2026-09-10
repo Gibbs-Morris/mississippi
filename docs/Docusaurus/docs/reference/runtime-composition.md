@@ -34,7 +34,7 @@ Empty runtime roots are valid. No placeholder aggregate, saga, or projection is 
 
 `ApplyToSilo(...)` is the recommended explicit integration hook at the end of configuration. It is optional: terminal attachment applies pending native callbacks automatically if the hook was omitted. It is not a second attachment API. Queue native configuration before explicit application; repeated application and configuration after application are rejected.
 
-Brooks uses `BrookStreamingDefaults.OrleansStreamProviderName` unless configured otherwise. The host still supplies Orleans stream providers and storage. Repeated `AddEventSourcing(...)` calls keep one canonical grain factory and compose option callbacks in order. Public and internal grain-factory registrations are authoritative so both paths resolve the same instance. Existing custom stream-ID factories are preserved.
+Brooks uses `BrookStreamingDefaults.OrleansStreamProviderName` unless configured otherwise. The host still supplies Orleans stream providers and storage. Repeated `AddEventSourcing(...)` calls keep one canonical grain factory and compose option callbacks in order. Concrete, public, and internal grain-factory registrations are authoritative singletons so all paths resolve the same instance across service scopes. Existing custom stream-ID factories are preserved.
 
 ## Behavior
 
