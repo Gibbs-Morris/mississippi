@@ -44,6 +44,7 @@ public static class ClientHostingRegistrations
         ServiceDescriptor attachment = ServiceDescriptor.Singleton(ClientAttachment.Instance);
         builder.Services.Add(attachment);
         bool completed = false;
+        ClientBuilder? client = null;
         try
         {
             ServiceCollection stagedServices = [];
@@ -53,7 +54,7 @@ public static class ClientHostingRegistrations
                 ((IServiceCollection)stagedServices).Add(descriptor);
             }
 
-            ClientBuilder client = new(stagedServices);
+            client = new(stagedServices);
             configure(client);
             IReadOnlyList<BuilderDiagnostic> diagnostics = client.Validate();
             if (diagnostics.Count > 0)
@@ -76,6 +77,7 @@ public static class ClientHostingRegistrations
         {
             if (!completed)
             {
+                client?.Abort();
                 builder.Services.Remove(attachment);
             }
         }

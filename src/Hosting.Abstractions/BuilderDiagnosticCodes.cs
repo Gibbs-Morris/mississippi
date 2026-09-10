@@ -12,6 +12,11 @@ public static class BuilderDiagnosticCodes
     public const string BuilderAlreadyAttached = "MSB002";
 
     /// <summary>
+    ///     Identifies configuration attempted through a scope that closed without attaching.
+    /// </summary>
+    public const string ConfigurationScopeClosed = "MSB003";
+
+    /// <summary>
     ///     Identifies a second attachment attempted for the same host role.
     /// </summary>
     public const string DuplicateHostAttachment = "MSB001";
