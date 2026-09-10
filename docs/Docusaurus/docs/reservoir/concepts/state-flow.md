@@ -39,6 +39,8 @@ The store emits `ActionDispatchingEvent` before reduction. It then emits `Action
 
 For one dispatched action, the store consumes one feature root's effect stream before moving to the next root. Within a root, matching effects are consumed sequentially in pipeline order. Keep each stream finite so later effects can run; separate dispatch calls can still overlap.
 
+An effect can yield an action synchronously before reaching an incomplete await. The store dispatches that yielded action immediately, so its reduction and listener notifications can occur before the original `Dispatch` returns. Account for this reentrant ordering in calling code.
+
 ## Guarantees
 
 - `AddReservoir()` registers `IStore` with scoped lifetime. Features in the same scope share that store.
