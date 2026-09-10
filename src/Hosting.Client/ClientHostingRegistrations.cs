@@ -135,7 +135,8 @@ public static class ClientHostingRegistrations
 
             hostServices.Add(attachment);
         }
-        catch (Exception publicationException)
+        catch (Exception publicationException) when (publicationException is not (OutOfMemoryException
+                                                         or AccessViolationException or StackOverflowException))
         {
             try
             {
@@ -146,7 +147,8 @@ public static class ClientHostingRegistrations
                     hostServices.Add(descriptor);
                 }
             }
-            catch (Exception restorationException)
+            catch (Exception restorationException) when (restorationException is not (OutOfMemoryException
+                                                             or AccessViolationException or StackOverflowException))
             {
                 throw new AggregateException(
                     "Client service publication failed and the original host registrations could not be restored. Use a fresh host.",

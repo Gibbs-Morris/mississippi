@@ -217,6 +217,40 @@ public sealed class ClientHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Fatal runtime faults propagate directly instead of attempting recovery or allocating aggregate errors.
+    /// </summary>
+    /// <param name="exceptionType">The fatal runtime fault type.</param>
+    /// <param name="duringRestoration">Whether the fault occurs during restoration instead of publication.</param>
+    [Theory]
+    [InlineData(typeof(OutOfMemoryException), false)]
+    [InlineData(typeof(OutOfMemoryException), true)]
+    [InlineData(typeof(AccessViolationException), false)]
+    [InlineData(typeof(AccessViolationException), true)]
+    [InlineData(typeof(StackOverflowException), false)]
+    [InlineData(typeof(StackOverflowException), true)]
+    public void FatalPublicationFaultsPropagateDirectly(
+        Type exceptionType,
+        bool duringRestoration
+    )
+    {
+        FaultingServiceCollection services = new()
+        {
+            ShouldFailOnClear = true,
+        };
+        WebAssemblyHostBuilder host = CreateHost(services);
+        Exception fatal = Assert.IsType<Exception>(Activator.CreateInstance(exceptionType), false);
+        if (duringRestoration)
+        {
+            services.Failures.Enqueue(new InvalidOperationException("Publication failed."));
+        }
+
+        services.Failures.Enqueue(fatal);
+        services.Failures.Enqueue(new InvalidOperationException("Recovery must stop after the fatal fault."));
+        Assert.Same(fatal, Assert.Throws(exceptionType, () => host.UseMississippi(_ => { })));
+        Assert.Single(services.Failures);
+    }
+
+    /// <summary>
     ///     Feature-scoped builders cannot silently accept registrations after their callback has returned.
     /// </summary>
     [Fact]
