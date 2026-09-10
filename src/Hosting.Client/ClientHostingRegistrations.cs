@@ -35,7 +35,7 @@ public static class ClientHostingRegistrations
             throw new BuilderValidationException(
             [
                 new(
-                    "MSB001",
+                    BuilderDiagnosticCodes.DuplicateHostAttachment,
                     "Mississippi client services are already attached to this host.",
                     "Combine client configuration in one UseMississippi(...) call."),
             ]);

@@ -61,7 +61,7 @@ public sealed class ClientBuilder : IMississippiBuilder
             ?
             [
                 new(
-                    "MSB002",
+                    BuilderDiagnosticCodes.BuilderAlreadyAttached,
                     "The client builder has already been attached.",
                     "Configure all client features inside UseMississippi(...)."),
             ]

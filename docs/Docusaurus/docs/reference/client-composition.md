@@ -11,7 +11,7 @@ sidebar_position: 40
 ## Applies to
 
 - `Mississippi.Hosting.Client`, included by `Mississippi.Sdk.Client`
-- `Mississippi.Hosting.Abstractions` for `IMississippiBuilder`, `BuilderDiagnostic`, and `BuilderValidationException`
+- `Mississippi.Hosting.Abstractions` for `IMississippiBuilder`, `BuilderDiagnostic`, `BuilderDiagnosticCodes`, and `BuilderValidationException`
 
 ## Contract
 
@@ -41,6 +41,8 @@ Staging covers service descriptors configured through the supplied builder. It d
 ## Failure behavior
 
 `BuilderValidationException.Diagnostics` is an immutable snapshot. Each `BuilderDiagnostic` contains `Code`, `Message`, and `Remediation`; exception messages also include these details.
+
+Compare `Code` with `BuilderDiagnosticCodes.DuplicateHostAttachment` or `BuilderDiagnosticCodes.BuilderAlreadyAttached` when handling these failures programmatically.
 
 | Code | Failure | Remediation |
 | --- | --- | --- |
