@@ -205,6 +205,31 @@ public sealed class InletBlazorSignalRBuilderTests
     }
 
     /// <summary>
+    ///     A failed callback closes its SignalR builder even when the standalone Reservoir parent remains writable.
+    /// </summary>
+    [Fact]
+    public void FailedCallbackClosesSignalRConfigurationAndAllowsFreshRetry()
+    {
+        ServiceCollection services = [];
+        IReservoirBuilder reservoir = services.AddReservoir();
+        InletBlazorSignalRBuilder? captured = null;
+        InvalidOperationException expected = new("SignalR configuration failed.");
+        Assert.Same(
+            expected,
+            Assert.Throws<InvalidOperationException>(() => reservoir.AddInletBlazorSignalR(builder =>
+            {
+                captured = builder;
+                throw expected;
+            })));
+        Assert.NotNull(captured);
+        Assert.False(services.IsReadOnly);
+        AssertConfigurationIsClosed(captured);
+        reservoir.AddInletBlazorSignalR(builder => builder.WithHubPath("/retry"));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Equal("/retry", provider.GetRequiredService<InletSignalRActionEffectOptions>().HubPath);
+    }
+
+    /// <summary>
     ///     A read-only parent closes SignalR configuration even before its own build step.
     /// </summary>
     [Fact]
