@@ -21,13 +21,13 @@
     padding: var(--rf-raw-space-2) var(--rf-raw-space-3);
 }
 
+.rf-input-field__input[aria-invalid="true"] {
+    border-color: var(--rf-color-status-error);
+}
+
 .rf-input-field__input:focus {
     outline: none;
     border-color: var(--rf-color-focus-ring);
-}
-
-.rf-input-field__input[aria-invalid="true"] {
-    border-color: var(--rf-color-status-error);
 }
 
 .rf-input-field__input:focus-visible {
