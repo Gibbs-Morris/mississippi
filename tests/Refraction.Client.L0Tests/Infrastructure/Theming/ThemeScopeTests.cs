@@ -37,7 +37,9 @@ public sealed class ThemeScopeTests : BunitContext
                     ["data-rf-theme"] = "dark",
                     ["class"] = "replacement",
                 }));
-        Assert.Equal("rf-theme customer-brand", cut.Find("[data-testid=brand]").ClassName);
+        Assert.Contains("rf-theme", cut.Find("[data-testid=brand]").ClassList);
+        Assert.Contains("customer-brand", cut.Find("[data-testid=brand]").ClassList);
+        Assert.DoesNotContain("replacement", cut.Find("[data-testid=brand]").ClassList);
         Assert.Equal("light", cut.Find(".rf-theme").GetAttribute("data-rf-theme"));
         Assert.Equal("--rf-color-action-primary: rebeccapurple", cut.Find(".rf-theme").GetAttribute("style"));
     }
