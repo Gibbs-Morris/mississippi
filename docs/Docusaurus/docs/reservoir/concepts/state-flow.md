@@ -78,6 +78,8 @@ A new store initializes from its registered initial state. When selections must 
 
 Keep diagnostic observers and store-subscription callbacks observational, and put follow-up actions in effects or application work scheduled after the callback. Synchronous `Dispatch` from a callback reenters the pipeline at that point: a pre-dispatch observer runs before the outer reduction, a post-dispatch observer runs after the outer snapshot, and a listener runs before remaining listeners and outer effects. Later callbacks can therefore read state newer than the outer event snapshot.
 
+`GetStateSnapshot` copies the feature-key dictionary while retaining the feature objects themselves, and restoration installs the supplied objects. Keep feature values and their nested collections immutable so retained snapshots remain meaningful. Use explicit deep serialization when the application needs an independent persisted history or rehydration payload.
+
 ## Trade-offs
 
 A feature introduces a few named artifacts—state, actions, reducers, and selectors. That structure gives a reviewable test boundary and reusable display logic. Simple selectors remain inexpensive to read; memoization can reuse a derived result while its input references stay the same.
