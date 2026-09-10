@@ -85,14 +85,15 @@ public sealed partial class InputField : ComponentBase
     [Parameter]
     public EventCallback<string> ValueChanged { get; set; }
 
-    private string? AriaInvalid => IsInvalid ? "true" : GetInputAttribute("aria-invalid");
+    private string? AriaInvalid => IsInvalid ? "true" : NormalizeAriaInvalid(GetInputAttribute("aria-invalid"));
 
     private string? DescribedBy
     {
         get
         {
             List<string> descriptions = [];
-            string? callerDescription = GetInputAttribute("aria-describedby");
+            object? callerAttribute = GetInputAttribute("aria-describedby");
+            string? callerDescription = callerAttribute is bool ? null : callerAttribute?.ToString();
             if (!string.IsNullOrWhiteSpace(callerDescription))
             {
                 descriptions.Add(callerDescription);
@@ -126,12 +127,34 @@ public sealed partial class InputField : ComponentBase
 
     private bool IsInvalid => State is RefractionStates.Invalid or RefractionStates.Error;
 
-    private string? GetInputAttribute(
+    private static string? NormalizeAriaInvalid(
+        object? value
+    )
+    {
+        if (value is bool isInvalid)
+        {
+            return isInvalid ? "true" : null;
+        }
+
+        string? text = value?.ToString();
+        return text?.Trim().ToUpperInvariant() switch
+        {
+            "TRUE" => "true",
+            "FALSE" => "false",
+            "GRAMMAR" => "grammar",
+            "SPELLING" => "spelling",
+            _ => text,
+        };
+    }
+
+    private object? GetInputAttribute(
         string name
     ) =>
-        InputAttributes
-            ?.FirstOrDefault(attribute => string.Equals(attribute.Key, name, StringComparison.OrdinalIgnoreCase))
-            .Value?.ToString();
+        InputAttributes?.FirstOrDefault(attribute => string.Equals(
+                attribute.Key,
+                name,
+                StringComparison.OrdinalIgnoreCase))
+            .Value;
 
     /// <summary>Handles blur event.</summary>
     private Task HandleBlurAsync(

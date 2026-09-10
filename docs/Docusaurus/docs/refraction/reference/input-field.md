@@ -69,6 +69,11 @@ states; those states take precedence. Disabled and read-only inputs retain their
 descriptions. Keyboard focus has a separate outline so an invalid border does
 not hide the focused field.
 
+A boolean `aria-invalid` value of `false` is omitted; `true` renders the token
+`"true"`. Known string tokens (`true`, `false`, `grammar`, `spelling`) are trimmed
+and normalized to lowercase. Boolean `aria-describedby` values do not create
+description IDs; provide a string containing the intended references.
+
 ## Pre-release API change
 
 The component moved from `Mississippi.Refraction.Client.Components.Atoms` to
