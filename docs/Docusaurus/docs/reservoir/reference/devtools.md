@@ -61,6 +61,8 @@ The store's system restoration path updates local feature state directly and can
 
 Strict restoration rejects the whole proposed restore when a registered feature is missing or fails deserialization. In the default mode, valid registered features can be restored while missing or invalid entries are left as they are. Extra input keys are outside the registered-feature iteration.
 
+Strict validation applies to JSON restoration through `JUMP_TO_STATE`, `JUMP_TO_ACTION`, and the final imported snapshot from `IMPORT_STATE`. `RESET` restores registered initial state and `ROLLBACK` restores the in-memory committed snapshot through system actions; those operations do not use the JSON strict-validation path.
+
 ## Initialization Diagnostics
 
 The root initializer starts observation after rendering and captures the initial rollback point. A later ordinary `ActionDispatchedEvent` triggers connection and reporting. The registration also supplies a hosted initialization checker; in hosts that execute it, the default check delay is five seconds. An explicit `ThrowOnMissingInitializer` value controls its response; otherwise it throws in an injected Development host environment and logs a warning in other cases.
