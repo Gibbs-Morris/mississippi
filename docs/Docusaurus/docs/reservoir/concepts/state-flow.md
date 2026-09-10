@@ -70,6 +70,8 @@ Keep reducers total for their supported inputs and represent expected outcomes a
 
 Keep diagnostic `StoreEvents` observers non-throwing too. An exception from an observer of `ActionDispatchingEvent` stops processing before reduction; one from an observer of `ActionDispatchedEvent` occurs after state changes but before listeners and effects. In either case, later event observers are interrupted. Handle diagnostic failures within the observer.
 
+Serialize dispatches for a shared store, including work arriving from background producers or effect continuations. Concurrent read-modify-write reductions can otherwise replace one another's state updates and interleave notifications. Use one execution context or an application synchronization policy, and coordinate system restoration with that policy.
+
 ## Trade-offs
 
 A feature introduces a few named artifacts—state, actions, reducers, and selectors. That structure gives a reviewable test boundary and reusable display logic. Simple selectors remain inexpensive to read; memoization can reuse a derived result while its input references stay the same.
