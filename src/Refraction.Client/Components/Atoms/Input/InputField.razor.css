@@ -26,13 +26,13 @@
 }
 
 .rf-input-field__input:focus {
-    outline: none;
     border-color: var(--rf-color-focus-ring);
-}
-
-.rf-input-field__input:focus-visible {
     outline: var(--rf-focus-ring-width) solid var(--rf-color-focus-ring);
     outline-offset: var(--rf-focus-ring-offset);
+}
+
+.rf-input-field__input:focus:not(:focus-visible) {
+    outline: none;
 }
 
 .rf-input-field__helper,
