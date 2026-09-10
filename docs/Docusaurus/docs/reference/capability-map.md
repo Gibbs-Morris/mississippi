@@ -13,6 +13,8 @@ Choose a Mississippi capability by the work your application needs to do, then u
 
 This reference maps the projects under `src/` to their consumer roles. Package identities use the `Mississippi.` prefix defined in [Directory.Build.props](https://github.com/Gibbs-Morris/mississippi/blob/main/Directory.Build.props); [src/Directory.Build.props](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Directory.Build.props) enables packing for source projects.
 
+This map describes the current development source, and its GitHub source links follow `main`. When using a released package, compare the linked contract with that package's release tag or commit. When preparing a versioned documentation snapshot, pin its source links to the corresponding release revision so the examples and evidence stay aligned.
+
 ## Choose a Capability
 
 | Your application needs to | Capability | Start with |
