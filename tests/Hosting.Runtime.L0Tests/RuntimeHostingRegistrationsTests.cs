@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Mississippi.Hosting.Abstractions;
 using Mississippi.Hosting.Runtime.Abstractions;
 
+using Moq;
+
 using Orleans.Hosting;
 
 
@@ -211,6 +213,29 @@ public sealed class RuntimeHostingRegistrationsTests
         Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
         Assert.Empty(silo.Services);
         silo.UseMississippi(_ => { });
+    }
+
+    /// <summary>
+    ///     A shared service collection does not make a different configuration the owning silo context.
+    /// </summary>
+    [Fact]
+    public void SharedServicesWithDifferentConfigurationAreRejected()
+    {
+        TestSiloBuilder silo = new();
+        TestSiloBuilder different = new();
+        ISiloBuilder wrapper = Mock.Of<ISiloBuilder>(candidate =>
+            (candidate.Services == silo.Services) && (candidate.Configuration == different.Configuration));
+        bool invoked = false;
+        silo.UseMississippi(runtime =>
+        {
+            runtime.ConfigureSilo(_ => invoked = true);
+            BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+                runtime.ApplyToSilo(wrapper));
+            Assert.Equal(RuntimeBuilderDiagnosticCodes.SiloHostMismatch, Assert.Single(exception.Diagnostics).Code);
+            Assert.False(invoked);
+            runtime.ApplyToSilo(silo);
+        });
+        Assert.True(invoked);
     }
 
     /// <summary>

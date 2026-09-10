@@ -58,7 +58,8 @@ public sealed class RuntimeBuilder : IRuntimeBuilder
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
         ThrowIfInvalid();
-        if (!ReferenceEquals(siloBuilder.Services, TargetSiloBuilder.Services))
+        if (!ReferenceEquals(siloBuilder.Services, TargetSiloBuilder.Services) ||
+            !ReferenceEquals(siloBuilder.Configuration, TargetSiloBuilder.Configuration))
         {
             throw new BuilderValidationException(
             [
