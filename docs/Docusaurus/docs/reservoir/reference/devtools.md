@@ -55,7 +55,7 @@ A non-null sanitizer result replaces that payload. A null result falls back to t
 | `RESET` | Dispatches the system action that restores initial feature states |
 | `COMMIT` | Records the current local snapshot as the rollback point |
 | `ROLLBACK` | Restores the committed local snapshot |
-| `IMPORT_STATE` | Extracts and restores an imported state payload |
+| `IMPORT_STATE` | Restores the final `computedStates` entry's state from the imported payload |
 
 The store's system restoration path updates local feature state directly and can notify listeners. It bypasses ordinary user reducers, effects, and middleware. Use application commands for server-side business changes.
 
