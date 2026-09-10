@@ -57,6 +57,10 @@ then the IDs of the currently rendered messages. Changing `Id`, clearing text,
 or returning to another state updates those associations. Error messages have
 `role="alert"` so newly displayed feedback can be announced.
 
+Description references are split on HTML whitespace and joined with single
+spaces. Duplicate IDs are removed while preserving first occurrence and
+case-sensitive identity, including duplicates of the generated message IDs.
+
 The component does not validate values. A containing page derives validation
 from its application state, supplies the appropriate `State` and `ErrorText`,
 and handles `ValueChanged`. Error text is hidden outside the Invalid and Error

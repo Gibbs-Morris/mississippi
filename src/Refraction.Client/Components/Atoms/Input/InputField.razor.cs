@@ -94,17 +94,23 @@ public sealed partial class InputField : ComponentBase
             List<string> descriptions = [];
             object? callerAttribute = GetInputAttribute("aria-describedby");
             string? callerDescription = callerAttribute is bool ? null : callerAttribute?.ToString();
-            if (!string.IsNullOrWhiteSpace(callerDescription))
+            if (callerDescription is not null)
             {
-                descriptions.Add(callerDescription);
+                foreach (string reference in callerDescription.Split(
+                                 [' ', '\t', '\r', '\n', '\f'],
+                                 StringSplitOptions.RemoveEmptyEntries)
+                             .Where(id => !descriptions.Contains(id)))
+                {
+                    descriptions.Add(reference);
+                }
             }
 
-            if (HasHelperText)
+            if (HasHelperText && !descriptions.Contains(HelperId))
             {
                 descriptions.Add(HelperId);
             }
 
-            if (HasErrorText)
+            if (HasErrorText && !descriptions.Contains(ErrorId))
             {
                 descriptions.Add(ErrorId);
             }
@@ -143,7 +149,7 @@ public sealed partial class InputField : ComponentBase
             "FALSE" => "false",
             "GRAMMAR" => "grammar",
             "SPELLING" => "spelling",
-            _ => text,
+            var _ => text,
         };
     }
 
