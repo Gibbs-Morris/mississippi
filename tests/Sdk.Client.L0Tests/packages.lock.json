@@ -666,7 +666,8 @@
           "Microsoft.Extensions.Hosting.Abstractions": "[10.0.11, )",
           "Mississippi.Hosting.Abstractions": "[1.0.0, )",
           "Mississippi.Reservoir.Abstractions": "[1.0.0, )",
-          "Mississippi.Reservoir.Client": "[1.0.0, )"
+          "Mississippi.Reservoir.Client": "[1.0.0, )",
+          "Mississippi.Reservoir.Core": "[1.0.0, )"
         }
       },
       "Mississippi.Inlet.Abstractions": {
