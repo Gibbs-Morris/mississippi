@@ -174,7 +174,7 @@ public sealed class ClientHostingRegistrationsTests
         Assert.False(invoked);
         Assert.Equal(original, services);
         BuilderDiagnostic diagnostic = Assert.Single(exception.Diagnostics);
-        Assert.Equal("MSB001", diagnostic.Code);
+        Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, diagnostic.Code);
         Assert.Contains("one UseMississippi", diagnostic.Remediation, StringComparison.Ordinal);
     }
 
@@ -204,7 +204,7 @@ public sealed class ClientHostingRegistrationsTests
         bool invoked = false;
         BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
             capturedClient.Reservoir(_ => invoked = true));
-        Assert.Equal("MSB003", Assert.Single(exception.Diagnostics).Code);
+        Assert.Equal(BuilderDiagnosticCodes.ConfigurationScopeClosed, Assert.Single(exception.Diagnostics).Code);
         Assert.False(invoked);
         Assert.Throws<InvalidOperationException>(() =>
             capturedReservoir.AddFeatureState<ClientLifecycleState>(_ => invoked = true));
