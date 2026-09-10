@@ -1,16 +1,12 @@
 namespace Mississippi.Hosting.Client;
 
 /// <summary>
-///     Marks a host whose Mississippi client composition has completed.
+///     Tracks the attachment and unrecoverable failure state of one client host.
 /// </summary>
 internal sealed class ClientAttachment
 {
-    private ClientAttachment()
-    {
-    }
-
     /// <summary>
-    ///     Gets the immutable marker shared by host-specific attachment descriptors.
+    ///     Gets or sets a value indicating whether the host service graph cannot be safely reused.
     /// </summary>
-    public static ClientAttachment Instance { get; } = new();
+    public bool IsDamaged { get; set; }
 }

@@ -40,9 +40,21 @@ public static class ClientHostingRegistrations
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
+        if (HostAttachments.TryGetValue(builder.Services, out ClientAttachment? previous) && previous.IsDamaged)
+        {
+            throw new BuilderValidationException(
+            [
+                new(
+                    BuilderDiagnosticCodes.HostServicesDamaged,
+                    "The client host service graph could not be restored after failed publication.",
+                    "Create a fresh host and configure it again; this service collection cannot be reused."),
+            ]);
+        }
+
         ThrowIfHostServicesReadOnly(builder.Services);
+        ClientAttachment state = new();
         if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(ClientAttachment)) ||
-            !HostAttachments.TryAdd(builder.Services, ClientAttachment.Instance))
+            !HostAttachments.TryAdd(builder.Services, state))
         {
             throw new BuilderValidationException(
             [
@@ -53,8 +65,9 @@ public static class ClientHostingRegistrations
             ]);
         }
 
-        ServiceDescriptor attachment = ServiceDescriptor.Singleton(ClientAttachment.Instance);
+        ServiceDescriptor attachment = ServiceDescriptor.Singleton(state);
         bool completed = false;
+        bool canReuseHost = true;
         ClientBuilder? client = null;
         try
         {
@@ -88,7 +101,7 @@ public static class ClientHostingRegistrations
             }
 
             client.Complete();
-            PublishServices(builder.Services, stagedServices, originalHostServices, attachment);
+            PublishServices(builder.Services, stagedServices, originalHostServices, attachment, ref canReuseHost);
             completed = true;
             return builder;
         }
@@ -96,9 +109,10 @@ public static class ClientHostingRegistrations
         {
             if (!completed)
             {
-                try
+                client?.Abort();
+                state.IsDamaged = true;
+                if (canReuseHost)
                 {
-                    client?.Abort();
                     if (!builder.Services.IsReadOnly)
                     {
                         for (int index = builder.Services.Count - 1; index >= 0; index--)
@@ -109,9 +123,7 @@ public static class ClientHostingRegistrations
                             }
                         }
                     }
-                }
-                finally
-                {
+
                     HostAttachments.Remove(builder.Services);
                 }
             }
@@ -122,9 +134,11 @@ public static class ClientHostingRegistrations
         IServiceCollection hostServices,
         IEnumerable<ServiceDescriptor> stagedServices,
         IReadOnlyList<ServiceDescriptor> originalHostServices,
-        ServiceDescriptor attachment
+        ServiceDescriptor attachment,
+        ref bool canReuseHost
     )
     {
+        canReuseHost = false;
         try
         {
             hostServices.Clear();
@@ -146,6 +160,8 @@ public static class ClientHostingRegistrations
                 {
                     hostServices.Add(descriptor);
                 }
+
+                canReuseHost = true;
             }
             catch (Exception restorationException) when (restorationException is not (OutOfMemoryException
                                                              or AccessViolationException or StackOverflowException))

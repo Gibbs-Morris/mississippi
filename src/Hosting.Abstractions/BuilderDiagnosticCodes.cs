@@ -27,6 +27,11 @@ public static class BuilderDiagnosticCodes
     public const string HostServicesChanged = "MSB004";
 
     /// <summary>
+    ///     Identifies a host whose service graph could not be restored after failed publication.
+    /// </summary>
+    public const string HostServicesDamaged = "MSB006";
+
+    /// <summary>
     ///     Identifies a host service collection that cannot accept terminal composition.
     /// </summary>
     public const string HostServicesReadOnly = "MSB005";
