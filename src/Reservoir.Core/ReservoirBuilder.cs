@@ -107,7 +107,7 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
         if (Services.IsReadOnly)
         {
             throw new InvalidOperationException(
-                "Reservoir configuration is complete. Configure features before terminal host attachment.");
+                "Reservoir services are read-only. Configure features while the owning configuration scope is open.");
         }
     }
 }
