@@ -47,7 +47,7 @@ Start here when you need to understand generated projection, API, and registrati
 
 ## Build With Inlet
 
-Use [Generated Application Contracts](./reference/generated-contracts.md) to connect domain inputs to each host's registrations. Then [own a live projection subscription](./how-to/subscribe-to-projections.md) in a Blazor page.
+Use [Generated Application Contracts](./reference/generated-contracts.md) to connect domain inputs to each host's registrations. Then [keep a workspace projection live](./how-to/subscribe-to-projections.md) across Blazor page navigation.
 
 The generated contracts let teams concentrate their review on business rules and typed boundaries. Those same boundaries give AI-assisted implementation a repeatable path from domain changes to consumer verification.
 

@@ -126,5 +126,5 @@ Domain metadata aligns generated contracts across hosts. Register each host's in
 ## Next Steps
 
 - [Compose an Inlet client](../how-to/how-to.md).
-- [Own a live projection subscription](../how-to/subscribe-to-projections.md).
+- [Keep a workspace projection live](../how-to/subscribe-to-projections.md).
 - [Add a business command](../../samples/spring-sample/tutorials/building-an-aggregate.md) with tested rules and reducers.

@@ -1,42 +1,99 @@
 ---
-title: Own a Live Projection Subscription
+title: Keep a Workspace Projection Live
 sidebar_position: 2
-description: Display a server projection in Blazor, refresh it, and release its subscription when the page changes entity or closes.
+description: Keep a fixed account projection live across Blazor page navigation with an application-shell owner and shared Reservoir state.
 ---
 
-# Own a Live Projection Subscription
+# Keep a Workspace Projection Live
 
 ## Overview
 
-Give a page ownership of the projection data it needs. Subscribe when the page selects an entity, read the data from Reservoir, and release the old subscription when selection changes or the page closes.
+Keep a workspace's account projection subscribed for the lifetime of the Blazor client. A provider in the application shell establishes the interest once, and pages read the resulting state from Reservoir.
 
-This keeps account screens connected to the same server read model while leaving business rules in the domain. The typed DTO, entity ID, and explicit lifecycle also give an AI assistant concrete boundaries for generating and testing the page.
+This keeps related account screens connected to the same server read model while leaving business rules in the domain. A fixed entity ID, typed DTO, and explicit application lifetime give an AI assistant concrete boundaries for generating and testing those screens.
 
 ## When To Use This
 
-Use this pattern when a Blazor screen selects an entity and owns the live projection state shared by its child components. Configure the generated projection features and Inlet connection before adding the screen.
+Use this pattern for a workspace with a small, fixed set of entities that should stay live as users navigate between pages. The application shell owns the subscriptions; individual pages own only their store listeners and presentation.
 
 ## Before You Begin
 
-- Start from the [Spring sample](../../samples/spring-sample/index.md), with its generated client features and [Inlet client composition](./how-to.md).
-- Use the sample's generated `BankAccountBalanceProjectionDto` and its `bank-account-balance` projection path.
-- Choose one owner for each DTO type and entity ID in a store. Let child components read the shared state. Inlet tracks subscriptions by that pair; one owner's unsubscribe releases the pair's active subscription.
+- Start from [Spring](../../samples/spring-sample/index.md), with its generated client features and [Inlet client composition](./how-to.md).
+- Choose an existing account ID for the workspace. Replace `doc-account-001` in the provider below with that ID before running the client.
+- Give each DTO type and entity ID one application-level owner. This example keeps the selected account live throughout the client session, including while its display page is closed.
 
-The following component is a complete additional Spring page. Its route parameter supplies the selected account ID. For your application, substitute the generated DTO and the entity-selection mechanism that your page uses.
+The following files add a provider and a display page to Spring. Keep the provider outside the router so it remains mounted during page navigation.
 
 ## Steps
 
-### 1. Add The Page
+### 1. Add The Application Owner
+
+Create `samples/Spring/Spring.Client/Components/AccountProjectionProvider.razor`:
+
+```razor
+@namespace MississippiSamples.Spring.Client.Components
+@inherits InletComponent
+@using Mississippi.Inlet.Client
+@using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos
+
+@code {
+    /// <summary>
+    /// Identifies the account kept live throughout this client session.
+    /// </summary>
+    public const string AccountId = "doc-account-001";
+
+    /// <inheritdoc />
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            SubscribeToProjection<BankAccountBalanceProjectionDto>(AccountId);
+        }
+    }
+}
+```
+
+The first browser render starts the subscription. Later renders retain the same interest. Inlet performs the asynchronous connection, hub subscription, and initial HTTP read, publishing the result into Reservoir.
+
+### 2. Mount It Outside The Router
+
+Update `samples/Spring/Spring.Client/App.razor` to include the provider alongside Spring's existing root components:
+
+```razor
+@using Mississippi.Reservoir.Client.BuiltIn.Components
+@using MississippiSamples.Spring.Client.Components
+@namespace MississippiSamples.Spring.Client
+
+<ReservoirNavigationProvider/>
+<ReservoirDevToolsInitializerComponent/>
+<AccountProjectionProvider/>
+
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p>Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
+```
+
+Page navigation can now occur while the initial subscription is pending: the provider and its interest remain part of the application shell. Keep the provider mounted for the client session. The scoped hub-connection provider disposes its connection when its service scope ends.
+
+### 3. Display Shared State In A Page
 
 Create `samples/Spring/Spring.Client/Pages/ProjectionWatch.razor`:
 
 ```razor
-@page "/projection-watch/{AccountId}"
+@page "/projection-watch"
 @namespace MississippiSamples.Spring.Client.Pages
 @inherits InletComponent
-@using Microsoft.AspNetCore.Components
 @using Mississippi.Inlet.Client
 @using Mississippi.Inlet.Client.SignalRConnection
+@using MississippiSamples.Spring.Client.Components
 @using MississippiSamples.Spring.Client.Features.BankAccountBalance.Dtos
 
 <h1>Account balance</h1>
@@ -63,86 +120,24 @@ else
 <button type="button" @onclick="RefreshCurrent">Refresh</button>
 
 @code {
-    private string? subscribedAccountId;
+    private const string AccountId = AccountProjectionProvider.AccountId;
 
-    /// <summary>
-    /// Gets or sets the account selected by the route.
-    /// </summary>
-    [Parameter]
-    public string AccountId { get; set; } = string.Empty;
-
-    /// <inheritdoc />
-    protected override void OnAfterRender(bool firstRender)
-    {
-        base.OnAfterRender(firstRender);
-        if (string.Equals(AccountId, subscribedAccountId, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        ReleaseSubscription();
-        if (!string.IsNullOrWhiteSpace(AccountId))
-        {
-            subscribedAccountId = AccountId;
-            SubscribeToProjection<BankAccountBalanceProjectionDto>(AccountId);
-        }
-    }
-
-    /// <inheritdoc />
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            ReleaseSubscription();
-        }
-
-        base.Dispose(disposing);
-    }
-
-    private void RefreshCurrent()
-    {
-        if (!string.IsNullOrWhiteSpace(AccountId))
-        {
-            RefreshProjection<BankAccountBalanceProjectionDto>(AccountId);
-        }
-    }
-
-    private void ReleaseSubscription()
-    {
-        if (subscribedAccountId is { } previousId)
-        {
-            subscribedAccountId = null;
-            UnsubscribeFromProjection<BankAccountBalanceProjectionDto>(previousId);
-        }
-    }
+    private void RefreshCurrent() =>
+        RefreshProjection<BankAccountBalanceProjectionDto>(AccountId);
 }
 ```
 
-`InletComponent` inherits Reservoir's store subscription and render lifecycle. Calling the base lifecycle methods preserves that behavior. The component records its own projection interest and explicitly releases it during disposal.
+`InletComponent` inherits Reservoir's store subscription and render lifecycle. Disposing this display page releases its store listener. The application provider continues owning the live account interest, ready for other pages or a return visit.
 
-The ID comparison makes repeated renders inexpensive. Starting the subscription after rendering follows the sample's browser lifecycle; a change to the route parameter releases the previous entity and selects the next one.
+### 4. Present Fetch And Transport State
 
-### 2. Present Loading, Data, And Connection Separately
+Use `IsProjectionLoading<T>()` and `GetProjectionError<T>()` for the entity's fetch state. `GetProjection<T>()` returns its DTO when available, and `GetProjectionState<T>()` exposes its version.
 
-Use `IsProjectionLoading<T>()` and `GetProjectionError<T>()` for that entity's fetch state. `GetProjection<T>()` returns its DTO when available, and `GetProjectionState<T>()` exposes its version.
+An initial HTTP 404 is an empty projection result. Inlet retains the active subscription so later events can provide data. Give this state a useful presentation, such as an invitation to open the account.
 
-An initial HTTP 404 means the projection has no data to load yet. Inlet records an empty result and retains the active subscription so later events can provide data. Give this state a useful empty presentation, such as an invitation to open the account.
+Read `SignalRConnectionState.Status` for the shared transport indicator. Projection entry `IsConnected` is separately controlled by projection connection actions; use the transport feature for the connection display above.
 
-Read `SignalRConnectionState.Status` for the transport indicator. This is the connection shared by projection subscriptions. Projection entry `IsConnected` is separately controlled by projection connection actions; the transport feature is the source for this page's connection display.
-
-### 3. Refresh On User Request
-
-`RefreshProjection<T>(entityId)` requests the latest projection through the configured fetcher and publishes the result into Reservoir. The Refresh button above provides a retry after a fetch error or a deliberate reload of the displayed account.
-
-Inlet also re-subscribes and refreshes active interests after a successful SignalR reconnection. Keep your normal loading, empty, error, and data presentation usable during that process.
-
-### 4. Keep Subscription Ownership With The Screen
-
-When several panels display the same account, subscribe once in their shared page or another deliberate owner. Pass the entity ID to the panels and let them select the projection state.
-
-A useful pattern is “the account workspace owns balance and ledger subscriptions; its summary and transaction panels read them.” Giving each panel independent ownership of the same pair couples one panel's disposal to the others' updates.
-
-Unsubscribing releases the live interest. Cached projection entries remain in Reservoir, so use the current entity ID when selecting data and explicitly refresh when your workflow requires a new read.
+`RefreshProjection<T>(entityId)` requests the latest projection and publishes the result into Reservoir. Inlet also re-establishes active interests and refreshes them after a successful SignalR reconnection. Keep the loading, empty, error, and data presentation usable throughout that process.
 
 ## Verify The Result
 
@@ -152,26 +147,27 @@ From the repository root, build the sample:
 pwsh ./build.ps1 -SkipMississippi -Configuration Release
 ```
 
-Run Spring using the [sample startup instructions](https://github.com/Gibbs-Morris/mississippi/blob/main/README.md#quick-start--see-it-running). Create an account on the Accounts page, then open `/projection-watch/{accountId}` using that account's ID.
+Run Spring using the [sample startup instructions](https://github.com/Gibbs-Morris/mississippi/blob/main/README.md#quick-start--see-it-running), then open `/projection-watch`.
 
-1. Confirm the holder, balance, and version appear after the initial fetch.
-2. Leave this page open and deposit into the same account from another browser tab. Confirm the page receives the projection update.
-3. Open the watch route for another account. Confirm it shows that account's state.
-4. Click Refresh and confirm the latest data returns.
-5. Navigate away. In the browser's Network tools, inspect the SignalR connection messages for the unsubscribe request; the component's disposal releases its owned interest.
+1. Confirm the configured account's holder, balance, and version appear after the initial fetch.
+2. Leave the page open and deposit into the same account from another browser tab. Confirm the displayed projection updates.
+3. Navigate to another page and back. Confirm the account remains selected and its data is available from the shared store.
+4. Repeat navigation while the initial projection request is delayed in browser Network tools. The application owner remains mounted while the request finishes.
+5. Click Refresh and confirm the latest data returns.
 
-For the sample's existing automated browser validation, run `pwsh ./test-spring.ps1 -Doctor` and then `pwsh ./test-spring.ps1`. A `PASS` summary means tests executed successfully; use the manual checks above to exercise the new watch page specifically.
+For Spring's existing automated browser validation, run `pwsh ./test-spring.ps1 -Doctor` and then `pwsh ./test-spring.ps1`. A `PASS` summary means tests executed successfully; the manual checks above exercise the additional workspace page specifically.
 
 ## Source Code
 
-- [InletComponent.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletComponent.cs) defines the page helpers.
-- [OperationsPage.razor.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Pages/OperationsPage.razor.cs) demonstrates ownership for balance, ledger, and saga projections.
-- [InletSignalRActionEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/InletSignalRActionEffect.cs) implements subscription, fetch, unsubscribe, and reconnect behavior.
+- [InletComponent.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/InletComponent.cs) defines the page helpers; [StoreComponent.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs) manages component store listeners.
+- [App.razor](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/App.razor) supplies the existing Spring application shell.
+- [InletSignalRActionEffect.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/InletSignalRActionEffect.cs) implements subscription, fetch, and reconnect behavior.
+- [HubConnectionProvider.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/ActionEffects/HubConnectionProvider.cs) owns the scoped connection.
 - [ProjectionsReducer.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/Reducers/ProjectionsReducer.cs) and [SignalRConnectionState.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Inlet.Client/SignalRConnection/SignalRConnectionState.cs) define the state consumed by the page.
 
 ## Summary
 
-Own the subscription at the screen boundary, select data by the active entity ID, present fetch and transport state separately, and release the interest as part of the page lifecycle.
+Mount a fixed workspace's subscription owner in the application shell, share its projection state between pages, and give each page its own presentation and store-listener lifecycle.
 
 ## Next Steps
 
