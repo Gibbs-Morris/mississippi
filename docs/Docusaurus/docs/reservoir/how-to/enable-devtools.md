@@ -11,11 +11,11 @@ sidebar_label: Enable DevTools
 
 Connect Reservoir to the Redux DevTools browser extension to inspect dispatched actions and local feature state. Use the action sequence and state snapshots to explain a UI result or give an AI assistant concrete debugging evidence.
 
-## When to Use This
+## When to use this
 
 Use this setup during client development when you need to inspect state transitions or explore a recorded local state. Use application commands for business changes on the server; DevTools restoration changes the local store snapshot.
 
-## Before You Begin
+## Before you begin
 
 - Have a .NET 10 Blazor WebAssembly client using `Mississippi.Reservoir.Client` and a configured Reservoir builder.
 - Install the browser extension through the [official Redux DevTools project](https://github.com/reduxjs/redux-devtools#documentation).
@@ -68,7 +68,7 @@ Use `ActionSanitizer` and `StateSanitizer` to return the explicit payload the ex
 
 Keep enough action identity and non-sensitive context to connect an action with its state transition. If you intend to restore snapshots, retain a shape that can be deserialized into the registered feature types, and review the strict restoration option.
 
-## Verify the Result
+## Verify the result
 
 Build the client and run it in Development with the extension installed:
 
