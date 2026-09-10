@@ -10,15 +10,22 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 ## Rules (RFC 2119)
 
+### Domain Record Visibility
+
+- Aggregate, command, and projection records **MUST** be internal by default and **MUST** be public when their types occur in public generated API signatures or are discovered through exported-type scanning. Why: Public C# signatures require accessible types, and exported-type discovery selects public types.
+- Contributors **MUST** verify visibility against the consuming generator and registration path. Why: Friend-assembly access permits internal access but does not relax public-signature accessibility requirements.
+
+Inlet's [aggregate controller generator](../../src/Inlet.Gateway.Generators/AggregateControllerGenerator.cs) exposes the aggregate type in its public base class and command types in public mapper constructor parameters. [Projection assembly scanning](../../src/Inlet.Runtime/InletSiloRegistrations.cs) uses `GetExportedTypes()`. Keep domain records public for these paths while retaining internal visibility for records without a public or discovery boundary.
+
 ### Aggregate Types
 
-- Aggregates **MUST** be `internal sealed record` types with `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Why: Enables event sourcing, serialization, and stable storage identity.
+- Aggregates **MUST** be `sealed record` types with the visibility defined above and `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Why: Enables event sourcing, serialization, and stable storage identity.
 - Aggregate properties **MUST** use `[Id(n)]` starting at 0 with unique sequential values; aggregate types **MUST** use `{ get; init; }` properties with sensible defaults. Why: Orleans serialization requires explicit member ordering.
 - Aggregates **SHOULD** include a sentinel property (e.g., `IsCreated`, `IsInitialized`) to detect first-time creation. Why: Command handlers need to distinguish new vs existing aggregates.
 
 ### Command Types
 
-- Commands **MUST** be `internal sealed record` types with `[GenerateSerializer]` and `[Alias]` attributes. Why: Enables Orleans serialization and stable identity.
+- Commands **MUST** be `sealed record` types with the visibility defined above and `[GenerateSerializer]` and `[Alias]` attributes. Why: Enables Orleans serialization and stable identity.
 - Command properties **MUST** use `required` modifier and `[Id(n)]` attributes; command names **SHOULD** be verb phrases (e.g., `CreateChannel`, `UpdateDisplayName`). Why: Enforces valid construction and clear intent.
 
 ### Event Types
@@ -40,7 +47,7 @@ Governing thought: Use consistent, attribute-driven domain modeling with immutab
 
 ### Projection Types
 
-- Projections **MUST** be `internal sealed record` types with `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Why: Same as aggregates but for read-optimized views.
+- Projections **MUST** be `sealed record` types with the visibility defined above and `[BrookName]`, `[SnapshotStorageName]`, `[GenerateSerializer]`, and `[Alias]` attributes. Why: Same as aggregates but for read-optimized views.
 - Projection types **SHOULD** be named `{Name}Projection` (e.g., `UserProfileProjection`, `ChannelMemberListProjection`). Why: Distinguishes from aggregate state.
 
 ### Projection Reducers
