@@ -39,6 +39,8 @@ For exact reduction boundaries, subscribe to `IStore.StoreEvents`: `ActionDispat
 
 The store handles `ISystemAction` restoration/reset before building the user middleware pipeline. Those actions therefore use their dedicated path. Use [DevTools reference](./devtools.md) for local restoration behavior.
 
+Handle middleware failures deliberately. An exception before `nextAction` prevents downstream dispatch; one after `nextAction` returns reaches the caller after reducers have run and effects may have started. Inspect the actual outcome before retrying an action, because a caller-visible exception can follow completed downstream work.
+
 ## Source and Verification
 
 - [IMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IMiddleware.cs).
