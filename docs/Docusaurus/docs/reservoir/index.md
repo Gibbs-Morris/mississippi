@@ -43,7 +43,7 @@ Within the broader stack, it is commonly used beneath Refraction and Inlet-power
 
 Start here when you need the client-state model itself: store behavior, reducers, effects, selectors, middleware, or the Blazor integration surface.
 
-## Current Coverage
+## Choose a Reading Path
 
 Start with a feature recipe, the local state-flow model, and the selector reference to connect actions to the values your screens display.
 
