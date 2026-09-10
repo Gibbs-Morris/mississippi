@@ -46,7 +46,9 @@ The host services must remain writable until composition finishes. A read-only h
 
 The staged graph retains the runtime attachment reservation and its nonterminal scope identity. Calling `UseMississippi(...)` again through a native callback or a wrapper over its staged services is rejected as duplicate attachment, even after clearing staged registrations; successful publication keeps one runtime attachment marker.
 
-If application or native configuration throws, the staged scope closes, its changes are discarded, and the attachment reservation is released. A fresh terminal callback can retry. Catching a native callback exception inside application configuration does not make that partially configured scope valid: terminal validation still rejects it.
+The original host's attachment identity is also tracked independently of its descriptors. Clearing original host services cannot permit recursive attachment through a captured silo or another wrapper over those services, and cannot make a successfully attached host reusable. Failed composition releases the independent identity; successful attachment remains terminal for that host collection.
+
+If application or native configuration throws, the staged scope closes, its changes are discarded, and the independent attachment reservation is released. Cleanup removes all runtime attachment descriptors from a writable host, including replaced, duplicate, and keyed copies, so a fresh terminal callback can retry. Catching a native callback exception inside application configuration does not make that partially configured scope valid: terminal validation still rejects it.
 
 Captured runtime builders and native adapters cannot modify the staged service collection after the terminal scope closes. Registration callbacks are synchronous; asynchronous initialization belongs in hosted services or Orleans lifecycle participants.
 
