@@ -1,3 +1,5 @@
+using System.Linq;
+
 using Bunit;
 
 using Mississippi.Reservoir.Core;
@@ -22,7 +24,7 @@ public sealed class KitchenSinkPageTests : BunitContext
         cut.Find("form").Submit();
         Assert.Equal("ValidateProfileAction", cut.Find("[data-testid=last-action]").TextContent);
         Assert.Equal("true", cut.Find("input[name=work-email]").GetAttribute("aria-invalid"));
-        cut.FindAll(".theme-options button")[1].Click();
+        cut.FindAll(".theme-options button").Single(button => button.TextContent.Trim() == "Light").Click();
         cut.Find("form button[type=button]").Click();
         Assert.Equal("alex@contoso.example", cut.Find("input[name=work-email]").GetAttribute("value"));
         Assert.Equal("4", cut.Find("[data-testid=action-count]").TextContent);
