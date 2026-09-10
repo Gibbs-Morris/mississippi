@@ -151,7 +151,7 @@ Compose Inlet in full Mississippi client apps by starting with `AddMississippiCl
 ## Next Steps
 
 - Use [Generated Application Contracts](../reference/generated-contracts.md) for runtime, gateway, and client registration responsibilities.
-- Use [Own a Live Projection Subscription](./subscribe-to-projections.md) to display and release a page's live data.
+- Use [Keep a Workspace Projection Live](./subscribe-to-projections.md) to share an application-owned projection between pages.
 - Use [Enable DevTools](../../reservoir/how-to/enable-devtools.md) for application environment selection and state inspection.
 - Use [Inlet Reference](../reference/reference.md) for the exact method surface.
 - Use [Read Models and Client Sync](../../concepts/read-models-and-client-sync.md) for the end-to-end projection delivery model.
