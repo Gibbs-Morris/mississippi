@@ -25,8 +25,8 @@ flowchart LR
 
 | Lesson | Where to Look |
 |--------|---------------|
-| **Define an aggregate** with `Command`s, `CommandHandler`s, events, and `EventReducer`s | [Building an Aggregate](./tutorials/building-an-aggregate.md) |
-| **Explore event reactions** in the sample (sync and fire-and-forget) | [Aggregate Event Reactions](./tutorials/building-an-aggregate.md#continue-with-reactions-to-events) |
+| **Add a business operation** with command validation and write/read reducers | [Add an Aggregate Command](./tutorials/building-an-aggregate.md) |
+| **Understand event reactions** after accepted changes | [Write Model](../../concepts/write-model.md) |
 | **Orchestrate multi-step workflows** with sagas and compensation | [Building a Saga](./tutorials/building-a-saga.md) |
 | **Create read-optimized views** from event streams | [Building Projections](./tutorials/building-projections.md) |
 | **Keep hosts minimal** with source-generated registration | [Host Architecture](./concepts/host-applications.md) |
@@ -70,7 +70,7 @@ When learning Spring, start with the domain pages first (`Aggregate` → `Saga` 
 
 - [Key Concepts](./concepts/key-concepts.md) - Quick reference for the domain-modeling vocabulary used throughout Spring
 - [Host Architecture](./concepts/host-applications.md) - How Runtime, Gateway, and Client stay minimal while the domain owns business logic
-- [Building an Aggregate](./tutorials/building-an-aggregate.md) - Step-by-step walkthrough of the BankAccount aggregate
+- [Add an Aggregate Command](./tutorials/building-an-aggregate.md) - Create and test account closure in Spring
 - [Building a Saga](./tutorials/building-a-saga.md) - Multi-step money transfer with compensation
 - [Building Projections](./tutorials/building-projections.md) - Read-optimized views from event streams
 - [Auth-Proof Mode](./how-to/auth-proof-mode.md) - Verify generated HTTP and subscription authorization behavior locally
