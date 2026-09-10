@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Abstractions.Factory;
 using Mississippi.Brooks.Abstractions.Streaming;
+using Mississippi.Brooks.Runtime.Factory;
 using Mississippi.Brooks.Runtime.Reader;
 using Mississippi.Hosting.Abstractions;
 using Mississippi.Hosting.Runtime;
@@ -14,6 +15,7 @@ using Mississippi.Hosting.Runtime.Abstractions;
 
 using Moq;
 
+using Orleans;
 using Orleans.Hosting;
 
 
@@ -100,6 +102,27 @@ public sealed class BrooksRuntimeRegistrationsTests
         CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
         using ServiceProvider provider = services.BuildServiceProvider();
         Assert.Same(custom, provider.GetRequiredService<IStreamIdFactory>());
+    }
+
+    /// <summary>
+    ///     Public and internal grain access use the same canonical factory even when the host registered another one.
+    /// </summary>
+    [Fact]
+    public void GrainFactoryRegistrationsRemainAuthoritativeAndConsistent()
+    {
+        ServiceCollection services = [];
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IGrainFactory>());
+        IBrookGrainFactory custom = Mock.Of<IBrookGrainFactory>();
+        services.AddSingleton(custom);
+        CreateSilo(services).UseMississippi(runtime => runtime.AddEventSourcing());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        BrookGrainFactory canonical = provider.GetRequiredService<BrookGrainFactory>();
+        Assert.Same(canonical, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Same(canonical, provider.GetRequiredService<IInternalBrookGrainFactory>());
+        Assert.NotSame(custom, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IBrookGrainFactory));
+        Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IInternalBrookGrainFactory));
     }
 
     /// <summary>

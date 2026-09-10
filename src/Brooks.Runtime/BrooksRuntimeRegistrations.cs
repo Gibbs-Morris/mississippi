@@ -41,8 +41,10 @@ public static class BrooksRuntimeRegistrations
 
         IServiceCollection services = builder.Services;
         services.TryAddSingleton<BrookGrainFactory>();
-        services.TryAddSingleton<IBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
-        services.TryAddSingleton<IInternalBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
+        services.RemoveAll<IBrookGrainFactory>();
+        services.RemoveAll<IInternalBrookGrainFactory>();
+        services.AddSingleton<IBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
+        services.AddSingleton<IInternalBrookGrainFactory>(sp => sp.GetRequiredService<BrookGrainFactory>());
         services.TryAddSingleton<IStreamIdFactory, StreamIdFactory>();
         services.AddOptions<BrookReaderOptions>();
         services.AddOptions<BrookProviderOptions>();
