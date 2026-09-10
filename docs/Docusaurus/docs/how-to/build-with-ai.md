@@ -13,11 +13,11 @@ Build one feature by specifying its business rules, representing accepted change
 
 This workflow uses Spring's bank-account withdrawal as a concrete reference. The business benefit is a reviewable path from a requirement to observable behavior: a reviewer can inspect the rule, the accepted event, and the resulting state separately.
 
-## When to Use This
+## When to use this
 
 Use this procedure when you want an AI assistant to implement one business operation with explicit source references and acceptance checks.
 
-## Before You Begin
+## Before you begin
 
 - Choose the capability and packages from the [capability map](../reference/capability-map.md).
 - Have an application following the [Spring project boundaries](../samples/spring-sample/concepts/host-applications.md), or use Spring to learn the workflow.
@@ -115,7 +115,7 @@ Use the generated artifacts as part of the application's build. Keep the human-a
 
 Continue through [building an aggregate](../samples/spring-sample/tutorials/building-an-aggregate.md), [building projections](../samples/spring-sample/tutorials/building-projections.md), and [client composition](../inlet/how-to/how-to.md) for the concrete integration paths.
 
-## Verify the Result
+## Verify the result
 
 Use more than successful compilation to judge completion.
 
