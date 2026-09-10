@@ -148,19 +148,19 @@
 @media (forced-colors: active) {
     [data-rf-theme] {
         color-scheme: light dark;
-        --rf-color-surface-void: Canvas;
-        --rf-color-surface-glass: Canvas;
-        --rf-color-surface-elevated: Canvas;
-        --rf-color-action-primary: LinkText;
-        --rf-color-action-hover: Highlight;
-        --rf-color-action-pressed: LinkText;
-        --rf-color-text-primary: CanvasText;
-        --rf-color-text-secondary: CanvasText;
-        --rf-color-text-muted: GrayText;
-        --rf-color-text-accent: LinkText;
-        --rf-color-status-warning: CanvasText;
-        --rf-color-status-error: CanvasText;
-        --rf-color-status-success: CanvasText;
-        --rf-color-focus-ring: Highlight;
+        --rf-color-surface-void: Canvas !important;
+        --rf-color-surface-glass: Canvas !important;
+        --rf-color-surface-elevated: Canvas !important;
+        --rf-color-action-primary: LinkText !important;
+        --rf-color-action-hover: Highlight !important;
+        --rf-color-action-pressed: LinkText !important;
+        --rf-color-text-primary: CanvasText !important;
+        --rf-color-text-secondary: CanvasText !important;
+        --rf-color-text-muted: GrayText !important;
+        --rf-color-text-accent: LinkText !important;
+        --rf-color-status-warning: CanvasText !important;
+        --rf-color-status-error: CanvasText !important;
+        --rf-color-status-success: CanvasText !important;
+        --rf-color-focus-ring: Highlight !important;
     }
 }

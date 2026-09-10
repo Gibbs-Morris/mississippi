@@ -56,6 +56,10 @@ Set CSS custom properties on the provider through its native `style` attribute.
 No global selector override is required. Override the semantic tokens needed by
 the brand and verify contrast in each used state.
 
+Use normal declarations for branded color tokens. In forced-colors mode,
+the system-color mappings take priority over normal inline branding. Typography,
+spacing, and other non-color tokens remain customizable.
+
 | Purpose | Token examples |
 | --- | --- |
 | Surfaces | `--rf-color-surface-void`, `--rf-color-surface-elevated`, `--rf-color-surface-glass` |
