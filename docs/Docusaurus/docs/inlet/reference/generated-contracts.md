@@ -115,7 +115,9 @@ A generated command action starts an HTTP operation through a generated effect. 
 
 Use command state to show progress and the command's result. Use projection state to display the read model. A successful command response and a refreshed projection are separate observations; keep the loading and error presentation for each tied to its own state.
 
-The projection update path is:
+One possible successful projection update sequence is shown below. The arrows illustrate the data path rather than an enforced ordering between concurrent HTTP reads:
+
+Initial, refresh, and notification-triggered reads can complete out of order. The projection reducers assign the returned data and version as responses arrive. If a view requires monotonic versions, supply application coordination that serializes its reads or rejects older results before they update state.
 
 ```mermaid
 sequenceDiagram
