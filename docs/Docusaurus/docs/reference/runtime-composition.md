@@ -40,6 +40,8 @@ Brooks uses `BrookStreamingDefaults.OrleansStreamProviderName` unless configured
 
 The runtime starts with a copy of the host's service descriptors. Native callbacks receive an `ISiloBuilder` adapter with that staged collection and the original host `Configuration`. Their registrations become visible to the host only after terminal composition succeeds.
 
+The staged graph retains the runtime attachment reservation and its nonterminal scope identity. Calling `UseMississippi(...)` again through a native callback or a wrapper over its staged services is rejected as duplicate attachment, even after clearing staged registrations; successful publication keeps one runtime attachment marker.
+
 If application or native configuration throws, the staged scope closes, its changes are discarded, and the attachment reservation is released. A fresh terminal callback can retry. Catching a native callback exception inside application configuration does not make that partially configured scope valid: terminal validation still rejects it.
 
 Captured runtime builders and native adapters cannot modify the staged service collection after the terminal scope closes. Registration callbacks are synchronous; asynchronous initialization belongs in hosted services or Orleans lifecycle participants.

@@ -30,7 +30,8 @@ public static class RuntimeHostingRegistrations
     {
         ArgumentNullException.ThrowIfNull(siloBuilder);
         ArgumentNullException.ThrowIfNull(configure);
-        if (siloBuilder.Services.Any(descriptor => descriptor.ServiceType == typeof(RuntimeAttachment)))
+        if (siloBuilder.Services is RuntimeServiceCollection ||
+            siloBuilder.Services.Any(descriptor => descriptor.ServiceType == typeof(RuntimeAttachment)))
         {
             throw new BuilderValidationException(
             [
@@ -41,9 +42,9 @@ public static class RuntimeHostingRegistrations
             ]);
         }
 
-        ServiceCollection stagedServices = [];
-        RuntimeBuilder runtime = new(siloBuilder, stagedServices);
         ServiceDescriptor attachment = ServiceDescriptor.Singleton(RuntimeAttachment.Instance);
+        RuntimeServiceCollection stagedServices = new(attachment);
+        RuntimeBuilder runtime = new(siloBuilder, stagedServices);
         siloBuilder.Services.Add(attachment);
         bool completed = false;
         try
@@ -68,7 +69,8 @@ public static class RuntimeHostingRegistrations
 
             runtime.Complete();
             siloBuilder.Services.Clear();
-            foreach (ServiceDescriptor descriptor in stagedServices)
+            foreach (ServiceDescriptor descriptor in stagedServices.Where(descriptor =>
+                         descriptor.ServiceType != typeof(RuntimeAttachment)))
             {
                 siloBuilder.Services.Add(descriptor);
             }
