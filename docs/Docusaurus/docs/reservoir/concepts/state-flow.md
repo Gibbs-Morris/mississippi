@@ -43,6 +43,8 @@ For one dispatched action, the store consumes one feature root's effect stream b
 
 An effect can yield an action synchronously before reaching an incomplete await. The store dispatches that yielded action immediately, so its reduction and listener notifications can occur before the original `Dispatch` returns. Account for this reentrant ordering in calling code.
 
+The store reads a feature's current state when it reaches that feature's effect root, then supplies that captured value to every matching effect in that root. Earlier roots can emit actions before later roots capture their state, and later effects within one root retain that root's earlier value. Carry stable request inputs in the action and make any need to reread current state explicit.
+
 ## Guarantees
 
 - By default, `AddReservoir()` registers `IStore` with scoped lifetime, and features in the same scope share that store. Its `TryAddScoped` registration preserves an existing `IStore` descriptor; an application override therefore supplies its own lifetime.
