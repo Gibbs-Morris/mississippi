@@ -48,7 +48,7 @@ Memoization stores one cache entry atomically. Concurrent callers can evaluate a
 
 ## Constraints and Errors
 
-- Store selection requires registered feature types with unique feature keys.
+- Validate that registered feature keys are unique. Store construction assigns state by key, so a later duplicate replaces the earlier state and can misassociate its processing registrations. `GetState<TState>()` for the displaced type can then throw `InvalidCastException`.
 - A null store or selector is rejected with `ArgumentNullException` by the store extension methods.
 - `GetState<TState>()` reports an unregistered feature with `InvalidOperationException`.
 - `Memoize.Create` rejects a null selector with `ArgumentNullException`.
