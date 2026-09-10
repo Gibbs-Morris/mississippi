@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
+using Mississippi.Hosting.Abstractions;
 using Mississippi.Hosting.Client;
 using Mississippi.Reservoir.Abstractions;
 
@@ -97,7 +98,8 @@ public sealed class DomainClientRegistrationGeneratorTests
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Runtime.dll")),
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Collections.dll")),
             MetadataReference.CreateFromFile(RuntimeAssembly(runtimeDirectory, "System.Collections.Immutable.dll")),
-            MetadataReference.CreateFromFile(typeof(MississippiClientBuilder).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(ClientBuilder).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(IMississippiBuilder).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(IReservoirBuilder).Assembly.Location),
         ];
         string netstandardPath = RuntimeAssembly(runtimeDirectory, "netstandard.dll");
@@ -155,11 +157,8 @@ public sealed class DomainClientRegistrationGeneratorTests
             .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("AddTestAppDomainClient", generatedCode, StringComparison.Ordinal);
-        Assert.Contains(
-            "public static MississippiClientBuilder AddTestAppDomainClient",
-            generatedCode,
-            StringComparison.Ordinal);
-        Assert.Contains("this MississippiClientBuilder client", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("public static ClientBuilder AddTestAppDomainClient", generatedCode, StringComparison.Ordinal);
+        Assert.Contains("this ClientBuilder client", generatedCode, StringComparison.Ordinal);
         Assert.Contains("client.Reservoir(reservoir =>", generatedCode, StringComparison.Ordinal);
         Assert.Contains("reservoir.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("reservoir.AddMoneyTransferSagaFeature();", generatedCode, StringComparison.Ordinal);
@@ -191,10 +190,7 @@ public sealed class DomainClientRegistrationGeneratorTests
             .GetText(TestContext.Current.CancellationToken)
             .ToString();
         Assert.Contains("AddCoreLogicClient", generatedCode, StringComparison.Ordinal);
-        Assert.Contains(
-            "public static MississippiClientBuilder AddCoreLogicClient",
-            generatedCode,
-            StringComparison.Ordinal);
+        Assert.Contains("public static ClientBuilder AddCoreLogicClient", generatedCode, StringComparison.Ordinal);
         Assert.Contains("reservoir.AddOrderAggregateFeature();", generatedCode, StringComparison.Ordinal);
         Assert.Contains("return client;", generatedCode, StringComparison.Ordinal);
         AssertHasNoCompilationErrors(outputCompilation);

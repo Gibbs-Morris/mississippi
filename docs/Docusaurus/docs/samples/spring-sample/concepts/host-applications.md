@@ -216,7 +216,7 @@ builder.Services.AddScoped(sp =>
     };
 });
 
-builder.AddMississippiClient(client =>
+builder.UseMississippi(client =>
 {
     client.AddMississippiSamplesSpringDomainClient();
     client.Reservoir(reservoir =>
@@ -244,7 +244,7 @@ builder.AddMississippiClient(client =>
 await builder.Build().RunAsync();
 ```
 
-The client now starts with `builder.AddMississippiClient(...)`, uses the generated `AddMississippiSamplesSpringDomainClient()` domain compositor on `MississippiClientBuilder`, and then drops into `client.Reservoir(...)` for hand-written UI features plus Inlet registrations. The client still never directly calls Orleans grains or knows about event-sourcing internals.
+The client now starts with `builder.UseMississippi(...)`, uses the generated `AddMississippiSamplesSpringDomainClient()` domain compositor on `ClientBuilder`, and then drops into `client.Reservoir(...)` for hand-written UI features plus Inlet registrations. The client still never directly calls Orleans grains or knows about event-sourcing internals.
 
 ([Spring.Client/Program.cs](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Client/Program.cs))
 
@@ -272,7 +272,7 @@ Mississippi's generators produce builder-based client feature registrations and 
 | `Add{Aggregate}AggregateFeature()`, `Add{Saga}SagaFeature()`, `AddProjectionsFeature()` | Client | Reservoir-level client feature registrations for generated state, reducers, effects, and projection support |
 | `Add{Domain}Client()` | Client | Mississippi client-builder convenience method that aggregates the generated Reservoir-level feature registrations |
 
-Gateway generators can emit a domain-level convenience method, but Spring.Gateway currently composes the generated mapper registrations explicitly in `Program.cs`. The client-side feature generators still target `IReservoirBuilder`, while the domain client generator now targets `MississippiClientBuilder` and routes its work through `client.Reservoir(...)`. Spring uses the generated domain client method for the write-side and projection slice, then adds hand-written UI and Inlet composition on the same Reservoir builder.
+Gateway generators can emit a domain-level convenience method, but Spring.Gateway currently composes the generated mapper registrations explicitly in `Program.cs`. The client-side feature generators still target `IReservoirBuilder`, while the domain client generator now targets `ClientBuilder` and routes its work through `client.Reservoir(...)`. Spring uses the generated domain client method for the write-side and projection slice, then adds hand-written UI and Inlet composition on the same Reservoir builder.
 
 `Spring.AppHost` is separate from those generated methods. It is an Aspire entry point that provisions Azurite, Cosmos emulator resources, Orleans configuration, and project startup order for local development.
 
@@ -293,7 +293,7 @@ The hosts are replaceable shells. The domain is the permanent asset. You could s
 
 ## Summary
 
-Mississippi's source generators transform domain annotations into infrastructure wiring. Spring.Runtime stays a thin Orleans host, Spring.Gateway composes generated gateway mapper registrations around its transport infrastructure, and Spring.Client now starts with `AddMississippiClient()`, uses the generated domain-level client method, and composes the remaining client features through `client.Reservoir(...)`.
+Mississippi's source generators transform domain annotations into infrastructure wiring. Spring.Runtime stays a thin Orleans host, Spring.Gateway composes generated gateway mapper registrations around its transport infrastructure, and Spring.Client now starts with `UseMississippi(...)`, uses the generated domain-level client method, and composes the remaining client features through `client.Reservoir(...)`.
 
 ## Next Steps
 
