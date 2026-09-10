@@ -80,11 +80,13 @@ builder.Services.AddInletServer(options =>
 });
 ```
 
-`GeneratedApiAuthorizationMode` is in `Mississippi.Inlet.Gateway`. Its default is `Disabled`; selecting force mode supplies authorization defaults for generated endpoints. Review `[GenerateAuthorization]` metadata on aggregates, commands, projections, and sagas because those contracts can specify their own policies, roles, and schemes.
+`GeneratedApiAuthorizationMode` is in `Mississippi.Inlet.Gateway`, with default `Disabled`. Put `[GenerateAuthorization(Policy = "application-access")]` metadata on each protected generated command, projection, and saga, or use aggregate-level metadata that covers its controller, and verify every action. Force mode adds a default controller filter only when neither the controller nor any action has explicit authorization metadata. A mixed controller therefore needs explicit protection for its otherwise-unannotated actions. The configuration above complements that deliberate contract coverage.
+
+Protect an exposed MCP endpoint and its tools separately through the application, or restrict them to a trusted local development environment. Generated controller and Inlet subscription authorization settings apply to those interfaces; MCP tools invoke domain grains directly.
 
 The hub applies projection authorization when a client subscribes. Its authorization callback receives the user and a null resource. Use these policies for identity-based access; entity-specific permissions require an application boundary that receives and checks the requested entity ID before granting access.
 
-Verify anonymous and insufficiently privileged requests as well as successful access. [Spring auth-proof mode](../../samples/spring-sample/how-to/auth-proof-mode.md) demonstrates HTTP `401`/`403` checks and allowed/denied projection subscriptions with development identities. Configure the deployment's real authentication mechanism for an exposed application.
+Verify anonymous and insufficiently privileged requests as well as successful access. [Spring auth-proof mode](../../samples/spring-sample/how-to/auth-proof-mode.md) provides executable HTTP `401`/`403` checks with development identities. Add application-specific SignalR integration tests for allowed and denied subscriptions. Configure the deployment's real authentication mechanism for an exposed application.
 
 ## Projection Identity Across The Boundary
 
