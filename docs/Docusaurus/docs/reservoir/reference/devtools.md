@@ -63,6 +63,8 @@ Strict restoration rejects the whole proposed restore when a registered feature 
 
 Strict validation applies to JSON restoration through `JUMP_TO_STATE`, `JUMP_TO_ACTION`, and the final imported snapshot from `IMPORT_STATE`. `RESET` restores registered initial state and `ROLLBACK` restores the in-memory committed snapshot through system actions; those operations do not use the JSON strict-validation path.
 
+Preserve the exact casing of top-level feature keys in restoration JSON. Their lookup uses case-sensitive `JsonElement.TryGetProperty`; serializer case-insensitivity applies inside each feature value. A key with different casing is treated as missing under the selected restoration mode.
+
 ## Initialization Diagnostics
 
 The root initializer starts observation after rendering and captures the initial rollback point. A later ordinary `ActionDispatchedEvent` triggers connection and reporting. The registration also supplies a hosted initialization checker; in hosts that execute it, the default check delay is five seconds. An explicit `ThrowOnMissingInitializer` value controls its response; otherwise it throws in an injected Development host environment and logs a warning in other cases.
