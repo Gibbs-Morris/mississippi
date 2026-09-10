@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,8 @@ namespace Mississippi.Hosting.Runtime;
 /// <remarks>Public so application startup has one validated runtime composition entry point.</remarks>
 public static class RuntimeHostingRegistrations
 {
+    private static ConditionalWeakTable<IServiceCollection, RuntimeAttachment> HostAttachments { get; } = new();
+
     /// <summary>
     ///     Configures, validates, and attaches Mississippi runtime services once for this host.
     /// </summary>
@@ -36,7 +39,8 @@ public static class RuntimeHostingRegistrations
         ArgumentNullException.ThrowIfNull(configure);
         ThrowIfHostServicesReadOnly(siloBuilder.Services);
         if (siloBuilder.Services is RuntimeServiceCollection ||
-            siloBuilder.Services.Any(descriptor => descriptor.ServiceType == typeof(RuntimeAttachment)))
+            siloBuilder.Services.Any(descriptor => descriptor.ServiceType == typeof(RuntimeAttachment)) ||
+            !HostAttachments.TryAdd(siloBuilder.Services, RuntimeAttachment.Instance))
         {
             throw new BuilderValidationException(
             [
@@ -48,12 +52,13 @@ public static class RuntimeHostingRegistrations
         }
 
         ServiceDescriptor attachment = ServiceDescriptor.Singleton(RuntimeAttachment.Instance);
-        RuntimeServiceCollection stagedServices = new(attachment);
-        RuntimeBuilder runtime = new(siloBuilder, stagedServices);
-        siloBuilder.Services.Add(attachment);
         bool completed = false;
+        RuntimeBuilder? runtime = null;
         try
         {
+            RuntimeServiceCollection stagedServices = new(attachment);
+            runtime = new(siloBuilder, stagedServices);
+            siloBuilder.Services.Add(attachment);
             ServiceDescriptor[] originalHostServices = siloBuilder.Services.ToArray();
             foreach (ServiceDescriptor descriptor in originalHostServices.Where(descriptor =>
                          !ReferenceEquals(descriptor, attachment)))
@@ -91,10 +96,23 @@ public static class RuntimeHostingRegistrations
         {
             if (!completed)
             {
-                runtime.Abort();
-                if (!siloBuilder.Services.IsReadOnly)
+                try
                 {
-                    siloBuilder.Services.Remove(attachment);
+                    runtime?.Abort();
+                    if (!siloBuilder.Services.IsReadOnly)
+                    {
+                        for (int index = siloBuilder.Services.Count - 1; index >= 0; index--)
+                        {
+                            if (siloBuilder.Services[index].ServiceType == typeof(RuntimeAttachment))
+                            {
+                                siloBuilder.Services.RemoveAt(index);
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    HostAttachments.Remove(siloBuilder.Services);
                 }
             }
         }

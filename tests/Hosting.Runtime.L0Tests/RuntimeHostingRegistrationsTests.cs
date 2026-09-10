@@ -20,6 +20,51 @@ namespace Mississippi.Hosting.Runtime.L0Tests;
 public sealed class RuntimeHostingRegistrationsTests
 {
     /// <summary>
+    ///     Clearing the original host cannot permit recursive attachment through application or native callbacks.
+    /// </summary>
+    /// <param name="nativeCallback">Whether recursion occurs in queued native configuration.</param>
+    /// <param name="wrapHost">Whether another silo builder wraps the original host services.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void ClearedOriginalHostCannotAttachRecursively(
+        bool nativeCallback,
+        bool wrapHost
+    )
+    {
+        TestSiloBuilder silo = new();
+        ISiloBuilder target = wrapHost
+            ? Mock.Of<ISiloBuilder>(candidate =>
+                (candidate.Services == silo.Services) && (candidate.Configuration == silo.Configuration))
+            : silo;
+        bool invoked = false;
+        Action recurse = () =>
+        {
+            silo.Services.Clear();
+            target.UseMississippi(_ => invoked = true);
+        };
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            silo.UseMississippi(runtime =>
+            {
+                if (nativeCallback)
+                {
+                    runtime.ConfigureSilo(_ => recurse());
+                }
+                else
+                {
+                    recurse();
+                }
+            }));
+        Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
+        Assert.False(invoked);
+        Assert.Empty(silo.Services);
+        silo.UseMississippi(_ => { });
+        Assert.Single(silo.Services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
+    }
+
+    /// <summary>
     ///     The staged native adapter remains nonterminal even when advanced composition clears its descriptors.
     /// </summary>
     /// <param name="wrapSilo">Whether to wrap the staged silo in another implementation.</param>
@@ -47,6 +92,23 @@ public sealed class RuntimeHostingRegistrationsTests
         Assert.Empty(silo.Services);
         silo.UseMississippi(_ => { });
         Assert.Single(silo.Services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
+    }
+
+    /// <summary>
+    ///     A successfully attached host remains terminal after its service descriptors are cleared.
+    /// </summary>
+    [Fact]
+    public void ClearedSuccessfullyAttachedHostCannotAttachAgain()
+    {
+        TestSiloBuilder silo = new();
+        silo.UseMississippi(_ => { });
+        silo.Services.Clear();
+        bool invoked = false;
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            silo.UseMississippi(_ => invoked = true));
+        Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
+        Assert.False(invoked);
+        Assert.Empty(silo.Services);
     }
 
     /// <summary>
@@ -411,6 +473,48 @@ public sealed class RuntimeHostingRegistrationsTests
         Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
         Assert.Empty(silo.Services);
         silo.UseMississippi(_ => { });
+    }
+
+    /// <summary>
+    ///     Rejected host descriptor rewrites remove all role reservations and preserve application registrations.
+    /// </summary>
+    /// <param name="replaceReservation">Whether to replace the original reservation instead of duplicating it.</param>
+    /// <param name="keyedReservation">Whether the rewritten reservation uses a service key.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void RewrittenReservationsDoNotBlockRetry(
+        bool replaceReservation,
+        bool keyedReservation
+    )
+    {
+        TestSiloBuilder silo = new();
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() => silo.UseMississippi(_ =>
+        {
+            ServiceDescriptor reservation = Assert.Single(silo.Services);
+            if (replaceReservation)
+            {
+                silo.Services.Remove(reservation);
+            }
+
+            if (keyedReservation)
+            {
+                silo.Services.AddKeyedSingleton(reservation.ServiceType, "copy", reservation.ImplementationInstance!);
+            }
+            else
+            {
+                silo.Services.AddSingleton(reservation.ServiceType, reservation.ImplementationInstance!);
+            }
+
+            silo.Services.AddSingleton(TimeProvider.System);
+        }));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesChanged, Assert.Single(exception.Diagnostics).Code);
+        Assert.DoesNotContain(silo.Services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
+        Assert.Equal(typeof(TimeProvider), Assert.Single(silo.Services).ServiceType);
+        silo.UseMississippi(_ => { });
+        Assert.Single(silo.Services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
     }
 
     /// <summary>
