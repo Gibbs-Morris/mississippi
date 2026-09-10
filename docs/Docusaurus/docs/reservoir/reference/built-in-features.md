@@ -51,6 +51,8 @@ Use these actions for application navigation. The effect accepts relative applic
 
 `NavigationState` uses feature key `reservoir:navigation` and exposes `CurrentUri`, `PreviousUri`, `IsNavigationIntercepted`, and `NavigationCount`. The location reducer moves the current URI to previous, records the new URI/interception flag, and increments the count.
 
+For `SetQueryParamsAction`, use Blazor's supported query values: `bool`, `DateOnly`, `DateTime`, `decimal`, `double`, `float`, `Guid`, `int`, `long`, and `string`, including their supported nullable and array forms. The [Blazor navigation reference](https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/navigation?view=aspnetcore-10.0#query-strings) defines this contract. Validate values before dispatch: unsupported object types are rejected by Blazor, and the live effect boundary catches that exception without producing a navigation error action.
+
 ## Lifecycle Milestones
 
 `LifecycleState` uses feature key `reservoir:lifecycle`. It starts in `NotStarted` with null timestamps.
