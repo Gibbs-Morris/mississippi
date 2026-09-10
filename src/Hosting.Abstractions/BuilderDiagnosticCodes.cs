@@ -25,4 +25,9 @@ public static class BuilderDiagnosticCodes
     ///     Identifies direct host service changes made while its staged composition callback was running.
     /// </summary>
     public const string HostServicesChanged = "MSB004";
+
+    /// <summary>
+    ///     Identifies a host service collection that cannot accept terminal composition.
+    /// </summary>
+    public const string HostServicesReadOnly = "MSB005";
 }

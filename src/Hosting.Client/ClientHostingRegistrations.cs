@@ -27,7 +27,8 @@ public static class ClientHostingRegistrations
     ///     collection reject attachment and remain on the host; staged client registrations are discarded.
     /// </remarks>
     /// <exception cref="BuilderValidationException">
-    ///     The host or composition has already been attached, or host services changed during configuration.
+    ///     The host or composition has already been attached, host services are read-only, or they changed during
+    ///     configuration.
     /// </exception>
     public static WebAssemblyHostBuilder UseMississippi(
         this WebAssemblyHostBuilder builder,
@@ -36,6 +37,7 @@ public static class ClientHostingRegistrations
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
+        ThrowIfHostServicesReadOnly(builder.Services);
         if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(ClientAttachment)))
         {
             throw new BuilderValidationException(
@@ -63,6 +65,7 @@ public static class ClientHostingRegistrations
 
             client = new(stagedServices);
             configure(client);
+            ThrowIfHostServicesReadOnly(builder.Services);
             IReadOnlyList<BuilderDiagnostic> diagnostics = client.Validate();
             if (diagnostics.Count > 0)
             {
@@ -96,8 +99,27 @@ public static class ClientHostingRegistrations
             if (!completed)
             {
                 client?.Abort();
-                builder.Services.Remove(attachment);
+                if (!builder.Services.IsReadOnly)
+                {
+                    builder.Services.Remove(attachment);
+                }
             }
+        }
+    }
+
+    private static void ThrowIfHostServicesReadOnly(
+        IServiceCollection services
+    )
+    {
+        if (services.IsReadOnly)
+        {
+            throw new BuilderValidationException(
+            [
+                new(
+                    BuilderDiagnosticCodes.HostServicesReadOnly,
+                    "Host services are read-only and cannot accept Mississippi client composition.",
+                    "Compose Mississippi before the host services become read-only; use a fresh host if they are already frozen."),
+            ]);
         }
     }
 }

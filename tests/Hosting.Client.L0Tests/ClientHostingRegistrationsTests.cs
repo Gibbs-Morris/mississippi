@@ -255,6 +255,68 @@ public sealed class ClientHostingRegistrationsTests
     }
 
     /// <summary>
+    ///     Freezing captured host services cannot mask callback failures or report a duplicate on the next attempt.
+    /// </summary>
+    /// <param name="throwFromCallback">Whether the callback also throws after freezing host services.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReadOnlyHostDuringConfigurationReportsTheCauseAndClosesTheScope(
+        bool throwFromCallback
+    )
+    {
+        ServiceCollection services = [];
+        WebAssemblyHostBuilder host = CreateHost(services);
+        ClientBuilder? captured = null;
+        InvalidOperationException expected = new("Application configuration failed.");
+        Exception? exception = Record.Exception(() => host.UseMississippi(client =>
+        {
+            captured = client;
+            client.Reservoir(_ => { });
+            services.MakeReadOnly();
+            if (throwFromCallback)
+            {
+                throw expected;
+            }
+        }));
+        if (throwFromCallback)
+        {
+            Assert.Same(expected, exception);
+        }
+        else
+        {
+            BuilderValidationException validation = Assert.IsType<BuilderValidationException>(exception);
+            Assert.Equal(BuilderDiagnosticCodes.HostServicesReadOnly, Assert.Single(validation.Diagnostics).Code);
+        }
+
+        Assert.NotNull(captured);
+        Assert.True(captured.Services.IsReadOnly);
+        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IStore));
+        bool invoked = false;
+        BuilderValidationException retry = Assert.Throws<BuilderValidationException>(() =>
+            host.UseMississippi(_ => invoked = true));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesReadOnly, Assert.Single(retry.Diagnostics).Code);
+        Assert.False(invoked);
+    }
+
+    /// <summary>
+    ///     An already frozen host fails before reservation or application configuration.
+    /// </summary>
+    [Fact]
+    public void ReadOnlyHostIsRejectedBeforeConfiguration()
+    {
+        ServiceCollection services = [];
+        services.MakeReadOnly();
+        WebAssemblyHostBuilder host = CreateHost(services);
+        bool invoked = false;
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            host.UseMississippi(_ => invoked = true));
+        Assert.Equal(BuilderDiagnosticCodes.HostServicesReadOnly, Assert.Single(exception.Diagnostics).Code);
+        Assert.False(invoked);
+        Assert.Empty(services);
+    }
+
+    /// <summary>
     ///     Recursive terminal attachment is also a duplicate and rolls back the reservation.
     /// </summary>
     [Fact]
