@@ -23,6 +23,10 @@ public static class RuntimeHostingRegistrations
     /// <param name="siloBuilder">The owning Orleans silo builder.</param>
     /// <param name="configure">The synchronous runtime composition callback.</param>
     /// <returns>The original silo builder.</returns>
+    /// <remarks>
+    ///     Register services through the runtime builder or its staged native callback. Direct changes to the captured
+    ///     host service collection reject attachment and remain on the host; staged runtime registrations are discarded.
+    /// </remarks>
     public static ISiloBuilder UseMississippi(
         this ISiloBuilder siloBuilder,
         Action<RuntimeBuilder> configure
@@ -49,13 +53,15 @@ public static class RuntimeHostingRegistrations
         bool completed = false;
         try
         {
-            foreach (ServiceDescriptor descriptor in siloBuilder.Services.Where(descriptor =>
+            ServiceDescriptor[] originalHostServices = siloBuilder.Services.ToArray();
+            foreach (ServiceDescriptor descriptor in originalHostServices.Where(descriptor =>
                          !ReferenceEquals(descriptor, attachment)))
             {
                 ((IServiceCollection)stagedServices).Add(descriptor);
             }
 
             configure(runtime);
+            ThrowIfHostServicesChanged(siloBuilder.Services, originalHostServices);
             IReadOnlyList<BuilderDiagnostic> diagnostics = runtime.Validate();
             if (diagnostics.Count > 0)
             {
@@ -67,6 +73,7 @@ public static class RuntimeHostingRegistrations
                 runtime.ApplyToSilo(siloBuilder);
             }
 
+            ThrowIfHostServicesChanged(siloBuilder.Services, originalHostServices);
             runtime.Complete();
             siloBuilder.Services.Clear();
             foreach (ServiceDescriptor descriptor in stagedServices.Where(descriptor =>
@@ -86,6 +93,23 @@ public static class RuntimeHostingRegistrations
                 runtime.Abort();
                 siloBuilder.Services.Remove(attachment);
             }
+        }
+    }
+
+    private static void ThrowIfHostServicesChanged(
+        IServiceCollection services,
+        ServiceDescriptor[] originalHostServices
+    )
+    {
+        if (!services.SequenceEqual(originalHostServices))
+        {
+            throw new BuilderValidationException(
+            [
+                new(
+                    BuilderDiagnosticCodes.HostServicesChanged,
+                    "Host services changed during Mississippi runtime composition.",
+                    "Register services through runtime.Services or the staged ConfigureSilo(...) callback, or configure the host before UseMississippi(...)."),
+            ]);
         }
     }
 }

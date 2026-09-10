@@ -40,6 +40,8 @@ Brooks uses `BrookStreamingDefaults.OrleansStreamProviderName` unless configured
 
 The runtime starts with a copy of the host's service descriptors. Native callbacks receive an `ISiloBuilder` adapter with that staged collection and the original host `Configuration`. Their registrations become visible to the host only after terminal composition succeeds.
 
+Inside composition, register services through `runtime.Services` or the staged silo passed to `ConfigureSilo(...)`. Configure the outer host's services before `UseMississippi(...)`. Direct changes to the captured host collection during either callback reject attachment with `MSB004` instead of being overwritten. Those direct changes remain on the host, the staged graph closes without attaching, and a fresh callback can retry. Application callback mutations are detected before automatic native application begins.
+
 The staged graph retains the runtime attachment reservation and its nonterminal scope identity. Calling `UseMississippi(...)` again through a native callback or a wrapper over its staged services is rejected as duplicate attachment, even after clearing staged registrations; successful publication keeps one runtime attachment marker.
 
 If application or native configuration throws, the staged scope closes, its changes are discarded, and the attachment reservation is released. A fresh terminal callback can retry. Catching a native callback exception inside application configuration does not make that partially configured scope valid: terminal validation still rejects it.
@@ -57,6 +59,7 @@ Staging covers service descriptors. The forwarded configuration and existing ser
 | `MSB001` | Duplicate or recursive runtime attachment | Use one runtime terminal callback for the host |
 | `MSB002` | The runtime builder has already attached | Configure it inside the terminal callback |
 | `MSB003` | The scope closed without attaching | Retry with a fresh scope |
+| `MSB004` | Direct changes to captured host services during composition | Use `runtime.Services` or the staged native callback, or configure the host before composition |
 | `MSB101` | The supplied silo has different services or configuration from the owning host | Pass the owning silo to `ApplyToSilo(...)` |
 | `MSB102` | Native configuration was applied twice | Apply explicitly once or rely on terminal automatic application |
 | `MSB103` | A native callback failed, leaving an incomplete scope | Correct the callback and retry with a fresh scope |
