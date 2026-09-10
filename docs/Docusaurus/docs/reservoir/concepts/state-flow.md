@@ -64,6 +64,8 @@ System restore/reset actions use the store's dedicated restoration path. Their b
 
 Keep store subscription callbacks non-throwing. If an `IStore.Subscribe` callback throws, `Dispatch` propagates that exception after reduction and `ActionDispatchedEvent`; it interrupts the remaining listeners and prevents effect triggering for that dispatch.
 
+Keep reducers total for their supported inputs and represent expected outcomes as state. A reducer exception interrupts dispatch during reduction: earlier feature updates can already be stored, while the post-dispatch event, listener notification, and effect triggering have not run. Treat this as interrupted processing when diagnosing a failed dispatch.
+
 ## Trade-offs
 
 A feature introduces a few named artifacts—state, actions, reducers, and selectors. That structure gives a reviewable test boundary and reusable display logic. Simple selectors remain inexpensive to read; memoization can reuse a derived result while its input references stay the same.
