@@ -44,7 +44,7 @@ The action namespace is `Mississippi.Reservoir.Client.BuiltIn.Navigation.Actions
 | `NavigateAction` | `Uri`, `ForceLoad = false` | Navigate through `NavigationManager` |
 | `ReplaceRouteAction` | `Uri`, `ForceLoad = false` | Navigate while replacing the history entry |
 | `SetQueryParamsAction` | `Parameters`, `ReplaceHistory = true` | Update query parameters on the current URI |
-| `ScrollToAnchorAction` | `AnchorId`, `ReplaceHistory = false` | Navigate to the current page's fragment |
+| `ScrollToAnchorAction` | `AnchorId` without `#`, `ReplaceHistory = false` | Navigate to the current page's fragment |
 | `LocationChangedAction` | `Location`, `IsNavigationIntercepted` | Record an observed browser location |
 
 Use these actions for application navigation. The effect accepts relative application paths and absolute URIs on the same origin; use normal links for external destinations. Navigation follows Blazor's `NavigationManager` behavior, including history and force-load semantics.
