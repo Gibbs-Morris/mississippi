@@ -39,6 +39,8 @@ An `AdditionalOptions` entry with the same key as a typed option replaces that k
 
 Use the [WebAssembly setup recipe](../how-to/enable-devtools.md) to select `Always` or `Off` from `WebAssemblyHostBuilder.HostEnvironment` explicitly. Keep service registration available for the initializer even when the selected mode is `Off`.
 
+Prefer `Off` outside controlled development or diagnostic environments. Selecting `Always` permits ordinary action payloads and feature-state snapshots to reach the browser extension, which can also request local restoration. Enable it deliberately, choose what data may be exposed, and supply appropriate sanitizers for that environment.
+
 ## Payloads
 
 The normal action payload includes the action type name and JSON serialized from the concrete action type. The normal state payload maps feature keys to JSON serialized from each concrete state type.
