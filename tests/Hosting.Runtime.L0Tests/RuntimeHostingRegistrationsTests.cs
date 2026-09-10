@@ -20,6 +20,36 @@ namespace Mississippi.Hosting.Runtime.L0Tests;
 public sealed class RuntimeHostingRegistrationsTests
 {
     /// <summary>
+    ///     The staged native adapter remains nonterminal even when advanced composition clears its descriptors.
+    /// </summary>
+    /// <param name="wrapSilo">Whether to wrap the staged silo in another implementation.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ClearedStagedServicesDoNotPermitRecursiveAttachment(
+        bool wrapSilo
+    )
+    {
+        TestSiloBuilder silo = new();
+        bool invoked = false;
+        BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+            silo.UseMississippi(runtime => runtime.ConfigureSilo(staged =>
+            {
+                staged.Services.Clear();
+                ISiloBuilder target = wrapSilo
+                    ? Mock.Of<ISiloBuilder>(candidate =>
+                        (candidate.Services == staged.Services) && (candidate.Configuration == staged.Configuration))
+                    : staged;
+                target.UseMississippi(_ => invoked = true);
+            })));
+        Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
+        Assert.False(invoked);
+        Assert.Empty(silo.Services);
+        silo.UseMississippi(_ => { });
+        Assert.Single(silo.Services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
+    }
+
+    /// <summary>
     ///     Completed runtime builders reject further native configuration without executing it.
     /// </summary>
     [Fact]
@@ -186,6 +216,33 @@ public sealed class RuntimeHostingRegistrationsTests
                 Assert.Single(lateConfiguration.Diagnostics).Code);
         });
         other.UseMississippi(_ => { });
+    }
+
+    /// <summary>
+    ///     Native callbacks cannot attach another runtime through the staged silo or a wrapper over its services.
+    /// </summary>
+    /// <param name="wrapSilo">Whether to wrap the staged silo in another interface implementation.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeCallbackRejectsNestedAttachment(
+        bool wrapSilo
+    )
+    {
+        TestSiloBuilder silo = new();
+        bool invoked = false;
+        silo.UseMississippi(runtime => runtime.ConfigureSilo(staged =>
+        {
+            ISiloBuilder target = wrapSilo
+                ? Mock.Of<ISiloBuilder>(candidate =>
+                    (candidate.Services == staged.Services) && (candidate.Configuration == staged.Configuration))
+                : staged;
+            BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
+                target.UseMississippi(_ => invoked = true));
+            Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
+        }));
+        Assert.False(invoked);
+        Assert.Single(silo.Services, descriptor => descriptor.ServiceType == typeof(RuntimeAttachment));
     }
 
     /// <summary>
