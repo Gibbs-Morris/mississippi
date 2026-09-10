@@ -41,6 +41,8 @@ The store handles `ISystemAction` restoration/reset before building the user mid
 
 Handle middleware failures deliberately. An exception before `nextAction` prevents downstream dispatch; one after `nextAction` returns reaches the caller after reducers have run and effects may have started. Inspect the actual outcome before retrying an action, because a caller-visible exception can follow completed downstream work.
 
+For recognized reset and restore system actions, observe `ActionDispatchingEvent` followed by `StateRestoredEvent`. Use `StateRestoredEvent` as the restoration completion boundary; those operations use the dedicated path instead of emitting the ordinary `ActionDispatchedEvent`.
+
 ## Source and Verification
 
 - [IMiddleware](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/IMiddleware.cs).
