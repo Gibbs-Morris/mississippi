@@ -224,7 +224,7 @@ internal sealed class AccountClosedProjectionReducer : EventReducerBase<AccountC
 {
     /// <inheritdoc />
     protected override BankAccountBalanceProjection ReduceCore(
-        BankAccountBalanceProjection state,
+        BankAccountBalanceProjection? state,
         AccountClosed eventData
     )
     {
