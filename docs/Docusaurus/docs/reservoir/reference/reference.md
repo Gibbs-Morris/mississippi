@@ -50,6 +50,8 @@ The `Services` property is marked advanced in the public contract. The normal di
 
 Its staged service collection is writable during that callback and becomes read-only when the callback exits, including on failure. Complete feature registration inside the callback; retaining the feature builder does not extend its configuration lifetime.
 
+Configure the supplied feature builder inside the callback. Add other feature states and middleware through the root before or after it; reentrant root registration is rejected before it runs. Direct parent-service changes reject the feature commit instead of being overwritten, preserving those changes while the failed feature scope closes.
+
 | Member | Purpose |
 |--------|---------|
 | `Services` | Advanced access to the underlying `IServiceCollection` |
