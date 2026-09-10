@@ -26,7 +26,7 @@ Inlet's [aggregate controller generator](../../src/Inlet.Gateway.Generators/Aggr
 ### Command Types
 
 - Commands **MUST** be `sealed record` types with the visibility defined above and `[GenerateSerializer]` and `[Alias]` attributes. Why: Enables Orleans serialization and stable identity.
-- Command properties **MUST** use `required` modifier and `[Id(n)]` attributes; command names **SHOULD** be verb phrases (e.g., `CreateChannel`, `UpdateDisplayName`). Why: Enforces valid construction and clear intent.
+- Serialized command properties **MUST** use `[Id(n)]` attributes. Commands **SHOULD** express caller-supplied inputs through constructor parameters or `required` init-only properties; intentionally optional inputs **MAY** use explicit defaults. Handlers **MUST** validate runtime input values. Command names **SHOULD** be verb phrases (e.g., `CreateChannel`, `UpdateDisplayName`). Why: Makes construction intent explicit while supporting the positional records and defaults used by current samples.
 
 ### Event Types
 
