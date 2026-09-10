@@ -1,0 +1,87 @@
+---
+title: Runtime Composition
+description: Reference RuntimeBuilder, terminal Orleans attachment, native configuration, and runtime diagnostics.
+sidebar_position: 41
+---
+
+# Runtime Composition
+
+`ISiloBuilder.UseMississippi(...)` configures, validates, and attaches a `RuntimeBuilder` to an Orleans host once.
+
+## Applies to
+
+- `Mississippi.Hosting.Runtime`, included by `Mississippi.Sdk.Runtime`
+- `Mississippi.Hosting.Runtime.Abstractions` for runtime extension contracts and native integration diagnostic codes
+- `Mississippi.Hosting.Abstractions` for the shared builder and diagnostic contracts
+- `Mississippi.Brooks.Runtime` for the unified event-sourcing registration
+
+## Contract
+
+| API | Behavior |
+| --- | --- |
+| `ISiloBuilder.UseMississippi(Action<RuntimeBuilder>)` | Creates a staged runtime scope, invokes configuration, validates it, applies pending native configuration, and commits service descriptors |
+| `IRuntimeBuilder.ConfigureSilo(Action<ISiloBuilder>)` | Queues synchronous native configuration in registration order |
+| `IRuntimeBuilder.ApplyToSilo(ISiloBuilder)` | Applies queued callbacks against staged services for the owning host, without publishing them to the host yet |
+| `IMississippiBuilder.Services` | Provides advanced access to the staged runtime registrations |
+| `IMississippiBuilder.Validate()` | Returns structured attachment-readiness diagnostics without changing registrations |
+| `IRuntimeBuilder.AddEventSourcing(Action<BrookProviderOptions>?)` | Registers Brooks factories, stream identity support, and options together |
+
+`RuntimeBuilder` implements both `IRuntimeBuilder` and `IMississippiBuilder`. Runtime subsystem extensions can depend on the role contract without referencing the hosting implementation.
+
+## Defaults and constraints
+
+Empty runtime roots are valid. No placeholder aggregate, saga, or projection is required for infrastructure-first setup.
+
+`ApplyToSilo(...)` is the recommended explicit integration hook at the end of configuration. It is optional: terminal attachment applies pending native callbacks automatically if the hook was omitted. It is not a second attachment API. Queue native configuration before explicit application; repeated application and configuration after application are rejected.
+
+Brooks uses `BrookStreamingDefaults.OrleansStreamProviderName` unless configured otherwise. The host still supplies Orleans stream providers and storage. Repeated `AddEventSourcing(...)` calls preserve one default factory registration and compose option callbacks in order; existing custom factory registrations are preserved.
+
+## Behavior
+
+The runtime starts with a copy of the host's service descriptors. Native callbacks receive an `ISiloBuilder` adapter with that staged collection and the original host `Configuration`. Their registrations become visible to the host only after terminal composition succeeds.
+
+If application or native configuration throws, the staged scope closes, its changes are discarded, and the attachment reservation is released. A fresh terminal callback can retry. Catching a native callback exception inside application configuration does not make that partially configured scope valid: terminal validation still rejects it.
+
+Captured runtime builders and native adapters cannot modify the staged service collection after the terminal scope closes. Registration callbacks are synchronous; asynchronous initialization belongs in hosted services or Orleans lifecycle participants.
+
+Staging covers service descriptors. The forwarded configuration and existing service instances are shared objects; their mutations and external callback side effects are not rolled back. Composition does not build a service provider, start a silo, or validate network connectivity.
+
+## Failure behavior
+
+`BuilderValidationException.Diagnostics` contains stable codes, messages, and remediation. Shared codes use `BuilderDiagnosticCodes`; native integration codes use `RuntimeBuilderDiagnosticCodes`.
+
+| Code | Failure | Remediation |
+| --- | --- | --- |
+| `MSB001` | Duplicate or recursive runtime attachment | Use one runtime terminal callback for the host |
+| `MSB002` | The runtime builder has already attached | Configure it inside the terminal callback |
+| `MSB003` | The scope closed without attaching | Retry with a fresh scope |
+| `MSB101` | The supplied silo belongs to a different host | Pass the owning silo to `ApplyToSilo(...)` |
+| `MSB102` | Native configuration was applied twice | Apply explicitly once or rely on terminal automatic application |
+| `MSB103` | A native callback failed, leaving an incomplete scope | Correct the callback and retry with a fresh scope |
+| `MSB104` | Native configuration was queued after application | Move all `ConfigureSilo(...)` calls before `ApplyToSilo(...)` |
+
+Null host and callback arguments produce `ArgumentNullException`. Application callback exceptions propagate unchanged; validation prevents a caught native failure from being attached.
+
+## Example
+
+This excerpt follows Spring's runtime setup after its host-owned stream provider has been configured. The remaining domain and storage registrations are omitted here.
+
+```csharp
+builder.UseOrleans(silo => silo.UseMississippi(runtime =>
+{
+    runtime.AddEventSourcing(options =>
+        options.OrleansStreamProviderName = "StreamProvider");
+    runtime.ConfigureSilo(configuredSilo => configuredSilo.AddActivityPropagation());
+    runtime.ApplyToSilo(silo);
+}));
+```
+
+## Compatibility
+
+The runtime builder replaces the separate `IServiceCollection.AddEventSourcingByService()`, `ISiloBuilder.AddEventSourcing(...)`, and `HostApplicationBuilder.AddEventSourcing(...)` entrypoints. Use the single runtime builder extension inside `UseMississippi(...)`; no compatibility wrappers remain for those methods.
+
+## Next Steps
+
+- [Spring host applications](../samples/spring-sample/concepts/host-applications.md)
+- [Client composition](./client-composition.md)
+- [Brooks](../brooks/index.md)

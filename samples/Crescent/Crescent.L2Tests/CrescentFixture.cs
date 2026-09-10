@@ -5,6 +5,7 @@ using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
 using Mississippi.DomainModeling.Abstractions;
+using Mississippi.Hosting.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
 
@@ -108,9 +109,6 @@ public sealed class CrescentFixture
         builder.Logging.AddFilter("Orleans", LogLevel.Warning);
         builder.Logging.AddFilter("Mississippi", LogLevel.Debug);
 
-        // Add Mississippi event sourcing services
-        builder.Services.AddEventSourcingByService();
-
         // Add JSON serialization for event sourcing
         builder.Services.AddJsonSerialization();
 
@@ -186,7 +184,7 @@ public sealed class CrescentFixture
             silo.AddMemoryGrainStorage("PubSubStore");
 
             // Tell Brooks which stream provider to use
-            silo.AddEventSourcing();
+            silo.UseMississippi(runtime => runtime.AddEventSourcing());
         });
         IHost host = builder.Build();
 

@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DomainModeling.Runtime\DomainModeling.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\Hosting.Runtime\Hosting.Runtime.csproj" />
     <ProjectReference Include="..\Testing.Utilities\Testing.Utilities.csproj" />
   </ItemGroup>
 </Project>

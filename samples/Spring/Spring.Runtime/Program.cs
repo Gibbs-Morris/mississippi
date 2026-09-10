@@ -10,6 +10,7 @@ using Mississippi.Aqueduct.Runtime;
 using Mississippi.Brooks.Runtime;
 using Mississippi.Brooks.Runtime.Storage.Cosmos;
 using Mississippi.Brooks.Serialization.Json;
+using Mississippi.Hosting.Runtime;
 using Mississippi.Inlet.Runtime;
 using Mississippi.Tributary.Runtime;
 using Mississippi.Tributary.Runtime.Storage.Cosmos;
@@ -91,20 +92,12 @@ builder.AddKeyedAzureBlobServiceClient("blobs");
 // Forward the Aspire-registered blob client to the Brooks key used by BlobDistributedLockManager
 builder.Services.AddKeyedSingleton(
     BrookCosmosDefaults.BlobLockingServiceKey,
-    (
-        sp,
-        _
-    ) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
+    (sp, _) => sp.GetRequiredKeyedService<BlobServiceClient>("blobs"));
 
 // Forward the Aspire-registered Cosmos client to a shared Mississippi keyed service key
 // Both Brooks and Snapshots use the same Cosmos account but different containers
 const string sharedCosmosKey = "spring-cosmos";
-builder.Services.AddKeyedSingleton(
-    sharedCosmosKey,
-    (
-        sp,
-        _
-    ) => sp.GetRequiredService<CosmosClient>());
+builder.Services.AddKeyedSingleton(sharedCosmosKey, (sp, _) => sp.GetRequiredService<CosmosClient>());
 
 // Add Inlet Silo services for projection subscription management
 builder.Services.AddInletSilo();
@@ -112,7 +105,6 @@ builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).A
 
 // Add event sourcing infrastructure
 builder.Services.AddJsonSerialization();
-builder.Services.AddEventSourcingByService();
 builder.Services.AddSnapshotCaching();
 
 // Configure Cosmos storage for Brooks (event streams)
@@ -137,23 +129,24 @@ builder.Services.AddCosmosSnapshotStorageProvider(options =>
 // Configure Orleans silo - Aspire injects clustering config via environment variables
 builder.UseOrleans(siloBuilder =>
 {
-    siloBuilder.AddActivityPropagation();
-
     // Configure Aqueduct to use the Aspire-configured stream provider for SignalR backplane
     siloBuilder.UseAqueduct(options => options.StreamProviderName = "StreamProvider");
 
     // Configure event sourcing to use the Aspire-configured stream provider
     // Must match the stream provider name configured in AppHost via WithMemoryStreaming
-    siloBuilder.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
+    siloBuilder.UseMississippi(runtime =>
+    {
+        runtime.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
+        runtime.ConfigureSilo(configuredSilo => configuredSilo.AddActivityPropagation());
+        runtime.ApplyToSilo(siloBuilder);
+    });
 });
 WebApplication app = builder.Build();
 
 // Health check endpoint for Aspire orchestration
 app.MapGet(
     "/health",
-    (
-        ISiloStatusOracle siloStatus
-    ) =>
+    (ISiloStatusOracle siloStatus) =>
     {
         SiloStatus status = siloStatus.CurrentStatus;
         return status == SiloStatus.Active
