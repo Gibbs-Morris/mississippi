@@ -3,6 +3,7 @@ using System.Linq;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Mississippi.Brooks.Abstractions.Factory;
@@ -172,6 +173,35 @@ public sealed class BrooksRuntimeRegistrationsTests
         Assert.Same(canonical, Assert.Single(provider.GetServices<BrookGrainFactory>()));
         Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IBrookGrainFactory));
         Assert.Single(services, descriptor => descriptor.ServiceType == typeof(IInternalBrookGrainFactory));
+    }
+
+    /// <summary>
+    ///     Tenant-specific keyed factories survive default runtime composition across all factory contracts.
+    /// </summary>
+    [Fact]
+    public void KeyedFactoriesRemainSeparateFromTheCanonicalDefault()
+    {
+        ServiceCollection services = [];
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IGrainFactory>());
+        BrookGrainFactory keyed = new(Mock.Of<IGrainFactory>(), Mock.Of<ILogger<BrookGrainFactory>>());
+        services.AddKeyedSingleton("tenant", keyed);
+        services.AddKeyedSingleton<IBrookGrainFactory>("tenant", keyed);
+        services.AddKeyedSingleton<IInternalBrookGrainFactory>("tenant", keyed);
+        CreateSilo(services)
+            .UseMississippi(runtime =>
+            {
+                runtime.AddEventSourcing();
+                runtime.AddEventSourcing();
+            });
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Same(keyed, provider.GetRequiredKeyedService<BrookGrainFactory>("tenant"));
+        Assert.Same(keyed, provider.GetRequiredKeyedService<IBrookGrainFactory>("tenant"));
+        Assert.Same(keyed, provider.GetRequiredKeyedService<IInternalBrookGrainFactory>("tenant"));
+        BrookGrainFactory canonical = provider.GetRequiredService<BrookGrainFactory>();
+        Assert.NotSame(keyed, canonical);
+        Assert.Same(canonical, provider.GetRequiredService<IBrookGrainFactory>());
+        Assert.Same(canonical, provider.GetRequiredService<IInternalBrookGrainFactory>());
     }
 
     /// <summary>
