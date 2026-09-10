@@ -12,11 +12,11 @@ Use `StoreTestHarness` to supply known state and actions, await an effect, and i
 
 This makes asynchronous behavior reviewable: a developer or AI assistant can show the input, expected reaction, and resulting state as distinct checks.
 
-## When to Use This
+## When to use this
 
 Use this guide when testing an existing Reservoir feature without a browser or live external service. The controlled effect below exists only to demonstrate the harness contract; replace it with your application's effect and test services when testing real behavior.
 
-## Before You Begin
+## Before you begin
 
 - Use an xUnit v3 test project that references the client feature assembly and `Mississippi.Reservoir.TestHarness`.
 - Allow the test assembly to access internal feature types when required by your project setup. Spring already has that test access.
@@ -158,7 +158,7 @@ In the first test, B remains `seed-b` immediately after the A action because the
 
 Use collection assertions such as `Assert.Single` when exact count or order matters. `ThenEmits<TAction>` is an existence/type-specific assertion, not an exact emission-count check. Dispose each scenario to release its service provider.
 
-## Verify the Result
+## Verify the result
 
 Run the sample test project from the repository root:
 
