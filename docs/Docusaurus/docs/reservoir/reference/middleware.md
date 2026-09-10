@@ -29,6 +29,8 @@ Register middleware with `IReservoirBuilder.AddMiddleware<TMiddleware>()`, where
 
 The first registered middleware is the outermost wrapper. Its before-next work runs first; its after-next work runs after the inner wrappers return. Configure middleware during startup before using the store.
 
+The store resolves its middleware collection during construction and retains those instances across its dispatches. Treat mutable middleware fields as state shared by that store's operations; the transient DI registration does not create a fresh middleware instance for each action.
+
 ## Execution Boundary
 
 `nextAction` is synchronous, but the store can start asynchronous effects during that call. Return from `nextAction` marks the synchronous downstream return, so observe effect completion through result actions and feature state.
