@@ -12,11 +12,11 @@ Add a local feature by defining its state, the actions that change it, and pure 
 
 This guide uses Spring's account-selection feature. Keeping the selected account IDs in one state slice lets several screens use the same selection. The named actions and transitions also give an AI assistant concrete inputs and expected results to implement or explain.
 
-## When to Use This
+## When to use this
 
 Use this recipe when an existing client needs shared local state, such as a selected account, an active workspace, or a filter. For server-derived account data, combine the local selection with an [Inlet projection subscription](../../inlet/how-to/how-to.md).
 
-## Before You Begin
+## Before you begin
 
 - Have a client using the current `Mississippi.Reservoir.Abstractions`, `Mississippi.Reservoir.Core`, and, for Blazor, `Mississippi.Reservoir.Client` APIs.
 - Create an `IReservoirBuilder` through the [Reservoir startup path](../getting-started/getting-started.md), or use the Reservoir callback of an existing Mississippi client builder.
@@ -279,7 +279,7 @@ private void ClearAccountA() => Dispatch(new SetEntityAIdAction(string.Empty));
 
 Wire a page event handler to dispatch the relevant action, and pass selected values down to presentational components. For a specific selection, dispatch `new SetEntityAIdAction(accountId)` with the ID from that event. `StoreComponent` owns its store subscription and disposes it with the component; call the base lifecycle methods when overriding them.
 
-## Verify the Result
+## Verify the result
 
 Build your client project after adding all six files and its startup call. Exercise these transitions through your page or feature tests:
 
