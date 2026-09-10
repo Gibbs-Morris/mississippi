@@ -88,13 +88,7 @@ public static class ClientHostingRegistrations
             }
 
             client.Complete();
-            builder.Services.Clear();
-            foreach (ServiceDescriptor descriptor in stagedServices)
-            {
-                builder.Services.Add(descriptor);
-            }
-
-            builder.Services.Add(attachment);
+            PublishServices(builder.Services, stagedServices, originalHostServices, attachment);
             completed = true;
             return builder;
         }
@@ -121,6 +115,46 @@ public static class ClientHostingRegistrations
                     HostAttachments.Remove(builder.Services);
                 }
             }
+        }
+    }
+
+    private static void PublishServices(
+        IServiceCollection hostServices,
+        IEnumerable<ServiceDescriptor> stagedServices,
+        IReadOnlyList<ServiceDescriptor> originalHostServices,
+        ServiceDescriptor attachment
+    )
+    {
+        try
+        {
+            hostServices.Clear();
+            foreach (ServiceDescriptor descriptor in stagedServices)
+            {
+                hostServices.Add(descriptor);
+            }
+
+            hostServices.Add(attachment);
+        }
+        catch (Exception publicationException)
+        {
+            try
+            {
+                hostServices.Clear();
+                foreach (ServiceDescriptor descriptor in originalHostServices.Where(descriptor =>
+                             !ReferenceEquals(descriptor, attachment)))
+                {
+                    hostServices.Add(descriptor);
+                }
+            }
+            catch (Exception restorationException)
+            {
+                throw new AggregateException(
+                    "Client service publication failed and the original host registrations could not be restored. Use a fresh host.",
+                    publicationException,
+                    restorationException);
+            }
+
+            throw;
         }
     }
 
