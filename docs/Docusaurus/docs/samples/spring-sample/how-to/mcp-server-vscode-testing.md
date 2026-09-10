@@ -100,7 +100,7 @@ Spring exposes MCP tools at `http://localhost:5101/mcp` in Development, with bot
 
 ## Next Steps
 
-- Run through [Building an Aggregate](../tutorials/building-an-aggregate.md) and test generated command tools over MCP.
+- Run through [Add an Aggregate Command](../tutorials/building-an-aggregate.md) and test generated command tools over MCP.
 - Run through [Building Projections](../tutorials/building-projections.md) and test projection read tools over MCP.
 - Extend your local MCP prompts using the Spring tool names validated in this page.
 - [Host Architecture](../concepts/host-applications.md) - Revisit how the MCP surface fits into the Spring gateway host.

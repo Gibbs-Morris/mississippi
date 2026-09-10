@@ -332,6 +332,6 @@ Every concept in Mississippi has a single, well-defined responsibility. Commands
 
 ## Next Steps
 
-- [Building an Aggregate](../tutorials/building-an-aggregate.md) - See these concepts in action with the BankAccount example
+- [Add an Aggregate Command](../tutorials/building-an-aggregate.md) - Apply these concepts by adding and testing account closure
 - [Building a Saga](../tutorials/building-a-saga.md) - Orchestrate a multi-aggregate workflow
 - [Building Projections](../tutorials/building-projections.md) - Create read-optimized views
