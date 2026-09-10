@@ -52,6 +52,8 @@ Its staged service collection is writable during that callback and becomes read-
 
 Configure the supplied feature builder inside the callback. Add other feature states and middleware through the root before or after it; reentrant root registration is rejected before it runs. Direct parent-service changes reject the feature commit instead of being overwritten, preserving those changes while the failed feature scope closes.
 
+Accessing the root builder's `Services` inside a feature callback also throws before returning the collection. This protects composite extensions, such as `AddInletClient()`, from partially registering parent services before a later root operation is rejected. Use the supplied feature builder's services for advanced feature configuration.
+
 | Member | Purpose |
 |--------|---------|
 | `Services` | Advanced access to the underlying `IServiceCollection` |

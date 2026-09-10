@@ -24,16 +24,25 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
     )
     {
         ArgumentNullException.ThrowIfNull(services);
-        Services = services;
+        ParentServices = services;
     }
 
     /// <summary>
     ///     Gets the underlying service collection for advanced extension scenarios.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public IServiceCollection Services { get; }
+    public IServiceCollection Services
+    {
+        get
+        {
+            ThrowIfConfiguringFeature();
+            return ParentServices;
+        }
+    }
 
     private bool IsConfiguringFeature { get; set; }
+
+    private IServiceCollection ParentServices { get; }
 
     /// <summary>
     ///     Adds a feature state without additional feature configuration.
@@ -124,16 +133,20 @@ internal sealed class ReservoirBuilder : IReservoirBuilder
 
     private void ThrowIfConfigurationUnavailable()
     {
+        ThrowIfConfiguringFeature();
+        if (ParentServices.IsReadOnly)
+        {
+            throw new InvalidOperationException(
+                "Reservoir services are read-only. Configure features while the owning configuration scope is open.");
+        }
+    }
+
+    private void ThrowIfConfiguringFeature()
+    {
         if (IsConfiguringFeature)
         {
             throw new InvalidOperationException(
                 "Reservoir root configuration is unavailable inside a feature callback. Use the supplied feature builder; register other states and middleware outside that callback.");
-        }
-
-        if (Services.IsReadOnly)
-        {
-            throw new InvalidOperationException(
-                "Reservoir services are read-only. Configure features while the owning configuration scope is open.");
         }
     }
 }
