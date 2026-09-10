@@ -18,7 +18,7 @@ sidebar_label: DevTools
 | `Enablement` | `Off` | Selects whether the service connects |
 | `Name` | `null` | Nonblank value is forwarded as the extension instance name |
 | `MaxAge` | `null` | Set values are forwarded as `maxAge` |
-| `Latency` | `null` | Set values are forwarded as `latency` |
+| `Latency` | `null` | Batching latency in milliseconds; forwarded as `latency` |
 | `AutoPause` | `null` | Set values are forwarded as `autoPause` |
 | `AdditionalOptions` | Empty dictionary | Extra extension options, applied after typed options |
 | `ActionSanitizer` | `null` | Optional action-payload replacement |
