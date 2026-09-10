@@ -11,7 +11,17 @@
            placeholder="@Placeholder"
            disabled="@IsDisabled"
            readonly="@IsReadOnly"
+           aria-describedby="@DescribedBy"
+           aria-invalid="@AriaInvalid"
            @oninput="HandleInputAsync"
            @onfocus="HandleFocusAsync"
            @onblur="HandleBlurAsync"/>
+    @if (HasHelperText)
+    {
+        <p id="@HelperId" class="rf-input-field__helper">@HelperText</p>
+    }
+    @if (HasErrorText)
+    {
+        <p id="@ErrorId" class="rf-input-field__error" role="alert">@ErrorText</p>
+    }
 </div>
