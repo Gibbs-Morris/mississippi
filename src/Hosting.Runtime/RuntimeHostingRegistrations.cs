@@ -106,18 +106,7 @@ public static class RuntimeHostingRegistrations
                 state.IsDamaged = true;
                 if (canReuseHost)
                 {
-                    if (!siloBuilder.Services.IsReadOnly)
-                    {
-                        for (int index = siloBuilder.Services.Count - 1; index >= 0; index--)
-                        {
-                            if (siloBuilder.Services[index].ServiceType == typeof(RuntimeAttachment))
-                            {
-                                siloBuilder.Services.RemoveAt(index);
-                            }
-                        }
-                    }
-
-                    HostAttachments.Remove(siloBuilder.Services);
+                    ReleaseHostReservation(siloBuilder.Services);
                 }
             }
         }
@@ -168,6 +157,24 @@ public static class RuntimeHostingRegistrations
 
             throw;
         }
+    }
+
+    private static void ReleaseHostReservation(
+        IServiceCollection services
+    )
+    {
+        if (!services.IsReadOnly)
+        {
+            for (int index = services.Count - 1; index >= 0; index--)
+            {
+                if (services[index].ServiceType == typeof(RuntimeAttachment))
+                {
+                    services.RemoveAt(index);
+                }
+            }
+        }
+
+        HostAttachments.Remove(services);
     }
 
     private static void ThrowIfHostServicesChanged(
