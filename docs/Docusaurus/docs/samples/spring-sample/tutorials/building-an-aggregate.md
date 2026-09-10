@@ -51,7 +51,7 @@ public sealed record CloseAccount
 }
 ```
 
-The command names intent and carries the reason. `[GenerateCommand]` gives it the `close` route segment. The public command type is available to generated host code; Orleans serialization uses the explicit alias and member ID.
+The command names intent and carries the reason. `[GenerateCommand]` gives it the `close` route segment. The command is public because it appears in the generated gateway controller's public constructor signature through `IMapper<CloseAccountDto, CloseAccount>`. Spring's [friend-assembly declarations](https://github.com/Gibbs-Morris/mississippi/blob/main/samples/Spring/Spring.Domain/Spring.Domain.csproj) support internal handlers and events; the client generators produce their own transport artifacts. Orleans serialization uses the explicit alias and member ID.
 
 ## Step 2: Create the Accepted Event
 
