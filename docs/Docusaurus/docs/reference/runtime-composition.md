@@ -55,7 +55,7 @@ Staging covers service descriptors. The forwarded configuration and existing ser
 | `MSB001` | Duplicate or recursive runtime attachment | Use one runtime terminal callback for the host |
 | `MSB002` | The runtime builder has already attached | Configure it inside the terminal callback |
 | `MSB003` | The scope closed without attaching | Retry with a fresh scope |
-| `MSB101` | The supplied silo belongs to a different host | Pass the owning silo to `ApplyToSilo(...)` |
+| `MSB101` | The supplied silo has different services or configuration from the owning host | Pass the owning silo to `ApplyToSilo(...)` |
 | `MSB102` | Native configuration was applied twice | Apply explicitly once or rely on terminal automatic application |
 | `MSB103` | A native callback failed, leaving an incomplete scope | Correct the callback and retry with a fresh scope |
 | `MSB104` | Native configuration was queued after application | Move all `ConfigureSilo(...)` calls before `ApplyToSilo(...)` |
