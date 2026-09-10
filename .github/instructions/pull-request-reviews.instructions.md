@@ -10,6 +10,7 @@ Governing thought: Deliver high-signal reviews that enforce small, single-respon
 
 ## Rules (RFC 2119)
 
+- Reviewers **MUST** verify [issue tracking and PR traceability](issue-tracking.instructions.md), including the documented plan, current issue status, and an appropriate issue reference in every PR description. Why: Review includes the requested outcome and its delivery record.
 - Reviewers **MUST** apply [PR size and stacked delivery](pr-size-and-stacking.instructions.md): target 600 changed lines or fewer and assess larger coherent changes using the author's rationale and review path. Why: Reviewability requires judgment rather than automatic rejection by line count.
 - Reviewers **MUST** assess a stacked PR against its immediate parent and verify the advancement gate before endorsing progression. Why: Ancestor changes are separate review units, and every layer needs current CI and resolved feedback.
 - Reviews **MUST** fail when L0 tests are missing for new code paths. Why: Tests are required for behavior changes.

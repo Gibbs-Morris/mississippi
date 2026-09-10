@@ -6,7 +6,7 @@ applyTo: '**'
 
 Governing thought: After pushing code to a branch with an open PR, agents sleep for human review, then systematically address every new comment one-at-a-time until none remain.
 
-> Drift check: If GitHub MCP tools are unavailable, fall back to GitHub CLI (`gh`); confirm `gh` is installed with `Get-Command gh` before use.
+> Drift check: If GitHub MCP tools are unavailable, fall back to GitHub CLI (`gh`); confirm `gh` is installed with `gh --version` before use.
 
 ## Rules (RFC 2119)
 

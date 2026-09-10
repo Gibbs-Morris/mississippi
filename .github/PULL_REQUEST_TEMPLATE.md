@@ -4,7 +4,8 @@ Keep this description proportional to the change. Replace placeholders and remov
 optional sections that add no information. Do not invent benefits or test results.
 Instruction files, relative to this template's directory:
 instructions/pr-description.instructions.md and
-instructions/pr-size-and-stacking.instructions.md.
+instructions/pr-size-and-stacking.instructions.md, plus
+instructions/issue-tracking.instructions.md.
 -->
 
 # [Title: Single logical outcome]
@@ -40,6 +41,7 @@ verified examples, or diagrams; mention observability changes when relevant. -->
 Identify pending or failed checks and explain non-applicable checks.]
 
 - [ ] One logical change; size exception explained if needed
+- [ ] Repository issue linked and current; plan documented before implementation, or during [permitted triage intake](instructions/issue-tracking.instructions.md) for pre-existing or eligible unattended automated PRs
 - [ ] Applicable build, cleanup, lint, tests, and coverage gates pass
 - [ ] Mutation execution status, available results, and significant gaps reported under the [mutation-testing policy](instructions/mutation-testing.instructions.md); no mandatory repository score threshold
 - [ ] Required tests, consumer updates, and documentation are in this PR
@@ -58,6 +60,9 @@ in instructions/pr-size-and-stacking.instructions.md. A draft or a quiet poll is
 
 ## Related Issues
 
-<!-- Remove unless applicable. Only use Fixes for issues this PR actually completes. -->
+<!-- Keep this section for every PR, including drafts, automation, and stack layers.
+Link at least one relevant issue in this repository. Use Fixes #123 only when this
+PR completes that issue; use Refs #123 for partial work. Replace the placeholder
+with a verified issue and keep the issue's plan, progress, and PR links current. -->
 
-- [Link to the issue or discussion.]
+- [Repository issue number or URL, with closing or non-closing reference as appropriate.]

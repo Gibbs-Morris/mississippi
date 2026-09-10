@@ -34,6 +34,7 @@ Governing thought: PR descriptions explain one change, why it matters, and how i
 
 ### PR Descriptions
 
+- Every PR description **MUST** link a relevant repository issue under [issue tracking and PR traceability](issue-tracking.instructions.md). Why: Reviewers need the planned outcome and current task record.
 - PR descriptions **MUST** be updated on each commit/push when a PR exists for the branch. Why: Keeps the description synchronized with the actual changes.
 - Authors **MUST** compare the branch against the PR's actual base (`main` for a standalone PR, the immediate parent for a stack layer). Why: Descriptions explain this layer rather than repeating ancestor changes.
 - Authors **MUST** include the single outcome, stack position and dependencies when applicable, and any size-exception rationale from [PR size and stacked delivery](pr-size-and-stacking.instructions.md). Why: Reviewers need clear boundaries and an efficient review path.

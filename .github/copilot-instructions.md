@@ -11,6 +11,7 @@ Governing thought: Copilot responses must follow repository guardrails—shared 
 ## Rules (RFC 2119)
 
 - Copilot **MUST** follow all applicable repository instruction files, especially shared guardrails, C#, naming, logging, and testing guidance. Why: Keeps suggestions compliant with their declared scopes.
+- Copilot **MUST** follow [issue tracking and PR traceability](instructions/issue-tracking.instructions.md), including its intake timing, ongoing updates, and issue link on every PR. Why: Requested work needs a durable record through delivery.
 - Copilot **MUST** use the [instruction-loading procedure](../AGENTS.md#instruction-loading), including its file-access or host-supplied fallback when shell discovery is unavailable, when selecting guidance not already supplied by the host. Why: All global and relevant requirements remain mandatory while unrelated instruction bodies stay out of startup context.
 - Copilot **MUST** follow [token efficiency and reassessment](instructions/agent-efficiency.instructions.md), including during persistent goals. Why: Repeated effort needs new evidence or a better approach while preserving the full outcome and required gates.
 - Copilot **MUST** follow the [mutation-testing policy](instructions/mutation-testing.instructions.md), prioritizing correct delivery and meaningful unit-test coverage over survivor chasing. Why: Mutation testing is an additional quality signal with no mandatory repository score threshold or ordinary completion gate.

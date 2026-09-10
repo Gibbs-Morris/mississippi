@@ -12,6 +12,7 @@ Governing thought: Agents follow repository instructions and iterate from correc
 
 - Agents MUST read `.github/copilot-instructions.md` first, then all globally scoped and task-applicable instruction files under `.github/instructions/`, before planning repository work, making changes, reviewing content, or answering repository questions. Why: Preserves authoritative requirements without preloading unrelated bodies.
 - Agents MUST follow every rule and guideline in those documents when planning or writing code. Why: Keeps contributions consistent, reviewable, and compliant with quality gates.
+- Agents MUST follow [issue tracking and PR traceability](.github/instructions/issue-tracking.instructions.md), including its intake timing, ongoing updates, and issue link on every PR. Why: Requested work needs a durable record through delivery.
 - Instruction selection MUST cover the task's edited, reviewed, and generated content, languages, frameworks, and role/workflow, not just changed filenames. Why: A C# example or runtime explanation still needs its relevant guidance.
 - Agents MUST read an instruction whose applicability is unclear, whose metadata is missing or unrecognized, or whose scope may overlap the task before excluding it. Why: Uncertainty cannot silently remove requirements.
 - Agents MUST reassess instruction selection when the task expands. Why: Initial context selection does not cover requirements introduced by later work.

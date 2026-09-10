@@ -76,7 +76,7 @@ flowchart TD
         P4Synth["Invoke cs Plan Synthesizer to categorize feedback"]
         P4Revise["Revise the plan"]
         P4More{"More review cycles needed?"}
-        P4Final["Write 04-planning/final-plan.md"]
+        P4Final["Write 04-planning/final-plan.md, complete issue intake, and record the verified issue URL before G2"]
 
         P4Draft --> P4Review --> P4Feedback --> P4Synth --> P4Revise --> P4More
         P4More -- Yes --> P4Review
@@ -85,7 +85,7 @@ flowchart TD
 
     subgraph Phase5["Phase 5: Implementation"]
         P5Branch["Create the planned branch from main or a verified stack parent"]
-        P5Lead["Invoke cs Lead Developer with the next slice of work"]
+        P5Lead["Recheck open issue and approved plan; invoke cs Lead Developer with both references"]
         P5Code["cs Lead Developer writes a small, focused increment"]
         P5Tests["Invoke cs Test Engineer to write or validate tests"]
         P5Build["Run the build and verify zero warnings"]
