@@ -73,9 +73,11 @@ states; those states take precedence. Disabled and read-only inputs retain their
 descriptions. Keyboard focus has a separate outline so an invalid border does
 not hide the focused field.
 
-The outline is defined on `:focus` as a fallback. Browsers that support
-`:focus-visible` suppress it for pointer-only focus while retaining the focus
-border; browsers without that selector keep the outline.
+The outline is defined on `:focus` as a fallback. In supporting browsers, it is
+removed only when `:focus-visible` does not match, while the focus border remains.
+The browser uses heuristics and user preferences to decide that match; pointer
+focus on text inputs can still retain the outline. Browsers without the selector
+keep the default outline.
 
 A boolean `aria-invalid` value of `false` is omitted; `true` renders the token
 `"true"`. Known string tokens (`true`, `false`, `grammar`, `spelling`) are trimmed
