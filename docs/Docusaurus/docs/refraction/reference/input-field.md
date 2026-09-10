@@ -44,6 +44,46 @@ The browser implements native input behavior. This atom does not manage an
 `EditContext`, run application validation, dispatch Reservoir actions, or call
 APIs. Store integration belongs in the containing page.
 
+## Helper and validation feedback
+
+`HelperText` adds instructions below the input. Set `State` to
+`RefractionStates.Invalid` or `RefractionStates.Error` to expose
+`aria-invalid="true"` and display a nonblank `ErrorText` message.
+Both text parameters default to `null`. Blank text does not render a message.
+
+Helper and error elements use the effective input ID with `-helper` and
+`-error` suffixes. `aria-describedby` includes caller-supplied description IDs,
+then the IDs of the currently rendered messages. Changing `Id`, clearing text,
+or returning to another state updates those associations. Error messages have
+`role="alert"` so newly displayed feedback can be announced.
+
+Description references are split on HTML whitespace and joined with single
+spaces. Duplicate IDs are removed while preserving first occurrence and
+case-sensitive identity, including duplicates of the generated message IDs.
+
+The component does not validate values. A containing page derives validation
+from its application state, supplies the appropriate `State` and `ErrorText`,
+and handles `ValueChanged`. Error text is hidden outside the Invalid and Error
+states. An invalid state without error text still marks the input invalid;
+provide an actionable message so users know how to correct the value.
+
+Native `required` remains available through `InputAttributes`. Caller-provided
+`aria-invalid` values remain supported outside the component's Invalid and Error
+states; those states take precedence. Disabled and read-only inputs retain their
+descriptions. Keyboard focus has a separate outline so an invalid border does
+not hide the focused field.
+
+The outline is defined on `:focus` as a fallback. In supporting browsers, it is
+removed only when `:focus-visible` does not match, while the focus border remains.
+The browser uses heuristics and user preferences to decide that match; pointer
+focus on text inputs can still retain the outline. Browsers without the selector
+keep the default outline.
+
+A boolean `aria-invalid` value of `false` is omitted; `true` renders the token
+`"true"`. Known string tokens (`true`, `false`, `grammar`, `spelling`) are trimmed
+and normalized to lowercase. Boolean `aria-describedby` values do not create
+description IDs; provide a string containing the intended references.
+
 ## Pre-release API change
 
 The component moved from `Mississippi.Refraction.Client.Components.Atoms` to
