@@ -5,10 +5,10 @@ using Bunit;
 
 using Microsoft.AspNetCore.Components;
 
-using Mississippi.Refraction.Client.Components.Atoms;
+using Mississippi.Refraction.Client.Components.Atoms.Input;
 
 
-namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms;
+namespace Mississippi.Refraction.Client.L0Tests.Components.Atoms.Input;
 
 /// <summary>
 ///     Smoke tests for <see cref="InputField" /> component.
