@@ -68,6 +68,8 @@ Keep store subscription callbacks non-throwing. If an `IStore.Subscribe` callbac
 
 Keep reducers total for their supported inputs and represent expected outcomes as state. A reducer exception interrupts dispatch during reduction: earlier feature updates can already be stored, while the post-dispatch event, listener notification, and effect triggering have not run. Treat this as interrupted processing when diagnosing a failed dispatch.
 
+Keep diagnostic `StoreEvents` observers non-throwing too. An exception from an observer of `ActionDispatchingEvent` stops processing before reduction; one from an observer of `ActionDispatchedEvent` occurs after state changes but before listeners and effects. In either case, later event observers are interrupted. Handle diagnostic failures within the observer.
+
 ## Trade-offs
 
 A feature introduces a few named artifacts—state, actions, reducers, and selectors. That structure gives a reviewable test boundary and reusable display logic. Simple selectors remain inexpensive to read; memoization can reuse a derived result while its input references stay the same.
