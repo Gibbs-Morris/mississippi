@@ -113,18 +113,7 @@ public static class ClientHostingRegistrations
                 state.IsDamaged = true;
                 if (canReuseHost)
                 {
-                    if (!builder.Services.IsReadOnly)
-                    {
-                        for (int index = builder.Services.Count - 1; index >= 0; index--)
-                        {
-                            if (builder.Services[index].ServiceType == typeof(ClientAttachment))
-                            {
-                                builder.Services.RemoveAt(index);
-                            }
-                        }
-                    }
-
-                    HostAttachments.Remove(builder.Services);
+                    ReleaseHostReservation(builder.Services);
                 }
             }
         }
@@ -174,6 +163,24 @@ public static class ClientHostingRegistrations
 
             throw;
         }
+    }
+
+    private static void ReleaseHostReservation(
+        IServiceCollection services
+    )
+    {
+        if (!services.IsReadOnly)
+        {
+            for (int index = services.Count - 1; index >= 0; index--)
+            {
+                if (services[index].ServiceType == typeof(ClientAttachment))
+                {
+                    services.RemoveAt(index);
+                }
+            }
+        }
+
+        HostAttachments.Remove(services);
     }
 
     private static void ThrowIfHostServicesReadOnly(
