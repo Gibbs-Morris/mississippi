@@ -57,6 +57,8 @@ Memoization stores one cache entry atomically. Concurrent callers can evaluate a
 - `Memoize.Create` rejects a null selector with `ArgumentNullException`.
 - Keep selectors free of mutation, I/O, time-dependent reads, and dispatch. Supply the facts they need through their inputs.
 
+Selectors execute synchronously. If the selector throws, the exception propagates through selection and can interrupt a component render. A failed memoized evaluation is not stored as a cache result. Keep expected outcomes representable as values and handle unexpected selector failures at the calling boundary.
+
 ## Source and Verification
 
 The signatures and behavior are defined by [SelectorExtensions](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Abstractions/SelectorExtensions.cs), [Memoize](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Core/Selectors/Memoize.cs), and [StoreComponent](https://github.com/Gibbs-Morris/mississippi/blob/main/src/Reservoir.Client/StoreComponent.cs). [MemoizeTests](https://github.com/Gibbs-Morris/mississippi/blob/main/tests/Reservoir.Core.L0Tests/Selectors/MemoizeTests.cs) covers reference reuse, changed inputs, multiple states, and concurrent access.
