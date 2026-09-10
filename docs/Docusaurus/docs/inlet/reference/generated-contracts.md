@@ -40,7 +40,7 @@ These are different registration surfaces, each with a specific receiver.
 | Gateway | `AddMississippiSamplesSpringDomainServer()` | `IServiceCollection` | Generated aggregate and projection mapper registrations |
 | Client | `AddMississippiSamplesSpringDomainClient()` | `MississippiClientBuilder` | Generated aggregate and saga Reservoir features, plus projection feature registration |
 
-The domain name comes from the domain root namespace. The generated extension namespaces follow the consuming project's root namespace:
+The domain name comes from the domain root namespace. The domain-level generated extension namespaces follow the consuming project's root namespace:
 
 | Host | Spring extension namespace |
 |------|----------------------------|
@@ -49,6 +49,8 @@ The domain name comes from the domain root namespace. The generated extension na
 | Client | `MississippiSamples.Spring.Client.Features` |
 
 You can compose individual generated registrations instead. Spring's runtime and gateway currently select individual methods, while its client calls the domain-level method. For example, `AddBankAccountAggregate()` registers runtime behavior, `AddBankAccountAggregateMappers()` registers gateway mappings, and `AddBankAccountAggregateFeature()` registers client command handling on `IReservoirBuilder`.
+
+Individual gateway mapper extensions live in the consuming project's `.Controllers.Aggregates.Mappers` and `.Controllers.Projections.Mappers` namespaces. The combined domain Server extension above lives in `.Controllers.Mappers`.
 
 ### Infrastructure Around Generated Registrations
 
