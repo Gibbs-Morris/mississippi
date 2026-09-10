@@ -208,7 +208,7 @@ public sealed class ClientHostingRegistrationsTests
                 client.Reservoir(_ => { });
                 client.Complete();
             }));
-        Assert.Equal("MSB002", Assert.Single(exception.Diagnostics).Code);
+        Assert.Equal(BuilderDiagnosticCodes.BuilderAlreadyAttached, Assert.Single(exception.Diagnostics).Code);
         Assert.Empty(services);
         Assert.Same(host, host.UseMississippi(_ => { }));
     }
@@ -223,7 +223,7 @@ public sealed class ClientHostingRegistrationsTests
         WebAssemblyHostBuilder host = CreateHost(services);
         BuilderValidationException exception = Assert.Throws<BuilderValidationException>(() =>
             host.UseMississippi(_ => host.UseMississippi(_ => { })));
-        Assert.Equal("MSB001", Assert.Single(exception.Diagnostics).Code);
+        Assert.Equal(BuilderDiagnosticCodes.DuplicateHostAttachment, Assert.Single(exception.Diagnostics).Code);
         Assert.Empty(services);
         Assert.Same(host, host.UseMississippi(_ => { }));
     }
