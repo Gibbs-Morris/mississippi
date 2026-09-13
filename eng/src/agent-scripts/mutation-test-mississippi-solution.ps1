@@ -3,7 +3,8 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+    [switch]$ReportOnly
 )
 
 Set-StrictMode -Version Latest
@@ -15,7 +16,7 @@ Import-Module -Name $modulePath -Force
 $repoRoot = Get-RepositoryRoot -StartPath $PSScriptRoot
 
 try {
-    Invoke-MississippiSolutionMutationTests -RepoRoot $repoRoot -Configuration $Configuration
+    Invoke-MississippiSolutionMutationTests -RepoRoot $repoRoot -Configuration $Configuration -ReportOnly:$ReportOnly
 }
 catch {
     Write-Error "=== MISSISSIPPI SOLUTION MUTATION TESTING FAILED ===: $($_.Exception.Message)"
