@@ -41,8 +41,8 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - Token validation **MUST** reject unsupported DTCG constructs instead of silently reinterpreting them. Why: Silent reinterpretation can change token meaning during generation.
 - Canonical token sources **MUST** use the supported DTCG concepts, including `$type`, `$value`, `$description`, groups, and aliases or references. Why: These concepts preserve the value, meaning, grouping, and dependency relationships needed by the architecture.
 - Canonical token JSON **SHOULD** live under `src/Refraction.Client/Themes/Tokens/` in reference, system, and optional component catalogs. Why: A predictable source location keeps token ownership discoverable.
-- Token layer names **MUST** use `rf-ref`, `rf-sys`, and optional `rf-comp` namespaces. Why: The source hierarchy remains visible in token names and generated APIs.
-- Generated token custom properties **MUST** map to `--rf-ref-*`, `--rf-sys-*`, or deliberately exposed `--rf-comp-*` according to their layer. Why: The CSS names preserve the same hierarchy as the canonical token source.
+- DTCG source paths **MUST** begin with `ref.*`, `sys.*`, or optional `comp.*`. Why: The canonical JSON uses semantic source namespaces rather than CSS output names.
+- Generated token custom properties **MUST** replace source dots with hyphens and prefix the source layer with `--rf-`, producing `--rf-ref-*`, `--rf-sys-*`, or deliberately exposed `--rf-comp-*`. Why: The output namespace preserves source ownership while remaining valid CSS.
 - Hand-authored generated CSS **MUST NOT** be the token source of truth. Why: Source edits need to survive regeneration without being overwritten or silently diverging.
 - Generated token output **MUST** identify itself as generated. Why: Reviewers and tools must distinguish source from derived artifacts.
 - Token generation **MUST** be deterministic for identical inputs. Why: Reproducible output makes changes reviewable and stale output detectable.
@@ -78,7 +78,7 @@ Governing thought: Refraction styling uses explicit ownership, isolated componen
 - A cascade-layer decision **MUST** record the tested bundle behavior and the reason for adoption or deferral. Why: The decision should be revisitable when the build pipeline changes.
 - Refraction styles **MUST** use native CSS custom properties and platform features unless repository evidence requires another mechanism. Why: Readable native CSS keeps browser debugging and generated output straightforward.
 - Sass and Less **MUST NOT** be introduced merely for variables, nesting, naming, or token generation. Why: Custom properties and build-time generation cover those needs without a new styling toolchain.
-- CSS and token validation **MUST** detect invalid Refraction names, raw tokens, direct reference-token consumption, hard-coded design colors, unjustified `::deep`, IDs, exceptional `!important`, invalid token names, duplicate tokens, unresolved aliases, and stale generated output. Why: The architecture needs mechanical regression detection in addition to prose.
+- CSS and token validation **MUST** detect invalid Refraction names, raw tokens, direct reference-token consumption, hard-coded design colors, unjustified `::deep`, IDs, exceptional `!important`, invalid token names, duplicate tokens, flattened output-name collisions, unresolved aliases, and stale generated output. Why: The architecture needs mechanical regression detection in addition to prose.
 - Validation **SHOULD** use existing PowerShell and .NET infrastructure, adding Stylelint only when it materially improves coverage without an unrelated toolchain. Why: Enforcement should fit the repository's build model.
 - New or changed CSS, Razor visual state, themes, token sources, and Refraction components **MUST** follow this standard immediately. Why: New drift is more expensive than a later migration.
 - Existing legacy styles **MUST** be migrated in later independent, valid stack layers rather than hidden by undocumented compatibility rules. Why: Each migration layer remains reviewable while the target architecture stays clear.
@@ -116,6 +116,16 @@ ref.* values -> sys.* semantic roles -> optional comp.* public hooks -> componen
 ```
 
 Private element selectors describe internal structure. Semantic system tokens and deliberately exposed component tokens describe the supported styling contract.
+
+## Token naming map
+
+The source/output distinction is illustrated by these mappings:
+
+| DTCG source path | CSS custom property |
+| --- | --- |
+| `ref.color.neo-blue.300` | `--rf-ref-color-neo-blue-300` |
+| `sys.color.action.primary` | `--rf-sys-color-action-primary` |
+| `comp.pane.accent-border` | `--rf-comp-pane-accent-border` |
 
 ## Illustrative future target
 
