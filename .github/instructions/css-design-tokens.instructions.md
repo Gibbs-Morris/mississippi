@@ -192,13 +192,14 @@ The following example uses the existing Pane shape but shows the post-migration 
 }
 
 .rf-c-pane[data-variant="accent"] {
-    border-color: var(--rf-sys-color-action-primary);
+    border-color: var(--rf-comp-pane-accent-border, var(--rf-sys-color-action-primary));
 }
 ```
 
 ### Token relationship
 
 This relationship distinguishes a value, a semantic role, an optional public component hook, and the selector that consumes it:
+In this future illustrative target, a missing component hook falls back to the current scope's semantic system token.
 
 ```text
 ref.color.neo-blue.300
