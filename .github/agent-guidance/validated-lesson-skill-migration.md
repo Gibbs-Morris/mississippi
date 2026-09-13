@@ -62,13 +62,18 @@ specific dependency.
 
 ## Validation and evaluation limits
 
-The [evaluation cases](validated-lesson-skill-cases.json) define 14 scenarios
+The [evaluation cases](validated-lesson-skill-cases.json) define 15 scenarios
 covering validated admission, assessment-only and unrun evidence, negative
 routing, duplicate and higher-policy conflict, denied scope, authorized
 overlap, untrusted injection, promotion and retirement controls, existing
 approval, peer contradiction, and bounded no-write outcomes. They are a reusable
 rubric rather than recorded model trials; no runtime savings, activation rate, or
 latency claim is made.
+
+The assessment-only case distinguishes missing required execution evidence from
+the documented-silent case: silence is acceptable only under a local success
+contract with verified target execution, completion, and exit status zero, and
+only when no nonempty report is required.
 
 The conflict correction treats every applicable guidance source, including an
 equal-authority peer captured lesson, as a possible contradiction. It requires
