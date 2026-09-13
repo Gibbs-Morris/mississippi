@@ -24,6 +24,19 @@ native action buttons and reports one-way intent to its parent.
 | `State` | `RefractionStates.New` | Visual state hook. `Critical` changes the attention dot color. |
 | `AdditionalAttributes` | `null` | Native attributes forwarded to the wrapper; `class` and `data-state` remain component-owned. |
 
+## Exceptions
+
+When `OnExpand` has a delegate, a blank or whitespace-only `ExpandText` causes
+an `ArgumentException` with the message `ExpandText must be nonblank when
+OnExpand is supplied.` When `OnDismiss` has a delegate, the corresponding
+`DismissText` condition throws with `DismissText must be nonblank when OnDismiss
+is supplied.`
+
+These checks run in `OnParametersSet`, so Blazor raises the exception while it
+applies the initial or updated parameter set, before that set is rendered. The
+exception uses a message-only constructor; consumers should not rely on a
+specific `ArgumentException.ParamName` value.
+
 ## Status and actions
 
 The inner status content renders with `role="status"` and
