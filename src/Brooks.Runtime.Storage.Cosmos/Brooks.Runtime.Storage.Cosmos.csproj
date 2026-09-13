@@ -10,6 +10,7 @@
     <ProjectReference Include="..\Common.Abstractions\Common.Abstractions.csproj" />
     <ProjectReference Include="..\Common.Runtime.Storage.Cosmos\Common.Runtime.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\Brooks.Runtime.Storage.Abstractions\Brooks.Runtime.Storage.Abstractions.csproj" />
+    <ProjectReference Include="..\Hosting.Runtime.Abstractions\Hosting.Runtime.Abstractions.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <Description>Azure Cosmos DB provider for Brooks.Runtime storage.</Description>

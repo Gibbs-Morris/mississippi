@@ -8,5 +8,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Brooks.Runtime.Storage.Cosmos\Brooks.Runtime.Storage.Cosmos.csproj"/>
+        <ProjectReference Include="..\..\src\Hosting.Runtime\Hosting.Runtime.csproj" />
     </ItemGroup>
 </Project>

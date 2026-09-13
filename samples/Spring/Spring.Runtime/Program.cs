@@ -107,16 +107,6 @@ builder.Services.ScanProjectionAssemblies(typeof(BankAccountBalanceProjection).A
 builder.Services.AddJsonSerialization();
 builder.Services.AddSnapshotCaching();
 
-// Configure Cosmos storage for Brooks (event streams)
-builder.Services.AddCosmosBrookStorageProvider(options =>
-{
-    options.CosmosClientServiceKey = sharedCosmosKey;
-    options.DatabaseId = "spring-db";
-    options.ContainerId = "events";
-    options.QueryBatchSize = 50;
-    options.MaxEventsPerBatch = 50;
-});
-
 // Configure Cosmos storage for Snapshots
 builder.Services.AddCosmosSnapshotStorageProvider(options =>
 {
@@ -133,6 +123,15 @@ builder.UseOrleans(siloBuilder =>
     // Must match the stream provider name configured in AppHost via WithMemoryStreaming
     siloBuilder.UseMississippi(runtime =>
     {
+        // Configure Cosmos storage for Brooks (event streams)
+        runtime.AddCosmosBrookStorageProvider(cosmos =>
+        {
+            cosmos.CosmosClientServiceKey = sharedCosmosKey;
+            cosmos.DatabaseId = "spring-db";
+            cosmos.ContainerId = "events";
+            cosmos.QueryBatchSize = 50;
+            cosmos.MaxEventsPerBatch = 50;
+        });
         runtime.AddAqueduct(aqueduct => aqueduct.StreamProviderName = "StreamProvider");
         runtime.AddEventSourcing(options => options.OrleansStreamProviderName = "StreamProvider");
         runtime.ConfigureSilo(configuredSilo => configuredSilo.AddActivityPropagation());

@@ -146,16 +146,6 @@ public sealed class CrescentFixture
             BrookCosmosDefaults.BlobLockingServiceKey,
             (_, _) => new BlobServiceClient(blobConnectionString));
 
-        // Configure Cosmos DB storage for brooks (event streams)
-        // Use the overload without connection strings since we pre-registered the clients
-        builder.Services.AddCosmosBrookStorageProvider(o =>
-        {
-            o.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
-            o.DatabaseId = "aspire-l2tests";
-            o.QueryBatchSize = 50;
-            o.MaxEventsPerBatch = 50;
-        });
-
         // Configure Cosmos DB storage for snapshots
         builder.Services.AddCosmosSnapshotStorageProvider(options =>
         {
@@ -183,8 +173,19 @@ public sealed class CrescentFixture
             silo.AddMemoryStreams(BrookStreamingDefaults.OrleansStreamProviderName);
             silo.AddMemoryGrainStorage("PubSubStore");
 
-            // Tell Brooks which stream provider to use
-            silo.UseMississippi(runtime => runtime.AddEventSourcing());
+            // Tell Brooks which stream provider to use and configure its Cosmos event storage.
+            silo.UseMississippi(runtime =>
+            {
+                // The keyed Cosmos and Blob clients were pre-registered above; this is host-owned mode.
+                runtime.AddCosmosBrookStorageProvider(cosmos =>
+                {
+                    cosmos.CosmosClientServiceKey = BrookCosmosDefaults.CosmosClientServiceKey;
+                    cosmos.DatabaseId = "aspire-l2tests";
+                    cosmos.QueryBatchSize = 50;
+                    cosmos.MaxEventsPerBatch = 50;
+                });
+                runtime.AddEventSourcing();
+            });
         });
         IHost host = builder.Build();
 
