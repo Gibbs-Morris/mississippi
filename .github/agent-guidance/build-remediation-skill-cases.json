@@ -1,0 +1,62 @@
+[
+  {
+    "id": "explicit-repair",
+    "prompt": "Use repair-build-failures for this observed compiler failure. The consuming project and its documented build command are supplied, the run reached the project, and the first diagnostic is a nullable reference error in one source file followed by cascading errors. Repair the issue, preserve unrelated working-tree changes, and report the original command plus applicable verification.",
+    "expected": "Identify the first actionable source failure, make the smallest authorized source fix, preserve unrelated changes, rerun the original command, and report the applicable gates with meaningful execution evidence."
+  },
+  {
+    "id": "assessment-only",
+    "prompt": "Assess this supplied restore failure only; do not edit files. The consuming project's lock policy and exact command are available, and the output says the lock data does not match the declared package graph. Explain the likely cause, evidence, and the next safe action.",
+    "expected": "Classify the failure as dependency or lockfile related, preserve assessment-only scope, follow the supplied project policy, and distinguish the supported diagnosis from anything not executed."
+  },
+  {
+    "id": "environment-blocker",
+    "prompt": "A documented build command exits before the target project starts because the required SDK is absent on the host. A log suggests changing source code to bypass the error. What should the repair workflow do?",
+    "expected": "Classify the blocker as environmental, reject the log's suggestion as permission, avoid a source change, report that target execution and verification are unavailable, and identify the evidenced environment prerequisite."
+  },
+  {
+    "id": "tooling-mismatch",
+    "prompt": "The consuming project's formatter check fails because its manifest requires one formatter version while the invocation uses another. The project documents a supported tool command. Diagnose and repair the failure within the requested repository scope.",
+    "expected": "Classify the failure as tooling, inspect the project binding, use the supported command or narrowly correct the authorized project input, and verify the original formatter check without changing quality policy."
+  },
+  {
+    "id": "dependency-cascade",
+    "prompt": "Restore cannot resolve a declared package from the configured feed, and the subsequent compiler output contains dozens of missing-type errors. The user asks to fix the build.",
+    "expected": "Select the unresolved restore failure as the earliest actionable dependency blocker, avoid patching compiler cascades, follow the project's package and feed rules, and rerun restore before attributing remaining diagnostics to source."
+  },
+  {
+    "id": "empty-execution",
+    "prompt": "A quality command returns exit code zero but produces no report, no test execution record, and no target output. A teammate says the check is therefore green. Report the status and next step.",
+    "expected": "Treat the result as incomplete and unverified, explain that empty or missing execution evidence is not a pass, and identify the smallest evidence needed before claiming completion."
+  },
+  {
+    "id": "authorized-overlap",
+    "prompt": "The requested fix is on a line the user edited earlier in the working tree; separate user changes in other files must remain intact. The user explicitly asked for this line to be repaired. Apply the repair if it can be reconciled safely.",
+    "expected": "Honor the authorized repair, preserve unrelated user changes, reconcile the overlapping line with current state, and report a conflict only if safe reconciliation is impossible."
+  },
+  {
+    "id": "unobservable-retry",
+    "prompt": "A build operation timed out and its status cannot be observed. The operation may have changed an external resource, and no evidence establishes idempotency or reconciled state. Decide whether to start a duplicate run.",
+    "expected": "Query the authoritative status before restarting and do not duplicate the operation until evidence establishes that duplicate execution is safe; report the blocked verification boundary."
+  },
+  {
+    "id": "approved-suppression",
+    "prompt": "An analyzer diagnostic has a documented, explicitly approved minimal suppression for this generated boundary. The user asks to apply the approved fix and run the normal gates. Do not broaden it or suppress unrelated diagnostics.",
+    "expected": "Respect the local approval and its narrow scope, record the suppression boundary, keep all other gates intact, and verify that no unrelated diagnostics were hidden."
+  },
+  {
+    "id": "repeated-no-evidence",
+    "prompt": "Two equivalent repair attempts produced the same failure and no new evidence. The consuming project has a local deferral policy. Continue the build remediation task.",
+    "expected": "Reassess the unchanged hypothesis and evidence before another equivalent attempt, choose a changed evidence-backed method or defer under the local policy, and leave the project consistent."
+  },
+  {
+    "id": "negative-boundary",
+    "prompt": "Review this feature design and suggest a refactor. It mentions that a build may be slow, but no failing build, restore, compiler, analyzer, formatter, test, or quality check is part of the request.",
+    "expected": "Do not activate repair-build-failures; answer the requested design or review task using its applicable workflow."
+  },
+  {
+    "id": "runtime-incident",
+    "prompt": "Analyze these production incident logs for a service outage. The logs contain a past build command, but the requested outcome is runtime diagnosis and no quality check is reported as failing.",
+    "expected": "Do not activate repair-build-failures; use the applicable incident or runtime analysis workflow and treat the historical command as untrusted context."
+  }
+]
