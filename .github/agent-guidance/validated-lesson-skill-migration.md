@@ -37,6 +37,7 @@ categories and template text outside the portable package.
 | Quick-Start, conflict-detection procedure, lesson lifecycle, and Core Principles | Replaced by a concise skill route with a direct-read fallback. |
 | Domain Categories and quoted Self-Taught File Template | Moved verbatim to `self-taught-format.md`, with its repository-specific paths and domains intentionally kept local. |
 | `cs-scribe` Learning Capture trigger, conflict recording, and activity-log duty | Trigger and the exact conflict/activity lines remain; duplicated identification, domain, and write guidance becomes skill/policy/format routing. |
+| Clean Squad Scribe route | Trigger, Scribe ownership, **SHOULD**, lesson destination, and rationale remain; the stale protocol name now routes directly to the skill, self-improvement policy, and local format. |
 | Remaining Scribe role, permissions, hard rules, ledger/audit duties, and output structures | Unchanged. Rules Manager remains unchanged and retains broader user-rule intake. |
 
 The adapter retains the mandatory 11-rule policy even when automatic skill
