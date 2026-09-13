@@ -41,7 +41,10 @@ record it as unknown; a documented or reconstructed invocation is a later
 reproduction, not evidence of what originally ran. A missing log, empty output,
 or command that did not reach the target is incomplete evidence; it is not a
 passing check. If the failure was only described, reproduce it when the target
-and command are clear. Keep the original evidence separate from later attempts.
+and command are clear and existing authority covers the command's side effects;
+otherwise use supplied evidence or authorized read-only diagnostics and label
+the reproduction unrun. Keep the original evidence separate from later
+attempts.
 
 ## Triage the earliest actionable failure
 

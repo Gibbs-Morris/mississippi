@@ -72,9 +72,9 @@ blockers, dependency cascades, expected-behavior contract checks, empty
 execution evidence, authorized overlap with user changes, safe retry
 requirements, approved narrow suppression, repeated no-evidence reassessment,
 and negative review/feature/incident boundaries. They are a reusable rubric, not
-a record of model trials. The historical host trial below predates the
-expected-behavior contract correction and does not validate this revised skill;
-fresh contract fixtures remain required.
+a record of model trials. The assessment-only case supplies a clear command
+that writes restore artifacts while authority covers only read-only diagnostics;
+its expected outcome leaves that command unrun.
 
 The structural checks produced these results: the bundled skill-creator
 validator passed with an isolated PyYAML 6.0.3 dependency; manual front matter
@@ -113,6 +113,13 @@ protected notes stayed unchanged. This is scoped example evidence, not a
 universal numeric-function result or CLI conformance claim; no runtime tests
 were rerun.
 
+One independent Codex Desktop collaboration Luna Max assessment used the
+current candidate and read-only fixture D. It identified a checker-controlled
+exit 1 after the artifact-write step without executing the side-effecting
+command or repairing anything. All five top-level file hashes and the protected
+note were unchanged, and `artifacts/assessment-check.json` was absent before
+and after. This is bounded assessment evidence, not a write or repair result.
+
 Codex CLI 0.154.0-alpha.6.2 still stops before model output on TLS
 `UnknownIssuer`; Copilot CLI 1.0.83-5 has discovery evidence but no behavior
 trial after max-effort rejection. Exact-head CI remains required.
@@ -123,21 +130,22 @@ of this layer.
 Corpus accounting uses raw Git blob bytes captured with `git cat-file blob`
 from the original adapter revision `567313a0714c2fc45160345b7e0f9d32f54aee05`
 and the pre-correction skill revision
-`ece637bc7ae09a32ed00ad9bcfbd82786a0d5267`. Candidate files are normalized to
+`80e461d1aa20d73fec258bc93e1e80557bb254f4`. Candidate files are normalized to
 LF before counting whitespace-delimited words with `\S+`, physical lines, and
 UTF-8 bytes; the helper does not use PowerShell `Out-String`. The adapter is
 measured separately from the added skill and audit metadata. Adapter before:
 342 words, 47 lines, and 2,571 bytes. Candidate adapter: 244 words, 35 lines,
 and 1,948 bytes, a reduction of 98 words, 12 lines, and 623 bytes.
 
-Before this contract correction, the skill was 1,276 words, 152 lines, and
-8,748 bytes full-file, with a 1,216-word, 148-line, 8,331-byte body. The
-candidate is 1,384 words, 164 lines, and 9,484 bytes full-file, with a
-1,324-word, 160-line, 9,067-byte body. Body line counts exclude all four YAML
+Before this early-reproduction correction, the skill was 1,384 words, 164
+lines, and 9,484 bytes full-file, with a 1,324-word, 160-line, 9,067-byte body.
+The candidate is 1,405 words, 167 lines, and 9,643 bytes full-file, with a
+1,345-word, 163-line, 9,226-byte body. Body line counts exclude all four YAML
 front matter lines. Candidate discovery metadata (name plus description) is 56
 words, 2 lines, and 389 bytes; the discovered path is
-`.agents/skills/repair-build-failures/SKILL.md`. Added cases and this record are
-metadata, not savings.
+`.agents/skills/repair-build-failures/SKILL.md`. Current candidate SHA-256 is
+`D214638A49CAE481F9C4FD321D8696A96F6A012D91378E37063E628382F2FC4F`. Added
+cases and this record are metadata, not savings.
 
 ## Rollback
 
