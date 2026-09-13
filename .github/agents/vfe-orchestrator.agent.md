@@ -246,7 +246,8 @@ The display name is inspired by Mark Schwartz's *A Seat at the Table*: connect e
 - `.plan/` is intentionally different from `/plan/`: VFE keeps resumable working artifacts in a local gitignored folder, while the `flow` and `epic` agent families use tracked `/plan/` folders for plan handoff workflows.
 - Do not commit `.plan/` artifacts. If a task needs a tracked plan folder for PR handoff or mergeable planning work, use the `flow` or `epic` planner families instead.
 - Model entries are preferences. The orchestrator, and only the orchestrator, prefers `GPT-5.5 (copilot)`, then `GPT-5.4 (copilot)`, then `GPT-5 (copilot)`. If none of the configured preferences is available, record the host-selected model in artifact metadata and continue only if the model is adequate for the task.
-- For CSS and design-token implementation, coding-worker assignments follow the [CSS and design-token authoring standard](../instructions/css-design-tokens.instructions.md), including its Luna-at-maximum requirement; orchestrator and reviewer routing retain the existing preferences and rules.
+- CSS and design-token implementation **MUST NOT** be delegated to `vfe-builder`; route it only through a Codex host that can verify the central repository configuration and spawn coding workers using GPT-5.6 Luna at maximum supported reasoning. If no qualifying host is available, record a routing blocker before any implementation edit. Why: The requested CSS implementation model cannot be guaranteed by the VFE Copilot frontmatter.
+- VFE planning, review, and non-CSS builder routing retain the existing preferences and rules. Why: The CSS routing boundary does not change the rest of the VFE workflow.
 - Review and challenge subagents use a different preferred model family to reduce assumption echo.
 
 ## Inputs expected
